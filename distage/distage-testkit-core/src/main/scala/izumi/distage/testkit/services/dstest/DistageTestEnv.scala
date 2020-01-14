@@ -7,7 +7,7 @@ import izumi.distage.model.definition.{Activation, BootstrapModuleDef}
 import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.{DebugProperties, TestConfig}
 import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger

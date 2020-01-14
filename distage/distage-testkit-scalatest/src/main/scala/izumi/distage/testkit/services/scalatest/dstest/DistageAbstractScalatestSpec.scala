@@ -102,20 +102,36 @@ object DistageAbstractScalatestSpec {
       takeFunAny(function, pos.get)
     }
 
+    def in(value: => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+      takeIO(() => value, pos.get)
+    }
+
+    def in(value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+
     def skip(@unused function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunAny((_: T) => cancelNow(), pos.get)
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunIO(cancel, pos.get)
     }
 
     private def cancel(eff: DIEffect[F]): F[Nothing] = {
@@ -165,20 +181,36 @@ object DistageAbstractScalatestSpec {
       takeFunAny(function, pos.get)
     }
 
+    def in(value: => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      takeBIO(() => value, pos.get)
+    }
+
+    def in(value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+
     def skip(@unused function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO(cancel _, pos.get)
+      takeFunIO(cancel, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunAny((_: T) => cancelNow(), pos.get)
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunIO(cancel, pos.get)
     }
 
     private def cancel(F: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
