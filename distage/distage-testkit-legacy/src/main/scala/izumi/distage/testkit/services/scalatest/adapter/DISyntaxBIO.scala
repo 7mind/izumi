@@ -9,14 +9,14 @@ import izumi.fundamentals.platform.language.{CodePosition, CodePositionMateriali
 trait DISyntaxBIO[F[+ _, + _]] extends DISyntaxBIOBase[F] {
   this: DISyntax[F[Throwable, ?]] =>
 
-  override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = dio(fAsThrowable)
+  override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = dio(fAsThrowable)
 
   final def dio(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-    take2(function, pos.get)
+    takeBIO(function, pos.get)
   }
 
   final def dio[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-    take2(function, pos.get)
+    takeFunBIO(function, pos.get)
   }
 
 }

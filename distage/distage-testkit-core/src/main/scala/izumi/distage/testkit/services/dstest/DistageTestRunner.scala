@@ -14,7 +14,9 @@ import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.CodePosition
@@ -35,7 +37,7 @@ class DistageTestRunner[F[_] : TagK]
     val groups = tests.groupBy(_.environment)
 
     val logger = runnerEnvironment.makeLogger()
-    val options = runnerEnvironment.contextOptions
+    val options = runnerEnvironment.planningOptions
     val loader = runnerEnvironment.makeConfigLoader(logger)
 
     val config = loader.buildConfig()
@@ -78,20 +80,27 @@ class DistageTestRunner[F[_] : TagK]
 
         logger.info(s"Memoized components in env: $sharedKeys")
 
-        val (strengthenKeys, strengthen) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
+        val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
           case (acc, b@SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && wholeEnvKeys(key) =>
             (key :: acc) -> b.copy(implementation = r.copy(weak = false))
           case (acc, b) =>
             acc -> b
         }
 
-        logger.info(s"Strengthen weak components in env: $strengthenKeys")
+        logger.info(s"Strengthened weak components in env: $strengthenedKeys")
 
-        val shared = injector.trisectByKeys(strengthen, sharedKeys) {
+        val shared = injector.trisectByKeys(strengthenedAppModule, sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
         checker.verify(runtimePlan)
+
+        debugLogger.log(
+          s"""Tests in env: ${tests.size}
+             |Integration plan: ${shared.side}
+             |Memoized plan: ${shared.shared}
+             |App plan: ${shared.primary}
+             |""".stripMargin)
 
         // first we produce our Monad's runtime
         injector.produceF[Identity](runtimePlan).use {
@@ -173,7 +182,7 @@ class DistageTestRunner[F[_] : TagK]
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
-                  println(s"Test Id $id")
+                  debugLogger.log(s"Running, test Id=$id")
 
                   checker.verify(newtestplan.primary)
                   checker.verify(newtestplan.side)
@@ -253,6 +262,7 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
+  lazy val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
 }
 
 object DistageTestRunner {

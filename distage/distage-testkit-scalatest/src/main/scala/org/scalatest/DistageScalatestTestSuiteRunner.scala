@@ -5,10 +5,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.framework.services.IntegrationChecker
-import izumi.distage.testkit.SpecConfig
+import izumi.distage.testkit.{DebugProperties, SpecConfig}
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.exceptions.TestCanceledException
@@ -21,7 +22,7 @@ trait ScalatestInitWorkaround {
 }
 
 object ScalatestInitWorkaround {
-  def apply[F[_]](runner: DistageScalatestTestSuiteRunner[F]): ScalatestInitWorkaround = {
+  def scan[F[_]](runner: DistageScalatestTestSuiteRunner[F]): ScalatestInitWorkaround = {
     ScalatestInitWorkaroundImpl.doScan(runner)
 
     new ScalatestInitWorkaround {
@@ -65,22 +66,26 @@ object ScalatestInitWorkaround {
 }
 
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
-  protected[scalatest] val init = ScalatestInitWorkaround[F](this)
+  protected def specConfig: SpecConfig = SpecConfig()
 
   implicit def tagMonoIO: TagK[F]
+
+  // initialize status early, so that runner can set it to `true` even before this test is discovered
+  // by scalatest, if it was already executed by that time
+  private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus(suiteId)
+
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
-  protected def specConfig: SpecConfig = SpecConfig()
   protected def makeSpecEnvironment(): SpecEnvironment = {
     val c = specConfig
     val clazz = this.getClass
 
     new SpecEnvironment.Impl[F](
       suiteClass = clazz,
-      contextOptions = c.contextOptions,
+      planningOptions = c.planningOptions,
       bootstrapOverrides = c.bootstrapOverrides,
       moduleOverrides = c.moduleOverrides,
       bootstrapLogLevel = c.bootstrapLogLevel,
-      configOverrides = c.configOverrides
+      configOverrides = c.configOverrides,
     )
   }
 
@@ -88,12 +93,20 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
-  // initialize status early, so that runner can set it to `true`
-  private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus(suiteId)
-
   override def run(testName: Option[String], args: Args): Status = {
     DistageTestsRegistrySingleton.registerTracker(suiteId)(args.tracker)
-    init.awaitTestsLoaded()
+    // If, we're running under sbt, scan the classpath manually to add all tests
+    // in neighboring packages before starting anything, because sbt runner
+    // instantiates & runs tests at the same time, so when `run` is called
+    // NOT all tests have been registered, so we must force all tests, otherwise
+    // we can't be sure.
+    //
+    // NON-sbt ScalatestRunner first instantiates ALL tests, THEN calls `.run` method,
+    // so for non-sbt runs we KNOW that all tests have already been registered, so we
+    // don't have to scan the classpath ourselves.
+    if (args.reporter.getClass.getName.contains("org.scalatest.tools.Framework")) {
+      ScalatestInitWorkaround.scan(this).awaitTestsLoaded()
+    }
 
     try {
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
@@ -115,7 +128,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   override def testNames: Set[String] = {
-    val testsInThisTestClass = DistageTestsRegistrySingleton.list[F].filter(_.meta.id.suiteId == suiteId)
+    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.id.suiteId == suiteId)
     TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
   }
 
@@ -151,8 +164,8 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   private def doRun(candidatesForThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
-    println(args)
-    println(
+    debugLogger.log(s"Scalatest Args: $args")
+    debugLogger.log(
       s"""tagsToInclude: ${args.filter.tagsToInclude}
          |tagsToExclude: ${args.filter.tagsToExclude}
          |dynaTags: ${args.filter.dynaTags}
@@ -181,7 +194,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     if (toRun.isEmpty) {
       return
     } else {
-      println(s"TORUN: ${toRun.map(_.meta.id.name)}")
+      debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
     }
 
     val runner = {
@@ -197,7 +210,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
   }
 
-  // FIXME: read scalatest runner configuration???
   protected def parallelTestsAlways: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
@@ -206,7 +218,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   override final val styleName: String = "DistageSuite"
+
+  lazy val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
 }
-
-
-

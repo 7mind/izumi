@@ -73,7 +73,7 @@ object DistageAbstractScalatestSpec {
                                        reg: TestRegistration[F],
                                        env: TestEnvironment,
                                      )(
-                                       implicit override val tagMonoIO: TagK[F]
+                                       implicit override val tagMonoIO: TagK[F],
                                      ) extends DISyntaxBase[F] {
 
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
@@ -90,12 +90,12 @@ object DistageAbstractScalatestSpec {
       takeIO(function, pos.get)
     }
 
-    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(function, pos.get)
-    }
-
     def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeAny(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+      takeFunIO(function, pos.get)
     }
 
     def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
@@ -103,20 +103,18 @@ object DistageAbstractScalatestSpec {
     }
 
     def skip(@unused function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
+      takeIO(cancel _, pos.get)
+    }
+
+    def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeIO(cancel _, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
+      takeIO(cancel _, pos.get)
     }
 
-    def skip(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      Quirks.discard(function)
-      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
-    }
-
-    def skip[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      Quirks.discard(function)
+    def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunAny((_: T) => cancelNow(), pos.get)
     }
 
@@ -129,18 +127,19 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapper2[F[+ _, + _]](
-                                               context: Option[SuiteContext],
-                                               suiteName: String,
-                                               suiteId: String,
-                                               testname: String,
-                                               reg: TestRegistration[F[Throwable, ?]],
-                                               env: TestEnvironment,
-                                             )(
-                                               implicit override val tagBIO: TagKK[F],
-                                             ) extends DISyntaxBIOBase[F] {
+  class DSWordSpecStringWrapper2[F[+_, +_]](
+                                             context: Option[SuiteContext],
+                                             suiteName: String,
+                                             suiteId: String,
+                                             testname: String,
+                                             reg: TestRegistration[F[Throwable, ?]],
+                                             env: TestEnvironment,
+                                           )(
+                                             implicit override val tagBIO: TagKK[F],
+                                           ) extends DISyntaxBIOBase[F] {
+    override val tagMonoIO: TagK[F[Throwable, ?]] = TagK[F[Throwable, ?]]
 
-    override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
+    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
         suiteName,
@@ -151,23 +150,39 @@ object DistageAbstractScalatestSpec {
     }
 
     def in(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      take2(function, pos.get)
+      takeBIO(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
     }
 
     def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      take2(function, pos.get)
+      takeFunBIO(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunAny(function, pos.get)
     }
 
     def skip(@unused function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
+      takeIO(cancel _, pos.get)
+    }
+
+    def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeIO(cancel _, pos.get)
     }
 
     def skip[T: Tag](@unused function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
+      takeIO(cancel _, pos.get)
     }
 
-    private def cancel(eff: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
-      eff.maybeSuspend(cancelNow())
+    def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunAny((_: T) => cancelNow(), pos.get)
+    }
+
+    private def cancel(F: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
+      F.maybeSuspend(cancelNow())
     }
 
     private def cancelNow(): Nothing = {
