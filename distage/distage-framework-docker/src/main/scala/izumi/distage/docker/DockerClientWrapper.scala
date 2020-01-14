@@ -30,21 +30,25 @@ class DockerClientWrapper[F[_]]
   def labels: Map[String, String] = labelsBase ++ labelsUnique
 
   def destroyContainer(container: ContainerId): F[Unit] = {
-    F.maybeSuspend {
-      logger.info(s"Going to destroy $container...")
+    F.definitelyRecover {
+      F.maybeSuspend {
+        logger.info(s"Going to destroy $container...")
 
-      try {
-        client
-          .stopContainerCmd(container.name)
-          .exec()
-          .discard()
-      } finally {
-        client
-          .removeContainerCmd(container.name)
-          .withForce(true)
-          .exec()
-          .discard()
+        try {
+          client
+            .stopContainerCmd(container.name)
+            .exec()
+            .discard()
+        } finally {
+          client
+            .removeContainerCmd(container.name)
+            .withForce(true)
+            .exec()
+            .discard()
+        }
       }
+    } {
+      e => F.maybeSuspend(logger.warn(s"Got failure during container destroy ${e.getMessage -> "message"}"))
     }
   }
 }
