@@ -44,10 +44,10 @@ Chats:
 
 Slides:
 
-* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://github.com/7mind/slides/blob/master/07-distage-tests-functional-scala/distage-tests-functional-scala.pdf)
+* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
 * [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 * [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
-* [Other slides](https://github.com/7mind/slides)
+* [More slides](https://github.com/7mind/slides)
 
 Videos:
 
