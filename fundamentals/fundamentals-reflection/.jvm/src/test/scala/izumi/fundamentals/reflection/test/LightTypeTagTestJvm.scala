@@ -1,9 +1,9 @@
 package izumi.fundamentals.reflection.test
 
 import izumi.fundamentals.reflection.ReflectionUtil
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LightTypeTagTestJvm extends WordSpec {
+class LightTypeTagTestJvm extends AnyWordSpec {
 
   type FP1[+T] = List[T]
   type Ap1[+F[+_], +T] = F[T]

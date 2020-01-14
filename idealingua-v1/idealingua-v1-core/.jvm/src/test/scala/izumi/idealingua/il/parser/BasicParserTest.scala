@@ -2,11 +2,11 @@ package izumi.idealingua.il.parser
 
 import izumi.idealingua.il.parser.structure._
 import izumi.idealingua.model.il.ast.raw.defns.RawMethod
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import fastparse._
 
 class BasicParserTest
-  extends WordSpec with ParserTestTools {
+  extends AnyWordSpec with ParserTestTools {
 
   import ctx._
 

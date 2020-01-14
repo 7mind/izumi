@@ -1,9 +1,9 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.strings.IzEscape
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzStringEscapeTest extends WordSpec {
+class IzStringEscapeTest extends AnyWordSpec {
 
   "string escape tool" should {
     "keep identity" in {

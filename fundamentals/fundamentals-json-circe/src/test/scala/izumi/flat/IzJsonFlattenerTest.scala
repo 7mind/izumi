@@ -4,9 +4,10 @@ package izumi.flat
 import io.circe.Json
 import io.circe.literal._
 import izumi.fundamentals.json.flat.JsonFlattener
-import org.scalatest.{Assertion, WordSpec}
+import org.scalatest.Assertion
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzJsonFlattenerTest extends WordSpec {
+class IzJsonFlattenerTest extends AnyWordSpec {
 
   "JSON flattener" should {
     "keep identity" in {
@@ -19,7 +20,6 @@ class IzJsonFlattenerTest extends WordSpec {
       check(original)
     }
   }
-
 
   private def check(original: Json): Assertion = {
     val flattened = new JsonFlattener().flatten(original)

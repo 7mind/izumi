@@ -2,9 +2,9 @@ package izumi.distage.impl
 
 import izumi.distage.model.planning.PlanAnalyzer
 import distage._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class ModelTest extends WordSpec {
+class ModelTest extends AnyWordSpec {
 
   "DI Keys" should {
     "support equality checks" in {

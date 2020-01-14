@@ -1,10 +1,10 @@
 package izumi.fundamentals.collections
 
 import izumi.fundamentals.tags.TagExpr
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class TagExprTest extends WordSpec {
+class TagExprTest extends AnyWordSpec {
 
   "Tag expression evaluator" should {
     "support pretty-printing" in {

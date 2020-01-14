@@ -4,9 +4,9 @@ import izumi.distage.fixtures.ImplicitCases.ImplicitCase2
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class StaticImplicitInjectionTest extends WordSpec with MkInjector {
+class StaticImplicitInjectionTest extends AnyWordSpec with MkInjector {
 
   "Handle multiple parameter lists" in {
     import ImplicitCase2._

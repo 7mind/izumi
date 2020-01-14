@@ -9,9 +9,9 @@ import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBindi
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class DSLTest extends WordSpec with MkInjector {
+class DSLTest extends AnyWordSpec with MkInjector {
 
   import TestTagOps._
 

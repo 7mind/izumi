@@ -4,11 +4,11 @@ import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable
 
-class GcBasicTestsJvm extends WordSpec with MkGcInjector {
+class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
     "keep proxies alive in case of intersecting loops" in {
       import GcCases.InjectorCase1._

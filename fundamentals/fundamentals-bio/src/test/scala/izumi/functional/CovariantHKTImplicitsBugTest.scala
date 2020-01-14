@@ -1,20 +1,24 @@
 package izumi.functional
 
-import org.scalatest.{GivenWhenThen, WordSpec}
+import org.scalatest.GivenWhenThen
+import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
-class CovariantHKTImplicitsBugTest extends WordSpec with GivenWhenThen {
+class CovariantHKTImplicitsBugTest extends AnyWordSpec with GivenWhenThen {
 
   "progression test: covariant HKT implicits are broken" in {
     And("quite broken")
-    assertTypeError(
+    val res1 = intercept[TestFailedException](assertCompiles(
       """
         val alg: SomeAlg[IO] = SomeAlg.mk()
-      """)
+      """))
+    assert(res1.getMessage contains "could not find implicit value")
     And("really broken")
-    assertTypeError(
+    val res2 = intercept[TestFailedException](assertCompiles(
       """
         val alg: SomeAlg[IO] = SomeAlg.mk[IO]()
-      """)
+      """))
+    assert(res2.getMessage contains "could not find implicit value")
   }
 
   trait MonoIO[F[_]]

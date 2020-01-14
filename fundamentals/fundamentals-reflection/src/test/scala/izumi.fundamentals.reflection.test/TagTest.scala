@@ -3,8 +3,9 @@ package izumi.fundamentals.reflection.test
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags._
 import izumi.fundamentals.reflection.macrortti._
+import org.scalatest.Assertions
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{Assertions, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.StaticAnnotation
 import scala.util.Try
@@ -52,7 +53,7 @@ final case class testTag3[F[_]: TagK]() {
   val res = Tag[X].tag
 }
 
-class TagTest extends WordSpec with XY[String] {
+class TagTest extends AnyWordSpec with XY[String] {
 
   import izumi.fundamentals.reflection.test.PlatformSpecific.fromRuntime
   def fromLTag[T: LTag]: LightTypeTag = LTag[T].tag

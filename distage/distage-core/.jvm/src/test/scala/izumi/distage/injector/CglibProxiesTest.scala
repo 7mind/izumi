@@ -9,11 +9,11 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.core.CodeGenerationException
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable.Queue
 
-class CglibProxiesTest extends WordSpec with MkInjector {
+class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
   "CircularDependenciesTest" should {
 

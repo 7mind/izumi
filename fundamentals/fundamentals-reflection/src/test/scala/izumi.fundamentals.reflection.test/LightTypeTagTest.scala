@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection.test
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.StaticAnnotation
 import scala.collection.immutable.ListSet
@@ -16,7 +16,7 @@ trait YieldOpCounts {
 }
 object YieldOpCounts extends YieldOpCounts
 
-class LightTypeTagTest extends WordSpec {
+class LightTypeTagTest extends AnyWordSpec {
   trait T0[A[_], B[_]]
   final val str = "str"
 

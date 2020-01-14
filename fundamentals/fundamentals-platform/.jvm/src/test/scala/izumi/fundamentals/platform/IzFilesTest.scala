@@ -3,13 +3,13 @@ package izumi.fundamentals.platform
 import java.util.concurrent.TimeUnit
 
 import izumi.fundamentals.platform.files.IzFiles
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 
-class IzFilesTest extends WordSpec {
+class IzFilesTest extends AnyWordSpec {
 
   "File tools" should {
     "resolve path entries on nix-like systems" in {

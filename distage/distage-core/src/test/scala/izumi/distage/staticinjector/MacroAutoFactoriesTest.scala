@@ -4,9 +4,9 @@ import izumi.distage.fixtures.FactoryCases.FactoryCase1
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class MacroAutoFactoriesTest extends WordSpec with MkInjector {
+class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
   "handle macro factory injections" in {
     import FactoryCase1._

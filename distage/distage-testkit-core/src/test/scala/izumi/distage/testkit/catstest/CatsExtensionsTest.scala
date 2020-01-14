@@ -3,16 +3,17 @@ package izumi.distage.testkit.catstest
 import cats.Id
 import cats.effect._
 import cats.instances.option._
+import distage.{DIKey, Injector}
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
-import distage._
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import org.scalatest.{GivenWhenThen, WordSpec}
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
+import org.scalatest.GivenWhenThen
+import org.scalatest.wordspec.AnyWordSpec
 
-class CatsExtensionsTest extends WordSpec with GivenWhenThen {
+class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
 
   "cats-effect extensions" should {
     "work" in {

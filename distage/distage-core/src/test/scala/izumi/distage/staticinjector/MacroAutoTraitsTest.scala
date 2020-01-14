@@ -7,9 +7,9 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class MacroAutoTraitsTest extends WordSpec with MkInjector {
+class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
   "construct a basic trait" in {
     val traitCtor = AnyConstructor[Aaa].provider.get

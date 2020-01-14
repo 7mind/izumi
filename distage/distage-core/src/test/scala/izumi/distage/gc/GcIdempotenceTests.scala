@@ -4,10 +4,10 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import distage.DIKey
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class GcIdempotenceTests extends WordSpec with MkGcInjector {
+class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" when {
     "plan is re-finished" should {
       "work with autosets" in {

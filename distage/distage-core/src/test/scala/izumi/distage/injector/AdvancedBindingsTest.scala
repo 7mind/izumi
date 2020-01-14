@@ -5,11 +5,11 @@ import izumi.distage.fixtures.SetCases.SetCase2
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
 
-class AdvancedBindingsTest extends WordSpec with MkInjector {
+class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
 
   "Support TODO bindings" in {
     import BasicCase1._

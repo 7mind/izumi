@@ -3,9 +3,9 @@ package izumi.distage.injector
 import izumi.distage.fixtures.ProviderCases.{ProviderCase2, ProviderCase3}
 import izumi.distage.model.PlannerInput
 import distage.{Id, ModuleDef}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class ProvidersTest extends WordSpec with MkInjector {
+class ProvidersTest extends AnyWordSpec with MkInjector {
 
   "instantiate provider bindings" in {
     import ProviderCase2._

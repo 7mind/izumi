@@ -5,10 +5,10 @@ import java.nio.file.Paths
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerator, ModelLoaderImpl}
 import izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class LoaderTest extends WordSpec {
+class LoaderTest extends AnyWordSpec {
 
   "IL loader" should {
     "parse all test domains" in {

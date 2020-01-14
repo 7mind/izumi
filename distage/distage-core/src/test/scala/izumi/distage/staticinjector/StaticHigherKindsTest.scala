@@ -5,9 +5,9 @@ import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class StaticHigherKindsTest extends WordSpec with MkInjector {
+class StaticHigherKindsTest extends AnyWordSpec with MkInjector {
 
   "macros support tagless final style module definitions" in {
     import HigherKindsCase1._
