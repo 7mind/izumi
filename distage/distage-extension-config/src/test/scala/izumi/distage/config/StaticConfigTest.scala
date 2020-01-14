@@ -7,9 +7,9 @@
 //import izumi.distage.injector.MkInjector
 //import izumi.distage.model.PlannerInput
 //import izumi.distage.model.definition.ModuleDef
-//import org.scalatest.WordSpec
+//import org.scalatest.wordspec.AnyWordSpec
 //
-//class StaticConfigTest extends WordSpec with MkInjector {
+//class StaticConfigTest extends AnyWordSpec with MkInjector {
 //
 //  "Inject config works for macro trait methods" in {
 //    import ConfigFixtures._

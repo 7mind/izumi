@@ -3,11 +3,11 @@ package izumi.logstage.api
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
 import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
-class BasicLoggingTest extends WordSpec {
+class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {
     "extract argument names from an arbitrary string" in {

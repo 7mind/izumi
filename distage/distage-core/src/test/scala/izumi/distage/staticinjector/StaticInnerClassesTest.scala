@@ -4,9 +4,9 @@ import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerC
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class StaticInnerClassesTest extends WordSpec with MkInjector {
+class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
 
   "macros can handle class local path-dependent injections" in {
     val definition = new ModuleDef {

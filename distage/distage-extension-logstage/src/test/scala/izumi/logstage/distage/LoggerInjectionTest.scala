@@ -4,7 +4,7 @@ import izumi.distage.model.PlannerInput
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 class ExampleService(log: IzLogger) {
   def compute: Int = {
@@ -20,7 +20,7 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
   }
 }
 
-class LoggerInjectionTest extends WordSpec {
+class LoggerInjectionTest extends AnyWordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
       val testSink = new TestSink()

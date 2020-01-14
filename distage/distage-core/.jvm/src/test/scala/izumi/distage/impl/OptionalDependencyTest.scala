@@ -6,9 +6,10 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
 import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.{GivenWhenThen, WordSpec}
+import org.scalatest.GivenWhenThen
+import org.scalatest.wordspec.AnyWordSpec
 
-class OptionalDependencyTest extends WordSpec with GivenWhenThen {
+class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
   "Using DIResource & DIEffect objects succeeds event if there's no cats or zio on the classpath" in {
 

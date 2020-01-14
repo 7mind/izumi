@@ -2,11 +2,11 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.{BIOFunctor, BlockingIO, BlockingIO3, BlockingIOInstances, F}
 import izumi.fundamentals.bio.test.masking.BIOMonad3
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 import zio.blocking.Blocking
 
-class BlockingIOSyntaxTest extends WordSpec {
+class BlockingIOSyntaxTest extends AnyWordSpec {
 
   def `attach BlockingIO methods to a trifunctor BIO`[F[-_, +_, +_]: BIOMonad3: BlockingIO3]: F[Any, Throwable, Int] = {
     F.syncBlocking(2)

@@ -4,9 +4,9 @@ import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class GcIdempotenceTestsJvm extends WordSpec with MkGcInjector {
+class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" when {
     "plan is re-finished" should {
       "keep proxies alive in case of intersecting loops" in {

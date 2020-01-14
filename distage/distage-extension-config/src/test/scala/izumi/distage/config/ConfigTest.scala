@@ -7,12 +7,12 @@
 //import distage.{Injector, ModuleDef}
 //import izumi.distage.config.model.AppConfig
 //import izumi.distage.model.PlannerInput
-//import org.scalatest.WordSpec
+//import org.scalatest.wordspec.AnyWordSpec
 //
 //import scala.collection.immutable.ListSet
 //import scala.collection.mutable
 //
-//class ConfigTest extends WordSpec {
+//class ConfigTest extends AnyWordSpec {
 //  def mkConfigModule(path: String): AppConfigModule = {
 //    mkModule(ConfigFactory.load(path))
 //  }

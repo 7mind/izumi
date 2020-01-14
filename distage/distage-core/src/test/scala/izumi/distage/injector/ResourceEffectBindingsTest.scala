@@ -10,7 +10,7 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
 import scala.collection.mutable
@@ -21,7 +21,7 @@ object ResourceEffectBindingsTest {
   final type Ft[+A] = Suspend2[Throwable, A]
 }
 
-class ResourceEffectBindingsTest extends WordSpec with MkInjector {
+class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
   "Effect bindings" should {
 

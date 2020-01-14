@@ -1,9 +1,9 @@
 
 package izumi.fundamentals.platform
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzHashTest extends WordSpec {
+class IzHashTest extends AnyWordSpec {
 
 //  "murmur32 hash" should {
 //    "produce hex output" in {

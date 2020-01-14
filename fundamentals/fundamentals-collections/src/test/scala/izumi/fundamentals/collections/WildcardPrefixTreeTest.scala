@@ -1,9 +1,9 @@
 package izumi.fundamentals.collections
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class WildcardPrefixTreeTest extends WordSpec {
+class WildcardPrefixTreeTest extends AnyWordSpec {
   def call[K, V](tree: WildcardPrefixTree[K, V], path: K*): Set[V] = {
     tree.findSubtrees(path.toList).flatMap(_.subtreeValues).toSet
   }

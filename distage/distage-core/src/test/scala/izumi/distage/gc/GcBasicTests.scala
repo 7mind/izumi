@@ -5,9 +5,9 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.UnsupportedOpException
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class GcBasicTests extends WordSpec with MkGcInjector {
+class GcBasicTests extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
 
     "fail during planning on non-by-name loops involving only final classes" in {

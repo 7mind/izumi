@@ -2,11 +2,11 @@ package izumi.idealingua
 
 import izumi.fundamentals.platform.files.IzFiles
 import izumi.idealingua.model.publishing.manifests.{CSharpProjectLayout, GoProjectLayout, ScalaProjectLayout, TypeScriptProjectLayout}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Properties
 
-class CompilerTest extends WordSpec {
+class CompilerTest extends AnyWordSpec {
 
   import IDLTestTools._
 

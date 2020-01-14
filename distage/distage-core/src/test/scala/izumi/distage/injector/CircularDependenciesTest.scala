@@ -10,9 +10,9 @@ import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializatio
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class CircularDependenciesTest extends WordSpec with MkInjector {
+class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
   "support trait initialization" in {
     import CircularCase2._

@@ -3,10 +3,10 @@ package izumi.distage.injector
 import distage._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class PlanOperationsTest extends WordSpec with MkInjector {
+class PlanOperationsTest extends AnyWordSpec with MkInjector {
 
   import PlanOperationsTest._
 

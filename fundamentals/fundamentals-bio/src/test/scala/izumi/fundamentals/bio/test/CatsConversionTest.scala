@@ -4,9 +4,9 @@ import cats.effect.concurrent.Ref
 import cats.effect.{Async, Concurrent, Sync}
 import izumi.functional.bio.{BIO, F}
 import izumi.functional.bio.catz._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class CatsConversionTest extends WordSpec {
+class CatsConversionTest extends AnyWordSpec {
 
   class X[F[+_, +_]: BIO](val ref: Ref[F[Throwable, ?], Int])
 

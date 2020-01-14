@@ -7,12 +7,12 @@ import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.reflection.ProjectAttributeMacro
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
 import scala.language.reflectiveCalls
 
-class AdvancedTypesTest extends WordSpec with MkInjector {
+class AdvancedTypesTest extends AnyWordSpec with MkInjector {
 
   "support generics" in {
     import TypesCase1._

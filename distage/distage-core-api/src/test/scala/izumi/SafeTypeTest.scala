@@ -2,11 +2,11 @@ package izumi
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.reflect.ClassTag
 
-class SafeTypeTest extends WordSpec {
+class SafeTypeTest extends AnyWordSpec {
   "SafeType" should {
     "have consistent equals and hashcode" in {
       val t1 = SafeType.get[Int]
