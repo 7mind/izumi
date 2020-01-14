@@ -37,12 +37,17 @@ Example projects:
 * [DIStage Example Project](https://github.com/7mind/distage-example)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
 
+Chats:
+
+* [Izumi on Gitter](https://gitter.im/7mind/izumi)
+* [distage Users on Telegram](https://t.me/distagesers)
+
 Slides:
 
-* [DIStage-Testkit slides from Functional Scala](https://github.com/7mind/slides/blob/master/07-distage-tests-functional-scala/distage-tests-functional-scala.pdf)
-* [DIStage slides from ScalaUA](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
-* [LogStage slides from ScalaUA](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
-* [Slides from other meetups](https://github.com/7mind/slides)
+* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://github.com/7mind/slides/blob/master/07-distage-tests-functional-scala/distage-tests-functional-scala.pdf)
+* [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
+* [Other slides](https://github.com/7mind/slides)
 
 Videos:
 
