@@ -31,9 +31,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def keyFromParameter(parameterSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = if (parameterSymbol.isByName) {
-      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.typeArgs.head.finalResultType))
+      DIKey.TypeKey(SafeType.create(parameterSymbol.finalResultType.typeArgs.head.finalResultType))
     } else {
-      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType))
+      DIKey.TypeKey(SafeType.create(parameterSymbol.finalResultType))
     }
 
     withIdKeyFromAnnotation(parameterSymbol, typeKey)
@@ -45,7 +45,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def keyFromMethod(methodSymbol: SymbolInfo): DIKey.BasicKey = {
-    val typeKey = DIKey.TypeKey(SafeType(methodSymbol.finalResultType))
+    val typeKey = DIKey.TypeKey(SafeType.create(methodSymbol.finalResultType))
     withIdKeyFromAnnotation(methodSymbol, typeKey)
   }
 
@@ -119,11 +119,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |  * Type $tpe has been considered a factory because of an unimplemented abstract method with parameters
              |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
              |""".stripMargin,
-          SafeType(tpe)
+          SafeType.create(tpe)
         )
 
       case _ =>
-        throw new UnsupportedWiringException(s"Wiring unsupported: $tpe", SafeType(tpe))
+        throw new UnsupportedWiringException(s"Wiring unsupported: $tpe", SafeType.create(tpe))
     }
   }
 
@@ -139,7 +139,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       typeRef
         .map(_.pre)
         .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-        .map(v => DIKey.TypeKey(SafeType(v)))
+        .map(v => DIKey.TypeKey(SafeType.create(v)))
     }
   }
 
