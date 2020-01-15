@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 
 import izumi.fundamentals.reflection.ReflectionUtil
 
+import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
