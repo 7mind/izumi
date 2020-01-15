@@ -1,13 +1,13 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.platform.properties.DebugProperties
+import izumi.fundamentals.platform.properties
 
 /**
   * Java properties and macro settings that control behavior and debug output of Lightweight Reflection macros
   *
   * @see [[DebugProperties]]
   */
-object DebugProperties extends DebugProperties {
+object DebugProperties extends properties.DebugProperties {
   /**
     * To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` system property!
     *

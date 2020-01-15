@@ -17,6 +17,7 @@ object TraitConstructorMacro {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val macroUniverse = StaticDIUniverse(c)
 
@@ -42,11 +43,11 @@ object TraitConstructorMacro {
     res
   }
 
-  def mkTraitConstructorUnwrapped(c: blackbox.Context)
-                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                  logger: TrivialLogger)
-                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+  private[macros] def mkTraitConstructorUnwrapped(c: blackbox.Context)
+                                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                                  logger: TrivialLogger)
+                                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
     import macroUniverse.Wiring.SingletonWiring.AbstractSymbol
 
@@ -68,13 +69,13 @@ object TraitConstructorMacro {
     val (wireMethods, _) = wireMethodsCtorArgNames.unzip
     val (ctorAssociations, classCtorArgs, ctorParams) = ClassConstructorMacro.mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
-    val ctorLambda = newWithMethods(c)(targetType, ctorParams, wireMethods)
+    val ctorLambda = newTraitWithMethods(c)(targetType, ctorParams, wireMethods)
     val constructor = q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($ctorLambda)"
 
     (ctorAssociations ++ traitAssociations, constructor)
   }
 
-  def newWithMethods(c: blackbox.Context)(targetType: c.universe.Type, arguments: List[List[c.universe.TermName]], methods: List[c.universe.Tree]): c.universe.Tree = {
+  private[macros] def newTraitWithMethods(c: blackbox.Context)(targetType: c.universe.Type, arguments: List[List[c.universe.TermName]], methods: List[c.universe.Tree]): c.universe.Tree = {
     import c.universe._
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
@@ -98,36 +99,6 @@ object TraitConstructorMacro {
             q"new ..$parents { ..$methods }"
           }
         }
-    }
-  }
-
-  def mkArgFromAssociation(c: blackbox.Context)
-                          (u: StaticDIUniverse.Aux[c.universe.type])
-                          (logger: TrivialLogger)
-                          (association: u.Association
-                          // parameter: u.Association.Parameter, ctorArgument: u.u.Tree, traitMethodImpl: u.u.Tree, ctorArgumentName: u.u.TermName
-                          ): (u.Association.Parameter, u.u.Tree, (u.u.Tree, u.u.TermName)) = {
-    import c.universe._
-    import u.Association._
-
-    association match {
-      case method: AbstractMethod =>
-        val paramTpe = method.symbol.finalResultType
-        val methodName = TermName(method.name)
-        val freshArgName = c.freshName(methodName)
-        // force by-name
-        val byNameParamTpe = appliedType(definitions.ByNameParamClass, paramTpe)
-
-        val parameter = method.asParameter
-        logger.log(s"original method return: $paramTpe, after by-name: $byNameParamTpe, $parameter")
-
-        (parameter, q"val $freshArgName: $byNameParamTpe", q"final lazy val $methodName: $paramTpe = $freshArgName" -> freshArgName)
-      case parameter: Parameter =>
-        val paramTpe = parameter.symbol.finalResultType
-        val methodName = TermName(parameter.name)
-        val freshArgName = c.freshName(TermName(parameter.name))
-
-        (parameter, q"val $freshArgName: $paramTpe", q"final lazy val $methodName: $paramTpe = $freshArgName" -> freshArgName)
     }
   }
 

@@ -17,6 +17,7 @@ object ClassConstructorMacro {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("ClassConstructor", targetType)
 
     targetType match {
       case t: SingletonTypeApi =>
@@ -49,16 +50,16 @@ object ClassConstructorMacro {
         val res = c.Expr[ClassConstructor[T]] {
           q"{ new ${weakTypeOf[ClassConstructor[T]]}($provided) }"
         }
-        logger.log(s"Final syntax tree of concrete constructor for $targetType:\n$res")
+        logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
     }
   }
 
-  def mkClassConstructorUnwrapped(c: blackbox.Context)
-                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                      logger: TrivialLogger)
-                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+  private[macros] def mkClassConstructorUnwrapped(c: blackbox.Context)
+                                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                                      logger: TrivialLogger)
+                                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
 
     if (!reflectionProvider.isConcrete(targetType)) {
@@ -71,13 +72,13 @@ object ClassConstructorMacro {
     }
   }
 
-  def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
-                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                      logger: TrivialLogger)
-                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], List[c.Tree], List[List[c.universe.TermName]]) = {
+  private[macros] def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
+                                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                                      logger: TrivialLogger)
+                                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], List[c.Tree], List[List[c.universe.TermName]]) = {
     val paramLists = reflectionProvider.constructorParameterLists(targetType)
-    val fnArgsNamesLists = paramLists.map(_.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_)))
+    val fnArgsNamesLists = paramLists.map(_.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)))
 
     val (associations, ctorArgs) = fnArgsNamesLists.flatten.map { case (p, a, _) => (p, a) }.unzip
     val ctorArgNamesLists = fnArgsNamesLists.map(_.map(_._3._2))
