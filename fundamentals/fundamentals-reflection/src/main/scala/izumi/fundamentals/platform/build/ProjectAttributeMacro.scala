@@ -1,10 +1,11 @@
-package izumi.fundamentals.reflection
+package izumi.fundamentals.platform.build
 
 import java.nio.file.{Path, Paths}
 import java.time.LocalDateTime
 
+import izumi.fundamentals.reflection.ReflectionUtil
+
 import scala.annotation.tailrec
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 /*

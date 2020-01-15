@@ -1,4 +1,4 @@
-package izumi.fundamentals.platform.logging
+package izumi.fundamentals.platform.properties
 
 /**
   * Marker trait for objects that hold names of Java Properties
@@ -12,4 +12,10 @@ package izumi.fundamentals.platform.logging
   *  sbt -Dizumi.debug.macro.rtti=true compile
   * }}}
   */
-trait DebugProperties
+trait DebugProperties {
+  case class Property protected (name: String) {
+
+  }
+}
+
+

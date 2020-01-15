@@ -5,14 +5,13 @@ import izumi.distage.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.fixtures.PgSvcExample
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+import izumi.fundamentals.platform.properties.EnvVarsCI
 import zio.IO
 
 final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
 
-  def isCI: Boolean = System.getenv().containsKey("CI_BRANCH")
-
   // ignore docker tests on CI (nested docker trouble)
-  if (!isCI) {
+  if (!EnvVarsCI.isIzumiCI()) {
     "distage test runner" should {
       "support docker resources" in {
         service: PgSvcExample =>

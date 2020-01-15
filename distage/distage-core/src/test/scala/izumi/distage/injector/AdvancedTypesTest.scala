@@ -5,8 +5,8 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.build.ProjectAttributeMacro
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
-import izumi.fundamentals.reflection.ProjectAttributeMacro
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
