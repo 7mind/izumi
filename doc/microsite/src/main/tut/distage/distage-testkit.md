@@ -15,24 +15,18 @@ Some example code from [distage-example](https://github.com/7mind/distage-exampl
 ```scala
 package leaderboard
 
-import com.typesafe.config.ConfigFactory
-import distage.{DIKey, Injector, ModuleDef}
-import izumi.distage.config.AppConfigModule
+import distage.{DIKey, ModuleDef}
 import izumi.distage.framework.model.PluginSource
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.model.plan.GCMode
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import izumi.distage.testkit.services.DISyntaxZIOEnv
-import izumi.logstage.api.logger.LogRouter
 import leaderboard.model.{QueryFailure, Score, UserId, UserProfile}
-import leaderboard.plugins.{LeaderboardPlugin, ZIOPlugin}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv._
-import logstage.di.LogstageModule
-import zio.{IO, Task, ZIO}
+import zio.{IO, ZIO}
 
 abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
   override def config = TestConfig(
