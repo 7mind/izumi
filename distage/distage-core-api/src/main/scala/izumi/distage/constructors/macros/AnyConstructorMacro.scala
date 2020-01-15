@@ -91,18 +91,19 @@ object AnyConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
-    val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("AnyConstructor", targetType)
 
-    if (reflectionProvider.isConcrete(tpe)) {
+    if (reflectionProvider.isConcrete(targetType)) {
       ClassConstructorMacro.mkClassConstructor[T](c)
-    } else if (reflectionProvider.isFactory(tpe)) {
+    } else if (reflectionProvider.isFactory(targetType)) {
       FactoryConstructorMacro.mkFactoryConstructor[T](c)
-    } else if (reflectionProvider.isWireableAbstract(tpe)) {
+    } else if (reflectionProvider.isWireableAbstract(targetType)) {
       TraitConstructorMacro.mkTraitConstructor[T](c)
     } else {
       c.abort(
         c.enclosingPosition,
-        s"""AnyConstructor failure: couldn't generate a constructor for $tpe!
+        s"""AnyConstructor failure: couldn't generate a constructor for $targetType!
            |It's neither a concrete class, nor a factory, nor a trait!""".stripMargin
       )
     }

@@ -17,6 +17,7 @@ object TraitConstructorMacro {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val macroUniverse = StaticDIUniverse(c)
 

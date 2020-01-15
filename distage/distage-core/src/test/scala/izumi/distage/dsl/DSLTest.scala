@@ -9,6 +9,7 @@ import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBindi
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class DSLTest extends AnyWordSpec with MkInjector {
@@ -448,6 +449,29 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(xInstance eq implInstance)
       assert(yInstance eq implInstance)
     }
+
+    "print a sensible error message at compile-time when user tries to derive a constructor for a type parameter" in {
+      val res1 = intercept[TestFailedException](assertCompiles(
+        """
+          def definition[T <: Int: Tag] = new ModuleDef {
+            make[Int].from[T]
+          }
+        """
+      ))
+      assert(res1.getMessage contains "[T: AnyConstructor]")
+      val res2 = intercept[TestFailedException](assertCompiles(
+        """
+          def definition[F[_]] = new ModuleDef {
+            make[Int].fromResource[DIResource[F, Int]]
+          }
+        """
+      ))
+      assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
+      assert(res2.getMessage contains "trying to create an implementation")
+      assert(res2.getMessage contains "`method release`")
+      assert(res2.getMessage contains "`trait DIResource`")
+    }
+
   }
 
 }

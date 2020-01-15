@@ -63,7 +63,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "fails on wrong @Id annotation at compile-time" in {
-    val exc = intercept[TestFailedException] {
+    val res = intercept[TestFailedException] {
       assertCompiles("""
         import BadAnnotationsCase._
 
@@ -76,7 +76,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
         injector.produceUnsafe(injector.plan(definition)).get[TestClass]
         """)
     }
-    assert(exc.getMessage.contains("BadIdAnnotationException"))
+    assert(res.getMessage.contains("BadIdAnnotationException"))
   }
 
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {

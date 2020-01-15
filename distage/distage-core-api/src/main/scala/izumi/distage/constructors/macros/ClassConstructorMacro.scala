@@ -17,6 +17,7 @@ object ClassConstructorMacro {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("ClassConstructor", targetType)
 
     targetType match {
       case t: SingletonTypeApi =>
@@ -49,7 +50,7 @@ object ClassConstructorMacro {
         val res = c.Expr[ClassConstructor[T]] {
           q"{ new ${weakTypeOf[ClassConstructor[T]]}($provided) }"
         }
-        logger.log(s"Final syntax tree of concrete constructor for $targetType:\n$res")
+        logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
     }
   }
