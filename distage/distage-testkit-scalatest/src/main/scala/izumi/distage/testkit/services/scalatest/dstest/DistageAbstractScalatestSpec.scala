@@ -11,7 +11,7 @@ import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks, unused}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
-import org.scalatest.TestCancellation
+import org.scalatest.{Assertion, TestCancellation}
 
 import scala.language.implicitConversions
 
@@ -94,19 +94,15 @@ object DistageAbstractScalatestSpec {
       takeAny(function, pos.get)
     }
 
-    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(function, pos.get)
-    }
-
-    def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunAny(function, pos.get)
-    }
-
     def in(value: => F[_])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO(() => value, pos.get)
     }
 
-    def in(value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+
+    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
@@ -130,7 +126,11 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
@@ -173,19 +173,15 @@ object DistageAbstractScalatestSpec {
       takeAny(function, pos.get)
     }
 
-    def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunBIO(function, pos.get)
-    }
-
-    def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunAny(function, pos.get)
-    }
-
     def in(value: => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       takeBIO(() => value, pos.get)
     }
 
-    def in(value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+
+    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
@@ -209,7 +205,11 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunIO(cancel, pos.get)
+    }
+
+    def skip(@unused value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 

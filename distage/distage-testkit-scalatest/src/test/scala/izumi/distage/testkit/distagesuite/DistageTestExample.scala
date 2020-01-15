@@ -9,12 +9,13 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase.{SetCounter, SetElement, SetElement1, SetElement2, SetElement3}
+import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
+import org.scalatest.exceptions.TestFailedException
 import zio.Task
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
@@ -202,3 +203,21 @@ final class TaskDistageSleepTest06 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
+
+abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F]  {
+  "test overloading of `in`" in {
+    // `in` with Unit return type is ok
+    assertCompiles(""" "test" in { println(""); () }  """)
+    // `in` with Assertion return type is ok
+    assertCompiles(""" "test" in { assert(1 + 1 == 2) }  """)
+    // `in` with any other return type is not ok
+    val res = intercept[TestFailedException](assertCompiles(
+      """ "test" in { println(""); 1 + 1 }  """
+    ))
+    assert(res.getMessage() contains "overloaded method")
+  }
+}
+
+final class OverloadingTestCIO extends OverloadingTest[CIO]
+final class OverloadingTestTask extends OverloadingTest[Task]
+final class OverloadingTestIdentity extends OverloadingTest[Identity]
