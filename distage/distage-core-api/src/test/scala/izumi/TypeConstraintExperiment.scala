@@ -1,8 +1,8 @@
 package izumi
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class TypeConstraintExperiment extends WordSpec {
+class TypeConstraintExperiment extends AnyWordSpec {
 //  import izumi.fundamentals.platform.language.unused
 //  import scala.annotation.{StaticAnnotation, TypeConstraint}
 //  import scala.language.implicitConversions

@@ -6,32 +6,24 @@ import izumi.distage.testkit.services.DISyntaxBIOBase.BIOBadBranch
 import izumi.functional.bio.BIOError
 import izumi.fundamentals.platform.language.CodePosition
 
-trait DISyntaxBIOBase[F[+_, +_]] {
-
+trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
   implicit def tagBIO: TagKK[F]
 
-  protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit
-
-  protected final def take2(function: ProviderMagnet[F[_, _]], pos: CodePosition): Unit = {
+  protected final def takeBIO(function: ProviderMagnet[F[_, _]], pos: CodePosition): Unit = {
     val fAsThrowable: ProviderMagnet[F[Throwable, _]] = function
-      .zip(ProviderMagnet.identity[BIOError[F]])
-      .map[F[Throwable, _]] {
-        case (effect, bio) =>
-          bio.leftMap(effect) {
+      .map2(ProviderMagnet.identity[BIOError[F]]) {
+        (effect, F) =>
+          F.leftMap(effect) {
             case t: Throwable => t
             case otherError: Any => BIOBadBranch(otherError)
           }
       }
 
-    takeAs1(fAsThrowable, pos)
+    takeIO(fAsThrowable, pos)
   }
 
-  protected final def take2[T: Tag](function: T => F[_, _], pos: CodePosition): Unit = {
-    val providerMagnet: ProviderMagnet[F[_, _]] = {
-      x: T =>
-        function(x)
-    }
-    take2(providerMagnet, pos)
+  protected final def takeFunBIO[T: Tag](function: T => F[_, _], pos: CodePosition): Unit = {
+    takeBIO(function, pos)
   }
 
 }

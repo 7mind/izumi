@@ -6,9 +6,12 @@ trait MkGcInjector {
   def mkInjector(): Injector = {
     Injector(AutoSetModule().register[AutoCloseable])
   }
+  def mkNoCglibInjector(): Injector = {
+    Injector.NoProxies(AutoSetModule().register[AutoCloseable])
+  }
 
-  implicit class InjectorExt(private val injector: Injector) {
-    def fproduce(plan: OrderedPlan): Locator = {
+  implicit class InjectorExt(injector: Injector) {
+    def finishProduce(plan: OrderedPlan): Locator = {
       val updated = injector.finish(plan.toSemi)
       injector.produceUnsafe(updated)
     }

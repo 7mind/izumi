@@ -16,7 +16,7 @@
 //import izumi.functional.bio.{BIO, BIOExit}
 //import org.scalacheck.Arbitrary
 //import org.scalatest.prop.Checkers
-//import org.scalatest.{FunSuite, WordSpec}
+//import org.scalatest.{FunSuite, AnyWordSpec}
 //import org.typelevel.discipline.scalatest.Discipline
 //
 //class MiniBIOCatsLaws extends FunSuite with Discipline

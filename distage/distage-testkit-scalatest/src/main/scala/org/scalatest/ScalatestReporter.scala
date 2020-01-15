@@ -74,6 +74,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           testName,
           testName,
           recordedEvents = Vector.empty,
+          analysis = Vector.empty,
           throwable = Some(t),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),

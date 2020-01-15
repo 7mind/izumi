@@ -57,15 +57,21 @@ object Docker {
 
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
 
+  trait ContainerNetwork {
+    def name: String
+  }
+
   final case class ContainerConfig[T](
                                        image: String,
                                        ports: Seq[DockerPort],
+                                       name: Option[String] = None,
                                        env: Map[String, String] = Map.empty,
                                        cmd: Seq[String] = Seq.empty,
                                        entrypoint: Seq[String] = Seq.empty,
                                        cwd: Option[String] = None,
                                        user: Option[String] = None,
                                        mounts: Seq[Mount] = Seq.empty,
+                                       networks: Seq[ContainerNetwork] = Seq.empty,
                                        reuse: Boolean = true,
                                        healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
                                        pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),

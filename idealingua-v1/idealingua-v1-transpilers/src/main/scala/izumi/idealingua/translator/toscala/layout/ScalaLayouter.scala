@@ -1,6 +1,6 @@
 package izumi.idealingua.translator.toscala.layout
 
-import izumi.fundamentals.reflection.ProjectAttributeMacro
+import izumi.fundamentals.platform.build.ProjectAttributeMacro
 import izumi.idealingua.model.common.DomainId
 import izumi.idealingua.model.output.{Module, ModuleId}
 import izumi.idealingua.model.publishing.manifests.ScalaProjectLayout

@@ -16,6 +16,7 @@ secrets.tar
 build/project
 .DS_Store
 .metals
+project/metals.sbt
 .bloop
 .java-version
 

@@ -1,8 +1,8 @@
 package izumi.functional
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzEitherTest extends WordSpec {
+class IzEitherTest extends AnyWordSpec {
   type BuilderFail
   type IzType
   type Result[+T] = Either[List[BuilderFail], T]

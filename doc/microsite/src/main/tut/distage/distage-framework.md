@@ -223,10 +223,10 @@ In test scope:
 // package com.example.test
 
 import com.example._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import izumi.distage.staticinjector.plugins.StaticPluginChecker
 
-final class AppPluginTest extends WordSpec {
+final class AppPluginTest extends AnyWordSpec {
   "App plugin will work (if OtherService is provided later)" in {
     StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("env:prod", ".*.application.conf")   
   }

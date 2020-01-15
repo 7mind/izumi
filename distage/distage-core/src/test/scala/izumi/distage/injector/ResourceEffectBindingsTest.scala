@@ -3,23 +3,25 @@ package izumi.distage.injector
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
+import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
-import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.util.Try
 
-class ResourceEffectBindingsTest extends WordSpec with MkInjector {
-
+object ResourceEffectBindingsTest {
   final type Fn[+A] = Suspend2[Nothing, A]
   final type Ft[+A] = Suspend2[Throwable, A]
+}
+
+class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
   "Effect bindings" should {
 
@@ -70,27 +72,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       assert(context.get[Int]("1") != context.get[Int]("2"))
       assert(Set(context.get[Int]("1"), context.get[Int]("2")) == Set(1,2))
       assert(context.get[Ref[Fn, Int]].get.unsafeRun() == 2)
-    }
-
-    "Support self-referencing circular effects" in {
-      import izumi.distage.fixtures.CircularCases.CircularCase3._
-
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
-        make[SelfReference].fromEffect {
-          (ref: Ref[Fn, Boolean], self: SelfReference) =>
-            ref.update(!_).flatMap(_ => Suspend2(new SelfReference(self)))
-        }
-      })
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
-
-      val instance = context.get[SelfReference]
-
-      assert(instance eq instance.self)
-      assert(context.get[Ref[Fn, Boolean]].get.unsafeRun())
     }
 
     "support Identity effects in Suspend monad" in {
@@ -245,37 +226,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       }.unsafeRun()
 
       assert(!instance.initialized)
-    }
-
-    "Support mutually-referent circular resources" in {
-      import CircularResourceCase._
-
-      val definition = PlannerInput(new ModuleDef {
-        make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
-        many[IntegrationComponent]
-          .ref[S3Component]
-        make[S3Component].fromResource(s3ComponentResource[Fn] _)
-        make[S3Client].fromResource(s3clientResource[Fn] _)
-      }, GCMode(DIKey.get[S3Client]))
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produceF[Suspend2[Nothing, ?]](plan).use {
-        Suspend2(_)
-      }.unsafeRun()
-
-      val s3Component = context.get[S3Component]
-      val s3Client = context.get[S3Client]
-
-      assert(s3Component eq s3Client.c)
-      assert(s3Client eq s3Component.s)
-
-      val startOps = context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().take(2)
-      assert(startOps.toSet == Set(ComponentStart, ClientStart))
-
-      val expectStopOps = startOps.reverse.map(_.invert)
-      assert(context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
     }
 
     "work with set bindings" in {

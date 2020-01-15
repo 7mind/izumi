@@ -275,6 +275,7 @@ object Izumi {
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val legacyTestkit = ArtifactId("distage-testkit-legacy")
+      final lazy val logging = ArtifactId("distage-extension-logstage")
     }
 
     object logstage {
@@ -284,7 +285,6 @@ object Izumi {
       final lazy val api = ArtifactId("logstage-api")
       final lazy val core = ArtifactId("logstage-core")
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
-      final lazy val di = ArtifactId("logstage-di")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
       final lazy val sinkSlf4j = ArtifactId("logstage-sink-slf4j")
     }
@@ -418,17 +418,19 @@ object Izumi {
         name = Projects.distage.proxyCglib,
         libs = Seq(cglib_nodep),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.core,
         libs = Seq.empty,
-        depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
         libs = Seq(circe_core, circe_derivation, circe_config).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -436,34 +438,45 @@ object Izumi {
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
+        platforms = Targets.jvm,
+      ),
+      Artifact(
+        name = Projects.distage.logging,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
+          Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.frameworkApi,
         libs = Seq.empty,
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.framework,
         libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.logging, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.docker,
         libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
-        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.logging).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitCore,
         libs = allMonadsOptional,
         depends =
-          Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.logging).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core).map(_ tin Scope.Compile.all),
-
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
@@ -474,20 +487,22 @@ object Izumi {
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.legacyTestkit,
         libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
         depends =
-          Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.logging).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.testkitCore).map(_ in Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),
+        platforms = Targets.jvm,
       ),
     ),
     pathPrefix = Projects.distage.basePath,
-    defaultPlatforms = Targets.jvm,
+    defaultPlatforms = Targets.cross,
     groups = Groups.distage,
   )
 
@@ -510,15 +525,6 @@ object Izumi {
         name = Projects.logstage.renderingCirce,
         libs = Seq.empty,
         depends = Seq(Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-      ),
-      Artifact(
-        name = Projects.logstage.di,
-        libs = Seq.empty,
-        depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
-        groups = Groups.distage,
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,

@@ -1,9 +1,9 @@
 package izumi.logstage.api
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class LoggingModelTest extends WordSpec {
+class LoggingModelTest extends AnyWordSpec {
 
   "Log levels" should {
     "be comparable" in {

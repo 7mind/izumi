@@ -12,11 +12,12 @@ import scala.collection.mutable
 
 object DistageTestsRegistrySingleton {
   protected[this] type Fake[T]
+  private[this] object Fake
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
-  private[this] val statuses = new mutable.HashMap[String, StatefulStatus]()
+  private[this] val statuses = new mutable.HashMap[SafeType, mutable.HashMap[String, StatefulStatus]]()
   private[this] val trackers = new mutable.HashMap[String, Either[mutable.ArrayBuffer[Tracker => Unit], Tracker]]()
-  private[this] val runTracker = new ConcurrentHashMap[SafeType, java.lang.Boolean]()
-  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), java.lang.Boolean]()
+  private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
+  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
   private[this] val registrationOpen = new AtomicBoolean(true)
 
   def disableRegistration(): Unit = {
@@ -25,7 +26,7 @@ object DistageTestsRegistrySingleton {
 
   def registerSuite[F[_]: TagK](suiteId: String): Boolean = synchronized {
     val tpe = SafeType.getK[F]
-    knownSuites.putIfAbsent((tpe, suiteId), true) eq null
+    knownSuites.putIfAbsent((tpe, suiteId), Fake) eq null
   }
 
   def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
@@ -36,23 +37,32 @@ object DistageTestsRegistrySingleton {
 
   def proceedWithTests[F[_]: TagK](): Option[Seq[DistageTest[F]]] = {
     val tpe = SafeType.getK[F]
-    if (runTracker.putIfAbsent(tpe, true) eq null) {
-      Some(list[F])
+    if (runTracker.putIfAbsent(tpe, Fake) eq null) {
+      Some(registeredTests[F])
     } else {
       None
     }
   }
 
-  def list[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
+  def registeredTests[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 
-  def registerStatus(suiteId: String): StatefulStatus = synchronized {
-    statuses.getOrElseUpdate(suiteId, new StatefulStatus)
+  def registerStatus[F[_]: TagK](suiteId: String): StatefulStatus = synchronized {
+    statuses
+      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
+      .getOrElseUpdate(suiteId, new StatefulStatus)
   }
 
-  def completeStatuses(suiteIds: Set[String]): Unit = synchronized {
-    suiteIds.foreach(statuses.get(_).foreach(_.setCompleted()))
+  def completeStatuses[F[_]: TagK](): Unit = synchronized {
+    statuses
+      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
+      .valuesIterator.foreach {
+        status =>
+          if (!status.isCompleted) {
+            status.setCompleted()
+          }
+      }
   }
 
   def runReport(suiteId: String)(f: Tracker => Unit): Unit = synchronized {

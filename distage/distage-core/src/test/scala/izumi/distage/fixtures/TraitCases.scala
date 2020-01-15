@@ -107,4 +107,25 @@ object TraitCases {
     }
   }
 
+  object TraitCase7 {
+    final case class Dependency1()
+    final case class Dependency2()
+    final case class Result(dependency1: Dependency1, dependency2: Dependency2)
+
+    trait X {
+      def get(): Result
+    }
+
+    trait XMixin {
+      protected def dependency1: Dependency1
+      def defaultImpl(dependency2: Dependency2): Result = Result(dependency1, dependency2)
+    }
+
+    abstract class XImpl(
+      dependency2: Dependency2
+    ) extends X with XMixin {
+      override def get(): Result = defaultImpl(dependency2)
+    }
+  }
+
 }

@@ -45,7 +45,7 @@ object LogFormat {
       val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
       processUnbalanced(occurences, withColors, templateBuilder, messageBuilder, unbalancedArgs, unbalanced)
 
-      RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters, unbalancedArgs)
+      RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.toSeq, unbalancedArgs.toSeq)
     }
 
     @inline protected[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String = {

@@ -9,6 +9,7 @@ import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.files.IzFiles
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.properties.EnvVarsCI
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.idealingua.il.loader._
 import izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
@@ -46,7 +47,7 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 @ExposedTestScope
 object IDLTestTools {
   def hasDocker: Boolean = IzFiles.haveExecutables("docker")
-  def isCI: Boolean = System.getenv().containsKey("CI_BRANCH")
+  def isCI: Boolean = EnvVarsCI.isIzumiCI()
 
   def loadDefs(): Seq[LoadedDomain.Success] = loadDefs("/defs/any")
 

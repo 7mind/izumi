@@ -7,9 +7,9 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class MacroAutoTraitsTest extends WordSpec with MkInjector {
+class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
   "construct a basic trait" in {
     val traitCtor = AnyConstructor[Aaa].provider.get
@@ -28,7 +28,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[TestTrait]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -45,7 +45,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[TestTrait].named("named-trait").from[TestTrait]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -66,7 +66,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Dependency1]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -92,7 +92,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Dependency1]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -109,7 +109,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Dep]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestTraitAny {def dep: Dep}]
@@ -126,7 +126,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Trait2 with (Trait2 with (Trait2 with Trait1))]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -146,7 +146,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Trait1]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -169,7 +169,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[Dep]
     }
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
     val context = injector.produceUnsafe(plan)
@@ -187,7 +187,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
       make[TestTrait]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 

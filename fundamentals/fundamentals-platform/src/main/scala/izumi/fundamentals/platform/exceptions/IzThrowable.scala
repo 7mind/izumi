@@ -39,7 +39,7 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
   }
 
   def allCauseClassNames: Seq[String] = {
-    t.allCauses.map(_.getClass.getCanonicalName)
+    t.allCauses.map(_.getClass.getName)
   }
 
   def allCauses: Seq[Throwable] = {

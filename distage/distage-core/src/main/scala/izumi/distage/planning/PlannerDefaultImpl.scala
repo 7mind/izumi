@@ -7,6 +7,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp,
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.MirrorProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
@@ -175,8 +176,9 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) =>
+        case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) && hasNonByNameUses(topology, completedPlan, op.target) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
+
         case _: InstantiationOp =>
           best
       }
@@ -214,12 +216,21 @@ final class PlannerDefaultImpl
     }
   }
 
-  private[this] def effectKey(key: DIKey) = key match {
+  private[this] def hasNonByNameUses(topology: PlanTopology, semiPlan: SemiPlan, key: DIKey): Boolean = {
+    val directDependees = topology.dependees.direct(key)
+    semiPlan.steps.filter(directDependees contains _.target).exists {
+      case op: ExecutableOp.WiringOp =>
+        op.wiring.associations.exists(param => param.key == key && !param.isByName)
+      case _ => false
+    }
+  }
+
+  private[this] def effectKey(key: DIKey): Boolean = key match {
     case _: DIKey.ResourceKey | _: DIKey.EffectKey => true
     case _ => false
   }
 
-  private[this] def referenceOp(s: SemiplanOp) = s match {
+  private[this] def referenceOp(s: SemiplanOp): Boolean = s match {
     case _: ReferenceKey /*| _: MonadicOp */=> true
     case _ => false
   }

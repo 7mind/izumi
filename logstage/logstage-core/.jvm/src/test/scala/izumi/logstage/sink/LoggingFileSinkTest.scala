@@ -11,7 +11,8 @@ import izumi.logstage.sink.file.FileServiceImpl.RealFile
 import izumi.logstage.sink.file.FileSink.FileIdentity
 import izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 import izumi.logstage.sink.file.{FileService, FileServiceImpl, FileSink}
-import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{Assertion, GivenWhenThen}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.{Random, Try}
@@ -39,7 +40,7 @@ object FileServiceUtils {
 }
 
 @ExposedTestScope
-trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
+trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
 
   def fileSvcUtils: FileServiceUtils[T]
 

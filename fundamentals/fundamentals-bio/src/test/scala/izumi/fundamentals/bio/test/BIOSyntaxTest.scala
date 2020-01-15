@@ -2,7 +2,7 @@ package izumi.fundamentals.bio.test
 
 import izumi.functional.bio.{BIO, BIOFunctor, BIOMonad, BIOMonadError, BIOPrimitives, BIOTemporal, F}
 import izumi.fundamentals.bio.test.masking._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
 
@@ -16,7 +16,7 @@ object masking {
   type Primitives3[F[-_, +_, +_]] = BIOPrimitives3[F]
 }
 
-class BIOSyntaxTest extends WordSpec {
+class BIOSyntaxTest extends AnyWordSpec {
 
   "BIO.apply is callable" in {
     class X[F[+_, +_]: BIO] {

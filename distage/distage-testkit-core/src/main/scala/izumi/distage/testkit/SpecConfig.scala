@@ -6,9 +6,9 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.logstage.api.Log
 
 final case class SpecConfig(
-                             contextOptions: PlanningOptions = PlanningOptions(),
-                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-                             moduleOverrides: ModuleBase = ModuleBase.empty,
+                             planningOptions: PlanningOptions = PlanningOptions(),
                              bootstrapLogLevel: Log.Level = Log.Level.Info,
-                             configOverrides: AppConfig => AppConfig = identity
+                             moduleOverrides: ModuleBase = ModuleBase.empty,
+                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+                             configOverrides: AppConfig => AppConfig = identity,
                            )

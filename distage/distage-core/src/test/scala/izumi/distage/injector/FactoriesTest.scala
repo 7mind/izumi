@@ -5,12 +5,12 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
 import scala.language.reflectiveCalls
 
-class FactoriesTest extends WordSpec with MkInjector {
+class FactoriesTest extends AnyWordSpec with MkInjector {
 
   "handle factory injections" in {
     import FactoryCase1._
@@ -171,7 +171,7 @@ class FactoriesTest extends WordSpec with MkInjector {
       }]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 

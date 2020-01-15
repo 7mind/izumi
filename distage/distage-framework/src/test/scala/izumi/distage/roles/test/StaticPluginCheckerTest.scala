@@ -2,10 +2,10 @@ package izumi.distage.roles.test
 
 import izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
 import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
-class StaticPluginCheckerTest extends WordSpec {
+class StaticPluginCheckerTest extends AnyWordSpec {
 
   "Check without config" in {
     StaticPluginChecker.check[StaticTestPlugin, LogstageModuleRequirements]("test:x")

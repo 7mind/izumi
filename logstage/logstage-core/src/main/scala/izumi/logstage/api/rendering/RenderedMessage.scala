@@ -15,6 +15,6 @@ final case class RenderedMessage(
                                   entry: Log.Entry
                                   , template: String
                                   , message: String
-                                  , parameters: collection.Seq[RenderedParameter]
-                                  , unbalanced: collection.Seq[RenderedParameter]
+                                  , parameters: Seq[RenderedParameter]
+                                  , unbalanced: Seq[RenderedParameter]
                                 )

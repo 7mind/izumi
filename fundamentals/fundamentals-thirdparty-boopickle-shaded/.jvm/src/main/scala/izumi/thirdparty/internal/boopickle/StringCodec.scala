@@ -3,7 +3,7 @@ package izumi.thirdparty.internal.boopickle
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-object StringCodec extends StringCodecBase {
+private[izumi] object StringCodec extends StringCodecBase {
   override def decodeUTF8(len: Int, buf: ByteBuffer): String = {
     val a = new Array[Byte](len)
     buf.get(a)

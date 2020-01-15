@@ -4,9 +4,9 @@ import izumi.logstage.api.{IzLogger, TestSink}
 import izumi.logstage.sink.{ConsoleSink, ExampleService}
 import io.circe.literal._
 import io.circe.parser._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LogstageCirceRenderingTest extends WordSpec {
+class LogstageCirceRenderingTest extends AnyWordSpec {
 
   val debug = false
 
