@@ -37,7 +37,7 @@ Example projects:
 * [DIStage Example Project](https://github.com/7mind/distage-example)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
 
-Chats:
+Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
 * [distage Users on Telegram](https://t.me/distagesers)
