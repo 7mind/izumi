@@ -27,8 +27,9 @@ trait CatsDIEffectModule extends ModuleDef {
   addImplicit[Effect[IO]]
 
   make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
-  bind[ConcurrentEffect[IO]](IO.ioConcurrentEffect(_: ContextShift[IO]))
-    .to[Concurrent[IO]]
+  make[ConcurrentEffect[IO]]
+    .from(IO.ioConcurrentEffect(_: ContextShift[IO]))
+    .aliasTo[Concurrent[IO]]
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
   make[Timer[IO]].from((_: PublicIOApp).timer)
