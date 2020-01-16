@@ -1,7 +1,6 @@
 package izumi.distage.plugins.load
 
-import distage.plugins.PluginConfig
-import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 
 trait PluginLoader {
   def load(): Seq[PluginBase]

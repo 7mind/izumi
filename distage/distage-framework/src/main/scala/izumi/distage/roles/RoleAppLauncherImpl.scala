@@ -129,14 +129,16 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   }
 
   protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
-    val activeRoleNames = parameters.roles.map(_.role).toSet
-    val roleProvider: RoleProvider[F] = new RoleProvider.Impl(logger, activeRoleNames)
     val bindings = plugins.app.flatMap(_.bindings)
-    val bsBindings = plugins.app.flatMap(_.bindings)
-    logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
-    val roles = roleProvider.getInfo(bindings)
+    val bsBindings = plugins.bootstrap.flatMap(_.bindings)
+    logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${
+      plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
 
+    val activeRoleNames = parameters.roles.map(_.role).toSet
+    val roleProvider = new RoleProvider.Impl(logger, activeRoleNames)
+    val roles = roleProvider.getInfo(bindings)
     printRoleInfo(logger, roles)
+
     val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
     if (missing.nonEmpty) {
       logger.crit(s"Missing ${missing.niceList() -> "roles"}")
