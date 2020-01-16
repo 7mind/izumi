@@ -98,7 +98,7 @@ class TagMacro(val c: blackbox.Context) {
 
     val res = {
       if (isSimplePartialApplication) {
-        // FIXME: unused in complex tl ???
+        // FIXME: unused in complex type lambda ???
         val argTags = {
           // FIXME: fast-path optimize if typeArg is Strong
           val args = embeddedMaybeNonParamTypeArgs.map(_.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias)))
