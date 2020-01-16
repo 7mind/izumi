@@ -102,7 +102,16 @@ new ModuleDef {
 }
 ```
 
-For true non-singleton semantics, you must create explicit factory classes or generate them (see @ref[Auto-Factories](#auto-factories))
+You can abstract over annotations with type aliases or with string constants:
+
+```scala mdoc:to-string
+object Ids {
+  final val byer1Id = "byer-1"
+  type Byer1 = Byer1 @Id(byer1Id)
+}
+```
+
+For true non-singleton semantics, you must create explicit factory classes, or generate them (see @ref[Auto-Factories](#auto-factories))
 
 ### Activation Axis
 
@@ -528,7 +537,7 @@ All unimplemented methods _with parameters_ in a trait will be filled by factory
 Given a class `ActorFactory`:
 
 ```scala mdoc:to-string
-import distage._
+import distage.ModuleDef
 import java.util.UUID
 
 class SessionStorage
@@ -563,28 +572,36 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 
 `@With` annotation can be used to specify the implementation class, when the factory result is abstract:
 
-```scala mdoc:to-string
+```scala mdoc:to-string;reset
+import distage.{ModuleDef, Injector, With}
+
 trait Actor { 
- def anyToUnit: Any => Unit = _ => ()
+  def receive(msg: Any): Unit
 }
 
 object Actor {
   trait Factory {
-    def mkActor(name: String): Actor @With[Actor.Impl]
+    def newActor(id: String): Actor @With[Actor.Impl]
   }
 
-  final class Impl(name: String) extends Actor{
-    override def anyToUnit: Any => Unit = msg => println(s"Actor `$name` received a message: $msg")
+  final class Impl(id: String, config: Actor.Configuration) extends Actor {
+    def receive(msg: String) = {
+      val response = s"Actor `$id` received a message: $msg"
+      println(if (config.allCaps) response.toUpperCase else response)
+    }
   }
+
+  final case class Configuration(allCaps: Boolean)
 }
 
 val factoryModule = new ModuleDef {
   make[Actor.Factory]
+  make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
 
 Injector()
-  .produce(factoryModule, GCMode.NoGC)
-  .use(_.get[Actor.Factory].mkActor("Martin").anyToUnit("ping"))
+  .produceGet[Actor.Factory](factoryModule)
+  .use(_.newActor("Martin Odersky").receive("ping"))
 ```
 
 You can use this feature to concisely provide non-Singleton semantics for some of your components.
