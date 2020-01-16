@@ -20,14 +20,19 @@ abstract class RoleAppMain
           parserFailureHandler.onParserError(parserFailure)
 
         case Right(parameters) =>
-          val roleSet = parameters.roles.map(_.role).toSet
-          val reqRoles = requiredRoles.filterNot(roleSet contains _.role)
-          launcher.launch(parameters.copy(roles = reqRoles ++ parameters.roles))
+          val requestedRoles = parameters.roles
+          val requestedRoleSet = requestedRoles.map(_.role).toSet
+          val knownRequiredRoles = requiredRoles.filterNot(requestedRoleSet contains _.role)
+          launcher.launch(parameters.copy(roles = rolesToLaunch(requestedRoles, knownRequiredRoles)))
       }
     } catch {
       case t: Throwable =>
         failureHandler.onError(t)
     }
+  }
+
+  protected def rolesToLaunch(requestedRoles: Vector[RawRoleParams], knownRequiredRoles: Vector[RawRoleParams]): Vector[RawRoleParams] = {
+    knownRequiredRoles ++ requestedRoles
   }
 }
 
