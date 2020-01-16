@@ -102,11 +102,11 @@ object LocatorDef {
     protected[this] def mutableState: SingletonRef
     protected[this] def key: DIKey
 
-    def aliasTo[T1 >: T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterFrom[T](_, key))
     }
 
-    def aliasTo[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    def aliased[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterFrom[T](_, key))
     }
 

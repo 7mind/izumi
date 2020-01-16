@@ -439,7 +439,7 @@ object ModuleDefDSL {
     *
     * Please update this when adding new methods to [[MakeDSL]]!
     */
-  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliasTo")
+  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliased")
 
   final class MakeDSL[T]
   (
@@ -497,11 +497,11 @@ object ModuleDefDSL {
     protected[this] def mutableState: SingletonRef
     protected[this] def key: DIKey
 
-    def aliasTo[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
+    def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterFrom[T](_, key))
     }
 
-    def aliasTo[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
+    def aliased[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new MakeDSLAfterFrom[T](_, key))
     }
 
