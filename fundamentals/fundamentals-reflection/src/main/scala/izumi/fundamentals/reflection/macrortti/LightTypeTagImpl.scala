@@ -57,7 +57,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
 
   def makeFullTagImpl(tpe0: Type): LightTypeTag = {
-    val tpe = norm(tpe0).dealias
+    val tpe = norm(tpe0.dealias).dealias
     val lttRef = makeRef(tpe)
 
     val allReferenceComponents: Set[Type] = Set(tpe) ++ {
