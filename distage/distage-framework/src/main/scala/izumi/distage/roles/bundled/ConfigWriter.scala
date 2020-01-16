@@ -1,4 +1,4 @@
-package izumi.distage.roles.examples
+package izumi.distage.roles.bundled
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
@@ -12,7 +12,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-import izumi.distage.roles.examples.ConfigWriter.{ConfigurableComponent, WriteReference}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
@@ -25,13 +25,14 @@ import izumi.logstage.distage.LogstageModule
 
 import scala.util._
 
-class ConfigWriter[F[_]: DIEffect]
+
+class ConfigWriter[F[_] : DIEffect]
 (
   logger: IzLogger,
-  launcherVersion: ArtifactVersion @Id("launcher-version"),
+  launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
-  appModule: ModuleBase @Id("application.module"),
+  appModule: ModuleBase@Id("application.module"),
 ) extends RoleTask[F] {
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
