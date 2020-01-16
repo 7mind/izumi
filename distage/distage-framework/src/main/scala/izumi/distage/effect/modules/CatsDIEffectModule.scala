@@ -30,7 +30,7 @@ trait CatsDIEffectModule extends ModuleDef {
   make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
   make[ConcurrentEffect[IO]]
     .from(IO.ioConcurrentEffect(_: ContextShift[IO]))
-    .aliasTo[Concurrent[IO]]
+    .aliased[Concurrent[IO]]
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
   make[Timer[IO]].from((_: PublicIOApp).timer)
