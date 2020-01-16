@@ -4,7 +4,8 @@ import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, ContextShift, 
 import cats.{Applicative, Functor, Monad, MonadError, Parallel}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.effect.modules.CatsDIEffectModule.PublicIOApp
+
+object CatsDIEffectModule extends CatsDIEffectModule
 
 trait CatsDIEffectModule extends ModuleDef {
   addImplicit[DIEffectRunner[IO]]
@@ -39,10 +40,8 @@ trait CatsDIEffectModule extends ModuleDef {
   }
 }
 
-object CatsDIEffectModule {
-  // extract default ContextShift & Timer from IOApp
-  trait PublicIOApp extends IOApp {
-    override def contextShift: ContextShift[IO] = super.contextShift
-    override def timer: Timer[IO] = super.timer
-  }
+// extract default ContextShift & Timer from IOApp
+trait PublicIOApp extends IOApp {
+  override def contextShift: ContextShift[IO] = super.contextShift
+  override def timer: Timer[IO] = super.timer
 }

@@ -13,6 +13,8 @@ import zio.internal.tracing.TracingConfig
 
 import scala.concurrent.ExecutionContext
 
+object ZIODIEffectModule extends ZIODIEffectModule
+
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner2[IO]].from[DIEffectRunner.BIOImpl[IO]]
   addImplicit[DIEffect2[IO]]

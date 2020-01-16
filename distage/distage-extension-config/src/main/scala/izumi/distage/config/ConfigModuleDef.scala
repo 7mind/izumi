@@ -8,11 +8,11 @@ import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLAfterFrom}
 import izumi.distage.model.definition.{BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.planning.PlanningHook
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.util.{Failure, Success, Try}
-import izumi.fundamentals.platform.language.Quirks._
 
 class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
   def this(config: Config) = this(AppConfig(config))
