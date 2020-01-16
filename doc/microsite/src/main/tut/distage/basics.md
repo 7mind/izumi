@@ -572,7 +572,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 
 `@With` annotation can be used to specify the implementation class, when the factory result is abstract:
 
-```scala mdoc:to-string;reset
+```scala mdoc:to-string:reset
 import distage.{ModuleDef, Injector, With}
 
 trait Actor { 
