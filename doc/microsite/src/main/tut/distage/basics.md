@@ -107,7 +107,7 @@ You can abstract over annotations with type aliases or with string constants:
 ```scala mdoc:to-string
 object Ids {
   final val byer1Id = "byer-1"
-  type Byer1 = Byer1 @Id(byer1Id)
+  type Byer1 = Byer @Id(byer1Id)
 }
 ```
 
@@ -570,7 +570,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
-`@With` annotation can be used to specify the implementation class, when the factory result is abstract:
+`@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
 ```scala mdoc:to-string:reset
 import distage.{ModuleDef, Injector, With}
@@ -585,7 +585,7 @@ object Actor {
   }
 
   final class Impl(id: String, config: Actor.Configuration) extends Actor {
-    def receive(msg: String) = {
+    def receive(msg: Any) = {
       val response = s"Actor `$id` received a message: $msg"
       println(if (config.allCaps) response.toUpperCase else response)
     }
