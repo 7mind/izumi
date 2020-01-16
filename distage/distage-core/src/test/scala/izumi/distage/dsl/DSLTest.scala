@@ -333,10 +333,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val implXYZResource = DIResource.make(implXYZ)(_ => ())
 
       val definition = new ModuleDef {
-        bind[ImplXYZ]
-          .to[TraitX]
-          .to[TraitY]
-          .to[TraitZ]
+        make[ImplXYZ]
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]
+          .aliasTo[TraitZ]
       }
 
       assert(definition == Module.make(
@@ -349,7 +349,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromEffect(implXYZ)
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]
+          .aliasTo[TraitZ]
       }
 
       assert(definitionEffect == Module.make(
@@ -368,7 +371,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       }
 
       val definitionResource = new ModuleDef {
-        bindResource[X].to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromResource[X]
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]
+          .aliasTo[TraitZ]
       }
       val expectedResource = Module.make(
         Set(
@@ -389,7 +395,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(definitionResource == expectedResource)
 
       val definitionResourceFn = new ModuleDef {
-        bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromResource(implXYZResource)
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]
+          .aliasTo[TraitZ]
       }
 
       assert(definitionResourceFn == Module.make(
@@ -409,9 +418,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
       import BasicCase6._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl")
-          .to[TraitX]
-          .to[TraitY]("Y")
+        make[ImplXYZ].named("my-impl")
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]("Y")
       })
 
       val defWithoutSugar = PlannerInput.noGc(new ModuleDef {
@@ -421,9 +430,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
       })
 
       val defWithTags = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl").tagged("tag1")
-          .to[TraitX]
-          .to[TraitY]
+        make[ImplXYZ].named("my-impl").tagged("tag1")
+          .aliasTo[TraitX]
+          .aliasTo[TraitY]
       })
 
       val defWithTagsWithoutSugar = PlannerInput.noGc(new ModuleDef {

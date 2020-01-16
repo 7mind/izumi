@@ -65,7 +65,7 @@ abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
 
   override protected def appOverride: ModuleBase = super.appOverride overridenBy new ConfigModuleDef {
     // FIXME: implement Provider mutators ???
-    makeConfig[TestConf]("test").to[TestConf]("test1")
+    makeConfig[TestConf]("test").aliasTo[TestConf]("test1")
     make[TestConf].named("test").from((_: TestConf @Id("test1")).copy(overriden = 3))
   }
 
