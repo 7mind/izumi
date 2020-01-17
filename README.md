@@ -13,6 +13,11 @@
 
 [![Buy me a coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/7mind)
 
+<p align="center">
+  <img src="https://github.com/7mind/izumi/blob/develop/doc/microsite/src/main/tut/media/izumi-logo-full.png?raw=true" alt="Izumi"/>
+</p>
+
+
 What is it?
 ===========
 
