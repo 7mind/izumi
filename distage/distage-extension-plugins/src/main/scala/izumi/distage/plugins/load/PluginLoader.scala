@@ -9,9 +9,6 @@ trait PluginLoader {
 }
 
 object PluginLoader {
-  /** Create a [[PluginLoader]] that scans the classpath according to [[PluginConfig]] */
-  def apply(): PluginLoader = new PluginLoaderDefaultImpl()
-
   /** Create a [[PluginLoader]] that ignores [[PluginConfig]] and returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginLoader = _ => plugins
   def const(plugin: PluginBase): PluginLoader = _ => Seq(plugin)

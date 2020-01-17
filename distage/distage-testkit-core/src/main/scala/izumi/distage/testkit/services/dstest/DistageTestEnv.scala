@@ -6,6 +6,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef}
 import izumi.distage.model.planning.PlanMergingPolicy
+import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.{DebugProperties, TestConfig}
@@ -14,9 +15,10 @@ import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
 trait DistageTestEnv {
-  protected[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader): TestEnvironment = {
+  protected[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig): TestEnvironment = {
     val roles = loadRoles(logger)
     val mergeStrategy = makeMergeStrategy(logger)
+    val pluginLoader = makePluginloader(logger)
 
     import izumi.fundamentals.platform.strings.IzString._
     def doMake(): TestEnvironment = {
@@ -59,8 +61,12 @@ trait DistageTestEnv {
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-  protected def makeMergeStrategy(@unused lateLogger: IzLogger): PluginMergeStrategy = {
+  protected def makeMergeStrategy(@unused logger: IzLogger): PluginMergeStrategy = {
     SimplePluginMergeStrategy
+  }
+
+  protected def makePluginloader(@unused logger: IzLogger): PluginLoader = {
+    new PluginLoaderDefaultImpl()
   }
 
 }

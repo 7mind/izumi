@@ -4,7 +4,7 @@ import distage.SafeType
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.{DistageTestEnv, TestEnvironment}
 import izumi.fundamentals.platform.language.unused
@@ -30,7 +30,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
     val config = TestConfig(bootstrapConfig.pluginConfig, bootstrapConfig.bootstrapPluginConfig.getOrElse(PluginConfig.empty), activation)
-    loadEnvironment(logger, config, makePluginLoader(bootstrapConfig))
+    loadEnvironment(logger, config)
   }
 
   protected def activation: Activation = {
@@ -47,8 +47,6 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
       bootstrapPluginConfig = pluginBootstrapPackages.map(p => PluginConfig.cached(p)),
     )
   }
-
-  protected def makePluginLoader(@unused bootstrapConfig: BootstrapConfig): PluginLoader = PluginLoader()
 
 }
 

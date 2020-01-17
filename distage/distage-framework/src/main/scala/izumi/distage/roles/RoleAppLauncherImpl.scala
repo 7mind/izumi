@@ -9,7 +9,7 @@ import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, Modul
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
@@ -100,8 +100,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def makeBootstrapMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs): PluginMergeStrategy = SimplePluginMergeStrategy
   protected def makeMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy = SimplePluginMergeStrategy
 
-  protected def makePluginLoader(): PluginLoader = PluginLoader()
-  protected def makeBootstrapPluginLoader(): PluginLoader = PluginLoader()
+  protected def makePluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
+  protected def makeBootstrapPluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
 
   protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
     new RoleAppPlanner.Impl[F](options, bsModule, lateLogger)

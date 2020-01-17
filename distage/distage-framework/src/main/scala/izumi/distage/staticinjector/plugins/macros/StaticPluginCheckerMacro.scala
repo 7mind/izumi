@@ -7,7 +7,7 @@ import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.PlannerInput
-import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppLauncher.Options
@@ -67,7 +67,7 @@ object StaticPluginCheckerMacro {
     val loadedPlugins = if (pluginPath == "") {
       Seq.empty
     } else {
-      PluginLoader().load(PluginConfig.packages(Seq(pluginPath)))
+      new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
     val configRegex = ReflectionUtil.getStringLiteral(c)(configFileRegex.tree)
