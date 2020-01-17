@@ -3,11 +3,13 @@ package izumi.distage.roles
 import distage._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.{ActivationInfo, AllLoadedPlugins, PluginSource}
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
+import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.load.PluginLoader
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
@@ -42,7 +44,8 @@ import scala.reflect.ClassTag
   * 16. Shutdown executors
   */
 abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher {
-  protected def pluginSource: PluginSource
+  protected def pluginLoader: PluginLoader
+  protected def bootstrapPluginLoader: PluginLoader = PluginLoader.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
@@ -57,39 +60,40 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
 
-    val plugins = pluginSource.load()
-    val roles = loadRoles(parameters, earlyLogger, plugins)
+    val appPlugins = pluginLoader.load()
+    val bsPlugins = bootstrapPluginLoader.load()
+    val roles = loadRoles(parameters, earlyLogger, appPlugins, bsPlugins)
 
     // default PlanMergingPolicy will be applied to bootstrap module, so any non-trivial conflict in bootstrap bindings will fail the app
-    val defBs = makeBootstrapMergeStrategy(earlyLogger, parameters).merge(plugins.bootstrap)
+    val bsDefinition = makeBootstrapMergeStrategy(earlyLogger, parameters).merge(bsPlugins)
 
-    earlyLogger.info(s"Loaded ${defBs.bindings.size -> "bootstrap bindings"}...")
+    earlyLogger.info(s"Loaded ${bsDefinition.bindings.size -> "bootstrap bindings"}...")
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
     val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config)
 
     val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
-    val defApp = mergeStrategy.merge(plugins.app)
-    lateLogger.info(s"Loaded ${defApp.bindings.size -> "app bindings"}...")
+    val appDefinition = mergeStrategy.merge(appPlugins)
+    lateLogger.info(s"Loaded ${appDefinition.bindings.size -> "app bindings"}...")
 
-    validate(defBs, defApp)
+    validate(bsDefinition, appDefinition)
 
     val roots = gcRoots(roles)
 
-    val (activationInfo, activation) = new RoleAppActivationParser().parseActivation(earlyLogger, parameters, defApp, defaultActivations ++ requiredActivations)
+    val (activationInfo, activation) = new RoleAppActivationParser().parseActivation(earlyLogger, parameters, appDefinition, defaultActivations ++ requiredActivations)
 
     val options = contextOptions(parameters)
     val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs overridenBy bsOverride
+    val bsModule = moduleProvider.bootstrapModules().merge overridenBy bsDefinition overridenBy bsOverride
 
-    val appModule = moduleProvider.appModules().merge overridenBy defApp overridenBy appOverride
+    val appModule = moduleProvider.appModules().merge overridenBy appDefinition overridenBy appOverride
     val planner = makePlanner(options, bsModule, lateLogger)
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.primary.keys.size -> "main ops"}, ${appPlan.app.side.keys.size -> "integration ops"}, ${appPlan.app.shared.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
     val injector = appPlan.injector
-    val r = makeExecutor(parameters, roles, lateLogger, makeStartupExecutor(lateLogger, injector))
-    r.runPlan(appPlan)
+    val roleAppExecutor = makeExecutor(parameters, roles, lateLogger, makeStartupExecutor(lateLogger, injector))
+    roleAppExecutor.runPlan(appPlan)
   }
 
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = rolesInfo.requiredComponents
@@ -128,11 +132,11 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     )
   }
 
-  protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
-    val bindings = plugins.app.flatMap(_.bindings)
-    val bsBindings = plugins.bootstrap.flatMap(_.bindings)
-    logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${
-      plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
+  protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, appPlugins: Seq[PluginBase], bsPlugins: Seq[PluginBase]): RolesInfo = {
+    val bindings = appPlugins.flatMap(_.bindings)
+    val bsBindings = bsPlugins.flatMap(_.bindings)
+    logger.info(s"Available ${appPlugins.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${
+      bsPlugins.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
 
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val roleProvider = new RoleProvider.Impl(logger, activeRoleNames)

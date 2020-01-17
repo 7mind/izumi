@@ -9,12 +9,12 @@ import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.PluginSource
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
+import izumi.distage.plugins.load.PluginLoader
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.test.fixtures.Fixture.{TestResource, IntegrationResource0, IntegrationResource1, XXX_ResourceEffectsRecorder}
+import izumi.distage.roles.test.fixtures.Fixture.{IntegrationResource0, IntegrationResource1, TestResource, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
@@ -56,7 +56,7 @@ class RoleAppTest extends AnyWordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginSource: PluginSource = super.pluginSource overridenBy probe
+          override protected def pluginLoader: PluginLoader = super.pluginLoader overridenBy probe
         }
       ).main(Array(
         "-ll", logLevel,
@@ -73,8 +73,8 @@ class RoleAppTest extends AnyWordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginSource: PluginSource = {
-            PluginSource(Seq(
+          override protected def pluginLoader: PluginLoader = {
+            PluginLoader.const(Seq(
               new ResourcesPluginBase().morph[PluginBase],
               new ConflictPlugin,
               new TestPlugin,

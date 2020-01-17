@@ -12,17 +12,15 @@ class PluginLoaderDefaultImpl
   pluginConfig: PluginConfig,
 ) extends PluginLoader {
   def load(): Seq[PluginBase] = {
-    val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled)
-
-    val enabledPackages: Seq[String] = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
-    val disabledPackages: Seq[String] = config.packagesDisabled
+    val enabledPackages: Seq[String] = pluginConfig.packagesEnabled.filterNot(pluginConfig.packagesDisabled.contains)
+    val disabledPackages: Seq[String] = pluginConfig.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
     val pluginDef = classOf[PluginDef]
     val whitelistedClasses = Seq(pluginDef.getName)
 
     def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {
-      PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, config.debug)
+      PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, pluginConfig.debug)
     }
 
     if (!pluginConfig.cachePackages) {
