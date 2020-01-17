@@ -8,7 +8,7 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.PluginLoader
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
@@ -44,8 +44,8 @@ import scala.reflect.ClassTag
   * 16. Shutdown executors
   */
 abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher {
-  protected def pluginLoader: PluginLoader
-  protected def bootstrapPluginLoader: PluginLoader = PluginLoader.empty
+  protected def pluginConfig: PluginConfig
+  protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
@@ -60,8 +60,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
 
-    val appPlugins = pluginLoader.load()
-    val bsPlugins = bootstrapPluginLoader.load()
+    val bsPlugins = makeBootstrapPluginLoader().load(bootstrapPluginConfig)
+    val appPlugins = makePluginLoader().load(pluginConfig)
     val roles = loadRoles(parameters, earlyLogger, appPlugins, bsPlugins)
 
     // default PlanMergingPolicy will be applied to bootstrap module, so any non-trivial conflict in bootstrap bindings will fail the app
@@ -99,6 +99,9 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = rolesInfo.requiredComponents
   protected def makeBootstrapMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs): PluginMergeStrategy = SimplePluginMergeStrategy
   protected def makeMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy = SimplePluginMergeStrategy
+
+  protected def makePluginLoader(): PluginLoader = PluginLoader()
+  protected def makeBootstrapPluginLoader(): PluginLoader = PluginLoader()
 
   protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
     new RoleAppPlanner.Impl[F](options, bsModule, lateLogger)

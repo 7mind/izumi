@@ -3,7 +3,7 @@ package izumi.distage.plugins
 import izumi.fundamentals.platform.properties
 
 /**
-  * Java properties that control behavior of [[load.PluginLoader]]
+  * Java properties that control the behavior of [[load.PluginLoader]]
   *
   * @see [[DebugProperties]]
   */

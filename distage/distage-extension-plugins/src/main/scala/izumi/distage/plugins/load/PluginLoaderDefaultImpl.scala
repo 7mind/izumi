@@ -7,33 +7,48 @@ import izumi.fundamentals.platform.cache.SyncCache
 
 import scala.jdk.CollectionConverters._
 
-class PluginLoaderDefaultImpl
-(
-  pluginConfig: PluginConfig,
-) extends PluginLoader {
-  def load(): Seq[PluginBase] = {
-    val enabledPackages: Seq[String] = pluginConfig.packagesEnabled.filterNot(pluginConfig.packagesDisabled.contains)
-    val disabledPackages: Seq[String] = pluginConfig.packagesDisabled
+class PluginLoaderDefaultImpl extends PluginLoader {
+  override def load(config: PluginConfig): Seq[PluginBase] = {
+    /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
+    val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
+      Seq.empty
+    } else {
+      scanClasspath(config)
+    }
+
+    applyOverrides(loadedPlugins, config)
+  }
+
+  protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
+    val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains).filterNot(_ == "_root_")
+    val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
     val pluginDef = classOf[PluginDef]
     val whitelistedClasses = Seq(pluginDef.getName)
 
     def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {
-      PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, pluginConfig.debug)
+      PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, config.debug)
     }
 
-    if (!pluginConfig.cachePackages) {
+    if (!config.cachePackages) {
       loadPkgs(enabledPackages)
     } else {
       val h1 = scala.util.hashing.MurmurHash3.seqHash(whitelistedClasses)
       val h2 = scala.util.hashing.MurmurHash3.seqHash(disabledPackages)
-      enabledPackages.flatMap{
-        p =>
-          val key = s"$p;$h1;$h2"
-          PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(p)))
+      enabledPackages.flatMap {
+        pkg =>
+          val key = s"$pkg;$h1;$h2"
+          PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(pkg)))
       }
     }
+  }
+
+  protected[this] def applyOverrides(loadedPlugins: Seq[PluginBase], config: PluginConfig): Seq[PluginBase] = {
+    val merged = loadedPlugins ++ config.merges
+    if (config.overrides.nonEmpty) {
+      Seq((merged.merge +: config.overrides).overrideLeft)
+    } else merged
   }
 }
 

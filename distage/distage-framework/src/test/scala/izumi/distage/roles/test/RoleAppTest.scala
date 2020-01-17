@@ -12,7 +12,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
-import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.test.fixtures.Fixture.{IntegrationResource0, IntegrationResource1, TestResource, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
@@ -56,7 +56,7 @@ class RoleAppTest extends AnyWordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginLoader: PluginLoader = super.pluginLoader overridenBy probe
+          override protected def pluginConfig: PluginConfig = super.pluginConfig overridenBy probe
         }
       ).main(Array(
         "-ll", logLevel,
@@ -73,8 +73,8 @@ class RoleAppTest extends AnyWordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginLoader: PluginLoader = {
-            PluginLoader.const(Seq(
+          override protected def pluginConfig: PluginConfig = {
+            PluginConfig.const(Seq(
               new ResourcesPluginBase().morph[PluginBase],
               new ConflictPlugin,
               new TestPlugin,

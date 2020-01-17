@@ -43,7 +43,8 @@ class DistageTestRunner[F[_] : TagK]
     val config = loader.buildConfig()
     val checker = new PlanCircularDependencyCheck(options, logger)
 
-    logger.info(s"Starting tests across ${groups.size -> "num envs"}")
+    import izumi.fundamentals.platform.strings.IzString._
+    logger.info(s"Starting tests across ${groups.size -> "num envs"} ${TagK[F].tag} ${groups.map(_._2.map(_.meta.id)).niceList()}")
     logger.trace(s"Env contents: ${groups.keys -> "test environments"}")
 
     groups.foreach {
