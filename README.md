@@ -51,7 +51,7 @@ Example projects:
 Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
-* [distage Users on Telegram](https://t.me/distagesers)
+* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
 
 Slides:
 
