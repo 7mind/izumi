@@ -2,6 +2,7 @@ package izumi.fundamentals.platform.jvm
 
 import java.lang.management.ManagementFactory
 import java.net.{URLClassLoader, URLDecoder}
+import java.nio.file.{Path, Paths}
 import java.time.ZonedDateTime
 
 import scala.annotation.tailrec
@@ -21,6 +22,8 @@ trait IzJvm {
     val maybeTerm = Option(System.getenv("TERM"))
     maybeTerm.isDefined
   }
+
+  def tempDir: Path = Paths.get(System.getProperty("java.io.tmpdir"))
 
   def terminalColorsEnabled: Boolean = {
     import izumi.fundamentals.platform.basics.IzBoolean._
