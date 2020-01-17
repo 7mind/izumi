@@ -1,7 +1,6 @@
 package izumi.distage.testkit.services.scalatest.adapter
 
 import distage.{Activation, SafeType}
-import izumi.distage.framework.model.BootstrapConfig
 
 @deprecated("Use dstest", "2019/Jul/18")
 sealed trait MemoizationContextId

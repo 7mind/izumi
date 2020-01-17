@@ -1,7 +1,7 @@
 package izumi.distage.testkit.services.scalatest.adapter
 
 import distage.SafeType
-import izumi.distage.framework.model.{BootstrapConfig, PluginSource}
+import izumi.distage.framework.model.PluginSource
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginConfig
@@ -9,8 +9,6 @@ import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.{DistageTestEnv, TestEnvironment}
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
-
-
 
 @deprecated("Use dstest", "2019/Jul/18")
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] with DistageTestEnv {
@@ -45,8 +43,8 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def bootstrapConfig: BootstrapConfig = {
     BootstrapConfig(
-      PluginConfig.cached(pluginPackages),
-      pluginBootstrapPackages.map(p => PluginConfig.cached(p)),
+      pluginConfig = PluginConfig.cached(pluginPackages),
+      bootstrapPluginConfig = pluginBootstrapPackages.map(p => PluginConfig.cached(p)),
     )
   }
 
