@@ -164,7 +164,7 @@ Injector(Activation(Style -> Style.Normal))
   .use(_.get[HelloByeApp].run())
 ```
 
-In @scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) there are three example Axes for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
+@scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) contains some bundled Axis for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
 
 In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppLauncher), you can choose axes using the `-u` command-line parameter:
 
@@ -291,7 +291,6 @@ To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDe
 For example, we may declare many [http4s](https://http4s.org) routes and serve them all from a central router:
 
 ```scala mdoc:silent:reset:to-string
-// import boilerplate
 import cats.implicits._
 import cats.effect.{Bracket, IO, Resource}
 import distage.{GCMode, ModuleDef, Injector}
@@ -458,10 +457,12 @@ distage can instantiate traits and structural types. All unimplemented fields in
 This can be used to create ZIO Environment cakes with required dependencies - https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
 
 Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
-and can be summoned at need. Example:
+and can be summoned at need. 
+
+Example:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, Injector, ProviderMagnet, Tag}
+import distage.{DIKey, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
 import zio.console.{Console, putStrLn}
 import zio.{UIO, URIO, ZIO, Ref, Task}
@@ -523,10 +524,92 @@ val definition = new ModuleDef {
 }
 
 val main = Injector()
-  .produceF[Task](definition, GCMode(DIKey.get[UIO[Unit]]))
-  .use(_.get[UIO[Unit]])
+  .produceGetF[UIO[Unit]](definition)
+  .useEffect
 
 new zio.DefaultRuntime{}.unsafeRun(main)
+```
+
+If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
+
+Example:
+
+```scala mdoc:reset:to-string
+import distage.{Id, Injector}
+
+trait Trait1 {
+  def a: Int @Id("a")
+}
+trait Trait2 {
+  def b: Int @Id("b")
+}
+
+/** All methods in this trait are implemented,
+  * so a constructor for it will be generated
+  * even though it's not a class */
+trait Pluser {
+  def plus(a: Int, b: Int) = a + b
+}
+
+trait PlusedInt {
+  def result(): Int
+}
+object PlusedInt {
+
+  /** Besides the dependency on `Pluser`,
+    * this class defines 2 more dependencies
+    * to be injected from the object graph:
+    *
+    * `def a: Int @Id("a")` and
+    * `def b: Int @Id("b")`
+    * 
+    * When an abstract type is declared as an implementation,
+    * its no-argument abstract defs & vals are considered as
+    * dependency parameters by TraitConstructor. (empty-parens and
+    * parameterized methods are not considered parameters)
+    *
+    * Here, using an abstract class directly as an implementation
+    * lets us avoid writing a lengthier constructor, like this one:
+    * 
+    * {{{
+    *   final class Impl(
+    *     pluser: Pluser,
+    *     override val a: Int @Id("a"),
+    *     override val b: Int @Id("b"),
+    *   ) extends PlusedInt with Trait1 with Trait2
+    * }}}
+    */
+  abstract class Impl(
+    pluser: Pluser
+  ) extends PlusedInt
+    with Trait1
+    with Trait2 {
+    override def result(): Int = {
+      pluser.plus(a, b)
+    }
+  }
+
+}
+
+Injector()
+  .produceGet[PlusedInt](new ModuleDef {
+    make[Int].named("a").from(1)
+    make[Int].named("b").from(2)
+    make[Pluser]
+    make[PlusedInt].from[PlusedInt.Impl]
+  })
+  .use(_.result)
+```
+
+Abstract classes or traits without obvious concrete subclasses
+may hinder the readability of a codebase, if you still want to use them
+to avoid writing the full constructor, you may use an optional @scaladoc[@impl](izumi.distage.model.definition.impl) 
+documenting annotation to aid the reader in understanding your intention.
+
+```scala mdoc:to-string
+@impl abstract class Impl(
+  pluser: Pluser
+) extends PlusedInt
 ```
 
 ### Auto-Factories
