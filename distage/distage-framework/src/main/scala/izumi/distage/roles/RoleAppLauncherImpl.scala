@@ -165,7 +165,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
-    val withIzumi = referenceLibraries :+ LibraryReference("izumi-r2", classOf[ConfigLoader])
+    val withIzumi = referenceLibraries :+ LibraryReference("izumi", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
     withIzumi.foreach {
       u => showDepData(logger, s"... using ${u.libraryName}", u.clazz)
