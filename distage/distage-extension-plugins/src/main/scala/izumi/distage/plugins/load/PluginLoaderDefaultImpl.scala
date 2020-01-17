@@ -20,7 +20,7 @@ class PluginLoaderDefaultImpl extends PluginLoader {
   }
 
   protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
-    val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains).filterNot(_ == "_root_")
+    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p) || p == "_root_")
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
