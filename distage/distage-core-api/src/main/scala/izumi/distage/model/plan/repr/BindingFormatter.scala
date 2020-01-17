@@ -27,10 +27,10 @@ object BindingFormatter {
 
     override def formatImplDef(implDef: ImplDef): String = {
       implDef match {
-        case ImplDef.ReferenceImpl(_, key, weak) =>
-          if (weak) s"weak[${formatKey(key)}]" else s"using[${formatKey(key)}]"
-        case ImplDef.InstanceImpl(_, instance) =>
-          s"value($instance)"
+        case ImplDef.ReferenceImpl(implType, key, weak) =>
+          if (weak) s"weak[${formatKey(key)}]" else s"using[${formatKey(key)}: $implType]"
+        case ImplDef.InstanceImpl(implType, instance) =>
+          s"value($instance: $implType)"
         case ImplDef.ProviderImpl(_, function) =>
           s"call($function)"
         case ImplDef.EffectImpl(_, effectHKTypeCtor, effectImpl) =>

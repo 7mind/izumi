@@ -306,7 +306,13 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
+    def todo(implicit pos: CodePositionMaterializer): AfterBind = {
+      val provider = ProviderMagnet.todoProvider(key)(pos).get
+      bind(ImplDef.ProviderImpl(provider.ret, provider))
+    }
+
     protected[this] def bind(impl: ImplDef): AfterBind
+    protected[this] def key: DIKey
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
@@ -428,7 +434,7 @@ object ModuleDefDSL {
 
   // DSL state machine
 
-  /** These are the _only_ methods that can chained after `make`
+  /** These are the _only_ (not `from`-like) methods that can chained after `make`
     * such that make[T] will still generate the constructor for `T`
     *
     * See [[izumi.distage.constructors.macros.AnyConstructorMacro.anyConstructorOptionalMakeDSL]]
@@ -441,11 +447,10 @@ object ModuleDefDSL {
     */
   private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliased")
 
-  final class MakeDSL[T]
-  (
+  final class MakeDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLMutBindBase[T] {
+  ) extends MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]] with MakeDSLMutBase[T] {
 
     def named[I](name: I)(implicit idContract: IdContract[I]): MakeNamedDSL[T] = {
       addOp(SetId(name, idContract))(new MakeNamedDSL[T](_, key.named(name)))
@@ -461,13 +466,16 @@ object ModuleDefDSL {
       }
     }
 
+    protected[this] override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+      addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    }
+
   }
 
-  final class MakeNamedDSL[T]
-  (
+  final class MakeNamedDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLMutBindBase[T] {
+  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] with MakeDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -475,34 +483,61 @@ object ModuleDefDSL {
       }
     }
 
-  }
-
-  final class MakeDSLAfterFrom[I]
-  (
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey,
-  ) extends MakeDSLMutBase[I]
-
-  sealed trait MakeDSLMutBindBase[T] extends MakeDSLBase[T, MakeDSLAfterFrom[T]] with MakeDSLMutBase[T] {
-    final def todo(implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
-      val provider = ProviderMagnet.todoProvider(key)(pos).get
-      addOp(SetImpl(ImplDef.ProviderImpl(provider.ret, provider)))(new MakeDSLAfterFrom[T](_, key))
+    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
-    protected[this] final def bind(impl: ImplDef): MakeDSLAfterFrom[T] =
-      addOp(SetImpl(impl))(new MakeDSLAfterFrom[T](_, key))
   }
+
+  final class MakeDSLNamedAfterFrom[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.IdKey[_],
+  ) extends MakeDSLMutBase[T] {
+
+    def tagged(tags: BindingTag*): MakeDSLNamedAfterFrom[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeDSLNamedAfterFrom[T](_, key)
+      }
+    }
+
+  }
+
+  final class MakeDSLUnnamedAfterFrom[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.TypeKey,
+  ) extends MakeDSLMutBase[T] {
+
+    def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
+      addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
+    }
+
+    def namedByImpl: MakeDSLNamedAfterFrom[T] = {
+      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key.named(key.toString)))
+    }
+
+    def tagged(tags: BindingTag*): MakeDSLUnnamedAfterFrom[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeDSLUnnamedAfterFrom[T](_, key)
+      }
+    }
+
+  }
+
+  final class MakeDSLAfterAlias[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.BasicKey,
+  ) extends MakeDSLMutBase[T]
 
   sealed trait MakeDSLMutBase[T] {
     protected[this] def mutableState: SingletonRef
-    protected[this] def key: DIKey
+    protected[this] def key: DIKey.BasicKey
 
-    def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
-      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterFrom[T](_, key))
+    def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
+      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterAlias[T](_, key))
     }
 
-    def aliased[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): MakeDSLAfterFrom[T] = {
-      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new MakeDSLAfterFrom[T](_, key))
+    def aliased[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
+      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new MakeDSLAfterAlias[T](_, key))
     }
 
     protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
@@ -510,8 +545,7 @@ object ModuleDefDSL {
     }
   }
 
-  final class SetDSL[T]
-  (
+  final class SetDSL[T](
     protected val mutableState: SetRef,
   ) extends SetDSLMutBase[T] {
 
@@ -525,8 +559,7 @@ object ModuleDefDSL {
     }
   }
 
-  final class SetNamedDSL[T]
-  (
+  final class SetNamedDSL[T](
     override protected val mutableState: SetRef,
   ) extends SetDSLMutBase[T] {
 
@@ -535,8 +568,7 @@ object ModuleDefDSL {
     }
   }
 
-  final class SetElementDSL[T]
-  (
+  final class SetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: SetElementRef,
   ) extends SetDSLMutBase[T] {
@@ -551,8 +583,7 @@ object ModuleDefDSL {
     }
   }
 
-  final class MultiSetElementDSL[T]
-  (
+  final class MultiSetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: MultiSetElementRef,
   ) extends SetDSLMutBase[T] {
