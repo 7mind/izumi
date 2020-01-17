@@ -1,15 +1,13 @@
 package izumi.distage.roles.test
 
 import cats.effect.IO
-import izumi.distage.framework.model.PluginSource
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.AppShutdownStrategy.ImmediateExitShutdownStrategy
 import izumi.distage.roles._
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 class TestLauncher extends RoleAppLauncher.LauncherF[IO] {
-  override protected def pluginSource: PluginSource = PluginSource(
+  override protected def pluginConfig: PluginConfig =
     PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
-  )
   override protected val shutdownStrategy: AppShutdownStrategy[IO] = new ImmediateExitShutdownStrategy()
 }

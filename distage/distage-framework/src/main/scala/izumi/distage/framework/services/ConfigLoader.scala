@@ -14,9 +14,7 @@ import scala.util.{Failure, Success, Try}
 trait ConfigLoader {
   def buildConfig(): AppConfig
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = {
-    () => f(buildConfig())
-  }
+  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(buildConfig())
 }
 
 object ConfigLoader {

@@ -3,6 +3,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 import distage.{Tag, TagK, TagKK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.plugins.load.PluginLoader
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._
@@ -33,7 +34,7 @@ trait DistageAbstractScalatestSpec[F[_]]
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
 
-  protected def makeTestEnv(): TestEnvironment = loadEnvironment(logger, config)
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment(logger, config, PluginLoader())
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
