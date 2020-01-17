@@ -20,6 +20,10 @@ trait Distage {
   type Locator = model.Locator
   type LocatorRef = model.Locator.LocatorRef
 
+  type Id = model.definition.Id
+  type With[T] = model.definition.With[T]
+  type impl = model.definition.impl
+
   type Tag[T] = Tags.Tag[T]
   val Tag: Tags.Tag.type = Tags.Tag
 
@@ -68,9 +72,6 @@ trait Distage {
   type SemiPlan = model.plan.SemiPlan
   val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  type Id = model.definition.Id
-  type With[T] = model.definition.With[T]
 
   type DIKey = RuntimeDIUniverse.DIKey
   val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey

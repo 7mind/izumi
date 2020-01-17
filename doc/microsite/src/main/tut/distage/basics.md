@@ -524,7 +524,7 @@ val definition = new ModuleDef {
 }
 
 val main = Injector()
-  .produceGetF[UIO[Unit]](definition)
+  .produceGetF[Task, UIO[Unit]](definition)
   .useEffect
 
 new zio.DefaultRuntime{}.unsafeRun(main)
@@ -535,7 +535,7 @@ If a suitable trait is specified as an implementation class for a binding, `Trai
 Example:
 
 ```scala mdoc:reset:to-string
-import distage.{Id, Injector}
+import distage.{ModuleDef, Id, Injector}
 
 trait Trait1 {
   def a: Int @Id("a")
@@ -556,7 +556,8 @@ trait PlusedInt {
 }
 object PlusedInt {
 
-  /** Besides the dependency on `Pluser`,
+  /**
+    * Besides the dependency on `Pluser`,
     * this class defines 2 more dependencies
     * to be injected from the object graph:
     *
@@ -607,6 +608,8 @@ to avoid writing the full constructor, you may use an optional @scaladoc[@impl](
 documenting annotation to aid the reader in understanding your intention.
 
 ```scala mdoc:to-string
+import distage.impl
+
 @impl abstract class Impl(
   pluser: Pluser
 ) extends PlusedInt

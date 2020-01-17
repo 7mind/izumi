@@ -18,6 +18,10 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type LocatorRef = model.Locator.LocatorRef
 
+  override type Id = model.definition.Id
+  override type With[T] = model.definition.With[T]
+  override type impl = model.definition.impl
+
   override type Tag[T] = Tags.Tag[T]
   override val Tag: Tags.Tag.type = Tags.Tag
 
@@ -66,9 +70,6 @@ package object distage extends Distage {
   override type SemiPlan = model.plan.SemiPlan
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  override type Id = model.definition.Id
-  override type With[T] = model.definition.With[T]
 
   override type DIKey = RuntimeDIUniverse.DIKey
   override val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey
