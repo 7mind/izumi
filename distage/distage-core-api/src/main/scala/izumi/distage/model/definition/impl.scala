@@ -1,7 +1,7 @@
 package izumi.distage.model.definition
 
 /**
-  * A documentation-only annotation you may use to convey that
+  * An optional, documentation-only annotation conveying that
   * an abstract class or a trait is the 'actual' implementation
   * of its supertypes and will be bound later in DI with
   * [[izumi.distage.constructors.TraitConstructor]] or

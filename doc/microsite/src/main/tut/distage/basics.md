@@ -603,8 +603,8 @@ Injector()
 
 Abstract classes or traits without obvious concrete subclasses
 may hinder the readability of a codebase, if you still want to use them
-to avoid writing the full constructor, you may use @scaladoc[@impl](izumi.distage.model.definition.impl) annotation
-to aid the reader in understanding your intentions.
+to avoid writing the full constructor, you may use an optional @scaladoc[@impl](izumi.distage.model.definition.impl) 
+documenting annotation to aid the reader in understanding your intention.
 
 ```scala mdoc:to-string
 @impl abstract class Impl(
