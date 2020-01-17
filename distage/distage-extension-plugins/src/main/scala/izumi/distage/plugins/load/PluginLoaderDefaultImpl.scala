@@ -1,26 +1,26 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef, PluginOp}
+import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
 import izumi.functional.Value
 import izumi.fundamentals.platform.cache.SyncCache
 
-import scala.collection.immutable.Queue
 import scala.jdk.CollectionConverters._
 
 class PluginLoaderDefaultImpl extends PluginLoader {
   override def load(config: PluginConfig): Seq[PluginBase] = {
-    config.ops.foldLeft(Queue.empty[Seq[PluginBase]]) {
-      (res, op) => op match {
-        case l: PluginOp.Load => res :+ scanClasspath(l)
-        case PluginOp.Add(plugins) => res :+ plugins
-        case PluginOp.Override(plugins) => Queue(Seq((res.flatten.merge +: plugins).overrideLeft))
-      }
-    }.flatten
+    /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
+    val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
+      Seq.empty
+    } else {
+      scanClasspath(config)
+    }
+
+    applyOverrides(loadedPlugins, config)
   }
 
-  protected[this] def scanClasspath(config: PluginOp.Load): Seq[PluginBase] = {
-    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p))
+  protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
+    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p) || p == "_root_")
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
@@ -42,6 +42,13 @@ class PluginLoaderDefaultImpl extends PluginLoader {
           PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(pkg)))
       }
     }
+  }
+
+  protected[this] def applyOverrides(loadedPlugins: Seq[PluginBase], config: PluginConfig): Seq[PluginBase] = {
+    val merged = loadedPlugins ++ config.merges
+    if (config.overrides.nonEmpty) {
+      Seq((merged.merge +: config.overrides).overrideLeft)
+    } else merged
   }
 }
 
