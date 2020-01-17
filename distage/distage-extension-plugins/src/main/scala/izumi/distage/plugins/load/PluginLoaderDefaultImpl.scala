@@ -1,7 +1,7 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
+import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef, PluginLoadConfig}
 import izumi.functional.Value
 import izumi.fundamentals.platform.cache.SyncCache
 
@@ -9,18 +9,12 @@ import scala.jdk.CollectionConverters._
 
 class PluginLoaderDefaultImpl extends PluginLoader {
   override def load(config: PluginConfig): Seq[PluginBase] = {
-    /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
-    val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
-      Seq.empty
-    } else {
-      scanClasspath(config)
-    }
-
+    val loadedPlugins = config.loads.flatMap(scanClasspath)
     applyOverrides(loadedPlugins, config)
   }
 
-  protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
-    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p) || p == "_root_")
+  protected[this] def scanClasspath(config: PluginLoadConfig): Seq[PluginBase] = {
+    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p))
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]

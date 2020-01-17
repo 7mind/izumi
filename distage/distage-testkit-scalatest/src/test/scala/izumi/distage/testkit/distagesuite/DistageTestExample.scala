@@ -62,7 +62,7 @@ object DistageTestExampleBase {
 abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
+    pluginConfig = super.config.pluginConfig.loadPackage("xxx") ++ new PluginDef {
       make[SetCounter]
 
       make[SetElement1]
