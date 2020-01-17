@@ -129,6 +129,9 @@ object AbstractBindingDefDSL {
           // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
           b = b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
         case AliasTo(key, pos) =>
+          // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
+          // `b` properties must come before first `aliased` call
+          // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
       }

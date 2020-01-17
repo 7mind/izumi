@@ -459,6 +459,63 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(yInstance eq implInstance)
     }
 
+    "support .named & .tagged calls after .from" in {
+      import BasicCase6._
+
+      val definition = new ModuleDef {
+        make[TraitX].from[ImplXYZ]
+          .named("other")
+          .tagged("x")
+          .aliased[TraitX]("other2")
+
+        make[ImplXYZ]
+          .from[ImplXYZ]
+          .tagged("xa")
+          .aliased[TraitY]
+
+        // can't call named after .named.from
+        assertTypeError("""
+        make[TraitX]
+          .named("x1")
+          .from[ImplXYZ]
+          .named("xy")""")
+
+        // can't call named twice
+        assertTypeError("""
+        make[TraitX]
+          .named("x1")
+          .named("x2")""")
+
+        // can't call from after aliased
+        assertTypeError("""
+        make[TraitY]
+          .aliased[TraitY]
+          .from[ImplXYZ]""")
+
+        // can't call tagged after aliased
+        assertTypeError("""
+        make[ImplXYZ]
+          .aliased[TraitY]
+          .tagged("xa")""")
+      }
+
+      assert(definition.bindings == Set(
+        Bindings.binding[TraitX, ImplXYZ]
+          .copy(
+            key = DIKey.get[TraitX].named("other"),
+            tags = Set("x"),
+          ),
+        Bindings.binding[ImplXYZ, ImplXYZ].addTags(Set("xa")),
+        Bindings.reference[TraitX, TraitX]
+          .copy(
+            key = DIKey.get[TraitX].named("other2"),
+            implementation = ImplDef.ReferenceImpl(SafeType.get[ImplXYZ], DIKey.get[TraitX].named("other"), weak = false),
+            tags = Set("x")
+          ),
+        Bindings.reference[TraitY, ImplXYZ].addTags(Set("xa")),
+      ))
+    }
+
     "print a sensible error message at compile-time when user tries to derive a constructor for a type parameter" in {
       val res1 = intercept[TestFailedException](assertCompiles(
         """
