@@ -4,7 +4,9 @@ out: index.html
 Izumi Project
 =============
 
-Izumi (*jp. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
+![izumi-logo](media/izumi-logo-full-purple.png)
+
+Izumi (jp. *泉水*, *spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
 
 including the following components:
 
@@ -23,7 +25,7 @@ To use, add the following into `project/build.sbt`,
 ```scala
 
 libraryDependencies ++= Seq(
-  // Core distage library
+  // distage core library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
   // distage-testkit for ScalaTest
   "io.7mind.izumi" %% "distage-testkit-scalatest" % "$izumi.version$" % Test,
@@ -36,7 +38,7 @@ libraryDependencies ++= Seq(
   // LogStage integration with DIStage
   "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
   
-  // Core LogStage library
+  // LogStage core library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
   // Configure LogStage with Typesafe Config
   "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
@@ -61,9 +63,9 @@ Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 
 @@@ index
 
-* [Idealingua](idealingua/00_idealingua.md)
 * [distage](distage/00_distage.md)
 * [LogStage](logstage/00_logstage.md)
+* [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
 * [PPER](pper/00_pper.md)

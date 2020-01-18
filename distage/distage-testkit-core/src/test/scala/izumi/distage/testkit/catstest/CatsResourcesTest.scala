@@ -9,6 +9,7 @@ import izumi.distage.model.plan.GCMode
 import izumi.distage.testkit.catstest.CatsResourcesTest._
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.GivenWhenThen
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 object CatsResourcesTest {
@@ -67,7 +68,7 @@ class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     definition.bindings.foreach {
       case SingletonBinding(_, implDef@ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
         assert(implDef.implType == SafeType.get[Res1])
-        assert(providerImplType == SafeType.get[DIResource.Cats[IO, Res1]])
+        assert(providerImplType == SafeType.get[DIResource.FromCats[IO, Res1]])
         assert(fn.diKeys contains DIKey.get[Bracket[IO, Throwable]])
       case _ =>
         fail()
@@ -107,6 +108,24 @@ class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .use(assert1)
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()
+  }
+
+  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
+    assertCompiles(
+      """
+         new ModuleDef {
+           make[String].fromResource { (_: Unit) => Resource.pure("42") }
+         }
+      """
+    )
+    val res = intercept[TestFailedException](assertCompiles(
+      """
+         new ModuleDef {
+           make[String].fromResource { (_: Unit) => Resource.pure(42) }
+         }
+      """
+    ))
+    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
   }
 
 }

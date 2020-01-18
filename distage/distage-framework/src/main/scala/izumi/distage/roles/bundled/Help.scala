@@ -1,4 +1,4 @@
-package izumi.distage.roles.examples
+package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.effect.DIEffect

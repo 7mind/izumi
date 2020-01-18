@@ -162,4 +162,11 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
+  object BasicCase7 {
+    type Port = Int @Id("port")
+    type Address = String @Id("address")
+
+    final case class ServerConfig(port: Port, address: Address)
+  }
+
 }

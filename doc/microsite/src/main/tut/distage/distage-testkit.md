@@ -12,31 +12,65 @@ Further documentation still TBD: [Issue #820](https://github.com/7mind/izumi/iss
 
 Some example code from [distage-example](https://github.com/7mind/distage-example):
 
-```scala
-package leaderboard
+```scala mdoc:reset:invisible:to-string
+type QueryFailure = Throwable
 
-import com.typesafe.config.ConfigFactory
-import distage.{DIKey, Injector, ModuleDef}
-import izumi.distage.config.AppConfigModule
-import izumi.distage.framework.model.PluginSource
+object leaderboard {
+  object model {
+    type UserId = java.util.UUID
+    type Score = Long
+  }
+  import model._
+
+  object repo {
+    trait Ladder[F[_, _]] {
+      def submitScore(userId: UserId, score: Score): F[QueryFailure, Unit]
+      def getScores: F[QueryFailure, List[(UserId, Score)]]
+    }
+    trait Profiles[F[_, _]]
+  }
+
+  object zioenv {
+    import zio.{IO, ZIO, URIO}
+    import repo.Ladder
+    trait LadderEnv { def ladder: Ladder[IO] }
+    trait RndEnv { def rnd: Rnd[IO] }
+    object ladder extends Ladder[ZIO[LadderEnv, ?, ?]] {
+      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.ladder.submitScore(userId, score))
+      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.ladder.getScores)
+    }
+    object rnd extends Rnd[ZIO[RndEnv, ?, ?]] {
+      override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.rnd.apply[A])
+    }
+  }
+}
+
+object PostgresDockerModule extends distage.ModuleDef
+
+trait Rnd[F[_, _]] {
+  def apply[A]: F[Nothing, A]
+}
+object Rnd {
+  final class Impl[F[_, _]] extends Rnd[F] { def apply[A] = ??? }
+}
+```
+
+```scala mdoc:to-string
+import distage.{DIKey, ModuleDef}
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.model.plan.GCMode
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import izumi.distage.testkit.services.DISyntaxZIOEnv
-import izumi.logstage.api.logger.LogRouter
-import leaderboard.model.{QueryFailure, Score, UserId, UserProfile}
-import leaderboard.plugins.{LeaderboardPlugin, ZIOPlugin}
+import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
-import leaderboard.zioenv._
-import logstage.di.LogstageModule
-import zio.{IO, Task, ZIO}
+import leaderboard.zioenv.{ladder, rnd}
+import zio.{IO, ZIO}
 
 abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
   override def config = TestConfig(
-    pluginSource = PluginSource(PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins"))),
+    pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
       // For testing, setup a docker container with postgres,

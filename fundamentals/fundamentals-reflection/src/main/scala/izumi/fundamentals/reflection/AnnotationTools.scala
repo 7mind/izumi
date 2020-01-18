@@ -20,11 +20,11 @@ object AnnotationTools {
     getAllTypeAnnotations(u)(typ).find(annotationTypeEq(u)(annType, _))
 
   def getAllTypeAnnotations(u: Universe)(typ: u.Type): List[u.Annotation] =
-    stripByName(u)(typ.finalResultType) match {
+    stripByName(u)(typ.finalResultType.dealias) match {
       case t: u.AnnotatedTypeApi =>
         t.annotations
       case _ =>
-        List()
+        Nil
     }
 
   def annotationTypeEq(u: Universe)(tpe: u.Type, ann: u.Annotation): Boolean =

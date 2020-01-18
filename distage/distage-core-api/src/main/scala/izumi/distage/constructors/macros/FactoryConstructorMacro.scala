@@ -26,10 +26,11 @@ object FactoryConstructorMacro {
     import macroUniverse._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val factory@Factory(factoryMethods, factoryTraitDependencies) = reflectionProvider.symbolToWiring(targetType)
-    val traitMeta = factoryTraitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
-    val paramMeta = factory.factoryProductDepsFromObjectGraph.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
+    val traitMeta = factoryTraitDependencies.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_))
+    val paramMeta = factory.factoryProductDepsFromObjectGraph.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val allMeta = traitMeta ++ paramMeta
     val dependencyMethods = traitMeta.map(_._3._1)
     val (dependencyAssociations, dependencyArgDecls, _) = allMeta.unzip3
@@ -94,7 +95,7 @@ object FactoryConstructorMacro {
 
     val allMethods = producerMethods ++ dependencyMethods
 
-    val instantiate = TraitConstructorMacro.newWithMethods(c)(targetType, Nil, allMethods)
+    val instantiate = TraitConstructorMacro.newTraitWithMethods(c)(targetType, Nil, allMethods)
 
     val constructor = q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
 

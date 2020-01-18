@@ -6,7 +6,7 @@ import izumi.distage.config.ConfigModuleDef
 import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.examples.{ConfigWriter, Help}
+import izumi.distage.roles.bundled.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00

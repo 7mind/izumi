@@ -1,7 +1,7 @@
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
-import izumi.distage.{model, planning}
+import izumi.distage.{constructors, model, planning}
 import izumi.fundamentals.reflection.Tags
 
 package object distage extends Distage {
@@ -18,6 +18,10 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type LocatorRef = model.Locator.LocatorRef
 
+  override type Id = model.definition.Id
+  override type With[T] = model.definition.With[T]
+  override type impl = model.definition.impl
+
   override type Tag[T] = Tags.Tag[T]
   override val Tag: Tags.Tag.type = Tags.Tag
 
@@ -29,17 +33,25 @@ package object distage extends Distage {
 
   override type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
-  override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
-  override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
-
-
-  override type GCMode = model.plan.GCMode
-  override val GCMode: model.plan.GCMode.type = model.plan.GCMode
+  override type Axis = model.definition.Axis
+  override val Axis: model.definition.Axis.type = model.definition.Axis
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
-  override type Axis = model.definition.Axis
-  override val Axis: model.definition.Axis.type = model.definition.Axis
+  override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+
+  override type ClassConstructor[T] = constructors.ClassConstructor[T]
+  override val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor
+
+  override type TraitConstructor[T] = constructors.TraitConstructor[T]
+  override val TraitConstructor: constructors.TraitConstructor.type = constructors.TraitConstructor
+
+  override type FactoryConstructor[T] = constructors.FactoryConstructor[T]
+  override val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
+
+  override type GCMode = model.plan.GCMode
+  override val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   override type BindingTag = model.definition.BindingTag
   override val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -58,9 +70,6 @@ package object distage extends Distage {
   override type SemiPlan = model.plan.SemiPlan
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  override type Id = model.definition.Id
-  override type With[T] = model.definition.With[T]
 
   override type DIKey = RuntimeDIUniverse.DIKey
   override val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey
@@ -99,4 +108,5 @@ package object distage extends Distage {
 
   override type TagTK3[T[_[_], _, _, _]] = Tags.TagTK3[T]
   override val TagTK3: Tags.TagTK3.type = Tags.TagTK3
+
 }

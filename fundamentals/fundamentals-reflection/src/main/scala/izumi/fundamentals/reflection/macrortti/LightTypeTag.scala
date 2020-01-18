@@ -144,7 +144,7 @@ abstract class LightTypeTag
 
   override def hashCode(): Int = hashcode
 
-  private lazy val hashcode: Int = {
+  private[this] lazy val hashcode: Int = {
     ref.hashCode() * 31
   }
 }
@@ -173,15 +173,16 @@ object LightTypeTag {
     LightTypeTag(ref, mergedBasesDB, mergedInheritanceDb)
   }
 
-  def parse[T](refString: String, basesString: String): LightTypeTag = {
+  def parse[T](hashCode: Int, refString: String, basesString: String): LightTypeTag = {
     lazy val shared = {
       subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes("ISO-8859-1")))
     }
 
-    new ParsedLightTypeTag(refString, () => shared.bases, () => shared.idb)
+    new ParsedLightTypeTag(hashCode, refString, () => shared.bases, () => shared.idb)
   }
 
   final class ParsedLightTypeTag(
+                                  override val hashCode: Int,
                                   private val refString: String,
                                   bases: () => Map[AbstractReference, Set[AbstractReference]],
                                   db: () => Map[NameReference, Set[NameReference]],

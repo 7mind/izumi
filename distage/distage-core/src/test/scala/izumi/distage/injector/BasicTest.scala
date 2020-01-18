@@ -8,10 +8,8 @@ import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
 import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
-
-
+import org.scalatest.wordspec.AnyWordSpec
 
 class BasicTest extends AnyWordSpec with MkInjector {
 
@@ -63,7 +61,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "fails on wrong @Id annotation at compile-time" in {
-    val exc = intercept[TestFailedException] {
+    val res = intercept[TestFailedException] {
       assertCompiles("""
         import BadAnnotationsCase._
 
@@ -76,7 +74,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
         injector.produceUnsafe(injector.plan(definition)).get[TestClass]
         """)
     }
-    assert(exc.getMessage.contains("BadIdAnnotationException"))
+    assert(res.getMessage.contains("BadIdAnnotationException"))
   }
 
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
@@ -335,5 +333,20 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(definition.bindings.bindings.collectFirst {
       case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
     }.nonEmpty)
+  }
+
+  "Can abstract over Id annotations with type aliases" in {
+    import BasicCase7._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Int].named("port").from(80)
+      make[String].named("address").from("localhost")
+      make[ServerConfig].from(ServerConfig)
+    })
+
+    val context = Injector.Standard().produceUnsafe(definition)
+
+    assert(context.get[ServerConfig].port == context.get[Int]("port"))
+    assert(context.get[ServerConfig].address == context.get[String]("address"))
   }
 }

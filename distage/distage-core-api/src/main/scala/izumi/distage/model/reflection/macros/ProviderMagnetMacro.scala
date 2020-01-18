@@ -145,7 +145,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
   }
 
   protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
-    sig.typeArgs.init.map {
+    widenFunctionObject(sig).typeArgs.init.map {
       tpe =>
         val symbol = SymbolInfo.Static(
           name = c.freshName(tpe.typeSymbol.name.toString),
@@ -156,6 +156,15 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
         )
 
         reflectionProvider.associationFromParameter(symbol)
+    }
+  }
+
+  protected[this] def widenFunctionObject(sig: Type): Type = {
+    sig match {
+      case s: SingleTypeApi =>
+        sig.baseType(s.sym.typeSignature.baseClasses.find(definitions.FunctionClass.seq.contains(_)).get)
+      case _ =>
+        sig
     }
   }
 

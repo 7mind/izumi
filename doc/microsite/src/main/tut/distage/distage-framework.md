@@ -133,13 +133,11 @@ object PetStorePlugin extends PluginDef {
 Collect all `PluginDefs` in a package:
 
 ```scala mdoc:to-string
-val pluginLoader = PluginLoader(
-  PluginConfig.cached(
-    packagesEnabled = Seq("com.example.petstore") // packages to scan
-  )
+val pluginConfig = PluginConfig.cached(
+  packagesEnabled = Seq("com.example.petstore") // packages to scan
 )
 
-val appModules = pluginLoader.load()
+val appModules = PluginLoader().load(pluginConfig)
 ```
 
 Execute collected modules as usual:

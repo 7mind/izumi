@@ -23,8 +23,9 @@ import izumi.fundamentals.platform.language.CodePosition
 import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.concurrent.duration.FiniteDuration
+import izumi.fundamentals.platform.strings.IzString._
 
-class DistageTestRunner[F[_] : TagK]
+class DistageTestRunner[F[_]: TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
@@ -43,8 +44,11 @@ class DistageTestRunner[F[_] : TagK]
     val config = loader.buildConfig()
     val checker = new PlanCircularDependencyCheck(options, logger)
 
-    logger.info(s"Starting tests across ${groups.size -> "num envs"}")
-    logger.trace(s"Env contents: ${groups.keys -> "test environments"}")
+    logger.info(s"Starting tests across ${groups.size -> "num envs"}, ${groups.values.map(_.size).toList -> "num tests"} in ${TagK[F].tag -> "monad"}")
+    debugLogger.log(
+      s"""Env contents:
+         |test environments=${groups.keys.niceList()}
+         |tests=${groups.values.map(_.map(_.meta.id).niceList()).zipWithIndex.map(_.swap).niceList()}""".stripMargin)
 
     groups.foreach {
       case (env, tests) =>

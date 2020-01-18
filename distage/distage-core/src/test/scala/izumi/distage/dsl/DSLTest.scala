@@ -9,6 +9,7 @@ import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBindi
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class DSLTest extends AnyWordSpec with MkInjector {
@@ -332,10 +333,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val implXYZResource = DIResource.make(implXYZ)(_ => ())
 
       val definition = new ModuleDef {
-        bind[ImplXYZ]
-          .to[TraitX]
-          .to[TraitY]
-          .to[TraitZ]
+        make[ImplXYZ]
+          .aliased[TraitX]
+          .aliased[TraitY]
+          .aliased[TraitZ]
       }
 
       assert(definition == Module.make(
@@ -348,7 +349,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromEffect(implXYZ)
+          .aliased[TraitX]
+          .aliased[TraitY]
+          .aliased[TraitZ]
       }
 
       assert(definitionEffect == Module.make(
@@ -367,7 +371,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       }
 
       val definitionResource = new ModuleDef {
-        bindResource[X].to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromResource[X]
+          .aliased[TraitX]
+          .aliased[TraitY]
+          .aliased[TraitZ]
       }
       val expectedResource = Module.make(
         Set(
@@ -388,7 +395,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(definitionResource == expectedResource)
 
       val definitionResourceFn = new ModuleDef {
-        bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
+        make[ImplXYZ].fromResource(implXYZResource)
+          .aliased[TraitX]
+          .aliased[TraitY]
+          .aliased[TraitZ]
       }
 
       assert(definitionResourceFn == Module.make(
@@ -408,9 +418,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
       import BasicCase6._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl")
-          .to[TraitX]
-          .to[TraitY]("Y")
+        make[ImplXYZ].named("my-impl")
+          .aliased[TraitX]
+          .aliased[TraitY]("Y")
       })
 
       val defWithoutSugar = PlannerInput.noGc(new ModuleDef {
@@ -420,9 +430,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
       })
 
       val defWithTags = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl").tagged("tag1")
-          .to[TraitX]
-          .to[TraitY]
+        make[ImplXYZ].named("my-impl").tagged("tag1")
+          .aliased[TraitX]
+          .aliased[TraitY]
       })
 
       val defWithTagsWithoutSugar = PlannerInput.noGc(new ModuleDef {
@@ -448,6 +458,86 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(xInstance eq implInstance)
       assert(yInstance eq implInstance)
     }
+
+    "support .named & .tagged calls after .from" in {
+      import BasicCase6._
+
+      val definition = new ModuleDef {
+        make[TraitX].from[ImplXYZ]
+          .named("other")
+          .tagged("x")
+          .aliased[TraitX]("other2")
+
+        make[ImplXYZ]
+          .from[ImplXYZ]
+          .tagged("xa")
+          .aliased[TraitY]
+
+        // can't call named after .named.from
+        assertTypeError("""
+        make[TraitX]
+          .named("x1")
+          .from[ImplXYZ]
+          .named("xy")""")
+
+        // can't call named twice
+        assertTypeError("""
+        make[TraitX]
+          .named("x1")
+          .named("x2")""")
+
+        // can't call from after aliased
+        assertTypeError("""
+        make[TraitY]
+          .aliased[TraitY]
+          .from[ImplXYZ]""")
+
+        // can't call tagged after aliased
+        assertTypeError("""
+        make[ImplXYZ]
+          .aliased[TraitY]
+          .tagged("xa")""")
+      }
+
+      assert(definition.bindings == Set(
+        Bindings.binding[TraitX, ImplXYZ]
+          .copy(
+            key = DIKey.get[TraitX].named("other"),
+            tags = Set("x"),
+          ),
+        Bindings.binding[ImplXYZ, ImplXYZ].addTags(Set("xa")),
+        Bindings.reference[TraitX, TraitX]
+          .copy(
+            key = DIKey.get[TraitX].named("other2"),
+            implementation = ImplDef.ReferenceImpl(SafeType.get[ImplXYZ], DIKey.get[TraitX].named("other"), weak = false),
+            tags = Set("x")
+          ),
+        Bindings.reference[TraitY, ImplXYZ].addTags(Set("xa")),
+      ))
+    }
+
+    "print a sensible error message at compile-time when user tries to derive a constructor for a type parameter" in {
+      val res1 = intercept[TestFailedException](assertCompiles(
+        """
+          def definition[T <: Int: Tag] = new ModuleDef {
+            make[Int].from[T]
+          }
+        """
+      ))
+      assert(res1.getMessage contains "[T: AnyConstructor]")
+      val res2 = intercept[TestFailedException](assertCompiles(
+        """
+          def definition[F[_]] = new ModuleDef {
+            make[Int].fromResource[DIResource[F, Int]]
+          }
+        """
+      ))
+      assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
+      assert(res2.getMessage contains "trying to create an implementation")
+      assert(res2.getMessage contains "`method release`")
+      assert(res2.getMessage contains "`trait DIResource`")
+    }
+
   }
 
 }

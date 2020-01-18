@@ -102,7 +102,16 @@ new ModuleDef {
 }
 ```
 
-For true non-singleton semantics, you must create explicit factory classes or generate them (see @ref[Auto-Factories](#auto-factories))
+You can abstract over annotations with type aliases or with string constants:
+
+```scala mdoc:to-string
+object Ids {
+  final val byer1Id = "byer-1"
+  type Byer1 = Byer @Id(byer1Id)
+}
+```
+
+For true non-singleton semantics, you must create explicit factory classes, or generate them (see @ref[Auto-Factories](#auto-factories))
 
 ### Activation Axis
 
@@ -155,7 +164,7 @@ Injector(Activation(Style -> Style.Normal))
   .use(_.get[HelloByeApp].run())
 ```
 
-In @scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) there are three example Axes for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
+@scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) contains some bundled Axis for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
 
 In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppLauncher), you can choose axes using the `-u` command-line parameter:
 
@@ -282,7 +291,6 @@ To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDe
 For example, we may declare many [http4s](https://http4s.org) routes and serve them all from a central router:
 
 ```scala mdoc:silent:reset:to-string
-// import boilerplate
 import cats.implicits._
 import cats.effect.{Bracket, IO, Resource}
 import distage.{GCMode, ModuleDef, Injector}
@@ -449,10 +457,12 @@ distage can instantiate traits and structural types. All unimplemented fields in
 This can be used to create ZIO Environment cakes with required dependencies - https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
 
 Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
-and can be summoned at need. Example:
+and can be summoned at need. 
+
+Example:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, Injector, ProviderMagnet, Tag}
+import distage.{DIKey, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
 import zio.console.{Console, putStrLn}
 import zio.{UIO, URIO, ZIO, Ref, Task}
@@ -514,10 +524,95 @@ val definition = new ModuleDef {
 }
 
 val main = Injector()
-  .produceF[Task](definition, GCMode(DIKey.get[UIO[Unit]]))
-  .use(_.get[UIO[Unit]])
+  .produceGetF[Task, UIO[Unit]](definition)
+  .useEffect
 
 new zio.DefaultRuntime{}.unsafeRun(main)
+```
+
+If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
+
+Example:
+
+```scala mdoc:reset:to-string
+import distage.{ModuleDef, Id, Injector}
+
+trait Trait1 {
+  def a: Int @Id("a")
+}
+trait Trait2 {
+  def b: Int @Id("b")
+}
+
+/** All methods in this trait are implemented,
+  * so a constructor for it will be generated
+  * even though it's not a class */
+trait Pluser {
+  def plus(a: Int, b: Int) = a + b
+}
+
+trait PlusedInt {
+  def result(): Int
+}
+object PlusedInt {
+
+  /**
+    * Besides the dependency on `Pluser`,
+    * this class defines 2 more dependencies
+    * to be injected from the object graph:
+    *
+    * `def a: Int @Id("a")` and
+    * `def b: Int @Id("b")`
+    * 
+    * When an abstract type is declared as an implementation,
+    * its no-argument abstract defs & vals are considered as
+    * dependency parameters by TraitConstructor. (empty-parens and
+    * parameterized methods are not considered parameters)
+    *
+    * Here, using an abstract class directly as an implementation
+    * lets us avoid writing a lengthier constructor, like this one:
+    * 
+    * {{{
+    *   final class Impl(
+    *     pluser: Pluser,
+    *     override val a: Int @Id("a"),
+    *     override val b: Int @Id("b"),
+    *   ) extends PlusedInt with Trait1 with Trait2
+    * }}}
+    */
+  abstract class Impl(
+    pluser: Pluser
+  ) extends PlusedInt
+    with Trait1
+    with Trait2 {
+    override def result(): Int = {
+      pluser.plus(a, b)
+    }
+  }
+
+}
+
+Injector()
+  .produceGet[PlusedInt](new ModuleDef {
+    make[Int].named("a").from(1)
+    make[Int].named("b").from(2)
+    make[Pluser]
+    make[PlusedInt].from[PlusedInt.Impl]
+  })
+  .use(_.result)
+```
+
+Abstract classes or traits without obvious concrete subclasses
+may hinder the readability of a codebase, if you still want to use them
+to avoid writing the full constructor, you may use an optional @scaladoc[@impl](izumi.distage.model.definition.impl) 
+documenting annotation to aid the reader in understanding your intention.
+
+```scala mdoc:to-string
+import distage.impl
+
+@impl abstract class Impl(
+  pluser: Pluser
+) extends PlusedInt
 ```
 
 ### Auto-Factories
@@ -528,7 +623,7 @@ All unimplemented methods _with parameters_ in a trait will be filled by factory
 Given a class `ActorFactory`:
 
 ```scala mdoc:to-string
-import distage._
+import distage.ModuleDef
 import java.util.UUID
 
 class SessionStorage
@@ -561,30 +656,38 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
-`@With` annotation can be used to specify the implementation class, when the factory result is abstract:
+`@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
-```scala mdoc:to-string
+```scala mdoc:to-string:reset
+import distage.{ModuleDef, Injector, With}
+
 trait Actor { 
- def anyToUnit: Any => Unit = _ => ()
+  def receive(msg: Any): Unit
 }
 
 object Actor {
   trait Factory {
-    def mkActor(name: String): Actor @With[Actor.Impl]
+    def newActor(id: String): Actor @With[Actor.Impl]
   }
 
-  final class Impl(name: String) extends Actor{
-    override def anyToUnit: Any => Unit = msg => println(s"Actor `$name` received a message: $msg")
+  final class Impl(id: String, config: Actor.Configuration) extends Actor {
+    def receive(msg: Any) = {
+      val response = s"Actor `$id` received a message: $msg"
+      println(if (config.allCaps) response.toUpperCase else response)
+    }
   }
+
+  final case class Configuration(allCaps: Boolean)
 }
 
 val factoryModule = new ModuleDef {
   make[Actor.Factory]
+  make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
 
 Injector()
-  .produce(factoryModule, GCMode.NoGC)
-  .use(_.get[Actor.Factory].mkActor("Martin").anyToUnit("ping"))
+  .produceGet[Actor.Factory](factoryModule)
+  .use(_.newActor("Martin Odersky").receive("ping"))
 ```
 
 You can use this feature to concisely provide non-Singleton semantics for some of your components.

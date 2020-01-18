@@ -4,17 +4,18 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import cats.effect.{IO => CIO}
 import distage._
-import izumi.distage.framework.model.PluginSource
+import distage.plugins.PluginDef
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase.{SetCounter, SetElement, SetElement1, SetElement2, SetElement3}
+import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.Quirks._
+import org.scalatest.exceptions.TestFailedException
 import zio.Task
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
@@ -43,30 +44,30 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 object DistageTestExampleBase {
   class SetCounter {
-    import Quirks._
     private[this] val c: AtomicInteger = new AtomicInteger(0)
     def inc(): Unit = c.incrementAndGet().discard()
     def get: Int = c.get()
   }
   sealed trait SetElement {
-    Quirks.discard(counter.inc())
+    locally {
+      counter.inc()
+    }
     def counter: SetCounter
-    def v: Int
   }
-  final case class SetElement1(v: Int, counter: SetCounter) extends SetElement
-  final case class SetElement2(v: Int, counter: SetCounter) extends SetElement
-  final case class SetElement3(v: Int, counter: SetCounter) extends SetElement
+  final case class SetElement1(counter: SetCounter) extends SetElement
+  final case class SetElement2(counter: SetCounter) extends SetElement
+  final case class SetElement3(counter: SetCounter) extends SetElement
 }
 
-abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx"))) ++ new ModuleDef {
+    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
       make[SetCounter]
 
-      make[SetElement1].from(SetElement1(1, _))
-      make[SetElement2].from(SetElement2(2, _))
-      make[SetElement3].from(SetElement3(3, _))
+      make[SetElement1]
+      make[SetElement2]
+      make[SetElement3]
 
       many[SetElement]
         .weak[SetElement1]
@@ -96,7 +97,7 @@ abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) exte
 
     "support memoized named weak sets" in {
       (
-        set: Set[SetElement]@Id("set-id"),
+        set: Set[SetElement] @Id("set-id"),
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
@@ -202,3 +203,21 @@ final class TaskDistageSleepTest06 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
+
+abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F]  {
+  "test overloading of `in`" in {
+    // `in` with Unit return type is ok
+    assertCompiles(""" "test" in { println(""); () }  """)
+    // `in` with Assertion return type is ok
+    assertCompiles(""" "test" in { assert(1 + 1 == 2) }  """)
+    // `in` with any other return type is not ok
+    val res = intercept[TestFailedException](assertCompiles(
+      """ "test" in { println(""); 1 + 1 }  """
+    ))
+    assert(res.getMessage() contains "overloaded method")
+  }
+}
+
+final class OverloadingTestCIO extends OverloadingTest[CIO]
+final class OverloadingTestTask extends OverloadingTest[Task]
+final class OverloadingTestIdentity extends OverloadingTest[Identity]

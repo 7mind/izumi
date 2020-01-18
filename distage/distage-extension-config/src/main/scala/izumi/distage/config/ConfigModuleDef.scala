@@ -5,10 +5,11 @@ import izumi.distage.config.codec.ConfigReader
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.model.definition.BindingTag.ConfTag
-import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MultipleDSL, MultipleNamedDSL}
+import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
 import izumi.distage.model.definition.{BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.planning.PlanningHook
 import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.util.{Failure, Success, Try}
@@ -18,7 +19,6 @@ class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
 
   make[AppConfig].fromValue(appConfig)
 }
-
 object AppConfigModule {
   def apply(appConfig: AppConfig): AppConfigModule = new AppConfigModule(appConfig)
   def apply(config: Config): AppConfigModule = new AppConfigModule(config)
@@ -30,28 +30,26 @@ class ConfigPathExtractorModule extends BootstrapModuleDef {
 }
 
 trait ConfigModuleDef extends ModuleDef {
-  final def makeConfig[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    bind[T] {
-      config: AppConfig =>
-        unpackResult(config, path)(ConfigReader[T].apply(config.config.getValue(path)))
-    }.tagged(ConfTag(path))
+  final def makeConfig[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
+    pos.discard()
+    make[T].tagged(ConfTag(path)).from(decodeConfig[T](path))
   }
-  final def makeConfigNamed[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MultipleNamedDSL[T] = {
-    makeConfig[T](path).named(path)
+  final def makeConfigNamed[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
+    pos.discard()
+    make[T].named(path).tagged(ConfTag(path)).from(decodeConfig[T](path))
+  }
+
+  final def decodeConfig[T: Tag: ConfigReader](path: String): AppConfig => T = {
+    config: AppConfig =>
+      unpackResult(config, path)(ConfigReader[T].apply(config.config.getValue(path)))
   }
 
   implicit final class FromConfig[T](private val dsl: MakeDSL[T]) {
-    def fromConfig(path: String)(implicit dec: ConfigReader[T], tag: Tag[T]): Unit = {
-      dsl.tagged(ConfTag(path)).from {
-        config: AppConfig =>
-          unpackResult(config, path)(ConfigReader[T].apply(config.config.getValue(path)))
-      }
+    def fromConfig(path: String)(implicit tag: Tag[T], dec: ConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
+      dsl.tagged(ConfTag(path)).from(decodeConfig[T](path))
     }
-    def fromConfigNamed(path: String)(implicit dec: ConfigReader[T], tag: Tag[T]): Unit = {
-      dsl.named(path).tagged(ConfTag(path)).from {
-        config: AppConfig =>
-          unpackResult(config, path)(ConfigReader[T].apply(config.config.getValue(path)))
-      }
+    def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: ConfigReader[T]): MakeDSLNamedAfterFrom[T] = {
+      dsl.named(path).tagged(ConfTag(path)).from(decodeConfig[T](path))
     }
   }
 

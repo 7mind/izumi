@@ -3,7 +3,7 @@ package distage
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
-import izumi.distage.{model, planning}
+import izumi.distage.{constructors, model, planning}
 import izumi.fundamentals.reflection.Tags
 
 trait Distage {
@@ -20,6 +20,10 @@ trait Distage {
   type Locator = model.Locator
   type LocatorRef = model.Locator.LocatorRef
 
+  type Id = model.definition.Id
+  type With[T] = model.definition.With[T]
+  type impl = model.definition.impl
+
   type Tag[T] = Tags.Tag[T]
   val Tag: Tags.Tag.type = Tags.Tag
 
@@ -31,16 +35,25 @@ trait Distage {
 
   type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
-  type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
-  val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
-
-  type GCMode = model.plan.GCMode
-  val GCMode: model.plan.GCMode.type = model.plan.GCMode
+  type Axis = model.definition.Axis
+  val Axis: model.definition.Axis.type = model.definition.Axis
 
   val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
-  type Axis = model.definition.Axis
-  val Axis: model.definition.Axis.type = model.definition.Axis
+  type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+
+  type ClassConstructor[T] = constructors.ClassConstructor[T]
+  val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor
+
+  type TraitConstructor[T] = constructors.TraitConstructor[T]
+  val TraitConstructor: constructors.TraitConstructor.type = constructors.TraitConstructor
+
+  type FactoryConstructor[T] = constructors.FactoryConstructor[T]
+  val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
+
+  type GCMode = model.plan.GCMode
+  val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   type BindingTag = model.definition.BindingTag
   val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -59,9 +72,6 @@ trait Distage {
   type SemiPlan = model.plan.SemiPlan
   val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  type Id = model.definition.Id
-  type With[T] = model.definition.With[T]
 
   type DIKey = RuntimeDIUniverse.DIKey
   val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey

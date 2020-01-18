@@ -362,7 +362,10 @@ class LightTypeTagTest extends AnyWordSpec {
     }
 
     "support TagK* family summoners" in {
-      assertSame(LTagK[List].tag, `LTT[_]`[List])
+      val tag = LTagK[List].tag
+      val tag1 = LTagKK[Either].tag
+      assertSame(tag, `LTT[_]`[List])
+      assertSame(tag1, `LTT[_,_]`[Either])
     }
 
     "support intersection type equality" in {

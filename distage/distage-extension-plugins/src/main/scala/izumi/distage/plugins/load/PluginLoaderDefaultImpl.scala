@@ -7,15 +7,21 @@ import izumi.fundamentals.platform.cache.SyncCache
 
 import scala.jdk.CollectionConverters._
 
-class PluginLoaderDefaultImpl
-(
-  pluginConfig: PluginConfig,
-) extends PluginLoader {
-  def load(): Seq[PluginBase] = {
-    val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled)
+class PluginLoaderDefaultImpl extends PluginLoader {
+  override def load(config: PluginConfig): Seq[PluginBase] = {
+    /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
+    val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
+      Seq.empty
+    } else {
+      scanClasspath(config)
+    }
 
-    val enabledPackages: Seq[String] = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
-    val disabledPackages: Seq[String] = config.packagesDisabled
+    applyOverrides(loadedPlugins, config)
+  }
+
+  protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
+    val enabledPackages = config.packagesEnabled.filterNot(p => config.packagesDisabled.contains(p) || p == "_root_")
+    val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
     val pluginDef = classOf[PluginDef]
@@ -25,24 +31,29 @@ class PluginLoaderDefaultImpl
       PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, config.debug)
     }
 
-    if (!pluginConfig.cachePackages) {
+    if (!config.cachePackages) {
       loadPkgs(enabledPackages)
     } else {
       val h1 = scala.util.hashing.MurmurHash3.seqHash(whitelistedClasses)
       val h2 = scala.util.hashing.MurmurHash3.seqHash(disabledPackages)
-      enabledPackages.flatMap{
-        p =>
-          val key = s"$p;$h1;$h2"
-          PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(p)))
+      enabledPackages.flatMap {
+        pkg =>
+          val key = s"$pkg;$h1;$h2"
+          PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(pkg)))
       }
     }
+  }
+
+  protected[this] def applyOverrides(loadedPlugins: Seq[PluginBase], config: PluginConfig): Seq[PluginBase] = {
+    val merged = loadedPlugins ++ config.merges
+    if (config.overrides.nonEmpty) {
+      Seq((merged.merge +: config.overrides).overrideLeft)
+    } else merged
   }
 }
 
 object PluginLoaderDefaultImpl {
   private lazy val cache = new SyncCache[String, Seq[PluginBase]]()
-
-
 
   def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = Value(new ClassGraph())
