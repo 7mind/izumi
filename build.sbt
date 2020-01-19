@@ -95,8 +95,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, NativePlatform).
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-collectionsJVM` = `fundamentals-collections`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -204,8 +203,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, NativePlatform).cro
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -300,8 +298,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, NativePlatform).c
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-functionalJVM` = `fundamentals-functional`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -399,8 +396,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, NativePlatform).crossTyp
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -501,8 +497,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, NativePlatform).c
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-reflectionJVM` = `fundamentals-reflection`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -608,8 +603,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = crossProject(JVMPlatform, 
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-thirdparty-boopickle-shadedJVM` = `fundamentals-thirdparty-boopickle-shaded`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -714,8 +708,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, NativePlatform).c
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `fundamentals-json-circeJVM` = `fundamentals-json-circe`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -821,8 +814,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, NativePlatform).crossTyp
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `distage-core-apiJVM` = `distage-core-api`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -912,7 +904,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1008,12 +1001,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, NativePlatform).crossType(Cr
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
-  )
-lazy val `distage-coreJVM` = `distage-core`.jvm
-  .dependsOn(
-    `distage-core-proxy-cglib` % "test->compile;compile->compile"
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 lazy val `distage-coreNative` = `distage-core`.native
@@ -1106,7 +1094,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1197,7 +1186,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1295,8 +1285,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, NativePlatform
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `distage-extension-logstageJVM` = `distage-extension-logstage`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -1385,7 +1374,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1482,7 +1472,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1577,7 +1568,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1671,7 +1663,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1765,7 +1758,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1861,7 +1855,8 @@ lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-leg
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -1957,6 +1952,27 @@ lazy val `logstage-core` = crossProject(JVMPlatform, NativePlatform).crossType(C
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
+  )
+  .disablePlugins(AssemblyPlugin)
+
+lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
+  .dependsOn(
+    `fundamentals-bio` % "test->compile;compile->compile",
+    `logstage-api` % "test->test;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test
     )
   )
   .nativeSettings(
@@ -1964,8 +1980,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, NativePlatform).crossType(C
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `logstage-coreJVM` = `logstage-core`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -2064,8 +2079,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, NativePlatform).
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `logstage-rendering-circeJVM` = `logstage-rendering-circe`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -2158,7 +2172,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2248,7 +2263,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2346,8 +2362,7 @@ lazy val `idealingua-v1-model` = crossProject(JVMPlatform, NativePlatform).cross
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `idealingua-v1-modelJVM` = `idealingua-v1-model`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -2447,8 +2462,7 @@ lazy val `idealingua-v1-core` = crossProject(JVMPlatform, NativePlatform).crossT
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `idealingua-v1-coreJVM` = `idealingua-v1-core`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -2552,8 +2566,7 @@ lazy val `idealingua-v1-runtime-rpc-scala` = crossProject(JVMPlatform, NativePla
     crossScalaVersions := Seq(
       "2.11.12"
     ),
-    coverageEnabled := false,
-    test := {}
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
 lazy val `idealingua-v1-runtime-rpc-scalaJVM` = `idealingua-v1-runtime-rpc-scala`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -2650,7 +2663,8 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2744,22 +2758,8 @@ lazy val `idealingua-v1-transpilers` = crossProject(JVMPlatform, NativePlatform)
       "2.12.10",
       "2.13.1"
     ),
-    fork in Test := true
-  )
-  .nativeSettings(
-    scalaVersion := crossScalaVersions.value.head,
-    crossScalaVersions := Seq(
-      "2.11.12"
-    ),
-    coverageEnabled := false,
-    test := {}
-  )
-lazy val `idealingua-v1-transpilersJVM` = `idealingua-v1-transpilers`.jvm
-  .dependsOn(
-    `idealingua-v1-test-defs` % "test->compile",
-    `idealingua-v1-runtime-rpc-typescript` % "test->compile",
-    `idealingua-v1-runtime-rpc-go` % "test->compile",
-    `idealingua-v1-runtime-rpc-csharp` % "test->compile"
+    fork in Test := true,
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 lazy val `idealingua-v1-transpilersNative` = `idealingua-v1-transpilers`.native
@@ -2847,7 +2847,8 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2931,7 +2932,8 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3015,7 +3017,8 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3099,7 +3102,8 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3205,7 +3209,8 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .enablePlugins(AssemblyPlugin)
 
@@ -3370,7 +3375,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    )
+    ),
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -3457,7 +3463,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     crossScalaVersions := Seq(
       "2.12.10"
     ),
-    coverageEnabled := false
+    coverageEnabled := false,
+    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml-${scalaVersion.value}"))
   )
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
 
@@ -3866,7 +3873,7 @@ lazy val `izumi` = (project in file("."))
     organization in ThisBuild := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
-    publishTo in ThisBuild := 
+    publishTo in ThisBuild :=
     (if (!isSnapshot.value) {
         sonatypePublishToBundle.value
       } else {

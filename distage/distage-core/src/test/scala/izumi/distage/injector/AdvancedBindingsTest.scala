@@ -2,12 +2,28 @@ package izumi.distage.injector
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.SetCase2
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.TODOBindingException
-import distage.ModuleDef
+import distage.{InjectorF, ModuleDef, PlannerInput}
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
+
+object Test {
+  def main(args: Array[String]): Unit = {
+    import izumi.distage.fixtures.SetCases.SetCase1._
+
+    val i = InjectorF.pure[Identity](PlannerInput.noGc(new ModuleDef {
+      make[TypedService[Int]].from[ServiceWithTypedSet]
+      many[ExampleTypedCaseClass[Int]]
+    }))
+    val p = InjectorF.flatMapX(i) {
+      locator =>
+        InjectorF.end(locator.get[TypedService[Int]])
+    }
+    println(InjectorF.run(p))
+  }
+}
 
 class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
 
