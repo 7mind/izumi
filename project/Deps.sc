@@ -222,7 +222,7 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-        "testOptions" in SettingScope.Test ++= s"""Seq(Tests.Argument("-u"), Tests.Argument(s"$${target.value}/junit-xml"))""".raw,
+        "testOptions" in (SettingScope.Test, Platform.Js) ++= s"""Seq(Tests.Argument("-u"), Tests.Argument(s"$${target.value}/junit-xml"))""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,

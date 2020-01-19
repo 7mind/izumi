@@ -23,7 +23,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -116,7 +115,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -197,7 +195,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -281,7 +278,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -368,7 +364,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -459,7 +454,6 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -551,7 +545,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -643,7 +636,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -728,7 +720,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -813,7 +804,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -902,7 +892,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -990,7 +979,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1077,7 +1065,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1161,7 +1148,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1255,7 +1241,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1347,7 +1332,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1438,7 +1422,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1529,7 +1512,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1622,7 +1604,6 @@ lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-leg
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1708,7 +1689,6 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1799,7 +1779,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1884,7 +1863,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -1972,7 +1950,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2059,7 +2036,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2145,7 +2121,6 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2231,7 +2206,6 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2321,7 +2295,6 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2413,7 +2386,6 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2505,7 +2477,6 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2590,7 +2561,6 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2671,7 +2641,6 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2752,7 +2721,6 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2833,7 +2801,6 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -2936,7 +2903,6 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -3099,7 +3065,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
@@ -3183,7 +3148,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
-    testOptions in Test ++= Seq(Tests.Argument("-u"), Tests.Argument(s"${target.value}/junit-xml")),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
