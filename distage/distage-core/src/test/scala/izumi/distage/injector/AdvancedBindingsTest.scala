@@ -13,11 +13,11 @@ object Test {
   def main(args: Array[String]): Unit = {
     import izumi.distage.fixtures.SetCases.SetCase1._
 
-    val i = InjectorF.pure[Identity](PlannerInput.noGc(new ModuleDef {
+    val i = InjectorF.module[Identity](PlannerInput.noGc(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
     }))
-    val p = InjectorF.flatMapX(i) {
+    val p = InjectorF.flatMap(i) {
       locator =>
         InjectorF.end(locator.get[TypedService[Int]])
     }
