@@ -719,7 +719,7 @@ First, the program we want to write:
 
 ```scala mdoc:reset:to-string
 import cats.Monad
-import cats.effect.{ExitCode, Sync, IO}
+import cats.effect.{Sync, IO}
 import cats.syntax.all._
 import distage.{GCMode, Module, ModuleDef, Injector, Tag, TagK, TagKK}
 
@@ -744,7 +744,7 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
   } yield ()
 }
 
-def ProgramModule[F[_]: TagK: Monad]: Module = new ModuleDef {
+def ProgramModule[F[_]: TagK: Monad] = new ModuleDef {
   make[TaglessProgram[F]]
   addImplicit[Monad[F]]
 }
@@ -851,45 +851,55 @@ consult @scaladoc[HKTag](izumi.fundamentals.reflection.WithTags#HKTag) docs for 
 
 ### Cats & ZIO Integration
 
-Cats & ZIO instances and syntax are available automatically without imports, if `cats-core`, `cats-effect` or `zio` are
-already dependencies of your project. (Note: distage *won't* bring `cats` or `zio` as a dependency if you don't already use them.
-See [No More Orphans](https://blog.7mind.io/no-more-orphans.html) for description of the technique)
+Cats & ZIO instances and syntax are available automatically in `distage-core`, without wildcard imports, if your project depends on `cats-core`, `cats-effect` or `zio`.
+But distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.
+([No More Orphans](https://blog.7mind.io/no-more-orphans.html) blog post details how that works)
 
-@ref[Cats Resource Bindings](basics.md#resource-bindings-lifecycle) will also work out of the box without any magic imports.
+@ref[Cats Resource & ZIO ZManaged Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
 
 Example:
 
-```scala mdoc:invisible:to-string
+```scala mdoc:reset:invisible:to-string
+import distage.Module
 class DBConnection
 object DBConnection {
   def create[F[_]]: F[DBConnection] = ???
 }
+def ProgramModule[F[_]]: Module = Module.empty
+def SyncInterpreters[F[_]]: Module = Module.empty
 ```
 
 ```scala mdoc:to-string
-import cats.effect.IOApp
-import distage.DIKey
+import cats.syntax.semigroup._
+import cats.effect.{ExitCode, IO, IOApp}
+import distage.{DIKey, GCMode, Injector}
 
 trait AppEntrypoint {
   def run: IO[Unit]
 }
 
-object Main extends IOApp {
+object Main extends App {
   def run(args: List[String]): IO[ExitCode] = {
-    // ModuleDef has a Monoid instance
+    
+    // `distage.Module` has a Monoid instance
+
     val myModules = ProgramModule[IO] |+| SyncInterpreters[IO]
+
     val plan = Injector().plan(myModules, GCMode(DIKey.get[AppEntrypoint]))
 
     for {
       // resolveImportsF can effectfully add missing instances to an existing plan
       // (You can also create instances effectfully inside `ModuleDef` via `make[_].fromEffect` bindings)
+
       newPlan <- plan.resolveImportsF[IO] {
         case i if i.target == DIKey.get[DBConnection] =>
            DBConnection.create[IO]
-      } 
+      }
+
       // `produceF` specifies an Effect to run in.
       // Effects used in Resource and Effect Bindings 
       // should match the effect in `produceF`
+
       _ <- Injector().produceF[IO](newPlan).use {
         classes =>
           classes.get[AppEntrypoint].run

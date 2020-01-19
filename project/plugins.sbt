@@ -1,7 +1,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.44")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.46")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % PV.sbt_assembly)
 

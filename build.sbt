@@ -3458,7 +3458,7 @@ lazy val `izumi` = (project in file("."))
       "-deprecation",
       "-language:higherKinds",
       "-Ybackend-parallelism",
-      math.max(1, sys.runtime.availableProcessors() - 1).toString,
+      math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
       "-explaintypes",
       "-Ycache-plugin-class-loader:always",
       "-Ycache-macro-class-loader:last-modified"
