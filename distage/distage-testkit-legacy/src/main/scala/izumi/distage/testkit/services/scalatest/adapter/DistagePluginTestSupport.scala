@@ -4,10 +4,8 @@ import distage.SafeType
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.{DistageTestEnv, TestEnvironment}
-import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
 
