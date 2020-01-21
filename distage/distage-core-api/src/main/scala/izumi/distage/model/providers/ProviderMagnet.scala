@@ -2,8 +2,9 @@ package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Association.Parameter
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
 
@@ -89,7 +90,8 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
-    implicit val rTag: Tag[A] = Tag(that.get.ret.cls, that.get.ret.tag); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
+    implicit val rTag: Tag[A] = getRetTag
+    rTag.discard() // used for assembling Tag[(A, B)] below
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
@@ -97,18 +99,26 @@ final case class ProviderMagnet[+A](get: Provider) {
     zip(that).map[C](f.tupled)
   }
 
-  /** Applicative's `ap` method - can be used to chain transformations similarly to `flatMap` */
+  /** Applicative's `ap` method - can be used to chain transformations like `flatMap` */
   def flatAp[B: Tag](that: ProviderMagnet[A => B]): ProviderMagnet[B] = {
-    implicit val rTag: Tag[A] = Tag(that.get.ret.cls, that.get.ret.tag); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
-    map2(that) { case (a, f) => f(a) }
+    implicit val rTag: Tag[A] = getRetTag
+    rTag.discard() // used for assembling Tag[A => B] below
+    map2[A => B, B](that) { case (a, f) => f(a) }
   }
 
-  /** Add `B` as an unused dependency for this constructor */
+  /** Apply a function produced by `this` Provider to the argument produced by `that` Provider */
+  def ap[B, C](that: ProviderMagnet[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): ProviderMagnet[C] = {
+    that.flatAp[C](this.asInstanceOf[ProviderMagnet[B => C]])
+  }
+
+  /** Add `B` as an unused dependency of this constructor */
   def addDependency[B: Tag]: ProviderMagnet[A] = addDependency(DIKey.get[B])
 
   def addDependency(key: DIKey): ProviderMagnet[A] = addDependencies(key :: Nil)
 
   def addDependencies(keys: Seq[DIKey]): ProviderMagnet[A] = copy[A](get = get.addUnused(keys))
+
+  @inline private[this] def getRetTag: Tag[A] = Tag(get.ret.cls, get.ret.tag)
 }
 
 object ProviderMagnet {
@@ -161,23 +171,42 @@ object ProviderMagnet {
     )
   }
 
+  def single[A: Tag, B: Tag](f: A => B): ProviderMagnet[B] = {
+    val key = DIKey.get[A]
+    val tpe = key.tpe
+    val retTpe = SafeType.get[B]
+    val symbolInfo = firstParamSymbolInfo(tpe)
+
+    new ProviderMagnet[B](
+      Provider.ProviderImpl(
+        parameters = Seq(Parameter(symbolInfo, key)),
+        ret = retTpe,
+        fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
+        isGenerated = false,
+      )
+    )
+  }
+
   def identityKey(key: DIKey): ProviderMagnet[_] = {
     val tpe = key.tpe
-    val symbolInfo = SymbolInfo(
-      name = "x$1",
-      finalResultType = tpe,
-      isByName = false,
-      wasGeneric = false
-    )
+    val symbolInfo = firstParamSymbolInfo(tpe)
 
     new ProviderMagnet(
       Provider.ProviderImpl(
-        parameters = Seq(Association.Parameter(symbolInfo, key)),
-        ret = key.tpe,
+        parameters = Seq(Parameter(symbolInfo, key)),
+        ret = tpe,
         fun = (_: Seq[Any]).head,
         isGenerated = false,
       )
     )
   }
 
+  @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
+    SymbolInfo(
+      name = "x$1",
+      finalResultType = tpe,
+      isByName = false,
+      wasGeneric = false
+    )
+  }
 }

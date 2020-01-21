@@ -7,7 +7,7 @@ sealed trait ImplDef {
   def implType: SafeType
 
   override final def toString: String = BindingFormatter(KeyFormatter.Full).formatImplDef(this)
-  override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
 }
 
 object ImplDef {
