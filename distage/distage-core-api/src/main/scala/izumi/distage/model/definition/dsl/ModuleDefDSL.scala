@@ -621,7 +621,12 @@ object ModuleDefDSL {
     *
     * Please update this when adding new methods to [[MakeDSL]]!
     */
-  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliased")
+  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set(
+    "named",
+    "namedByImpl",
+    "tagged",
+    "aliased",
+  )
 
   final class MakeDSL[T](
     override protected val mutableState: SingletonRef,
@@ -644,6 +649,37 @@ object ModuleDefDSL {
 
     protected[this] override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    }
+
+  }
+
+  final class MakeDSLUnnamedAfterFrom[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.TypeKey,
+  ) extends MakeDSLMutBase[T] {
+
+    def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
+      addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
+    }
+
+    def namedByImpl: MakeDSLNamedAfterFrom[T] = {
+      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key.named(key.toString)))
+    }
+
+    def tagged(tags: BindingTag*): MakeDSLUnnamedAfterFrom[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeDSLUnnamedAfterFrom[T](_, key)
+      }
+    }
+
+    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
+      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
+      addOp(Modify[T, I](SafeType.get[I], ProviderMagnet.single(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    }
+
+    def modify[I <: T: Tag](f: ProviderMagnet[T => I]): MakeDSLUnnamedAfterFrom[T] = {
+      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
+      addOp(Modify[T, I](SafeType.get[I], f.ap(ProviderMagnet.identity[T])))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
   }
@@ -676,25 +712,14 @@ object ModuleDefDSL {
       }
     }
 
-  }
-
-  final class MakeDSLUnnamedAfterFrom[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLMutBase[T] {
-
-    def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
-      addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
+    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
+      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
+      addOp(Modify[T, I](SafeType.get[I], ProviderMagnet.single(f)))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
-    def namedByImpl: MakeDSLNamedAfterFrom[T] = {
-      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key.named(key.toString)))
-    }
-
-    def tagged(tags: BindingTag*): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeDSLUnnamedAfterFrom[T](_, key)
-      }
+    def modify[I <: T: Tag](f: ProviderMagnet[T => I]): MakeDSLNamedAfterFrom[T] = {
+      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
+      addOp(Modify[T, I](SafeType.get[I], f.ap(ProviderMagnet.identity[T])))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
   }
