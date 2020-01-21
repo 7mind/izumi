@@ -188,7 +188,7 @@ class DistageTestRunner[F[_]: TagK]
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
-                  debugLogger.log(s"Running, test Id=$id")
+                  debugLogger.log(s"Running `test Id`=${test.meta.id}")
 
                   checker.verify(newtestplan.primary)
                   checker.verify(newtestplan.side)
