@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.44`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.46`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -52,7 +52,7 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    sbtVersion = "1.3.6",
+    sbtVersion = "1.3.7",
     scalaJsVersion = PV.scala_js_version,
     crossProjectVersion = PV.crossproject_version,
     bundlerVersion = PV.scalajs_bundler_version,
@@ -222,6 +222,7 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+        //"testOptions" in (SettingScope.Test, Platform.Jvm) ++= s"""Seq(Tests.Argument("-u"), Tests.Argument(s"$${target.value}/junit-xml-$${scalaVersion.value}"))""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,

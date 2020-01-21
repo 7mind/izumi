@@ -66,7 +66,7 @@ function publishIDL {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" =~ ^series/.*$ || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
   #copypaste
@@ -90,13 +90,13 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" =~ ^series/.*$ || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  if [[ "$CI_BRANCH" == "develop" ]] ; then
+  if [[ "$CI_BRANCH" == "develop" || "$CI_BRANCH" =~ ^series/.*$ ]] ; then
     csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
   else
     csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" sonatypeBundleRelease || exit 1
@@ -106,7 +106,7 @@ function publishScala {
 function init {
     echo "=== INIT ==="
     export LC_ALL="C.UTF-8"
-    
+
     if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
         export CI_PULL_REQUEST=false
     else

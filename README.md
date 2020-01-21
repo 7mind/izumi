@@ -53,6 +53,7 @@ Example projects:
 Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
+* [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
 * [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
 
 Slides:
