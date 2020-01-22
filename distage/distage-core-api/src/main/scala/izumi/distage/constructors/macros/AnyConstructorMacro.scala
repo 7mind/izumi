@@ -91,7 +91,7 @@ object AnyConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("AnyConstructor", targetType)
 
     if (reflectionProvider.isConcrete(targetType)) {

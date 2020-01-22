@@ -187,6 +187,17 @@ object ProviderMagnet {
     )
   }
 
+  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        parameters = Seq.empty,
+        ret = SafeType.get[A],
+        fun = (_: Seq[Any]) => a,
+        isGenerated = true,
+      )
+    )
+  }
+
   def identityKey(key: DIKey): ProviderMagnet[_] = {
     val tpe = key.tpe
     val symbolInfo = firstParamSymbolInfo(tpe)

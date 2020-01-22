@@ -16,7 +16,7 @@ object ClassConstructorMacro {
   def mkClassConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ClassConstructor[T]] = {
     import c.universe._
 
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("ClassConstructor", targetType)
 
     targetType match {
@@ -28,7 +28,7 @@ object ClassConstructorMacro {
           case _ => q"${t.termSymbol}"
         }
         c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.pure[$targetType]($term)) }"
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.singleton[$targetType]($term)) }"
         }
 
       case _ =>
