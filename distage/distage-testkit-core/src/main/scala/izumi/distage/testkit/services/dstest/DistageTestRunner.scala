@@ -15,15 +15,16 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.DebugProperties
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
+import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.CodePosition
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.Tags.TagK
 
-import scala.concurrent.duration.FiniteDuration
-import izumi.fundamentals.platform.strings.IzString._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class DistageTestRunner[F[_]: TagK]
 (
@@ -32,7 +33,8 @@ class DistageTestRunner[F[_]: TagK]
   runnerEnvironment: SpecEnvironment,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
-  parallelTests: Boolean
+  parallelTests: Boolean,
+  parallelEnvs: Boolean,
 ) {
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
@@ -50,15 +52,14 @@ class DistageTestRunner[F[_]: TagK]
          |test environments=${groups.keys.niceList()}
          |tests=${groups.values.map(_.map(_.meta.id).niceList()).zipWithIndex.map(_.swap).niceList()}""".stripMargin)
 
-    groups.foreach {
-      case (env, tests) =>
-
+    try configuredForeach(groups) {
+      case (env, tests) => try {
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
         val appModule = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
-        val injector = Injector.Standard(bsModule)
+        val injector = Injector(bsModule)
 
         // first we need to plan runtime for our monad. Identity is also supported
         val runtimeGcRoots: Set[DIKey] = Set(
@@ -115,13 +116,14 @@ class DistageTestRunner[F[_]: TagK]
             implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
             implicit val P: DIEffectAsync[F] = runtimeLocator.get[DIEffectAsync[F]]
 
-            try {
-              runner.run {
-                // now we produce integration components for our shared plan
-                checker.verify(shared.side)
+            runner.run {
+              // now we produce integration components for our shared plan
+              checker.verify(shared.shared)
 
+              F.definitelyRecoverCause {
                 Injector.inherit(runtimeLocator).produceF[F](shared.shared).use {
                   sharedLocator =>
+                    checker.verify(shared.side)
 
                     Injector.inherit(sharedLocator).produceF[F](shared.side).use {
                       sharedIntegrationLocator =>
@@ -130,19 +132,26 @@ class DistageTestRunner[F[_]: TagK]
                         }
                     }
                 }
+              } {
+                case (ProvisioningIntegrationException(integrations), _) =>
+                  // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+                  F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
+                case (_, cause) =>
+                  // fail all tests (if an exception reached here, it must have happened before the individual test runs)
+                  F.maybeSuspend(failAllTests(tests, cause))
               }
-            } catch {
-              case p: ProvisioningException =>
-                val integrations = p.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq
-                if (integrations.nonEmpty) {
-                  ignoreIntegrationCheckFailedTests(tests, integrations.flatten)
-                } else throw p
             }
         }
-    }
+      } catch {
+        case t: Throwable =>
+          // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
+          failAllTests(tests, t)
+          reporter.onFailure(t)
+      }
+    } finally reporter.endAll()
   }
 
-  private def ifIntegChecksOk(integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
+  protected def ifIntegChecksOk(integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
     integrationChecker.collectFailures(plans.side.declaredRoots, integLocator).flatMap {
       case Left(failures) =>
         F.maybeSuspend(ignoreIntegrationCheckFailedTests(testplans, failures))
@@ -152,36 +161,46 @@ class DistageTestRunner[F[_]: TagK]
     }
   }
 
-  private def ignoreIntegrationCheckFailedTests(tests: Seq[DistageTest[F]], failures: Seq[ResourceCheck.Failure]): Unit = {
+  protected def ignoreIntegrationCheckFailedTests(tests: Seq[DistageTest[F]], failures: Seq[ResourceCheck.Failure]): Unit = {
     tests.foreach {
       test =>
         reporter.testStatus(test.meta, TestStatus.Ignored(failures))
     }
   }
 
-  private def proceed(appmodule: ModuleBase,
-                      checker: PlanCircularDependencyCheck,
-                      testplans: Seq[(DistageTest[F], OrderedPlan)],
-                      shared: TriSplittedPlan,
-                      parent: Locator,
-                     )(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+  protected def failAllTests(tests: Seq[DistageTest[F]], cause: Throwable): Unit = {
+    tests.foreach {
+      test =>
+        reporter.testStatus(test.meta, TestStatus.Failed(cause, Duration.Zero))
+    }
+  }
+
+  protected def proceed(appmodule: ModuleBase,
+                        checker: PlanCircularDependencyCheck,
+                        testplans: Seq[(DistageTest[F], OrderedPlan)],
+                        shared: TriSplittedPlan,
+                        parent: Locator,
+                       )(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
+
     Injector.inherit(parent).produceF[F](shared.primary).use {
       mainSharedLocator =>
         val testInjector = Injector.inherit(mainSharedLocator)
 
+        val testsBySuite = testplans.groupBy {
+          t =>
+            val testId = t._1.meta.id
+            SuiteData(testId.suiteName, testId.suiteId, testId.suiteClassName)
+        }
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        val tests = configuredTraverse_(testplans.groupBy {
-          t =>
-            val id = t._1.meta.id
-            SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
-        }) {
-          case (id, plans) =>
-            for {
-              _ <- F.maybeSuspend(reporter.beginSuite(id))
-              _ <- configuredTraverse_(plans) {
+        configuredTraverse_(testsBySuite) {
+          case (suiteData, plans) =>
+            F.bracket(
+              acquire = F.maybeSuspend(reporter.beginSuite(suiteData))
+            )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) { _ =>
+              configuredTraverse_(plans) {
                 case (test, testplan) =>
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
@@ -205,58 +224,47 @@ class DistageTestRunner[F[_]: TagK]
                       }
                   }
               }
-              _ <- F.maybeSuspend(reporter.endSuite(id))
-            } yield ()
+            }
         }
-
-        F.definitelyRecover(tests.flatMap(_ => F.maybeSuspend(reporter.endAll()))) {
-          f =>
-            F.maybeSuspend(reporter.onFailure(f)).flatMap(_ => F.fail(f))
-        }
-
     }
   }
 
-  private def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
-    Injector.inherit(parent)
-      .produceF[F](newtestplan.primary).use {
-      testLocator =>
-        def doRun(before: Long): F[Unit] = {
-          for {
-            _ <- F.definitelyRecover(testLocator.run(test.test).flatMap {
-              _ =>
-                F.maybeSuspend {
-                  val after = System.nanoTime()
-                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-                  reporter.testStatus(test.meta, TestStatus.Succeed(testDuration))
-                }
-            }) {
-              case s if isTestSkipException(s) =>
-                F.maybeSuspend {
-                  val after = System.nanoTime()
-                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-                  reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration))
-                }
-              case o =>
-                F.fail(o)
-            }
-          } yield ()
-        }
+  protected def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
+    def testDuration(before: Option[Long]): FiniteDuration = {
+      before.fold(Duration.Zero) {
+        before =>
+          val after = System.nanoTime()
+          FiniteDuration(after - before, TimeUnit.NANOSECONDS)
+      }
+    }
 
-        def doRecover(before: Long): Throwable => F[Unit] = {
-          // TODO: here we may also ignore individual tests
-          throwable =>
-            F.maybeSuspend {
-              val after = System.nanoTime()
-              reporter.testStatus(test.meta, TestStatus.Failed(throwable, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
-            }
-        }
+    def doRecover(before: Option[Long])(action: => F[Unit]): F[Unit] = {
+      F.definitelyRecoverCause(action) {
+        case (s, _) if isTestSkipException(s) =>
+          F.maybeSuspend {
+            reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
+          }
+        case (_, cause) =>
+          F.maybeSuspend {
+            reporter.testStatus(test.meta, TestStatus.Failed(cause, testDuration(before)))
+          }
+      }
+    }
 
-        for {
-          before <- F.maybeSuspend(System.nanoTime())
-          _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
-          _ <- F.definitelyRecoverCause(doRun(before))(doRecover(before))
-        } yield ()
+    doRecover(None) {
+      Injector.inherit(parent).produceF[F](newtestplan.primary).use {
+        testLocator =>
+          F.suspendF {
+            val before = System.nanoTime()
+            reporter.testStatus(test.meta, TestStatus.Running)
+
+            doRecover(Some(before)) {
+              testLocator
+                .run(test.test)
+                .flatMap(_ => F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(testDuration(Some(before))))))
+            }
+          }
+        }
     }
   }
 
@@ -265,6 +273,17 @@ class DistageTestRunner[F[_]: TagK]
       P.parTraverse_(l)(f)
     } else {
       F.traverse_(l)(f)
+    }
+  }
+
+  protected def configuredForeach[A](environments: Iterable[A])(f: A => Unit): Unit = {
+    if (parallelEnvs && environments.size > 1) {
+      val ec = ExecutionContext.fromExecutorService(null)
+      try {
+        DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
+      } finally ec.shutdown()
+    } else {
+      environments.foreach(f)
     }
   }
 
@@ -283,12 +302,10 @@ object DistageTestRunner {
 
   sealed trait TestStatus
   object TestStatus {
-    //    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
-
     sealed trait Finished extends Done
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
     final case class Succeed(duration: FiniteDuration) extends Finished
@@ -301,6 +318,14 @@ object DistageTestRunner {
     def beginSuite(id: SuiteData): Unit
     def endSuite(id: SuiteData): Unit
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
+  }
+
+  object ProvisioningIntegrationException {
+    def unapply(arg: ProvisioningException): Option[Seq[ResourceCheck.Failure]] = {
+      Some(arg.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq)
+        .filter(_.nonEmpty)
+        .map(_.flatten)
+    }
   }
 
 }

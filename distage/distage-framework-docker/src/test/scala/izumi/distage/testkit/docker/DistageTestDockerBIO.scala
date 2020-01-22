@@ -1,7 +1,6 @@
 package izumi.distage.testkit.docker
 
 import distage.DIKey
-import izumi.distage.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.fixtures.PgSvcExample
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
@@ -32,8 +31,9 @@ final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
   override protected def config: TestConfig = {
     super.config.copy(
       memoizationRoots = Set(
-        DIKey.get[DynamoDocker.Container],
-        DIKey.get[PostgresDocker.Container],
+        DIKey.get[PgSvcExample],
+//        DIKey.get[DynamoDocker.Container],
+//        DIKey.get[PostgresDocker.Container],
       ))
   }
 }

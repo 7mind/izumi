@@ -195,7 +195,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
         val runner = {
           val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
           val checker = new IntegrationChecker.Impl(logger)
-          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
+          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways, parallelEnvs)
         }
         runner.run()
       }
@@ -205,6 +205,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   }
 
   protected def parallelTestsAlways: Boolean = true
+  protected def parallelEnvs: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
     val scalatestReporter = new ScalatestReporter(args.reporter)

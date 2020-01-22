@@ -167,8 +167,8 @@ object ResourceCases {
           case Right(value) => Right(value)
         })
       }
-      override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
-        definitelyRecover(action)(recoverCause)
+      override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
+        definitelyRecover(action)(e => recoverCause(e, e))
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =

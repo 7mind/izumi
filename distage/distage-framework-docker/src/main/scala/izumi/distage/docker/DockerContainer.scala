@@ -123,7 +123,7 @@ object DockerContainer {
         for {
           containers <- DIEffect[F]
             .maybeSuspend {
-              // FIXME: temporary hack to allow missing containers to skip tests
+              // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
               try {
                 client.listContainersCmd()
                   .withAncestorFilter(List(config.image).asJava)

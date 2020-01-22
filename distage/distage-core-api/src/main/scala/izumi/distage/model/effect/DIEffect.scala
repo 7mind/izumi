@@ -24,11 +24,11 @@ trait DIEffect[F[_]] {
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
   def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A]
 
-  /** `definitelyRecover`, but the Throwable is not guaranteed to be
-    * the original Throwable, it can be a Throwable enhanced with a
-    * Monad's own debugging information (e.g. in case of `ZIO` it's always `FiberFailure`)
+  /** `definitelyRecover`, but second Throwable is not the original Throwable,
+    * it can be a Throwable enhanced with an effect's own debugging information
+    * (e.g. in case of `ZIO` it's always `FiberFailure`)
     */
-  def definitelyRecoverCause[A](action: => F[A])(recoverCause: Throwable => F[A]): F[A]
+  def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, Throwable) => F[A]): F[A]
 
   def fail[A](t: => Throwable): F[A]
 
@@ -74,8 +74,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
         case t: Throwable => recover(t)
       }
     }
-    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: Throwable => Identity[A]): Identity[A] = {
-      definitelyRecover(action)(recoverCause)
+    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, Throwable) => Identity[A]): Identity[A] = {
+      definitelyRecover(action)(e => recoverCause(e, e))
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -106,8 +106,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
       override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
         suspendF(action).sandbox.catchAll(recover apply _.toThrowable)
       }
-      override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: Throwable => F[Throwable, A]): F[Throwable, A] = {
-        suspendF(action).sandbox.catchAll(recover apply _.trace.toThrowable)
+      override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: (Throwable, Throwable) => F[Throwable, A]): F[Throwable, A] = {
+        suspendF(action).sandbox.catchAll(e => recover(e.toThrowable, e.trace.toThrowable))
       }
 
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
@@ -146,8 +146,8 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.suspend(action))(recover)
       }
-      override def definitelyRecoverCause[A](action: => F[A])(recoverCause: Throwable => F[A]): F[A] = {
-        definitelyRecover(action)(recoverCause)
+      override def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, Throwable) => F[A]): F[A] = {
+        definitelyRecover(action)(e => recoverCause(e, e))
       }
       override def fail[A](t: => Throwable): F[A] = F.suspend(F.raiseError(t))
       override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {

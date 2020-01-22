@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.{SafeType, TagK}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
+import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.{StatefulStatus, Tracker}
 
@@ -14,7 +15,7 @@ object DistageTestsRegistrySingleton {
   protected[this] type Fake[T]
   private[this] object Fake
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
-  private[this] val statuses = new mutable.HashMap[SafeType, mutable.HashMap[String, StatefulStatus]]()
+  private[this] val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]()
   private[this] val trackers = new mutable.HashMap[String, Either[mutable.ArrayBuffer[Tracker => Unit], Tracker]]()
   private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
   private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
@@ -31,7 +32,9 @@ object DistageTestsRegistrySingleton {
 
   def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
     if (registrationOpen.get()) {
-      registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
+      registry
+        .getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty)
+        .append(castTest(t))
     }
   }
 
@@ -45,24 +48,33 @@ object DistageTestsRegistrySingleton {
   }
 
   def registeredTests[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
+    val arr = registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty)
+    castArray(arr).toSeq
   }
 
   def registerStatus[F[_]: TagK](suiteId: String): StatefulStatus = synchronized {
     statuses
-      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
-      .getOrElseUpdate(suiteId, new StatefulStatus)
+      .getOrElseUpdate(SafeType.getK[F], Some(mutable.HashMap.empty))
+      .fold {
+        // return completed test if the runner has already ran before this test got registered
+        Value(new StatefulStatus).eff(_.setCompleted()).get
+      } {
+        _.getOrElseUpdate(suiteId, new StatefulStatus)
+      }
   }
 
   def completeStatuses[F[_]: TagK](): Unit = synchronized {
-    statuses
-      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
-      .valuesIterator.foreach {
-        status =>
-          if (!status.isCompleted) {
-            status.setCompleted()
-          }
+    statuses.get(SafeType.getK[F])
+      .flatten
+      .foreach {
+        _.valuesIterator.foreach {
+          status =>
+            if (!status.isCompleted) {
+              status.setCompleted()
+            }
+        }
       }
+    statuses.put(SafeType.getK[F], None).discard()
   }
 
   def runReport(suiteId: String)(f: Tracker => Unit): Unit = synchronized {
@@ -82,4 +94,7 @@ object DistageTestsRegistrySingleton {
       case Right(_) =>
     }
   }
+
+  @inline private[this] def castTest[F[_]](t: DistageTest[F]): DistageTest[Fake] = t.asInstanceOf[DistageTest[Fake]]
+  @inline private[this] def castArray[C[_], F[_]](a: C[DistageTest[Fake]]): C[DistageTest[F]] = a.asInstanceOf[C[DistageTest[F]]]
 }
