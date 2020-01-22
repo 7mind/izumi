@@ -20,7 +20,7 @@ object V {
   val circe_config = "0.7.0"
   val jawn = "0.14.3"
 
-  val http4s = "0.21.0-M6"
+  val http4s = "0.21.0-RC1"
 
   val scalameta = "4.3.0"
   val fastparse = "2.2.3"
