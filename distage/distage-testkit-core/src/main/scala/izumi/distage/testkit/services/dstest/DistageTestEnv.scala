@@ -32,7 +32,7 @@ trait DistageTestEnv {
     }
   }
 
-  private def makeEnv(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
+  protected[distage] def makeEnv(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
@@ -72,8 +72,7 @@ trait DistageTestEnv {
 }
 
 object DistageTestEnv {
-  private lazy val cache = new SyncCache[EnvCacheKey, TestEnvironment]
+  private[distage] lazy val cache = new SyncCache[EnvCacheKey, TestEnvironment]
 
-  case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
-
+  final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
 }

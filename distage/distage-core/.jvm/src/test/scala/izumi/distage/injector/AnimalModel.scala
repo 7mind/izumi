@@ -24,9 +24,9 @@ class AnimalModel extends AnyWordSpec with MkInjector {
       val debug = false
 
       val injector = if (debug) {
-        Injector.Standard(GraphDumpBootstrapModule())
+        Injector(GraphDumpBootstrapModule())
       } else {
-        Injector.Standard()
+        Injector()
       }
 
       val plan = injector.plan(definition)

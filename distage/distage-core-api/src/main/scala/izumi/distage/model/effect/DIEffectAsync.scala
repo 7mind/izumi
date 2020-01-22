@@ -20,6 +20,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
+      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService(null)
+
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
         parTraverse(l)(f)
         ()
@@ -29,9 +31,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
       }
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        implicit val ec = ExecutionContext.global
-        val future = Future.sequence(l.map(a => Future(f(a))))
-        Await.result(future, Duration.Inf).toList
+        parTraverseIdentity(DIEffectAsyncIdentityPool)(l)(f)
       }
     }
   }
@@ -48,6 +48,12 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
         F.parTraverse(l)(f)
       }
     }
+  }
+
+  private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
+    implicit val ec = ec0
+    val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
+    Await.result(future, Duration.Inf).toList
   }
 
 }

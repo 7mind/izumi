@@ -33,7 +33,7 @@ class LoggerInjectionTest extends AnyWordSpec {
 
       val loggerModule = new LogstageModule(router, false)
 
-      val injector = Injector.Standard(loggerModule)
+      val injector = Injector(loggerModule)
       val plan = injector.plan(definition)
       val context = injector.produceUnsafe(plan)
       assert(context.get[ExampleApp].test == 265)

@@ -8,9 +8,18 @@ import izumi.distage.plugins.PluginDef
 import izumi.distage.docker.Docker.AvailablePort
 import izumi.distage.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.docker.modules.DockerContainerModule
+import izumi.distage.framework.model.IntegrationCheck
+import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import zio.Task
 
-class PgSvcExample(val pg: AvailablePort @Id("pg"), val ddb: AvailablePort @Id("ddb"))
+class PgSvcExample(
+                    val pg: AvailablePort @Id("pg"),
+                    val ddb: AvailablePort @Id("ddb"),
+                  ) extends IntegrationCheck {
+  override def resourcesAvailable(): ResourceCheck = {
+    new PortCheck(10).checkPort(pg.hostV4, pg.port)
+  }
+}
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
