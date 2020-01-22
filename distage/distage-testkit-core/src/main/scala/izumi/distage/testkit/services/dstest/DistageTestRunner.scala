@@ -51,7 +51,7 @@ class DistageTestRunner[F[_]: TagK]
       val printedEnvs = groups.toList.map {
         case (t, tests) =>
           final case class TestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
-          TestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().indent(2))
+          TestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().shift(2))
       }.niceList()
       s"Env contents: $printedEnvs"
     }
