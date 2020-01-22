@@ -4,74 +4,77 @@ import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit, TimeoutException}
 
+import fs2.concurrent.Queue
+import io.circe.Json
+import io.circe.syntax._
+import izumi.functional.bio.BIOApplicative
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.time.IzTime
 import izumi.fundamentals.platform.uuid.UUIDGen
 import izumi.idealingua.runtime.rpc._
-import fs2.concurrent.Queue
-import io.circe.Json
-import io.circe.syntax._
 import logstage.IzLogger
 import org.http4s.AuthedRequest
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Ping, Text}
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
-trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {
-  def requestState: RequestState[B]
+trait WebsocketClientContext[F[+_, +_], ClientId, Ctx] {
+  def requestState: RequestState[F]
 
   def id: WsClientId[ClientId]
 
-  def enqueue(method: IRTMethodId, data: Json): RpcPacketId
+  def enqueue(method: IRTMethodId, data: Json): F[Throwable, RpcPacketId]
 
-  def finish(): Unit
+  def finish(): F[Throwable, Unit]
 }
 
-trait WsSessionsStorage[B[+ _, + _], ClientId, Ctx] {
-  def addClient(id: WsSessionId, ctx: WebsocketClientContext[B, ClientId, Ctx]): WebsocketClientContext[B, ClientId, Ctx]
+trait WsSessionsStorage[F[+_, +_], ClientId, Ctx] {
+  def addClient(id: WsSessionId, ctx: WebsocketClientContext[F, ClientId, Ctx]): F[Throwable, WebsocketClientContext[F, ClientId, Ctx]]
 
-  def deleteClient(id: WsSessionId): WebsocketClientContext[B, ClientId, Ctx]
+  def deleteClient(id: WsSessionId): F[Throwable, WebsocketClientContext[F, ClientId, Ctx]]
 
-  def allClients(): Seq[WebsocketClientContext[B, ClientId, Ctx]]
+  def allClients(): F[Throwable, Seq[WebsocketClientContext[F, ClientId, Ctx]]]
 
-  def buzzersFor(clientId: ClientId): Option[IRTDispatcher[B]]
+  def buzzersFor(clientId: ClientId): F[Throwable, Option[IRTDispatcher[F]]]
 }
 
-trait WsSessionListener[ClientId] {
-  def onSessionOpened(context: WsClientId[ClientId]): Unit
+trait WsSessionListener[F[+_, +_], ClientId] {
+  def onSessionOpened(context: WsClientId[ClientId]): F[Throwable, Unit]
 
-  def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): Unit
+  def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): F[Throwable, Unit]
 
-  def onSessionClosed(context: WsClientId[ClientId]): Unit
+  def onSessionClosed(context: WsClientId[ClientId]): F[Throwable, Unit]
 }
 
 object WsSessionListener {
-  def empty[ClientId]: WsSessionListener[ClientId] = new WsSessionListener[ClientId] {
-    override def onSessionOpened(context: WsClientId[ClientId]): Unit = {}
-
-    override def onSessionClosed(context: WsClientId[ClientId]): Unit = {}
-
-    override def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): Unit = {}
+  def empty[F[+_, +_]: BIOApplicative, ClientId]: WsSessionListener[F, ClientId] = new WsSessionListener[F, ClientId] {
+    import izumi.functional.bio.F
+    override def onSessionOpened(context: WsClientId[ClientId]): F[Throwable, Unit] = F.unit
+    override def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): F[Throwable, Unit] = F.unit
+    override def onSessionClosed(context: WsClientId[ClientId]): F[Throwable, Unit] = F.unit
   }
 }
 
+trait WsContextProvider[F[+_, +_], Ctx, ClientId] {
+  def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): F[Throwable, Ctx]
 
-trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
-  def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): B[Throwable, Ctx]
-
-  def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): B[Throwable, Option[ClientId]]
+  def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): F[Throwable, Option[ClientId]]
 
   // TODO: we use this to mangle with authorization but it's dirty
-  def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): B[Throwable, (Option[ClientId], B[Throwable, Option[RpcPacket]])]
+  def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): F[Throwable, (Option[ClientId], F[Throwable, Option[RpcPacket]])]
 }
 
 class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextProvider[C#BiIO, C#RequestContext, C#ClientId] {
 
   import c._
 
-  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, (Option[ClientId], C#BiIO[Throwable, Option[RpcPacket]])] = {
+  override def handleEmptyBodyPacket(
+    id: WsClientId[ClientId],
+    initial: C#RequestContext,
+    packet: RpcPacket
+  ): C#BiIO[Throwable, (Option[ClientId], C#BiIO[Throwable, Option[RpcPacket]])] = {
     Quirks.discard(id, initial, packet)
     F.pure((None, F.pure(None)))
   }
@@ -81,17 +84,16 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
     F.pure(initial)
   }
 
-  override def toId(initial:  C#RequestContext, currentId:  WsClientId[C#ClientId], packet:  RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
+  override def toId(initial: C#RequestContext, currentId: WsClientId[C#ClientId], packet: RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
     Quirks.discard(initial, packet)
     F.pure(None)
   }
 }
 
-class WsSessionsStorageImpl[C <: Http4sContext]
-(
-  val c: C#IMPL[C]
-  , logger: IzLogger
-  , codec: IRTClientMultiplexor[C#BiIO]
+class WsSessionsStorageImpl[C <: Http4sContext](
+  val c: C#IMPL[C],
+  logger: IzLogger,
+  codec: IRTClientMultiplexor[C#BiIO]
 ) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
@@ -103,70 +105,70 @@ class WsSessionsStorageImpl[C <: Http4sContext]
   protected val timeout: FiniteDuration = 20.seconds
   protected val pollingInterval: FiniteDuration = 50.millis
 
-  def addClient(id: WsSessionId, ctx: WSC): WSC = {
+  override def addClient(
+    id: WsSessionId,
+    ctx: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]
+  ): C#BiIO[Throwable, WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]] = F.sync {
     logger.debug(s"Adding a client with session - $id")
     clients.put(id, ctx)
   }
 
-  def deleteClient(id: WsSessionId): WSC = {
+  override def deleteClient(id: WsSessionId): C#BiIO[Throwable, WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]] = F.sync {
     logger.debug(s"Deleting a client with session - $id")
     clients.remove(id)
   }
 
-  def allClients(): Seq[WSC] = {
+  override def allClients(): C#BiIO[Throwable, Seq[WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]]] = F.sync {
     clients.values().asScala.toSeq
   }
 
-  def buzzersFor(clientId: ClientId): Option[IRTDispatcher[BiIO]] = {
-    val buzzerClient = allClients()
-      .find(_.id.id.contains(clientId))
+  override def buzzersFor(clientId: ClientId): C#BiIO[Throwable, Option[IRTDispatcher[BiIO]]] = {
+    allClients().map(_.find(_.id.id.contains(clientId))).map {
+      buzzerClient =>
+        logger.debug(s"Asked for buzzer for $clientId. Found: $buzzerClient")
+        buzzerClient.map {
+          session =>
+            new IRTDispatcher[BiIO] {
+              override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
+                for {
+                  json <- codec.encode(request)
+                  id <- session.enqueue(request.method, json)
+                  resp <- F.bracket(F.pure(id)) {
+                    id =>
+                      logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                      F.sync(session.requestState.forget(id))
+                  } {
+                    id =>
+                      session.requestState.poll(id, pollingInterval, timeout).flatMap {
+                        case Some(value: RawResponse.GoodRawResponse) =>
+                          logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                          codec.decode(value.data, value.method)
 
-    logger.debug(s"Asked for buzzer for $clientId. Found: $buzzerClient")
+                        case Some(value: RawResponse.BadRawResponse) =>
+                          logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
+                          F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
-    buzzerClient
-      .map {
-        session =>
-          new IRTDispatcher[BiIO] {
-            override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
-              for {
-                json <- codec.encode(request)
-                id <- F.sync(session.enqueue(request.method, json))
-                resp <- F.bracket(F.pure(id)) {
-                  id =>
-                    logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                    F.sync(session.requestState.forget(id))
-                } {
-                  id =>
-                    session.requestState.poll(id, pollingInterval, timeout).flatMap {
-                      case Some(value: RawResponse.GoodRawResponse) =>
-                        logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                        codec.decode(value.data, value.method)
-
-                      case Some(value: RawResponse.BadRawResponse) =>
-                        logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
-                        F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
-
-                      case None =>
-                        F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                    }
+                        case None =>
+                          F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                      }
+                  }
+                } yield {
+                  resp
                 }
-              } yield {
-                resp
               }
             }
-          }
-      }
+        }
+    }
   }
 }
 
-class WebsocketClientContextImpl[C <: Http4sContext]
-(
-  val c: C#IMPL[C]
-  , val initialRequest: AuthedRequest[C#MonoIO, C#RequestContext]
-  , val initialContext: C#RequestContext
-  , listeners: Seq[WsSessionListener[C#ClientId]]
-  , wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
-  , logger: IzLogger
+class WebsocketClientContextImpl[C <: Http4sContext](
+  val c: C#IMPL[C],
+  val initialRequest: AuthedRequest[C#MonoIO, C#RequestContext],
+  val initialContext: C#RequestContext,
+  listeners: Seq[WsSessionListener[C#BiIO, C#ClientId]],
+  wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext],
+  logger: IzLogger
 ) extends WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
@@ -192,7 +194,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS)
   }
 
-  def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
+  def enqueue(method: IRTMethodId, data: Json): C#MonoIO[RpcPacketId] = F.sync {
     val request = RpcPacket.buzzerRequestRndId(method, data)
     val id = request.id.get
     logger.debug(s"Enqueue $request with $id to request state & send queue")
@@ -201,32 +203,32 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     id
   }
 
-  def onWsSessionOpened(): Unit = {
-  }
+  def onWsSessionOpened(): C#MonoIO[Unit] = F.unit
 
-  def onWsClientIdUpdate(maybeNewId: Option[ClientId], oldId: WsClientId[ClientId]): Unit = {
+  def onWsClientIdUpdate(maybeNewId: Option[ClientId], oldId: WsClientId[ClientId]): C#MonoIO[Unit] = F.sync {
     logger.debug(s"Id updated to $maybeNewId, was: ${oldId.id}")
   }
 
-  def onWsSessionClosed(): Unit = {
+  def onWsSessionClosed(): C#MonoIO[Unit] = F.sync {
     logger.debug("Finish called. Clear request state")
   }
 
-  protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
+  protected[http4s] def updateId(maybeNewId: Option[ClientId]): C#MonoIO[Unit] = {
     val oldId = id
     maybeId.set(maybeNewId)
     val newId = id
 
-    def notifyListeners(): Unit = {
-      onWsClientIdUpdate(maybeNewId, oldId)
-      listeners.foreach { listener =>
-        listener.onClientIdUpdate(newId, oldId)
+    def notifyListeners(): C#MonoIO[Unit] = {
+      onWsClientIdUpdate(maybeNewId, oldId) *>
+      F.traverse_(listeners) {
+        listener =>
+          listener.onClientIdUpdate(newId, oldId)
       }
     }
 
     (newId, oldId) match {
       case (WsClientId(_, Some(prev)), WsClientId(_, Some(next))) if prev != next => notifyListeners()
-      case (WsClientId(_, None), WsClientId(_, None)) => ()
+      case (WsClientId(_, None), WsClientId(_, None)) => F.unit
       case _ => notifyListeners()
     }
   }
@@ -246,20 +248,22 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   protected[http4s] val pingStream: fs2.Stream[MonoIO, WebSocketFrame] =
     fs2.Stream.awakeEvery[MonoIO](pingTimeout) >> fs2.Stream(Ping())
 
-  override def finish(): Unit = {
-    onWsSessionClosed()
-    Quirks.discard(wsSessionStorage.deleteClient(sessionId))
-    listeners.foreach { listener =>
-      listener.onSessionClosed(id)
-    }
-    requestState.clear()
+  override def finish(): C#MonoIO[Unit] = {
+    onWsSessionClosed() *>
+    wsSessionStorage.deleteClient(sessionId) *>
+    F.traverse_(listeners) {
+      listener =>
+        listener.onSessionClosed(id)
+    } *>
+    F.sync(requestState.clear())
   }
 
-  protected[http4s] def start(): Unit = {
-    Quirks.discard(wsSessionStorage.addClient(sessionId, this))
-    onWsSessionOpened()
-    listeners.foreach { listener =>
-      listener.onSessionOpened(id)
+  protected[http4s] def start(): C#MonoIO[Unit] = {
+    wsSessionStorage.addClient(sessionId, this) *>
+    onWsSessionOpened() *>
+    F.traverse_(listeners) {
+      listener =>
+        listener.onSessionOpened(id)
     }
   }
 
