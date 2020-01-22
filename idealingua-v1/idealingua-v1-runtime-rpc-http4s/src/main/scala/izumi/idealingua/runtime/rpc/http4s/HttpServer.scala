@@ -21,17 +21,16 @@ import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Binary, Close, Pong, Text}
 
-class HttpServer[C <: Http4sContext]
-(
-  val c: C#IMPL[C]
-, val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext]
-, val codec: IRTClientMultiplexor[C#BiIO]
-, val contextProvider: AuthMiddleware[C#MonoIO, C#RequestContext]
-, val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]
-, val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
-, val listeners: Seq[WsSessionListener[C#ClientId]]
-, logger: IzLogger
-, printer: Printer
+class HttpServer[C <: Http4sContext](
+  val c: C#IMPL[C],
+  val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext],
+  val codec: IRTClientMultiplexor[C#BiIO],
+  val contextProvider: AuthMiddleware[C#MonoIO, C#RequestContext],
+  val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId],
+  val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext],
+  val listeners: Seq[WsSessionListener[C#BiIO, C#ClientId]],
+  logger: IzLogger,
+  printer: Printer
 ) {
 
   import c._
@@ -67,15 +66,15 @@ class HttpServer[C <: Http4sContext]
   }
 
   protected def handler(): PartialFunction[AuthedRequest[MonoIO, RequestContext], MonoIO[Response[MonoIO]]] = {
-    case request@GET -> Root / "ws" as ctx =>
+    case request @ GET -> Root / "ws" as ctx =>
       val result = setupWs(request, ctx)
       result
 
-    case request@GET -> Root / service / method as ctx =>
+    case request @ GET -> Root / service / method as ctx =>
       val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
       run(new HttpRequestContext(request, ctx), body = "{}", methodId)
 
-    case request@POST -> Root / service / method as ctx =>
+    case request @ POST -> Root / service / method as ctx =>
       val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
       request.req.decode[String] {
         body =>
@@ -83,62 +82,55 @@ class HttpServer[C <: Http4sContext]
       }
   }
 
-  protected def handleWsClose(context: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]): Unit = {
-    logger.debug(s"${context -> null}: Websocket client disconnected")
+  protected def handleWsClose(context: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]): MonoIO[Unit] = {
+    F.sync(logger.debug(s"${context -> null}: Websocket client disconnected")) *>
     context.finish()
   }
 
-  protected def onWsOpened(): Unit = {
-  }
+  protected def onWsOpened(): MonoIO[Unit] = F.unit
 
-  protected def onWsUpdate(maybeNewId: Option[C#ClientId], old: WsClientId[ClientId]): Unit = {
+  protected def onWsUpdate(maybeNewId: Option[C#ClientId], old: WsClientId[ClientId]): MonoIO[Unit] = F.sync {
     (maybeNewId, old).forget
   }
 
-  protected def onWsClosed(): Unit = {
-  }
+  protected def onWsClosed(): MonoIO[Unit] = F.unit
 
   protected def setupWs(request: AuthedRequest[MonoIO, RequestContext], initialContext: RequestContext): MonoIO[Response[MonoIO]] = {
     val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger) {
-
-      override def onWsSessionOpened(): Unit = {
-          onWsOpened()
-          super.onWsSessionOpened()
+      override def onWsSessionOpened(): C#MonoIO[Unit] = {
+        onWsOpened() *> super.onWsSessionOpened()
       }
-
-      override def onWsClientIdUpdate(maybeNewId: Option[C#ClientId], oldId: WsClientId[C#ClientId]): Unit = {
-        onWsUpdate(maybeNewId, oldId)
-        super.onWsClientIdUpdate(maybeNewId, oldId)
+      override def onWsClientIdUpdate(maybeNewId: Option[C#ClientId], oldId: WsClientId[C#ClientId]): C#MonoIO[Unit] = {
+        onWsUpdate(maybeNewId, oldId) *> super.onWsClientIdUpdate(maybeNewId, oldId)
       }
-
-      override def onWsSessionClosed(): Unit = {
-        onWsClosed()
-        super.onWsSessionClosed()
+      override def onWsSessionClosed(): C#MonoIO[Unit] = {
+        onWsClosed() *> super.onWsSessionClosed()
       }
     }
-    context.start()
-    logger.debug(s"${context -> null}: Websocket client connected")
-
-    context.queue.flatMap[Throwable, Response[MonoIO]] { q =>
-      val dequeueStream = q.dequeue.through {
-        stream =>
-          stream
-            .evalMap(handleWsMessage(context))
-            .collect { case Some(v) => WebSocketFrame.Text(v) }
+    for {
+      _ <- context.start()
+      _ <- F.sync(logger.debug(s"${context -> null}: Websocket client connected"))
+      response <- context.queue.flatMap[Throwable, Response[MonoIO]] {
+        q =>
+          val dequeueStream = q.dequeue.through {
+            stream =>
+              stream
+                .evalMap(handleWsMessage(context))
+                .collect { case Some(v) => WebSocketFrame.Text(v) }
+          }
+          val enqueueSink = q.enqueue
+          WebSocketBuilder[MonoIO].build(
+            send = dequeueStream.merge(context.outStream).merge(context.pingStream),
+            receive = enqueueSink,
+            onClose = handleWsClose(context)
+          )
       }
-      val enqueueSink = q.enqueue
-      WebSocketBuilder[MonoIO].build(
-        send = dequeueStream.merge(context.outStream).merge(context.pingStream)
-      , receive = enqueueSink
-      , onClose = F.syncThrowable(handleWsClose(context))
-      )
-    }
+    } yield response
   }
 
   protected def handleWsMessage(context: WebsocketClientContextImpl[C], requestTime: ZonedDateTime = IzTime.utcNow): WebSocketFrame => MonoIO[Option[String]] = {
     case Text(msg, _) =>
-      makeResponse(context, msg)
-        .sandboxBIOExit
+      makeResponse(context, msg).sandboxBIOExit
         .map(handleResult(context, _))
 
     case Close(_) =>
@@ -178,7 +170,7 @@ class HttpServer[C <: Http4sContext]
       parsed <- F.fromEither(parse(message))
       unmarshalled <- F.fromEither(parsed.as[RpcPacket])
       id <- wsContextProvider.toId(context.initialContext, context.id, unmarshalled)
-      _ <- F.syncThrowable(context.updateId(id))
+      _ <- context.updateId(id)
       response <- respond(context, unmarshalled).sandbox.catchAll {
         case BIOExit.Termination(exception, allExceptions, trace) =>
           logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions, $trace")
@@ -195,8 +187,7 @@ class HttpServer[C <: Http4sContext]
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
         wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input).flatMap {
           case (id, eff) =>
-          context.updateId(id)
-          eff
+            context.updateId(id) *> eff
         }
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
@@ -219,7 +210,7 @@ class HttpServer[C <: Http4sContext]
         context.requestState.handleResponse(id, data).as(None)
 
       case RpcPacket(RPCPacketKind.BuzzFailure, Some(data), _, Some(id), _, _, _) =>
-        context.requestState.respond(id, RawResponse.BadRawResponse())
+        F.sync(context.requestState.respond(id, RawResponse.BadRawResponse())) *>
         F.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
 
       case k =>
@@ -239,7 +230,6 @@ class HttpServer[C <: Http4sContext]
     }
   }
 
-
   protected def run(context: HttpRequestContext[MonoIO, RequestContext], body: String, method: IRTMethodId): MonoIO[Response[MonoIO]] = {
     val ioR = for {
       parsed <- F.fromEither(parse(body))
@@ -252,7 +242,11 @@ class HttpServer[C <: Http4sContext]
       .flatMap(handleResult(context, method, _))
   }
 
-  private def handleResult(context: HttpRequestContext[MonoIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): BiIO[Throwable, Response[MonoIO]] = {
+  private def handleResult(
+    context: HttpRequestContext[MonoIO, RequestContext],
+    method: IRTMethodId,
+    result: BIOExit[Throwable, Option[Json]]
+  ): C#MonoIO[Response[MonoIO]] = {
     result match {
       case Success(v) =>
         v match {
