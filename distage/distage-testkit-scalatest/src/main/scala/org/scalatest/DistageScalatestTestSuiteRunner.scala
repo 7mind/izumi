@@ -43,16 +43,19 @@ object ScalatestInitWorkaround {
     def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]): Unit = {
       if (classpathScanned.compareAndSet(false, true)) {
         val classLoader = instance.getClass.getClassLoader
-        val nearest2Packages = instance.getClass.getPackage.getName.split('.').toSeq.inits.take(2).map(_.mkString(".")).toSeq
         val scan = new ClassGraph()
           .whitelistJars("distage-testkit-scalatest*")
-          .whitelistPackages(nearest2Packages: _*)
           .enableClassInfo()
           .addClassLoader(classLoader)
           .scan()
         try {
-          val specs = scan.getSubclasses(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
-          specs.foreach(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
+          val suiteClassName = classOf[DistageScalatestTestSuiteRunner[Identity]].getName
+          val testClasses = scan.getSubclasses(suiteClassName).asScala.filterNot(_.isAbstract)
+          lazy val debugLogger = TrivialLogger.make[ScalatestInitWorkaroundImpl.type](DebugProperties.`izumi.distage.testkit.debug`)
+          testClasses.foreach(classInfo => Try {
+            debugLogger.log(s"Added scanned class `${classInfo.getName}` to current test run")
+            classInfo.loadClass().getDeclaredConstructor().newInstance()
+          })
           DistageTestsRegistrySingleton.disableRegistration()
           latch.countDown()
         } finally {
@@ -60,7 +63,6 @@ object ScalatestInitWorkaround {
         }
       }
     }
-
   }
 
 }
@@ -195,7 +197,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
         val runner = {
           val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
           val checker = new IntegrationChecker.Impl(logger)
-          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
+          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways, parallelEnvs)
         }
         runner.run()
       }
@@ -205,6 +207,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   }
 
   protected def parallelTestsAlways: Boolean = true
+  protected def parallelEnvs: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
     val scalatestReporter = new ScalatestReporter(args.reporter)

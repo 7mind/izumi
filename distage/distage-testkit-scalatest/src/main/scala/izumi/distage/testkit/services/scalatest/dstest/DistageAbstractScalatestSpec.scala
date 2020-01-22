@@ -3,7 +3,6 @@ package izumi.distage.testkit.services.scalatest.dstest
 import distage.{Tag, TagK, TagKK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.plugins.load.PluginLoader
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._

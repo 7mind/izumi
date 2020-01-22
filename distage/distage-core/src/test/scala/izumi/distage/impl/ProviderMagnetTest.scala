@@ -4,7 +4,7 @@ import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -252,8 +252,57 @@ class ProviderMagnetTest extends AnyWordSpec {
       assert(fn.diKeys contains DIKey.get[Any])
       var counter = 0
       class CountInstantiations { counter += 1 }
-      fn.unsafeApply(Seq(RuntimeDIUniverse.TypedRef.byName(new CountInstantiations)))
+      fn.unsafeApply(Seq(TypedRef.byName(new CountInstantiations)))
       assert(counter == 0)
+    }
+
+    "zip is correct" in {
+      val fn = ProviderMagnet.pure(5).zip(ProviderMagnet.pure("Hello"))
+
+      assert(fn.get.parameters.isEmpty)
+      assert(fn.get.ret == SafeType.get[(Int, String)])
+    }
+
+    "map2 is correct" in {
+      val fn = ProviderMagnet.pure(5).map2(ProviderMagnet.identity[String])(
+        (i: Int, s: String) => StringContext(s + i)
+      )
+
+      assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
+      assert(fn.get.parameters.size == 1)
+      assert(fn.get.parameters.head.key == DIKey.get[String])
+      assert(fn.get.ret == SafeType.get[StringContext])
+    }
+
+    "flatAp is correct" in {
+      val fn = ProviderMagnet.pure(5).flatAp(
+        (s: String) => (i: Int) => StringContext(s + i)
+      )
+
+      assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
+      assert(fn.get.parameters.size == 1)
+      assert(fn.get.parameters.head.key == DIKey.get[String])
+      assert(fn.get.ret == SafeType.get[StringContext])
+    }
+
+    "ap is correct" in {
+      val fn = ProviderMagnet(
+        (s: String) => (i: Int) => StringContext(s + i)
+      ).ap(ProviderMagnet.pure(5))
+
+      assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
+      assert(fn.get.parameters.size == 1)
+      assert(fn.get.parameters.head.key == DIKey.get[String])
+      assert(fn.get.ret == SafeType.get[StringContext])
+    }
+
+    "ProviderMagnet.single is correct" in {
+      val fn = ProviderMagnet.single((_: String).length)
+
+      assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == 5)
+      assert(fn.get.parameters.size == 1)
+      assert(fn.get.parameters.head.key == DIKey.get[String])
+      assert(fn.get.ret == SafeType.get[Int])
     }
 
     "generic parameters without TypeTag should fail" in {

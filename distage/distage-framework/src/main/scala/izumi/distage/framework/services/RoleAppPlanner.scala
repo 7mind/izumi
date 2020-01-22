@@ -26,7 +26,7 @@ object RoleAppPlanner {
                           bsModule: BootstrapModule,
                           logger: IzLogger,
                         ) extends RoleAppPlanner[F] { self =>
-    private[this] val injector = Injector.Standard(bsModule)
+    private[this] val injector = Injector(bsModule)
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {
       new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, logger)

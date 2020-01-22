@@ -497,7 +497,7 @@ object DIResource {
       new AdaptProvider[ZManaged[R, E, A]] {
         type Out = DIResource.FromZIO[R, E, A]
 
-        override def apply(a: ProviderMagnet[ZManaged[R, E, A]])(implicit tag: ResourceTag[Out]): ProviderMagnet[FromZIO[R, E, A]] = {
+        override def apply(a: ProviderMagnet[ZManaged[R, E, A]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[FromZIO[R, E, A]] = {
           import tag.tagFull
           a.map(fromZIO)
         }
