@@ -25,7 +25,7 @@ object FactoryConstructorMacro {
     import macroUniverse.Wiring._
     import macroUniverse._
 
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val factory@Factory(factoryMethods, factoryTraitDependencies) = reflectionProvider.symbolToWiring(targetType)

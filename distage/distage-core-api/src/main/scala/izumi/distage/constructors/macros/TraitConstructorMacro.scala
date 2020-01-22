@@ -16,7 +16,7 @@ object TraitConstructorMacro {
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val macroUniverse = StaticDIUniverse(c)

@@ -5,6 +5,8 @@ import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import izumi.fundamentals.platform.build.ProjectAttributeMacro
+import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -303,6 +305,29 @@ class ProviderMagnetTest extends AnyWordSpec {
       assert(fn.get.parameters.size == 1)
       assert(fn.get.parameters.head.key == DIKey.get[String])
       assert(fn.get.ret == SafeType.get[Int])
+    }
+
+    "ProviderMagnet.singleton is correct" in {
+      val xa = new {}
+      val fn = ProviderMagnet.singleton[xa.type](xa)
+
+      assert(fn.get.unsafeApply(Seq()).asInstanceOf[AnyRef] eq xa)
+      assert(fn.get.parameters.isEmpty)
+      assert(fn.get.ret == SafeType.get[xa.type])
+    }
+
+    "ProviderMagnet.singleton is correct with constant types" in {
+      import Ordering.Implicits._
+      assume(ScalaRelease.parse(ProjectAttributeMacro.extractScalaVersion().get) >= ScalaRelease.`2_13`(0))
+      assertCompiles(
+        """
+      val fn = ProviderMagnet.singleton["xa"]("xa")
+
+      assert(fn.get.unsafeApply(Seq()) == "xa")
+      assert(fn.get.parameters.isEmpty)
+      assert(fn.get.ret == SafeType.get["xa"])
+        """
+      )
     }
 
     "generic parameters without TypeTag should fail" in {
