@@ -65,10 +65,14 @@ class Http4sTransportTest extends AnyWordSpec {
         assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
         assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
-        ioService.wsSessionStorage.buzzersFor("user").foreach {
-          buzzer =>
-            val client = new GreeterServiceClientWrapped(buzzer)
-            assert(BIOR.unsafeRun(client.greet("John", "Buzzer")) == "Hi, John Buzzer!")
+        BIOR.unsafeRunSyncAsEither(ioService.wsSessionStorage.buzzersFor("user")) match {
+          case Success(buzzers) =>
+            buzzers.foreach {
+              buzzer =>
+                val client = new GreeterServiceClientWrapped(buzzer)
+                assert(BIOR.unsafeRun(client.greet("John", "Buzzer")) == "Hi, John Buzzer!")
+            }
+          case v => fail(s"Expected success result but got $v")
         }
 
         disp.setupCredentials("user", "badpass")

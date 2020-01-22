@@ -114,9 +114,7 @@ object Http4sTestContext {
     AuthMiddleware(authUser),
     wsContextProvider,
     storage,
-    Seq(
-      WsSessionListener.empty[String]
-    ),
+    Seq(WsSessionListener.empty[rt.BiIO, String]),
     RT.logger,
     RT.printer,
   )
