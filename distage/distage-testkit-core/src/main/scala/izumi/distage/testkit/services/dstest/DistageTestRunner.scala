@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.TimeUnit
 
-import distage.{DIKey, Injector, PlannerInput}
+import distage.{Activation, DIKey, Injector, PlannerInput}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
@@ -47,10 +47,14 @@ class DistageTestRunner[F[_]: TagK]
     val checker = new PlanCircularDependencyCheck(options, logger)
 
     logger.info(s"Starting tests across ${groups.size -> "num envs"}, ${groups.values.map(_.size).toList -> "num tests"} in ${TagK[F].tag -> "monad"}")
-    debugLogger.log(
-      s"""Env contents:
-         |test environments=${groups.keys.niceList()}
-         |tests=${groups.values.map(_.map(_.meta.id).niceList()).zipWithIndex.map(_.swap).niceList()}""".stripMargin)
+    debugLogger.log {
+      val printedEnvs = groups.toList.map {
+        case (t, tests) =>
+          final case class TestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
+          TestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().indent(2))
+      }.niceList()
+      s"Env contents: $printedEnvs"
+    }
 
     try configuredForeach(groups) {
       case (env, tests) => try {
