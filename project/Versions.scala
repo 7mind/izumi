@@ -14,7 +14,7 @@ object V {
   val zio = "1.0.0-RC17"
   val zio_interop_cats = "2.0.0.0-RC10"
 
-  val circe = "0.12.3"
+  val circe = "0.13.0-RC1"
   val circe_generic_extras = "0.12.2"
   val circe_derivation = "0.12.0-M7"
   val circe_config = "0.7.0"
