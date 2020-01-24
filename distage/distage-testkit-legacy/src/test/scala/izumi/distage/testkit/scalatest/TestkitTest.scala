@@ -1,9 +1,8 @@
 package izumi.distage.testkit.scalatest
 
 import cats.effect.IO
-import distage.{DIKey, Id, ModuleBase, TagK}
+import distage.{DIKey, Id, LocatorRef, ModuleBase, TagK}
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.scalatest.fixtures._

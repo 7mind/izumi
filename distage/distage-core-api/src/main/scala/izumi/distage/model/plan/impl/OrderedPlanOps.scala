@@ -1,12 +1,12 @@
 package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflective.LocatorRef
 import izumi.fundamentals.reflection.Tags.Tag
 
 private[plan] trait OrderedPlanOps extends Any {

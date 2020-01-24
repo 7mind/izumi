@@ -6,7 +6,7 @@ import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{ResolveImportFOrderedPl
 import izumi.distage.model.plan.repr.{CompactOrderedPlanFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.PlanTopology
-import izumi.distage.model.plan.{ExecutableOp, GCMode, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
 import izumi.functional.Renderable
 import izumi.fundamentals.reflection.Tags.Tag
 
@@ -40,11 +40,11 @@ private[plan] object OrderedPlanExtensions {
     import cats.syntax.functor._
     import cats.syntax.traverse._
 
-    def traverse[F[_]: Applicative](f: ExecutableOp => F[SemiplanOp]): F[SemiPlan] =
-      plan.steps.traverse(f).map(SemiPlan(_, GCMode.fromSet(plan.declaredRoots)))
+    def traverse[F[_]: Applicative](f: SemiplanOp => F[SemiplanOp]): F[SemiPlan] =
+      plan.toSemi.steps.traverse(f).map(SemiPlan(_, GCMode.fromSet(plan.declaredRoots)))
 
-    def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
-      plan.steps.traverse(f).map(s => SemiPlan(s.flatten, GCMode.fromSet(plan.declaredRoots)))
+    def flatMapF[F[_]: Applicative](f: SemiplanOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
+      plan.toSemi.steps.traverse(f).map(s => SemiPlan(s.flatten, GCMode.fromSet(plan.declaredRoots)))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 

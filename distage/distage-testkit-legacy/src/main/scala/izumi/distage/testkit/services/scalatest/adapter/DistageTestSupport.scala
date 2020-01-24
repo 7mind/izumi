@@ -6,12 +6,13 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
-import izumi.distage.model.Locator
+import izumi.distage.model.{Locator, PlannerInput}
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, Binding, BootstrapModule, ImplDef, Module}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflective.Bootloader
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services._
@@ -66,9 +67,9 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, bsModule, logger)
+    val planner = makePlanner(options, bsModule, logger, Injector.bootloader(PlannerInput(withMemoized overridenBy appOverride, allRoots)))
 
-    val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
+    val plan = planner.makePlan(allRoots)
 
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
       plan.injector.produceF[Identity](plan.runtime)
@@ -159,8 +160,8 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   protected def contextOptions(): PlanningOptions = PlanningOptions()
 
-  protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlanner.Impl[F](options, bsModule, logger)
+  protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, logger: IzLogger, reboot: Bootloader): RoleAppPlanner[F] = {
+    new RoleAppPlanner.Impl[F](options, bsModule, logger, reboot)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor[F] = {

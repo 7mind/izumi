@@ -4,12 +4,15 @@ import cats.Id
 import cats.effect._
 import cats.instances.option._
 import distage.{DIKey, Injector}
+import izumi.distage.InjectorApi
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.ExecutableOp.SemiplanOp
+import izumi.distage.model.definition.{BootstrapModule, ModuleDef}
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
+import izumi.distage.model.reflective.Bootloader
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -29,7 +32,7 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
 
       Then("imports should be empty")
       val plan1 = plan.resolveImportsF[Id] {
-        case _ => throw new RuntimeException()
+        case i if i.target != DIKey.get[BootstrapModule] => throw new RuntimeException(s"Unexpected import: $i")
       }
 
       assert(plan1 === plan)
@@ -41,16 +44,25 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
           make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
         })
       )
-      val testDependencyOp = testDependencyPlan.steps.last.asInstanceOf[SemiplanOp]
+      val dynamicKeys = Set[DIKey](DIKey.get[PlannerInput], DIKey.get[Bootloader], DIKey.get[InjectorApi])
+      def filterDynamic(steps: Seq[ExecutableOp]) = {
+        steps.filterNot(b => dynamicKeys.contains(b.target))
+      }
 
-      val plan2 = injector.finish(testDependencyPlan.traverse[Id] { _ => testDependencyOp })
+      val testDependencyOp = filterDynamic(testDependencyPlan.steps).last.asInstanceOf[SemiplanOp]
 
-      assert(plan2.steps === testDependencyPlan.steps)
+      val traversed = testDependencyPlan.traverse[Id] {
+        case op if op.target == DIKey.get[NotInContext] => testDependencyOp
+        case o => o
+      }
+      val plan2 = injector.finish(traversed)
+
+      assert(filterDynamic(plan2.steps) === filterDynamic(testDependencyPlan.steps))
 
       case object NotInContext extends NotInContext
       Then("resolveImportsF should work")
       val plan3 = plan2.resolveImportsF[Id] {
-        case _ => NotInContext
+        case ImportDependency(target, _, _) if target == DIKey.get[NotInContext] => NotInContext
       }
       assert(plan3.steps.collectFirst { case UseInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
 
@@ -59,7 +71,8 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
       assert(plan4.steps.collectFirst { case UseInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
 
       Then("object graph is correct")
-      assert(plan3 == plan4)
+      plan3.render()
+      assert(filterDynamic(plan3.steps) == filterDynamic(plan4.steps))
 
       val objs = injector.produceUnsafeF[IO](plan3).unsafeRunSync()
 

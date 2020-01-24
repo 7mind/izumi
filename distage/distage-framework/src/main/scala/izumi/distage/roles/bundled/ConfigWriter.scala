@@ -7,7 +7,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.ConfigPathExtractorModule
 import izumi.distage.framework.services.RoleAppPlanner
-import izumi.distage.model.definition.{Id, ModuleBase}
+import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
@@ -32,7 +32,7 @@ class ConfigWriter[F[_] : DIEffect]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
-  appModule: ModuleBase@Id("application.module"),
+  //appModule: ModuleBase@Id("application.module"),
 ) extends RoleTask[F] {
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
@@ -114,8 +114,8 @@ class ConfigWriter[F[_] : DIEffect]
       new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
-    val newAppModule = appModule
-    val plans = context.reboot(cfg).makePlan(Set(roleDIKey), newAppModule)
+    //val newAppModule = appModule
+    val plans = context.reboot(cfg).makePlan(Set(roleDIKey))
 
     def getConfig(plan: OrderedPlan): Option[Config] = {
       plan

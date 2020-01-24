@@ -8,9 +8,10 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.plugins.{PluginBase, PluginConfig}
+import izumi.distage.model.reflective.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
@@ -87,8 +88,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy bsDefinition overridenBy bsOverride
 
     val appModule = moduleProvider.appModules().merge overridenBy appDefinition overridenBy appOverride
-    val planner = makePlanner(options, bsModule, lateLogger)
-    val appPlan = planner.makePlan(roots, appModule)
+    val planner = makePlanner(options, bsModule, lateLogger, Injector.bootloader(PlannerInput(appModule, roots)))
+    val appPlan = planner.makePlan(roots)
     lateLogger.info(s"Planning finished. ${appPlan.app.primary.keys.size -> "main ops"}, ${appPlan.app.side.keys.size -> "integration ops"}, ${appPlan.app.shared.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
     val injector = appPlan.injector
@@ -103,8 +104,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def makePluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
   protected def makeBootstrapPluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
 
-  protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlanner.Impl[F](options, bsModule, lateLogger)
+  protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger, reboot: Bootloader): RoleAppPlanner[F] = {
+    new RoleAppPlanner.Impl[F](options, bsModule, lateLogger, reboot)
   }
 
   protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, startupPlanExecutor: StartupPlanExecutor[F], filters: Filters[F] = Filters.all): RoleAppExecutor[F] = {

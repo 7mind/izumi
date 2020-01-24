@@ -1,9 +1,8 @@
 package izumi.distage.testkit.scalatest
 
 import cats.effect.IO
-import distage.TagK
+import distage.{LocatorRef, TagK}
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.testkit.scalatest.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity

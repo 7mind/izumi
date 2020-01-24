@@ -3,9 +3,8 @@ package izumi.distage.testkit.scalatest
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO
-import distage.{DIKey, TagK}
+import distage.{DIKey, LocatorRef, TagK}
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.testkit.scalatest.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 
