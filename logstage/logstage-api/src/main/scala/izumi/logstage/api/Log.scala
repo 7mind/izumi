@@ -2,7 +2,7 @@ package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
-import izumi.logstage.macros.LogMessageMacro.logMessageMacro
+import izumi.logstage.macros.{LogMessageMacro, LogMessageMacroStrict, LogstageCodec}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -70,7 +70,7 @@ object Log {
 
   }
 
-  final case class LogArg(path: Seq[String], value: Any, hiddenName: Boolean) {
+  final case class LogArg(path: Seq[String], value: Any, hiddenName: Boolean, codec: Option[LogstageCodec[_]]) {
     def name: String = path.last
   }
 
@@ -83,7 +83,7 @@ object Log {
   object CustomContext {
     def apply(map: Map[String, Any]): CustomContext = {
       val logArgs = map.map {
-        case (k, v) => LogArg(Seq(k), v, hiddenName = false)
+        case (k, v) => LogArg(Seq(k), v, hiddenName = false, None)
       }.toList
 
       CustomContext(logArgs)
@@ -161,7 +161,10 @@ object Log {
 
   object Message {
     /** Construct [[Message]] from a string interpolation */
-    implicit def apply(message: String): Message = macro logMessageMacro
+    implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
   }
-
+  object StrictMessage {
+    /** Construct [[Message]] from a string interpolation */
+    implicit def apply(message: String): Message = macro LogMessageMacroStrict.logMessageMacro
+  }
 }

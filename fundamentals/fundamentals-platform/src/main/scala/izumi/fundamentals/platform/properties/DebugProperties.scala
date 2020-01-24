@@ -1,4 +1,5 @@
 package izumi.fundamentals.platform.properties
+import izumi.fundamentals.platform.strings.IzString._
 
 /**
   * Marker trait for objects that hold names of Java Properties
@@ -14,7 +15,9 @@ package izumi.fundamentals.platform.properties
   */
 trait DebugProperties {
   case class Property protected (name: String) {
-
+    def asBoolean(default: Boolean): Boolean = {
+      System.getProperty(name).asBoolean().getOrElse(default)
+    }
   }
 }
 
