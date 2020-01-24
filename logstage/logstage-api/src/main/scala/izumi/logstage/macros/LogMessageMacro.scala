@@ -5,19 +5,9 @@ import izumi.logstage.api.Log.{LogArg, Message}
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
-trait LogstageCodec[T] {
-
-}
-
-object LogstageCodec {
-
-  implicit object LogstageCodecString extends LogstageCodec[String] {
-
-  }
-
-}
 
 class LogMessageMacro(cc: blackbox.Context) extends LogMessageMacro0(cc, false)
+
 class LogMessageMacroStrict(cc: blackbox.Context) extends LogMessageMacro0(cc, true)
 
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {

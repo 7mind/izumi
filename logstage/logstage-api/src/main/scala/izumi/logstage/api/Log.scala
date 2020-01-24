@@ -2,7 +2,8 @@ package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
-import izumi.logstage.macros.{LogMessageMacro, LogMessageMacroStrict, LogstageCodec}
+import izumi.logstage.api.rendering.LogstageCodec
+import izumi.logstage.macros.{LogMessageMacro, LogMessageMacroStrict}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions

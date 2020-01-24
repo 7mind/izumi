@@ -5,6 +5,7 @@ import izumi.logstage.api.Log.LogArg
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.rendering.LogstageCodec
 
 import scala.util.{Failure, Success}
 
