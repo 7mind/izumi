@@ -2,7 +2,8 @@ package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.CodePositionMaterializer.getEnclosingPosition
-import izumi.logstage.api.{AbstractLogger, Log}
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.AbstractLogger
 
 import scala.reflect.macros.blackbox
 

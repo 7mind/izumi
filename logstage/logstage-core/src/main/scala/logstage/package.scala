@@ -32,7 +32,9 @@ package object logstage extends LogStage {
   override final val Error: api.Log.Level.Error.type = api.Log.Level.Error
   override final val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
 
-  type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
   type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
+  type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, ?]]
+
+  type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
   type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
 }

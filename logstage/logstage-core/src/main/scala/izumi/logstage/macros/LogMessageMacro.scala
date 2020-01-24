@@ -1,4 +1,4 @@
-package izumi.logstage.macros
+    package izumi.logstage.macros
 
 import izumi.logstage.api.Log.{LogArg, Message}
 

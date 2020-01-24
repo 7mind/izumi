@@ -3,9 +3,9 @@ package izumi.logstage.distage
 import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanningObserver
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.logger.{AbstractLogger, LogRouter, RoutingLogger}
 import izumi.logstage.api.routing.StaticLogRouter
-import izumi.logstage.api.{AbstractLogger, IzLogger, RoutingLogger}
+import izumi.logstage.api.IzLogger
 
 class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends BootstrapModuleDef {
   if (setupStaticLogRouter) {
