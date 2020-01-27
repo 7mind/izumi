@@ -1,23 +1,26 @@
 package izumi.distage
 
-import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import izumi.distage.model.definition.{BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.recursive.Bootloader
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.fundamentals.reflection.Tags.TagK
 
-class InjectorDefaultImpl(
+class InjectorDefaultImpl
+(
   parentContext: Locator,
+  parentFactory: InjectorFactory,
 ) extends Injector {
 
   private val planner: Planner = parentContext.get[Planner]
   private val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
+  private val bsModule: BootstrapModule = parentContext.get[BootstrapModule]
 
   override def plan(input: PlannerInput): OrderedPlan = {
     planner.plan(addImpl(input))
@@ -58,7 +61,8 @@ class InjectorDefaultImpl(
   private def addImpl(input: PlannerInput): PlannerInput = {
     val reflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
-      make[InjectorApi].fromValue(distage.Injector)
+      make[InjectorFactory].fromValue(parentFactory)
+      make[BootstrapModule].fromValue(bsModule)
       make[Bootloader]
     }
 

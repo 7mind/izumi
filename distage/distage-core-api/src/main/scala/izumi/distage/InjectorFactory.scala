@@ -4,7 +4,7 @@ import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
 import izumi.distage.model.recursive.Bootloader
 
-trait InjectorApi {
+trait InjectorFactory {
 
   /**
     * Create a new Injector
@@ -13,6 +13,7 @@ trait InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   def apply(overrides: BootstrapModule*): Injector
+
   /**
     * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes
     *
@@ -20,6 +21,7 @@ trait InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   def apply(activation: Activation, overrides: BootstrapModule*): Injector
+
   /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
@@ -28,6 +30,7 @@ trait InjectorApi {
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
   def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
+
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from results of a previous Injector's run
     *

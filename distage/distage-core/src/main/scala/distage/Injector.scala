@@ -3,9 +3,9 @@ package distage
 import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.{InjectorApi, InjectorDefaultImpl}
+import izumi.distage.{InjectorFactory, InjectorDefaultImpl}
 
-object Injector extends InjectorApi {
+object Injector extends InjectorFactory {
 
   /**
     * Create a new Injector
@@ -14,7 +14,7 @@ object Injector extends InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(overrides: BootstrapModule*): Injector = {
-    apply(CglibBootstrap.cogenBootstrap, overrides: _ *)
+    bootstrap(CglibBootstrap.cogenBootstrap, overrides.merge)
   }
 
   /**
@@ -24,7 +24,7 @@ object Injector extends InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-    apply(CglibBootstrap.cogenBootstrap, overrides :+ activationModule(activation): _ *)
+    bootstrap(CglibBootstrap.cogenBootstrap, (overrides :+ activationModule(activation)).merge)
   }
 
   /**
@@ -44,11 +44,12 @@ object Injector extends InjectorApi {
     * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
   override def inherit(parent: Locator): Injector = {
-    new InjectorDefaultImpl(parent)
+    new InjectorDefaultImpl(parent, this)
   }
 
-
-  final override def bootloader(input: PlannerInput, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = new Bootloader(bootstrapModule, input, this)
+  override def bootloader(input: PlannerInput, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
+    new Bootloader(bootstrapModule, input, this)
+  }
 
   private[this] def bootstrap(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
@@ -58,42 +59,37 @@ object Injector extends InjectorApi {
     inherit(bootstrapLocator)
   }
 
-  object Standard extends InjectorBootstrap {
-    override def apply(): Injector = super.apply()
+  object Standard extends InjectorBootstrap(CglibBootstrap.cogenBootstrap)
 
-    override def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(CglibBootstrap.cogenBootstrap, overrides = overrides.merge)
+  /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
+  object NoProxies extends InjectorBootstrap(BootstrapLocator.noProxiesBootstrap)
+
+  /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
+  object NoCycles extends InjectorBootstrap(BootstrapLocator.noCyclesBootstrap)
+
+  private[Injector] sealed abstract class InjectorBootstrap(bootstrapContextModule: BootstrapContextModule) extends InjectorFactory {
+    override final def apply(overrides: BootstrapModule*): Injector = {
+      bootstrap(bootstrapContextModule, overrides.merge)
+    }
+
+    override final def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
+      bootstrap(bootstrapContextModule, (overrides :+ activationModule(activation)).merge)
+    }
+
+    override final def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+      bootstrap(bootstrapBase, overrides.merge)
+    }
+
+    override final def inherit(parent: Locator): Injector = {
+      new InjectorDefaultImpl(parent, this)
+    }
+
+    override final def bootloader(input: PlannerInput, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
+      new Bootloader(bootstrapModule, input, this)
     }
   }
 
-  object NoProxies extends InjectorBootstrap {
-    override def apply(): Injector = super.apply()
-
-    override def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(BootstrapLocator.noProxiesBootstrap, overrides = overrides.merge)
-    }
-  }
-
-  object NoCycles extends InjectorBootstrap {
-    override def apply(): Injector = super.apply()
-
-    override def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(BootstrapLocator.noCyclesBootstrap, overrides = overrides.merge)
-    }
-  }
-
-  private[Injector] sealed trait InjectorBootstrap {
-    def apply(overrides: BootstrapModule*): Injector
-    def apply(): Injector = apply(overrides = Seq.empty[BootstrapModule]: _*)
-
-    final def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-      apply(overrides :+ activationModule(activation): _*)
-    }
-  }
-
-  private[this] def activationModule(activation: Activation): BootstrapModuleDef = {
-    new BootstrapModuleDef {
-      make[Activation].fromValue(activation)
-    }
+  private[this] def activationModule(activation: Activation): BootstrapModuleDef = new BootstrapModuleDef {
+    make[Activation].fromValue(activation)
   }
 }

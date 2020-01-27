@@ -4,14 +4,14 @@ import cats.Id
 import cats.effect._
 import cats.instances.option._
 import distage.{DIKey, Injector}
-import izumi.distage.InjectorApi
+import izumi.distage.InjectorFactory
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.{BootstrapModule, ModuleDef}
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.recursive.Bootloader
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -32,7 +32,7 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
 
       Then("imports should be empty")
       val plan1 = plan.resolveImportsF[Id] {
-        case i if i.target != DIKey.get[BootstrapModule] => throw new RuntimeException(s"Unexpected import: $i")
+        case i => throw new RuntimeException(s"Unexpected import: $i")
       }
 
       assert(plan1 === plan)
@@ -44,7 +44,7 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
           make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
         })
       )
-      val dynamicKeys = Set[DIKey](DIKey.get[PlannerInput], DIKey.get[Bootloader], DIKey.get[InjectorApi])
+      val dynamicKeys = Set[DIKey](DIKey.get[PlannerInput], DIKey.get[Bootloader], DIKey.get[InjectorFactory])
       def filterDynamic(steps: Seq[ExecutableOp]) = {
         steps.filterNot(b => dynamicKeys.contains(b.target))
       }

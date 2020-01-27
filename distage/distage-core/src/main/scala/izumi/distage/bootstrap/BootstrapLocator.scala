@@ -2,10 +2,9 @@ package izumi.distage.bootstrap
 
 import java.util.concurrent.atomic.AtomicReference
 
-import distage.TagK
-import izumi.distage._
+import izumi.distage.AbstractLocator
 import izumi.distage.model._
-import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapContextModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapContextModuleDef, BootstrapModule, BootstrapModuleDef}
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
@@ -23,8 +22,10 @@ import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.reflection.Tags.TagK
 
-final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
+final class BootstrapLocator(bindings0: BootstrapContextModule) extends AbstractLocator {
+  private[this] val bindings = bindings0 overridenBy new BootstrapModuleDef { make[BootstrapModule].fromValue(bindings0) }
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = BootstrapLocator.bootstrapPlanner.plan(PlannerInput.noGc(bindings))
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
