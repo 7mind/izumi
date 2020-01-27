@@ -40,6 +40,3 @@ final case class OrderedPlan(
                             ) extends AbstractPlan[ExecutableOp] with OrderedPlanOps
 
 object OrderedPlan extends OrderedPlanExtensions
-
-
-

@@ -3,7 +3,6 @@ package izumi.distage.injector
 import distage._
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.CircularCases._
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
