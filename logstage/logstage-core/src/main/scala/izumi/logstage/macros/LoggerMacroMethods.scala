@@ -1,14 +1,15 @@
 package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.CodePositionMaterializer.getEnclosingPosition
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.AbstractLogger
 
 import scala.reflect.macros.blackbox
 
 object LoggerMacroMethods {
-  
+
   def scTraceMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     logMacro(c)(c.universe.reify(Log.Level.Trace), new LogMessageMacro0[c.type](c, strict = false).logMessageMacro(message), getEnclosingPosition(c))
   }
@@ -56,14 +57,12 @@ object LoggerMacroMethods {
   def scCritMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     logMacro(c)(c.universe.reify(Log.Level.Crit), new LogMessageMacro0[c.type](c, strict = true).logMessageMacro(message), getEnclosingPosition(c))
   }
-  
+
   @inline private[this] def logMacro(c: blackbox.Context {type PrefixType = AbstractLogger})(level: c.Expr[Log.Level], message: c.Expr[Log.Message], position: c.Expr[CodePositionMaterializer]): c.Expr[Unit] = {
     c.universe.reify {
       {
         val self = c.prefix.splice
-//        import c.universe._
-//
-        if (self.acceptable(Log.LoggerId(CodePositionMaterializer.getApplicationPointId(c).splice), level.splice)) {
+        if (self.acceptable(Log.LoggerId(CodePositionMaterializerMacro.getApplicationPointId(c).splice), level.splice)) {
           self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position.splice))
         }
       }

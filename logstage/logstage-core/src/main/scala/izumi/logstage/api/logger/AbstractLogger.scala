@@ -6,21 +6,6 @@ import izumi.logstage.api.Log.{CustomContext, LoggerId}
 
 trait AbstractLogger {
 
-//  /**
-//    * More efficient aliases for [[log]]
-//    *
-//    * These directly splice an [[acceptable]] check before calling [[unsafeLog]] which is more efficient than
-//    * creating a `messageThunk` for a [[log]] call.
-//    *
-//    * They also look better in Intellij
-//    * */
-//  final def trace(message: String): Unit = macro scTraceMacro
-//  final def debug(message: String): Unit = macro scDebugMacro
-//  final def info(message: String): Unit = macro scInfoMacro
-//  final def warn(message: String): Unit = macro scWarnMacro
-//  final def error(message: String): Unit = macro scErrorMacro
-//  final def crit(message: String): Unit = macro scCritMacro
-
   /** Log Entry if `logLevel` is above the threshold configured for this logger. */
   @inline final def log(entry: Log.Entry): Unit = {
     if (acceptable(entry.context.static.id, entry.context.dynamic.level)) {

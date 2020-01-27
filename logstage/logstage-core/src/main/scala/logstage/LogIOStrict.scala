@@ -6,9 +6,7 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
-import scala.language.experimental.macros
 import scala.language.implicitConversions
-
 
 trait LogIOStrict[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
   def log(entry: Entry): F[Unit]

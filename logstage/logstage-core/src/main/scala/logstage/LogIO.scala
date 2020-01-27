@@ -8,8 +8,6 @@ import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-
-
 trait LogIO[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]

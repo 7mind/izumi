@@ -1,14 +1,13 @@
-    package izumi.logstage.macros
+package izumi.logstage.macros
 
 import izumi.logstage.api.Log.{LogArg, Message}
 
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
+class LogMessageMacro(c: blackbox.Context) extends LogMessageMacro0(c, false)
 
-class LogMessageMacro(cc: blackbox.Context) extends LogMessageMacro0(cc, false)
-
-class LogMessageMacroStrict(cc: blackbox.Context) extends LogMessageMacro0(cc, true)
+class LogMessageMacroStrict(c: blackbox.Context) extends LogMessageMacro0(c, true)
 
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
   private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)

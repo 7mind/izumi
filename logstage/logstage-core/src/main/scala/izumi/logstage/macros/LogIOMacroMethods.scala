@@ -1,7 +1,7 @@
 package izumi.logstage.macros
 
-import izumi.fundamentals.platform.language.CodePositionMaterializer.getEnclosingPosition
-import izumi.logstage.api.Log.Level
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
+import izumi.logstage.api.Log.{Level, Message}
 import logstage.{Log, LogIO}
 
 import scala.reflect.macros.blackbox
@@ -56,7 +56,7 @@ object LogIOMacroMethods {
   }
 
   private[this] def doLog[F[_]](c: blackbox.Context {type PrefixType = LogIO[F]})(message: c.Expr[String], level: Level, strict: Boolean) = {
-    val m = new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
+    val m: c.Expr[Message] = new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
     val l = level match {
       case Level.Trace =>
         c.universe.reify(Level.Trace)

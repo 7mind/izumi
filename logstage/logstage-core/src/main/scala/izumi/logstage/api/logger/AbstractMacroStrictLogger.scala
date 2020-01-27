@@ -1,11 +1,11 @@
 package izumi.logstage.api.logger
 
+import izumi.logstage.macros.LoggerMacroMethods._
+
 import scala.language.experimental.macros
 
 trait AbstractMacroStrictLogger {
   this: AbstractLogger =>
-
-  import izumi.logstage.macros.LoggerMacroMethods._
 
   /**
     * More efficient aliases for [[log]]
