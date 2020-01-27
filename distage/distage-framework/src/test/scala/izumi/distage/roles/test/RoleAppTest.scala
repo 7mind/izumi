@@ -6,11 +6,11 @@ import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
-import distage.{DIKey, Injector, Locator}
+import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
-import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
@@ -108,14 +108,16 @@ class RoleAppTest extends AnyWordSpec
         many[TestResource]
           .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
+      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
+        Injector.bootloader(PlannerInput(definition, roots))
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
+      val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
@@ -142,14 +144,16 @@ class RoleAppTest extends AnyWordSpec
         many[TestResource]
           .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
+      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
+        Injector.bootloader(PlannerInput(definition, roots))
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
+      val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
@@ -176,14 +180,16 @@ class RoleAppTest extends AnyWordSpec
           .ref[TestResource with AutoCloseable]
         make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule
+      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
+        Injector.bootloader(PlannerInput(definition, roots))
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
+      val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {

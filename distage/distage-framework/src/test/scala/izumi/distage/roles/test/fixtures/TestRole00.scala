@@ -2,8 +2,8 @@ package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.ExecutorService
 
+import distage.LocatorRef
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}

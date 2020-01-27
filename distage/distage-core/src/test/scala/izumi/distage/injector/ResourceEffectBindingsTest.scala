@@ -1,10 +1,9 @@
 package izumi.distage.injector
 
-import distage.{DIKey, Id, ModuleDef, PlannerInput}
+import distage.{DIKey, Id, LocatorRef, ModuleDef, PlannerInput}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode

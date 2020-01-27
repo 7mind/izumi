@@ -589,7 +589,7 @@ object DIResource {
   }
 
   object ResourceTag extends ResourceTagLowPriority {
-    def apply[A: ResourceTag]: ResourceTag[A] = implicitly
+    @inline def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
     implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
       new ResourceTag[R] {
@@ -599,14 +599,6 @@ object DIResource {
         val tagA: Tag[A0] = Tag[A0]
         val tagFull: Tag[R] = Tag[R]
       }
-    }
-
-    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
-      val tagMacro = new TagMacro(c)
-      tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
-      val tagTrace = tagMacro.getImplicitError()
-
-      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }
   }
 
@@ -619,7 +611,17 @@ object DIResource {
       *
       * TODO: report to IJ bug tracker
       */
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+  }
+
+  object ResourceTagMacro {
+    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
+      val tagMacro = new TagMacro(c)
+      tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
+      val tagTrace = tagMacro.getImplicitError()
+
+      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
+    }
   }
 
 }

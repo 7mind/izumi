@@ -1,7 +1,5 @@
 package izumi.distage.model
 
-import java.util.concurrent.atomic.AtomicReference
-
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
@@ -87,18 +85,6 @@ trait Locator {
 
 object Locator {
 
-  /**
-    * This class allows you to summon a locator reference from any class in the object graph.
-    *
-    * Reference will be initialized after the provisioning process finishes,
-    * so you cannot dereference it in constructor.
-    *
-    * Summoning the entire Locator is usually an anti-pattern, but may sometimes be necessary.
-    */
-  class LocatorRef {
-    private[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
-
-    def get: Locator = ref.get()
-  }
 
 }
+

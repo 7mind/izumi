@@ -58,7 +58,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   }
 
   private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-    implicit val ec = ec0
+    implicit val ec: ExecutionContext = ec0
     val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
     Await.result(future, Duration.Inf).toList
   }

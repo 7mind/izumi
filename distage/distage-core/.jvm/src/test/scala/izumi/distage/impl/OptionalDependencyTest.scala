@@ -28,6 +28,8 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
     BIOAsync[Either](null)
 
+    DIResource.makePair(Some((1, Some(()))))
+
     And("Can search for BIO/BIOAsync")
     def optSearch[A >: Null](implicit a: A = null) = a
     optSearch[BIOTemporal[Either]]

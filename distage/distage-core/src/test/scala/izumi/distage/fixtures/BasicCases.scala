@@ -1,7 +1,6 @@
 package izumi.distage.fixtures
 
-import distage.ModuleDef
-import izumi.distage.model.Locator
+import distage.{LocatorRef, ModuleDef}
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
@@ -54,7 +53,7 @@ object BasicCases {
 
     class Impl3 extends JustTrait
 
-    case class LocatorDependent(ref: Locator.LocatorRef)
+    case class LocatorDependent(ref: LocatorRef)
 
   }
 
