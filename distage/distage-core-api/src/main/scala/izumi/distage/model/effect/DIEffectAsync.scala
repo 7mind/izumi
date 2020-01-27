@@ -1,11 +1,11 @@
 package izumi.distage.model.effect
 
-import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{Executors, ThreadFactory}
 
 import cats.Parallel
 import cats.effect.Timer
 import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
-import izumi.functional.bio.BIORunner.NamedThreadFactory
 import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -61,6 +61,27 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     implicit val ec = ec0
     val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
     Await.result(future, Duration.Inf).toList
+  }
+
+  private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+
+    private val parentGroup =
+      Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
+
+    private val threadGroup = new ThreadGroup(parentGroup, name)
+    private val threadCount = new AtomicInteger(1)
+    private val threadHash  = Integer.toUnsignedString(this.hashCode())
+
+    override def newThread(r: Runnable): Thread = {
+      val newThreadNumber = threadCount.getAndIncrement()
+
+      val thread = new Thread(threadGroup, r)
+      thread.setName(s"$name-$newThreadNumber-$threadHash")
+      thread.setDaemon(daemon)
+
+      thread
+    }
+
   }
 
 }

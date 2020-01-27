@@ -10,13 +10,13 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{ImplDef, ModuleBase}
 import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffectAsync.NamedThreadFactory
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.functional.bio.BIORunner.NamedThreadFactory
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
