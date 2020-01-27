@@ -18,7 +18,7 @@ trait Distage {
   type Producer = model.Producer
 
   type Locator = model.Locator
-  type LocatorRef = model.reflective.LocatorRef
+  type LocatorRef = model.recursive.LocatorRef
 
   type Id = model.definition.Id
   type With[T] = model.definition.With[T]

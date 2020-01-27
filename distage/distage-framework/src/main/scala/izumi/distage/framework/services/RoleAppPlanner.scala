@@ -7,7 +7,7 @@ import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
-import izumi.distage.model.reflective.{BootConfig, Bootloader}
+import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.logstage.api.IzLogger
 
 trait RoleAppPlanner[F[_]] {

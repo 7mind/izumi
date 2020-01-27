@@ -2,7 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
-import izumi.distage.model.reflective.Bootloader
+import izumi.distage.model.recursive.Bootloader
 
 trait InjectorApi {
 

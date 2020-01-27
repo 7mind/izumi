@@ -8,7 +8,7 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.reflective.Bootloader
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}

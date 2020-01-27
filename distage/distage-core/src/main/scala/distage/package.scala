@@ -16,7 +16,7 @@ package object distage extends Distage {
   override type Producer = model.Producer
 
   override type Locator = model.Locator
-  override type LocatorRef = model.reflective.LocatorRef
+  override type LocatorRef = model.recursive.LocatorRef
 
   override type Id = model.definition.Id
   override type With[T] = model.definition.With[T]

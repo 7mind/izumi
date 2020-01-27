@@ -1,4 +1,4 @@
-package izumi.distage.model.reflective
+package izumi.distage.model.recursive
 
 import izumi.distage.InjectorApi
 import izumi.distage.model.definition.{BootstrapModule, ModuleBase}
@@ -6,10 +6,10 @@ import izumi.distage.model.plan.{GCMode, OrderedPlan}
 import izumi.distage.model.{Injector, PlannerInput}
 
 case class BootstrappedApp(
-                     injector: Injector,
-                     module: ModuleBase,
-                     plan: OrderedPlan
-                   )
+                            injector: Injector,
+                            module: ModuleBase,
+                            plan: OrderedPlan,
+                          )
 
 case class BootConfig(
                        bootstrap: BootstrapModule => BootstrapModule = identity,
@@ -17,7 +17,11 @@ case class BootConfig(
                        gcMode: GCMode => GCMode = identity,
                      )
 
-class Bootloader(val bootstrapModule: BootstrapModule, val input: PlannerInput, api: InjectorApi) {
+class Bootloader(
+  val bootstrapModule: BootstrapModule,
+  val input: PlannerInput,
+  api: InjectorApi,
+) {
   def boot(config: BootConfig): BootstrappedApp = {
     val injector = api.apply(config.bootstrap(bootstrapModule))
     val module = config.appModule(input.bindings)

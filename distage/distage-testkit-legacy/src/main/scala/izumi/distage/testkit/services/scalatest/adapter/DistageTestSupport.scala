@@ -12,7 +12,7 @@ import izumi.distage.model.definition.{Activation, Binding, BootstrapModule, Imp
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflective.Bootloader
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services._

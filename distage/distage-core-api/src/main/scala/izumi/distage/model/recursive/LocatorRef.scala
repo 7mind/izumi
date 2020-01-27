@@ -1,4 +1,4 @@
-package izumi.distage.model.reflective
+package izumi.distage.model.recursive
 
 import java.util.concurrent.atomic.AtomicReference
 

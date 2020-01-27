@@ -2,7 +2,7 @@ package distage
 
 import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
 import izumi.distage.model.definition.BootstrapContextModule
-import izumi.distage.model.reflective.Bootloader
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.{InjectorApi, InjectorDefaultImpl}
 
 object Injector extends InjectorApi {

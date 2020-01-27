@@ -14,7 +14,7 @@ import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.model.reflective.LocatorRef
+import izumi.distage.model.recursive.LocatorRef
 import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.collection.mutable

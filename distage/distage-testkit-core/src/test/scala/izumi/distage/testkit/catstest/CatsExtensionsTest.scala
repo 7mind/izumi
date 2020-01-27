@@ -12,7 +12,7 @@ import izumi.distage.model.definition.{BootstrapModule, ModuleDef}
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
-import izumi.distage.model.reflective.Bootloader
+import izumi.distage.model.recursive.Bootloader
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
