@@ -1,7 +1,3 @@
-# Workaround to allow shutdown hooks
-# https://github.com/sbt/sbt/issues/4796
--Dsbt.classloader.close=false
-
 -Xmx4G
 -XX:ReservedCodeCacheSize=256m
 -XX:MaxMetaspaceSize=3G
