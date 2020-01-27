@@ -7,6 +7,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.testkit.scalatest.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
 
@@ -29,8 +30,11 @@ abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitIgnoredTestZio extends TestkitIgnoredTest[zio.IO[Throwable, ?]]

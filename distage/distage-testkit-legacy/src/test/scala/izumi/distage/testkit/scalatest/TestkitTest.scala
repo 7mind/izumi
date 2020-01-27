@@ -8,6 +8,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.scalatest.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
   "testkit" must {
     "load plugins" in dio {
@@ -75,10 +76,13 @@ abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
   }
 }
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitTestIO extends TestkitTest[IO]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitTestIdentity extends TestkitTest[Identity]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitTestZio extends TestkitTest[zio.IO[Throwable, ?]]
 
 object TestkitTest {
