@@ -1,7 +1,6 @@
 package izumi.distage
 
-import distage.Injector
-import izumi.distage.model._
+import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
@@ -13,10 +12,12 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.recursive.Bootloader
 import izumi.fundamentals.reflection.Tags.TagK
 
-class InjectorDefaultImpl(parentContext: Locator) extends Injector {
+class InjectorDefaultImpl(
+  parentContext: Locator,
+) extends Injector {
 
   private val planner: Planner = parentContext.get[Planner]
-  private val interpreter = parentContext.get[PlanInterpreter]
+  private val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
 
   override def plan(input: PlannerInput): OrderedPlan = {
     planner.plan(addImpl(input))
@@ -42,7 +43,6 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.finish(semiPlan)
   }
 
-
   override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
   }
@@ -58,7 +58,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
   private def addImpl(input: PlannerInput): PlannerInput = {
     val reflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
-      make[InjectorApi].fromValue(Injector)
+      make[InjectorApi].fromValue(distage.Injector)
       make[Bootloader]
     }
 

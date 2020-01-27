@@ -26,7 +26,7 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase {type Self <: S}
+  type Aux[S] = ModuleBase { type Self <: S }
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = {
     binds =>

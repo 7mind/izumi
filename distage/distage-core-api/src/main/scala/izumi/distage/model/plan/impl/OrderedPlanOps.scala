@@ -115,6 +115,6 @@ private[plan] trait OrderedPlanOps extends Any {
             Seq.empty
         }
     }
-    SemiPlan(safeSteps.toVector, GCMode.fromSet(declaredRoots))
+    SemiPlan(safeSteps.toVector, GCMode(declaredRoots))
   }
 }

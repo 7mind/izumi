@@ -22,10 +22,8 @@ final case class PlannerInput(
                              )
 
 object PlannerInput {
-  def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = {
-    new PlannerInput(bindings, GCMode.GCRoots(roots))
-  }
-  def noGc(bindings: ModuleBase): PlannerInput = {
-    new PlannerInput(bindings, GCMode.NoGC)
-  }
+  def apply(bindings: ModuleBase, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, GCMode(root, roots: _*))
+  def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = PlannerInput(bindings, GCMode(roots))
+
+  def noGc(bindings: ModuleBase): PlannerInput = PlannerInput(bindings, GCMode.NoGC)
 }
