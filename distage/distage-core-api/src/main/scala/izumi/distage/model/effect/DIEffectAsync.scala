@@ -1,8 +1,11 @@
 package izumi.distage.model.effect
 
+import java.util.concurrent.Executors
+
 import cats.Parallel
 import cats.effect.Timer
 import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
+import izumi.functional.bio.BIORunner.NamedThreadFactory
 import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -20,7 +23,11 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
-      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService(null)
+      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(new NamedThreadFactory(
+          "dieffect-cached-pool", daemon = true
+        ))
+      }
 
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
         parTraverse(l)(f)

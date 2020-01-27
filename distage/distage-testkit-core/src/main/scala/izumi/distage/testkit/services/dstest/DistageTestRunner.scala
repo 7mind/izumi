@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.dstest
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 
 import distage.{Activation, DIKey, Injector, PlannerInput}
 import izumi.distage.framework.model.IntegrationCheck
@@ -16,6 +16,7 @@ import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
+import izumi.functional.bio.BIORunner.NamedThreadFactory
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -282,7 +283,11 @@ class DistageTestRunner[F[_]: TagK]
 
   protected def configuredForeach[A](environments: Iterable[A])(f: A => Unit): Unit = {
     if (parallelEnvs && environments.size > 1) {
-      val ec = ExecutionContext.fromExecutorService(null)
+      val ec = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(new NamedThreadFactory(
+          "distage-test-runner-cached-pool", daemon = true
+        ))
+      }
       try {
         DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
       } finally ec.shutdown()
