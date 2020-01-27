@@ -1,6 +1,6 @@
 package izumi.distage.model.recursive
 
-import izumi.distage.InjectorApi
+import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.{BootstrapModule, ModuleBase}
 import izumi.distage.model.plan.{GCMode, OrderedPlan}
 import izumi.distage.model.{Injector, PlannerInput}
@@ -20,10 +20,10 @@ final case class BootConfig(
 class Bootloader(
   val bootstrapModule: BootstrapModule,
   val input: PlannerInput,
-  api: InjectorApi,
+  val injectorFactory: InjectorFactory,
 ) {
   def boot(config: BootConfig): BootstrappedApp = {
-    val injector = api.apply(config.bootstrap(bootstrapModule))
+    val injector = injectorFactory(config.bootstrap(bootstrapModule))
     val module = config.appModule(input.bindings)
     val roots = config.gcMode(input.mode)
     val plan = injector.plan(PlannerInput(module, roots))

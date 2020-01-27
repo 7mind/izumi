@@ -3,9 +3,9 @@ package distage
 import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.{InjectorApi, InjectorDefaultImpl}
+import izumi.distage.{InjectorFactory, InjectorDefaultImpl}
 
-object Injector extends InjectorApi {
+object Injector extends InjectorFactory {
 
   /**
     * Create a new Injector
@@ -14,7 +14,7 @@ object Injector extends InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(overrides: BootstrapModule*): Injector = {
-    apply(CglibBootstrap.cogenBootstrap, overrides: _ *)
+    bootstrap(CglibBootstrap.cogenBootstrap, overrides.merge)
   }
 
   /**
@@ -24,7 +24,7 @@ object Injector extends InjectorApi {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-    apply(CglibBootstrap.cogenBootstrap, overrides :+ activationModule(activation): _ *)
+    bootstrap(CglibBootstrap.cogenBootstrap, (overrides :+ activationModule(activation)).merge)
   }
 
   /**
@@ -44,11 +44,12 @@ object Injector extends InjectorApi {
     * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
   override def inherit(parent: Locator): Injector = {
-    new InjectorDefaultImpl(parent)
+    new InjectorDefaultImpl(parent, this)
   }
 
-
-  final override def bootloader(input: PlannerInput, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = new Bootloader(bootstrapModule, input, this)
+  final override def bootloader(input: PlannerInput, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
+    new Bootloader(bootstrapModule, input, this)
+  }
 
   private[this] def bootstrap(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
