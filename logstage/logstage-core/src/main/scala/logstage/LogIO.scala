@@ -4,7 +4,7 @@ import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log._
-import izumi.logstage.macros.LogIOMacros._
+import izumi.logstage.macros.LogIOMacros
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.experimental.macros
@@ -22,12 +22,12 @@ trait LogIO[F[_]] extends UnsafeLogIO[F] {
   final def apply(context: Map[String, Any]): LogIO[F] = withCustomContext(context)
 
   /** Aliases for [[log]] that look better in Intellij */
-  final def trace(message: String): F[Unit] = macro scTraceMacro[F]
-  final def debug(message: String): F[Unit] = macro scDebugMacro[F]
-  final def info(message: String): F[Unit] = macro scInfoMacro[F]
-  final def warn(message: String): F[Unit] = macro scWarnMacro[F]
-  final def error(message: String): F[Unit] = macro scErrorMacro[F]
-  final def crit(message: String): F[Unit] = macro scCritMacro[F]
+  final def trace(message: String): F[Unit] = macro LogIOMacros.scTraceMacro[F]
+  final def debug(message: String): F[Unit] = macro LogIOMacros.scDebugMacro[F]
+  final def info(message: String): F[Unit] = macro LogIOMacros.scInfoMacro[F]
+  final def warn(message: String): F[Unit] = macro LogIOMacros.scWarnMacro[F]
+  final def error(message: String): F[Unit] = macro LogIOMacros.scErrorMacro[F]
+  final def crit(message: String): F[Unit] = macro LogIOMacros.scCritMacro[F]
 }
 
 object LogIO {
