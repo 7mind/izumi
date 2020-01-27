@@ -6,7 +6,6 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
-import scala.language.experimental.macros
 import scala.language.implicitConversions
 
 

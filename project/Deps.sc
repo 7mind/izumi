@@ -536,7 +536,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.sinkSlf4j,
         libs = Seq(slf4j_api, slf4j_simple),
-        depends = Seq(Projects.logstage.core).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       )
     ),
