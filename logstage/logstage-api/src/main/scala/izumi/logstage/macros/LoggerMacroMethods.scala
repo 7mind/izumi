@@ -1,7 +1,8 @@
 package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.CodePositionMaterializer.getEnclosingPosition
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
 import izumi.logstage.api.{AbstractLogger, Log}
 import izumi.logstage.macros.LogMessageMacro._
 
@@ -37,7 +38,7 @@ object LoggerMacroMethods {
     c.universe.reify {
       {
         val self = c.prefix.splice
-        if (self.acceptable(Log.LoggerId(CodePositionMaterializer.getApplicationPointId(c).splice), level.splice)) {
+        if (self.acceptable(Log.LoggerId(CodePositionMaterializerMacro.getApplicationPointId(c).splice), level.splice)) {
           self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position.splice))
         }
       }
