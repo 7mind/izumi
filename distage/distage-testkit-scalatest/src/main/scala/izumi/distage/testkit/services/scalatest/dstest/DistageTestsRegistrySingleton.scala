@@ -7,16 +7,18 @@ import distage.{SafeType, TagK}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
-import org.scalatest.{StatefulStatus, Tracker}
+import org.scalatest.{Reporter, StatefulStatus, Tracker}
 
 import scala.collection.mutable
 
 object DistageTestsRegistrySingleton {
+  final case class SuiteReporter(tracker: Tracker, reporter: Reporter)
+
   protected[this] type Fake[T]
   private[this] object Fake
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
   private[this] val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]()
-  private[this] val trackers = new mutable.HashMap[String, Either[mutable.ArrayBuffer[Tracker => Unit], Tracker]]()
+  private[this] val suiteReporters = new mutable.HashMap[String, Either[mutable.ArrayBuffer[SuiteReporter => Unit], SuiteReporter]]()
   private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
   private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
   private[this] val registrationOpen = new AtomicBoolean(true)
@@ -64,33 +66,31 @@ object DistageTestsRegistrySingleton {
   }
 
   def completeStatuses[F[_]: TagK](): Unit = synchronized {
-    statuses.get(SafeType.getK[F])
-      .flatten
-      .foreach {
-        _.valuesIterator.foreach {
-          status =>
-            if (!status.isCompleted) {
-              status.setCompleted()
-            }
-        }
+    statuses.get(SafeType.getK[F]).flatten.foreach {
+      _.valuesIterator.foreach {
+        status =>
+          if (!status.isCompleted) {
+            status.setCompleted()
+          }
       }
+    }
     statuses.put(SafeType.getK[F], None).discard()
   }
 
-  def runReport(suiteId: String)(f: Tracker => Unit): Unit = synchronized {
-    trackers.getOrElseUpdate(suiteId, Left(mutable.ArrayBuffer.empty)) match {
+  def runReport(suiteId: String)(f: SuiteReporter => Unit): Unit = synchronized {
+    suiteReporters.getOrElseUpdate(suiteId, Left(mutable.ArrayBuffer.empty)) match {
       case Left(reports) =>
         (reports += f).discard()
-      case Right(tracker) =>
-        f(tracker)
+      case Right(suiteReporter) =>
+        f(suiteReporter)
     }
   }
 
-  def registerTracker(suiteId: String)(tracker: Tracker): Unit = synchronized {
-    trackers.getOrElseUpdate(suiteId, Right(tracker)) match {
+  def registerSuiteReporter(suiteId: String)(suiteReporter: SuiteReporter): Unit = synchronized {
+    suiteReporters.getOrElseUpdate(suiteId, Right(suiteReporter)) match {
       case Left(reports) =>
-        trackers(suiteId) = Right(tracker)
-        reports.foreach(_.apply(tracker))
+        suiteReporters(suiteId) = Right(suiteReporter)
+        reports.foreach(_.apply(suiteReporter))
       case Right(_) =>
     }
   }
