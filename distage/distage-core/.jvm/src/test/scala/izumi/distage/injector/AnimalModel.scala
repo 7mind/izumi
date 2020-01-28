@@ -39,7 +39,7 @@ class AnimalModel extends AnyWordSpec with MkInjector {
         println(plan.renderAllDeps())
         println()
       }
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
       assert(context.find[App].nonEmpty)
     }
   }

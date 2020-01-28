@@ -33,7 +33,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
         make[Box[T1]].from(new Box(new T1))
       }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)

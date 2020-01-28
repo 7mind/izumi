@@ -249,6 +249,16 @@ object DIResource {
     }
   }
 
+  implicit final class DIResourceUnsafeGet[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    /** Unsafely acquire the resource and throw away the finalizer,
+      * this will leak the resource and cause it to never be cleaned up.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[DIResourceUse#use]] instead!
+      */
+    def unsafeGet()(implicit F: DIEffect[F]): F[A] = F.map(resource.acquire)(resource.extract)
+  }
+
   trait Simple[A] extends DIResource[Identity, A]
 
   trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }

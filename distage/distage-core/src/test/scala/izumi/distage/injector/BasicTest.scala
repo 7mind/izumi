@@ -30,7 +30,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
 
     val exc = intercept[ProvisioningException] {
-      injector.produceUnsafe(plan)
+      injector.produce(plan).unsafeGet()
     }
 
     assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/13 operations failed"))
@@ -38,7 +38,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
     }
-    val locator = injector.produceUnsafe(fixedPlan)
+    val locator = injector.produce(fixedPlan).unsafeGet()
     assert(locator.get[LocatorDependent].ref.get == locator)
   }
 
@@ -52,7 +52,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val s = context.get[TypedService[Int]]
     val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
@@ -71,7 +71,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
         })
 
         val injector = mkInjector()
-        injector.produceUnsafe(injector.plan(definition)).get[TestClass]
+        injector.produce(injector.plan(definition)).unsafeGet().get[TestClass]
         """)
     }
     assert(res.getMessage.contains("BadIdAnnotationException"))
@@ -85,7 +85,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
 
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[MyClass].a eq context.get[String]("a"))
     assert(context.get[MyClass].b eq context.get[String]("b"))
@@ -109,7 +109,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Set[JustTrait]].size == 2)
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
@@ -127,11 +127,11 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val sub = Injector.inherit(context)
     val subplan = sub.plan(definition)
-    val subcontext = injector.produceUnsafe(subplan)
+    val subcontext = injector.produce(subplan).unsafeGet()
 
     assert(context.get[Set[JustTrait]].size == 1)
     assert(subcontext.get[Set[JustTrait]].size == 1)
@@ -154,7 +154,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
@@ -184,7 +184,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestCaseClass2]
 
     assert(instantiated.a.z.nonEmpty)
@@ -223,7 +223,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Service0].set.size == 3)
     assert(context.get[Service1].set.size == 3)
@@ -250,7 +250,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
         | Take two of these feel like Goku""".stripMargin
     }
 
-    val context = injector.produceUnsafe(plan3)
+    val context = injector.produce(plan3).unsafeGet()
 
     assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
   }
@@ -266,7 +266,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
 
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass] != null)
   }
@@ -284,7 +284,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
 
-    val context = Injector.Standard().produceUnsafe(definition)
+    val context = Injector.Standard().produce(definition).unsafeGet()
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
@@ -305,7 +305,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       }
     })
 
-    val context = Injector.Standard().produceUnsafe(definition)
+    val context = Injector.Standard().produce(definition).unsafeGet()
     assert(context.get[Set[Int]].toList.sorted == List(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
@@ -316,7 +316,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[TestImpl1]
     })
 
-    val context = Injector.Standard().produceUnsafe(definition)
+    val context = Injector.Standard().produce(definition).unsafeGet()
 
     assert(context.get[TestImpl1].justASet == Set.empty)
   }
@@ -344,7 +344,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[ServerConfig].from(ServerConfig)
     })
 
-    val context = Injector.Standard().produceUnsafe(definition)
+    val context = Injector.Standard().produce(definition).unsafeGet()
 
     assert(context.get[ServerConfig].port == context.get[Int]("port"))
     assert(context.get[ServerConfig].address == context.get[String]("address"))

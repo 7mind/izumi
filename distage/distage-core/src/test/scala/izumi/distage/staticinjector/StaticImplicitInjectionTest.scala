@@ -20,7 +20,7 @@ class StaticImplicitInjectionTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     }
     val plan = injector.plan(PlannerInput.noGc(definition))
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass].a != null)
     assert(context.get[TestClass].b != null)
@@ -42,7 +42,7 @@ class StaticImplicitInjectionTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     }
     val plan = injector.plan(PlannerInput.noGc(definition))
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass].b == context.get[TestClass].d)
   }

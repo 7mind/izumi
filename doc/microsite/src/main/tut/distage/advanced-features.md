@@ -37,7 +37,7 @@ val roots = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
 // create an object graph from description in `module`
 // with `A` as a GC root
 
-val objects = Injector().produceUnsafe(module, roots)
+val objects = Injector().produce(module, roots).unsafeGet()
 
 // A and B are in the object graph
 
@@ -63,15 +63,15 @@ class A(val b: B)
 class B(val a: A) 
 class C(val c: C)
 
-val locator = Injector().produceUnsafe(new ModuleDef {
+val objects = Injector().produce(new ModuleDef {
   make[A]
   make[B]
   make[C]
-}, GCMode.NoGC)
+}, GCMode.NoGC).unsafeGet()
 
-locator.get[A] eq locator.get[B].a
-locator.get[B] eq locator.get[A].b
-locator.get[C] eq locator.get[C].c
+objects.get[A] eq objects.get[B].a
+objects.get[B] eq objects.get[A].b
+objects.get[C] eq objects.get[C].c
 ```
 
 #### Automatic Resolution with generated proxies
@@ -114,7 +114,8 @@ val module = new ModuleDef {
 // disable proxies and execute the module
 
 val locator = Injector.NoProxies()
-  .produceUnsafe(module, GCMode.NoGC)
+  .produce(module, GCMode.NoGC)
+  .unsafeGet()
 
 locator.get[A].b eq locator.get[B]
 locator.get[B].a eq locator.get[A]
@@ -160,8 +161,8 @@ val appModule = new ModuleDef {
 }
 
 val resources = Injector(bootstrapModule)
-  .produceUnsafe(appModule, GCMode.NoGC)
-  .get[Set[PrintResource]]
+  .produce(appModule, GCMode.NoGC)
+  .use(_.get[Set[PrintResource]])
 
 resources.foreach(_.start())
 resources.toSeq.reverse.foreach(_.stop())
@@ -212,9 +213,9 @@ val module = new ModuleDef {
 
 val roots = Set[DIKey](DIKey.get[Set[Elem]])
 
-val locator = Injector().produceUnsafe(PlannerInput(module, roots))
+val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
 
-locator.get[Set[Elem]].size == 1
+objects.get[Set[Elem]].size == 1
 ```
 
 The `Weak` class was not required by any dependency of `Set[Elem]`, so it was pruned.
@@ -248,9 +249,9 @@ final class Strong(weak: Weak) extends Elem {
   println("Strong constructed")
 }
 
-val locator = Injector().produceUnsafe(PlannerInput(module, roots))
+val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
 
-locator.get[Set[Elem]].size == 2
+objects.get[Set[Elem]].size == 2
 ```
 
 ### Inner Classes and Path-Dependent Types
@@ -270,8 +271,8 @@ val module = new ModuleDef {
 }
 
 Injector()
-  .produceUnsafe(module, GCMode.NoGC)
-  .get[path.A]
+  .produce(module, GCMode.NoGC)
+  .use(_.get[path.A])
 ```
 
 Since version `0.10`, path-dependent types with a type (non-value) prefix are no longer supported, see issue: https://github.com/7mind/izumi/issues/764
@@ -295,9 +296,9 @@ val module = new ModuleDef {
   make[C]
 }
 
-val locator = Injector().produceUnsafe(module, GCMode.NoGC)
+val objects = Injector().produce(module, GCMode.NoGC).unsafeGet()
 
-assert(locator.get[A].c eq locator.get[C]) 
+assert(objects.get[A].c eq objects.get[C]) 
 ```
 
 Locator contains metadata about the plan and the bindings from which it was ultimately created:
@@ -305,7 +306,7 @@ Locator contains metadata about the plan and the bindings from which it was ulti
 ```scala mdoc:to-string
 // Plan that created this locator
 
-val plan: OrderedPlan = locator.plan
+val plan: OrderedPlan = objects.plan
 
 // Bindings from which the Plan was built
 

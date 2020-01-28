@@ -21,12 +21,14 @@ trait Producer {
     produceDetailedFX[F](plan, FinalizerFilter.all[F])
   }
 
+  final def produce(plan: OrderedPlan): DIResourceBase[Identity, Locator] = produceF[Identity](plan)
+  final def produceDetailed(plan: OrderedPlan): DIResourceBase[Identity, Either[FailedProvision[Identity], Locator]] = produceDetailedF[Identity](plan)
+
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafeF[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Locator] = {
     val resource = produceF[F](plan)
     resource.acquire.map(resource.extract)
   }
-
-  final def produce(plan: OrderedPlan): DIResourceBase[Identity, Locator] = produceF[Identity](plan)
-  final def produceDetailed(plan: OrderedPlan): DIResourceBase[Identity, Either[FailedProvision[Identity], Locator]] = produceDetailedF[Identity](plan)
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafe(plan: OrderedPlan): Locator = produceUnsafeF[Identity](plan)
 }

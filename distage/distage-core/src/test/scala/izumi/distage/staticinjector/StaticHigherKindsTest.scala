@@ -33,7 +33,7 @@ class StaticHigherKindsTest extends AnyWordSpec with MkInjector {
 
     val listInjector = mkNoCyclesInjector()
     val listPlan = listInjector.plan(PlannerInput.noGc(Definition[List](5)))
-    val listContext = listInjector.produceUnsafe(listPlan)
+    val listContext = listInjector.produce(listPlan).unsafeGet()
 
     assert(listContext.get[TestTrait].get == List(5))
     assert(listContext.get[TestServiceClass[List]].get == List(5))
@@ -46,7 +46,7 @@ class StaticHigherKindsTest extends AnyWordSpec with MkInjector {
 
     val optionTInjector = mkNoCyclesInjector()
     val optionTPlan = optionTInjector.plan(PlannerInput.noGc(Definition[OptionT[List, ?]](5)))
-    val optionTContext = optionTInjector.produceUnsafe(optionTPlan)
+    val optionTContext = optionTInjector.produce(optionTPlan).unsafeGet()
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
     assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
@@ -55,7 +55,7 @@ class StaticHigherKindsTest extends AnyWordSpec with MkInjector {
 
     val idInjector = mkNoCyclesInjector()
     val idPlan = idInjector.plan(PlannerInput.noGc(Definition[id](5)))
-    val idContext = idInjector.produceUnsafe(idPlan)
+    val idContext = idInjector.produce(idPlan).unsafeGet()
 
     assert(idContext.get[TestTrait].get == 5)
     assert(idContext.get[TestServiceClass[id]].get == 5)

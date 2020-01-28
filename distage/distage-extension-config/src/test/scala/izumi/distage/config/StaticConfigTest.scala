@@ -22,7 +22,7 @@
 //      make[TestTrait]
 //    }
 //    val plan = injector.plan(PlannerInput.noGc(definition))
-//    val context = injector.produceUnsafe(plan)
+//    val context = injector.produce(plan).unsafeGet()
 //
 //    assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
 //    assert(context.get[TestTrait].testConf == TestConf(true))
@@ -40,7 +40,7 @@
 //      make[TestGenericConfFactory[TestConfAlias]]
 //    }
 //    val plan = injector.plan(PlannerInput.noGc(definition))
-//    val context = injector.produceUnsafe(plan)
+//    val context = injector.produce(plan).unsafeGet()
 //
 //    assert(context.get[TestDependency] == TestDependency(TestConf(false)))
 //    assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
@@ -59,7 +59,7 @@
 //      make[TestGenericConfFactory[TestConfAlias]]
 //    }
 //    val plan = injector.plan(PlannerInput.noGc(definition))
-//    val context = injector.produceUnsafe(plan)
+//    val context = injector.produce(plan).unsafeGet()
 //
 //    val factory = context.get[TestFactory]
 //    assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
@@ -85,7 +85,7 @@
 //      }
 //    }
 //    val plan = injector.plan(PlannerInput.noGc(definition))
-//    val context = injector.produceUnsafe(plan)
+//    val context = injector.produce(plan).unsafeGet()
 //
 //    assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
 //  }

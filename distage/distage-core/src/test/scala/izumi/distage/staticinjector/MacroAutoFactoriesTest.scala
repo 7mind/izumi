@@ -21,7 +21,7 @@ class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val factory = context.get[Factory]
     assert(factory.wiringTargetForDependency != null)
@@ -55,7 +55,7 @@ class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[GenericAssistedFactory]
     val product = instantiated.x(List(SpecialDep()), List(5))
@@ -74,7 +74,7 @@ class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[AssistedFactory]
 
@@ -93,7 +93,7 @@ class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[NamedAssistedFactory]
 
@@ -133,7 +133,7 @@ class MacroAutoFactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Factory]
 

@@ -17,13 +17,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val injector1 = Injector(Activation(Repo -> Repo.Prod))
-    val context1 = injector1.produceUnsafe(PlannerInput(definition, GCMode(DIKey.get[JustTrait])))
+    val context1 = injector1.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = Injector(Activation(Repo -> Repo.Dummy))
-    val context2 = injector2.produceUnsafe(PlannerInput(definition, GCMode(DIKey.get[JustTrait])))
+    val context2 = injector2.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])

@@ -83,12 +83,12 @@ val appModule = new ModuleDef {
   make[ConfigPrinter]
 }
 
-val objects = Injector().produceUnsafe(
-  input = Seq(appModule, configModule, appConfigModule).merge,
-  mode  = GCMode(DIKey.get[ConfigPrinter])
-)
-
-objects.get[ConfigPrinter].print()
+Injector().produceGet[ConfigPrinter](
+  Seq(appModule, configModule, appConfigModule).merge
+).use {
+  configPrinter =>
+    configPrinter.print()
+} 
 ```
 
 Automatic derivation of config codecs is based on [circe-config](https://github.com/circe/circe-config) & [circe-derivation](https://github.com/circe/circe-derivation). 

@@ -27,7 +27,7 @@
 //      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
 //      val plan = injector.plan(TestConfigApp.definition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[HttpServer1].listenOn.port == 8081)
 //      assert(context.get[HttpServer2].listenOn.port == 8082)
@@ -70,7 +70,7 @@
 //      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
 //      val plan = injector.plan(TestConfigApp.setDefinition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
 //    }
@@ -79,7 +79,7 @@
 //      val injector = Injector.Standard(mkConfigModule("map-test.conf"))
 //      val plan = injector.plan(TestConfigReaders.mapDefinition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[_, _]])
 //      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
@@ -97,7 +97,7 @@
 //      val injector = Injector.Standard(mkConfigModule("list-test.conf"))
 //      val plan = injector.plan(TestConfigReaders.listDefinition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
 //      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
@@ -114,7 +114,7 @@
 //      val injector = Injector.Standard(mkConfigModule("opt-test.conf"))
 //      val plan = injector.plan(TestConfigReaders.optDefinition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
 //    }
@@ -130,7 +130,7 @@
 //      val injector = Injector.Standard(mkConfigModule("opt-test-missing.conf"))
 //      val plan = injector.plan(TestConfigReaders.optDefinition)
 //
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
 //    }
@@ -167,7 +167,7 @@
 //        make[TestTrait]
 //      })
 //      val plan = injector.plan(definition)
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
 //      assert(context.get[TestTrait].testConf == TestConf(true))
@@ -185,7 +185,7 @@
 //        make[TestGenericConfFactory[TestConfAlias]]
 //      })
 //      val plan = injector.plan(definition)
-//      val context = injector.produceUnsafe(plan)
+//      val context = injector.produce(plan).unsafeGet()
 //
 //      val factory = context.get[TestFactory]
 //      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))

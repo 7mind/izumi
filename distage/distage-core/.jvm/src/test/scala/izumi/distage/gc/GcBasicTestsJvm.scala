@@ -22,7 +22,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Trash]
       }, GCMode(DIKey.get[Circular2])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
@@ -40,7 +40,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[App]
       }, GCMode(DIKey.get[App])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[App] != null)
     }
 
@@ -57,7 +57,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[S3Component]
       }, GCMode(DIKey.get[Ctx])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx].upload.client != null)
       val c1 = result.get[MkS3Client]
       val c2 = result.get[Ctx].upload.client
@@ -77,7 +77,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Initiator]
       }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx] != null)
     }
 
@@ -93,7 +93,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[T2].using[Circular2]
       }, GCMode(DIKey.get[Circular2])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -109,7 +109,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[T2].from[Circular2]
       }, GCMode(DIKey.get[T1])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[T1] != null)
       assert(result.get[T2] != null)
     }
@@ -141,7 +141,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
             }
         }
       }, GCMode(DIKey.get[Circular2])))
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].nothing == 1)
       assert(result.get[Circular2].nothing == 2)
       assert(result.get[Circular1].c2.nothing == 2)
@@ -157,7 +157,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Circular2]
       }, GCMode(DIKey.get[Circular2])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2 != null)
@@ -173,7 +173,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Circular2]
       }, GCMode(DIKey.get[Circular2])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -188,7 +188,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Circular2]
       }, GCMode(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)
@@ -208,7 +208,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           .ref[Circular2]
       }, GCMode(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3])))
 
-      val result = injector.produceUnsafe(plan)
+      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)

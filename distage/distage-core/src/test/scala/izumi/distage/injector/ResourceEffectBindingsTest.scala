@@ -32,7 +32,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Int] == 12)
     }
@@ -46,7 +46,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -66,7 +66,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
+      val context = injector.produceF[Suspend2[Nothing, ?]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int]("1") != context.get[Int]("2"))
       assert(Set(context.get[Int]("1"), context.get[Int]("2")) == Set(1,2))
@@ -81,7 +81,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -110,7 +110,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Set[Char]] == "ab".toSet)
       assert(context.get[Ref[Fn, Set[Char]]].get.unsafeRun() == "ABZ".toSet)

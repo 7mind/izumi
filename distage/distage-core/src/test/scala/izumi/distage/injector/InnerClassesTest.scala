@@ -15,7 +15,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[StableObjectInheritingTrait1.TestDependency]
     })
 
-    val context = mkInjector().produceUnsafe(definition)
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[StableObjectInheritingTrait.TestDependency] == StableObjectInheritingTrait.TestDependency())
     assert(context.get[StableObjectInheritingTrait1.TestDependency] == StableObjectInheritingTrait1.TestDependency())
@@ -31,7 +31,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     })
 
-    val context = mkInjector().produceUnsafe(definition)
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }
@@ -49,7 +49,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
   }
@@ -69,7 +69,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
     }
@@ -91,7 +91,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[TestModule#TestClass].a.isInstanceOf[TestModule#TestDependency])
       """)
@@ -110,7 +110,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass].aValue.isInstanceOf[testProviderModule.TestDependency])
   }
@@ -129,7 +129,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TopLevelPathDepTest.TestClass].a != null)
   }
@@ -141,7 +141,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[TestFactory]
     })
 
-    val context = mkInjector().produceUnsafe(definition)
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
   }
@@ -155,7 +155,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[ByNameCircular2]
     })
 
-    val context = mkNoCglibInjector().produceUnsafe(definition)
+    val context = mkNoCglibInjector().produce(definition).unsafeGet()
 
     assert(context.get[ByNameCircular1] != null)
     assert(context.get[ByNameCircular1].circular2 eq context.get[ByNameCircular2])
@@ -172,7 +172,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[testProviderModule.TestFactory]
     })
 
-    val context = mkInjector().produceUnsafe(definition)
+    val context = mkInjector().produce(definition).unsafeGet()
     assert(context.instances.size == 2 + 5)
 
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
@@ -188,7 +188,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     def testCase = {
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[TestClass].a != null)
     }

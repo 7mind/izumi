@@ -450,7 +450,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val plan4 = injector.plan(defWithTagsWithoutSugar)
       assert(plan3.definition == plan4.definition)
 
-      val context = injector.produceUnsafe(plan1)
+      val context = injector.produce(plan1).unsafeGet()
       val xInstance = context.get[TraitX]
       val yInstance = context.get[TraitY]("Y")
       val implInstance = context.get[ImplXYZ]("my-impl")
