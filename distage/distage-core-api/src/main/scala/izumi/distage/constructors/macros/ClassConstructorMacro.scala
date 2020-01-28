@@ -3,8 +3,8 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
-import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
@@ -36,29 +36,82 @@ object ClassConstructorMacro {
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val (associations, constructor) = mkClassConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(targetType)
-
-        val provided: c.Expr[ProviderMagnet[T]] = {
-          val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
-          providerMagnetMacro.generateProvider[T](
-            parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
-            fun = constructor,
-            isGenerated = true
-          )
-        }
+        val providerMagnet: c.Expr[ProviderMagnet[T]] = mkClassConstructorUnwrapped0(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
         val res = c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($provided) }"
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet) }"
         }
         logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
     }
   }
 
+  private[this] def mkClassConstructorUnwrapped0[T: c.WeakTypeTag](c: blackbox.Context)
+                                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                                  logger: TrivialLogger)
+                                                 (targetType: c.Type): c.Expr[ProviderMagnet[T]] = {
+    import c.universe._
+    import macroUniverse._
+
+    if (!reflectionProvider.isConcrete(targetType)) {
+      c.abort(c.enclosingPosition,
+        s"""Tried to derive constructor function for class $targetType, but the class is an
+           |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
+    } else {
+      val associations = reflectionProvider.constructorParameterLists(targetType)
+
+      def generateProvider[R: c.WeakTypeTag](parameters: List[List[Association.Parameter]],
+                                             fun: List[List[Tree]] => Tree,
+                                             isGenerated: Boolean,
+                                            ): c.Expr[ProviderMagnet[R]] = {
+        val tools = DIUniverseLiftables(macroUniverse)
+        import tools.{liftableParameter, liftTypeToSafeType}
+
+        var i = 0
+        val res = parameters.map(_.map {
+          param =>
+            val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
+              ReflectionUtil.stripByName(u)(param.symbol.finalResultType)
+            })
+            val seqCast = if (param.isByName) {
+              q"seqAny($i).asInstanceOf[() => ${param.tpe}]()"
+            } else {
+              q"seqAny($i).asInstanceOf[${param.tpe}]"
+            }
+            i += 1
+            strippedByNameTpe -> seqCast
+        })
+        val (substitutedByNames, casts) = (res.flatten.map(_._1), res.map(_.map(_._2)))
+
+        val parametersNoByName = Liftable.liftList[Association.Parameter].apply(substitutedByNames)
+
+        c.Expr[ProviderMagnet[R]] {
+          q"""{
+            new ${weakTypeOf[ProviderMagnet[R]]}(
+              new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
+                $parametersNoByName,
+                ${liftTypeToSafeType(weakTypeOf[R])},
+                { seqAny => ${fun(casts)} },
+                $isGenerated,
+              )
+            )
+          }"""
+        }
+      }
+
+      generateProvider[T](
+        parameters = associations,
+        fun = args => q"new $targetType(...$args)",
+        isGenerated = true
+      )
+    }
+  }
+
   private[macros] def mkClassConstructorUnwrapped(c: blackbox.Context)
                                                  (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
                                                  (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                                      logger: TrivialLogger)
+                                                  logger: TrivialLogger)
                                                  (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
 

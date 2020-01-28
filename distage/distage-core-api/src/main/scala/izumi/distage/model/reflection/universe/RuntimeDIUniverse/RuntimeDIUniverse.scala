@@ -225,6 +225,8 @@ object Provider {
                                      fun: Seq[Any] => Any,
                                      isGenerated: Boolean,
                                    ) extends Provider {
+    def this(parameters: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any, isGenerated: Boolean) =
+      this(parameters, ret, fun, fun, isGenerated)
 
     override def unsafeApply(refs: Seq[TypedRef[_]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
@@ -249,7 +251,7 @@ object Provider {
   }
   object ProviderImpl {
     @inline def apply[A](parameters: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any, isGenerated: Boolean): ProviderImpl[A] =
-      new ProviderImpl(parameters, ret, fun, fun, isGenerated)
+      new ProviderImpl(parameters, ret, fun, isGenerated)
   }
 
 }

@@ -85,13 +85,15 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
         strippedByNameTpe -> q"seqAny($i)"
     }.unzip
 
+    val parametersNoByName = Liftable.liftList[Association.Parameter].apply(substitutedByNames)
+
     c.Expr[ProviderMagnet[R]] {
       q"""{
         val fun = $fun
 
         new ${weakTypeOf[ProviderMagnet[R]]}(
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
-            ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
+            $parametersNoByName,
             ${liftTypeToSafeType(weakTypeOf[R])},
             fun,
             { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },

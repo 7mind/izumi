@@ -168,4 +168,15 @@ Forest fire, climbin' higher, real life, it can wait""")
     final case class ServerConfig(port: Port, address: Address)
   }
 
+  object BasicCase8 {
+    class Beep[A]
+    class Bop[A : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep]
+    (implicit val beep: Beep[A])
+  }
+
 }
