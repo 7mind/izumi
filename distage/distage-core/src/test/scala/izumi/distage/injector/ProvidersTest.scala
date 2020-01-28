@@ -18,7 +18,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     assert(context.parent.exists(_.plan.steps.nonEmpty))
     val instantiated = context.get[TestClass]
     assert(instantiated.b == null)
@@ -34,7 +34,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val dependency = context.get[TestDependency]("classdeftypeann1")
     val instantiated = context.get[TestClass]
@@ -51,7 +51,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val context = injector.produceUnsafe(injector.plan(definition))
+    val context = injector.produce(injector.plan(definition)).unsafeGet()
 
     val dependency = context.get[TestDependency]("classdeftypeann1")
     val instantiated = context.get[TestClass]

@@ -31,7 +31,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -48,7 +48,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]("named-trait")
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -69,7 +69,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated1 = context.get[Trait1]
     assert(instantiated1.isInstanceOf[Trait1])
 
@@ -95,7 +95,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated3 = context.get[Trait2]
     assert(instantiated3.isInstanceOf[Trait2])
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
@@ -111,7 +111,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTraitAny {def dep: Dep}]
 
     assert(instantiated.dep eq context.get[Dep])
@@ -128,7 +128,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait2 with (Trait2 with (Trait2 with Trait1))]
 
@@ -149,7 +149,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[Trait]
 
     assert(instantiated.depA.isA)
@@ -172,7 +172,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]
 
     assert(instantiated.rd == Dep().toString)
@@ -189,7 +189,7 @@ class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestTrait].anyValDep != null)
 

@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.46`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.47`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -283,7 +283,6 @@ object Izumi {
       final val id = ArtifactId("logstage")
       final val basePath = Seq("logstage")
 
-      final lazy val api = ArtifactId("logstage-api")
       final lazy val core = ArtifactId("logstage-core")
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
@@ -511,16 +510,12 @@ object Izumi {
     name = Projects.logstage.id,
     artifacts = Seq(
       Artifact(
-        name = Projects.logstage.api,
-        libs = Seq(scala_reflect in Scope.Provided.all) ++ Seq(scala_java_time),
-        depends = Seq(Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
-      ),
-      Artifact(
         name = Projects.logstage.core,
         libs = Seq(scala_reflect in Scope.Provided.all) ++
           Seq(cats_core, zio_core).map(_ in Scope.Optional.all) ++
+          Seq(scala_java_time) ++
           allMonadsTest,
-        depends = Seq(Projects.fundamentals.bio).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.api).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,
@@ -541,7 +536,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.sinkSlf4j,
         libs = Seq(slf4j_api, slf4j_simple),
-        depends = Seq(Projects.logstage.api).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Test.all),
+        depends = Seq(Projects.logstage.core).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       )
     ),
@@ -744,7 +739,7 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
-    enableSharedSettings = false,
+    enableProjectSharedAggSettings = false,
     dontIncludeInSuperAgg = false,
   )
 

@@ -1,0 +1,50 @@
+package izumi.logstage.api
+
+import izumi.logstage.api.Log.CustomContext
+import izumi.logstage.api.logger.{LogRouter, LogSink, RoutingLogger}
+import izumi.logstage.api.routing.ConfigurableLogRouter
+import izumi.logstage.sink.ConsoleSink
+
+trait IzLoggerConvenienceApi {
+  final val Level: Log.Level.type = Log.Level
+  type Logger <: RoutingLogger
+  protected final def make(r: LogRouter): Logger = make(r, CustomContext.empty)
+  protected def make(r: LogRouter, context: CustomContext): Logger
+
+  /**
+    * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
+    */
+  final def apply(threshold: Log.Level = IzLogger.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): Logger = {
+    val r = ConfigurableLogRouter(threshold, sink, levels)
+    make(r)
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink]): Logger = {
+    val r = ConfigurableLogRouter(threshold, sinks)
+    make(r)
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): Logger = {
+    val r = ConfigurableLogRouter(threshold, sinks, levels)
+    make(r)
+  }
+
+  final def apply(receiver: LogRouter): Logger = {
+    make(receiver)
+  }
+
+  final def apply(receiver: LogRouter, customContext: CustomContext): Logger = {
+    make(receiver, customContext)
+  }
+
+  /**
+    * Ignores all log messages
+    */
+  final lazy val NullLogger = make(LogRouter.nullRouter)
+
+  /**
+    * Prints log messages as-is, suitable for logger debugging only
+    */
+  final lazy val DebugLogger = make(LogRouter.debugRouter)
+
+}

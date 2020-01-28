@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.bio.SyncSafe2
-import izumi.logstage.api.AbstractLogger
+import izumi.logstage.api.logger.AbstractLogger
 
 object LogBIO {
   def apply[F[_, _]: LogBIO]: LogBIO[F] = implicitly
@@ -10,3 +10,5 @@ object LogBIO {
     LogIO.fromLogger(logger)
   }
 }
+
+

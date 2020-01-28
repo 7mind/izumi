@@ -330,10 +330,19 @@ class ProviderMagnetTest extends AnyWordSpec {
       )
     }
 
-    "generic parameters without TypeTag should fail" in {
+    "generic parameters without Tag should fail" in {
       assertTypeError(
-        """def fn[T]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get"""
+        """def fn[T] = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get"""
       )
+    }
+
+    "should be equal for the same function value" in {
+      val fn: Int => String = (i: Int) => i.toString
+
+      val p1: ProviderMagnet[String] = fn
+      val p2: ProviderMagnet[String] = fn
+
+      assert(p1 == p2)
     }
 
     "progression test: FAILS to handle case class .apply references with argument annotations" in {

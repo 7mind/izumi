@@ -5,9 +5,19 @@ import izumi.logstage.api.Log.LogArg
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.rendering.LogstageCodec
+
+import scala.util.{Failure, Success}
 
 
-object ArgumentNameExtractionMacro {
+class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict: Boolean) {
+  private final val applyDebug = DebugProperties.`izumi.debug.macro.logstage`.asBoolean(false)
+
+  @inline private[this] final def debug(arg: c.universe.Tree, s: => String): Unit = {
+    if (applyDebug) {
+      c.warning(arg.pos, s)
+    }
+  }
 
   import ExtractedName._
 
@@ -18,23 +28,17 @@ object ArgumentNameExtractionMacro {
        |   logger.info(s"My message: $${call.method} $${access.value}")
        |3) Named expression:
        |   logger.info(s"My message: $${Some.expression -> "argname"}")
-       |4) Invisible named expression:
+       |4) Named expression, hidden name:
        |   logger.info(s"My message: $${Some.expression -> "argname" -> null}")
        |5) De-camelcased name:
        |   logger.info($${camelCaseName-> ' '})
        |""".stripMargin
 
 
-  protected[macros] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
+  protected[macros] def recoverArgNames(args: Seq[c.Tree]): c.Expr[List[LogArg]] = {
     import c.universe._
 
-    val applyDebug = false
 
-    def debug(arg: c.universe.Tree, s: => String): Unit = {
-      if (applyDebug) {
-        c.warning(arg.pos, s)
-      }
-    }
 
     object Arrow {
       def unapply(arg: c.universe.Tree): Option[TypeApply] = {
@@ -134,20 +138,20 @@ object ArgumentNameExtractionMacro {
       }
     }
 
-    val expressions = args.map {
+    val expressions = args.map(a => c.Expr(a)).map {
       param =>
         param.tree match {
           case NameSeq(seq) =>
-            reifiedExtracted(c)(param, seq)
+            reifiedExtracted(param, seq)
 
           case ArrowArg(expr, name) => // ${x -> "name"}
             name match {
               case NChar(ch) if ch == ' ' =>
                 expr.tree match {
                   case NameSeq(seq) =>
-                    reifiedExtracted(c)(expr, seq.map(_.camelToUnderscores.replace('_', ' ')))
+                    reifiedExtracted(expr, seq.map(_.camelToUnderscores.replace('_', ' ')))
                   case _ =>
-                    reifiedExtracted(c)(expr, Seq(ch.toString))
+                    reifiedExtracted(expr, Seq(ch.toString))
                 }
               case NChar(ch) =>
                 c.abort(param.tree.pos,
@@ -158,11 +162,11 @@ object ArgumentNameExtractionMacro {
                      |""".stripMargin)
 
               case NString(s) =>
-                reifiedExtracted(c)(expr, Seq(s))
+                reifiedExtracted(expr, Seq(s))
             }
 
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
-            reifiedExtractedHidden(c)(expr, name.str)
+            reifiedExtractedHidden(expr, name.str)
 
           case t@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
             c.warning(t.pos,
@@ -172,7 +176,7 @@ object ArgumentNameExtractionMacro {
                  |$example
                  |""".stripMargin)
 
-            reifiedPrefixed(c)(param, "UNNAMED")
+            reifiedPrefixed(param, "UNNAMED")
 
           case v =>
             c.warning(v.pos,
@@ -183,7 +187,7 @@ object ArgumentNameExtractionMacro {
                  |
                  |Tree: ${c.universe.showRaw(v)}
                  |""".stripMargin)
-            reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
+            reifiedPrefixedValue(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
         }
     }
 
@@ -193,34 +197,51 @@ object ArgumentNameExtractionMacro {
   }
 
 
-  private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
-    reifiedPrefixedValue(c)(param, param, prefix)
+  private def reifiedPrefixed(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
+    reifiedPrefixedValue(param, param, prefix)
   }
 
-  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
+  private def reifiedPrefixedValue(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
     import c.universe._
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
-      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hiddenName = false)
+      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hiddenName = false, findCodec(param).splice)
     }
   }
 
 
-  private def reifiedExtractedHidden(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
+  private def reifiedExtractedHidden(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
     import c.universe._
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     reify {
-      LogArg(Seq(paramRepTree.splice), param.splice, hiddenName = true)
+      LogArg(Seq(paramRepTree.splice), param.splice, hiddenName = true, findCodec(param).splice)
     }
   }
 
-  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: Seq[String]): c.universe.Expr[LogArg] = {
+  private def reifiedExtracted(param: c.Expr[Any], s: Seq[String]): c.universe.Expr[LogArg] = {
     import c.universe._
     val list = c.Expr[Seq[String]](q"List(..$s)")
+
     reify {
-      LogArg(list.splice, param.splice, hiddenName = false)
+      LogArg(list.splice, param.splice, hiddenName = false, findCodec(param).splice)
     }
   }
 
+  private def findCodec(param: c.Expr[Any]): c.Expr[Option[LogstageCodec[Any]]] = {
+    import c.universe._
+    val maybeCodec = scala.util.Try(c.inferImplicitValue(appliedType(weakTypeOf[LogstageCodec[Nothing]].typeConstructor, param.tree.tpe), silent = false))
+    debug(param.tree, s"Logstage codec for argument $param: ${param.tree.tpe} == $maybeCodec")
+
+    val tc = maybeCodec match {
+      case Failure(exception) if strict =>
+        throw exception
+      case Failure(_) =>
+        None
+      case Success(value) =>
+        Some(value)
+    }
+
+    c.Expr[Option[LogstageCodec[Any]]](q"$tc")
+  }
 }
 

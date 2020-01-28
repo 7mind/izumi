@@ -13,7 +13,7 @@ trait MkGcInjector {
   implicit class InjectorExt(injector: Injector) {
     def finishProduce(plan: OrderedPlan): Locator = {
       val updated = injector.finish(plan.toSemi)
-      injector.produceUnsafe(updated)
+      injector.produce(updated).unsafeGet()
     }
   }
 }

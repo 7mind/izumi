@@ -27,7 +27,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -44,7 +44,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -66,7 +66,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -82,7 +82,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       val instance = context.get[SelfReference]
 
@@ -101,7 +101,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       val instance = context.get[SelfReference]
 
@@ -119,7 +119,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -143,7 +143,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -166,7 +166,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkInjector()
-      val context = injector.produceUnsafe(definition)
+      val context = injector.produce(definition).unsafeGet()
 
       assert(context.get[Dependency] != null)
       assert(context.get[GenericCircular[Dependency]] != null)
@@ -187,7 +187,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+      val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[IdTypeCircular] != null)
       assert(context.get[IdParamCircular] != null)
@@ -205,7 +205,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkInjector()
-      val context = injector.produceUnsafe(definition)
+      val context = injector.produce(definition).unsafeGet()
 
       assert(context.get[Dependency {def dep: RefinedCircular}] != null)
       assert(context.get[RefinedCircular] != null)
@@ -226,7 +226,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       }, GCMode(DIKey.get[Root]))
 
       val injector = mkInjector()
-      val context = injector.produceUnsafe(definition)
+      val context = injector.produce(definition).unsafeGet()
 
       assert(context.get[ComponentHolder].componentFwdRef eq context.get[ComponentWithByNameFwdRef])
       assert(context.get[ComponentWithByNameFwdRef].get eq context.get[ComponentHolder])
@@ -274,7 +274,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       )
 
       val plan = injector.plan(definition)
-      injector.produceUnsafe(plan)
+      injector.produce(plan).unsafeGet()
     }
   }
 
@@ -290,7 +290,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
           make[Circular2]
         })
 
-        val context = mkInjector().produceUnsafe(definition)
+        val context = mkInjector().produce(definition).unsafeGet()
 
         assert(context.get[Circular1] != null)
         assert(context.get[Circular1].circular2 != context.get[Circular2])
@@ -310,7 +310,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
           make[testProviderModule.Circular2]
         })
 
-        val context = mkInjector().produceUnsafe(definition)
+        val context = mkInjector().produce(definition).unsafeGet()
 
         assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
       }
@@ -336,7 +336,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeGet().unsafeRun()
 
       val instance = context.get[SelfReference]
 

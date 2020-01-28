@@ -279,8 +279,6 @@ println(closedInit.initialized)
 You can convert between `DIResource` and `cats.effect.Resource` via `.toCats`/`.fromCats` methods, and between
 `zio.ZManaged` via `.toZIO`/`.fromZIO`.
 
-You need to use resource-aware `Injector.produce`/`Injector.produceF`, instead of `produceUnsafe` to be able to deallocate the object graph.
-
 ### Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
@@ -364,7 +362,7 @@ val finalModule = Seq(
 ).merge
 
 // wire the graph
-val objects = Injector().produceUnsafeF[IO](finalModule, GCMode.NoGC).unsafeRunSync()
+val objects = Injector().produceF[IO](finalModule, GCMode.NoGC).unsafeGet().unsafeRunSync()
 
 val server = objects.get[Server[IO]]
 val client = objects.get[Client[IO]]
@@ -448,7 +446,7 @@ val io = Injector()
 new zio.DefaultRuntime{}.unsafeRun(io)
 ```
 
-You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
+You need to use effect-aware `Injector.produceF` method to use effect bindings.
 
 ### Auto-Traits
 

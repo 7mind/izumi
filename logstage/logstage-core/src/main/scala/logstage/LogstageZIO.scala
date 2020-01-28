@@ -2,8 +2,8 @@ package logstage
 
 import izumi.functional.bio.SyncSafe2
 import izumi.functional.mono.SyncSafe
-import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log.CustomContext
+import izumi.logstage.api.logger.AbstractLogger
 import logstage.LogstageCats.WrappedLogIO
 import zio.{IO, ZIO}
 

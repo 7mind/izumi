@@ -2,8 +2,8 @@ package logstage
 
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
-import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log.{Entry, LoggerId}
+import izumi.logstage.api.logger.AbstractLogger
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.implicitConversions

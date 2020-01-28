@@ -1,27 +1,10 @@
-package izumi.logstage.api
+package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{CustomContext, LoggerId}
-import izumi.logstage.macros.LoggerMacroMethods
-
-import scala.language.experimental.macros
 
 trait AbstractLogger {
-
-  /**
-    * More efficient aliases for [[log]]
-    *
-    * These directly splice an [[acceptable]] check before calling [[unsafeLog]] which is more efficient than
-    * creating a `messageThunk` for a [[log]] call.
-    *
-    * They also look better in Intellij
-    * */
-  final def trace(message: String): Unit = macro LoggerMacroMethods.scTraceMacro
-  final def debug(message: String): Unit = macro LoggerMacroMethods.scDebugMacro
-  final def info(message: String): Unit = macro LoggerMacroMethods.scInfoMacro
-  final def warn(message: String): Unit = macro LoggerMacroMethods.scWarnMacro
-  final def error(message: String): Unit = macro LoggerMacroMethods.scErrorMacro
-  final def crit(message: String): Unit = macro LoggerMacroMethods.scCritMacro
 
   /** Log Entry if `logLevel` is above the threshold configured for this logger. */
   @inline final def log(entry: Log.Entry): Unit = {
