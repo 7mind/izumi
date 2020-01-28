@@ -1,4 +1,5 @@
 import izumi.logstage.{api, sink}
+import logstage.strict.LogIOStrict
 
 package object logstage extends LogStage {
   override type IzLogger = api.IzLogger

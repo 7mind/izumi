@@ -6,9 +6,6 @@ trait LogStage {
   type IzLogger = api.IzLogger
   val IzLogger: api.IzLogger.type = api.IzLogger
 
-  type IzStrictLogger = api.IzStrictLogger
-  val IzStrictLogger: api.IzStrictLogger.type = api.IzStrictLogger
-
   type ConsoleSink = sink.ConsoleSink
   val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
 

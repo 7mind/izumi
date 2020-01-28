@@ -1,8 +1,8 @@
-package izumi.logstage.api
+package izumi.logstage.api.strict
 
-import izumi.logstage.api
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractMacroStrictLogger, LogRouter, RoutingLogger}
+import izumi.logstage.api.{IzLogger, IzLoggerConvenienceApi, Log}
 
 
 class IzStrictLogger
@@ -24,7 +24,7 @@ class IzStrictLogger
 object IzStrictLogger extends IzLoggerConvenienceApi {
   override type Logger = IzStrictLogger
 
-  override protected def make(r: LogRouter, context: CustomContext): api.IzStrictLogger = {
+  override protected def make(r: LogRouter, context: CustomContext): IzStrictLogger = {
     new IzStrictLogger(r, context)
   }
 }

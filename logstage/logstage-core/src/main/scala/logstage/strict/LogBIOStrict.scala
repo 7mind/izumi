@@ -1,4 +1,4 @@
-package logstage
+package logstage.strict
 
 import izumi.functional.bio.SyncSafe2
 import izumi.logstage.api.logger.AbstractLogger
