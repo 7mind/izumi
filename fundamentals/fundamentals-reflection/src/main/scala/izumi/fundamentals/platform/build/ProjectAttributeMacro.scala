@@ -19,23 +19,26 @@ import scala.reflect.macros.blackbox
     ),
  */
 object ProjectAttributeMacro {
-  def buildTimestamp(): LocalDateTime = macro buildTimestampMacro
+  def buildTimestamp(): LocalDateTime = macro ProjectAttributeMacroImpl.buildTimestampMacro
 
-  def projectRoot(): Option[String] = macro findProjectRootMacro
+  def projectRoot(): Option[String] = macro ProjectAttributeMacroImpl.findProjectRootMacro
 
-  def extractSbtProjectGroupId(): Option[String] = macro extractProjectGroupIdMacro
+  def extractSbtProjectGroupId(): Option[String] = macro ProjectAttributeMacroImpl.extractProjectGroupIdMacro
 
-  def extractSbtProjectVersion(): Option[String] = macro extractProjectVersionMacro
+  def extractSbtProjectVersion(): Option[String] = macro ProjectAttributeMacroImpl.extractProjectVersionMacro
 
-  def extractSbtVersion(): Option[String] = macro extractSbtVersionMacro
+  def extractSbtVersion(): Option[String] = macro ProjectAttributeMacroImpl.extractSbtVersionMacro
 
-  def extractScalatestVersion(): Option[String] = macro extractScalatestVersionMacro
+  def extractScalatestVersion(): Option[String] = macro ProjectAttributeMacroImpl.extractScalatestVersionMacro
 
-  def extractScalaVersion(): Option[String] = macro extractScalaVersionMacro
+  def extractScalaVersion(): Option[String] = macro ProjectAttributeMacroImpl.extractScalaVersionMacro
 
-  def extractScalaVersions(): Option[String] = macro extractScalaVersionsMacro
+  def extractScalaVersions(): Option[String] = macro ProjectAttributeMacroImpl.extractScalaVersionsMacro
 
-  def extract(name: String): Option[String] = macro extractAttrMacro
+  def extract(name: String): Option[String] = macro ProjectAttributeMacroImpl.extractAttrMacro
+}
+
+object ProjectAttributeMacroImpl {
 
   def buildTimestampMacro(c: blackbox.Context)(): c.Expr[LocalDateTime] = {
     import c.universe._

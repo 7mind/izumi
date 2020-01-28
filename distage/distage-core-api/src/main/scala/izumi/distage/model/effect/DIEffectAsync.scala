@@ -1,5 +1,8 @@
 package izumi.distage.model.effect
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{Executors, ThreadFactory}
+
 import cats.Parallel
 import cats.effect.Timer
 import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
@@ -20,7 +23,11 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
-      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService(null)
+      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(new NamedThreadFactory(
+          "dieffect-cached-pool", daemon = true
+        ))
+      }
 
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
         parTraverse(l)(f)
@@ -51,9 +58,30 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   }
 
   private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-    implicit val ec = ec0
+    implicit val ec: ExecutionContext = ec0
     val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
     Await.result(future, Duration.Inf).toList
+  }
+
+  private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+
+    private val parentGroup =
+      Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
+
+    private val threadGroup = new ThreadGroup(parentGroup, name)
+    private val threadCount = new AtomicInteger(1)
+    private val threadHash  = Integer.toUnsignedString(this.hashCode())
+
+    override def newThread(r: Runnable): Thread = {
+      val newThreadNumber = threadCount.getAndIncrement()
+
+      val thread = new Thread(threadGroup, r)
+      thread.setName(s"$name-$newThreadNumber-$threadHash")
+      thread.setDaemon(daemon)
+
+      thread
+    }
+
   }
 
 }

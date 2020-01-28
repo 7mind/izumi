@@ -7,16 +7,15 @@ import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
-  self =>
 
-  import u.u.{Annotation, Constant, Literal}
+  import u.u.{Annotation, LiteralApi}
   import u.{Association, DIKey, MethodSymbNative, SafeType, SymbNative, SymbolInfo, TypeNative, Wiring, stringIdContract}
 
   private[this] object Id {
     def unapply(ann: Annotation): Option[String] = {
       ann.tree.children.tail.collectFirst {
-        case Literal(Constant(name: String)) =>
-          name
+        case l: LiteralApi if l.value.value.isInstanceOf[String] =>
+          l.value.value.asInstanceOf[String]
       }
     }
   }

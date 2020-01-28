@@ -9,6 +9,7 @@ import izumi.distage.testkit.{DebugProperties, SpecConfig}
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
@@ -94,7 +95,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
   override def run(testName: Option[String], args: Args): Status = {
-    DistageTestsRegistrySingleton.registerTracker(suiteId)(args.tracker)
+    DistageTestsRegistrySingleton.registerSuiteReporter(suiteId)(SuiteReporter(args.tracker, args.reporter))
     // If, we're running under sbt, scan the classpath manually to add all tests
     // in neighboring packages before starting anything, because sbt runner
     // instantiates & runs tests at the same time, so when `run` is called
@@ -210,7 +211,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   protected def parallelEnvExecution: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
-    val scalatestReporter = new ScalatestReporter(args.reporter)
+    val scalatestReporter = new DistageScalatestReporter
     new SafeTestReporter(scalatestReporter)
   }
 

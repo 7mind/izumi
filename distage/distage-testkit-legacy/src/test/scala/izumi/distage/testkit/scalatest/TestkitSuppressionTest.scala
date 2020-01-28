@@ -3,13 +3,12 @@ package izumi.distage.testkit.scalatest
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO
-import distage.{DIKey, TagK}
+import distage.{DIKey, LocatorRef, TagK}
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.testkit.scalatest.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 
-
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
   private val cc = new AtomicInteger(0)
@@ -40,8 +39,11 @@ abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitSuppressionTestZio extends TestkitSuppressionTest[zio.IO[Throwable, ?]]

@@ -6,6 +6,7 @@ import izumi.distage.testkit.services.scalatest.adapter.DISyntaxBIO
 import izumi.functional.bio.{BIO, BIOError, F}
 import scalatest.adapter.specs.DistagePluginBioSpec
 
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK] extends DistagePluginBioSpec[F]
   with DISyntaxBIO[F] {
 
@@ -25,4 +26,5 @@ abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK] extends DistagePluginBioSpe
 
 }
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitBIOTestZio extends TestkitBIOTest[zio.IO]

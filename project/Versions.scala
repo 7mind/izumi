@@ -20,7 +20,7 @@ object V {
   val circe_config = "0.7.0"
   val jawn = "1.0.0"
 
-  val http4s = "0.21.0-RC1"
+  val http4s = "0.21.0-RC2"
 
   val scalameta = "4.3.0"
   val fastparse = "2.2.3"
@@ -38,5 +38,5 @@ object V {
   // good to drop - java
   val cglib_nodep = "3.3.0"
   val scala_java_time = "2.0.0-RC3"
-  val docker_java = "3.2.0-rc2"
+  val docker_java = "3.2.0-rc3"
 }

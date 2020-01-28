@@ -14,6 +14,7 @@ import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.recursive.LocatorRef
 import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.collection.mutable
@@ -52,7 +53,7 @@ class PlanInterpreterDefaultRuntimeImpl
 
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
-    mutProvisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
+    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], new LocatorRef())
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
@@ -125,7 +126,7 @@ class PlanInterpreterDefaultRuntimeImpl
                 Left(FailedProvision[F](context, plan, parentContext, mutFailures.toVector))
               } else {
                 val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
-                locator.get[Locator.LocatorRef].ref.set(locator)
+                locator.get[LocatorRef].ref.set(locator)
 
                 Right(locator)
               }

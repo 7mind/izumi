@@ -10,7 +10,7 @@ import izumi.distage.testkit.scalatest.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
-
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class TestkitMemoizationTest[F[_] : TagK] extends TestkitSelftest[F] {
   val ref = new AtomicReference[TestResource1]()
 
@@ -53,8 +53,11 @@ abstract class TestkitMemoizationTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
 
+@deprecated("Use dstest", "2019/Jul/18")
 class TestkitMemoizationTestZio extends TestkitMemoizationTest[zio.IO[Throwable, ?]]

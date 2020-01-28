@@ -26,7 +26,7 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase {type Self <: S}
+  type Aux[S] = ModuleBase { type Self <: S }
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = {
     binds =>
@@ -91,6 +91,10 @@ object ModuleBase {
       val thoseBindings = that.bindings.toSeq
 
       T.make(tagwiseMerge(theseBindings ++ thoseBindings))
+    }
+
+    def +(binding: Binding): T = {
+      module ++ T.make(Set(binding))
     }
 
     def :+(binding: Binding): T = {
@@ -159,6 +163,7 @@ object ModuleBase {
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
     val grouped = bs.groupBy(_.group)
 
+    // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
     ListSet.newBuilder.++= {
       grouped
         .map {

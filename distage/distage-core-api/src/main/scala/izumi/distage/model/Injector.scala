@@ -9,7 +9,7 @@ import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 
 /**
-  * Injector can create an object graph ([[Locator]]) from [[ModuleBase]] or [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector can create an object graph ([[Locator]]) from a [[ModuleBase]] or an [[izumi.distage.model.plan.OrderedPlan]]
   *
   * @see [[Planner]]
   * @see [[Producer]]
@@ -33,8 +33,8 @@ trait Injector extends Planner with Producer {
   final def produceF[F[_]: TagK: DIEffect](input: PlannerInput): DIResourceBase[F, Locator] = {
     produceF[F](plan(input))
   }
-  final def produceF[F[_]: TagK: DIEffect](input: ModuleBase, mode: GCMode): DIResourceBase[F, Locator] = {
-    produceF[F](plan(PlannerInput(input, mode)))
+  final def produceF[F[_]: TagK: DIEffect](module: ModuleBase, mode: GCMode): DIResourceBase[F, Locator] = {
+    produceF[F](plan(PlannerInput(module, mode)))
   }
 
   /**
@@ -44,43 +44,34 @@ trait Injector extends Planner with Producer {
     * This is useful for the common case when your main logic class
     * is the root of your graph AND the object you want to use immediately.
     *
-    * A short-hand for:
+    * `Injector().produceGetF[F, A](moduleDef)` is a short-hand for:
     *
     * {{{
     *   Injector()
-    *     .produceF[F](input, GCMode(DIKey.get[A]))
+    *     .produceF[F](moduleDef, GCMode(DIKey.get[A]))
     *     .map(_.get[A])
     * }}}
     * */
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](input: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A])))).map(_.get[A])
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](module: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(module, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(input: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A].named(name))))).map(_.get[A](name))
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(module: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(module, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
-
-  final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = {
-    produce(plan(input))
-  }
-  final def produce(input: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = {
-    produce(plan(PlannerInput(input, mode)))
-  }
-
-  final def produceGet[A: Tag](input: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](input)
-  final def produceGet[A: Tag](name: String)(input: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(input)
 
   final def produceUnsafeF[F[_]: TagK: DIEffect](input: PlannerInput): F[Locator] = {
     produceUnsafeF[F](plan(input))
   }
-  final def produceUnsafeF[F[_]: TagK: DIEffect](input: ModuleBase, mode: GCMode): F[Locator] = {
-    produceUnsafeF[F](plan(PlannerInput(input, mode)))
+  final def produceUnsafeF[F[_]: TagK: DIEffect](module: ModuleBase, mode: GCMode): F[Locator] = {
+    produceUnsafeF[F](plan(PlannerInput(module, mode)))
   }
 
-  final def produceUnsafe(input: PlannerInput): Locator = {
-    produceUnsafe(plan(input))
-  }
-  final def produceUnsafe(input: ModuleBase, mode: GCMode): Locator = {
-    produceUnsafe(plan(PlannerInput(input, mode)))
-  }
+  final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
+  final def produce(module: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = produceF[Identity](module, mode)
 
+  final def produceGet[A: Tag](module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](module)
+  final def produceGet[A: Tag](name: String)(module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(module)
+
+  final def produceUnsafe(input: PlannerInput): Locator = produceUnsafeF[Identity](input)
+  final def produceUnsafe(module: ModuleBase, mode: GCMode): Locator = produceUnsafeF[Identity](module, mode)
 }

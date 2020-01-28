@@ -2,7 +2,7 @@ package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
-import izumi.logstage.macros.LogMessageMacro.logMessageMacro
+import izumi.logstage.macros.LogMessageMacro
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -161,7 +161,7 @@ object Log {
 
   object Message {
     /** Construct [[Message]] from a string interpolation */
-    implicit def apply(message: String): Message = macro logMessageMacro
+    implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
   }
 
 }
