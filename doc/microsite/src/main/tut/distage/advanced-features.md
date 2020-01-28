@@ -161,7 +161,7 @@ val appModule = new ModuleDef {
 }
 
 val resources = Injector(bootstrapModule)
-  .produceGet(appModule, GCMode.NoGC)
+  .produce(appModule, GCMode.NoGC)
   .use(_.get[Set[PrintResource]])
 
 resources.foreach(_.start())
@@ -306,7 +306,7 @@ Locator contains metadata about the plan and the bindings from which it was ulti
 ```scala mdoc:to-string
 // Plan that created this locator
 
-val plan: OrderedPlan = locator.plan
+val plan: OrderedPlan = objects.plan
 
 // Bindings from which the Plan was built
 
