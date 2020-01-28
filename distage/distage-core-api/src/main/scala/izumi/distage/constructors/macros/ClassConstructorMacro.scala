@@ -3,7 +3,7 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -66,7 +66,7 @@ object ClassConstructorMacro {
                                              isGenerated: Boolean,
                                             ): c.Expr[ProviderMagnet[R]] = {
         val tools = DIUniverseLiftables(macroUniverse)
-        import tools.{liftableParameter, liftTypeToSafeType}
+        import tools.{liftTypeToSafeType, liftableParameter}
 
         var i = 0
         val res = parameters.map(_.map {
