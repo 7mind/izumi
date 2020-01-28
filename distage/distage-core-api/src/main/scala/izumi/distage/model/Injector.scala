@@ -33,8 +33,8 @@ trait Injector extends Planner with Producer {
   final def produceF[F[_]: TagK: DIEffect](input: PlannerInput): DIResourceBase[F, Locator] = {
     produceF[F](plan(input))
   }
-  final def produceF[F[_]: TagK: DIEffect](module: ModuleBase, mode: GCMode): DIResourceBase[F, Locator] = {
-    produceF[F](plan(PlannerInput(module, mode)))
+  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, mode: GCMode): DIResourceBase[F, Locator] = {
+    produceF[F](plan(PlannerInput(bindings, mode)))
   }
 
   /**
@@ -52,11 +52,11 @@ trait Injector extends Planner with Producer {
     *     .map(_.get[A])
     * }}}
     * */
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](module: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(module, DIKey.get[A]))).map(_.get[A])
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(bindings, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(module: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(module, DIKey.get[A].named(name)))).map(_.get[A](name))
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(bindings: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(bindings, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
   @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
@@ -65,19 +65,19 @@ trait Injector extends Planner with Producer {
   }
 
   @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
-  final def produceUnsafeF[F[_]: TagK: DIEffect](module: ModuleBase, mode: GCMode): F[Locator] = {
-    produceUnsafeF[F](plan(PlannerInput(module, mode)))
+  final def produceUnsafeF[F[_]: TagK: DIEffect](bindings: ModuleBase, mode: GCMode): F[Locator] = {
+    produceUnsafeF[F](plan(PlannerInput(bindings, mode)))
   }
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
-  final def produce(module: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = produceF[Identity](module, mode)
+  final def produce(bindings: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = produceF[Identity](bindings, mode)
 
-  final def produceGet[A: Tag](module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](module)
-  final def produceGet[A: Tag](name: String)(module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(module)
+  final def produceGet[A: Tag](bindings: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](bindings)
+  final def produceGet[A: Tag](name: String)(bindings: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(bindings)
 
   @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafe(input: PlannerInput): Locator = produceUnsafeF[Identity](input)
 
   @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
-  final def produceUnsafe(module: ModuleBase, mode: GCMode): Locator = produceUnsafeF[Identity](module, mode)
+  final def produceUnsafe(bindings: ModuleBase, mode: GCMode): Locator = produceUnsafeF[Identity](bindings, mode)
 }
