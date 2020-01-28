@@ -59,8 +59,11 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     assert(instantiated.a == dependency)
   }
 
-  "progression test: provider equality doesn't work for defs/classes/traits (for vals and objects function pointers are equal)" in {
+  "provider equality works for def/class/trait ModuleDefs with functions inside" in {
     import ProviderCase3._
+
+    def x() = (i: Int) => new TestDependency
+    assert(x() == x())
 
     class Definition extends ModuleDef {
       make[TestDependency].from {
