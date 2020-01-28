@@ -5,7 +5,7 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -164,7 +164,7 @@ object DIResource {
     }
   }
 
-  def liftF[F[_], A](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+  def liftF[F[_], A](acquire: => F[A])(implicit F: DIApplicative[F]): DIResource[F, A] = {
     make(acquire)(_ => F.unit)
   }
 
@@ -239,14 +239,24 @@ object DIResource {
   }
 
   implicit final class DIResourceSimpleSyntax[A](private val resource: DIResourceBase[Identity, A]) extends AnyVal {
-    def toEffect[G[_]: DIEffect]: DIResourceBase[G, A] = {
-      new DIResourceBase[G, A] {
+    def toEffect[F[_]: DIEffect]: DIResourceBase[F, A] = {
+      new DIResourceBase[F, A] {
         override type InnerResource = resource.InnerResource
-        override def acquire: G[InnerResource] = DIEffect[G].maybeSuspend(resource.acquire)
-        override def release(res: InnerResource): G[Unit] = DIEffect[G].maybeSuspend(resource.release(res))
+        override def acquire: F[InnerResource] = DIEffect[F].maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): F[Unit] = DIEffect[F].maybeSuspend(resource.release(res))
         override def extract(res: InnerResource): A = resource.extract(res)
       }
     }
+  }
+
+  implicit final class DIResourceUnsafeGet[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    /** Unsafely acquire the resource and throw away the finalizer,
+      * this will leak the resource and cause it to never be cleaned up.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[DIResourceUse#use]] instead!
+      */
+    def unsafeGet()(implicit F: DIApplicative[F]): F[A] = F.map(resource.acquire)(resource.extract)
   }
 
   trait Simple[A] extends DIResource[Identity, A]
@@ -255,7 +265,7 @@ object DIResource {
 
   trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
-  abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
+  abstract class NoClose[+F[_]: DIApplicative, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
   /**
     * Class-based variant of [[make]]:
@@ -302,7 +312,7 @@ object DIResource {
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
     * }}}
     */
-  class LiftF[+F[_]: DIEffect, A] private[this](acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIApplicative, A] private[this](acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()
@@ -351,7 +361,7 @@ object DIResource {
     */
   class OfZIO[-R, +E, +A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
 
-  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
+  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
     override type InnerResource = Unit
     override final def extract(resource: Unit): A = this
   }
@@ -396,8 +406,8 @@ object DIResource {
   }
 
   object DIResourceBase {
-    abstract class NoClose[+F[_]: DIEffect, +A] extends DIResourceBase[F, A] {
-      override final def release(resource: InnerResource): F[Unit] = DIEffect[F].unit
+    abstract class NoClose[+F[_]: DIApplicative, +A] extends DIResourceBase[F, A] {
+      override final def release(resource: InnerResource): F[Unit] = DIApplicative[F].unit
     }
   }
 

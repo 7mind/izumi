@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.46`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.47`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -739,7 +739,7 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
-    enableSharedSettings = false,
+    enableProjectSharedAggSettings = false,
     dontIncludeInSuperAgg = false,
   )
 

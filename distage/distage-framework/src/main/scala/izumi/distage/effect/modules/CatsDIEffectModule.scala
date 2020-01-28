@@ -3,12 +3,13 @@ package izumi.distage.effect.modules
 import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, ContextShift, Effect, ExitCode, IO, IOApp, Sync, Timer}
 import cats.{Applicative, Functor, Monad, MonadError, Parallel}
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
 
 object CatsDIEffectModule extends CatsDIEffectModule
 
 trait CatsDIEffectModule extends ModuleDef {
   addImplicit[DIEffectRunner[IO]]
+  addImplicit[DIApplicative[IO]]
   addImplicit[DIEffect[IO]]
 
   make[DIEffectAsync[IO]].from {

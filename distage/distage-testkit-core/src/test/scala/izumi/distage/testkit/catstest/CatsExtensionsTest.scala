@@ -74,7 +74,7 @@ class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
       plan3.render()
       assert(filterDynamic(plan3.steps) == filterDynamic(plan4.steps))
 
-      val objs = injector.produceUnsafeF[IO](plan3).unsafeRunSync()
+      val objs = injector.produceF[IO](plan3).unsafeGet().unsafeRunSync()
 
       assert(objs.get[TestDependency1].unresolved != null)
       assert(!objs.instances.map(_.value).contains(null))

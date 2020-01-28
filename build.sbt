@@ -530,8 +530,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "io.circe" %% "circe-parser" % V.circe,
       "io.circe" %% "circe-literal" % V.circe,
       "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
-      "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "org.typelevel" %% "jawn-parser" % V.jawn
+      "io.circe" %% "circe-derivation" % V.circe_derivation
     )
   )
   .settings(

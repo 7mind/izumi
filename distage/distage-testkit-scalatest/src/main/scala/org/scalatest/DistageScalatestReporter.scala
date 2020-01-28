@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import org.scalatest.Suite.getIndentedTextForTest
 import org.scalatest.events._
 
-class ScalatestReporter(reporter: Reporter) extends TestReporter {
+class DistageScalatestReporter extends TestReporter {
 
   override def onFailure(f: Throwable): Unit = {
     System.err.println("Test runner failed")
@@ -108,7 +108,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
   }
 
   @inline private[this] def doReport(suiteId: String)(f: Ordinal => Event): Unit = {
-    DistageTestsRegistrySingleton.runReport(suiteId)(tracker => reporter(f(tracker.nextOrdinal())))
+    DistageTestsRegistrySingleton.runReport(suiteId)(sr => sr.reporter(f(sr.tracker.nextOrdinal())))
   }
 
 }

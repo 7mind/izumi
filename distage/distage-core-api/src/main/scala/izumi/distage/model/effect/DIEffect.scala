@@ -1,17 +1,16 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
+import izumi.distage.model.effect.LowPriorityDIApplicativeInstances._Applicative
 import izumi.distage.model.effect.LowPriorityDIEffectInstances._Sync
-import izumi.functional.bio.{BIO, BIOExit}
+import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
-trait DIEffect[F[_]] {
-  def pure[A](a: A): F[A]
-  def map[A, B](fa: F[A])(f: A => B): F[B]
+trait DIEffect[F[_]] extends DIApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
   def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
   def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B]
@@ -32,7 +31,6 @@ trait DIEffect[F[_]] {
 
   def fail[A](t: => Throwable): F[A]
 
-  final val unit: F[Unit] = pure(())
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
   final def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
@@ -46,7 +44,7 @@ trait DIEffect[F[_]] {
 }
 
 object DIEffect extends LowPriorityDIEffectInstances {
-  def apply[F[_] : DIEffect]: DIEffect[F] = implicitly
+  @inline def apply[F[_]: DIEffect]: DIEffect[F] = implicitly
 
   object syntax {
     implicit def suspendedSyntax[F[_], A](fa: => F[A]): DIEffectSuspendedSyntax[F, A] = new DIEffectSuspendedSyntax(() => fa)
@@ -65,8 +63,9 @@ object DIEffect extends LowPriorityDIEffectInstances {
 
   implicit val diEffectIdentity: DIEffect[Identity] = new DIEffect[Identity] {
     override def pure[A](a: A): Identity[A] = a
-    override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
+    override def map2[A, B, C](fa: Identity[A], fb: Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
+    override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
@@ -100,6 +99,7 @@ object DIEffect extends LowPriorityDIEffectInstances {
     new DIEffect[F[Throwable, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
+      override def map2[A, B, C](fa: F[E, A], fb: F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
@@ -134,12 +134,12 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: _Sync[R], F0: R[F]): DIEffect[F] = {
-    l.discard()
+  implicit def fromCatsEffect[F[_], R[_[_]]](implicit @unused l: _Sync[R], F0: R[F]): DIEffect[F] = {
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
     new DIEffect[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
+      override def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
@@ -177,5 +177,60 @@ object LowPriorityDIEffectInstances {
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
     @inline implicit final def catsEffectSync: _Sync[cats.effect.Sync] = null
+  }
+}
+
+trait DIApplicative[F[_]] {
+  def pure[A](a: A): F[A]
+  def map[A, B](fa: F[A])(f: A => B): F[B]
+  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
+  final val unit: F[Unit] = pure(())
+}
+
+object DIApplicative extends LowPriorityDIApplicativeInstances {
+  @inline def apply[F[_]: DIApplicative]: DIApplicative[F] = implicitly
+
+  implicit val diapplicativeIdentity: DIApplicative[Identity] = new DIApplicative[Identity] {
+    override def pure[A](a: A): Identity[A] = a
+    override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
+    override def map2[A, B, C](fa: Identity[A], fb: Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
+  }
+
+  implicit def fromBIO[F[+_, +_], E](implicit F: BIOApplicative[F]): DIApplicative[F[E, ?]] = {
+    new DIApplicative[F[E, ?]] {
+      override def pure[A](a: A): F[E, A] = F.pure(a)
+      override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
+      override def map2[A, B, C](fa: F[E, A], fb: F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
+    }
+  }
+}
+
+trait LowPriorityDIApplicativeInstances {
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  implicit def fromCats[F[_], R[_[_]]](implicit @unused l: _Applicative[R], F0: R[F]): DIApplicative[F] = {
+    val F = F0.asInstanceOf[cats.Applicative[F]]
+    new DIApplicative[F] {
+      override def pure[A](a: A): F[A] = F.pure(a)
+      override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
+      override def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+    }
+  }
+}
+
+object LowPriorityDIApplicativeInstances {
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  sealed abstract class _Applicative[R[_[_]]]
+  object _Applicative {
+    @inline implicit final def catsApplicative: _Applicative[cats.Applicative] = null
   }
 }

@@ -158,6 +158,7 @@ object ResourceCases {
     implicit def DIEffectSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
+      override def map2[A, B, C](fa: Suspend2[E, A], fb: Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)

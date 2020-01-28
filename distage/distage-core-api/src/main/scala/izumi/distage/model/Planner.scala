@@ -10,14 +10,14 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 trait Planner extends PlanSplittingOps {
   def plan(input: PlannerInput): OrderedPlan
 
-  final def plan(module: ModuleBase, gcMode: GCMode): OrderedPlan = {
-    plan(PlannerInput(module, gcMode))
+  final def plan(bindings: ModuleBase, gcMode: GCMode): OrderedPlan = {
+    plan(PlannerInput(bindings, gcMode))
   }
 
   // plan lifecycle
   def planNoRewrite(input: PlannerInput): OrderedPlan
 
-  def rewrite(module: ModuleBase): ModuleBase
+  def rewrite(bindings: ModuleBase): ModuleBase
 
   def prepare(input: PlannerInput): PrePlan
 
