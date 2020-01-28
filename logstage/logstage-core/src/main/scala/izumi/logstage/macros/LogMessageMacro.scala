@@ -5,21 +5,26 @@ import izumi.logstage.api.Log.{LogArg, Message}
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
-object LogMessageMacro {
+class LogMessageMacro(c: blackbox.Context) extends LogMessageMacro0(c, false)
 
-  def logMessageMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Message] = {
+class LogMessageMacroStrict(c: blackbox.Context) extends LogMessageMacro0(c, true)
+
+class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
+  private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
+
+  def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
     import c.universe._
 
     message.tree match {
       case Typed(tree, _) =>
-        processExpr(c)(tree, false)
+        processExpr(tree, isMultiline = false)
       case tree =>
-        processExpr(c)(tree, false)
+        processExpr(tree, isMultiline = false)
     }
   }
 
   @scala.annotation.tailrec
-  private[this] def processExpr(c: blackbox.Context)(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
+  private[this] def processExpr(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
     import c.universe._
 
     sealed trait Chunk {
@@ -142,36 +147,36 @@ object LogMessageMacro {
 
     message match {
       case PlusExtractor(lst) =>
-        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(lst.arguments.map(p => c.Expr(p)))
+        val namedArgs = nameExtractor.recoverArgNames(lst.arguments)
         val sc = lst.makeStringContext(isMultiline)
-        reifyContext(c)(sc, namedArgs)
+        reifyContext(sc, namedArgs)
 
       case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
         // qq causes a weird warning here
         //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
-        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
-        reifyContext(c)(stringContext, namedArgs)
+        val namedArgs = nameExtractor.recoverArgNames(args)
+        reifyContext(stringContext, namedArgs)
 
       case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]))), TermName("stripMargin")) =>
-        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
+        val namedArgs = nameExtractor.recoverArgNames(args)
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
-        reifyContext(c)(sc, namedArgs)
+        reifyContext(sc, namedArgs)
 
       // support .stripMargin in scala 2.13
       case Select(Apply(_, List(Typed(tree, _))), TermName("stripMargin")) =>
-        processExpr(c)(tree, true)
+        processExpr(tree, isMultiline = true)
 
       case Literal(c.universe.Constant(s)) =>
         val emptyArgs = reify(List.empty)
         val sc = q"_root_.scala.StringContext(${s.toString})"
-        reifyContext(c)(sc, emptyArgs)
+        reifyContext(sc, emptyArgs)
 
       case other =>
         c.warning(other.pos,
           s"""Complex expression found as an input for a logger: ${other.toString()} ; ${showRaw(other)}.
              |
              |But Logstage expects you to use string interpolations instead, such as:
-             |${ArgumentNameExtractionMacro.example}
+             |${nameExtractor.example}
              |""".stripMargin)
 
         val emptyArgs = reify(List.empty)
@@ -180,11 +185,11 @@ object LogMessageMacro {
           ...
         */
         val sc = q"_root_.scala.StringContext($other)"
-        reifyContext(c)(sc, emptyArgs)
+        reifyContext(sc, emptyArgs)
     }
   }
 
-  private[this] def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
+  private[this] def reifyContext(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
     import c.universe._
     reify {
       Message(

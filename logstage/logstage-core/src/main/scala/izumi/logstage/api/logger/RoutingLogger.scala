@@ -1,7 +1,7 @@
-package izumi.logstage.api
+package izumi.logstage.api.logger
 
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.Log
 
 /** Logger that forwards entries to [[LogRouter]] */
 trait RoutingLogger extends AbstractLogger {

@@ -1664,94 +1664,10 @@ lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-leg
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
-  .dependsOn(
-    `fundamentals-reflection` % "test->compile;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
-  )
-  .settings(
-    organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    testOptions in Test += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
-        "-Xsource:2.13",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.13.1") => Seq(
-        "-Xlint:_,-eta-sam",
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wunused:_",
-        "-Wvalue-discard"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, _) => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalaVersion := crossScalaVersions.value.head,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    )
-  )
-  .disablePlugins(AssemblyPlugin)
-
 lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
-    `logstage-api` % "test->test;compile->compile"
+    `fundamentals-reflection` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1761,6 +1677,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time,
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test
@@ -2011,8 +1928,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
 
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
   .dependsOn(
-    `logstage-api` % "test->compile;compile->compile",
-    `logstage-core` % "test->compile,test"
+    `logstage-core` % "test->compile;compile->compile",
+    `logstage-core` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2983,7 +2900,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-testkit-core` % "test->compile;compile->compile",
     `distage-testkit-scalatest` % "test->compile;compile->compile",
     `distage-testkit-legacy` % "test->compile;compile->compile",
-    `logstage-api` % "test->compile;compile->compile",
     `logstage-core` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
     `logstage-adapter-slf4j` % "test->compile;compile->compile",
@@ -3308,7 +3224,6 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `logstage-api`,
     `logstage-core`,
     `logstage-rendering-circe`,
     `logstage-adapter-slf4j`,
@@ -3326,7 +3241,6 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `logstage-api`,
     `logstage-core`,
     `logstage-rendering-circe`,
     `logstage-adapter-slf4j`,

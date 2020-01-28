@@ -16,11 +16,11 @@ class BasicLoggingTest extends AnyWordSpec {
 
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
       val expectation = List(
-        LogArg(Seq("arg1"), 1, hiddenName = false),
-        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
-        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
+        LogArg(Seq("arg1"), 1, hiddenName = false, None),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, None),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, None),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, None),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, None),
       )
 
       val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
@@ -41,7 +41,7 @@ class BasicLoggingTest extends AnyWordSpec {
            |multiline ${m -> "message"}""".stripMargin
       }
       assert(message1.template.parts.toList == List("This\nis a\nmultiline ", ""))
-      assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false)))
+      assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false, None)))
 
       val message2 = Message("single line with stripMargin".stripMargin)
       assert(message2.template.parts.toList == List("single line with stripMargin"))
@@ -60,7 +60,7 @@ class BasicLoggingTest extends AnyWordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(colored = false))
-      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false), LogArg(Seq("[a2]"), 2, hiddenName = false))))
+      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false, None), LogArg(Seq("[a2]"), 2, hiddenName = false, None))))
       assert(rendered.endsWith("begin [a_1]=1 end {{ [a_2]=2 }}"))
     }
   }
@@ -71,7 +71,7 @@ class BasicLoggingTest extends AnyWordSpec {
       val s = "hi"
       val msg = Message(s"begin $i $s end")
 
-      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false), LogArg(Seq("s"), "hi", hiddenName = false))))
+      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false, None), LogArg(Seq("s"), "hi", hiddenName = false, None))))
     }
   }
 
