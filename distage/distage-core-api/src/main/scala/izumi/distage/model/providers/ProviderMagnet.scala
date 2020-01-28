@@ -165,6 +165,7 @@ object ProviderMagnet {
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
+        originalFun = () => a,
         fun = (_: Seq[Any]) => a,
         isGenerated = false,
       )
@@ -181,6 +182,7 @@ object ProviderMagnet {
       Provider.ProviderImpl(
         parameters = Seq(Parameter(symbolInfo, key)),
         ret = retTpe,
+        originalFun = f,
         fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
         isGenerated = false,
       )

@@ -93,6 +93,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
             ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
             ${liftTypeToSafeType(weakTypeOf[R])},
+            fun,
             { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
             $isGenerated,
           )

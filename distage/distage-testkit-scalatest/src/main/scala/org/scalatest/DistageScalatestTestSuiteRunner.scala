@@ -172,7 +172,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
          |dynaTags: ${args.filter.dynaTags}
          |excludeNestedSuites: ${args.filter.excludeNestedSuites}
          |""".stripMargin)
-    val testReporter = mkTestReporter(args)
+    val testReporter = mkTestReporter()
 
     val toRun = testName match {
       case None =>
@@ -210,7 +210,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   protected def parallelExecution: Boolean = true
   protected def parallelEnvExecution: Boolean = true
 
-  private def mkTestReporter(args: Args): TestReporter = {
+  private def mkTestReporter(): TestReporter = {
     val scalatestReporter = new DistageScalatestReporter
     new SafeTestReporter(scalatestReporter)
   }

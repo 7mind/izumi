@@ -150,6 +150,7 @@ trait DIFunction {
 
   def ret: SafeType
 
+  def originalFun: AnyRef
   def fun: Seq[Any] => Any
   def arity: Int
 
@@ -202,7 +203,7 @@ trait Provider extends DIFunction {
   override final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
   override final val arity: Int = parameters.size
 
-  private def eqField: AnyRef = if (isGenerated) ret else fun
+  private def eqField: AnyRef = if (isGenerated) ret else originalFun
   override final def equals(obj: Any): Boolean = {
     obj match {
       case that: Provider =>
@@ -220,20 +221,21 @@ object Provider {
   final case class ProviderImpl[+A](
                                      parameters: Seq[Association.Parameter],
                                      ret: SafeType,
+                                     originalFun: AnyRef,
                                      fun: Seq[Any] => Any,
                                      isGenerated: Boolean,
                                    ) extends Provider {
 
-    override final def unsafeApply(refs: Seq[TypedRef[_]]): A =
+    override def unsafeApply(refs: Seq[TypedRef[_]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
 
-    override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
+    override def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
       copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
     override def addUnused(keys: Seq[DIKey]): Provider =
       copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, false, false), key)))
 
-    override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
+    override def unsafeZip(newRet: SafeType, that: Provider): Provider = {
       ProviderImpl(
         parameters ++ that.parameters,
         newRet,
@@ -241,8 +243,13 @@ object Provider {
           val (args1, args2) = args0.splitAt(arity)
           fun(args1) -> that.fun(args2)
         },
-        isGenerated
+        isGenerated,
       )
+    }
+  }
+  object ProviderImpl {
+    @inline def apply[A](parameters: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any, isGenerated: Boolean): ProviderImpl[A] =
+      new ProviderImpl(parameters, ret, fun, fun, isGenerated)
   }
 
 }
