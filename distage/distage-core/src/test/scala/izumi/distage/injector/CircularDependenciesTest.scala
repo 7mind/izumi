@@ -25,7 +25,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
 
     val exc = intercept[ProvisioningException] {
-      injector.produceUnsafe(plan)
+      injector.produce(plan).unsafeGet()
     }
 
     assert(exc.getSuppressed.head.isInstanceOf[TraitInitializationFailedException])
@@ -48,7 +48,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(3)).children.size == 1)
     assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(3)).children.size == 2)
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]
     val traitArg = c3.arg
 
@@ -68,7 +68,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCglibInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[ByNameSelfReference]
 
@@ -84,7 +84,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCglibInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[TraitSelfReference]
 
@@ -103,7 +103,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCglibInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[FactorySelfReference]
 
@@ -137,7 +137,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val planTypes: Seq[SafeType] = plan.steps
       .collect {
@@ -166,7 +166,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCglibInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
@@ -188,7 +188,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val context = injector.produceUnsafe(definition)
+    val context = injector.produce(definition).unsafeGet()
 
     assert(context.get[ErasedCircular[Dependency]] != null)
     assert(context.get[PhantomDependency[Dependency]] != null)

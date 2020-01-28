@@ -59,9 +59,12 @@ trait Injector extends Planner with Producer {
     produceF[F](plan(PlannerInput(module, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafeF[F[_]: TagK: DIEffect](input: PlannerInput): F[Locator] = {
     produceUnsafeF[F](plan(input))
   }
+
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafeF[F[_]: TagK: DIEffect](module: ModuleBase, mode: GCMode): F[Locator] = {
     produceUnsafeF[F](plan(PlannerInput(module, mode)))
   }
@@ -72,6 +75,9 @@ trait Injector extends Planner with Producer {
   final def produceGet[A: Tag](module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](module)
   final def produceGet[A: Tag](name: String)(module: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(module)
 
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafe(input: PlannerInput): Locator = produceUnsafeF[Identity](input)
+
+  @deprecated("Use .produce(_).unsafeGet() instead", "wll be removed in 0.10.2")
   final def produceUnsafe(module: ModuleBase, mode: GCMode): Locator = produceUnsafeF[Identity](module, mode)
 }

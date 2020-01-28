@@ -21,7 +21,7 @@ class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
         }, GCMode(DIKey.get[App])))
 
         val updated = injector.finish(plan.toSemi)
-        val result = injector.produceUnsafe(updated)
+        val result = injector.produce(updated).unsafeGet()
         assert(updated.steps.size == plan.steps.size)
 
         assert(result.get[App].components.size == 1)

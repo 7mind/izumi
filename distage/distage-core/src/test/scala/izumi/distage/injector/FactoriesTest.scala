@@ -25,7 +25,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val factory = context.get[Factory]
     assert(factory.wiringTargetForDependency != null)
@@ -62,7 +62,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[GenericAssistedFactory]
     val product = instantiated.x(List(SpecialDep()), List(5))
@@ -83,7 +83,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     assert(!context.get[Dependency].isSpecial)
     assert(context.get[Dependency]("special").isSpecial)
@@ -105,7 +105,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val dep = context.get[Dependency]
     val instantiated = context.get[MixedAssistendNonAssisted]
@@ -126,7 +126,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val dep = context.get[Dependency]
     val instantiated = context.get[AssistedAbstractFactory]
@@ -147,7 +147,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val dep = context.get[Dependency]
     val instantiated = context.get[AssistedAbstractFactoryF[Identity]]
@@ -173,7 +173,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
 
@@ -194,7 +194,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
         val injector = mkInjector()
         val plan = injector.plan(definition)
-        val context = injector.produceUnsafe(plan)
+        val context = injector.produce(plan).unsafeGet()
 
         val instantiated = context.get[FactoryProducingFactory]
 
@@ -215,7 +215,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Factory]
 

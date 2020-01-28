@@ -30,9 +30,9 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     val plan2 = injector.plan(def2)
     val plan3 = injector.plan(def3)
 
-    assert(Try(injector.produceUnsafe(plan1)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
-    assert(Try(injector.produceUnsafe(plan2)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
-    assert(Try(injector.produceUnsafe(plan3)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan1).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan2).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan3).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
   }
 
   "Set element references are the same as their referees" in {
@@ -48,7 +48,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produceUnsafe(plan)
+    val context = injector.produce(plan).unsafeGet()
     val svc = context.get[Service1]
     val set = context.get[Set[Service]]
     assert(set.head eq svc)
