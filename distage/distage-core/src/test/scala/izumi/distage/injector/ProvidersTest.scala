@@ -59,23 +59,4 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     assert(instantiated.a == dependency)
   }
 
-  "provider equality works for def/class/trait ModuleDefs with functions inside" in {
-    import ProviderCase3._
-
-    def x() = (i: Int) => new TestDependency
-    assert(x() == x())
-
-    class Definition extends ModuleDef {
-      make[TestDependency].from {
-        () => new TestDependency
-      }
-    }
-
-    val definition = new Definition
-    val combinedDefinition = new Definition ++ new Definition
-    val valDefinition = definition ++ definition
-
-    assert(combinedDefinition == definition)
-    assert(valDefinition == definition)
-  }
 }
