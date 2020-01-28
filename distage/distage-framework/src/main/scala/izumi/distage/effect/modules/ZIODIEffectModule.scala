@@ -17,6 +17,7 @@ object ZIODIEffectModule extends ZIODIEffectModule
 
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner2[IO]].from[DIEffectRunner.BIOImpl[IO]]
+  addImplicit[DIApplicative2[IO]]
   addImplicit[DIEffect2[IO]]
   make[DIEffectAsync2[IO]].from(DIEffectAsync.fromBIOTemporal(_: BIOTemporal[IO]))
 
