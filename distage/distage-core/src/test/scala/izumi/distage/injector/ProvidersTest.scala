@@ -75,7 +75,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     val combinedDefinition = new Definition ++ new Definition
     val valDefinition = definition ++ definition
 
-    assert(!(combinedDefinition == definition))
+    assert(combinedDefinition == definition)
     assert(valDefinition == definition)
   }
 }
