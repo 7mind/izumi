@@ -530,8 +530,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "io.circe" %% "circe-parser" % V.circe,
       "io.circe" %% "circe-literal" % V.circe,
       "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
-      "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "org.typelevel" %% "jawn-parser" % V.jawn
+      "io.circe" %% "circe-derivation" % V.circe_derivation
     )
   )
   .settings(
@@ -1674,8 +1673,7 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
