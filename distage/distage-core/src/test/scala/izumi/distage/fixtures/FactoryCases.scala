@@ -49,6 +49,10 @@ object FactoryCases {
       def x(a: Int): AssistedTestClass
     }
 
+    abstract class AbstractClassFactory(private val t: TestClass) {
+      def x(a: Int): AssistedTestClass
+    }
+
     trait NamedAssistedFactory {
       def dep: Dependency @Id("veryspecial")
       def x(a: Int): NamedAssistedTestClass

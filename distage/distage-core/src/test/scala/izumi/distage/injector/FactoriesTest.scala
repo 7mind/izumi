@@ -222,5 +222,21 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(!instantiated.x().eq(context.get[TestClass]))
     assert(!instantiated.x().eq(instantiated.x()))
   }
+//
+//  "can handle abstract classes" in {
+//    import FactoryCase1._
+//
+//    val definition = PlannerInput.noGc(new ModuleDef {
+//      make[Dependency]
+//      make[TestClass]
+//      make[AbstractClassFactory]
+//    })
+//
+//    val injector = mkInjector()
+//    val plan = injector.plan(definition)
+//    val context = injector.produce(plan).unsafeGet()
+//
+//    assert(context.get[AbstractClassFactory].x(5) == AssistedTestClass(context.get[Dependency], 5))
+//  }
 
 }

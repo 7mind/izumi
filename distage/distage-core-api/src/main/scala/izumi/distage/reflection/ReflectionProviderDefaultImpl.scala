@@ -59,7 +59,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }// reflectionprovider
 
-  override def symbolToWiring(tpe: TypeNative): Wiring.PureWiring = {
+  override def symbolToWiring(tpe: TypeNative): Wiring = {
     tpe match {
       case FactorySymbol(factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -104,13 +104,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(associationFromParameter))
   }
 
-  private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): Wiring.SingletonWiring.ReflectiveInstantiationWiring = {
+  private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): Wiring.SingletonWiring = {
     tpe match {
       case ConcreteSymbol(t) =>
-        Wiring.SingletonWiring.Constructor(t, constructorParameters(t), getPrefix(t))
+        Wiring.SingletonWiring.Class(t, constructorParameters(t), getPrefix(t))
 
       case AbstractSymbol(t) =>
-        Wiring.SingletonWiring.AbstractSymbol(t, traitMethods(t), getPrefix(t))
+        Wiring.SingletonWiring.Trait(t, traitMethods(t), getPrefix(t))
 
       case FactorySymbol(_, _) =>
         throw new UnsupportedWiringException(

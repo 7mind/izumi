@@ -8,7 +8,7 @@ trait ReflectionProvider {
 
   def associationFromParameter(parameterSymbol: SymbolInfo): Association.Parameter
 
-  def symbolToWiring(symbl: TypeNative): Wiring.PureWiring
+  def symbolToWiring(symbl: TypeNative): Wiring
   def constructorParameterLists(symbl: TypeNative): List[List[Association.Parameter]]
 
   def isConcrete(tpe: TypeNative): Boolean
