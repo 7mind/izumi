@@ -7,8 +7,8 @@ sealed trait GCMode {
 }
 
 object GCMode {
-  def apply(key: DIKey, keys: DIKey*): GCMode = {
-    GCRoots(keys.toSet + key)
+  def apply(root: DIKey, roots: DIKey*): GCMode = {
+    GCRoots(roots.toSet + root)
   }
   def apply(roots: Set[DIKey]): GCMode = {
     GCMode.GCRoots(roots)
