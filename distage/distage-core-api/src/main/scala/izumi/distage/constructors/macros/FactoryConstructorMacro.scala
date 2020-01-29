@@ -62,7 +62,7 @@ object FactoryConstructorMacro {
 
     val constructor = {
       val allMethods = producerMethods ++ traitMeta.map(_.traitMethodImpl)
-      val instantiate = newTraitWithMethods(targetType, Nil, allMethods)
+      val instantiate = mkNewAbstractTypeInstanceExpr(targetType, Nil, allMethods)
       q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
     }
 

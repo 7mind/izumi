@@ -219,7 +219,6 @@ object ProviderMagnet {
       name = "x$1",
       finalResultType = tpe,
       isByName = false,
-      wasGeneric = false
     )
   }
 }

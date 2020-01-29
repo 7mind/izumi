@@ -64,7 +64,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case FactorySymbol(factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
+            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe)
 
             val resultType = resultOfFactoryMethod(factoryMethodSymb)
               .asSeenFrom(tpe, tpe.typeSymbol)
@@ -72,7 +72,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val alreadyInSignature = {
               selectNonImplicitParameters(factoryMethod)
                 .flatten
-                .map(p => keyFromParameter(SymbolInfo.Runtime(p, tpe, wasGeneric = false)))
+                .map(p => keyFromParameter(SymbolInfo.Runtime(p, tpe)))
             }
 
             val methodTypeWireable = mkConstructorWiring(factoryMethod, resultType)
@@ -171,7 +171,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def methodToAssociation(tpe: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
-    val methodSymb = SymbolInfo.Runtime(method, tpe, wasGeneric = false)
+    val methodSymb = SymbolInfo.Runtime(method, tpe)
     Association.AbstractMethod(methodSymb, keyFromMethod(methodSymb))
   }
 
@@ -206,9 +206,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             case (origTypes, params) =>
               origTypes.zip(params).map {
                 case (o: u.u.AnnotatedTypeApi, p) =>
-                  SymbolInfo.Runtime(p, tpe, o.underlying.typeSymbol.isParameter, o.annotations)
-                case (o, p) =>
-                  SymbolInfo.Runtime(p, tpe, o.typeSymbol.isParameter)
+                  SymbolInfo.Runtime(p, tpe, o.annotations)
+                case (_, p) =>
+                  SymbolInfo.Runtime(p, tpe)
               }
           }
     }

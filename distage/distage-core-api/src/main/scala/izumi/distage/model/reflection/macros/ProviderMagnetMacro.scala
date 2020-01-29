@@ -76,16 +76,8 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
     val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftableParameter, liftTypeToSafeType}
 
-    val (substitutedByNames, casts) = parameters.zipWithIndex.map {
-      case (param, i) =>
-
-        val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
-          ReflectionUtil.stripByName(u)(param.symbol.finalResultType)
-        })
-        strippedByNameTpe -> q"seqAny($i)"
-    }.unzip
-
-    val parametersNoByName = Liftable.liftList[Association.Parameter].apply(substitutedByNames)
+    val casts = parameters.indices.map(i => q"seqAny($i)")
+    val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)
 
     c.Expr[ProviderMagnet[R]] {
       q"""{

@@ -34,7 +34,7 @@ package object macros {
     }
 
     case class CtorArgument(parameter: u.Association.Parameter, ctorArgument: u.u.Tree, ctorArgumentName: u.u.TermName) {
-      def traitMethodImpl = q"final lazy val ${parameter.termName}: ${parameter.tpe} = $ctorArgumentName"
+      def traitMethodImpl = q"final lazy val ${parameter.termName}: ${parameter.nonBynameTpe} = $ctorArgumentName"
     }
     object CtorArgument {
       implicit def unzip3: CtorArgument => (u.Association.Parameter, u.u.Tree, u.u.TermName) = {
@@ -114,40 +114,46 @@ package object macros {
           c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
       }
 
-      val Trait(_, wireables, prefix@_) = reflectionProvider.symbolToWiring(targetType)
-      val (traitAssociations, traitCtorArgs, wireMethods) = wireables.map(mkTraitMethod(_)).unzip3
+      val (traitAssociations, traitCtorArgs, wireMethods) = {
+        val Trait(_, methods, _) = reflectionProvider.symbolToWiring(targetType)
+        methods.map(mkTraitMethod(_)).unzip3
+      }
       val (ctorAssociations, classCtorArgs, ctorParams) = mkClassConstructorFunctionImpl(reflectionProvider, logger)(targetType)
 
-      val ctorLambda = newTraitWithMethods(targetType, ctorParams, wireMethods)
+      val ctorLambda = mkNewAbstractTypeInstanceExpr(
+        targetType = targetType,
+        constructorArguments = ctorParams,
+        methodImpls = wireMethods,
+      )
       val constructor = q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($ctorLambda)"
 
       (ctorAssociations ++ traitAssociations, constructor)
     }
 
-    def newTraitWithMethods(
-                             targetType: Type,
-                             arguments: List[List[TermName]],
-                             methods: List[Tree],
-                           ): Tree = {
+    def mkNewAbstractTypeInstanceExpr(
+                                       targetType: Type,
+                                       constructorArguments: List[List[TermName]],
+                                       methodImpls: List[Tree],
+                                     ): Tree = {
       val parents = ReflectionUtil.intersectionTypeMembers[u.u.type](targetType)
       parents match {
         case parent :: Nil =>
-          if (methods.isEmpty) {
-            q"new $parent(...$arguments) {}"
+          if (methodImpls.isEmpty) {
+            q"new $parent(...$constructorArguments) {}"
           } else {
-            q"new $parent(...$arguments) { ..$methods }"
+            q"new $parent(...$constructorArguments) { ..$methodImpls }"
           }
         case _ =>
-          if (arguments.nonEmpty) {
+          if (constructorArguments.nonEmpty) {
             c.abort(c.enclosingPosition,
               s"""Unsupported case: intersection type containing an abstract class.
                  |Please manually create an abstract class with the added traits.
                  |When trying to create a TraitConstructor for $targetType""".stripMargin)
           } else {
-            if (methods.isEmpty) {
+            if (methodImpls.isEmpty) {
               q"new ..$parents {}"
             } else {
-              q"new ..$parents { ..$methods }"
+              q"new ..$parents { ..$methodImpls }"
             }
           }
       }
@@ -192,33 +198,29 @@ package object macros {
       val tools = DIUniverseLiftables(u)
 
       import tools.{liftTypeToSafeType, liftableParameter}
-      import u.Association
+
+      val seqName = c.freshName(TermName("seqAny"))
 
       var i = 0
-      val res = parameters.map(_.map {
+      val casts = parameters.map(_.map {
         param =>
-          val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
-            ReflectionUtil.stripByName(u.u)(param.symbol.finalResultType)
-          })
           val seqCast = if (param.isByName) {
-            q"seqAny($i).asInstanceOf[() => ${param.tpe}]()"
+            q"$seqName($i).asInstanceOf[() => ${param.tpe}]()"
           } else {
-            q"seqAny($i).asInstanceOf[${param.tpe}]"
+            q"$seqName($i).asInstanceOf[${param.tpe}]"
           }
-          i += 1
-          strippedByNameTpe -> seqCast
-      })
-      val (substitutedByNames, casts) = (res.flatten.map(_._1), res.map(_.map(_._2)))
 
-      val parametersNoByName = Liftable.liftList[Association.Parameter].apply(substitutedByNames)
+          i += 1
+          seqCast
+      })
 
       c.Expr[ProviderMagnet[T]] {
         q"""{
         new ${weakTypeOf[ProviderMagnet[T]]}(
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[T]]}(
-            $parametersNoByName,
+            ${Liftable.liftList.apply(parameters.flatten)},
             ${liftTypeToSafeType(weakTypeOf[T])},
-            { seqAny => ${fun(casts)} },
+            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)} },
             $isGenerated,
           )
         )
