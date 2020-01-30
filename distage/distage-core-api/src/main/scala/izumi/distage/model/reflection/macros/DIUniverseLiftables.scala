@@ -46,7 +46,8 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       q"""{ $runtimeDIUniverse.SymbolInfo(
       name = ${info.name},
       finalResultType = ${liftTypeToSafeType(info.nonByNameFinalResultType)},
-      isByName = ${info.isByName}
+      isByName = ${info.isByName},
+      wasGeneric = ${info.wasGeneric}
       ) }"""
   }
 

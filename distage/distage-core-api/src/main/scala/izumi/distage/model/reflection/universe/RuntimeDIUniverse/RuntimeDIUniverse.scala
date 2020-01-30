@@ -25,6 +25,8 @@ object Association {
     override final def name: String = symbol.name
     override final def isByName: Boolean = symbol.isByName
     override final def withKey(key: DIKey): Association.Parameter = copy(key = key)
+
+    final def wasGeneric: Boolean = symbol.wasGeneric
   }
 }
 
@@ -34,6 +36,7 @@ final case class SymbolInfo(
                              // no custom annotation support since 0.10.0... open an issue if desired!
                              // annotations: List[u.Annotation]
                              isByName: Boolean,
+                             wasGeneric: Boolean,
                            )
 
 final case class SafeType private(
@@ -233,7 +236,7 @@ object Provider {
       copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
     override def addUnused(keys: Seq[DIKey]): Provider =
-      copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, isByName = false), key)))
+      copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)))
 
     override def unsafeZip(newRet: SafeType, that: Provider): Provider = {
       ProviderImpl(

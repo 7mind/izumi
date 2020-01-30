@@ -3,7 +3,6 @@ package izumi.distage.constructors
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -37,7 +36,6 @@ package object macros {
         val (argName, freshArgName) = association.ctorArgumentExpr(c)
         CtorArgument(association.asParameter, argName, freshArgName)
       }
-
       def asCtorArgument: CtorArgument => (u.Association.Parameter, Tree, Tree) = {
         case CtorArgument(parameter, ctorArgument, ctorArgumentName) => (parameter, ctorArgument, ctorArgumentName)
       }

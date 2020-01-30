@@ -49,6 +49,8 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific
   private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: RuntimeDIUniverse.Association.Parameter): (Class[_], Any) = {
     val clazz: Class[_] = if (param.isByName) {
       classOf[Function0[_]]
+    } else if (param.wasGeneric) {
+      classOf[Any]
     } else {
       param.key.tpe.cls
     }

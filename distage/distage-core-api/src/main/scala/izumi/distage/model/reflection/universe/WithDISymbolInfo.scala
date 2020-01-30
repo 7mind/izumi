@@ -13,6 +13,8 @@ trait WithDISymbolInfo {
     final def nonByNameFinalResultType: TypeNative = if (isByName) ReflectionUtil.stripByName(u: u.type)(finalResultType) else finalResultType
 
     def isByName: Boolean
+    def wasGeneric: Boolean
+
     def annotations: List[u.Annotation]
 
     def withTpe(tpe: TypeNative): SymbolInfo
@@ -28,19 +30,20 @@ trait WithDISymbolInfo {
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
     private[universe] case class Runtime private (
-                                 underlying: SymbNative,
-                                 typeSignatureInDefiningClass: TypeNative,
-                                 finalResultType: TypeNative,
-                                 isByName: Boolean,
-                                 annotations: List[u.Annotation],
-                               ) extends SymbolInfo {
+                                                   underlying: SymbNative,
+                                                   typeSignatureInDefiningClass: TypeNative,
+                                                   finalResultType: TypeNative,
+                                                   isByName: Boolean,
+                                                   wasGeneric: Boolean,
+                                                   annotations: List[u.Annotation],
+                                                 ) extends SymbolInfo {
       override final val name: String = underlying.name.toTermName.toString
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }
 
     private[distage] object Runtime {
-      def apply(underlying: SymbNative, definingClass: TypeNative, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
+      def apply(underlying: SymbNative, definingClass: TypeNative, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
         val tpeIn = underlying
           .typeSignatureIn(definingClass)
           .asSeenFrom(definingClass, definingClass.typeSymbol)
@@ -49,6 +52,7 @@ trait WithDISymbolInfo {
           typeSignatureInDefiningClass = tpeIn,
           finalResultType = tpeIn.finalResultType,
           isByName = underlying.isTerm && underlying.asTerm.isByNameParam,
+          wasGeneric = wasGeneric,
           annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct
         )
       }
@@ -59,6 +63,7 @@ trait WithDISymbolInfo {
           typeSignatureInDefiningClass = underlying.typeSignature,
           finalResultType = underlying.typeSignature,
           isByName = (underlying.isTerm && underlying.asTerm.isByNameParam) || ReflectionUtil.isByName(u)(underlying.typeSignature),
+          wasGeneric = underlying.typeSignature.typeSymbol.isParameter,
           annotations = AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct
         )
       }

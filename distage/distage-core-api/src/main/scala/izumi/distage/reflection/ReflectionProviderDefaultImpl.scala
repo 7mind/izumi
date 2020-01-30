@@ -74,13 +74,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.Wiring.Factory.FactoryMethod = {
-      val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe)
+      val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
       val resultType = ReflectionUtil.norm(u.u: u.u.type) {
         resultOfFactoryMethod(factoryMethodSymb)
           .asSeenFrom(tpe, tpe.typeSymbol)
       }
 
-      val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe)))
+      val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
       val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
 
       val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
@@ -162,7 +162,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def methodToAssociation(tpe: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
-    val methodSymb = SymbolInfo.Runtime(method, tpe)
+    val methodSymb = SymbolInfo.Runtime(method, tpe, wasGeneric = false)
     Association.AbstractMethod(methodSymb, keyFromMethod(methodSymb))
   }
 
@@ -198,9 +198,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             case (origTypes, params) =>
               origTypes.zip(params).map {
                 case (o: u.u.AnnotatedTypeApi, p) =>
-                  SymbolInfo.Runtime(p, tpe, o.annotations)
-                case (_, p) =>
-                  SymbolInfo.Runtime(p, tpe)
+                  SymbolInfo.Runtime(p, tpe, o.underlying.typeSymbol.isParameter, o.annotations)
+                case (o, p) =>
+                  SymbolInfo.Runtime(p, tpe, wasGeneric = o.typeSymbol.isParameter)
               }
           }
     }
