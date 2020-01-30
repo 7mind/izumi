@@ -28,14 +28,14 @@ object FactoryConstructorMacro {
 
     val factory = symbolToFactory(reflectionProvider)(targetType)
 
-    val traitMeta = factory.methods.map(mkCtorArgument(_))
+    val traitMeta = factory.methods.map(CtorArgument(_))
 
     val ((dependencyAssociations, dependencyArgDecls, _), dependencyArgMap: Map[macroUniverse.DIKey.BasicKey, Tree]) = {
       val allMeta = {
-        val paramMeta = factory.factoryProductDepsFromObjectGraph.map(mkCtorArgument(_))
+        val paramMeta = factory.factoryProductDepsFromObjectGraph.map(CtorArgument(_))
         traitMeta ++ paramMeta
       }
-      (allMeta.unzip3, allMeta.map { case CtorArgument(param, _, argName) => param.key -> argName }.toMap)
+      (allMeta.unzip3(CtorArgument.asCtorArgument), allMeta.map { case CtorArgument(param, _, argName) => param.key -> argName }.toMap)
     }
 
     logger.log(
@@ -43,12 +43,7 @@ object FactoryConstructorMacro {
          |Got argmap: $dependencyArgMap
          |""".stripMargin)
 
-    val producerMethods = {
-      factory.factoryMethods.map(generateFactoryMethod(c)(macroUniverse)(reflectionProvider)(uttils)(
-        _,
-        dependencyArgMap
-      ))
-    }
+    val producerMethods = factory.factoryMethods.map(generateFactoryMethod(dependencyArgMap))
 
     val constructor = {
       val allMethods = producerMethods ++ traitMeta.map(_.traitMethodExpr)
@@ -70,72 +65,6 @@ object FactoryConstructorMacro {
     logger.log(s"Final syntax tree of factory $targetType:\n$res")
 
     res
-  }
-
-  private def generateFactoryMethod[T: c.WeakTypeTag](c: blackbox.Context)
-                                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type])
-                                                     (uttils: ConstructorMacros.Aux[c.type, macroUniverse.type])
-                                                     (
-                                                       factoryMethod0: macroUniverse.Wiring.Factory.FactoryMethod,
-                                                       dependencyArgMap: Map[macroUniverse.DIKey.BasicKey, c.Tree],
-                                                     ): c.Tree = {
-    import c.universe._
-    import macroUniverse.Wiring.Factory.FactoryMethod
-    import macroUniverse.u
-    import uttils.mkAnyConstructorFunction
-
-    val FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
-
-    val (methodArgListDecls, methodArgList) = {
-      @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = {
-        tpe match {
-          case m: MethodTypeApi => m
-          case p: PolyTypeApi => instantiatedMethod(p.resultType)
-        }
-      }
-      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
-        argSymbol =>
-          val tpe = argSymbol.typeSignature
-          val name = argSymbol.asTerm.name
-          val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
-          expr -> (tpe -> name)
-      })
-      paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
-    }
-
-    val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
-
-    val (associations, fnTree) = mkAnyConstructorFunction(productConstructor)
-    val args = associations.map {
-      param =>
-        val candidates = methodArgList.collect {
-          case (tpe, termName) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe) =>
-            Liftable.liftName(termName)
-        }
-        candidates match {
-          case one :: Nil =>
-            one
-          case Nil =>
-            dependencyArgMap.getOrElse(param.key, c.abort(c.enclosingPosition,
-              s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap.keys.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}"
-            ))
-          case multiple =>
-            multiple.find(_.toString == param.name)
-              .getOrElse(c.abort(c.enclosingPosition,
-                s"""Couldn't disambiguate between multiple arguments with the same type available for parameter ${param.name}: ${param.tpe} of ${factoryMethod.finalResultType} constructor
-                   |Expected one of the arguments to be named `${param.name}` or for the type to be unique among factory method arguments""".stripMargin
-              ))
-        }
-    }
-    val freshName = TermName(c.freshName("wiring"))
-
-    q"""
-    final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgListDecls): ${factoryMethod.finalResultType} = {
-      val $freshName = $fnTree
-      $freshName(..$args)
-    }
-    """
   }
 
 }

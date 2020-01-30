@@ -25,16 +25,7 @@ object TraitConstructorMacro {
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val (associations, constructor) = mkTraitConstructorFunction(symbolToTrait(reflectionProvider)(targetType))
-
-    val provider: c.Expr[ProviderMagnet[T]] = {
-      val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
-      providerMagnetMacro.generateProvider[T](
-        parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
-        fun = constructor,
-        isGenerated = true
-      )
-    }
+    val provider: c.Expr[ProviderMagnet[T]] = mkTraitConstructorProvider(symbolToTrait(reflectionProvider)(targetType))
 
     val res = c.Expr[TraitConstructor[T]] {
       q"""{ new ${weakTypeOf[TraitConstructor[T]]}($provider) }"""

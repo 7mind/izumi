@@ -177,6 +177,55 @@ Forest fire, climbin' higher, real life, it can wait""")
     : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
     : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep]
     (implicit val beep: Beep[A])
+
+    trait BopTrait[A] {
+      def beep0: Beep[A]
+      def beep1: Beep[A]
+      def beep2: Beep[A]
+      def beep3: Beep[A]
+      def beep4: Beep[A]
+      def beep5: Beep[A]
+      def beep6: Beep[A]
+      def beep7: Beep[A]
+      def beep8: Beep[A]
+      def beep9: Beep[A]
+      def beep10: Beep[A]
+      def beep11: Beep[A]
+      def beep12: Beep[A]
+      def beep13: Beep[A]
+      def beep14: Beep[A]
+      def beep15: Beep[A]
+      def beep16: Beep[A]
+      def beep17: Beep[A]
+      def beep18: Beep[A]
+      def beep19: Beep[A]
+      def beep20: Beep[A]
+      def beep21: Beep[A]
+      def beep22: Beep[A]
+      def beep23: Beep[A]
+      def beep24: Beep[A]
+      def beep25: Beep[A]
+      def beep26: Beep[A]
+      def beep27: Beep[A]
+      def beep28: Beep[A]
+      def beep29: Beep[A]
+    }
+
+    abstract class BopAbstractClass[A : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep]
+    (implicit val beep: Beep[A]) extends BopTrait[A]
+
+    case class BeepDependency[A]()(implicit val beep: Beep[A])
+    case class BeepDependency1[A](i: Int)(implicit val beep: Beep[A])
+
+    trait BopFactory[A] extends BopTrait[A] {
+      def x(): BeepDependency[A]
+      def x(i: Int): BeepDependency1[A]
+    }
   }
 
 }

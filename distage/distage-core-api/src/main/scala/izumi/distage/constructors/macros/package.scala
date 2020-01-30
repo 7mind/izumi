@@ -7,6 +7,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.fundamentals.reflection.ReflectionUtil
 
+import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 package object macros {
@@ -28,18 +29,19 @@ package object macros {
 
     import c.universe._
 
-    def mkCtorArgument(association: u.Association): CtorArgument = {
-      val (argName, freshArgName) = association.ctorArgumentExpr(c)
-      CtorArgument(association.asParameter, argName, freshArgName)
-    }
-
     case class CtorArgument(parameter: u.Association.Parameter, ctorArgument: Tree, ctorArgumentName: Tree) {
       def traitMethodExpr: Tree = parameter.traitMethodExpr(ctorArgumentName)
     }
     object CtorArgument {
-      implicit def unzip3: CtorArgument => (u.Association.Parameter, Tree, Tree) = {
+      def apply(association: u.Association): CtorArgument = {
+        val (argName, freshArgName) = association.ctorArgumentExpr(c)
+        CtorArgument(association.asParameter, argName, freshArgName)
+      }
+
+      def asCtorArgument: CtorArgument => (u.Association.Parameter, Tree, Tree) = {
         case CtorArgument(parameter, ctorArgument, ctorArgumentName) => (parameter, ctorArgument, ctorArgumentName)
       }
+      def asTraitMethod(c: CtorArgument): (u.Association.Parameter, Tree, Tree) = (c.parameter, c.ctorArgument, c.traitMethodExpr)
 
       def unzipLists(ls: List[List[CtorArgument]]): (List[u.Association.Parameter], List[Tree], List[List[Tree]]) = {
         val (associations, ctorArgs) = ls.flatten.map {
@@ -47,18 +49,6 @@ package object macros {
         }.unzip
         val ctorArgNamesLists = ls.map(_.map(_.ctorArgumentName))
         (associations, ctorArgs, ctorArgNamesLists)
-      }
-    }
-
-    def mkTraitMethod(method: u.Association.AbstractMethod): TraitMethod = {
-      val (argExpr, freshArgName) = method.ctorArgumentExpr(c)
-      TraitMethod(method.asParameter, argExpr, method.traitMethodExpr(freshArgName))
-    }
-
-    case class TraitMethod(parameter: u.Association.Parameter, ctorArgument: Tree, traitMethodImpl: Tree)
-    object TraitMethod {
-      implicit def unzip3: TraitMethod => (u.Association.Parameter, Tree, Tree) = {
-        case TraitMethod(parameter, ctorArgument, traitMethodImpl) => (parameter, ctorArgument, traitMethodImpl)
       }
     }
 
@@ -89,34 +79,35 @@ package object macros {
     }
     def mkClassConstructorFunction(w: u.Wiring.SingletonWiring.Class): (List[u.Association.Parameter], Tree) = {
       val u.Wiring.SingletonWiring.Class(targetType, classParameters, _) = w
-      val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
+      val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(CtorArgument(_))))
       (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
 //      val argsNamess = classParameters.map(_.map(_.ctorArgumentExpr(c)))
 //      q"(classParameters.flatten, ..${argsNamess.flatten.map(_._1)}) => new $targetType(...${argsNamess.map(_.map(_._2))})"
     }
+
     def mkTraitConstructorFunction(wiring: u.Wiring.SingletonWiring.Trait): (List[u.Association.Parameter], Tree) = {
       val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
 
-      val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
-      val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(mkTraitMethod(_)).unzip3
+      val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(CtorArgument(_))))
+      val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(CtorArgument(_)).unzip3(CtorArgument.asTraitMethod)
 
       (ctorAssociations ++ traitAssociations, {
         val newExpr = mkNewAbstractTypeInstanceApplyExpr(targetType, ctorParams, wireMethods)
         q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($newExpr)"
       })
     }
-
     def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[ProviderMagnet[T]] = {
       val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
+      val traitParameters = methods.map(_.asParameter)
 
-      val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
-      val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(mkTraitMethod(_)).unzip3
-
-      val newExpr = mkNewAbstractTypeInstanceApplyExpr(targetType, ctorParams, wireMethods)
-      q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($newExpr)"
       generateProvider[T](
-        classParameters :+ traitAssociations,
-        argss => mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, argss.last)
+        parameters = classParameters :+ traitParameters,
+        fun = argss => q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
+          val methodDefs = methods.zip(argss.last).map {
+            case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
+          }
+          mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
+        })",
       )
     }
 
@@ -133,6 +124,61 @@ package object macros {
         err =>
           c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
       }
+    }
+
+    def generateFactoryMethod(dependencyArgMap: Map[u.DIKey.BasicKey, c.Tree])
+                             (factoryMethod0: u.Wiring.Factory.FactoryMethod): c.Tree = {
+      val u.Wiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
+
+      val (methodArgListDecls, methodArgList) = {
+        @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = {
+          tpe match {
+            case m: MethodTypeApi => m
+            case p: PolyTypeApi => instantiatedMethod(p.resultType)
+          }
+        }
+        val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
+          argSymbol =>
+            val tpe = argSymbol.typeSignature
+            val name = argSymbol.asTerm.name
+            val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
+            expr -> (tpe -> name)
+        })
+        paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
+      }
+
+      val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
+
+      val (associations, fnTree) = mkAnyConstructorFunction(productConstructor)
+      val args = associations.map {
+        param =>
+          val candidates = methodArgList.collect {
+            case (tpe, termName) if ReflectionUtil.stripByName(u.u)(tpe) =:= ReflectionUtil.stripByName(u.u)(param.tpe) =>
+              Liftable.liftName(termName)
+          }
+          candidates match {
+            case one :: Nil =>
+              one
+            case Nil =>
+              dependencyArgMap.getOrElse(param.key, c.abort(c.enclosingPosition,
+                s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap.keys.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}"
+              ))
+            case multiple =>
+              multiple.find(_.toString == param.name)
+                .getOrElse(c.abort(c.enclosingPosition,
+                  s"""Couldn't disambiguate between multiple arguments with the same type available for parameter ${param.name}: ${param.tpe} of ${factoryMethod.finalResultType} constructor
+                     |Expected one of the arguments to be named `${param.name}` or for the type to be unique among factory method arguments""".stripMargin
+                ))
+          }
+      }
+      val freshName = TermName(c.freshName("wiring"))
+
+      q"""
+      final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgListDecls): ${factoryMethod.finalResultType} = {
+        val $freshName = $fnTree
+        $freshName(..$args)
+      }
+      """
     }
 
     def mkNewAbstractTypeInstanceApplyExpr(

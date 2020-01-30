@@ -351,17 +351,4 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[ServerConfig].address == context.get[String]("address"))
   }
 
-  "Support classes with more than 22-argument constructors" in {
-    import BasicCase8._
-
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[Beep[Int]]
-      make[Bop[Int]]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
-
-    assert(context.get[Bop[Int]].beep == context.get[Beep[Int]])
-  }
-
 }
