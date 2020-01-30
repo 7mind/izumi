@@ -26,11 +26,11 @@ object FactoryConstructorMacro {
 
     val factory = symbolToFactory(reflectionProvider)(targetType)
 
-    val traitMeta = factory.methods.map(CtorArgument(_))
+    val traitMeta = factory.methods.map(mkCtorArgument(_))
 
     val ((dependencyAssociations, dependencyArgDecls, _), dependencyArgMap: Map[macroUniverse.DIKey.BasicKey, Tree]) = {
       val allMeta = {
-        val paramMeta = factory.factoryProductDepsFromObjectGraph.map(CtorArgument(_))
+        val paramMeta = factory.factoryProductDepsFromObjectGraph.map(mkCtorArgument(_))
         traitMeta ++ paramMeta
       }
       (allMeta.unzip3(CtorArgument.asCtorArgument), allMeta.map { case CtorArgument(param, _, argName) => param.key -> argName }.toMap)

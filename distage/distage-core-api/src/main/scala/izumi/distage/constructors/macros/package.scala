@@ -28,14 +28,15 @@ package object macros {
 
     import c.universe._
 
+    def mkCtorArgument(association: u.Association): CtorArgument = {
+      val (argName, freshArgName) = association.ctorArgumentExpr(c)
+      CtorArgument(association.asParameter, argName, freshArgName)
+    }
+
     case class CtorArgument(parameter: u.Association.Parameter, ctorArgument: Tree, ctorArgumentName: Tree) {
       def traitMethodExpr: Tree = parameter.traitMethodExpr(ctorArgumentName)
     }
     object CtorArgument {
-      def apply(association: u.Association): CtorArgument = {
-        val (argName, freshArgName) = association.ctorArgumentExpr(c)
-        CtorArgument(association.asParameter, argName, freshArgName)
-      }
       def asCtorArgument: CtorArgument => (u.Association.Parameter, Tree, Tree) = {
         case CtorArgument(parameter, ctorArgument, ctorArgumentName) => (parameter, ctorArgument, ctorArgumentName)
       }
@@ -64,8 +65,8 @@ package object macros {
       )
     }
 
-    final case class FunctionCtor(parameters: List[u.Association.Parameter], ctorArguments: List[Tree], ctorParameters: List[List[Tree]])
-    final case class ProviderCtor(parameters: List[List[u.Association.Parameter]], newExpr: List[List[Tree]] => Tree)
+    case class FunctionCtor(parameters: List[u.Association.Parameter], ctorArguments: List[Tree], ctorParameters: List[List[Tree]])
+    case class ProviderCtor(parameters: List[List[u.Association.Parameter]], newExpr: List[List[Tree]] => Tree)
 
     def mkAnyConstructorFunction(wiring: u.Wiring.SingletonWiring): (List[u.Association.Parameter], Tree) = {
       wiring match {
@@ -77,7 +78,7 @@ package object macros {
     }
     def mkClassConstructorFunction(w: u.Wiring.SingletonWiring.Class): (List[u.Association.Parameter], Tree) = {
       val u.Wiring.SingletonWiring.Class(targetType, classParameters, _) = w
-      val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(CtorArgument(_))))
+      val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
       (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
 //      val argsNamess = classParameters.map(_.map(_.ctorArgumentExpr(c)))
 //      q"(classParameters.flatten, ..${argsNamess.flatten.map(_._1)}) => new $targetType(...${argsNamess.map(_.map(_._2))})"
@@ -86,8 +87,8 @@ package object macros {
     def mkTraitConstructorFunction(wiring: u.Wiring.SingletonWiring.Trait): (List[u.Association.Parameter], Tree) = {
       val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
 
-      val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(CtorArgument(_))))
-      val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(CtorArgument(_)).unzip3(CtorArgument.asTraitMethod)
+      val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
+      val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(mkCtorArgument(_)).unzip3(CtorArgument.asTraitMethod)
 
       (ctorAssociations ++ traitAssociations, {
         val newExpr = mkNewAbstractTypeInstanceApplyExpr(targetType, ctorParams, wireMethods)
