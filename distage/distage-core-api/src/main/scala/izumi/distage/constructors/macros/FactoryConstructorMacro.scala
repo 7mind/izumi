@@ -20,8 +20,8 @@ object FactoryConstructorMacro {
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
-    val uttils = ConstructorMacros(c)(macroUniverse)
-    import uttils.{c => _, u => _, _}
+    val impls = FactoryConstructorMacros(c)(macroUniverse)
+    import impls.{c => _, u => _, _}
 
     val macroUniverse.Wiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
     val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)

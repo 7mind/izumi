@@ -12,10 +12,9 @@ object TraitConstructorMacro {
 
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     val macroUniverse = StaticDIUniverse(c)
-    val uttils = ConstructorMacros(c)(macroUniverse)
-
+    val impls = TraitConstructorMacros(c)(macroUniverse)
     import c.universe._
-    import uttils.{c => _, u => _, _}
+    import impls.{c => _, u => _, _}
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("TraitConstructor", targetType)
@@ -26,13 +25,10 @@ object TraitConstructorMacro {
 
     val provider: c.Expr[ProviderMagnet[T]] = mkTraitConstructorProvider(symbolToTrait(reflectionProvider)(targetType))
 
-    val res = c.Expr[TraitConstructor[T]] {
-      q"""{ new ${weakTypeOf[TraitConstructor[T]]}($provider) }"""
-    }
+    val res = c.Expr[TraitConstructor[T]](q"{ new ${weakTypeOf[TraitConstructor[T]]}($provider) }")
     logger.log(s"Final syntax tree of trait $targetType:\n$res")
 
     res
   }
-
 
 }

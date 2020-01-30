@@ -30,11 +30,8 @@ object ClassConstructorMacro {
 
       case _ =>
         val macroUniverse = StaticDIUniverse(c)
-
-
-        val uttils = ConstructorMacros(c)(macroUniverse)
-        import uttils.{c => _, u => _, _}
-
+        val impls = ClassConstructorMacros(c)(macroUniverse)
+        import impls.{c => _, u => _, _}
 
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         if (!reflectionProvider.isConcrete(targetType)) {
@@ -45,11 +42,9 @@ object ClassConstructorMacro {
 
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val providerMagnet: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
+        val provider: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
 
-        val res = c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet) }"
-        }
+        val res = c.Expr[ClassConstructor[T]](q"{ new ${weakTypeOf[ClassConstructor[T]]}($provider) }")
         logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
     }
