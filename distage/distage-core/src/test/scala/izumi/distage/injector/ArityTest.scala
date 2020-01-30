@@ -48,21 +48,37 @@ class ArityTest extends AnyWordSpec with MkInjector {
     assert(context.get[BopAbstractClass[Int]].beep0 == context.get[Beep[Int]])
     assert(context.get[BopAbstractClass[Int]].beep29 == context.get[Beep[Int]])
   }
-//
-//  "Support factories with more than 22-argument constructors" in {
-//    import BasicCase8._
-//
-//    val definition = PlannerInput.noGc(new ModuleDef {
-//      make[Beep[Int]]
-//      make[BopFactory[Int]]
-//    })
-//
-//    val context = Injector.Standard().produce(definition).unsafeGet()
-//
-//    assert(context.get[BopFactory[Int]].x(5) == BeepDependency1(5)(context.get[Beep[Int]]))
-//    assert(context.get[BopFactory[Int]].x() == BeepDependency()(context.get[Beep[Int]]))
-//    assert(context.get[BopFactory[Int]].beep0 == context.get[Beep[Int]])
-//    assert(context.get[BopFactory[Int]].beep29 == context.get[Beep[Int]])
-//  }
+
+  "Support factories with more than 22-argument constructors" in {
+    import BasicCase8._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Beep[Int]]
+      make[BopFactory[Int]]
+    })
+
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[BopFactory[Int]].x(5) == BeepDependency1(5)(context.get[Beep[Int]]))
+    assert(context.get[BopFactory[Int]].x() == BeepDependency()(context.get[Beep[Int]]))
+    assert(context.get[BopFactory[Int]].beep0 == context.get[Beep[Int]])
+    assert(context.get[BopFactory[Int]].beep29 == context.get[Beep[Int]])
+  }
+
+  "Support types with no parameters" in {
+    import BasicCase8._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[NoArgClass]
+      make[NoArgTrait]
+      make[NoArgAbstractClass]
+    })
+
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[NoArgClass] != null)
+    assert(context.get[NoArgTrait] != null)
+    assert(context.get[NoArgAbstractClass] != null)
+  }
 
 }

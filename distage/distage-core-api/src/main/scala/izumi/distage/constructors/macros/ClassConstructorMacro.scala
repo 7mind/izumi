@@ -37,6 +37,12 @@ object ClassConstructorMacro {
 
 
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
+        if (!reflectionProvider.isConcrete(targetType)) {
+          c.abort(c.enclosingPosition,
+            s"""Tried to derive constructor function for class $targetType, but the class is an
+               |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
+        }
+
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
         val providerMagnet: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)

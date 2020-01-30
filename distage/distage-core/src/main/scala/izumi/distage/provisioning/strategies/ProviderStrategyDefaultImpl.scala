@@ -10,7 +10,7 @@ import izumi.fundamentals.platform.language.unused
 class ProviderStrategyDefaultImpl extends ProviderStrategy  {
   def callProvider(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: WiringOp.CallProvider): Seq[NewObjectOp.NewInstance] = {
 
-    val args: Seq[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
+    val args: Vector[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
       param =>
         context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
@@ -19,7 +19,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
                 s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
-    }
+    }.toVector
 
     val instance = op.wiring.provider.unsafeApply(args)
     Seq(NewObjectOp.NewInstance(op.target, instance))

@@ -52,21 +52,9 @@ package object macros {
     }
 
     def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[ProviderMagnet[T]] = {
-      if (!reflectionProvider.isConcrete(targetType)) {
-        c.abort(c.enclosingPosition,
-          s"""Tried to derive constructor function for class $targetType, but the class is an
-             |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
-      }
-
       val associations = reflectionProvider.constructorParameterLists(targetType)
-      generateProvider[T](
-        parameters = associations,
-        fun = args => q"new $targetType(...$args)",
-      )
+      generateProvider[T](associations)(args => q"new $targetType(...$args)")
     }
-
-    case class FunctionCtor(parameters: List[u.Association.Parameter], ctorArguments: List[Tree], ctorParameters: List[List[Tree]])
-    case class ProviderCtor(parameters: List[List[u.Association.Parameter]], newExpr: List[List[Tree]] => Tree)
 
     def mkAnyConstructorFunction(wiring: u.Wiring.SingletonWiring): (List[u.Association.Parameter], Tree) = {
       wiring match {
@@ -80,8 +68,6 @@ package object macros {
       val u.Wiring.SingletonWiring.Class(targetType, classParameters, _) = w
       val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
       (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
-//      val argsNamess = classParameters.map(_.map(_.ctorArgumentExpr(c)))
-//      q"(classParameters.flatten, ..${argsNamess.flatten.map(_._1)}) => new $targetType(...${argsNamess.map(_.map(_._2))})"
     }
 
     def mkTraitConstructorFunction(wiring: u.Wiring.SingletonWiring.Trait): (List[u.Association.Parameter], Tree) = {
@@ -99,15 +85,14 @@ package object macros {
       val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
       val traitParameters = methods.map(_.asParameter)
 
-      generateProvider[T](
-        parameters = classParameters :+ traitParameters,
-        fun = argss => q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
+      generateProvider[T](classParameters :+ traitParameters) {
+        argss => q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
           val methodDefs = methods.zip(argss.last).map {
             case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
           }
           mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
-        })",
-      )
+        })"
+      }
     }
 
     def traitConstructorAssertion(targetType: Type): Unit = {
@@ -152,7 +137,7 @@ package object macros {
       val args = associations.map {
         param =>
           val candidates = methodArgList.collect {
-            case (tpe, termName) if ReflectionUtil.stripByName(u.u)(tpe) =:= ReflectionUtil.stripByName(u.u)(param.tpe) =>
+            case (tpe, termName) if ReflectionUtil.stripByName(u.u)(tpe) =:= param.nonBynameTpe =>
               Liftable.liftName(termName)
           }
           candidates match {
@@ -209,10 +194,8 @@ package object macros {
       }
     }
 
-    def generateProvider[T: c.WeakTypeTag](
-                                            parameters: List[List[u.Association.Parameter]],
-                                            fun: List[List[Tree]] => Tree,
-                                          ): c.Expr[ProviderMagnet[T]] = {
+    def generateProvider[T: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
+                                          (fun: List[List[Tree]] => Tree,): c.Expr[ProviderMagnet[T]] = {
       val tools = DIUniverseLiftables(u)
 
       import tools.{liftTypeToSafeType, liftableParameter}
@@ -224,9 +207,9 @@ package object macros {
         parameters.map(_.map {
           param =>
             val seqCast = if (param.isByName) {
-              q"$seqName($i).asInstanceOf[() => ${param.tpe}].apply()"
+              q"$seqName($i).asInstanceOf[() => ${param.nonBynameTpe}].apply()"
             } else {
-              q"$seqName($i).asInstanceOf[${param.tpe}]"
+              q"$seqName($i).asInstanceOf[${param.nonBynameTpe}]"
             }
 
             i += 1
@@ -240,7 +223,7 @@ package object macros {
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[T]]}(
             ${Liftable.liftList.apply(parameters.flatten)},
             ${liftTypeToSafeType(weakTypeOf[T])},
-            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)} },
+            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },
             true,
           )
         )

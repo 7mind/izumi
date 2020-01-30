@@ -130,7 +130,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
       methodReferenceParams.zip(lambdaParams).map {
         case (mArg, lArg) =>
           mArg.copy(
-            symbol = mArg.symbol.withTpe(lArg.tpe),
+            symbol = mArg.symbol.withTpe(lArg.symbol.finalResultType),
             key = mArg.key.withTpe(lArg.key.tpe),
           )
       }

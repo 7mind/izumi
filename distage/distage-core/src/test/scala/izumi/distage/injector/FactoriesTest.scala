@@ -178,6 +178,9 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
 
+    import izumi.fundamentals.platform.strings.IzString._
+    println(s"Methods: ${(instantiated: Object).getClass.getMethods.toList.niceList()}")
+
     val instance = instantiated.makeConcreteDep()
     assert(instance.isInstanceOf[ConcreteDep])
   }
@@ -252,21 +255,21 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(res.getMessage.contains("contains types not required by constructor of the result type"))
     assert(res.getMessage.contains("UnrelatedTC["))
   }
-//
-//  "can handle abstract classes" in {
-//    import FactoryCase1._
-//
-//    val definition = PlannerInput.noGc(new ModuleDef {
-//      make[Dependency]
-//      make[TestClass]
-//      make[AbstractClassFactory]
-//    })
-//
-//    val injector = mkInjector()
-//    val plan = injector.plan(definition)
-//    val context = injector.produce(plan).unsafeGet()
-//
-//    assert(context.get[AbstractClassFactory].x(5) == AssistedTestClass(context.get[Dependency], 5))
-//  }
+
+  "can handle abstract classes" in {
+    import FactoryCase1._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dependency]
+      make[TestClass]
+      make[AbstractClassFactory]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(context.get[AbstractClassFactory].x(5) == AssistedTestClass(context.get[Dependency], 5))
+  }
 
 }

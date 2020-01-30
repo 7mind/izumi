@@ -12,14 +12,17 @@ private[distage] trait WithDIAssociation {
   sealed trait Association {
     def symbol: SymbolInfo
     def key: DIKey.BasicKey
-    /** never by-name for methods, may be by-name for parameters */
-    final def tpe: TypeNative = symbol.finalResultType
-    final def nonBynameTpe: TypeNative = symbol.nonByNameFinalResultType
     final def name: String = symbol.name
-    // methods are always by-name
+
+    /** methods are always by-name */
     def isByName: Boolean
 
     def asParameter: Association.Parameter
+
+    /** - never by-name for methods, - may be by-name for parameters */
+    final def tpe: TypeNative = symbol.finalResultType
+    final def nonBynameTpe: TypeNative = symbol.nonByNameFinalResultType
+    /** - always by-name for methods, - may be by-name for parameters */
     def asParameterTpe: TypeNative
 
     final def ctorArgumentExpr(c: blackbox.Context): (u.Tree, u.Tree) = {
@@ -40,7 +43,7 @@ private[distage] trait WithDIAssociation {
       override final def asParameterTpe: TypeNative = tpe
     }
 
-    // FIXME: non-existent wiring, at runtime there are only Parameters
+    // tpe is never by-name for `AbstractMethod`
     case class AbstractMethod(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
       override final def isByName: Boolean = true
       override final def asParameter: Parameter = Parameter(symbol.withIsByName(true).withTpe(asParameterTpe), key)

@@ -26,7 +26,7 @@ trait WithDIWiring {
     }
 
     case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
-      final def factoryProductDepsFromObjectGraph: Seq[Association] = {
+      final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
         val fieldKeys = methods.map(_.key).toSet
 
@@ -38,6 +38,12 @@ trait WithDIWiring {
     }
 
     object Factory {
+      object WithProductDeps {
+        def unapply(arg: Factory): Some[(List[Factory.FactoryMethod], List[List[Association.Parameter]], List[Association.AbstractMethod], List[Association])] = {
+          Some((arg.factoryMethods, arg.classParameters, arg.methods, arg.factoryProductDepsFromObjectGraph))
+        }
+      }
+
       case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring, methodArgumentKeys: Seq[DIKey]) {
         def objectGraphDeps: Seq[Association] = wireWith.associations.filterNot(methodArgumentKeys contains _.key)
       }

@@ -226,6 +226,10 @@ Forest fire, climbin' higher, real life, it can wait""")
       def x(): BeepDependency[A]
       def x(i: Int): BeepDependency1[A]
     }
+
+    class NoArgClass
+    trait NoArgTrait
+    abstract class NoArgAbstractClass
   }
 
 }
