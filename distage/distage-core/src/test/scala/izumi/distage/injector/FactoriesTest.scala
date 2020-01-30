@@ -2,12 +2,11 @@ package izumi.distage.injector
 
 import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.fixtures.FactoryCases.FactoryCase3.{Dep1, TC2}
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 
@@ -177,9 +176,6 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
-
-    import izumi.fundamentals.platform.strings.IzString._
-    println(s"Methods: ${(instantiated: Object).getClass.getMethods.toList.niceList()}")
 
     val instance = instantiated.makeConcreteDep()
     assert(instance.isInstanceOf[ConcreteDep])

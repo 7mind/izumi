@@ -195,7 +195,7 @@ package object macros {
     }
 
     def generateProvider[T: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
-                                          (fun: List[List[Tree]] => Tree,): c.Expr[ProviderMagnet[T]] = {
+                                          (fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
       val tools = DIUniverseLiftables(u)
 
       import tools.{liftTypeToSafeType, liftableParameter}
