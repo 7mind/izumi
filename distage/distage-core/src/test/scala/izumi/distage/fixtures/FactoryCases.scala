@@ -49,10 +49,6 @@ object FactoryCases {
       def x(a: Int): AssistedTestClass
     }
 
-    abstract class AbstractClassFactory(private val t: TestClass) {
-      def x(a: Int): AssistedTestClass
-    }
-
     trait NamedAssistedFactory {
       def dep: Dependency @Id("veryspecial")
       def x(a: Int): NamedAssistedTestClass
@@ -80,6 +76,10 @@ object FactoryCases {
       def x(): Factory
     }
 
+    abstract class AbstractClassFactory(private val t: TestClass) {
+      def x(a: Int): AssistedTestClass
+    }
+
   }
 
   object FactoryCase2 {
@@ -101,6 +101,28 @@ object FactoryCases {
 
     trait ProductF[F[_]] extends Product
     final case class ProductFImpl[F[_]](x: Int, y: Int, z: Int, dependency: F[Dependency]) extends ProductF[F]
+  }
+
+  object FactoryCase3 {
+    trait TC[-T]
+
+    case object TC1 extends TC[Any]
+    implicit case object TC2 extends TC[Any]
+
+    class Dep1
+    class Dep2
+    implicit object Dep3
+    class UnrelatedTC[T]
+
+    case class TestClass[T](dep1: Dep1, dep2: Dep2)(implicit val TC: TC[T], val dep3: Dep3.type)
+
+    trait ImplicitFactory {
+      def x[T](dep1: Dep1)(implicit tc: TC[T], dep3: Dep3.type): TestClass[T]
+    }
+
+    trait InvalidImplicitFactory {
+      def x[T: TC: UnrelatedTC](dep1: Dep1): TestClass[T]
+    }
   }
 
 }

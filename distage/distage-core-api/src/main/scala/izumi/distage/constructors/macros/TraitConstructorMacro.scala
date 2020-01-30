@@ -12,22 +12,20 @@ import scala.reflect.macros.blackbox
 object TraitConstructorMacro {
 
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
+    val macroUniverse = StaticDIUniverse(c)
+    val uttils = ConstructorMacros(c)(macroUniverse)
+
     import c.universe._
+    import uttils.{c => _, u => _, _}
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("TraitConstructor", targetType)
-
-    val macroUniverse = StaticDIUniverse(c)
-
-
-    val uttils = ConstructorMacros(c)(macroUniverse)
-    import uttils.{c => _, u => _, _}
-
+    traitConstructorAssertion(targetType)
 
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val (associations, constructor) = mkTraitConstructorFunction(reflectionProvider, logger)(targetType)
+    val (associations, constructor) = mkTraitConstructorFunction(symbolToTrait(reflectionProvider)(targetType))
 
     val provider: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)

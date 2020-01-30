@@ -17,14 +17,18 @@ trait WithDIWiring {
       def requiredKeys: Set[DIKey] = associations.map(_.key).toSet ++ prefix.toSet
     }
     object SingletonWiring {
-      case class Class(instanceType: TypeNative, associations: List[Association.Parameter], prefix: Option[DIKey]) extends SingletonWiring
-      case class Trait(instanceType: TypeNative, associations: List[Association.AbstractMethod], prefix: Option[DIKey]) extends SingletonWiring
+      case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[DIKey]) extends SingletonWiring {
+        override lazy val associations: List[Association] = classParameters.flatten
+      }
+      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[DIKey]) extends SingletonWiring {
+        override lazy val associations: List[Association] = classParameters.flatten ++ methods
+      }
     }
 
-    case class Factory(factoryMethods: List[Factory.FactoryMethod], traitDependencies: List[Association.AbstractMethod]) extends Wiring {
+    case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
       final def factoryProductDepsFromObjectGraph: Seq[Association] = {
         import izumi.fundamentals.collections.IzCollections._
-        val fieldKeys = traitDependencies.map(_.key).toSet
+        val fieldKeys = methods.map(_.key).toSet
 
         factoryMethods
           .flatMap(_.objectGraphDeps)

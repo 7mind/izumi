@@ -6,7 +6,6 @@ import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.annotation.tailrec
@@ -27,25 +26,16 @@ object FactoryConstructorMacro {
     val uttils = ConstructorMacros(c)(macroUniverse)
     import uttils.{c => _, u => _, _}
 
-    val factory = reflectionProvider.symbolToWiring(targetType) match {
-      case factory: macroUniverse.Wiring.Factory => factory
-      case wiring => c.abort(c.enclosingPosition,
-        s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
-           |
-           |Inferred wiring is: $wiring
-           |""".stripMargin)
-    }
+    val factory = symbolToFactory(reflectionProvider)(targetType)
 
-    val traitMeta = factory.traitDependencies.map(mkCtorArgument(_))
+    val traitMeta = factory.methods.map(mkCtorArgument(_))
 
     val ((dependencyAssociations, dependencyArgDecls, _), dependencyArgMap: Map[macroUniverse.DIKey.BasicKey, Tree]) = {
       val allMeta = {
         val paramMeta = factory.factoryProductDepsFromObjectGraph.map(mkCtorArgument(_))
         traitMeta ++ paramMeta
       }
-      allMeta.unzip3 -> allMeta.map {
-        case CtorArgument(param, _, argName) => param.key -> Liftable.liftName(argName)
-      }.toMap
+      (allMeta.unzip3, allMeta.map { case CtorArgument(param, _, argName) => param.key -> argName }.toMap)
     }
 
     logger.log(
@@ -54,15 +44,15 @@ object FactoryConstructorMacro {
          |""".stripMargin)
 
     val producerMethods = {
-      factory.factoryMethods.map(generateFactoryMethod(c)(macroUniverse)(reflectionProvider)(logger)(uttils)(
+      factory.factoryMethods.map(generateFactoryMethod(c)(macroUniverse)(reflectionProvider)(uttils)(
         _,
         dependencyArgMap
       ))
     }
 
     val constructor = {
-      val allMethods = producerMethods ++ traitMeta.map(_.traitMethodImpl)
-      val instantiate = mkNewAbstractTypeInstanceExpr(targetType, Nil, allMethods)
+      val allMethods = producerMethods ++ traitMeta.map(_.traitMethodExpr)
+      val instantiate = mkNewAbstractTypeInstanceApplyExpr(targetType, Nil, allMethods)
       q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
     }
 
@@ -85,7 +75,6 @@ object FactoryConstructorMacro {
   private def generateFactoryMethod[T: c.WeakTypeTag](c: blackbox.Context)
                                                      (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
                                                      (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type])
-                                                     (logger: TrivialLogger)
                                                      (uttils: ConstructorMacros.Aux[c.type, macroUniverse.type])
                                                      (
                                                        factoryMethod0: macroUniverse.Wiring.Factory.FactoryMethod,
@@ -109,14 +98,15 @@ object FactoryConstructorMacro {
         argSymbol =>
           val tpe = argSymbol.typeSignature
           val name = argSymbol.asTerm.name
-          q"val $name: $tpe" -> (tpe -> name)
+          val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
+          expr -> (tpe -> name)
       })
       paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
     }
 
     val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
 
-    val (associations, fnTree) = mkAnyConstructorFunction(reflectionProvider, logger)(productConstructor.instanceType)
+    val (associations, fnTree) = mkAnyConstructorFunction(productConstructor)
     val args = associations.map {
       param =>
         val candidates = methodArgList.collect {

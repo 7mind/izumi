@@ -39,7 +39,7 @@ object ClassConstructorMacro {
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val providerMagnet: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider, logger)(targetType)
+        val providerMagnet: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
 
         val res = c.Expr[ClassConstructor[T]] {
           q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet) }"

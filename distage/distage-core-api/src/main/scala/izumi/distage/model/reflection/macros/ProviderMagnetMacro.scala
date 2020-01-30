@@ -5,7 +5,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -74,7 +74,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
                                          isGenerated: Boolean,
                                         ): c.Expr[ProviderMagnet[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
-    import tools.{liftableParameter, liftTypeToSafeType}
+    import tools.{liftTypeToSafeType, liftableParameter}
 
     val casts = parameters.indices.map(i => q"seqAny($i)")
     val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)

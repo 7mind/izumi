@@ -57,49 +57,44 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case None =>
         typeKey
     }
-  }// reflectionprovider
+  } // reflectionprovider
 
   override def symbolToWiring(tpe: TypeNative): Wiring = {
     tpe match {
-      case FactorySymbol(factoryMethods, dependencyMethods) =>
-        val mw = factoryMethods.map(_.asMethod).map {
-          factoryMethod =>
-            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe)
+      case FactorySymbol(symbolMethods, dependencyMethods) =>
+        val factoryMethods = symbolMethods.map(_.asMethod).map(factoryMethod(tpe))
+        val traitMethods = dependencyMethods.map(methodToAssociation(tpe, _))
+        val classParameters = constructorParameterLists(tpe)
 
-            val resultType = resultOfFactoryMethod(factoryMethodSymb)
-              .asSeenFrom(tpe, tpe.typeSymbol)
-
-            val alreadyInSignature = {
-              selectNonImplicitParameters(factoryMethod)
-                .flatten
-                .map(p => keyFromParameter(SymbolInfo.Runtime(p, tpe)))
-            }
-
-            val methodTypeWireable = mkConstructorWiring(factoryMethod, resultType)
-
-            val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.requiredKeys
-
-            if (excessiveSymbols.nonEmpty) {
-              throw new UnsupportedDefinitionException(
-                s"""Augmentation failure.
-                   |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
-                   |  * But method signature types not required by result type constructor: $excessiveSymbols
-                   |  * Only the following types are required: ${methodTypeWireable.requiredKeys}
-                   |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
-            }
-
-            Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
-        }
-
-        val materials = dependencyMethods.map(methodToAssociation(tpe, _))
-
-        Wiring.Factory(mw, materials)
+        Wiring.Factory(factoryMethods, classParameters, traitMethods)
 
       case _ =>
-        mkConstructorWiring(u.u.NoSymbol, tpe)
+        mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
     }
   }
 
+  private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.Wiring.Factory.FactoryMethod = {
+      val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe)
+      val resultType = ReflectionUtil.norm(u.u: u.u.type) {
+        resultOfFactoryMethod(factoryMethodSymb)
+          .asSeenFrom(tpe, tpe.typeSymbol)
+      }
+
+      val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe)))
+      val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
+
+      val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
+      if (excessiveTypes.nonEmpty) {
+        throw new UnsupportedDefinitionException(
+          s"""Augmentation failure.
+             |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
+             |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
+             |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
+             |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
+      }
+
+      Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
+  }
   override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(associationFromParameter))
   }
@@ -107,10 +102,10 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): Wiring.SingletonWiring = {
     tpe match {
       case ConcreteSymbol(t) =>
-        Wiring.SingletonWiring.Class(t, constructorParameters(t), getPrefix(t))
+        Wiring.SingletonWiring.Class(t, constructorParameterLists(t), getPrefix(t))
 
       case AbstractSymbol(t) =>
-        Wiring.SingletonWiring.Trait(t, traitMethods(t), getPrefix(t))
+        Wiring.SingletonWiring.Trait(t, constructorParameterLists(t), traitMethods(t), getPrefix(t))
 
       case FactorySymbol(_, _) =>
         throw new UnsupportedWiringException(
@@ -134,10 +129,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         } else ""
         throw new UnsupportedWiringException(s"Wiring unsupported: `$tpe` / $safeType$factoryMsg", safeType)
     }
-  }
-
-  private[this] def constructorParameters(tpe: TypeNative): List[Association.Parameter] = {
-    constructorParameterLists(tpe).flatten
   }
 
   private[this] def getPrefix(tpe: TypeNative): Option[DIKey] = {
@@ -191,7 +182,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
           (f.members.filter(isFactoryMethod).toList,
             f.members.filter(isWireableMethod).map(_.asMethod).toList,
           ))
-    }}
+    }
+  }
 
   // symbolintrospector
   private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[SymbolInfo]]] = {
@@ -223,14 +215,10 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def selectNonImplicitParameters(symb: MethodSymbNative): List[List[SymbNative]] = {
-    symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
-  }
-
   override def isConcrete(tpe: TypeNative): Boolean = {
     tpe match {
-      case _: u.u.RefinedTypeApi | u.u.definitions.AnyTpe     | u.u.definitions.AnyRefTpe
-                                 | u.u.definitions.NothingTpe | u.u.definitions.NullTpe =>
+      case _: u.u.RefinedTypeApi | u.u.definitions.AnyTpe | u.u.definitions.AnyRefTpe
+           | u.u.definitions.NothingTpe | u.u.definitions.NullTpe =>
         // 1. refinements never have a valid constructor unless they are tautological and can be substituted by a class
         // 2. ignoring non-runtime refinements (type members, covariant overrides) leads to unsoundness
         // rt.parents.size == 1 && !rt.decls.exists(_.isAbstract)
@@ -251,8 +239,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     tpe match {
       case rt: u.u.RefinedTypeApi =>
         val abstractMembers1 = (abstractMembers ++ rt.decls.filter(_.isAbstract)).toSet
-        rt.parents.forall { pt =>
-          !pt.typeSymbol.isFinal && !(pt.typeSymbol.isClass && pt.typeSymbol.asClass.isSealed)
+        rt.parents.forall {
+          pt =>
+            !pt.typeSymbol.isFinal && !(pt.typeSymbol.isClass && pt.typeSymbol.asClass.isSealed)
         } && abstractMembers1.forall(isWireableMethod)
 
       case t =>
