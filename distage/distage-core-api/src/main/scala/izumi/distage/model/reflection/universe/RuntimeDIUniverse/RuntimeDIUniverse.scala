@@ -33,7 +33,8 @@ object Association {
 final case class SymbolInfo(
                              name: String,
                              finalResultType: SafeType,
-                             // annotations: List[u.Annotation],
+                             // no custom annotation support since 0.10.0... open an issue if desired!
+                             // annotations: List[u.Annotation]
                              isByName: Boolean,
                              wasGeneric: Boolean,
                            )
@@ -225,6 +226,8 @@ object Provider {
                                      fun: Seq[Any] => Any,
                                      isGenerated: Boolean,
                                    ) extends Provider {
+    def this(parameters: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any, isGenerated: Boolean) =
+      this(parameters, ret, fun, fun, isGenerated)
 
     override def unsafeApply(refs: Seq[TypedRef[_]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
@@ -233,7 +236,7 @@ object Provider {
       copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
     override def addUnused(keys: Seq[DIKey]): Provider =
-      copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, false, false), key)))
+      copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)))
 
     override def unsafeZip(newRet: SafeType, that: Provider): Provider = {
       ProviderImpl(
@@ -249,7 +252,7 @@ object Provider {
   }
   object ProviderImpl {
     @inline def apply[A](parameters: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any, isGenerated: Boolean): ProviderImpl[A] =
-      new ProviderImpl(parameters, ret, fun, fun, isGenerated)
+      new ProviderImpl(parameters, ret, fun, isGenerated)
   }
 
 }

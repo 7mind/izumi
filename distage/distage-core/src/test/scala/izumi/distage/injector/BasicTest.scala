@@ -1,6 +1,7 @@
 package izumi.distage.injector
 
 import distage._
+import izumi.distage.fixtures.BasicCases.BasicCase7.ServerConfig
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
@@ -349,4 +350,5 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[ServerConfig].port == context.get[Int]("port"))
     assert(context.get[ServerConfig].address == context.get[String]("address"))
   }
+
 }

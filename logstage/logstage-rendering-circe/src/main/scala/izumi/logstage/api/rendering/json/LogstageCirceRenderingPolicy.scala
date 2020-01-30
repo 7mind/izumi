@@ -147,6 +147,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
 }
 
 object LogstageCirceRenderingPolicy {
+  def apply(prettyPrint: Boolean): LogstageCirceRenderingPolicy = new LogstageCirceRenderingPolicy(prettyPrint)
 
   object Format extends LogFormat.LogFormatImpl {
     override protected def toString(argValue: Any): String = {

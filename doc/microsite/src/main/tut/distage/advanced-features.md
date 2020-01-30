@@ -18,9 +18,13 @@ To use garbage collector, pass GC roots as an argument to `Injector.produce*` me
 ```scala mdoc:reset:to-string
 import distage._
 
-case class A(b: B)
-case class B()
-case class C() {
+class A(b: B) {
+  println("A!")
+}
+class B() {
+  println("B!")
+}
+class C() {
   println("C!")
 }
 
@@ -32,16 +36,17 @@ val module = new ModuleDef {
 
 // declare `A` as a GC root
 
-val roots = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
+val gc = GCMode(root = DIKey.get[A])
 
 // create an object graph from description in `module`
 // with `A` as a GC root
 
-val objects = Injector().produce(module, roots).unsafeGet()
+val objects = Injector().produce(module, gc).unsafeGet()
 
 // A and B are in the object graph
 
 objects.find[A]
+
 objects.find[B]
 
 // C is missing
@@ -49,8 +54,35 @@ objects.find[B]
 objects.find[C]
 ```
 
-Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
-But, if class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` - the GC root, would depend on `B` which in turns depends on `C`.
+Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message has never been printed.
+If class `B` had a `C` parameter, like `class B(c: C)`; `C` would have been retained, because `A` - the GC root, would depend on `B`, and `B` would depend on `C`.
+
+```scala mdoc:reset-object:invisible:to-string
+import distage._
+
+class A(b: B) {
+  println("A!")
+}
+class C() {
+  println("C!")
+}
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+```
+
+```scala mdoc:to-string
+class B(c: C) {
+  println("B!")
+}
+
+val objects = Injector().produce(module, GCMode(DIKey.get[A])).unsafeGet()
+
+objects.find[C]
+```
 
 ### Circular Dependencies Support
 
@@ -84,11 +116,11 @@ If you want to disable it, use `NoProxies` bootstrap configuration:
 Injector.NoProxies()
 ```
 
+Proxies are not supported on Scala.js.
+
 #### Manual Resolution with by-name parameters
 
-Most cycles can be resolved manually when identified using By Name parameters.
-
-Circular dependencies in the following example are all resolved via Scala's native By Name, no proxies are generated:
+Most cycles can be resolved without proxies, using By-Name parameters:
 
 ```scala mdoc:reset:to-string
 import distage.{GCMode, ModuleDef, Injector}
@@ -122,18 +154,17 @@ locator.get[B].a eq locator.get[A]
 locator.get[C].c eq locator.get[C]
 ```
 
-The proxy generation via `cglib` is currently enabled by default, because in scenarios with extreme late-binding cycles
-can emerge unexpectedly, out of control of the origin module.
+The proxy generation via `cglib` is enabled by default, because in scenarios with extreme late-binding cycles can emerge unexpectedly,
+out of control of the origin module.
 
-NB: Currently a limitation applies to by-names - ALL dependencies of a class engaged in a by-name circular dependency must
-be by-name, otherwise distage will revert to generating proxies.
+Note: Currently a limitation applies to by-names - ALL dependencies of a class engaged in a by-name circular dependency must
+be by-name, otherwise `distage` will revert to generating proxies.
 
 ### Auto-Sets
 
 AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks can traverse the plan and collect all future objects that match a predicate.
 
 Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
-
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
@@ -151,13 +182,14 @@ class B(val a: A) extends PrintResource("B")
 class C(val b: B) extends PrintResource("C")
 
 val bootstrapModule = new BootstrapModuleDef {
-  many[PlanningHook].add(new AutoSetHook[PrintResource, PrintResource](identity))
+  many[PlanningHook]
+    .add(new AutoSetHook[PrintResource, PrintResource](identity))
 }
 
 val appModule = new ModuleDef {
-  make[C]
-  make[B]
   make[A]
+  make[B]
+  make[C]
 }
 
 val resources = Injector(bootstrapModule)
@@ -181,7 +213,7 @@ See also: same concept in [MacWire](https://github.com/softwaremill/macwire#mult
 ### Weak Sets
 
 @ref[Set bindings](basics.md#set-bindings) can contain *weak* references. References designated as weak will
-be retained *only* if there are other dependencies on them **except** for the set addition.
+be retained *only* if there are *other* dependencies on the referred bindings, *NOT* if there's a dependency only on the entire Set.
 
 Example:
 
@@ -190,11 +222,11 @@ import distage._
 
 sealed trait Elem
 
-final class Strong extends Elem {
+final case class Strong() extends Elem {
   println("Strong constructed")
 }
 
-final class Weak extends Elem {
+final case class Weak() extends Elem {
   println("Weak constructed")
 }
 
@@ -215,7 +247,17 @@ val roots = Set[DIKey](DIKey.get[Set[Elem]])
 
 val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
 
-objects.get[Set[Elem]].size == 1
+// Strong is around
+
+objects.find[Strong]
+
+// Weak is not
+
+objects.find[Strong]
+
+// There's only Strong in the Set
+
+objects.get[Set[Elem]]
 ```
 
 The `Weak` class was not required by any dependency of `Set[Elem]`, so it was pruned.
@@ -251,12 +293,18 @@ final class Strong(weak: Weak) extends Elem {
 
 val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
 
-objects.get[Set[Elem]].size == 2
+// Weak is around
+
+objects.find[Weak]
+
+// both Strong and Weak are in the Set
+
+objects.get[Set[Elem]]
 ```
 
 ### Inner Classes and Path-Dependent Types
 
-Path-dependent types with a value prefix will instantiate normally:
+Path-dependent types with a value prefix will be instantiated normally:
 
 ```scala mdoc:reset:to-string
 import distage.{GCMode, ModuleDef, Injector}
@@ -275,17 +323,19 @@ Injector()
   .use(_.get[path.A])
 ```
 
-Since version `0.10`, path-dependent types with a type (non-value) prefix are no longer supported, see issue: https://github.com/7mind/izumi/issues/764
+Since version `0.10`, support for path-dependent types with a non-value (type) prefix hasn't reimplemented after a rewrite of the internals, see issue: https://github.com/7mind/izumi/issues/764
 
 ### Depending on Locator
 
-Objects can depend on the Locator (container of the final object graph):
+Objects can depend on the outer object graph that contains them (@scaladoc[Locator](izumi.distage.model.Locator)), by including a @scaladoc[LocatorRef](izumi.distage.model.recursive.LocatorRef) parameter:
 
 ```scala mdoc:reset:to-string
-import distage._
+import distage.{ModuleDef, LocatorRef, Injector, GCMode}
 
-class A(all: LocatorRef) {
-  def c = all.get.get[C]
+class A(
+  objects: LocatorRef
+) {
+  def c = objects.get.get[C]
 }
 class B
 class C
@@ -298,17 +348,52 @@ val module = new ModuleDef {
 
 val objects = Injector().produce(module, GCMode.NoGC).unsafeGet()
 
-assert(objects.get[A].c eq objects.get[C]) 
+// A took C from the object graph
+
+objects.get[A].c
+
+// this C is the same C as in this `objects` value
+
+val thisC = objects.get[C]
+val thatC = objects.get[A].c
+
+assert(thisC == thatC)
 ```
 
 Locator contains metadata about the plan and the bindings from which it was ultimately created:
 
 ```scala mdoc:to-string
-// Plan that created this locator
+import distage.{OrderedPlan, ModuleBase}
+
+// Plan that created this locator (after GC)
 
 val plan: OrderedPlan = objects.plan
 
-// Bindings from which the Plan was built
+// Bindings from which the Plan was built (after GC)
 
-val moduleDef: ModuleBase = plan.definition
+val bindings: ModuleBase = plan.definition
 ```
+
+The plan and bindings in Locator are saved in the state they were AFTER @ref[Garbage Collection](#garbage-collection) has been performed.
+Objects can request the original input via a `PlannerInput` parameter:
+
+```scala mdoc:reset:to-string
+import distage.{DIKey, GCMode, ModuleDef, PlannerInput, Injector}
+
+class InjectionInfo(val plannerInput: PlannerInput)
+
+val module = new ModuleDef {
+  make[InjectionInfo]
+}
+
+val input = PlannerInput(module, GCMode(root = DIKey.get[InjectionInfo]))
+
+val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
+
+// the PlannerInput in `InjectionInfo` is the same as `input`
+
+assert(injectionInfo.plannerInput == input)
+```
+
+@scaladoc[Bootloader](izumi.distage.model.recursive.Bootloader) is another summonable parameter that contains the above information in aggregate
+and lets you create another object graph from the same inputs as the current or with alterations.

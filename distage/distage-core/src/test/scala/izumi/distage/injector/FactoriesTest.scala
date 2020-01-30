@@ -5,8 +5,8 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 
@@ -221,6 +221,51 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     assert(!instantiated.x().eq(context.get[TestClass]))
     assert(!instantiated.x().eq(instantiated.x()))
+  }
+
+  "can handle factory methods with implicit parameters" in {
+    import FactoryCase3._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep1]
+      make[Dep2]
+      make[TC[Any]].fromValue(TC1)
+      make[ImplicitFactory]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val instantiated = context.get[ImplicitFactory]
+
+    assert(instantiated.x(new Dep1).dep1 ne context.get[Dep1])
+    assert(instantiated.x(new Dep1).dep2 eq context.get[Dep2])
+    assert(instantiated.x(new Dep1).TC != TC1)
+    assert(instantiated.x(new Dep1).TC == TC2)
+    assert(instantiated.x(new Dep1).dep3 == Dep3)
+
+    val res = intercept[TestFailedException](assertCompiles("""new ModuleDef {
+      make[InvalidImplicitFactory]
+    }"""))
+    assert(res.getMessage.contains("contains types not required by constructor of the result type"))
+    assert(res.getMessage.contains("UnrelatedTC["))
+  }
+
+  "can handle abstract classes" in {
+    import FactoryCase1._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dependency]
+      make[TestClass]
+      make[AbstractClassFactory]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(context.get[AbstractClassFactory].x(5) == AssistedTestClass(context.get[Dependency], 5))
   }
 
 }

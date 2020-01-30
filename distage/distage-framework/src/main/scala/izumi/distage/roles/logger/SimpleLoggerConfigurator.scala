@@ -1,8 +1,8 @@
 package izumi.distage.roles.logger
 
 import com.typesafe.config.Config
-import io.circe.Decoder
-import izumi.distage.config.codec.{CirceDerivationConfigStyle, ConfigReader}
+import io.circe.{Decoder, Json}
+import izumi.distage.config.codec.ConfigReader
 import izumi.distage.roles.logger.SimpleLoggerConfigurator.SinksConfig
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
@@ -70,7 +70,26 @@ object SimpleLoggerConfigurator {
                                 layout: Option[String],
                               )
   object SinksConfig {
-    implicit val decoder: Decoder[SinksConfig] = CirceDerivationConfigStyle.deriveDecoder
+    implicit val decoder: Decoder[SinksConfig] = for {
+      levels <- Decoder.forProduct1("levels")(identity[Map[String, List[String]]])
+      options <- Decoder.forProduct1("options")(identity[Option[RenderingOptions]]){
+        implicit val renderingOptionsCodec: Decoder[RenderingOptions] = io.circe.derivation.deriveDecoder[RenderingOptions]
+        implicitly[Decoder[Option[RenderingOptions]]]
+      }
+      json <- Decoder.forProduct1("json")((_: Json).fold(
+        jsonNull = None,
+        jsonBoolean = Some(_),
+        jsonNumber = _ => None,
+        jsonString = { str =>
+          if (Set("true", "on").contains(str)) Some(true)
+          else if (Set("false", "off").contains(str)) Some(false)
+          else throw new IllegalArgumentException(s"Not a Boolean config value for `logger.json`: `$str`")
+        },
+        jsonArray = _ => None,
+        jsonObject = _ => None,
+      ))
+      layout <- Decoder.forProduct1("layout")(identity[Option[String]])
+    } yield SinksConfig(levels, options, json, layout)
     implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.deriveFromCirce
   }
 }

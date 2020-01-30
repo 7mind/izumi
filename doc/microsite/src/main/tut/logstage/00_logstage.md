@@ -16,13 +16,35 @@ Key features:
 6. Method-level logging granularity. Can configure methods `com.example.Service.start` and `com.example.Service.doSomething` independently,
 7. Slf4J adapters: route legacy Slf4J logs into LogStage router
 
+Dependencies
+------------
+
+@@@vars
+```scala
+libraryDependencies ++= Seq(
+  // LogStage core library
+  "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
+  // Json output
+  "io.7mind.izumi" %% "logstage-rendering-circe" % "$izumi.version$",
+  // Router from Slf4j to LogStage
+  "io.7mind.izumi" %% "logstage-adapter-slf4j" % "$izumi.version$",
+  // Configure LogStage with Typesafe Config
+  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
+  // LogStage integration with DIStage
+  "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
+  // Router from LogStage to Slf4J
+  "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
+)
+```
+@@@
+
 Overview
 --------
 
 The following snippet:
 
 ```scala mdoc:reset
-import logstage._
+import logstage.IzLogger
 import scala.util.Random
 
 val logger = IzLogger()
@@ -90,63 +112,16 @@ Syntax Reference
    logger.info(${camelCaseName-> ' '})
    ```
 
-Dependencies
-------------
-
-```scala
-// LogStage core
-libraryDependencies += Izumi.R.logstage_core
-
-// Optional
-libraryDependencies ++= Seq(
-  // Json output
-  Izumi.R.logstage_rendering_circe,
-  // Router from Slf4j to LogStage
-  Izumi.R.logstage_adapter-slf4j,
-  // Configure LogStage with Typesafe Config
-  Izumi.R.logstage_config,
-  // LogStage integration with DIStage 
-  Izumi.R.logstage_di,
-  // Router from LogStage to Slf4J
-  Izumi.R.logstage_sink_slf4j,
-)
-```
-
-or
-
-@@@vars
-```scala
-val izumi_version = "$izumi.version$"
-// LogStage core
-libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
-
-// Optional
-libraryDependencies ++= Seq(
-  // Json output
-  "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version,
-  // Router from Slf4j to LogStage
-  "io.7mind.izumi" %% "logstage-adapter-slf4j" % izumi_version,    
-  // Configure LogStage with Typesafe Config
-  "io.7mind.izumi" %% "logstage-config" % izumi_version,
-  // LogStage integration with DIStage 
-  "io.7mind.izumi" %% "distage-extension-logstage" % izumi_version,
-  // Router from LogStage to Slf4J
-  "io.7mind.izumi" %% "logstage-sink-slf4j " % izumi_version,
-)
-```
-@@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Basic setup
 -----------
 
 ```scala mdoc:reset
-import logstage._
-import logstage.circe._
+import logstage.{ConsoleSink, IzLogger, Trace}
+import logstage.circe.LogstageCirceRenderingPolicy
 
-val jsonSink = ConsoleSink.json(prettyPrint = true)
 val textSink = ConsoleSink.text(colored = true)
+val jsonSink = ConsoleSink(LogstageCirceRenderingPolicy(prettyPrint = true))
 
 val sinks = List(jsonSink, textSink)
 
@@ -164,7 +139,7 @@ Log algebras
 `LogIO` and `LogBIO` algebras provide a purely-functional API for one- and two-parameter effect types respectively:
 
 ```scala mdoc:reset
-import logstage._
+import logstage.{IzLogger, LogIO}
 import cats.effect.IO
 
 val logger = IzLogger()
@@ -209,7 +184,7 @@ def load(entity: Entity): cats.effect.IO[Unit] = cats.effect.IO.unit
 ```scala mdoc
 import cats.effect.IO
 import cats.implicits._
-import logstage._
+import logstage.LogIO
 import io.circe.Printer
 import io.circe.syntax._
 
@@ -234,7 +209,7 @@ have to mutate a global singleton `StaticLogRouter`. Replace its `LogRouter`
 with the same one you use elsewhere in your application to use the same configuration for Slf4j. 
 
 ```scala mdoc:reset
-import logstage._
+import logstage.IzLogger
 import izumi.logstage.api.routing.StaticLogRouter
 
 val myLogger = IzLogger()

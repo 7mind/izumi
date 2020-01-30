@@ -2,11 +2,8 @@ package izumi.distage.constructors.macros
 
 import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -33,57 +30,24 @@ object ClassConstructorMacro {
 
       case _ =>
         val macroUniverse = StaticDIUniverse(c)
+        val impls = ClassConstructorMacros(c)(macroUniverse)
+        import impls.{c => _, u => _, _}
+
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
+        if (!reflectionProvider.isConcrete(targetType)) {
+          c.abort(c.enclosingPosition,
+            s"""Tried to derive constructor function for class $targetType, but the class is an
+               |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
+        }
+
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val (associations, constructor) = mkClassConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(targetType)
+        val provider: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
 
-        val provided: c.Expr[ProviderMagnet[T]] = {
-          val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
-          providerMagnetMacro.generateProvider[T](
-            parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
-            fun = constructor,
-            isGenerated = true
-          )
-        }
-
-        val res = c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($provided) }"
-        }
+        val res = c.Expr[ClassConstructor[T]](q"{ new ${weakTypeOf[ClassConstructor[T]]}($provider) }")
         logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
     }
-  }
-
-  private[macros] def mkClassConstructorUnwrapped(c: blackbox.Context)
-                                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                                      logger: TrivialLogger)
-                                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
-    import c.universe._
-
-    if (!reflectionProvider.isConcrete(targetType)) {
-      c.abort(c.enclosingPosition,
-        s"""Tried to derive constructor function for class $targetType, but the class is an
-           |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
-    } else {
-      val (associations, ctorArgs, ctorArgNamesLists) = mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
-      (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
-    }
-  }
-
-  private[macros] def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
-                                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                                      logger: TrivialLogger)
-                                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], List[c.Tree], List[List[c.universe.TermName]]) = {
-    val paramLists = reflectionProvider.constructorParameterLists(targetType)
-    val fnArgsNamesLists = paramLists.map(_.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)))
-
-    val (associations, ctorArgs) = fnArgsNamesLists.flatten.map { case (p, a, _) => (p, a) }.unzip
-    val ctorArgNamesLists = fnArgsNamesLists.map(_.map(_._3._2))
-
-    (associations, ctorArgs, ctorArgNamesLists)
   }
 
 }

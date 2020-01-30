@@ -19,26 +19,39 @@ import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
 
 /**
-  * `DIResource` is a class that captures the effectful
-  * allocation of a resource, along with its finalizer.
-  *
+  * `DIResource` is a class that captures the effectful allocation of a resource, along with its finalizer.
   * This can be used to wrap expensive resources.
   *
-  * Example with [[DIResource.make]]:
+  * Resources can be created using [[DIResource.make]]:
   *
   * {{{
   *   def open(file: File): DIResource[IO, BufferedReader] =
   *     DIResource.make(IO { new BufferedReader(new FileReader(file)) })(in => IO { in.close() })
   * }}}
   *
-  * Example with inheritance:
+  * Using inheritance from [[DIResource]]:
   *
   * {{{
-  *   final class BufferedReaderResource(file: File) extends DIResource[IO, BufferedReader] {
-  *     val acquire = IO { new BufferedReader(new FileReader(file)) }
-  *     def release(in: BufferedReader) = IO { in.close() }
-  *   }
+  *   final class BufferedReaderResource(file: File)
+  *     extends DIResource[IO, BufferedReader] {
+  *       val acquire = IO { new BufferedReader(new FileReader(file)) }
+  *       def release(in: BufferedReader) = IO { in.close() }
+  *     }
   * }}}
+  *
+  * Using constructor-based inheritance from [[DIResource.Make]], [[DIResource.LiftF]], etc:
+  *
+  * {{{
+  *   final class BufferedReaderResource(file: File)
+  *     extends DIResource.Make[IO, BufferedReader](
+  *       acquire = IO { new BufferedReader(new FileReader(file)) },
+  *       release = in => IO { in.close() },
+  *     }
+  * }}}
+  *
+  * Or by converting an existing [[cats.effect.Resource]] or a [[zio.ZManaged]].
+  * Use [[DIResource.fromCats]], [[DIResource.DIResourceCatsSyntax#toCats]] and
+  * [[DIResource.fromZIO]], [[DIResource.DIResourceZIOSyntax#toZIO]] to convert back and forth.
   *
   * Usage is done via [[DIResource.DIResourceUse#use use]]:
   *
@@ -67,13 +80,10 @@ import scala.reflect.macros.blackbox
   * `DIResource` can be used in non-FP context with [[DIResource.Simple]]
   * it can also mimic Java's initialization-after-construction with [[DIResource.Mutable]]
   *
-  * DIResource is compatible with [[cats.effect.Resource]]. Use [[DIResource.fromCats]]
-  * and [[DIResource.DIResourceCatsSyntax.toCats]] to convert back and forth.
-  *
   * Use DIResource's to specify lifecycles of objects injected into the object graph.
   *
-  * Example:
-  * {{{
+  *  {{{
+  *   import distage.{DIResource, ModuleDef, Injector}
   *   import cats.effect.IO
   *
   *   class DBConnection
@@ -92,10 +102,9 @@ import scala.reflect.macros.blackbox
   *     make[MyApp]
   *   }
   *
-  *   Injector().produceF[IO](module).use {
-  *     objects =>
-  *       objects.get[MyApp].run
-  *   }.unsafeRunSync()
+  *   Injector().produceFGet[IO, MyApp](module)
+  *     .use(_.run())
+  *     .unsafeRunSync()
   * }}}
   *
   * Will produce the following output:
@@ -109,11 +118,12 @@ import scala.reflect.macros.blackbox
   * }}}
   *
   * The lifecycle of the entire object graph is itself expressed with `DIResource`,
-  * you can control it by controlling the scope in `.use` or by manually using
+  * you can control it by controlling the scope of `.use` or by manually invoking
   * [[DIResourceBase.acquire]] and [[DIResourceBase.release]].
   *
-  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL.fromResource]]
+  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
+  *      [[zio.ZManaged]]: https://zio.dev/docs/datatypes/datatypes_managed
   **/
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
   def acquire: F[Resource]
@@ -259,13 +269,61 @@ object DIResource {
     def unsafeGet()(implicit F: DIApplicative[F]): F[A] = F.map(resource.acquire)(resource.extract)
   }
 
-  trait Simple[A] extends DIResource[Identity, A]
+  /**
+    * Class-based proxy over a [[DIResource]] value
+    *
+    * {{{
+    *   class IntRes extends DIResource.Of(DIResource.pure(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  class Of[+F[_], +A](private[Of] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
+    override final type InnerResource = inner.InnerResource
+    override final def acquire: F[inner.InnerResource] = inner.acquire
+    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
+    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
+  }
 
-  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
+  /**
+    * Class-based proxy over a [[cats.effect.Resource]] value
+    *
+    * {{{
+    *   class IntRes extends DIResource.OfCats(Resource.pure(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
 
-  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
-
-  abstract class NoClose[+F[_]: DIApplicative, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
+  /**
+    * Class-based proxy over a [[zio.ZManaged]] value
+    *
+    * {{{
+    *   class IntRes extends DIResource.OfZIO(Managed.succeed(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  class OfZIO[-R, +E, +A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -275,7 +333,15 @@ object DIResource {
     *     acquire = IO(1000)
     *   )(release = _ => IO.unit)
     * }}}
-    */
+    *
+    * For binding resources using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    **/
   class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @unused dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
@@ -289,6 +355,14 @@ object DIResource {
     * {{{
     *   class IntRes extends DIResource.Make_(IO(1000))(IO.unit)
     * }}}
+    *
+    * For binding resources using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
@@ -297,6 +371,14 @@ object DIResource {
     *
     * {{{
     *   class IntRes extends DIResource.MakePair(IO(1000 -> IO.unit))
+    * }}}
+    *
+    * For binding resources using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
     * }}}
     */
   class MakePair[F[_], A] private[this](acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromCats[F, A] {
@@ -310,6 +392,14 @@ object DIResource {
     *
     * {{{
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
+    * }}}
+    *
+    * For binding resources using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
     * }}}
     */
   class LiftF[+F[_]: DIApplicative, A] private[this](acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
@@ -326,45 +416,22 @@ object DIResource {
     *     acquire = IO(new FileOutputStream("abc"))
     *   )
     * }}}
+    *
+    * For binding resources using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
     */
   class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends DIResource.Of(DIResource.fromAutoCloseableF(acquire))
 
-  /**
-    * Class-based proxy over a [[DIResource]] value
-    *
-    * {{{
-    *   class IntRes extends DIResource.Of(DIResource.pure(1000))
-    * }}}
-    */
-  class Of[+F[_], +A](private[Of] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
-    override final type InnerResource = inner.InnerResource
-    override final def acquire: F[inner.InnerResource] = inner.acquire
-    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
-    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
-  }
+  trait Simple[A] extends DIResource[Identity, A]
 
-  /**
-    * Class-based proxy over a [[cats.effect.Resource]] value
-    *
-    * {{{
-    *   class IntRes extends DIResource.OfCats(Resource.pure(1000))
-    * }}}
-    */
-  class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
+  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
 
-  /**
-    * Class-based proxy over a [[zio.ZManaged]] value
-    *
-    * {{{
-    *   class IntRes extends DIResource.OfZIO(Managed.succeed(1000))
-    * }}}
-    */
-  class OfZIO[-R, +E, +A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
-
-  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
-    override type InnerResource = Unit
-    override final def extract(resource: Unit): A = this
-  }
+  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     def release: F[Unit]
@@ -372,6 +439,13 @@ object DIResource {
     override final def release(resource: Unit): F[Unit] = release
     override final def extract(resource: Unit): A = this
   }
+
+  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
+    override type InnerResource = Unit
+    override final def extract(resource: Unit): A = this
+  }
+
+  abstract class NoClose[+F[_]: DIApplicative, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
   trait FromCats[F[_], A] extends DIResourceBase[F, A] {
     override final type InnerResource = (A, F[Unit])
@@ -633,5 +707,4 @@ object DIResource {
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }
   }
-
 }

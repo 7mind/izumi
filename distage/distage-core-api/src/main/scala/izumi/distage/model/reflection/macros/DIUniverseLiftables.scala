@@ -40,11 +40,12 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // So, `liftableSafeType` is fine and will work, since parameter
   // types must all be resolved anyway - they cannot contain polymorphic
   // components, unlike general method symbols (info for which we don't generate).
+  // (annotations always empty currently)
   protected[this] implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
       q"""{ $runtimeDIUniverse.SymbolInfo(
       name = ${info.name},
-      finalResultType = ${liftTypeToSafeType(info.finalResultType)},
+      finalResultType = ${liftTypeToSafeType(info.nonByNameFinalResultType)},
       isByName = ${info.isByName},
       wasGeneric = ${info.wasGeneric}
       ) }"""

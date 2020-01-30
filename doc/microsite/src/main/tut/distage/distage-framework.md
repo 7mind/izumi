@@ -149,9 +149,9 @@ val appModule = appModules.merge
 
 // launch
 
-Injector().produce(appModule, GCMode.NoGC).use {
-  _.get[PetStoreController].run()
-}
+Injector()
+  .produceGet[PetStoreController](appModule)
+  .use(_.run())
 ```
 
 ### Compile-time checks

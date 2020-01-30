@@ -7,25 +7,28 @@ trait WithDIWiring {
     with WithDIAssociation
     with WithDISymbolInfo
   =>
-  object Wiring {
-    sealed trait PureWiring
 
+  sealed trait Wiring
+  object Wiring {
+    sealed trait SingletonWiring extends Wiring {
+      def prefix: Option[DIKey]
+      def instanceType: TypeNative
+      def associations: Seq[Association]
+      def requiredKeys: Set[DIKey] = associations.map(_.key).toSet ++ prefix.toSet
+    }
     object SingletonWiring {
-      sealed trait ReflectiveInstantiationWiring extends PureWiring {
-        def prefix: Option[DIKey]
-        def instanceType: TypeNative
-        def associations: Seq[Association]
-        def requiredKeys: Set[DIKey] = associations.map(_.key).toSet ++ prefix.toSet
+      case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[DIKey]) extends SingletonWiring {
+        override lazy val associations: List[Association] = classParameters.flatten
       }
-      case class Constructor(instanceType: TypeNative, associations: List[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
-      case class AbstractSymbol(instanceType: TypeNative, associations: List[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
+      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[DIKey]) extends SingletonWiring {
+        override lazy val associations: List[Association] = classParameters.flatten ++ methods
+      }
     }
 
-    case class Factory(factoryMethods: List[Factory.FactoryMethod], traitDependencies: List[Association.AbstractMethod]) extends PureWiring {
-
-      final def factoryProductDepsFromObjectGraph: Seq[Association] = {
+    case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
+      final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
-        val fieldKeys = traitDependencies.map(_.key).toSet
+        val fieldKeys = methods.map(_.key).toSet
 
         factoryMethods
           .flatMap(_.objectGraphDeps)
@@ -35,7 +38,13 @@ trait WithDIWiring {
     }
 
     object Factory {
-      case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring.ReflectiveInstantiationWiring, methodArgumentKeys: Seq[DIKey]) {
+      object WithProductDeps {
+        def unapply(arg: Factory): Some[(List[Factory.FactoryMethod], List[List[Association.Parameter]], List[Association.AbstractMethod], List[Association])] = {
+          Some((arg.factoryMethods, arg.classParameters, arg.methods, arg.factoryProductDepsFromObjectGraph))
+        }
+      }
+
+      case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring, methodArgumentKeys: Seq[DIKey]) {
         def objectGraphDeps: Seq[Association] = wireWith.associations.filterNot(methodArgumentKeys contains _.key)
       }
     }

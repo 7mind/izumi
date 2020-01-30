@@ -66,7 +66,7 @@ import izumi.distage.testkit.services.DISyntaxZIOEnv
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
-import zio.{IO, ZIO}
+import zio.IO
 
 abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
   override def config = TestConfig(

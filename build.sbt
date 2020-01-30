@@ -1677,7 +1677,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time,
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test

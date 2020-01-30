@@ -154,14 +154,14 @@ val capsInjector = Injector(Activation(Style -> Style.AllCaps))
 // Check the result:
 
 capsInjector
-  .produce(CombinedModule, GCMode.NoGC)
-  .use(_.get[HelloByeApp].run())
+  .produceGet[HelloByeApp](CombinedModule)
+  .use(_.run())
 
 // Check that result changes with a different configuration:
 
 Injector(Activation(Style -> Style.Normal))
-  .produce(CombinedModule, GCMode.NoGC)
-  .use(_.get[HelloByeApp].run())
+  .produceGet[HelloByeApp](CombinedModule)
+  .use(_.run())
 ```
 
 @scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) contains some bundled Axis for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
@@ -233,7 +233,9 @@ val module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc:to-string
-val objectGraphResource = Injector().produceF[IO](module, GCMode.NoGC)
+import distage.DIKey
+
+val objectGraphResource = Injector().produceF[IO](module, GCMode(root = DIKey.get[MyApp]))
 
 objectGraphResource
   .use(_.get[MyApp].run)
@@ -264,11 +266,12 @@ val module = new ModuleDef {
   make[Init].fromResource[InitResource]
 }
 
-val closedInit = Injector().produce(module, GCMode.NoGC).use {
-  objects =>
-    val init = objects.get[Init] 
-    println(init.initialized)
-    init
+val closedInit = Injector()
+  .produceGet[Init](module)
+  .use {
+    init =>
+      println(init.initialized)
+      init
 }
 
 println(closedInit.initialized)
@@ -430,11 +433,9 @@ val kvStoreModule = new ModuleDef {
 }
 
 val io = Injector()
-  .produceF[Task](kvStoreModule, GCMode.NoGC)
+  .produceGetF[Task, KVStore[IO]](kvStoreModule)
   .use {
-    objects =>
-      val kv = objects.get[KVStore[IO]]
-      
+    kv =>
       for {
         _    <- kv.put("apple", "pie")
         res1 <- kv.get("apple")
