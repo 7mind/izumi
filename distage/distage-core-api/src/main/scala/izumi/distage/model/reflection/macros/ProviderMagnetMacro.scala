@@ -5,7 +5,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -74,16 +74,10 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
                                          isGenerated: Boolean,
                                         ): c.Expr[ProviderMagnet[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
-    import tools.{liftableParameter, liftTypeToSafeType}
+    import tools.{liftTypeToSafeType, liftableParameter}
 
-    val (substitutedByNames, casts) = parameters.zipWithIndex.map {
-      case (param, i) =>
-
-        val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
-          ReflectionUtil.stripByName(u)(param.symbol.finalResultType)
-        })
-        strippedByNameTpe -> q"seqAny($i)"
-    }.unzip
+    val casts = parameters.indices.map(i => q"seqAny($i)")
+    val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)
 
     c.Expr[ProviderMagnet[R]] {
       q"""{
@@ -91,7 +85,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
         new ${weakTypeOf[ProviderMagnet[R]]}(
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
-            ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
+            $parametersNoByName,
             ${liftTypeToSafeType(weakTypeOf[R])},
             fun,
             { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
@@ -136,7 +130,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
       methodReferenceParams.zip(lambdaParams).map {
         case (mArg, lArg) =>
           mArg.copy(
-            symbol = mArg.symbol.withTpe(lArg.tpe),
+            symbol = mArg.symbol.withTpe(lArg.symbol.finalResultType),
             key = mArg.key.withTpe(lArg.key.tpe),
           )
       }

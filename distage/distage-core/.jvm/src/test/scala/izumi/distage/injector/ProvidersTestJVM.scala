@@ -10,7 +10,7 @@ class ProvidersTestJVM extends AnyWordSpec with MkInjector {
   "provider equality works for def/class/trait ModuleDefs with functions inside on the JVM" in {
     import ProviderCase3._
 
-    def x() = (i: Int) => new TestDependency
+    def x() = (_: Int) => new TestDependency
     assert(x() == x())
 
     class Definition extends ModuleDef {

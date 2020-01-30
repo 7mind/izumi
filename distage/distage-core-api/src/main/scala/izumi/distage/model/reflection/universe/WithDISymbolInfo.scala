@@ -10,6 +10,7 @@ trait WithDISymbolInfo {
   sealed trait SymbolInfo {
     def name: String
     def finalResultType: TypeNative
+    final def nonByNameFinalResultType: TypeNative = if (isByName) ReflectionUtil.stripByName(u: u.type)(finalResultType) else finalResultType
 
     def isByName: Boolean
     def wasGeneric: Boolean
@@ -28,13 +29,20 @@ trait WithDISymbolInfo {
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
-    case class Runtime private (underlying: SymbNative, typeSignatureInDefiningClass: TypeNative, finalResultType: TypeNative, isByName: Boolean, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+    private[universe] case class Runtime private (
+                                                   underlying: SymbNative,
+                                                   typeSignatureInDefiningClass: TypeNative,
+                                                   finalResultType: TypeNative,
+                                                   isByName: Boolean,
+                                                   wasGeneric: Boolean,
+                                                   annotations: List[u.Annotation],
+                                                 ) extends SymbolInfo {
       override final val name: String = underlying.name.toTermName.toString
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }
 
-    object Runtime {
+    private[distage] object Runtime {
       def apply(underlying: SymbNative, definingClass: TypeNative, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
         val tpeIn = underlying
           .typeSignatureIn(definingClass)
