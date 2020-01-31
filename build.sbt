@@ -6,7 +6,7 @@ enablePlugins(SbtgenVerificationPlugin)
 
 disablePlugins(AssemblyPlugin)
 
-lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections"))
+lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -112,7 +112,7 @@ lazy val `fundamentals-collectionsJS` = `fundamentals-collections`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-collectionsNative` = `fundamentals-collections`.native
 
-lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
+lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
     `fundamentals-collections` % "test->compile;compile->compile"
   )
@@ -235,7 +235,7 @@ lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-platformNative` = `fundamentals-platform`.native
 
-lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functional"))
+lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functional"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -341,7 +341,7 @@ lazy val `fundamentals-functionalJS` = `fundamentals-functional`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-functionalNative` = `fundamentals-functional`.native
 
-lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
+lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -450,7 +450,7 @@ lazy val `fundamentals-bioJS` = `fundamentals-bio`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-bioNative` = `fundamentals-bio`.native
 
-lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-reflection"))
+lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functional` % "test->compile;compile->compile",
@@ -562,7 +562,7 @@ lazy val `fundamentals-reflectionJS` = `fundamentals-reflection`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-reflectionNative` = `fundamentals-reflection`.native
 
-lazy val `fundamentals-thirdparty-boopickle-shaded` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-thirdparty-boopickle-shaded"))
+lazy val `fundamentals-thirdparty-boopickle-shaded` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-thirdparty-boopickle-shaded"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -679,7 +679,7 @@ lazy val `fundamentals-thirdparty-boopickle-shadedJS` = `fundamentals-thirdparty
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-thirdparty-boopickle-shadedNative` = `fundamentals-thirdparty-boopickle-shaded`.native
 
-lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe"))
+lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
@@ -800,7 +800,7 @@ lazy val `fundamentals-json-circeJS` = `fundamentals-json-circe`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-json-circeNative` = `fundamentals-json-circe`.native
 
-lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
+lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
@@ -1005,7 +1005,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
+lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile"
   )
@@ -1300,7 +1300,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
+lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
@@ -1974,7 +1974,7 @@ lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-leg
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
+lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
@@ -2095,7 +2095,7 @@ lazy val `logstage-coreJS` = `logstage-core`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `logstage-coreNative` = `logstage-core`.native
 
-lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
+lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
     `fundamentals-json-circe` % "test->compile;compile->compile",
     `logstage-core` % "test->test;compile->compile"
@@ -2386,7 +2386,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `idealingua-v1-model` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-model"))
+lazy val `idealingua-v1-model` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-model"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
@@ -2497,7 +2497,7 @@ lazy val `idealingua-v1-modelJS` = `idealingua-v1-model`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `idealingua-v1-modelNative` = `idealingua-v1-model`.native
 
-lazy val `idealingua-v1-core` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-core"))
+lazy val `idealingua-v1-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-core"))
   .dependsOn(
     `idealingua-v1-model` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
@@ -2608,7 +2608,7 @@ lazy val `idealingua-v1-coreJS` = `idealingua-v1-core`.js
   .disablePlugins(AssemblyPlugin)
 lazy val `idealingua-v1-coreNative` = `idealingua-v1-core`.native
 
-lazy val `idealingua-v1-runtime-rpc-scala` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-runtime-rpc-scala"))
+lazy val `idealingua-v1-runtime-rpc-scala` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-runtime-rpc-scala"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile"
@@ -2818,7 +2818,7 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `idealingua-v1-transpilers` = crossProject(JVMPlatform, JSPlatform, NATIVEPlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-transpilers"))
+lazy val `idealingua-v1-transpilers` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("idealingua-v1/idealingua-v1-transpilers"))
   .dependsOn(
     `fundamentals-json-circe` % "test->compile;compile->compile",
     `idealingua-v1-core` % "test->compile;compile->compile",
