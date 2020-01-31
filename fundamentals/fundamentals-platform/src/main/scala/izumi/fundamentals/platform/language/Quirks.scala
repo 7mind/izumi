@@ -10,7 +10,7 @@ import scala.language.implicitConversions
   **/
 object Quirks {
 
-  @inline final def discard(@unused trash: Any*): Unit = ()
+  @inline final def discard(@izumi.fundamentals.platform.language.unused() trash: Any*): Unit = ()
 
   @inline final def forget(@unused trash: LazyDiscarder[_]*): Unit = ()
 

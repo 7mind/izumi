@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 private[izumi] object RuntimeAPI {
@@ -62,8 +62,7 @@ private[izumi] object RuntimeAPI {
   }
 
   final class Rewriter(rules: Map[String, AbstractReference]) {
-    def complete(context: AppliedNamedReference, ref: AbstractReference): AbstractReference = {
-      Quirks.discard(context)
+    def complete(@unused context: AppliedNamedReference, ref: AbstractReference): AbstractReference = {
       ref
     }
 

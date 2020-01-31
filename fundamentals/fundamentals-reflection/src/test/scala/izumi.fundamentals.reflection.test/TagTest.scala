@@ -444,7 +444,7 @@ class TagTest extends AnyWordSpec with XY[String] {
           Some(eitherRSwapTag),
           Some(throwableTag),
           None,
-          None,
+          None
         )).tag
       val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
       assert(combinedTag =:= expectedTag)

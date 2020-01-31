@@ -79,7 +79,7 @@ object ParserSchemaFormatter {
     Seq(
       doc.map(_.trim.shift(docShift)),
       optDoc.map(_.trim.shift(shift)),
-      notes.map(_.trim.shift(docShift)),
+      notes.map(_.trim.shift(docShift))
     ).flatMap(_.toSeq).mkString("\n\n")
 
   }

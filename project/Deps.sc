@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.47`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.49`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -42,6 +42,7 @@ object Izumi {
     val sbt_assembly = Version.VExpr("PV.sbt_assembly")
 
     val scala_js_version = Version.VExpr("PV.scala_js_version")
+    val scala_native_version = Version.VExpr("PV.scala_native_version")
     val crossproject_version = Version.VExpr("PV.crossproject_version")
     val scalajs_bundler_version = Version.VExpr("PV.scalajs_bundler_version")
   }
@@ -54,6 +55,7 @@ object Izumi {
     groupId = "io.7mind.izumi",
     sbtVersion = "1.3.7",
     scalaJsVersion = PV.scala_js_version,
+    scalaNativeVersion = PV.scala_native_version,
     crossProjectVersion = PV.crossproject_version,
     bundlerVersion = PV.scalajs_bundler_version,
   )
@@ -131,6 +133,7 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
+  final val scala211 = ScalaVersion("2.11.12")
   final val scala212 = ScalaVersion("2.12.10")
   final val scala213 = ScalaVersion("2.13.1")
 
@@ -151,13 +154,6 @@ object Izumi {
       platform = Platform.Jvm,
       language = targetScala,
     )
-    private val jvmPlatformSbt = PlatformEnv(
-      platform = Platform.Jvm,
-      language = Seq(scala212),
-      settings = Seq(
-        "coverageEnabled" := false,
-      ),
-    )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
       language = targetScala,
@@ -166,7 +162,21 @@ object Izumi {
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
       ),
     )
-    final val cross = Seq(jvmPlatform, jsPlatform)
+    private val nativePlatform = PlatformEnv(
+      platform = Platform.Native,
+      language = Seq(scala211),
+      settings = Seq(
+        "coverageEnabled" := false,
+      ),
+    )
+    private val jvmPlatformSbt = PlatformEnv(
+      platform = Platform.Jvm,
+      language = Seq(scala212),
+      settings = Seq(
+        "coverageEnabled" := false,
+      ),
+    )
+    final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
     final val jvmSbt = Seq(jvmPlatformSbt)
@@ -334,6 +344,7 @@ object Izumi {
       """(unmanagedSourceDirectories in Compile).value.flatMap {
         |  dir =>
         |   Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
+        |     case Some((2, 11)) => "_2.11"
         |     case Some((2, 12)) => "_2.12"
         |     case Some((2, 13)) => "_2.13"
         |     case _             => "_3.0"

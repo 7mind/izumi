@@ -74,7 +74,7 @@ sealed trait LightTypeTagRef {
 
   @tailrec
   @inline
-  private[this] def getName(render: SymName => String, self: LightTypeTagRef): String = {
+  private[this] final def getName(render: SymName => String, self: LightTypeTagRef): String = {
     self match {
       case Lambda(_, output) => getName(render, output)
       case NameReference(ref, _, _) => render(ref)
@@ -208,23 +208,19 @@ object LightTypeTagRef {
     override def toString: String = this.render()
   }
 
-  final case class NameReference(ref: SymName, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class NameReference(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None) extends AppliedNamedReference {
     override def asName: NameReference = this
 
     override def toString: String = this.render()
   }
   object NameReference {
-    def apply(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
     def apply(tpeName: String): NameReference = NameReference(SymTypeName(tpeName))
   }
 
-  final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None) extends AppliedNamedReference {
     override def asName: NameReference = NameReference(SymTypeName(ref), prefix = prefix)
 
     override def toString: String = this.render()
-  }
-  object FullReference {
-    def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
 
   final case class TypeParam(ref: AbstractReference, variance: Variance) {
