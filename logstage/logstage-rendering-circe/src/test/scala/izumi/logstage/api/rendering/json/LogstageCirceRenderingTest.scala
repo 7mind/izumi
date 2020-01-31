@@ -1,6 +1,6 @@
 package izumi.logstage.api.rendering.json
 
-import io.circe.Codec
+import io.circe.{Codec, Json}
 import io.circe.literal._
 import io.circe.parser._
 import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
@@ -13,7 +13,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class LogstageCirceRenderingTest extends AnyWordSpec {
   import LogstageCirceRenderingTest._
 
-  val debug = true
+  val debug = false
 
   "Log macro" should {
     "support console sink with json output policy" in {
@@ -48,14 +48,29 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
 
     "support strict logging" in {
       val (logger, sink) = setupJsonStrictLogger(debug)
-      logger.info(s"${List("a", "b", "c") -> "list"}, ${WithCustomCodec() -> "custom"}, ${WithCustomDerivedCodec(42, "hatersgonnahate", List(Map("kudah" -> "kukarek"))) -> "custom1"}")
+
+      val list = List("a", "b", "c")
+      val withCustomCodec = WithCustomCodec()
+      val withCustomDerivedCodec = WithCustomDerivedCodec(42, "hatersgonnahate", List(Map("kudah" -> "kukarek")))
+
+      val subLogger = logger("list" -> list, "custom" -> withCustomCodec, "derived" -> withCustomDerivedCodec)
+
+      subLogger.info(s"${list -> "list"}, ${withCustomCodec -> "custom"}, ${withCustomDerivedCodec -> "derived"}")
+
       val renderedMessages = sink.fetchRendered()
       assert(renderedMessages.nonEmpty)
-      val data = parse(renderedMessages.head).right.get.hcursor.downField("event").focus.get.asObject.map(_.toMap).get
+      val eventJson = parse(renderedMessages.head).right.get.hcursor
+      val data = eventJson.downField("event").focus.get.asObject.map(_.toMap).get
+      val context = eventJson.downField("context").focus.get.asObject.map(_.toMap).get
 
-      assert(data("custom") == json"""{"a":[1,"b"]}""")
-      assert(data("list") == json"""["a","b","c"]""")
-      assert(data("custom_1") == json"""{"a":42,"b":"hatersgonnahate","c":[{"kudah":"kukarek"}]}""")
+      def verifyBlock(d: Map[String, Json]) = {
+        assert(d("list") == json"""["a","b","c"]""")
+        assert(d("custom") == json"""{"a":[1,"b"]}""")
+        assert(d("derived") == json"""{"a":42,"b":"hatersgonnahate","c":[{"kudah":"kukarek"}]}""")
+      }
+
+      verifyBlock(data)
+      verifyBlock(context)
     }
   }
 

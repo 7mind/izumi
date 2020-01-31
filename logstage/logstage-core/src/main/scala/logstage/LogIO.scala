@@ -2,6 +2,7 @@ package logstage
 
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.logstage.api.AnyEncoded
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
@@ -13,11 +14,11 @@ trait LogIO[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
   def withCustomContext(context: CustomContext): LogIO[F]
 
-  final def withCustomContext(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
-  final def withCustomContext(context: Map[String, Any]): LogIO[F] = withCustomContext(CustomContext(context))
+  final def withCustomContext(context: (String, AnyEncoded)*): LogIO[F] = withCustomContext(context.toMap)
+  final def withCustomContext(context: Map[String, AnyEncoded]): LogIO[F] = withCustomContext(CustomContext(context))
   final def apply(context: CustomContext): LogIO[F] = withCustomContext(context)
-  final def apply(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
-  final def apply(context: Map[String, Any]): LogIO[F] = withCustomContext(context)
+  final def apply(context: (String, AnyEncoded)*): LogIO[F] = withCustomContext(context.toMap)
+  final def apply(context: Map[String, AnyEncoded]): LogIO[F] = withCustomContext(context)
 }
 
 object LogIO {
