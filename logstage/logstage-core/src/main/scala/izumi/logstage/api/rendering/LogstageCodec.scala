@@ -82,12 +82,6 @@ trait LogstageCodecs {
 
 object LogstageCodec extends LogstageCodecs {
 
-//  implicit def toCodec[T: LogstageCodec]: LogstageCodec[T] = new LogstageCodec[T] {
-//    override def write(value: T, writer: LogstageWriter): Unit = {
-//      implicitly[LogstageCodec[T]].write(value, writer)
-//    }
-//  }
-
   implicit def listCodec[T: LogstageCodec]: LogstageCodec[Iterable[T]] = new LogstageCodec[Iterable[T]] {
     override def write(value: Iterable[T], writer: LogstageWriter): Unit = {
       writer.openList()
