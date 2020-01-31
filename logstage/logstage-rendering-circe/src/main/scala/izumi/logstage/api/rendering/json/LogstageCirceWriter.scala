@@ -50,10 +50,10 @@ class LogstageCirceWriter extends LogstageWriter {
     }.toList match {
       case one :: Nil =>
         one
-      case shouldNotHappen =>
-        Json.fromValues(shouldNotHappen)
       case Nil =>
         Json.Null
+      case shouldNotHappen =>
+        Json.fromValues(shouldNotHappen)
     }
   }
 
@@ -79,11 +79,11 @@ class LogstageCirceWriter extends LogstageWriter {
 
   override def writeNull(): Unit = stack.push(Token.Value(Json.Null))
 
-  override def write(a: Byte): Unit = stack.push(Token.Value(Json.fromInt(a)))
+  override def write(a: Byte): Unit = stack.push(Token.Value(Json.fromInt(a.toInt)))
 
-  override def write(a: Short): Unit = stack.push(Token.Value(Json.fromInt(a)))
+  override def write(a: Short): Unit = stack.push(Token.Value(Json.fromInt(a.toInt)))
 
-  override def write(a: Char): Unit = stack.push(Token.Value(Json.fromInt(a)))
+  override def write(a: Char): Unit = stack.push(Token.Value(Json.fromString(a.toString)))
 
   override def write(a: Int): Unit = stack.push(Token.Value(Json.fromInt(a)))
 

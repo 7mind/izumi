@@ -3,8 +3,8 @@ package logstage.strict
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log._
-import izumi.logstage.api.StrictEncoded
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
+import izumi.logstage.api.rendering.StrictEncoded
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 import logstage.{Level, LogBIO, UnsafeLogIO}
 

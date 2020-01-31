@@ -2,7 +2,8 @@ package izumi.logstage.api.strict
 
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractMacroStrictLogger, LogRouter, RoutingLogger}
-import izumi.logstage.api.{IzLogger, IzLoggerConvenienceApi, Log, StrictEncoded}
+import izumi.logstage.api.rendering.StrictEncoded
+import izumi.logstage.api.{IzLogger, IzLoggerConvenienceApi, Log}
 
 
 class IzStrictLogger
