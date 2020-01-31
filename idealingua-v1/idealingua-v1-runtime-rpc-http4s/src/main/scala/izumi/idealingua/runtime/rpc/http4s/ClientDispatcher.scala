@@ -37,16 +37,13 @@ class ClientDispatcher[C <: Http4sContext]
   }
 
   protected def runRequest[T](handler: Response[MonoIO] => MonoIO[T], req: Request[MonoIO]): BiIO[Throwable, T] = {
-    val builder = blazeClientBuilder(BlazeClientBuilder[MonoIO](c.clientExecutionContext))
-    builder.resource.use[T] {
-      client =>
-        client.fetch[T](req)(handler)
+    val clientBuilder = blazeClientBuilder(BlazeClientBuilder[MonoIO](c.clientExecutionContext))
+    clientBuilder.resource.use {
+      _.fetch[T](req)(handler)
     }
   }
 
-  protected def blazeClientBuilder(defaultBuilder: BlazeClientBuilder[MonoIO]) : BlazeClientBuilder[MonoIO] = {
-    defaultBuilder
-  }
+  protected def blazeClientBuilder(defaultBuilder: BlazeClientBuilder[MonoIO]): BlazeClientBuilder[MonoIO] = defaultBuilder
 
   protected def handleResponse(input: IRTMuxRequest, resp: Response[MonoIO]): MonoIO[IRTMuxResponse] = {
     logger.trace(s"${input.method -> "method"}: Received response, going to materialize, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
