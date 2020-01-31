@@ -6,10 +6,11 @@ import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.logunits.LogFormat
-import izumi.logstage.api.rendering.{RenderedMessage, RenderedParameter, RenderingPolicy}
+import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter, RenderingPolicy}
 
 import scala.collection.mutable
 import scala.runtime.RichInt
+
 
 class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
 
@@ -111,7 +112,13 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
 
     val mapParameter = mapScalar orElse mapStruct
 
-    mapParameter(parameter.value)
+    parameter.arg.codec match {
+      case Some(codec) =>
+        LogstageCirceWriter.write(codec.asInstanceOf[LogstageCodec[Any]], parameter.value)
+
+      case None =>
+        mapParameter(parameter.value)
+    }
   }
 
   private val mapScalar: PartialFunction[Any, Json] = {

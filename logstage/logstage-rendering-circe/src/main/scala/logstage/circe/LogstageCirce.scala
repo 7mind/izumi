@@ -1,6 +1,7 @@
 package logstage.circe
 
-import izumi.logstage.api.rendering.json
+import io.circe.Encoder
+import izumi.logstage.api.rendering.{LogstageCodec, json}
 import izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
@@ -12,5 +13,12 @@ trait LogstageCirce {
 
   @inline implicit final def ToConsoleSinkJsonCtor(consoleSink: ConsoleSink.type): ConsoleSinkJsonCtor = new ConsoleSinkJsonCtor(consoleSink)
 
+
+  implicit val LogstageCirceJsonCodec: LogstageCirceCodec.LogstageCirceJsonCodec.type = LogstageCirceCodec.LogstageCirceJsonCodec
+  def fromCirce[T: Encoder]: LogstageCodec[T] = new LogstageCirceCodec[T]
 }
+
+
+
+
 

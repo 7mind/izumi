@@ -2,7 +2,7 @@ package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
-import izumi.logstage.api.rendering.LogstageCodec
+import izumi.logstage.api.rendering.{AnyEncoded, LogstageCodec}
 import izumi.logstage.macros.{LogMessageMacro, LogMessageMacroStrict}
 
 import scala.language.experimental.macros
@@ -82,15 +82,15 @@ object Log {
   }
 
   object CustomContext {
-    def apply(map: Map[String, Any]): CustomContext = {
+    def apply(map: Map[String, AnyEncoded]): CustomContext = {
       val logArgs = map.map {
-        case (k, v) => LogArg(Seq(k), v, hiddenName = false, None)
+        case (k, v) => LogArg(Seq(k), v.value, hiddenName = false, v.codec)
       }.toList
 
       CustomContext(logArgs)
     }
 
-    def apply(args: (String, Any)*)(implicit dummy: DummyImplicit): CustomContext = {
+    def apply(args: (String, AnyEncoded)*)(implicit dummy: DummyImplicit): CustomContext = {
       CustomContext(Map(args: _*))
     }
 
