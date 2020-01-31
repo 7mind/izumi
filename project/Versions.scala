@@ -9,8 +9,8 @@ object V {
 
   val shapeless = "2.3.3"
 
-  val cats = "2.0.0"
-  val cats_effect = "2.0.0"
+  val cats = "2.1.0"
+  val cats_effect = "2.1.0"
   val zio = "1.0.0-RC17"
   val zio_interop_cats = "2.0.0.0-RC10"
 
