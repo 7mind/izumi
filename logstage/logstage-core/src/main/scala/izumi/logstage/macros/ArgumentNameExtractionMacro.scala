@@ -234,6 +234,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
 
     val tc = maybeCodec match {
       case Failure(exception) if strict =>
+        c.error(param.tree.pos, s"Implicit search failed for parameter ${c.universe.showCode(param.tree)}: ${param.tree.tpe}")
         throw exception
       case Failure(_) =>
         None
