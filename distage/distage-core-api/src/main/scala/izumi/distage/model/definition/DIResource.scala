@@ -178,6 +178,10 @@ object DIResource {
     make(acquire)(_ => F.unit)
   }
 
+  def suspend[F[_]: DIEffect, A](acquire: => F[DIResourceBase[F, A]]): DIResourceBase[F, A] = {
+    liftF(acquire).flatten
+  }
+
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
@@ -257,6 +261,10 @@ object DIResource {
         override def extract(res: InnerResource): A = resource.extract(res)
       }
     }
+  }
+
+  implicit final class DIResourceFlatten[F[_], A](private val resource: DIResourceBase[F, DIResourceBase[F, A]]) extends AnyVal {
+    def flatten(implicit F: DIEffect[F]): DIResourceBase[F, A] = resource.flatMap(identity)
   }
 
   implicit final class DIResourceUnsafeGet[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
@@ -469,6 +477,7 @@ object DIResource {
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
     final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
     final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+    final def evalTap[G[x] >: F[x]: DIEffect](f: OuterResource => G[Unit]): DIResourceBase[G, OuterResource] = evalMap[G, OuterResource](a => DIEffect[G].map(f(a))(_ => a))
 
     /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
     final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = logAcquireImpl[G, OuterResource](this: this.type)(f)
