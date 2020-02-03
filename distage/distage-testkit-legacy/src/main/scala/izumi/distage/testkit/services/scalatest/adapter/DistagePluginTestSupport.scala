@@ -27,7 +27,11 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   protected def pluginBootstrapPackages: Option[Seq[String]] = None
 
   override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
-    val config = TestConfig(bootstrapConfig.pluginConfig, bootstrapConfig.bootstrapPluginConfig.getOrElse(PluginConfig.empty), activation)
+    val config = TestConfig(
+      bootstrapConfig.pluginConfig,
+      bootstrapConfig.bootstrapPluginConfig.getOrElse(PluginConfig.empty),
+      activation
+    )
     loadEnvironment(logger, config)
   }
 

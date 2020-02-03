@@ -12,10 +12,10 @@ import izumi.distage.model.definition.{Activation, BootstrapModuleDef, Module}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.AbstractRole
+import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.LogstageModule
 
 trait ModuleProvider {
@@ -27,7 +27,7 @@ object ModuleProvider {
 
   class Impl[F[_]: TagK]
   (
-    logger: IzLogger,
+    logRouter: LogRouter,
     config: AppConfig,
     roles: RolesInfo,
     options: PlanningOptions,
@@ -45,7 +45,7 @@ object ModuleProvider {
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
-      val loggerModule = new LogstageModule(logger.router, true)
+      val loggerModule = new LogstageModule(logRouter, true)
 
       val autosetModule = AutoSetModule()
         .register[AbstractRole[F]]

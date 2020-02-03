@@ -22,6 +22,7 @@ import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogRouter
 
 import scala.reflect.ClassTag
 
@@ -84,7 +85,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val (activationInfo, activation) = new RoleAppActivationParser().parseActivation(earlyLogger, parameters, appDefinition, defaultActivations ++ requiredActivations)
 
     val options = contextOptions(parameters)
-    val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger)
+    val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger.router)
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy bsDefinition overridenBy bsOverride
 
     val appModule = moduleProvider.appModules().merge overridenBy appDefinition overridenBy appOverride
@@ -116,9 +117,9 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     StartupPlanExecutor(injector, new IntegrationChecker.Impl[F](lateLogger))
   }
 
-  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, activation: Activation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider = {
+  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
     new ModuleProvider.Impl[F](
-      logger = lateLogger,
+      logRouter = logRouter,
       config = config,
       roles = roles,
       options = options,
