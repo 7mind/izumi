@@ -468,7 +468,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.framework,
         libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.logging, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.logging, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
