@@ -82,7 +82,7 @@ object Log {
   }
 
   object CustomContext {
-    def apply(map: Map[String, AnyEncoded]): CustomContext = {
+    def fromMap(map: Map[String, AnyEncoded]): CustomContext = {
       val logArgs = map.map {
         case (k, v) => LogArg(Seq(k), v.value, hiddenName = false, v.codec)
       }.toList
@@ -91,7 +91,7 @@ object Log {
     }
 
     def apply(args: (String, AnyEncoded)*)(implicit dummy: DummyImplicit): CustomContext = {
-      CustomContext(Map(args: _*))
+      CustomContext.fromMap(Map(args: _*))
     }
 
     val empty: CustomContext = CustomContext(Nil)

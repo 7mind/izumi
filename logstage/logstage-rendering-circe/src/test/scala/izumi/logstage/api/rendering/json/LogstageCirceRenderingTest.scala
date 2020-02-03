@@ -1,8 +1,8 @@
 package izumi.logstage.api.rendering.json
 
-import io.circe.{Codec, Json}
 import io.circe.literal._
 import io.circe.parser._
+import io.circe.{Codec, Json}
 import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.{IzLogger, TestSink}
@@ -20,6 +20,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       val (logger, sink) = setupJsonLogger(debug)
       val jsonc = json"""{"customctx": 1}"""
       val jsonv = json"""{"custommessage": 2}"""
+      logger.withCustomContextMap(Map("ctx" -> "something")).debug(s"Example message $jsonv")
       logger("ctx" -> "something", "jctx" -> jsonc).debug(s"Example message $jsonv")
 
       new ExampleService(logger).start()

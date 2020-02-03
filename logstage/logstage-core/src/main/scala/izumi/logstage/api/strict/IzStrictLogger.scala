@@ -13,12 +13,12 @@ class IzStrictLogger
 ) extends RoutingLogger with AbstractMacroStrictLogger {
 
   override def withCustomContext(context: CustomContext): IzLogger = new IzLogger(router, customContext + context)
-  final def withCustomContext(context: (String, StrictEncoded)*): IzLogger = withCustomContext(context.toMap)
-  final def withCustomContext(context: Map[String, StrictEncoded]): IzLogger = withCustomContext(CustomContext(context))
+  final def withCustomContext(context: (String, StrictEncoded)*): IzLogger = withCustomContextMap(context.toMap)
+  final def withCustomContextMap(context: Map[String, StrictEncoded]): IzLogger = withCustomContext(CustomContext.fromMap(context))
 
   final def apply(context: CustomContext): IzLogger = withCustomContext(context)
-  final def apply(context: (String, StrictEncoded)*): IzLogger = withCustomContext(context.toMap)
-  final def apply(context: Map[String, StrictEncoded]): IzLogger = withCustomContext(context)
+  final def apply(context: (String, StrictEncoded)*): IzLogger = withCustomContextMap(context.toMap)
+  final def apply(context: Map[String, StrictEncoded]): IzLogger = withCustomContextMap(context)
 
 }
 
