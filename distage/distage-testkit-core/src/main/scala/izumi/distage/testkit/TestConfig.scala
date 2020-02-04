@@ -1,7 +1,10 @@
 package izumi.distage.testkit
 
+import distage.config.AppConfig
 import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
+import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.plugins.PluginConfig
+import izumi.logstage.api.Log
 
 /**
   * @param pluginConfig          Source of module definitions from which to build object graphs for each tests.
@@ -25,9 +28,15 @@ final case class TestConfig(
                              pluginConfig: PluginConfig,
                              bootstrapPluginConfig: PluginConfig = PluginConfig.empty,
                              activation: Activation = StandardAxis.testProdActivation,
+                             planningOptions: PlanningOptions = PlanningOptions(),
                              memoizationRoots: Set[DIKey] = Set.empty,
                              moduleOverrides: Module = Module.empty,
                              bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+                             bootstrapLogLevel: Log.Level = Log.Level.Info,
+                             configPackage: Option[String] = None,
+                             configOverrides: Option[AppConfig] = None,
+                             parallelSuites: Boolean = true,
+                             parallelTests: Boolean = true,
                            )
 
 object TestConfig {

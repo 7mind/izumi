@@ -24,6 +24,7 @@ import izumi.fundamentals.platform.language.{CodePosition, unused}
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
+import izumi.logstage.api.logger.LogRouter
 
 @deprecated("Use dstest", "2019/Jul/18")
 abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
@@ -58,7 +59,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     val env = loadEnvironment(logger)
     val config = loader.buildConfig()
     val options = contextOptions()
-    val provider = makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
+    val provider = makeModuleProvider(options, config, logger.router, env.roles, env.activationInfo, env.activation)
 
     val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
     val appModule = provider.appModules().merge overridenBy env.appModule
@@ -145,10 +146,10 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   protected def makeLogger(): IzLogger = IzLogger(bootstrapLogLevel)("phase" -> "test")
 
-  protected def makeModuleProvider(options: PlanningOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
+  protected def makeModuleProvider(options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
     new ModuleProvider.Impl[F](
-      logger = lateLogger,
+      logRouter = logRouter,
       config = config,
       roles = roles,
       options = options,

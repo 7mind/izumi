@@ -126,7 +126,7 @@ val jsonSink = ConsoleSink(LogstageCirceRenderingPolicy(prettyPrint = true))
 val sinks = List(jsonSink, textSink)
 
 val logger: IzLogger = IzLogger(Trace, sinks)
-val contextLogger: IzLogger = logger(Map("key" -> "value"))
+val contextLogger: IzLogger = logger("key" -> "value")
 
 logger.info("Hey")
 

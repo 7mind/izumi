@@ -15,11 +15,10 @@ trait LogIOStrict[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
   def withCustomContext(context: CustomContext): LogIOStrict[F]
 
-  final def withCustomContext(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContext(context.toMap)
-  final def withCustomContext(context: Map[String, StrictEncoded]): LogIOStrict[F] = withCustomContext(CustomContext(context))
+  final def withCustomContext(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContextMap(context.toMap)
+  final def withCustomContextMap(context: Map[String, StrictEncoded]): LogIOStrict[F] = withCustomContext(CustomContext.fromMap(context))
   final def apply(context: CustomContext): LogIOStrict[F] = withCustomContext(context)
-  final def apply(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContext(context.toMap)
-  final def apply(context: Map[String, StrictEncoded]): LogIOStrict[F] = withCustomContext(context)
+  final def apply(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContextMap(context.toMap)
 }
 
 

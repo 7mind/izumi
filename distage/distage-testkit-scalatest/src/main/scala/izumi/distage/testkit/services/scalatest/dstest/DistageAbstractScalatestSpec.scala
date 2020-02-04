@@ -33,14 +33,13 @@ trait DistageAbstractScalatestSpec[F[_]]
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
 
-  protected def makeTestEnv(): TestEnvironment = loadEnvironment(logger, config)
+  protected def testEnvLogger: IzLogger = IzLogger(Log.Level.Info)("phase" -> "loader")
+
+  protected def config: TestConfig = TestConfig.forSuite(this.getClass)
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment(testEnvLogger, config)
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
-
-  protected def config: TestConfig = TestConfig.forSuite(this.getClass)
-
-  protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
   //
   protected[distage] var context: Option[SuiteContext] = None
