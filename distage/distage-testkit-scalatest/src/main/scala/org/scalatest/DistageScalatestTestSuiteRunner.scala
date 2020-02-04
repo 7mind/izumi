@@ -178,7 +178,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
         val runner = {
-          new DistageTestRunner[F](testReporter, toRun, _.isInstanceOf[TestCanceledException], parallelExecution, parallelEnvExecution)
+          new DistageTestRunner[F](testReporter, toRun, _.isInstanceOf[TestCanceledException], parallelEnvExecution)
         }
         runner.run()
       }
@@ -187,7 +187,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     }
   }
 
-  protected def parallelExecution: Boolean = true
   protected def parallelEnvExecution: Boolean = true
 
   private def mkTestReporter(): TestReporter = {

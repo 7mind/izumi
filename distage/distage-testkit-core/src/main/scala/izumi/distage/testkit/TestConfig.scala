@@ -34,7 +34,9 @@ final case class TestConfig(
                              bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
                              bootstrapLogLevel: Log.Level = Log.Level.Info,
                              configPackage: Option[String] = None,
-                             configOverrides: AppConfig => AppConfig = identity,
+                             configOverrides: Option[AppConfig] = None,
+                             parallelSuites: Boolean = true,
+                             parallelTests: Boolean = true,
                            )
 
 object TestConfig {

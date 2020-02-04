@@ -3,6 +3,7 @@ package izumi.distage.testkit.services.dstest
 import java.util.concurrent.{Executors, TimeUnit}
 
 import distage.{Activation, DIKey, Injector, PlannerInput}
+import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, PlanCircularDependencyCheck}
@@ -35,7 +36,6 @@ class DistageTestRunner[F[_] : TagK]
   reporter: TestReporter,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
-  parallelTests: Boolean,
   parallelEnvs: Boolean,
 ) {
   def run(): Unit = {
@@ -44,8 +44,8 @@ class DistageTestRunner[F[_] : TagK]
     debugLogger.log {
       val printedEnvs = groups.toList.map {
         case (t, tests) =>
-          final case class TestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
-          TestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().shift(2))
+          final case class DebugTestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
+          DebugTestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().shift(2))
       }.niceList()
       s"Env contents: $printedEnvs"
     }
@@ -53,7 +53,16 @@ class DistageTestRunner[F[_] : TagK]
     try configuredForeach(groups) {
       case (env, tests) => try {
         val earlyPhaseLogger = IzLogger(env.bootstrapLogLevel)("phase" -> "env")
-        val loader: ConfigLoader = env.bootstrapFactory.makeConfigLoader(env.configPackage, earlyPhaseLogger).map(env.configOverrides)
+        val loader: ConfigLoader = env.bootstrapFactory.makeConfigLoader(env.configPackage, earlyPhaseLogger).map {
+          c =>
+            env.configOverrides match {
+              case Some(overrides) =>
+                AppConfig(overrides.config.resolveWith(c.config))
+              case None =>
+                c
+            }
+
+        }
         val config = loader.buildConfig()
 
         val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config)
@@ -137,7 +146,7 @@ class DistageTestRunner[F[_] : TagK]
                     Injector.inherit(sharedLocator).produceF[F](shared.side).use {
                       sharedIntegrationLocator =>
                         ifIntegChecksOk(checker, sharedIntegrationLocator)(tests, shared) {
-                          proceed(checker, appModule, planCheck, testPlans, shared, sharedLocator)
+                          proceed(env, checker, appModule, planCheck, testPlans, shared, sharedLocator)
                         }
                     }
                 }
@@ -185,6 +194,7 @@ class DistageTestRunner[F[_] : TagK]
   }
 
   protected def proceed(
+                         env: TestEnvironment,
                          ichecker: IntegrationChecker[F],
                          appmodule: ModuleBase,
                          checker: PlanCircularDependencyCheck,
@@ -206,12 +216,12 @@ class DistageTestRunner[F[_] : TagK]
         }
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        configuredTraverse_(testsBySuite) {
+        configuredTraverse_(env.parallelSuites, testsBySuite) {
           case (suiteData, plans) =>
             F.bracket(
               acquire = F.maybeSuspend(reporter.beginSuite(suiteData))
             )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) { _ =>
-              configuredTraverse_(plans) {
+              configuredTraverse_(env.parallelTests, plans) {
                 case (test, testplan) =>
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
@@ -279,8 +289,8 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  protected def configuredTraverse_[A](l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
-    if (parallelTests) {
+  protected def configuredTraverse_[A](parallel: Boolean, l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+    if (parallel) {
       P.parTraverse_(l)(f)
     } else {
       F.traverse_(l)(f)

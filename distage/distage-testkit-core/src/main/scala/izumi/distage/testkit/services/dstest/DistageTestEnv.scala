@@ -57,7 +57,9 @@ trait DistageTestEnv {
       configPackage = testConfig.configPackage.getOrElse(this.getClass.getPackage.getName),
       planningOptions = testConfig.planningOptions,
       bootstrapLogLevel = testConfig.bootstrapLogLevel,
-      configOverrides = testConfig.configOverrides
+      configOverrides = testConfig.configOverrides,
+      parallelSuites = testConfig.parallelSuites,
+      parallelTests = testConfig.parallelTests,
     )
   }
 

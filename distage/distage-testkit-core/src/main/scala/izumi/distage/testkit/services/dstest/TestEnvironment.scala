@@ -20,6 +20,7 @@ final case class TestEnvironment(
                                   bootstrapFactory: BootstrapFactory,
                                   configPackage: String,
                                   bootstrapLogLevel: Log.Level,
-                                  configOverrides: AppConfig => AppConfig,
-
+                                  configOverrides: Option[AppConfig],
+                                  parallelSuites: Boolean,
+                                  parallelTests: Boolean,
                                 )
