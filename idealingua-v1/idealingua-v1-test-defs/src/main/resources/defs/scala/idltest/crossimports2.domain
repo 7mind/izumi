@@ -1,8 +1,0 @@
-@nonportable()
-domain idltest.crossimports2
-
-import idltest.crossimports3
-
-data Dummy2 {
-  other: opt[idltest.crossimports3#Dummy3]
-}

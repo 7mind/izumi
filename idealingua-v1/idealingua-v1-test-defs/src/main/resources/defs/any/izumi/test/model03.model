@@ -1,5 +1,0 @@
-include "model03shared01.model"
-include "model03shared02.model"
-
-alias Test11 = Test1
-alias Test12 = Test2
