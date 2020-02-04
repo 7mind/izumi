@@ -69,7 +69,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     val basesAsLambdas = allReferenceComponents.flatMap(makeBaseClasses)
     val allBases = Seq(
       basesAsLambdas,
-      stableBases,
+      stableBases
     )
     val fullDb = allBases
       .flatten

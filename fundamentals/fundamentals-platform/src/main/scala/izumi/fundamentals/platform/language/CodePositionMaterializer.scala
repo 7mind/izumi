@@ -31,9 +31,9 @@ object CodePositionMaterializer {
             CodePosition.apply(
               SourceFilePosition(
                 c.Expr[String](Literal(Constant(file))).splice,
-                c.Expr[Int](Literal(Constant(line))).splice,
+                c.Expr[Int](Literal(Constant(line))).splice
               ),
-              applicationPointId = c.Expr[String](Literal(Constant(applicationPointId))).splice,
+              applicationPointId = c.Expr[String](Literal(Constant(applicationPointId))).splice
             )
           }
       }
@@ -82,9 +82,9 @@ object CodePositionMaterializer {
       CodePosition(
         SourceFilePosition(
           line = c.enclosingPosition.line,
-          file = c.enclosingPosition.source.file.name,
+          file = c.enclosingPosition.source.file.name
         ),
-        applicationPointId = normalizedName,
+        applicationPointId = normalizedName
       )
     }
   }

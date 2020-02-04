@@ -24,7 +24,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   private final val tpeNothing = NameReference("scala.Nothing")
   private final val tpeAny = NameReference("scala.Any")
   private final val tpeAnyRef = NameReference("scala.AnyRef")
-  private final val tpeObject = NameReference("java.lang.Object")
+  private final val tpeObject = NameReference(classOf[Object].getName)
 
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = LightTypeTag.mergeIDBs(self.idb, other.idb)
   private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = LightTypeTag.mergeIDBs(self.basesdb, other.basesdb)

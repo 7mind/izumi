@@ -13,7 +13,7 @@ package izumi.fundamentals.platform.cli.model.schema
   */
 final case class ParserSchema(
                          globalArgsSchema: GlobalArgsSchema,
-                         descriptors: Seq[RoleParserSchema],
+                         descriptors: Seq[RoleParserSchema]
                        )
 
 

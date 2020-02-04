@@ -66,7 +66,7 @@ jobs:
             - build_212
           steps:
             - script: |
-                bash sbtgen.sc --js
+                bash sbtgen.sc --js --native
                 bash .build.sh 2.12 secrets publishScala
         - job: publish213
           displayName: 'Publish to Maven Central 2.13'
@@ -74,5 +74,5 @@ jobs:
             - build_213
           steps:
             - script: |
-                bash sbtgen.sc --js
+                bash sbtgen.sc --js --native
                 bash .build.sh 2.13 secrets publishScala

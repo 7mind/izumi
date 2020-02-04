@@ -120,7 +120,7 @@ object ReflectionUtil {
       tpe match {
         case t: Universe#RefinedTypeApi =>
           t.parents.forall(allPartsStrong) &&
-            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
+            t.decls.toSeq.forall((s: Universe#Symbol) => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
         case _ =>
           true
       }

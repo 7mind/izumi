@@ -5,8 +5,15 @@ import izumi.fundamentals.platform.cli.impl.CLIParserState
 import izumi.fundamentals.platform.cli.model.raw._
 
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 class CLIParser {
+  implicit def eitherW[A, B](e: Either[A, B]) = new {
+    def map[B1](f: B => B1): Either[A, B1] = e.right map f
+
+    def flatMap[B1](f: B => Either[A, B1]): Either[A, B1] = e.right flatMap f
+  }
+
   def parse(args: Array[String]): Either[ParserError, RawAppArgs] = {
     var state: CLIParserState = new CLIParserState.Initial()
     val processed = mutable.ArrayBuffer[String]()
@@ -51,12 +58,19 @@ class CLIParser {
 }
 
 object CLIParser {
+
   sealed trait ParserError
+
   object ParserError {
+
     final case class DanglingArgument(processed: Vector[String], arg: String) extends ParserError
+
     final case class DanglingSplitter(processed: Vector[String]) extends ParserError
+
     final case class DuplicatedRoles(bad: Set[String]) extends ParserError
+
   }
+
 }
 
 
