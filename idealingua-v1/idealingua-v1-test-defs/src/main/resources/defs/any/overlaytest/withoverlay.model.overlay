@@ -1,7 +1,0 @@
-data OverlayUserAttributes {
-    name: str
-    surname: str
-}
-
-@annotated(path = "users/{id}")
-declared User
