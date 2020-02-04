@@ -1,3 +1,6 @@
+addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % PV.crossproject_version)
+
+addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % PV.scala_native_version)
 
 ////////////////////////////////////////////////////////////////////////////////
 
