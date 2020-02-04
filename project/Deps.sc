@@ -8,7 +8,6 @@ object Izumi {
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
-    val shapeless = Version.VExpr("V.shapeless")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
     val zio = Version.VExpr("V.zio")
@@ -19,10 +18,6 @@ object Izumi {
     val circe_config = Version.VExpr("V.circe_config")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
-    val scalameta = Version.VExpr("V.scalameta")
-    val fastparse = Version.VExpr("V.fastparse")
-    val scala_xml = Version.VExpr("V.scala_xml")
-    val asynchttpclient = Version.VExpr("V.asynchttpclient")
     val classgraph = Version.VExpr("V.classgraph")
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
@@ -97,8 +92,6 @@ object Izumi {
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
-    final val scala_xml = Library("org.scala-lang.modules", "scala-xml", V.scala_xml, LibraryType.Auto) in Scope.Compile.all
-    final val scalameta = Library("org.scalameta", "scalameta", V.scalameta, LibraryType.Auto) in Scope.Compile.all
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
 
@@ -107,12 +100,10 @@ object Izumi {
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.js
-    final val shapeless = Library("com.chuusai", "shapeless", V.shapeless, LibraryType.Auto) in Scope.Compile.all
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
 
-    final val fastparse = Library("com.lihaoyi", "fastparse", V.fastparse, LibraryType.Auto) in Scope.Compile.all
 
     final val http4s_client = Seq(
       Library("org.http4s", "http4s-blaze-client", V.http4s, LibraryType.Auto),
@@ -126,7 +117,6 @@ object Izumi {
 
     val http4s_all = (http4s_server ++ http4s_client)
 
-    val asynchttpclient = Library("org.asynchttpclient", "async-http-client", V.asynchttpclient, LibraryType.Invariant)
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
   }
 
@@ -141,7 +131,6 @@ object Izumi {
     final val fundamentals = Set(Group("fundamentals"))
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
-    final val idealingua = Set(Group("idealingua"))
     final val docs = Set(Group("docs"))
     final val sbt = Set(Group("sbt"))
   }
@@ -298,22 +287,6 @@ object Izumi {
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
       final lazy val sinkSlf4j = ArtifactId("logstage-sink-slf4j")
-    }
-
-    object idealingua {
-      final val id = ArtifactId("idealingua")
-      final val basePath = Seq("idealingua-v1")
-
-      final val model = ArtifactId("idealingua-v1-model")
-      final val core = ArtifactId("idealingua-v1-core")
-      final val runtimeRpcScala = ArtifactId("idealingua-v1-runtime-rpc-scala")
-      final val testDefs = ArtifactId("idealingua-v1-test-defs")
-      final val transpilers = ArtifactId("idealingua-v1-transpilers")
-      final val runtimeRpcHttp4s = ArtifactId("idealingua-v1-runtime-rpc-http4s")
-      final val runtimeRpcTypescript = ArtifactId("idealingua-v1-runtime-rpc-typescript")
-      final val runtimeRpcCSharp = ArtifactId("idealingua-v1-runtime-rpc-csharp")
-      final val runtimeRpcGo = ArtifactId("idealingua-v1-runtime-rpc-go")
-      final val compiler = ArtifactId("idealingua-v1-compiler")
     }
 
     object docs {
@@ -557,99 +530,6 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final lazy val idealingua = Aggregate(
-    name = Projects.idealingua.id,
-    artifacts = Seq(
-      Artifact(
-        name = Projects.idealingua.model,
-        libs = Seq.empty,
-        depends = Projects.fundamentals.basics,
-      ),
-      Artifact(
-        name = Projects.idealingua.core,
-        libs = Seq(fastparse),
-        depends = Seq(Projects.idealingua.model, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
-      ),
-      Artifact(
-        name = Projects.idealingua.runtimeRpcScala,
-        libs = Seq(scala_reflect in Scope.Provided.all) ++ (cats_all ++ zio_all).map(_ in Scope.Compile.all),
-        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
-      ),
-      Artifact(
-        name = Projects.idealingua.runtimeRpcHttp4s,
-        libs = (http4s_all ++ Seq(asynchttpclient)).map(_ in Scope.Compile.all),
-        depends = Seq(Projects.idealingua.runtimeRpcScala, Projects.logstage.core, Projects.logstage.adapterSlf4j).map(_ in Scope.Compile.all) ++
-          Seq(Projects.idealingua.testDefs).map(_ in Scope.Test.jvm),
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.idealingua.transpilers,
-        libs = Seq(scala_xml, scalameta),
-        depends = Seq(Projects.fundamentals.fundamentalsJsonCirce, Projects.idealingua.core, Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all) ++
-          Seq(Projects.idealingua.testDefs, Projects.idealingua.runtimeRpcTypescript, Projects.idealingua.runtimeRpcGo, Projects.idealingua.runtimeRpcCSharp).map(_ in Scope.Test.jvm),
-        settings = forkTests
-      ),
-      Artifact(
-        name = Projects.idealingua.testDefs,
-        libs = Seq.empty,
-        depends = Seq(Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.idealingua.runtimeRpcTypescript,
-        libs = Seq.empty,
-        depends = Seq.empty,
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.idealingua.runtimeRpcGo,
-        libs = Seq.empty,
-        depends = Seq.empty,
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.idealingua.runtimeRpcCSharp,
-        libs = Seq.empty,
-        depends = Seq.empty,
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.idealingua.compiler,
-        libs = Seq(typesafe_config),
-        depends = Seq(
-          Projects.idealingua.transpilers,
-          Projects.idealingua.runtimeRpcScala,
-          Projects.idealingua.runtimeRpcTypescript,
-          Projects.idealingua.runtimeRpcGo,
-          Projects.idealingua.runtimeRpcCSharp,
-          Projects.idealingua.testDefs,
-        ).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
-        plugins = Plugins(Seq(assemblyPluginJvm)),
-        settings = Seq(
-          "mainClass" in SettingScope.Raw("assembly") := """Some("izumi.idealingua.compiler.CommandlineIDLCompiler")""".raw,
-          "assemblyMergeStrategy" in SettingScope.Raw("assembly") :=
-            """{
-              |      // FIXME: workaround for https://github.com/zio/interop-cats/issues/16
-              |      case path if path.contains("zio/BuildInfo$.class") =>
-              |        MergeStrategy.last
-              |      case p =>
-              |        (assemblyMergeStrategy in assembly).value(p)
-              |}""".stripMargin.raw,
-          "artifact" in SettingScope.Raw("(Compile, assembly)") :=
-            """{
-              |      val art = (artifact in(Compile, assembly)).value
-              |      art.withClassifier(Some("assembly"))
-              |}""".stripMargin.raw,
-          SettingDef.RawSettingDef("addArtifact(artifact in(Compile, assembly), assembly)")
-        )
-      ),
-    ),
-    pathPrefix = Projects.idealingua.basePath,
-    groups = Groups.idealingua,
-    defaultPlatforms = Targets.cross,
-  )
-
   val all = Seq(fundamentals, distage, logstage)
 
   final lazy val docs = Aggregate(
@@ -761,7 +641,6 @@ object Izumi {
       fundamentals,
       distage,
       logstage,
-      idealingua,
       docs,
       sbtplugins,
     ),
