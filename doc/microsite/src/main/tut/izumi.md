@@ -65,6 +65,7 @@ Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
 * [PPER](pper/00_pper.md)
+* [Idealingua](idealingua/00_idealingua.md)
 
 @@@
 
