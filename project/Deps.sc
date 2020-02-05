@@ -53,7 +53,7 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    sbtVersion = "1.3.7",
+    sbtVersion = "1.3.8",
     scalaJsVersion = PV.scala_js_version,
     scalaNativeVersion = PV.scala_native_version,
     crossProjectVersion = PV.crossproject_version,
