@@ -56,30 +56,6 @@ function site {
   fi
 }
 
-function publishIDL {
-  #copypaste
-  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
-    return 0
-  fi
-
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
-    return 0
-  fi
-
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
-    return 0
-  fi
-  #copypaste
-
-  echo "PUBLISH IDL RUNTIMES..."
-
-  echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-  npm whoami
-
-  ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh || exit 1
-  ./idealingua-v1/idealingua-v1-runtime-rpc-csharp/src/main/nuget/publish.sh || exit 1
-}
-
 function publishScala {
   #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
@@ -182,9 +158,6 @@ case $i in
     #     scripted
     # ;;
 
-    publishIDL)
-        publishIDL
-    ;;
 
     publishScala)
         publishScala
