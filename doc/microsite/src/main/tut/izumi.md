@@ -63,10 +63,11 @@ Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 
 * [distage](distage/00_distage.md)
 * [LogStage](logstage/00_logstage.md)
+* [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
 * [PPER](pper/00_pper.md)
-* [Idealingua](idealingua/00_idealingua.md)
+
 
 @@@
 
