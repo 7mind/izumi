@@ -29,7 +29,7 @@ object V {
 
   // java-only dependencies below
   // java, we need it bcs http4s ws client isn't ready yet
-  val asynchttpclient = "2.10.4"
+  val asynchttpclient = "2.10.5"
 
   val classgraph = "4.8.62"
   val slf4j = "1.7.30"
