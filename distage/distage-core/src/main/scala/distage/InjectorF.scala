@@ -7,31 +7,35 @@ sealed trait InjectorF[F[_], T] {
 }
 
 object InjectorF {
-  case class Module[F[_]](module: PlannerInput) extends InjectorF[F, PlannerInput]
-  case class End[F[_], T](t: T) extends InjectorF[F, T]
 
-  def flatMap[F[_] : DIEffect : TagK, T, T1](injectorF: InjectorF[F, T])(f: Locator => F[InjectorF[F, T1]]): F[InjectorF[F, T1]] = {
-    val F = implicitly[DIEffect[F]]
-    injectorF match {
-      case module: Module[F] =>
-        for {
-          m <- F.maybeSuspend[PlannerInput](module.module)
-          inj = Injector().produceF[F](m)
-          out <- F.bracket(inj.acquire)(a => inj.release(a)) {
-            r =>
-              f(inj.extract(r))
-          }
-        } yield {
+//  case class FlatMap[F[_]](module: PlannerInput) extends InjectorF[F, PlannerInput]
+  case class Module[F[_]](module: PlannerInput) extends InjectorF[F, PlannerInput] {
 
-            out
+    def flatMap[T1](f: Locator => F[InjectorF[F, T1]])(implicit eff: DIEffect[F], tag: TagK[F]): F[InjectorF[F, T1]] = {
+      val F = implicitly[DIEffect[F]]
+      for {
+        m <- F.maybeSuspend[PlannerInput](module)
+        inj = Injector().produceF[F](m)
+        out <- F.bracket(inj.acquire)(a => inj.release(a)) {
+          r =>
+            f(inj.extract(r))
         }
+      } yield {
 
-
-      case end: End[_, _] =>
-        end
+        out
+      }
     }
   }
+
+  case class End[F[_], T](t: T) extends InjectorF[F, T] {
+    def map[T1](f: T => T1)(implicit eff: DIEffect[F], tag: TagK[F]): F[InjectorF[F, T1]] = {
+      val F = implicitly[DIEffect[F]]
+      F.pure(End(f(t)))
+    }
+  }
+
   def module[F[_]](module: PlannerInput) = new Module[F](module)
+
   def end[F[_], T](value: T) = new End[F, T](value)
 
   def run[F[_] : DIEffect : DIEffectRunner, T](injectorF: F[InjectorF[F, T]]): InjectorF[F, T] = {
