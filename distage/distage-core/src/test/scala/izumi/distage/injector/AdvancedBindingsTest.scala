@@ -3,23 +3,38 @@ package izumi.distage.injector
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.SetCase2
 import izumi.distage.model.exceptions.TODOBindingException
-import distage.{InjectorF, ModuleDef, PlannerInput}
+import distage.{InjectorF, Locator, ModuleDef, PlannerInput}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
 
 object Test {
+
+  case class Service0()
+
+  case class Service1(service0: Service0)
+
+  case class Service2()
+
+  case class Service3(service0: Service2)
+
   def main(args: Array[String]): Unit = {
-    import izumi.distage.fixtures.SetCases.SetCase1._
-
-
     val p = for {
-      locator <- InjectorF.module[Identity](PlannerInput.noGc(new ModuleDef {
-        make[TypedService[Int]].from[ServiceWithTypedSet]
-        many[ExampleTypedCaseClass[Int]]
+      _ <- InjectorF.module[Identity](PlannerInput.noGc(new ModuleDef {
+        make[Service0]
+        make[Service1]
       }))
-      out <- InjectorF.end(locator.get[TypedService[Int]])
+      _ <- InjectorF.module[Identity](PlannerInput.noGc(new ModuleDef {
+        make[Service2]
+        make[Service3]
+      }))
+      out <- InjectorF.end {
+        _.run {
+          (service0: Service0, service2: Service2) =>
+            List(service0, service2)
+        }
+      }
     } yield {
       out
     }
