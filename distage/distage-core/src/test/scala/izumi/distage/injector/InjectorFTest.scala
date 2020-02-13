@@ -36,6 +36,7 @@ class InjectorFTest extends AnyWordSpec {
       val result = DIEffectRunner[Identity].run(InjectorF.run(p))
       val expected = (List(Service0(), Service1(Service0())), List(Service0(), Service2()))
       assert(result == expected)
+      //println(result)
     }
   }
 }

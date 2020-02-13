@@ -54,35 +54,43 @@ object InjectorF {
 
     def interpret[T1, B](in: Locator, i: InjectorF[F, T1]): F[B] = {
       val out: F[B] = i match {
-        case fm: FlatMapLocator[F, Any] =>
+        case fm: FlatMapLocator[F, PlannerInput]@unchecked =>
           for {
-            m <- interpret[PlannerInput, PlannerInput](in, fm.prev)
-            loc = Injector.inherit(in).produceF[F](m)
+            ms <- F.maybeSuspend(interpret[PlannerInput, PlannerInput](in, fm.prev))
+            m <- ms
+            loc <- F.maybeSuspend(Injector.inherit(in).produceF[F](m))
             out <- loc.use {
               loc =>
-                F.maybeSuspend(interpret(loc, fm.f(loc)))
-
+                interpret[PlannerInput, B](loc, fm.f(loc))
             }
           } yield {
-            out.asInstanceOf[B]
+            out
           }
 
-        case fm: FlatMapValue[F, Any, Any] =>
+        case fm: FlatMapValue[F, T1, B]@unchecked =>
           for {
-            p <- interpret[Any, Any](in, fm.prev)
-            out <- F.maybeSuspend(interpret(in, fm.f(p)))
+            p <- F.maybeSuspend(interpret[T1, T1](in, fm.prev))
+            v <- p
+            i = fm.f.apply(v)
+            out <- F.maybeSuspend(interpret[B, B](in, i))
+            r <- out
           } yield {
-            out.asInstanceOf[B]
+            r
           }
 
-        case m: Map[F, Any, Any] =>
-          interpret(in, m.prev).map(m.f).asInstanceOf[F[B]]
+        case m: Map[F, T1, B]@unchecked =>
+          for {
+            p <- F.maybeSuspend(interpret[T1, T1](in, m.prev).map(m.f))
+            out <- p
+          } yield {
+            out
+          }
 
         case DeclareModule(module) =>
           F.pure(module)
 
-        case UseLocator(t) =>
-          F.pure(t(in).asInstanceOf[B])
+        case u: UseLocator[F, B]@unchecked =>
+          F.maybeSuspend(u.t(in))
       }
       out
     }
