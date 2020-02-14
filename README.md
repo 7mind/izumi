@@ -94,7 +94,9 @@ In the future we are going to (or may) implement more tools based on PPER approa
 Users
 =====
 
-The following companies are using
+The following companies are using Izumi:
+
+- Raiffeisen Bank Russia
 
 [![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
 
