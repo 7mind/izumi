@@ -10,12 +10,20 @@ sealed trait InjectorF[F[_], T] {
 
 object InjectorF {
 
-  case class State(locator: Locator)
+  case class State(bootstrapLocator: Locator)
 
-  case class FlatMapLocator[F[_], T1](
-                                       prev: InjectorF[F, PlannerInput],
-                                       f: Locator => InjectorF[F, T1]
-                                     ) extends InjectorF[F, T1]
+  case class FMPlan[F[_], T1](
+                               input: PlannerInput,
+                               in: Option[Locator],
+                               f: OrderedPlan => InjectorF[F, T1]
+                             ) extends InjectorF[F, T1]
+
+
+  case class FMProduce[F[_], T1](
+                                  plan: OrderedPlan,
+                                  in: Option[Locator],
+                                  f: Locator => InjectorF[F, T1]
+                                ) extends InjectorF[F, T1]
 
   case class FlatMapValue[F[_], T0, T1](
                                          prev: InjectorF[F, T0],
@@ -27,15 +35,22 @@ object InjectorF {
                                f: T => T1
                              ) extends InjectorF[F, T1]
 
-  case class DeclareModule[F[_]](module: PlannerInput) extends InjectorF[F, PlannerInput] {
-    def flatMap[T1](f: Locator => InjectorF[F, T1]): InjectorF[F, T1] = {
-      FlatMapLocator(this, f)
+  case class DeclareModule[F[_]](module: PlannerInput, in: Option[Locator]) {
+    def flatMap[T1](f: OrderedPlan => InjectorF[F, T1]): InjectorF[F, T1] = {
+      FMPlan(module, in, f)
     }
   }
 
-  case class UseLocator[F[_], T](t: Locator => T) extends InjectorF[F, T] {
+  case class CreateSubcontext[F[_]](plan: OrderedPlan, in: Option[Locator]) {
+    def flatMap[T1](f: Locator => InjectorF[F, T1]): InjectorF[F, T1] = {
+      FMProduce(plan, in, f)
+    }
+  }
+
+
+  case class UseLocator[F[_], T](locator: Locator, t: Locator => T) extends InjectorF[F, T] {
     def map[T1](f: T => T1): InjectorF[F, T1] = {
-      UseLocator(locator => f(t(locator)))
+      UseLocator(locator, l => f(t(l)))
     }
 
     def flatMap[T1](f: T => InjectorF[F, T1]): InjectorF[F, T1] = {
@@ -54,9 +69,15 @@ object InjectorF {
   }
 
 
-  def declare[F[_]](module: PlannerInput): DeclareModule[F] = new DeclareModule[F](module)
-  def useLocator[F[_], T](f: Locator => T): UseLocator[F, T] = new UseLocator[F, T](f)
-  def use[F[_], T](f: ProviderMagnet[T]): UseLocator[F, T] = new UseLocator[F, T](_.run(f))
+  def plan[F[_]](module: PlannerInput): DeclareModule[F] = new DeclareModule[F](module, None)
+  def plan[F[_]](module: PlannerInput, in: Locator): DeclareModule[F] = new DeclareModule[F](module, Some(in))
+
+  def produce[F[_]](plan: OrderedPlan): CreateSubcontext[F] = new CreateSubcontext[F](plan, None)
+  def produce[F[_]](plan: OrderedPlan, in: Locator): CreateSubcontext[F] = new CreateSubcontext[F](plan, Some(in))
+
+  //def useLocator[F[_], T](f: Locator => T): UseLocator[F, T] = new UseLocator[F, T](f)
+  def use[F[_], T](locator: Locator)(f: ProviderMagnet[T]): UseLocator[F, T] = new UseLocator[F, T](locator, _.run(f))
+
   def raw[F[_], T](f: State => T): UseState[F, T] = new UseState[F, T](f)
 
   def run[F[_] : DIEffect : TagK, T](
@@ -68,15 +89,29 @@ object InjectorF {
 
     def interpret[T1, B](state: State, i: InjectorF[F, T1]): F[B] = {
       val out: F[B] = i match {
-        case fm: FlatMapLocator[F, PlannerInput]@unchecked =>
+
+        case fm: FMPlan[F, T1]@unchecked =>
           for {
-            ms <- F.maybeSuspend(interpret[PlannerInput, PlannerInput](state, fm.prev))
-            m <- ms
-            loc <- F.maybeSuspend(Injector.inherit(state.locator).produceF[F](m))
-            out <- loc.use {
-              newLocator =>
-                interpret[PlannerInput, B](state.copy(locator = newLocator), fm.f(newLocator))
+            plan <- F.maybeSuspend {
+              Injector.inherit(fm.in.getOrElse(state.bootstrapLocator)).plan(fm.input)
             }
+            p <- F.maybeSuspend(interpret[T1, B](state, fm.f(plan)))
+            out <- p
+          } yield {
+            out
+          }
+
+        case fm: FMProduce[F, T1]@unchecked =>
+          for {
+            loc <- F.maybeSuspend {
+              Injector.inherit(fm.in.getOrElse(state.bootstrapLocator))
+                .produceF[F](fm.plan)
+            }
+            p <- loc.use {
+              newLocator =>
+                F.maybeSuspend(interpret[T1, B](state, fm.f(newLocator)))
+            }
+            out <- p
           } yield {
             out
           }
@@ -100,20 +135,12 @@ object InjectorF {
             out
           }
 
-        case DeclareModule(module) =>
-          F.pure(module)
-
         case u: UseLocator[F, B]@unchecked =>
-//          for {
-//            loc <- F.maybeSuspend(Injector.inherit(state.locator).produceF[F](m))
-//            out <- loc.use {
-//              newLocator =>
-//                interpret[PlannerInput, B](state.copy(locator = newLocator), fm.f(newLocator))
-//            }
-//            u <- F.maybeSuspend(u.t(state.locator))
-//          } yield {
-//          }
-          F.maybeSuspend(u.t(state.locator))
+          for {
+            out <- F.maybeSuspend(u.t(u.locator))
+          } yield {
+            out
+          }
 
         case u: UseState[F, B]@unchecked =>
           F.maybeSuspend(u.t(state))

@@ -12,19 +12,21 @@ class InjectorFTest extends AnyWordSpec {
   "InjectorF" should {
     "support for comprehension" in {
       val p = for {
-        _ <- InjectorF.declare[Identity](PlannerInput.noGc(new ModuleDef {
+        p1 <- InjectorF.plan[Identity](PlannerInput.noGc(new ModuleDef {
           make[Service0]
           make[Service1]
         }))
-        out0 <- InjectorF.use {
-          (service0: Service0, service2: Service1) =>
-            List(service0, service2)
+        l1 <- InjectorF.produce(p1)
+        out0 <- InjectorF.use(l1) {
+          (service0: Service0, service1: Service1) =>
+            List(service0, service1)
         }
-        _ <- InjectorF.declare[Identity](PlannerInput.noGc(new ModuleDef {
+        p2 <- InjectorF.plan[Identity](PlannerInput.noGc(new ModuleDef {
           make[Service2]
           make[Service3]
         }))
-        out <- InjectorF.use {
+        l2 <- InjectorF.produce(p2, l1)
+        out <- InjectorF.use(l2) {
           (service0: Service0, service2: Service2) =>
             List(service0, service2)
         }
