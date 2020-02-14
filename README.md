@@ -91,16 +91,12 @@ In the future we are going to (or may) implement more tools based on PPER approa
 2. Best in the world cluster orchestration tool
 3. Best in the world load testing/macro-benchmark tool
 
-Users
-=====
+Adopters
+========
 
-The following companies are using Izumi:
-
-- Raiffeisen Bank Russia
+Are you using Izumi? Please consider opening a pull request to list your organization here:
 
 [![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
-
-- vidIQ
 
 [![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
 
