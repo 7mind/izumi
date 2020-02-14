@@ -100,6 +100,10 @@ The following companies are using Izumi:
 
 [![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
 
+- vidIQ
+
+[![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
+
 Credits
 =======
 
