@@ -15,7 +15,7 @@
 ---
 
 <p align="center">
-  <a href="https://www.buymeacoffee.com/7mind"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Izumi"/></a>  
+  <a href="https://www.buymeacoffee.com/7mind"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Izumi"/></a>
 </p>
 
 ---
@@ -90,6 +90,13 @@ In the future we are going to (or may) implement more tools based on PPER approa
 1. Best in the world build system
 2. Best in the world cluster orchestration tool
 3. Best in the world load testing/macro-benchmark tool
+
+Users
+=====
+
+The following companies are using
+
+[![Raiffeisen Bank Russia](https://github.com/7mind/izumi/blob/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?raw=true)](https://www.raiffeisen.ru/en/)
 
 Credits
 =======
