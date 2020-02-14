@@ -96,7 +96,7 @@ Users
 
 The following companies are using
 
-[![Raiffeisen Bank Russia](https://github.com/7mind/izumi/blob/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?raw=true)](https://www.raiffeisen.ru/en/)
+[![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
 
 Credits
 =======
