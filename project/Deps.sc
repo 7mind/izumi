@@ -225,6 +225,7 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
           "test" in Platform.Native := "{}".raw,
+          "test" in (SettingScope.Test, Platform.Native) := "{}".raw,
           "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
           //"testOptions" in (SettingScope.Test, Platform.Jvm) ++= s"""Seq(Tests.Argument("-u"), Tests.Argument(s"$${target.value}/junit-xml-$${scalaVersion.value}"))""".raw,
           "scalacOptions" ++= Seq(

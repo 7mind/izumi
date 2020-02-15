@@ -110,7 +110,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.11.12"
     ),
     coverageEnabled := false,
-    test := {}, test in Test := {}
+    test := {},
+    test in Test := {}
   )
 lazy val `fundamentals-collectionsJVM` = `fundamentals-collections`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -238,7 +239,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.11.12"
     ),
     coverageEnabled := false,
-    test := {}, test in Test := {}
+    test := {},
+    test in Test := {}
   )
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -351,7 +353,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.11.12"
     ),
     coverageEnabled := false,
-    test := {}, test in Test := {}
+    test := {},
+    test in Test := {}
   )
 lazy val `fundamentals-functionalJVM` = `fundamentals-functional`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -474,7 +477,8 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = crossProject(JVMPlatform, 
       "2.11.12"
     ),
     coverageEnabled := false,
-    test := {}, test in Test := {}
+    test := {},
+    test in Test := {}
   )
 lazy val `fundamentals-thirdparty-boopickle-shadedJVM` = `fundamentals-thirdparty-boopickle-shaded`.jvm
   .disablePlugins(AssemblyPlugin)
@@ -592,7 +596,8 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.11.12"
     ),
     coverageEnabled := false,
-    test := {}, test in Test := {}
+    test := {},
+    test in Test := {}
   )
 lazy val `fundamentals-reflectionJVM` = `fundamentals-reflection`.jvm
   .disablePlugins(AssemblyPlugin)
