@@ -13,7 +13,7 @@ class TagExprTest extends AnyWordSpec {
 
       val abExpr = TagExpr.Strings.And(Set(
         notXorExpr,
-        TagExpr.Strings.all("a", "b"),
+        TagExpr.Strings.all("a", "b")
       ))
 
       val expr = TagExpr.Strings.And(Set(
