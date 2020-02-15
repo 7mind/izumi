@@ -12,11 +12,23 @@ object Iz {
 
   case class State(bootstrapLocator: Locator)
 
+  case class DeclareModule[F[_]](module: PlannerInput, in: Option[Locator]) {
+    def flatMap[T1](f: OrderedPlan => Iz[F, T1]): Iz[F, T1] = {
+      FMPlan(module, in, f)
+    }
+  }
+
   case class FMPlan[F[_], T1](
                                input: PlannerInput,
                                in: Option[Locator],
                                f: OrderedPlan => Iz[F, T1]
                              ) extends Iz[F, T1]
+
+  case class CreateSubcontext[F[_]](plan: OrderedPlan, in: Option[Locator]) {
+    def flatMap[T1](f: Locator => Iz[F, T1]): Iz[F, T1] = {
+      FMProduce(plan, in, f)
+    }
+  }
 
 
   case class FMProduce[F[_], T1](
@@ -35,18 +47,6 @@ object Iz {
                                f: T => T1
                              ) extends Iz[F, T1]
 
-  case class DeclareModule[F[_]](module: PlannerInput, in: Option[Locator]) {
-    def flatMap[T1](f: OrderedPlan => Iz[F, T1]): Iz[F, T1] = {
-      FMPlan(module, in, f)
-    }
-  }
-
-  case class CreateSubcontext[F[_]](plan: OrderedPlan, in: Option[Locator]) {
-    def flatMap[T1](f: Locator => Iz[F, T1]): Iz[F, T1] = {
-      FMProduce(plan, in, f)
-    }
-  }
-
 
   case class UseLocator[F[_], T](locator: Locator, t: Locator => T) extends Iz[F, T] {
     def map[T1](f: T => T1): Iz[F, T1] = {
@@ -58,27 +58,28 @@ object Iz {
     }
   }
 
-  case class UseState[F[_], T](t: State => T) extends Iz[F, T] {
-    def map[T1](f: T => T1): Iz[F, T1] = {
-      UseState(locator => f(t(locator)))
+  class Suspend[F[_], T1](c: => T1) extends Iz[F, T1] {
+    def flatMap[B](f: T1 => Iz[F, B]): Iz[F, B] = {
+      FlatMapValue[F, T1, B](this, f)
     }
 
-    def flatMap[T1](f: T => Iz[F, T1]): Iz[F, T1] = {
-      FlatMapValue(this, f)
-    }
+    def value: T1 = c
   }
 
 
   def plan[F[_]](module: PlannerInput): DeclareModule[F] = new DeclareModule[F](module, None)
+
   def plan[F[_]](module: PlannerInput, in: Locator): DeclareModule[F] = new DeclareModule[F](module, Some(in))
 
   def produce[F[_]](plan: OrderedPlan): CreateSubcontext[F] = new CreateSubcontext[F](plan, None)
+
   def produce[F[_]](plan: OrderedPlan, in: Locator): CreateSubcontext[F] = new CreateSubcontext[F](plan, Some(in))
 
-  //def useLocator[F[_], T](f: Locator => T): UseLocator[F, T] = new UseLocator[F, T](f)
+  def useLocator[F[_], T](locator: Locator)(f: Locator => T): UseLocator[F, T] = new UseLocator[F, T](locator, f)
+
   def use[F[_], T](locator: Locator)(f: ProviderMagnet[T]): UseLocator[F, T] = new UseLocator[F, T](locator, _.run(f))
 
-  def raw[F[_], T](f: State => T): UseState[F, T] = new UseState[F, T](f)
+  def suspend[F[_], T](v: T): Suspend[F, T] = new Suspend[F, T](v)
 
   def run[F[_] : DIEffect : TagK, T](
                                       injectorF: Iz[F, T],
@@ -141,8 +142,12 @@ object Iz {
             out
           }
 
-        case u: UseState[F, B]@unchecked =>
-          F.maybeSuspend(u.t(state))
+        case u: Suspend[F, B]@unchecked =>
+          for {
+            out <- F.maybeSuspend(u.value)
+          } yield {
+            out
+          }
       }
       out
     }
