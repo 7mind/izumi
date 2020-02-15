@@ -230,7 +230,12 @@ object Izumi {
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" ++= Seq(
-          SettingKey(None, Some(true)) := Seq(
+          SettingKey(Some(scala212), Some(true)) := Seq(
+            "-opt:l:inline",
+            "-opt-inline-from:izumi.**",
+          ),
+
+          SettingKey(Some(scala213), Some(true)) := Seq(
             "-opt:l:inline",
             "-opt-inline-from:izumi.**",
           ),
