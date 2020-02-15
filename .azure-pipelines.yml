@@ -59,7 +59,7 @@ jobs:
           steps:
             - script: |
                 bash sbtgen.sc --js --native
-                bash .build.sh all secrets publishScala
+                bash .build.sh scala-all secrets publishScala
 
 #        - job: publish212
 #          displayName: 'Publish to Maven Central 2.12'
