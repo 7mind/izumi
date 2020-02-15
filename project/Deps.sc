@@ -165,7 +165,8 @@ object Izumi {
         "coverageEnabled" := false,
       ),
     )
-    final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
+    final val cross = Seq(jvmPlatform, jsPlatform)
+    final val crossNative = Seq(jvmPlatform, jsPlatform, nativePlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
     final val jvmSbt = Seq(jvmPlatformSbt)
@@ -333,6 +334,7 @@ object Izumi {
         name = Projects.fundamentals.collections,
         libs = Seq.empty,
         depends = Seq.empty,
+        platforms = Targets.crossNative,
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -346,25 +348,13 @@ object Izumi {
           "npmDependencies" in(SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
         ) ++ crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+        platforms = Targets.crossNative,
       ),
       Artifact(
         name = Projects.fundamentals.functional,
         libs = Seq.empty,
         depends = Seq.empty,
-      ),
-      Artifact(
-        name = Projects.fundamentals.bio,
-        libs = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
-        depends = Seq.empty,
-      ),
-      Artifact(
-        name = Projects.fundamentals.reflection,
-        libs = Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(
-          Projects.fundamentals.platform,
-          Projects.fundamentals.functional,
-          Projects.fundamentals.thirdpartyBoopickleShaded,
-        ),
+        platforms = Targets.crossNative,
       ),
       Artifact(
         name = Projects.fundamentals.thirdpartyBoopickleShaded,
@@ -376,7 +366,27 @@ object Izumi {
             FullSettingScope(SettingScope.Compile, Platform.All),
           ),
         ),
+        platforms = Targets.crossNative,
+
       ),
+      Artifact(
+        name = Projects.fundamentals.reflection,
+        libs = Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq(
+          Projects.fundamentals.platform,
+          Projects.fundamentals.functional,
+          Projects.fundamentals.thirdpartyBoopickleShaded,
+        ),
+        platforms = Targets.crossNative,
+      ),
+
+      Artifact(
+        name = Projects.fundamentals.bio,
+        libs = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
+        depends = Seq.empty,
+      ),
+
+
       Artifact(
         name = Projects.fundamentals.fundamentalsJsonCirce,
         libs = circe ++ Seq(jawn in Scope.Compile.js),
