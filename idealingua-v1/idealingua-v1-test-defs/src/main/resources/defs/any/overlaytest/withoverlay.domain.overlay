@@ -1,3 +1,0 @@
-data OverlayEmailAttributes {
-    disposable: bit
-}

@@ -1,7 +1,7 @@
 ---
 out: index.html
 ---
-IdeaLingua RPC & Domain Modeling Language
+IdeaLingua RPC/DML
 ==================
 
 IdeaLingua is an RPC framework & Domain Modeling Language, it's purpose is to:

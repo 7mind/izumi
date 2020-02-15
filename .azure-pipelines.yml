@@ -51,15 +51,6 @@ jobs:
             - script: |
                 bash sbtgen.sc --js
                 bash .build.sh secrets site
-        - job: publishAlien
-          displayName: 'Publish non-scala artifacts'
-          steps:
-            - script: |
-                bash .build.sh 2.12 secrets publishIDL
-            - script: |
-                echo "Adding dummy cache directories so cache task wouldn't fail"
-                mkdir -p $COURSIER_CACHE
-                mkdir -p $IVY_CACHE_FOLDER
         - job: publish212
           displayName: 'Publish to Maven Central 2.12'
           dependsOn:
