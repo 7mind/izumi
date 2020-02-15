@@ -8,12 +8,16 @@
 
 function scala213 {
   echo "Using Scala 2.13..."
-  VERSION_COMMAND="++ $SCALA213"
+  VERSION_COMMAND="++ $SCALA213 "
 }
 
 function scala212 {
   echo "Using Scala 2.12..."
-  VERSION_COMMAND="++ $SCALA212"
+  VERSION_COMMAND="++ $SCALA212 "
+}
+
+function scalaall {
+  VERSION_COMMAND="+"
 }
 
 function csbt {
@@ -31,7 +35,7 @@ function csbt {
 # }
 
 function coverage {
-  csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
+  csbt clean coverage "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
   bash <(curl -s https://codecov.io/bash)
 }
 
@@ -73,9 +77,9 @@ function publishScala {
   echo "PUBLISH SCALA LIBRARIES..."
 
   if [[ "$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" ]] ; then
-    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   else
-    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" sonatypeBundleRelease || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   fi
 }
 
@@ -144,6 +148,10 @@ case $i in
 
     2.12)
         scala212
+    ;;
+
+    scala-all)
+        scalaall
     ;;
 
     # versionate)
