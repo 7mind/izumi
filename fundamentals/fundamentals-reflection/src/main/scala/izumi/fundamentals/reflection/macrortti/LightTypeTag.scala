@@ -9,6 +9,15 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymTermN
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference, SymName}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
 
+/**
+  * Extracts internal databases from [[LightTypeTag]].
+  * Should be not used under normal circumstances.
+  */
+case class LightTypeTagUnpacker(tag: LightTypeTag) {
+  def bases: Map[AbstractReference, Set[AbstractReference]] = tag.basesdb
+  def inheritance: Map[NameReference, Set[NameReference]] = tag.idb
+}
+
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],
