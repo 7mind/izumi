@@ -213,7 +213,7 @@ object LightTypeTagRef {
     val eradicate = Set[AppliedNamedReference](
       LightTypeTagInheritance.tpeAny,
       LightTypeTagInheritance.tpeAnyRef,
-      LightTypeTagInheritance.tpeObject,
+      LightTypeTagInheritance.tpeObject
     )
     val normalized = refs.diff(eradicate)
     normalized.toList match {
