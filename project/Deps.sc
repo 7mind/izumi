@@ -154,6 +154,14 @@ object Izumi {
         "scalaJSModuleKind" in (SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
       ),
     )
+    private val jsPlatformN = PlatformEnv(
+      platform = Platform.Js,
+      language = targetScalaN,
+      settings = Seq(
+        "coverageEnabled" := false,
+        "scalaJSModuleKind" in (SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
+      ),
+    )
     private val nativePlatform = PlatformEnv(
       platform = Platform.Native,
       language = Seq(scala211),
@@ -169,7 +177,7 @@ object Izumi {
       ),
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
-    final val crossNative = Seq(jvmPlatformNative, jsPlatform, nativePlatform)
+    final val crossNative = Seq(jvmPlatformNative, jsPlatformN, nativePlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
     final val jvmSbt = Seq(jvmPlatformSbt)

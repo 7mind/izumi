@@ -99,7 +99,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
-      "2.13.1"
+      "2.13.1",
+      "2.11.12"
     ),
     coverageEnabled := false,
     scalaJSModuleKind := ModuleKind.CommonJSModule
@@ -225,7 +226,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
-      "2.13.1"
+      "2.13.1",
+      "2.11.12"
     ),
     coverageEnabled := false,
     scalaJSModuleKind := ModuleKind.CommonJSModule,
@@ -342,7 +344,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
-      "2.13.1"
+      "2.13.1",
+      "2.11.12"
     ),
     coverageEnabled := false,
     scalaJSModuleKind := ModuleKind.CommonJSModule
@@ -466,7 +469,8 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = crossProject(JVMPlatform, 
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
-      "2.13.1"
+      "2.13.1",
+      "2.11.12"
     ),
     coverageEnabled := false,
     scalaJSModuleKind := ModuleKind.CommonJSModule
@@ -585,7 +589,8 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform, Nativ
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
-      "2.13.1"
+      "2.13.1",
+      "2.11.12"
     ),
     coverageEnabled := false,
     scalaJSModuleKind := ModuleKind.CommonJSModule
