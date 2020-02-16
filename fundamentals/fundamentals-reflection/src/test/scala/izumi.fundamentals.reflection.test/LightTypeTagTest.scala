@@ -175,7 +175,7 @@ class LightTypeTagTest extends AnyWordSpec {
   "lightweight type tags" should {
     "support human-readable representation" in {
       assertRepr(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}],
-        "({Int} & {def a(String): Int, def b(): String, type M1 = LightTypeTagTest::W1, type M2 = M2|<Nothing..LightTypeTagTest::W2>, type M3 = λ %0 → Either[+Unit,+0]})"
+        "(Int & {def a(String): Int, def b(): String, type M1 = LightTypeTagTest::W1, type M2 = M2|<Nothing..LightTypeTagTest::W2>, type M3 = λ %0 → Either[+Unit,+0]})"
       )
       assertRepr(LTT[I1 with (I1 with (I1 with W1))], "{LightTypeTagTest::I1 & LightTypeTagTest::W1}")
       assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
