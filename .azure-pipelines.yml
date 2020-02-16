@@ -51,29 +51,36 @@ jobs:
             - script: |
                 bash sbtgen.sc --js
                 bash .build.sh secrets site
-        - job: publish
-          displayName: 'Publish to Maven Central'
-          dependsOn:
-            - build_212
-            - build_213
-          steps:
-            - script: |
-                bash sbtgen.sc --js --native
-                bash .build.sh scala-all secrets publishScala
-
-#        - job: publish212
-#          displayName: 'Publish to Maven Central 2.12'
+#        - job: publish
+#          displayName: 'Publish to Maven Central'
 #          dependsOn:
 #            - build_212
-#          steps:
-#            - script: |
-#                bash sbtgen.sc --js --native
-#                bash .build.sh 2.12 secrets publishScala
-#        - job: publish213
-#          displayName: 'Publish to Maven Central 2.13'
-#          dependsOn:
 #            - build_213
 #          steps:
 #            - script: |
 #                bash sbtgen.sc --js --native
-#                bash .build.sh 2.13 secrets publishScala
+#                bash .build.sh scala-all secrets publishScala
+        - job: publish211
+          displayName: 'Publish to Maven Central 2.12'
+          dependsOn:
+            - build_212
+          steps:
+            - script: |
+                bash sbtgen.sc --js --native
+                bash .build.sh 2.11 secrets publishScala
+        - job: publish212
+          displayName: 'Publish to Maven Central 2.12'
+          dependsOn:
+            - build_212
+          steps:
+            - script: |
+                bash sbtgen.sc --js
+                bash .build.sh 2.12 secrets publishScala
+        - job: publish213
+          displayName: 'Publish to Maven Central 2.13'
+          dependsOn:
+            - build_213
+          steps:
+            - script: |
+                bash sbtgen.sc --js
+                bash .build.sh 2.13 secrets publishScala
