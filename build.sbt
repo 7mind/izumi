@@ -2443,6 +2443,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
 
 lazy val `microsite` = project.in(file("doc/microsite"))
   .dependsOn(
+    `fundamentals-collectionsJVM` % "test->compile;compile->compile",
+    `fundamentals-platformJVM` % "test->compile;compile->compile",
+    `fundamentals-functionalJVM` % "test->compile;compile->compile",
+    `fundamentals-thirdparty-boopickle-shadedJVM` % "test->compile;compile->compile",
+    `fundamentals-reflectionJVM` % "test->compile;compile->compile",
     `fundamentals-bioJVM` % "test->compile;compile->compile",
     `fundamentals-json-circeJVM` % "test->compile;compile->compile",
     `distage-core-apiJVM` % "test->compile;compile->compile",
@@ -2696,7 +2701,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   )
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
 
-lazy val `fundamentals-cross` = (project in file(".agg/fundamentals-fundamentals-cross"))
+lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Nil
@@ -2717,10 +2722,14 @@ lazy val `fundamentals-cross` = (project in file(".agg/fundamentals-fundamentals
     `fundamentals-thirdparty-boopickle-shadedNative`,
     `fundamentals-reflectionJVM`,
     `fundamentals-reflectionJS`,
-    `fundamentals-reflectionNative`
+    `fundamentals-reflectionNative`,
+    `fundamentals-bioJVM`,
+    `fundamentals-bioJS`,
+    `fundamentals-json-circeJVM`,
+    `fundamentals-json-circeJS`
   )
 
-lazy val `fundamentals-cross-jvm` = (project in file(".agg/fundamentals-fundamentals-cross-jvm"))
+lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Nil
@@ -2731,10 +2740,12 @@ lazy val `fundamentals-cross-jvm` = (project in file(".agg/fundamentals-fundamen
     `fundamentals-platformJVM`,
     `fundamentals-functionalJVM`,
     `fundamentals-thirdparty-boopickle-shadedJVM`,
-    `fundamentals-reflectionJVM`
+    `fundamentals-reflectionJVM`,
+    `fundamentals-bioJVM`,
+    `fundamentals-json-circeJVM`
   )
 
-lazy val `fundamentals-cross-js` = (project in file(".agg/fundamentals-fundamentals-cross-js"))
+lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Nil
@@ -2745,10 +2756,12 @@ lazy val `fundamentals-cross-js` = (project in file(".agg/fundamentals-fundament
     `fundamentals-platformJS`,
     `fundamentals-functionalJS`,
     `fundamentals-thirdparty-boopickle-shadedJS`,
-    `fundamentals-reflectionJS`
+    `fundamentals-reflectionJS`,
+    `fundamentals-bioJS`,
+    `fundamentals-json-circeJS`
   )
 
-lazy val `fundamentals-cross-native` = (project in file(".agg/fundamentals-fundamentals-cross-native"))
+lazy val `fundamentals-native` = (project in file(".agg/fundamentals-fundamentals-native"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Nil
@@ -2759,53 +2772,6 @@ lazy val `fundamentals-cross-native` = (project in file(".agg/fundamentals-funda
     `fundamentals-functionalNative`,
     `fundamentals-thirdparty-boopickle-shadedNative`,
     `fundamentals-reflectionNative`
-  )
-
-lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
-  .settings(
-    skip in publish := true,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    ),
-    scalaVersion := crossScalaVersions.value.head
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `fundamentals-bioJVM`,
-    `fundamentals-bioJS`,
-    `fundamentals-json-circeJVM`,
-    `fundamentals-json-circeJS`
-  )
-
-lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
-  .settings(
-    skip in publish := true,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    ),
-    scalaVersion := crossScalaVersions.value.head
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `fundamentals-bioJVM`,
-    `fundamentals-json-circeJVM`
-  )
-
-lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js"))
-  .settings(
-    skip in publish := true,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    ),
-    scalaVersion := crossScalaVersions.value.head
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `fundamentals-bioJS`,
-    `fundamentals-json-circeJS`
   )
 
 lazy val `distage` = (project in file(".agg/distage-distage"))
@@ -3075,7 +3041,6 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `fundamentals-cross-jvm`,
     `fundamentals-jvm`,
     `distage-jvm`,
     `logstage-jvm`,
@@ -3093,7 +3058,6 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `fundamentals-cross-js`,
     `fundamentals-js`,
     `distage-js`,
     `logstage-js`,
@@ -3110,7 +3074,7 @@ lazy val `izumi-native` = (project in file(".agg/.agg-native"))
     scalaVersion := crossScalaVersions.value.head
   )
   .aggregate(
-    `fundamentals-cross-native`,
+    `fundamentals-native`,
     `distage-native`,
     `logstage-native`,
     `sbt-plugins-native`
@@ -3170,7 +3134,6 @@ lazy val `izumi` = (project in file("."))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `fundamentals-cross`,
     `fundamentals`,
     `distage`,
     `logstage`,
