@@ -340,7 +340,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       UniRefinement.breakRefinement(t) match {
         case Broken.Compound(tpes, decls) =>
           val parts = tpes.map(p => unpack(p, rules))
-          val intersection = IntersectionReference(parts)
+
+          val intersection = LightTypeTagRef.maybeIntersection(parts)
 
           if (decls.nonEmpty) {
             Refinement(intersection, UniRefinement.convertDecls(decls.toList, rules).toSet)

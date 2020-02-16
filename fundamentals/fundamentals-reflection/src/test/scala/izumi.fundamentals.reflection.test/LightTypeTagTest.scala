@@ -209,6 +209,13 @@ class LightTypeTagTest extends AnyWordSpec {
       assertCombineNonPos(`LTT[_,_]`[Either], Seq(None, Some(LTT[Unit])), `LTT[_]`[Either[?, Unit]])
     }
 
+    "eradicate tautologies" in {
+      assertSame(LTT[Object with Option[String]], LTT[Option[String]])
+      assertSame(LTT[Any with Option[String]], LTT[Option[String]])
+      assertSame(LTT[AnyRef with Option[String]], LTT[Option[String]])
+
+    }
+
     "support subtype checks" in {
       assertChild(LTT[Int], LTT[AnyVal])
       assertChild(LTT[Int], LTT[Int])

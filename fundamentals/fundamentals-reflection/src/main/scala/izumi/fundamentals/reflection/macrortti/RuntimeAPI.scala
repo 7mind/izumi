@@ -95,7 +95,7 @@ private[izumi] object RuntimeAPI {
       reference match {
         case IntersectionReference(refs) =>
           val replaced = refs.map(replaceNamed).map(r => ensureAppliedNamed(reference, r))
-          IntersectionReference(replaced)
+          maybeIntersection(replaced)
         case Refinement(base, decls) =>
 
           val rdecls = decls.map {

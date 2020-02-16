@@ -171,9 +171,9 @@ object LightTypeTag {
     def mergedBasesDB = LightTypeTag.mergeIDBs(structure.basesdb, intersection.iterator.map(_.basesdb))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(structure.idb, intersection.iterator.map(_.idb))
 
-    val intersectionRef = LightTypeTagRef.IntersectionReference(
-      intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
-    )
+    val parts = intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
+    val intersectionRef = LightTypeTagRef.maybeIntersection(parts)
+
     val ref = structure.ref match {
       case LightTypeTagRef.Refinement(_, decls) if decls.nonEmpty =>
         LightTypeTagRef.Refinement(intersectionRef, decls)
