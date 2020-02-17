@@ -6,7 +6,9 @@ import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.StandardAxis.Env
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -67,3 +69,11 @@ class ApplePaymentProvider[F[_]] extends IntegrationCheck {
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])
+
+class ForcedRootProbe {
+  var started = false
+}
+class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe)
+  extends DIResource.SelfNoClose[F, ForcedRootResource[F]] {
+  override def acquire: F[Unit] = DIEffect[F].maybeSuspend(forcedRootProbe.started = true)
+}

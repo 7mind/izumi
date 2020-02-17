@@ -6,7 +6,7 @@ import distage.{Activation, DIKey, Injector, PlannerInput}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
-import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, PlanCircularDependencyCheck}
+import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{ImplDef, ModuleBase}
@@ -27,49 +27,44 @@ import izumi.fundamentals.platform.language.CodePosition
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
-import logstage.Log
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class DistageTestRunner[F[_] : TagK]
+class DistageTestRunner[F[_]: TagK]
 (
   reporter: TestReporter,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
-  parallelEnvs: Boolean,
 ) {
   def run(): Unit = {
-    val groups = tests.groupBy(_.environment)
+    val envs = tests.groupBy(_.environment)
+    debugLogEnvs(envs)
+    try {
+      val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.parallelEnvs)
+      runEnvs(parallel = true)(parallelEnvs)
+      runEnvs(parallel = false)(sequentialEnvs)
+    } finally reporter.endAll()
+  }
 
-    debugLogger.log {
-      val printedEnvs = groups.toList.map {
-        case (t, tests) =>
-          final case class DebugTestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
-          DebugTestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().shift(2))
-      }.niceList()
-      s"Env contents: $printedEnvs"
-    }
-
-    try configuredForeach(groups) {
+  def runEnvs(parallel: Boolean)(envs: Iterable[(TestEnvironment, Seq[DistageTest[F]])]): Unit = {
+    configuredForeach(parallel)(envs) {
       case (env, tests) => try {
-        val earlyPhaseLogger = IzLogger(env.bootstrapLogLevel)("phase" -> "env")
-        val loader: ConfigLoader = env.bootstrapFactory.makeConfigLoader(env.configPackage, earlyPhaseLogger).map {
+        val earlyPhaseLogger = IzLogger(env.testRunnerLogLevel)("phase" -> "env")
+        val configLoader = env.bootstrapFactory.makeConfigLoader(env.configBaseName, earlyPhaseLogger).map {
           c =>
             env.configOverrides match {
+              case None => c
               case Some(overrides) =>
                 AppConfig(overrides.config.resolveWith(c.config))
-              case None =>
-                c
             }
-
         }
-        val config = loader.loadConfig()
+        val config = configLoader.loadConfig()
 
-        val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, Log.Level.Info, defaultLogFormatJson = false)
+        val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, env.testRunnerLogLevel, defaultLogFormatJson = false)
 
         val checker = new IntegrationChecker.Impl[F](testRunnerLogger)
-        testRunnerLogger.info(s"Processing env ${env.hashCode() -> "id"} with ${tests.size -> "tests"} in ${TagK[F].tag -> "monad"}, ${env.configPackage}, ${env.activation}")
+        testRunnerLogger.info(s"Processing env ${env.hashCode} with ${tests.size -> "tests"} in ${TagK[F].tag -> "monad"}, ${env.configBaseName}, ${env.activation}")
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val options = env.planningOptions
         val planCheck = new PlanCircularDependencyCheck(options, testRunnerLogger)
@@ -94,7 +89,8 @@ class DistageTestRunner[F[_] : TagK]
         val testPlans = tests.map {
           distageTest =>
             val keys = distageTest.test.get.diKeys.toSet
-            distageTest -> injector.plan(PlannerInput(appModule, keys))
+            val testRoots = keys ++ env.forcedRoots
+            distageTest -> injector.plan(PlannerInput(appModule, testRoots))
         }
 
         val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
@@ -167,13 +163,13 @@ class DistageTestRunner[F[_] : TagK]
           failAllTests(tests, t)
           reporter.onFailure(t)
       }
-    } finally reporter.endAll()
+    }
   }
 
-  protected def ifIntegChecksOk(checker: IntegrationChecker[F], integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
+  protected def ifIntegChecksOk(checker: IntegrationChecker[F], integLocator: Locator)(tests: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
     checker.collectFailures(plans.side.declaredRoots, integLocator).flatMap {
       case Left(failures) =>
-        F.maybeSuspend(ignoreIntegrationCheckFailedTests(testplans, failures))
+        F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, failures))
 
       case Right(_) =>
         onSuccess
@@ -217,12 +213,12 @@ class DistageTestRunner[F[_] : TagK]
         }
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        configuredTraverse_(env.parallelSuites, testsBySuite) {
+        configuredTraverse_(env.parallelSuites)(testsBySuite) {
           case (suiteData, plans) =>
             F.bracket(
               acquire = F.maybeSuspend(reporter.beginSuite(suiteData))
             )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) { _ =>
-              configuredTraverse_(env.parallelTests, plans) {
+              configuredTraverse_(env.parallelTests)(plans) {
                 case (test, testplan) =>
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
@@ -290,7 +286,7 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  protected def configuredTraverse_[A](parallel: Boolean, l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+  protected def configuredTraverse_[A](parallel: Boolean)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     if (parallel) {
       P.parTraverse_(l)(f)
     } else {
@@ -298,7 +294,7 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  protected def configuredForeach[A](environments: Iterable[A])(f: A => Unit): Unit = {
+  protected def configuredForeach[A](parallelEnvs: Boolean)(environments: Iterable[A])(f: A => Unit): Unit = {
     if (parallelEnvs && environments.size > 1) {
       val ec = ExecutionContext.fromExecutorService {
         Executors.newCachedThreadPool(new NamedThreadFactory(
@@ -313,7 +309,18 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  lazy val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
+  protected def debugLogEnvs(groups: Map[TestEnvironment, Seq[DistageTest[F]]]): Unit = {
+    debugLogger.log {
+      val printedEnvs = groups.toList.map {
+        case (t, tests) =>
+          final case class DebugTestEnvironment(Activation: Activation, memoizationRoots: DIKey => Boolean, tests: String)
+          DebugTestEnvironment(t.activation, t.memoizationRoots, tests.map(_.meta.id).niceList().shift(2))
+      }.niceList()
+      s"Env contents: $printedEnvs"
+    }
+  }
+
+  protected val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
 }
 
 object DistageTestRunner {
