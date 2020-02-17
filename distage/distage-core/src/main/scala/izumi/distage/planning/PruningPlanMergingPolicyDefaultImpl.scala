@@ -1,6 +1,6 @@
 package izumi.distage.planning
 
-import izumi.distage.model.definition.{Activation, BindingTag}
+import izumi.distage.model.definition.{Activation, Axis, BindingTag}
 import izumi.distage.model.exceptions.ConflictingDIKeyBindingsException
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan._
@@ -21,7 +21,7 @@ class PruningPlanMergingPolicyDefaultImpl
   activation: Activation,
 ) extends PlanMergingPolicyDefaultImpl {
 
-  private[this] val activeChoices = activation.activeChoices.values.toSet
+  private[this] val activeChoices: Set[Axis.AxisValue] = activation.activeChoices.values.toSet
 
   protected def logUntaggedConflicts(@unused key: DIKey, @unused noTags: Set[PrePlan.JustOp]): Unit = {}
   protected def logHandleIssues(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed]): Unit = {}

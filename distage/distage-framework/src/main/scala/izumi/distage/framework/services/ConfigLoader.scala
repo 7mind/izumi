@@ -4,6 +4,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
 import distage.config.AppConfig
+import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigSource, ResourceConfigKind}
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -11,6 +12,18 @@ import izumi.logstage.api.IzLogger
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Default config resources:
+  *   - $roleName.conf
+  *   - $roleName-reference.conf
+  *   - $roleName-reference-dev.conf
+  *   - application.conf
+  *   - application-reference.conf
+  *   - application-reference-dev.conf
+  *   - common.conf
+  *   - common-reference.conf
+  *   - common-reference-dev.conf
+  */
 trait ConfigLoader {
   def buildConfig(): AppConfig
 
@@ -18,34 +31,25 @@ trait ConfigLoader {
 }
 
 object ConfigLoader {
-
-  /**
-   * default config locations:
-   *   - common.conf
-   *   - common-reference.conf
-   *   - common-reference-dev.conf
-   *   - $roleName.conf
-   *   - $roleName-reference.conf
-   *   - $roleName-reference-dev.conf
-   */
   class LocalFSImpl(
     logger: IzLogger,
-    primaryConfig: Option[File],
+    baseConfig: Option[File],
     roleConfigs: Map[String, Option[File]],
   ) extends ConfigLoader {
 
-    import LocalFSImpl._
+    protected def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
     def buildConfig(): AppConfig = {
-      val commonConfigFile = toConfig("common", primaryConfig)
+      val commonConfigFiles = baseConfig.fold(
+        defaultBaseConfigs.flatMap(toConfig(_, baseConfig))
+      )(f => Seq(ConfigSource.File(f)))
 
       val roleConfigFiles = roleConfigs.flatMap {
         case (roleName, roleConfig) =>
           toConfig(roleName, roleConfig)
-      }
-        .toList
+      }.toList
 
-      val allConfigs = roleConfigFiles ++ commonConfigFile
+      val allConfigs = roleConfigFiles ++ commonConfigFiles
 
       val cfgInfo = allConfigs.map {
         case r: ConfigSource.Resource =>
@@ -96,14 +100,6 @@ object ConfigLoader {
       AppConfig(config)
     }
 
-    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-      Seq(
-        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
-      )
-    }
-
     protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
       roleConfigs.foldLeft(ConfigFactory.empty()) {
         case (acc, (src, cfg)) =>
@@ -125,11 +121,16 @@ object ConfigLoader {
       }
     }
 
-    private def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
-      maybeConfigFile.fold(defaultConfigReferences(name)) {
-        f =>
-          Seq(ConfigSource.File(f))
-      }
+    protected def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
+      maybeConfigFile.fold(defaultConfigReferences(name))(f => Seq(ConfigSource.File(f)))
+    }
+
+    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+      Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
+      )
     }
   }
 

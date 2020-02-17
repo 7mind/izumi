@@ -52,7 +52,8 @@ object ModuleProvider {
 
       val resourceRewriter = new BootstrapModuleDef {
         make[RewriteRules].fromValue(options.rewriteRules)
-        many[PlanningHook].add[ResourceRewriter]
+        many[PlanningHook]
+          .add[ResourceRewriter]
       }
 
       Seq(

@@ -4,7 +4,7 @@ import scala.reflect.macros.blackbox
 
 private[izumi] object PicklerMaterializersImpl {
 
-  private var logmacro = {
+  private val logmacro = {
     val prop = System.getProperty("boopickle.logmacro")
     prop != null && prop.toLowerCase == "true"
   }
