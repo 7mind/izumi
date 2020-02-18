@@ -13,7 +13,27 @@ import scala.util.{Failure, Success, Try}
   * Always automatically derives a codec if it's not available.
   *
   * Automatic derivation will use **`camelCase`** fields, not `snake-case` fields,
-  * as in default pureconfig. It will also work without importing `pureconfig.generic.auto._`.
+  * as in default pureconfig. It also override pureconfig's default `type` field
+  * type discriminator for sealed traits. Instead, using `circe`-like format with a single-key object. Example:
+  *
+  * {{{
+  *   sealed trait AorB
+  *   final case class A(a: Int) extends AorB
+  *   final case class B(b: String) extends AorB
+  *
+  *   final case class Config(values: List[AorB])
+  * }}}
+  *
+  * in config:
+  *
+  * {{{
+  *   config {
+  *     values = [{ A { a = 5 } }, { B { b = cba } }]
+  *   }
+  * }}}
+  *
+  * It will also work without importing `pureconfig.generic.auto._`
+  *
   * If you want to use it to recursively derive a pureconfig codec,
   * you may use `PureconfigAutoDerive[T]`:
   *

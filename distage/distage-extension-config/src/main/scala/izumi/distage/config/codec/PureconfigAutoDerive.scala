@@ -19,6 +19,8 @@ object PureconfigAutoDerive {
         // by new config codecs that aren't in Decoder companion object
         q"""{
            import _root_.izumi.distage.config.codec.PureconfigInstances._
+           import _root_.pureconfig.module.magnolia.auto.reader._
+
            new ${weakTypeOf[PureconfigAutoDerive[A]]}(_root_.pureconfig.module.magnolia.auto.reader.exportReader[${weakTypeOf[A]}])
          }"""
       }
