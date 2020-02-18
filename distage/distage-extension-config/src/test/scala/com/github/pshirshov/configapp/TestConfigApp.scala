@@ -1,6 +1,6 @@
 package com.github.pshirshov.configapp
 
-import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
+import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.fundamentals.platform.language.Quirks

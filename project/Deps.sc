@@ -15,7 +15,7 @@ object Izumi {
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
-    val circe_config = Version.VExpr("V.circe_config")
+    val pureconfig = Version.VExpr("V.pureconfig")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
     val classgraph = Version.VExpr("V.classgraph")
@@ -75,7 +75,7 @@ object Izumi {
       Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
       circe_derivation,
     ).map(_ in Scope.Compile.all)
-    final val circe_config = Library("io.circe", "circe-config", V.circe_config, LibraryType.Auto)
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
@@ -435,7 +435,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(circe_core, circe_derivation, circe_config).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(pureconfig_magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
         platforms = Targets.jvm,

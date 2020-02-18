@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
-import izumi.distage.config.ConfigPathExtractorModule
+import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
+import izumi.distage.config.extractor.ConfigPathExtractorModule
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.DIEffect

@@ -1,7 +1,7 @@
-package izumi.distage.config
+package izumi.distage.config.extractor
 
 import com.typesafe.config.{Config, ConfigFactory}
-import izumi.distage.config.ConfigPathExtractor._
+import izumi.distage.config.extractor.ConfigPathExtractor.{ConfigPath, ExtractConfigPath, ResolvedConfig}
 import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}

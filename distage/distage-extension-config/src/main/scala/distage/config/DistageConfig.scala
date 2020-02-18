@@ -1,6 +1,6 @@
 package distage.config
 
-import izumi.distage.config.{codec, model}
+import izumi.distage.config.{codec, extractor, model}
 
 trait DistageConfig {
 
@@ -15,6 +15,6 @@ trait DistageConfig {
   type ConfigReader[T] = codec.ConfigReader[T]
   val ConfigReader: codec.ConfigReader.type = codec.ConfigReader
 
-  type ConfigPathExtractorModule = izumi.distage.config.ConfigPathExtractorModule
+  type ConfigPathExtractorModule = extractor.ConfigPathExtractorModule
 
 }

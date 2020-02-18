@@ -4,8 +4,6 @@ import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractMacroLogger, LogRouter, RoutingLogger}
 import izumi.logstage.api.rendering.AnyEncoded
 
-import scala.language.implicitConversions
-
 class IzLogger
 (
   override val router: LogRouter,

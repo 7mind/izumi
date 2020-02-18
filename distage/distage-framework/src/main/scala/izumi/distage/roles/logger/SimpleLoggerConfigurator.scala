@@ -90,6 +90,6 @@ object SimpleLoggerConfigurator {
       ))
       layout <- Decoder.forProduct1("layout")(identity[Option[String]])
     } yield SinksConfig(levels, options, json, layout)
-    implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.deriveFromCirce
+    implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.derive
   }
 }
