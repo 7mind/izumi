@@ -8,7 +8,7 @@ object V {
   val boopickle = "1.3.1"
 
   val cats = "2.1.0"
-  val cats_effect = "2.1.0"
+  val cats_effect = "2.1.1"
   val zio = "1.0.0-RC17"
   val zio_interop_cats = "2.0.0.0-RC10"
 
