@@ -221,7 +221,7 @@ object LightTypeTagRef {
         LightTypeTagInheritance.tpeAny
       case head :: Nil =>
         head
-      case o =>
+      case _ =>
         IntersectionReference(normalized)
     }
   }

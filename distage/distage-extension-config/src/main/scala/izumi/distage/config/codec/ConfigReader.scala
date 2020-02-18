@@ -1,37 +1,26 @@
 package izumi.distage.config.codec
 
-import com.typesafe.config.{ConfigObject, ConfigValue, ConfigValueFactory}
-import io.circe.Decoder
-import io.circe.config.parser
+import com.typesafe.config.ConfigValue
+import pureconfig.error.ConfigReaderException
 
-import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 /**
-  * Config reader that uses Circe Json Decoder instance for a type
+  * Config reader that uses pureconfig.ConfigReader instance for a type
   * to decode Typesafe Config.
   *
   * Always automatically derives a codec if it's not available.
   *
-  * Automatic derivation will also make additional Decoder instances
-  * in [[CirceConfigInstances]] available. If you want to use this
-  * deriving strategy for your own Decoder instance, you may use
-  * `ConfigReader.deriveDecoder`:
+  * Automatic derivation will use **`camelCase`** fields, not `snake-case` fields,
+  * as in default pureconfig. It will also work without importing `pureconfig.generic.auto._`.
+  * If you want to use it to recursively derive a pureconfig codec,
+  * you may use `PureconfigAutoDerive[T]`:
   *
   * {{{
-  *   case class Abc(a: Duration, b: Regex, c: URL) // types for which there is no default instance in Circe
+  *   final case class Abc(a: Duration, b: Regex, c: URL)
   *   object Abc {
-  *     implicit val decoder: Decoder[Abc] = ConfigReader.deriveDecoder
-  *   }
-  * }}}
-  *
-  * Or just import [[CirceConfigInstances]]:
-  *
-  * {{{
-  *   object Abc {
-  *     import CirceConfigInstances._
-  *
-  *     implicit val decoder: Decoder[Abc] = io.circe.derivation.deriveDecoder
+  *     implicit val configReader: pureconfig.ConfigReader[Abc] = PureconfigAutoDerive[Abc]
   *   }
   * }}}
   */
@@ -43,28 +32,23 @@ trait ConfigReader[A] {
 }
 
 object ConfigReader extends LowPriorityConfigReaderInstances {
-  def apply[T: ConfigReader]: ConfigReader[T] = implicitly
+  @inline def apply[T: ConfigReader]: ConfigReader[T] = implicitly
 
-  def derive[T](implicit dec: CirceDerivationConfigStyle[T]): ConfigReader[T] = ConfigReader.deriveFromCirce(dec.value)
+  def derive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): ConfigReader[T] = {
+    ConfigReader.deriveFromPureconfig[T](implicitly, dec.value)
+  }
 
-  implicit def deriveFromCirce[T](implicit dec: Decoder[T]): ConfigReader[T] = {
+  implicit def deriveFromPureconfig[T: ClassTag](implicit dec: pureconfig.ConfigReader[T]): ConfigReader[T] = {
     cv =>
-      val (wrappedValue, path) = cv match {
-        case configObject: ConfigObject =>
-          configObject.toConfig -> None
-        case _ =>
-          ConfigValueFactory.fromMap(Map("_root_" -> cv).asJava).toConfig -> Some("_root_")
+      dec.from(cv) match {
+        case Left(errs) => Failure(ConfigReaderException[T](errs))
+        case Right(value) => Success(value)
       }
-      Try {
-        path.fold(parser.decode[T](wrappedValue)(dec)) {
-          parser.decodePath[T](wrappedValue, _)(dec)
-        }.toTry
-      }.flatten
   }
 }
 
 trait LowPriorityConfigReaderInstances {
-  implicit def materializeFromCirceDerivationWithCirceConfigInstances[T](implicit dec: CirceDerivationConfigStyle[T]): ConfigReader[T] = {
-    ConfigReader.deriveFromCirce(dec.value)
+  implicit def materializeFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): ConfigReader[T] = {
+    ConfigReader.deriveFromPureconfig(implicitly, dec.value)
   }
 }

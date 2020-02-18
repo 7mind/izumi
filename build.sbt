@@ -1001,9 +1001,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "io.circe" %% "circe-config" % V.circe_config,
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )

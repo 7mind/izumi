@@ -1,33 +1,16 @@
 package izumi.distage.config
 
-import com.typesafe.config.Config
 import izumi.distage.config.codec.ConfigReader
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.model.definition.BindingTag.ConfTag
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
-import izumi.distage.model.definition.{BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.planning.PlanningHook
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.util.{Failure, Success, Try}
-
-class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
-  def this(config: Config) = this(AppConfig(config))
-
-  make[AppConfig].fromValue(appConfig)
-}
-object AppConfigModule {
-  def apply(appConfig: AppConfig): AppConfigModule = new AppConfigModule(appConfig)
-  def apply(config: Config): AppConfigModule = new AppConfigModule(config)
-}
-
-class ConfigPathExtractorModule extends BootstrapModuleDef {
-  many[PlanningHook]
-    .add[ConfigPathExtractor]
-}
 
 trait ConfigModuleDef extends ModuleDef {
   final def makeConfig[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
