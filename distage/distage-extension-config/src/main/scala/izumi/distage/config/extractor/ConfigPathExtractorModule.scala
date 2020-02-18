@@ -1,6 +1,6 @@
 package izumi.distage.config.extractor
 
-import distage.BootstrapModuleDef
+import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanningHook
 
 class ConfigPathExtractorModule extends BootstrapModuleDef {

@@ -1002,7 +1002,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
-      "com.github.pureconfig" %% "pureconfig-generic" % V.pureconfig,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )

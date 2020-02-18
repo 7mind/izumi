@@ -1,12 +1,14 @@
 package izumi.distage.config
 
-import distage.config.{AppConfig, ConfigReader}
-import distage.{ModuleDef, Tag}
+import izumi.distage.config.codec.ConfigReader
+import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.model.definition.BindingTag.ConfTag
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.util.{Failure, Success, Try}
 
