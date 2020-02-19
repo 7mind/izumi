@@ -51,14 +51,16 @@ trait DistageTestEnv {
       roles = roles,
       activationInfo = availableActivations,
       activation = activation,
-      memoizationRoots = testConfig.memoizationRoots,
-      bootstrapFactory = BootstrapFactory.Impl,
-      configPackage = testConfig.configPackage.getOrElse(this.getClass.getPackage.getName),
-      planningOptions = testConfig.planningOptions,
-      bootstrapLogLevel = testConfig.bootstrapLogLevel,
-      configOverrides = testConfig.configOverrides,
+      memoizationRoots = testConfig.memoizationRoots.toSet,
+      forcedRoots = testConfig.forcedRoots.toSet,
+      parallelEnvs = testConfig.parallelEnvs,
       parallelSuites = testConfig.parallelSuites,
       parallelTests = testConfig.parallelTests,
+      bootstrapFactory = BootstrapFactory.Impl,
+      configBaseName = testConfig.configBaseName,
+      configOverrides = testConfig.configOverrides,
+      planningOptions = testConfig.planningOptions,
+      testRunnerLogLevel = testConfig.testRunnerLogLevel,
     )
   }
 
