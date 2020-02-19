@@ -61,15 +61,15 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOSpecScalatest}
 import izumi.distage.testkit.services.DISyntaxZIOEnv
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.IO
 
-abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
-  override def config = TestConfig(
+abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv with AssertIO {
+  override def config = super.config.copy(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
@@ -114,7 +114,7 @@ abstract class LadderTest extends LeaderboardTest {
           score <- rnd[Score]
           _     <- ladder.submitScore(user, score)
           res   <- ladder.getScores.map(_.find(_._1 == user).map(_._2))
-          _     = assert(res contains score)
+          _     <- assertIO(res contains score)
         } yield ()
     }
 
@@ -133,10 +133,10 @@ abstract class LadderTest extends LeaderboardTest {
         user1Rank = scores.indexWhere(_._1 == user1)
         user2Rank = scores.indexWhere(_._1 == user2)
 
-        _ = if (score1 > score2) {
-          assert(user1Rank < user2Rank)
+        _ <- if (score1 > score2) {
+          assertIO(user1Rank < user2Rank)
         } else if (score2 > score1) {
-          assert(user2Rank < user1Rank)
+          assertIO(user2Rank < user1Rank)
         }
       } yield ()
     }
