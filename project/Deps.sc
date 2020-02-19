@@ -292,7 +292,6 @@ object Izumi {
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
-      final lazy val legacyTestkit = ArtifactId("distage-testkit-legacy")
       final lazy val logging = ArtifactId("distage-extension-logstage")
     }
 
@@ -481,9 +480,6 @@ object Izumi {
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.logging).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core).map(_ tin Scope.Compile.all),
-        settings = Seq(
-          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
-        ),
         platforms = Targets.jvm,
       ),
       Artifact(
@@ -492,20 +488,6 @@ object Izumi {
         depends =
           Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        settings = Seq(
-          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
-        ),
-        platforms = Targets.jvm,
-      ),
-      Artifact(
-        name = Projects.distage.legacyTestkit,
-        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
-        depends =
-          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.logging).map(_ in Scope.Compile.all) ++
-            Seq(Projects.distage.core, Projects.distage.testkitCore).map(_ in Scope.Compile.all),
-        settings = Seq(
-          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
-        ),
         platforms = Targets.jvm,
       ),
     ),
