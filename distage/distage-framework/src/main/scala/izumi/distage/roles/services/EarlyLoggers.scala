@@ -11,6 +11,7 @@ import izumi.logstage.api.{IzLogger, Log}
 import scala.util.Try
 
 object EarlyLoggers {
+
   def makeEarlyLogger(parameters: RawAppArgs, defaultLogLevel: Log.Level): IzLogger = {
     val rootLogLevel = getRootLogLevel(parameters.globalParameters, defaultLogLevel)
     IzLogger(rootLogLevel)("phase" -> "early")

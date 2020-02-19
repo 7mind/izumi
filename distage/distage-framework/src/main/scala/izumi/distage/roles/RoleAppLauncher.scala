@@ -2,9 +2,8 @@ package izumi.distage.roles
 
 import cats.effect.LiftIO
 import distage.{TagK, TagKK}
-import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.AppShutdownStrategy.{BIOShutdownStrategy, CatsEffectIOShutdownStrategy, JvmExitHookLatchShutdownStrategy}
-import izumi.functional.bio.{BIOAsync, BIOPrimitives}
+import izumi.functional.bio.BIOAsync
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
@@ -25,11 +24,11 @@ object RoleAppLauncher {
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 
-  abstract class LauncherF[F[_]: TagK: DIEffect: LiftIO](executionContext: ExecutionContext = ExecutionContext.global) extends RoleAppLauncherImpl[F] {
+  abstract class LauncherF[F[_]: TagK: LiftIO](executionContext: ExecutionContext = ExecutionContext.global) extends RoleAppLauncherImpl[F] {
     override protected val shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: BIOPrimitives] extends RoleAppLauncherImpl[F[Throwable, ?]] {
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync] extends RoleAppLauncherImpl[F[Throwable, ?]] {
     override protected val shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 

@@ -8,6 +8,7 @@ import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 
@@ -28,7 +29,7 @@ object BootstrapFactory {
       new ConfigLoader.LocalFSImpl(logger, None, moreConfigs)
     }
 
-    def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
+    def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, @unused activation: Activation): ModuleProvider = {
       // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
       new ModuleProvider.Impl[F](
         logRouter = logRouter,
@@ -37,7 +38,6 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
-        activation = activation,
       )
     }
   }

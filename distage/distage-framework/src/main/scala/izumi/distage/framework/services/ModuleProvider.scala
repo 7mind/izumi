@@ -1,6 +1,6 @@
 package izumi.distage.framework.services
 
-import distage.{BootstrapModule, TagK}
+import distage.{AutoSetModule, BootstrapModule, BootstrapModuleDef, Module, TagK}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.effect.modules.IdentityDIEffectModule
@@ -8,9 +8,7 @@ import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.{Activation, BootstrapModuleDef, Module}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
-import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.AbstractRole
 import izumi.distage.roles.model.meta.RolesInfo
@@ -33,7 +31,6 @@ object ModuleProvider {
     options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
-    activation: Activation,
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -41,7 +38,6 @@ object ModuleProvider {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
-        make[Activation].fromValue(activation)
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
@@ -68,9 +64,8 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      val configModule = new AppConfigModule(config)
       Seq(
-        configModule,
+        AppConfigModule(config),
         IdentityDIEffectModule,
       )
     }

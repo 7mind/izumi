@@ -1,8 +1,6 @@
 package izumi.distage.roles.services
 
-import distage.ModuleBase
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
@@ -14,14 +12,13 @@ class RoleAppActivationParser {
   def parseActivation(
                        logger: IzLogger,
                        parameters: RawAppArgs,
-                       appModule: ModuleBase,
+                       activationInfo: ActivationInfo,
                        defaultActivations: Activation,
-                     ): (ActivationInfo, Activation) = {
+                     ): Activation = {
     val uses = parameters.globalParameters.findValues(Options.use)
-    val availableUses = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
 
     def options: String = {
-      availableUses.availableChoices.map {
+      activationInfo.availableChoices.map {
         case (axis, members) =>
           s"$axis:${members.niceList().shift(2)}"
       }.niceList()
@@ -30,7 +27,7 @@ class RoleAppActivationParser {
     val activeChoices = uses.map {
       rawValue =>
         val (axisName, choiceName) = rawValue.value.split2(':')
-        availableUses.availableChoices.find(_._1.name == axisName) match {
+        activationInfo.availableChoices.find(_._1.name == axisName) match {
           case Some((base, members)) =>
             members.find(_.id == choiceName) match {
               case Some(member) =>
@@ -58,9 +55,9 @@ class RoleAppActivationParser {
         }.niceList()
       logger.crit(s"Conflicting choices, you can activate one choice on each axis $conflicts")
       throw new DIAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
+    } else {
+      Activation(defaultActivations.activeChoices ++ activeChoices)
     }
-
-    availableUses -> Activation(defaultActivations.activeChoices ++ activeChoices)
   }
 
 }

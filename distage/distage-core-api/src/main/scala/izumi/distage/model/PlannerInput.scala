@@ -33,7 +33,7 @@ object PlannerInput {
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph
     * that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = PlannerInput(bindings, GCMode(roots))
+  def apply(bindings: ModuleBase, roots: Set[_ <: DIKey]): PlannerInput = PlannerInput(bindings, GCMode(roots))
 
   /** Instantiate `root`, `roots` and their dependencies, discarding bindings that are unrelated. */
   def apply(bindings: ModuleBase, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, GCMode(root, roots: _*))

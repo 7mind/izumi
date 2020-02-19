@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.AbstractLocator
 import izumi.distage.model._
-import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapContextModuleDef, BootstrapModule, BootstrapModuleDef}
+import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
@@ -24,10 +24,20 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.reflection.Tags.TagK
 
-final class BootstrapLocator(bindings0: BootstrapContextModule) extends AbstractLocator {
-  private[this] val bindings = bindings0 overridenBy new BootstrapModuleDef { make[BootstrapModule].fromValue(bindings0) }
+final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None
-  override val plan: OrderedPlan = BootstrapLocator.bootstrapPlanner.plan(PlannerInput.noGc(bindings))
+  override val plan: OrderedPlan = {
+    val bindings1 = new BootstrapModuleDef {
+      make[Activation].fromValue(bootstrapActivation)
+    }.overridenBy(bindings0)
+    val bindings = bindings1.overridenBy(new BootstrapModuleDef {
+      make[BootstrapModule].fromValue(bindings1)
+    })
+
+    BootstrapLocator
+      .bootstrapPlanner(bootstrapActivation)
+      .plan(PlannerInput.noGc(bindings))
+  }
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
   private[this] val bootstrappedContext: Locator = {
@@ -61,26 +71,31 @@ final class BootstrapLocator(bindings0: BootstrapContextModule) extends Abstract
 object BootstrapLocator {
   @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
-  private final val bootstrapPlanner: Planner = {
+  private final val bootstrapPlanner: Activation => Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObserver = new PlanningObserverAggregate(Set(
-      new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.bootstrap")),
+      new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`)),
       //new GraphObserver(analyzer, Set.empty),
     ))
 
     val hook = new PlanningHookAggregate(Set.empty)
     val translator = new BindingTranslator.Impl(hook)
-    new PlannerDefaultImpl(
-      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true),
-      sanityChecker = new SanityCheckerDefaultImpl(analyzer),
-      gc = NoopDIGC,
+    val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
+    val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
+    val gc = NoopDIGC
+    val mp = mirrorProvider
+
+    activation => new PlannerDefaultImpl(
+      forwardingRefResolver = forwardingRefResolver,
+      sanityChecker = sanityChecker,
+      gc = gc,
       planningObserver = bootstrapObserver,
-      planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl(Activation.empty),
+      planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl(activation),
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
-      mirrorProvider = mirrorProvider
+      mirrorProvider = mp
     )
   }
 
@@ -105,7 +120,6 @@ object BootstrapLocator {
 
   final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("distage.init-proxies-asap").fromValue(true)
-    make[Activation].fromValue(Activation.empty)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 

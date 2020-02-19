@@ -64,7 +64,7 @@ class DistageTestRunner[F[_] : TagK]
             }
 
         }
-        val config = loader.buildConfig()
+        val config = loader.loadConfig()
 
         val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, Log.Level.Info, defaultLogFormatJson = false)
 
@@ -78,7 +78,7 @@ class DistageTestRunner[F[_] : TagK]
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
         val appModule = provider.appModules().merge overridenBy env.appModule
 
-        val injector = Injector(bsModule)
+        val injector = Injector(env.activation, bsModule)
 
         // first we need to plan runtime for our monad. Identity is also supported
         val runtimeGcRoots: Set[DIKey] = Set(

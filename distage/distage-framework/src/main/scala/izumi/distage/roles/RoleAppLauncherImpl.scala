@@ -5,9 +5,8 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
+import izumi.distage.framework.services.{ActivationInfoExtractor, ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
@@ -21,8 +20,8 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.{IzLogger, Log}
 
 import scala.reflect.ClassTag
 
@@ -45,12 +44,12 @@ import scala.reflect.ClassTag
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher {
+abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
-  protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
+  protected def additionalLibraryReferences: Seq[LibraryReference] = Vector.empty
 
   protected def appOverride: ModuleBase = ModuleBase.empty
   protected def bsOverride: BootstrapModule = BootstrapModule.empty
@@ -62,51 +61,55 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def defaultLogFormatJson: Boolean = false
 
   def launch(parameters: RawAppArgs): Unit = {
-    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel = Log.Level.Info)
-    showBanner(earlyLogger, referenceLibraryInfo)
+    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+    showBanner(earlyLogger, additionalLibraryReferences)
 
-    val bsPlugins = makeBootstrapPluginLoader().load(bootstrapPluginConfig)
-    val appPlugins = makePluginLoader().load(pluginConfig)
+    val bsPlugins = makeBootstrapPluginLoader(earlyLogger).load(bootstrapPluginConfig)
+    val appPlugins = makePluginLoader(earlyLogger).load(pluginConfig)
     val roles = loadRoles(parameters, earlyLogger, appPlugins, bsPlugins)
 
-    // default PlanMergingPolicy will be applied to bootstrap module, so any non-trivial conflict in bootstrap bindings will fail the app
-    val bsDefinition = makeBootstrapMergeStrategy(earlyLogger, parameters).merge(bsPlugins)
-
-    earlyLogger.info(s"Loaded ${bsDefinition.bindings.size -> "bootstrap bindings"}...")
-
-    val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
+    val config = makeConfigLoader(earlyLogger, parameters).loadConfig()
     val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
 
-    val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
-    val appDefinition = mergeStrategy.merge(appPlugins)
-    lateLogger.info(s"Loaded ${appDefinition.bindings.size -> "app bindings"}...")
-
-    validate(bsDefinition, appDefinition)
-
-    val roots = gcRoots(roles)
-
-    val (activationInfo, activation) = new RoleAppActivationParser().parseActivation(earlyLogger, parameters, appDefinition, defaultActivations ++ requiredActivations)
-
-    val options = contextOptions(parameters)
-    val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger.router)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy bsDefinition overridenBy bsOverride
-
-    val appModule = moduleProvider.appModules().merge overridenBy appDefinition overridenBy appOverride
-    val planner = makePlanner(options, bsModule, lateLogger, Injector.bootloader(PlannerInput(appModule, roots)))
-    val appPlan = planner.makePlan(roots)
+    val appPlan = createAppPlan(parameters, roles, appPlugins, bsPlugins, config, lateLogger)
     lateLogger.info(s"Planning finished. ${appPlan.app.primary.keys.size -> "main ops"}, ${appPlan.app.side.keys.size -> "integration ops"}, ${appPlan.app.shared.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
-    val injector = appPlan.injector
-    val roleAppExecutor = makeExecutor(parameters, roles, lateLogger, makeStartupExecutor(lateLogger, injector))
+    val roleAppExecutor = {
+      val injector = appPlan.injector
+      val startupExecutor = makeStartupExecutor(lateLogger, injector)
+      makeExecutor(parameters, roles, lateLogger, startupExecutor)
+    }
     roleAppExecutor.runPlan(appPlan)
   }
 
-  protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = rolesInfo.requiredComponents
-  protected def makeBootstrapMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs): PluginMergeStrategy = SimplePluginMergeStrategy
-  protected def makeMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy = SimplePluginMergeStrategy
+  def createAppPlan(parameters: RawAppArgs, roles: RolesInfo, appPlugins: Seq[PluginBase], bsPlugins: Seq[PluginBase], config: AppConfig, lateLogger: IzLogger): RoleAppPlanner.AppStartupPlans = {
+    val bsModule = makeBootstrapMergeStrategy(lateLogger, parameters, roles).merge(bsPlugins)
+    lateLogger.info(s"Loaded ${bsModule.bindings.size -> "bootstrap bindings"}...")
 
-  protected def makePluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
-  protected def makeBootstrapPluginLoader(): PluginLoader = new PluginLoaderDefaultImpl()
+    val appModule = makeAppMergeStrategy(lateLogger, parameters, roles).merge(appPlugins)
+    lateLogger.info(s"Loaded ${appModule.bindings.size -> "app bindings"}...")
+
+    validate(bsModule, appModule)
+
+    val activationInfo = parseActivationInfo(lateLogger, appModule)
+    val activation = new RoleAppActivationParser().parseActivation(lateLogger, parameters, activationInfo, defaultActivations ++ requiredActivations)
+
+    val options = planningOptions(parameters)
+    val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger.router)
+
+    val finalBsModule = moduleProvider.bootstrapModules().merge overridenBy bsModule overridenBy bsOverride
+    val finalAppModule = moduleProvider.appModules().merge overridenBy appModule overridenBy appOverride
+    val roots = gcRoots(roles)
+    val planner = makePlanner(options, finalBsModule, lateLogger, Injector.bootloader(PlannerInput(finalAppModule, roots), activation))
+    planner.makePlan(roots)
+  }
+
+  protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = rolesInfo.requiredComponents
+  protected def makeBootstrapMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy = SimplePluginMergeStrategy
+  protected def makeAppMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy = SimplePluginMergeStrategy
+
+  protected def makePluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
+  protected def makeBootstrapPluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
 
   protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger, reboot: Bootloader): RoleAppPlanner[F] = {
     new RoleAppPlanner.Impl[F](options, bsModule, lateLogger, reboot)
@@ -120,7 +123,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     StartupPlanExecutor(injector, new IntegrationChecker.Impl[F](lateLogger))
   }
 
-  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
+  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, @unused activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
     new ModuleProvider.Impl[F](
       logRouter = logRouter,
       config = config,
@@ -128,11 +131,10 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
       options = options,
       args = parameters,
       activationInfo = activationInfo,
-      activation = activation,
     )
   }
 
-  protected def contextOptions(parameters: RawAppArgs): PlanningOptions = {
+  protected def planningOptions(parameters: RawAppArgs): PlanningOptions = {
     PlanningOptions(
       addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext),
       warnOnCircularDeps = true,
@@ -165,41 +167,31 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
 
     val availableRoleInfo = roles.availableRoleBindings.map {
       r =>
-        val active = if (requestedNames.contains(r.descriptor.id)) {
-          s"[+]"
-        } else {
-          s"[ ]"
-        }
+        val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
         s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.source.getOrElse("N/A")}"
     }.sorted
 
     logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
   }
 
-  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
+  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {
+    def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {
+      val mf = IzManifest.manifest()(ClassTag(clazz)).map(IzManifest.read)
+      val details = mf.getOrElse("{No version data}")
+      logger.info(s"$msg : $details")
+    }
+
     val withIzumi = referenceLibraries :+ LibraryReference("izumi", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
     withIzumi.foreach {
-      u => showDepData(logger, s"... using ${u.libraryName}", u.clazz)
+      lib => showDepData(logger, s"... using ${lib.libraryName}", lib.clazz)
     }
-    this
   }
 
-  private def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {
-    val mf = IzManifest.manifest()(ClassTag(clazz)).map(IzManifest.read)
-    val details = mf.getOrElse("{No version data}")
-    logger.info(s"$msg : $details")
-  }
-
-  protected def validate(bootstrapAutoDef: ModuleBase, appDef: ModuleBase): Unit = {
-    val conflicts = bootstrapAutoDef.keys.intersect(appDef.keys)
-    if (conflicts.nonEmpty) {
-      throw new DIAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
-    }
-
-    if (appDef.bindings.isEmpty) {
-      throw new DIAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
-    }
+  protected def validate(bootstrapAutoModule: ModuleBase, appModule: ModuleBase): Unit = {
+    val conflicts = bootstrapAutoModule.keys.intersect(appModule.keys)
+    if (conflicts.nonEmpty) throw new DIAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
+    if (appModule.bindings.isEmpty) throw new DIAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
   }
 
   protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
@@ -209,6 +201,10 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
         roleParams.role -> roleParams.roleParameters.findValue(Options.configParam).asFile
     }
     new ConfigLoader.LocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
+  }
+
+  protected def parseActivationInfo(logger: IzLogger, appModule: ModuleBase): ActivationInfo = {
+    ActivationInfoExtractor.findAvailableChoices(logger, appModule)
   }
 
 }

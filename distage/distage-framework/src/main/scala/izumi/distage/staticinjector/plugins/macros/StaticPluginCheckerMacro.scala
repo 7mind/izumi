@@ -6,6 +6,7 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
+import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.PlannerInput
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
@@ -138,11 +139,13 @@ object StaticPluginCheckerMacro {
 
     val logger = IzLogger.NullLogger
     val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
-    val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Activation.empty)
 
-    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap overridenBy new BootstrapModuleDef {
-      make[Activation].fromValue(activation)
-    })
+    val activation = {
+      val activationInfo = ActivationInfoExtractor.findAvailableChoices(logger, module)
+      new RoleAppActivationParser().parseActivation(logger, args, activationInfo, Activation.empty)
+    }
+
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap, activation)
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)

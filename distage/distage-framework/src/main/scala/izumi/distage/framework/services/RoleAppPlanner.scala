@@ -23,13 +23,12 @@ object RoleAppPlanner {
                                     injector: Injector,
                                   )
 
-  class Impl[F[_] : TagK](
-                           options: PlanningOptions,
-                           bsModule: BootstrapModule,
-                           logger: IzLogger,
-                           reboot: Bootloader,
-                         ) extends RoleAppPlanner[F] {
-    self =>
+  class Impl[F[_]: TagK](
+                          options: PlanningOptions,
+                          bsModule: BootstrapModule,
+                          logger: IzLogger,
+                          bootloader: Bootloader,
+                         ) extends RoleAppPlanner[F] { self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
@@ -38,14 +37,14 @@ object RoleAppPlanner {
     )
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {
-      new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, logger, reboot)
+      new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, logger, bootloader)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-      val rm = reflectionModule()
-      val app = reboot.boot(BootConfig(
+      val additionalModule = selfReflectionModule()
+      val app = bootloader.boot(BootConfig(
         bootstrap = _ => bsModule,
-        appModule = _.overridenBy(rm),
+        appModule = _.overridenBy(additionalModule),
         gcMode = _ => GCMode.GCRoots(runtimeGcRoots),
       ))
 
@@ -62,8 +61,8 @@ object RoleAppPlanner {
       AppStartupPlans(app.plan, appPlan, app.injector)
     }
 
-    private def reflectionModule(): ModuleDef = new ModuleDef {
-      make[RoleAppPlanner[F]].from(self)
+    private def selfReflectionModule(): ModuleDef = new ModuleDef {
+      make[RoleAppPlanner[F]].fromValue(self)
       make[PlanningOptions].fromValue(options)
     }
   }

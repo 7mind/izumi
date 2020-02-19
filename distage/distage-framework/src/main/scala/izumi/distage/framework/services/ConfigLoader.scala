@@ -25,9 +25,9 @@ import scala.util.{Failure, Success, Try}
   *   - common-reference-dev.conf
   */
 trait ConfigLoader {
-  def buildConfig(): AppConfig
+  def loadConfig(): AppConfig
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(buildConfig())
+  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
 }
 
 object ConfigLoader {
@@ -39,7 +39,7 @@ object ConfigLoader {
 
     protected def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
-    def buildConfig(): AppConfig = {
+    def loadConfig(): AppConfig = {
       val commonConfigFiles = baseConfig.fold(
         defaultBaseConfigs.flatMap(toConfig(_, baseConfig))
       )(f => Seq(ConfigSource.File(f)))

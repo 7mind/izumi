@@ -4,14 +4,14 @@ import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.planning.PlanAnalyzerDefaultImpl
-import distage.DIKey
+import distage.{Activation, DIKey}
 import org.scalatest.wordspec.AnyWordSpec
 
 class BootstrapTest extends AnyWordSpec {
 
   "Bootstrap Context" should {
     "contain expected definitions" in {
-      val context = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap)
+      val context = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap, Activation.empty)
 
       val maybeRef = context.find[PlanAnalyzer]
       val ref = context.lookupLocal[PlanAnalyzer](DIKey.get[PlanAnalyzer])
