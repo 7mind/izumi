@@ -1,5 +1,6 @@
 package izumi.distage.model
 
+import izumi.distage.AbstractLocator
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
@@ -84,7 +85,12 @@ trait Locator {
 }
 
 object Locator {
-
-
+  val empty: AbstractLocator = new AbstractLocator {
+    override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
+    override def instances: Seq[IdentifiedRef] = Nil
+    override def plan: OrderedPlan = OrderedPlan.empty
+    override def parent: Option[Locator] = None
+    override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
+  }
 }
 
