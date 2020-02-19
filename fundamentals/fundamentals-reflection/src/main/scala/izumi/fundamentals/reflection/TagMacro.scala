@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection
 
+import com.github.ghik.silencer.silent
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.TagMacro._
@@ -11,9 +12,9 @@ import scala.collection.immutable.ListMap
 import scala.reflect.api.Universe
 import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
-// TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
+@silent("deprecated")
 class TagMacro(val c: blackbox.Context) {
 
   import c.universe._
@@ -455,6 +456,7 @@ private object TagMacro {
   }
 }
 
+@silent("deprecated")
 class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
 
   import c.universe._

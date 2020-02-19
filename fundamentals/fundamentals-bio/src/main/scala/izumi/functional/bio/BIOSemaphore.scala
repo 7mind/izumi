@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import com.github.ghik.silencer.silent
 import zio.{IO, Semaphore}
 
 trait BIOSemaphore[F[_, _]] {
@@ -11,6 +12,7 @@ trait BIOSemaphore[F[_, _]] {
 }
 
 object BIOSemaphore {
+  @silent("deprecated")
   def fromZIO(semaphore: Semaphore): BIOSemaphore[IO] =
     new BIOSemaphore[IO] {
       override def acquire: IO[Nothing, Unit] = semaphore.acquire

@@ -1,5 +1,6 @@
 package izumi.logstage.sink
 
+import com.github.ghik.silencer.silent
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
@@ -9,6 +10,7 @@ import logstage.LogIO
 import scala.util.Random
 
 @ExposedTestScope
+@silent("[Ee]xpression.*logger")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 

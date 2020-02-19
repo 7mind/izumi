@@ -239,6 +239,8 @@ object LightTypeTag {
     implicit lazy val dbsSerializer: Pickler[SubtypeDBs] = generatePickler[SubtypeDBs]
 
     // false positive unused warnings
+    symTypeName.discard()
+    symTermName.discard()
     symName.discard()
     appliedRefSerializer.discard()
     nameRefSerializer.discard()

@@ -1,11 +1,12 @@
+import sbt.librarymanagement.CrossVersion
 object V {
   // foundation
   val collection_compat = "2.1.4"
 
   val kind_projector = "0.11.0"
-  val scalatest = "3.1.0"
+  val silencer = "1.4.4"
 
-  val boopickle = "1.3.1"
+  val scalatest = "3.1.0"
 
   val cats = "2.1.0"
   val cats_effect = "2.1.1"

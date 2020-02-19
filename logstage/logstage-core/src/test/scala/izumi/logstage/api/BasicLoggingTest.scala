@@ -1,5 +1,6 @@
 package izumi.logstage.api
 
+import com.github.ghik.silencer.silent
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
@@ -7,6 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
+@silent("[Ee]xpression.*logger")
 class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {

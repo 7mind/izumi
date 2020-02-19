@@ -13,7 +13,7 @@ private[izumi] object PicklerMaterializersImpl {
   private def logStatistics(x: String): Unit = {
     stats += ((x, 1 + stats.getOrElse(x, 0)))
     overallCount += 1
-    var count = stats(x)
+    val count = stats(x)
     if (count == 1) {
       println(s"Boopickle macro: overall: $overallCount, class: $x")
     } else {
