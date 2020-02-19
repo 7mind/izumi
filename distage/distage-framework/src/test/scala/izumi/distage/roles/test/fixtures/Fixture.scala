@@ -75,4 +75,6 @@ object Fixture {
     case object Correct extends AxisValueDef
   }
 
+  case class ListConf(ints: List[Int])
+
 }

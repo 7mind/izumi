@@ -127,3 +127,21 @@ object TestRole03 extends RoleDescriptor {
   override final val id = "testrole03"
 }
 
+class TestRole04[F[_]: DIEffect](
+                                  logger: IzLogger
+                                , listconf: ListConf
+                                ) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole04] started: $roleParameters, $freeArgs")
+    assert(listconf.ints == List(3, 2, 1), listconf.ints)
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole04] exiting role...")
+      }
+  }
+}
+object TestRole04 extends RoleDescriptor {
+  override final val id = "testrole04"
+}
+

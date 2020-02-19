@@ -137,7 +137,7 @@ abstract class LadderTest extends LeaderboardTest {
           assertIO(user1Rank < user2Rank)
         } else if (score2 > score1) {
           assertIO(user2Rank < user1Rank)
-        }
+        } else IO.unit
       } yield ()
     }
   }

@@ -122,6 +122,20 @@ class RoleAppTest extends AnyWordSpec
       assert(err.getMessage.contains(TestRole03.expectedError))
     }
 
+    "be able to override list configs using system properties" in {
+      withProperties(
+        "listconf.ints.0" -> "3",
+        "listconf.ints.1" -> "2",
+        "listconf.ints.2" -> "1",
+      ) {
+        new RoleAppMain.Silent(new TestLauncher)
+          .main(Array(
+            "-ll", logLevel,
+            ":" + TestRole04.id,
+          ))
+      }
+    }
+
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
       val probe = new XXX_TestWhiteboxProbe()
 

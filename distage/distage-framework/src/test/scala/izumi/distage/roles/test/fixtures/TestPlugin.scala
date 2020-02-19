@@ -32,6 +32,7 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
   make[TestRole01[F]]
   make[TestRole02[F]]
   make[TestRole03[F]]
+  make[TestRole04[F]]
 
   make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck]
@@ -39,6 +40,9 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
   make[NotCloseable].from[InheritedCloseable]
   make[ConfigWriter[F]]
   make[Help[F]]
+
+  make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
+  make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
 
   makeConfig[TestServiceConf]("testservice")
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
@@ -54,9 +58,7 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
     conf: TestServiceConf2 @Id("testservice2") =>
       TestServiceConf2(conf.strval + ":updated")
   }
-
-  make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
-  make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
+  makeConfig[ListConf]("listconf")
 }
 
 class TestPlugin extends TestPluginBase[IO]
