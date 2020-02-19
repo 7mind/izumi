@@ -82,7 +82,7 @@ object TrivialLogger {
 
   final case class Config(
                            sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
-                           forceLog: Boolean = false,
+                           forceLog: Boolean = false
                          )
 
   def make[T: ClassTag](sysProperty: String, config: Config = Config()): TrivialLogger = {

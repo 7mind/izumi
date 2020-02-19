@@ -4,6 +4,7 @@ import distage._
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
@@ -58,8 +59,8 @@ object RoleProvider {
               val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
               Seq(RoleBinding(roleBinding, runtimeClass, impltype, d, src))
             case None =>
-              logger.error(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor thus ignored")
-              Seq.empty
+              logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
+              throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
           }
       }
     }
@@ -79,7 +80,10 @@ object RoleProvider {
         Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
       } catch {
         case t: Throwable =>
-          logger.error(s"Failed to reflect descriptor for $role: $t")
+          logger.crit(
+            s"""Failed to reflect RoleDescriptor companion object for $role: $t
+               |Please create a companion object extending `izumi.distage.roles.model.RoleDescriptor` for `$roleClassName`
+               |""".stripMargin)
           None
       }
     }

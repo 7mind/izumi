@@ -1,12 +1,14 @@
 package izumi.logstage.api
 
+import com.github.ghik.silencer.silent
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
-import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
+@silent("[Ee]xpression.*logger")
 class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {
@@ -16,11 +18,11 @@ class BasicLoggingTest extends AnyWordSpec {
 
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
       val expectation = List(
-        LogArg(Seq("arg1"), 1, hiddenName = false, None),
-        LogArg(Seq("arg2"), "argument 2", hiddenName = false, None),
-        LogArg(Seq("arg2"), "argument 2", hiddenName = false, None),
-        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, None),
-        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, None),
+        LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       )
 
       val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
@@ -41,7 +43,7 @@ class BasicLoggingTest extends AnyWordSpec {
            |multiline ${m -> "message"}""".stripMargin
       }
       assert(message1.template.parts.toList == List("This\nis a\nmultiline ", ""))
-      assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false, None)))
+      assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false, Some(LogstageCodec.LogstageCodecString))))
 
       val message2 = Message("single line with stripMargin".stripMargin)
       assert(message2.template.parts.toList == List("single line with stripMargin"))
@@ -71,7 +73,7 @@ class BasicLoggingTest extends AnyWordSpec {
       val s = "hi"
       val msg = Message(s"begin $i $s end")
 
-      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false, None), LogArg(Seq("s"), "hi", hiddenName = false, None))))
+      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false,  Some(LogstageCodec.LogstageCodecInt)), LogArg(Seq("s"), "hi", hiddenName = false,  Some(LogstageCodec.LogstageCodecString)))))
     }
   }
 

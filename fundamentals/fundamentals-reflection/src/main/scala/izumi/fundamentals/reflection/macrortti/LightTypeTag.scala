@@ -1,16 +1,27 @@
 package izumi.fundamentals.reflection.macrortti
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymTermName, SymTypeName}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference, SymName}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
+
+/**
+  * Extracts internal databases from [[LightTypeTag]].
+  * Should be not used under normal circumstances.
+  */
+case class LightTypeTagUnpacker(tag: LightTypeTag) {
+  def bases: Map[AbstractReference, Set[AbstractReference]] = tag.basesdb
+  def inheritance: Map[NameReference, Set[NameReference]] = tag.idb
+}
 
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],
-  inheritanceDb: () => Map[NameReference, Set[NameReference]],
+  inheritanceDb: () => Map[NameReference, Set[NameReference]]
 ) extends Serializable {
 
   def ref: LightTypeTagRef
@@ -23,6 +34,15 @@ abstract class LightTypeTag
 
   @inline final def =:=(other: LightTypeTag): Boolean = {
     this == other
+  }
+
+  final def decompose: Set[LightTypeTag] = {
+    ref match {
+      case LightTypeTagRef.IntersectionReference(refs) =>
+        refs.map(r => LightTypeTag.apply(r, bases(), inheritanceDb()))
+      case _ =>
+        Set(this)
+    }
   }
 
   /**
@@ -160,9 +180,9 @@ object LightTypeTag {
     def mergedBasesDB = LightTypeTag.mergeIDBs(structure.basesdb, intersection.iterator.map(_.basesdb))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(structure.idb, intersection.iterator.map(_.idb))
 
-    val intersectionRef = LightTypeTagRef.IntersectionReference(
-      intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
-    )
+    val parts = intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
+    val intersectionRef = LightTypeTagRef.maybeIntersection(parts)
+
     val ref = structure.ref match {
       case LightTypeTagRef.Refinement(_, decls) if decls.nonEmpty =>
         LightTypeTagRef.Refinement(intersectionRef, decls)
@@ -175,7 +195,7 @@ object LightTypeTag {
 
   def parse[T](hashCode: Int, refString: String, basesString: String): LightTypeTag = {
     lazy val shared = {
-      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes("ISO-8859-1")))
+      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes(StandardCharsets.ISO_8859_1)))
     }
 
     new ParsedLightTypeTag(hashCode, refString, () => shared.bases, () => shared.idb)
@@ -185,10 +205,10 @@ object LightTypeTag {
                                   override val hashCode: Int,
                                   private val refString: String,
                                   bases: () => Map[AbstractReference, Set[AbstractReference]],
-                                  db: () => Map[NameReference, Set[NameReference]],
+                                  db: () => Map[NameReference, Set[NameReference]]
                                 ) extends LightTypeTag(bases, db) {
     override lazy val ref: LightTypeTagRef = {
-      lttRefSerializer.unpickle(ByteBuffer.wrap(refString.getBytes("ISO-8859-1")))
+      lttRefSerializer.unpickle(ByteBuffer.wrap(refString.getBytes(StandardCharsets.ISO_8859_1)))
     }
 
     override def equals(other: Any): Boolean = {
@@ -208,6 +228,9 @@ object LightTypeTag {
   private[macrortti] val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
     import izumi.thirdparty.internal.boopickle.Default._
 
+    implicit lazy val symTypeName: Pickler[SymTypeName] = generatePickler[SymTypeName]
+    implicit lazy val symTermName: Pickler[SymTermName] = generatePickler[SymTermName]
+    implicit lazy val symName: Pickler[SymName] = generatePickler[SymName]
     implicit lazy val appliedRefSerializer: Pickler[AppliedReference] = generatePickler[AppliedReference]
     implicit lazy val nameRefSerializer: Pickler[NameReference] = generatePickler[NameReference]
     implicit lazy val abstractRefSerializer: Pickler[AbstractReference] = generatePickler[AbstractReference]
@@ -216,6 +239,9 @@ object LightTypeTag {
     implicit lazy val dbsSerializer: Pickler[SubtypeDBs] = generatePickler[SubtypeDBs]
 
     // false positive unused warnings
+    symTypeName.discard()
+    symTermName.discard()
+    symName.discard()
     appliedRefSerializer.discard()
     nameRefSerializer.discard()
     abstractRefSerializer.discard()

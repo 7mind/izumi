@@ -5,9 +5,7 @@ import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.logstage.api.Log
 
 trait LogRouter extends AutoCloseable {
-
   def log(entry: Log.Entry): Unit
-
   def acceptable(id: Log.LoggerId, logLevel: Log.Level): Boolean
 
   override def close(): Unit = {}

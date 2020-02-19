@@ -13,7 +13,7 @@ class WildcardPrefixTreeTest extends AnyWordSpec {
       val tree = WildcardPrefixTree.build(Seq(
         (Seq(Some("a"), Some("b"), Some("c")), 1),
         (Seq(Some("a"), Some("b")), 2),
-        (Seq(Some("a"), Some("b"), Some("d")), 3),
+        (Seq(Some("a"), Some("b"), Some("d")), 3)
       ))
 
       assert(call(tree, "a") == Set(1, 2, 3))
@@ -31,7 +31,7 @@ class WildcardPrefixTreeTest extends AnyWordSpec {
       val tree = WildcardPrefixTree.build(Seq(
         (Seq(Some("a"), None, Some("c")), 1),
         (Seq(Some("a"), None, Some("d")), 3),
-        (Seq(Some("a"), Some("b")), 2),
+        (Seq(Some("a"), Some("b")), 2)
       ))
 
       assert(call(tree, "a") == Set(1, 2, 3))

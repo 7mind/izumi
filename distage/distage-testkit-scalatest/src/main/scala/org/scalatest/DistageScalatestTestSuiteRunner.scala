@@ -4,15 +4,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.TagK
 import io.github.classgraph.ClassGraph
-import izumi.distage.framework.services.IntegrationChecker
-import izumi.distage.testkit.{DebugProperties, SpecConfig}
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
-import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
@@ -69,26 +67,10 @@ object ScalatestInitWorkaround {
 }
 
 abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMonoIO: TagK[F]) extends Suite with AbstractDistageSpec[F] {
-  protected def specConfig: SpecConfig = SpecConfig()
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time
   private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus[F](suiteId)
-
-  private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
-  protected def makeSpecEnvironment(): SpecEnvironment = {
-    val c = specConfig
-    val clazz = this.getClass
-
-    new SpecEnvironment.Impl[F](
-      suiteClass = clazz,
-      planningOptions = c.planningOptions,
-      bootstrapOverrides = c.bootstrapOverrides,
-      moduleOverrides = c.moduleOverrides,
-      bootstrapLogLevel = c.bootstrapLogLevel,
-      configOverrides = c.configOverrides,
-    )
-  }
 
   override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
@@ -196,9 +178,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
         val runner = {
-          val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
-          val checker = new IntegrationChecker.Impl(logger)
-          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelExecution, parallelEnvExecution)
+          new DistageTestRunner[F](testReporter, toRun, _.isInstanceOf[TestCanceledException])
         }
         runner.run()
       }
@@ -206,9 +186,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
       DistageTestsRegistrySingleton.completeStatuses[F]()
     }
   }
-
-  protected def parallelExecution: Boolean = true
-  protected def parallelEnvExecution: Boolean = true
 
   private def mkTestReporter(): TestReporter = {
     val scalatestReporter = new DistageScalatestReporter

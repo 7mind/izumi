@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
 
 final case class RawAppArgs(
                              globalParameters: RawEntrypointParams,
-                             roles: Vector[RawRoleParams],
+                             roles: Vector[RawRoleParams]
                            )
 
 object RawAppArgs {

@@ -444,7 +444,7 @@ class TagTest extends AnyWordSpec with XY[String] {
           Some(eitherRSwapTag),
           Some(throwableTag),
           None,
-          None,
+          None
         )).tag
       val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
       assert(combinedTag =:= expectedTag)
@@ -531,7 +531,7 @@ class TagTest extends AnyWordSpec with XY[String] {
       """
         )
       }
-      assert(t.message.get contains "could not find implicit value")
+      assert((t.message.get contains "could not find implicit value") || (t.message.get contains "diverging implicit") /*2.11*/)
     }
 
     "progression test: cannot resolve a higher-kinded type in a higher-kinded tag in an anonymous deeply-nested type lambda" in {
@@ -545,7 +545,7 @@ class TagTest extends AnyWordSpec with XY[String] {
       """
         )
       }
-      assert(t.message.get contains "could not find implicit value")
+      assert((t.message.get contains "could not find implicit value") || (t.message.get contains "diverging implicit") /*2.11*/)
     }
 
     "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth it to support?)" in {

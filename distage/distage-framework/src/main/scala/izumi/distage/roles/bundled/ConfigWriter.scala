@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
-import izumi.distage.config.ConfigPathExtractorModule
+import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
+import izumi.distage.config.extractor.ConfigPathExtractorModule
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.DIEffect
@@ -26,10 +26,10 @@ import izumi.logstage.distage.LogstageModule
 import scala.util._
 
 
-class ConfigWriter[F[_] : DIEffect]
+class ConfigWriter[F[_]: DIEffect]
 (
   logger: IzLogger,
-  launcherVersion: ArtifactVersion@Id("launcher-version"),
+  launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
   //appModule: ModuleBase@Id("application.module"),
@@ -114,7 +114,6 @@ class ConfigWriter[F[_] : DIEffect]
       new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
-    //val newAppModule = appModule
     val plans = context.reboot(cfg).makePlan(Set(roleDIKey))
 
     def getConfig(plan: OrderedPlan): Option[Config] = {

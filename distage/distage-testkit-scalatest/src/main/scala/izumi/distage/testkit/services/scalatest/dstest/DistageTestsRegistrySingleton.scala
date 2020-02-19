@@ -37,6 +37,7 @@ object DistageTestsRegistrySingleton {
       registry
         .getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty)
         .append(castTest(t))
+      ()
     }
   }
 

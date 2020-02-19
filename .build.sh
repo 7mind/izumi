@@ -8,12 +8,22 @@
 
 function scala213 {
   echo "Using Scala 2.13..."
-  VERSION_COMMAND="++ $SCALA213"
+  VERSION_COMMAND="++ $SCALA213 "
 }
 
 function scala212 {
   echo "Using Scala 2.12..."
-  VERSION_COMMAND="++ $SCALA212"
+  VERSION_COMMAND="++ $SCALA212 "
+}
+
+function scala211 {
+  echo "Using Scala 2.11..."
+  VERSION_COMMAND="++ $SCALA211 "
+}
+
+
+function scalaall {
+  VERSION_COMMAND="+"
 }
 
 function csbt {
@@ -31,8 +41,8 @@ function csbt {
 # }
 
 function coverage {
-  csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
-  bash <(curl -s https://codecov.io/bash)
+  csbt clean coverage "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
+  bash <(curl -s https://codecov.io/bash) || true # codecov.io may be offline for some reason
 }
 
 # function scripted {
@@ -56,30 +66,6 @@ function site {
   fi
 }
 
-function publishIDL {
-  #copypaste
-  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
-    return 0
-  fi
-
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
-    return 0
-  fi
-
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
-    return 0
-  fi
-  #copypaste
-
-  echo "PUBLISH IDL RUNTIMES..."
-
-  echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-  npm whoami
-
-  ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh || exit 1
-  ./idealingua-v1/idealingua-v1-runtime-rpc-csharp/src/main/nuget/publish.sh || exit 1
-}
-
 function publishScala {
   #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
@@ -97,9 +83,9 @@ function publishScala {
   echo "PUBLISH SCALA LIBRARIES..."
 
   if [[ "$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" ]] ; then
-    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   else
-    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" sonatypeBundleRelease || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   fi
 }
 
@@ -126,6 +112,7 @@ function init {
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
     export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
+    export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
@@ -170,6 +157,14 @@ case $i in
         scala212
     ;;
 
+    2.11)
+        scala211
+    ;;
+
+    scala-all)
+        scalaall
+    ;;
+
     # versionate)
     #     versionate
     # ;;
@@ -182,9 +177,6 @@ case $i in
     #     scripted
     # ;;
 
-    publishIDL)
-        publishIDL
-    ;;
 
     publishScala)
         publishScala

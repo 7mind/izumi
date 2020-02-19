@@ -1,12 +1,12 @@
 package com.github.pshirshov.configapp
 
+import distage.config.ConfigModuleDef
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
 
 import scala.collection.immutable.ListSet
-import scala.collection.mutable
 
-case class MapCaseClass(mymap: mutable.LinkedHashMap[String, HostPort])
+//case class MapCaseClass(mymap: mutable.LinkedHashMap[String, HostPort]) // pureconfig can read only plain `Map`...
+case class MapCaseClass(mymap: Map[String, HostPort])
 
 case class ListCaseClass(mylist: IndexedSeq[ListSet[Wrapper[HostPort]]])
 
@@ -31,30 +31,33 @@ object SealedTrait2 {
 }
 
 case class Wrapper[A](wrap: A)
-case class Service[A](/*@AutoConf */conf: A)
+case class Service[A](conf: A)
 
 object TestConfigReaders {
-  final val mapDefinition = PlannerInput.noGc(new ModuleDef {
+  final val mapDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[MapCaseClass]]
+    makeConfig[MapCaseClass]("MapCaseClass")
   })
 
-  final val listDefinition = PlannerInput.noGc(new ModuleDef {
+  final val listDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[ListCaseClass]]
   })
 
-  final val optDefinition = PlannerInput.noGc(new ModuleDef {
+  final val optDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[OptionCaseClass]]
   })
 
-  final val backticksDefinition = PlannerInput.noGc(new ModuleDef {
+  final val backticksDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[BackticksCaseClass]]
+    makeConfig[BackticksCaseClass]("BackticksCaseClass")
   })
 
-  final val sealedDefinition = PlannerInput.noGc(new ModuleDef {
+  final val sealedDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[SealedCaseClass]]
+    makeConfig[SealedCaseClass]("SealedCaseClass")
   })
 
-  final val tupleDefinition = PlannerInput.noGc(new ModuleDef {
+  final val tupleDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[TupleCaseClass]]
   })
 }

@@ -5,12 +5,15 @@ import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 import scala.collection.mutable
 
 object LightTypeTagInheritance {
+  protected[macrortti] final val tpeNothing = NameReference("scala.Nothing")
+  protected[macrortti] final val tpeAny = NameReference("scala.Any")
+  protected[macrortti] final val tpeAnyRef = NameReference("scala.AnyRef")
+  protected[macrortti] final val tpeObject = NameReference(classOf[Object].getName)
 
   final case class Ctx(params: List[LambdaParameter], logger: TrivialLogger) {
     def next(): Ctx = Ctx(params, logger.sub())
@@ -21,11 +24,7 @@ object LightTypeTagInheritance {
 }
 
 final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
-  private final val tpeNothing = NameReference("scala.Nothing")
-  private final val tpeAny = NameReference("scala.Any")
-  private final val tpeAnyRef = NameReference("scala.AnyRef")
-  private final val tpeObject = NameReference("java.lang.Object")
-
+  import LightTypeTagInheritance._
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = LightTypeTag.mergeIDBs(self.idb, other.idb)
   private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = LightTypeTag.mergeIDBs(self.basesdb, other.basesdb)
 

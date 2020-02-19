@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
+import com.github.ghik.silencer.silent
 import distage.TagK
 import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
@@ -198,6 +199,7 @@ object DockerContainer {
       }
     }
 
+    @silent("deprecated")
     private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client

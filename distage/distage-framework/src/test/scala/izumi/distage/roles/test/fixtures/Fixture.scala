@@ -1,6 +1,8 @@
 package izumi.distage.roles.test.fixtures
 
+import distage.LocatorRef
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.definition.Axis
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 
@@ -35,6 +37,8 @@ object Fixture {
     def getCheckedResources(): Seq[IntegrationCheck] = this.synchronized(checkedResources.toList)
   }
 
+  case class XXX_LocatorLeak(locatorRef: LocatorRef)
+
   trait TestResource
 
   trait ProbeResource extends TestResource with AutoCloseable {
@@ -61,5 +65,16 @@ object Fixture {
   case class JustResource1(roleComponent: JustResource2, counter: XXX_ResourceEffectsRecorder) extends TestResource
   case class JustResource2(closeable: ProbeResource0, counter: XXX_ResourceEffectsRecorder) extends TestResource
   case class JustResource3(counter: XXX_ResourceEffectsRecorder) extends TestResource
+
+  trait AxisComponent
+  object AxisComponentIncorrect extends AxisComponent
+  object AxisComponentCorrect extends AxisComponent
+
+  object AxisComponentAxis extends Axis {
+    case object Incorrect extends AxisValueDef
+    case object Correct extends AxisValueDef
+  }
+
+  case class ListConf(ints: List[Int])
 
 }

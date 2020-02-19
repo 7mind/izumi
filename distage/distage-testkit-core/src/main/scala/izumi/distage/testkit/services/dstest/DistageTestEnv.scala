@@ -4,7 +4,7 @@ import distage.plugins.PluginLoader
 import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationInfoExtractor
-import izumi.distage.model.definition.{Activation, BootstrapModuleDef}
+import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
@@ -43,7 +43,6 @@ trait DistageTestEnv {
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
       make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       make[ActivationInfo].fromValue(availableActivations)
-      make[Activation].fromValue(activation)
     }
 
     TestEnvironment(
@@ -52,7 +51,16 @@ trait DistageTestEnv {
       roles = roles,
       activationInfo = availableActivations,
       activation = activation,
-      memoizationRoots = testConfig.memoizationRoots,
+      memoizationRoots = testConfig.memoizationRoots.toSet,
+      forcedRoots = testConfig.forcedRoots.toSet,
+      parallelEnvs = testConfig.parallelEnvs,
+      parallelSuites = testConfig.parallelSuites,
+      parallelTests = testConfig.parallelTests,
+      bootstrapFactory = BootstrapFactory.Impl,
+      configBaseName = testConfig.configBaseName,
+      configOverrides = testConfig.configOverrides,
+      planningOptions = testConfig.planningOptions,
+      testRunnerLogLevel = testConfig.testRunnerLogLevel,
     )
   }
 

@@ -138,7 +138,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       val typeRef = ReflectionUtil.toTypeRef[u.u.type](tpe)
       typeRef
         .map(_.pre)
-        .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
+        .filterNot(m =>  m.termSymbol.isModule && m.termSymbol.isStatic)
         .map(v => DIKey.TypeKey(SafeType.create(v)))
     }
   }

@@ -2,7 +2,6 @@ package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.ExecutorService
 
-import distage.LocatorRef
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
@@ -24,12 +23,9 @@ class TestTask00[F[_]: DIEffect](logger: IzLogger) extends RoleTask[F] {
     }
   }
 }
-
 object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
-
-case class XXX_LocatorLeak(locatorRef: LocatorRef)
 
 object roles {
 
@@ -51,6 +47,7 @@ object roles {
 
     override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
       logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
+      assert(conf.overridenInt == 111)
     }) {
       _ =>
         DIEffect[F].maybeSuspend {
@@ -58,7 +55,6 @@ object roles {
         }
     }
   }
-
   object TestRole00 extends RoleDescriptor {
     override final val id = "testrole00"
 
@@ -92,7 +88,6 @@ class TestRole01[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
       }
   }
 }
-
 object TestRole01 extends RoleDescriptor {
   override final val id = "testrole01"
 
@@ -109,8 +104,44 @@ class TestRole02[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
       }
   }
 }
-
 object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
+}
+
+class TestRole03[F[_]: DIEffect](
+                                  logger: IzLogger
+                                , axisComponent: AxisComponent
+                                ) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole03] started: $roleParameters, $freeArgs")
+    assert(axisComponent == AxisComponentCorrect, TestRole03.expectedError)
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole03] exiting role...")
+      }
+  }
+}
+object TestRole03 extends RoleDescriptor {
+  val expectedError = "bad axisComponent"
+  override final val id = "testrole03"
+}
+
+class TestRole04[F[_]: DIEffect](
+                                  logger: IzLogger
+                                , listconf: ListConf
+                                ) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole04] started: $roleParameters, $freeArgs")
+    assert(listconf.ints == List(3, 2, 1), listconf.ints)
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole04] exiting role...")
+      }
+  }
+}
+object TestRole04 extends RoleDescriptor {
+  override final val id = "testrole04"
 }
 

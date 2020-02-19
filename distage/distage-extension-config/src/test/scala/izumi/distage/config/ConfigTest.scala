@@ -1,70 +1,61 @@
-//package izumi.distage.config
-//
-//import com.github.pshirshov.configapp.SealedTrait.CaseClass2
-//import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
-//import com.github.pshirshov.configapp.{SealedTrait, _}
-//import com.typesafe.config._
-//import distage.{Injector, ModuleDef}
-//import izumi.distage.config.model.AppConfig
-//import izumi.distage.model.PlannerInput
-//import org.scalatest.wordspec.AnyWordSpec
-//
-//import scala.collection.immutable.ListSet
-//import scala.collection.mutable
-//
-//class ConfigTest extends AnyWordSpec {
-//  def mkConfigModule(path: String): AppConfigModule = {
-//    mkModule(ConfigFactory.load(path))
-//  }
-//
-//  def mkModule(config: Config): AppConfigModule = {
-//    val appConfig = AppConfig(config)
-//    new AppConfigModule(appConfig)
-//  }
-//
-//  "Config resolver" should {
-//    "resolve config references" in {
-//      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
-//      val plan = injector.plan(TestConfigApp.definition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[HttpServer1].listenOn.port == 8081)
-//      assert(context.get[HttpServer2].listenOn.port == 8082)
-//      assert(context.get[HttpServer3].listenOn.port == 8083)
-//
-//      assert(context.get[DataPuller1].target.port == 9001)
-//      assert(context.get[DataPuller2].target.port == 9002)
-//      assert(context.get[DataPuller3].target.port == 9003)
-//
-//      assert(context.get[TestAppService]("puller4").asInstanceOf[DataPuller1].target.port == 10010)
-//      assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
-//      assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
-//      assert(context.get[Set[TestAppService]].size == 9)
-//
-//      assert(!context.get[TestConfigApp].usedConfig.minimized().entrySet().isEmpty)
-//    }
-//
-//    "be idempotent under Injector.finish" in {
-//      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
-//      val plan = injector.plan(TestConfigApp.definition)
-//
-//      val plan2 = injector.finish(plan.toSemi)
-//      val context = injector.produceUnsafe(plan2)
-//
-//      assert(context.get[HttpServer1].listenOn.port == 8081)
-//      assert(context.get[HttpServer2].listenOn.port == 8082)
-//      assert(context.get[HttpServer3].listenOn.port == 8083)
-//
-//      assert(context.get[DataPuller1].target.port == 9001)
-//      assert(context.get[DataPuller2].target.port == 9002)
-//      assert(context.get[DataPuller3].target.port == 9003)
-//
-//      assert(context.get[TestAppService]("puller4").asInstanceOf[DataPuller1].target.port == 10010)
-//      assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
-//      assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
-//      assert(context.get[Set[TestAppService]].size == 9)
-//    }
+package izumi.distage.config
+
+import com.github.pshirshov.configapp.SealedTrait.CaseClass2
+import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
+import com.github.pshirshov.configapp._
+import com.typesafe.config._
+import distage.Injector
+import izumi.distage.config.extractor.ConfigPathExtractorModule
+import izumi.distage.config.model.AppConfig
+import izumi.distage.model.PlannerInput
+import org.scalatest.wordspec.AnyWordSpec
+
+class ConfigTest extends AnyWordSpec {
+  def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
+    p.copy(bindings = p.bindings ++ mkModule(ConfigFactory.load(path)))
+  }
+
+  def mkModule(config: Config): AppConfigModule = {
+    val appConfig = AppConfig(config)
+    new AppConfigModule(appConfig)
+  }
+
+  "Config resolver" should {
+    "resolve config references" in {
+      val injector = Injector(new ConfigPathExtractorModule)
+      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.definition))
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[HttpServer1].listenOn.port == 8081)
+      assert(context.get[HttpServer2].listenOn.port == 8082)
+
+      assert(context.get[DataPuller1].target.port == 9001)
+      assert(context.get[DataPuller2].target.port == 9002)
+      assert(context.get[DataPuller3].target.port == 9003)
+
+      assert(context.get[Set[TestAppService]].size == 5)
+
+      val testConfigApp = context.get[TestConfigApp]
+      assert(!testConfigApp.usedConfig.minimized(testConfigApp.appConfig.config).entrySet().isEmpty)
+    }
+
+    "be idempotent under Injector.finish" in {
+      val injector = Injector(new ConfigPathExtractorModule)
+      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.definition))
+
+      val plan2 = injector.finish(plan.toSemi)
+      val context = injector.produce(plan2).unsafeGet()
+
+      assert(context.get[HttpServer1].listenOn.port == 8081)
+      assert(context.get[HttpServer2].listenOn.port == 8082)
+
+      assert(context.get[DataPuller1].target.port == 9001)
+      assert(context.get[DataPuller2].target.port == 9002)
+      assert(context.get[DataPuller3].target.port == 9003)
+
+      assert(context.get[Set[TestAppService]].size == 5)
+    }
 //
 //    "resolve config references in set elements" in {
 //      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
@@ -74,18 +65,19 @@
 //
 //      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
 //    }
-//
-//    "resolve config maps" in {
-//      val injector = Injector.Standard(mkConfigModule("map-test.conf"))
-//      val plan = injector.plan(TestConfigReaders.mapDefinition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
+
+    "resolve config maps" in {
+      val injector = Injector()
+      val plan = injector.plan(mkConfigModule("map-test.conf")(TestConfigReaders.mapDefinition))
+
+      val context = injector.produce(plan).unsafeGet()
+
 //      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[_, _]])
-//      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
-//      assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
-//    }
-//
+      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[Map[_, _]])
+      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
+      assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
+    }
+
 //    "The order is not preserved in config maps due to limitations of typesafe-config" in {
 //      val context = Injector(mkConfigModule("map-test.conf")).produceUnsafe(TestConfigReaders.mapDefinition)
 //
@@ -134,28 +126,27 @@
 //
 //      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
 //    }
-//
-//    "resolve backticks" in {
-//      val context = Injector.Standard(mkConfigModule("backticks-test.conf"))
-//        .produceUnsafe(TestConfigReaders.backticksDefinition)
-//
-//      assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
-//    }
-//
-//    "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {
-//      val context1 =
-//        Injector.Standard(mkConfigModule("sealed-test1.conf"))
-//          .produceUnsafe(TestConfigReaders.sealedDefinition)
-//
-//      val context2 =
-//        Injector.Standard(mkConfigModule("sealed-test2.conf"))
-//          .produceUnsafe(TestConfigReaders.sealedDefinition)
-//
-//      assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
-//
-//      assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
-//      assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
-//    }
+
+    "resolve backticks" in {
+      val context = Injector()
+        .produce(mkConfigModule("backticks-test.conf")(TestConfigReaders.backticksDefinition)).unsafeGet()
+
+      assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
+    }
+
+    "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {
+      // FIXME: pureconfig-magnolia can't read enumerations properly
+      val context1 =
+        Injector()
+          .produce(mkConfigModule("sealed-test1.conf")(TestConfigReaders.sealedDefinition)).unsafeGet()
+      assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
+
+      val context2 =
+        Injector()
+          .produce(mkConfigModule("sealed-test2.conf")(TestConfigReaders.sealedDefinition)).unsafeGet()
+      assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
+      assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
+    }
 //
 //    "Inject config works for trait methods" in {
 //      import ConfigFixtures._
@@ -197,8 +188,8 @@
 //      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
 //      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
 //    }
-//
-//  }
-//
-//}
-//
+
+  }
+
+}
+

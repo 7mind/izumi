@@ -1,55 +1,48 @@
-//package izumi.distage.config
-//
-//import distage.config.AutoConf
-//import izumi.distage.config.annotations.AutoConf
-//import izumi.distage.model.definition.With
-//import izumi.fundamentals.platform.build.ExposedTestScope
-//
-//@ExposedTestScope
-//object ConfigFixtures {
-//
-//  case class TestConf(flag: Boolean)
-//
-//  case class ConcreteProduct(@AutoConf testConf: TestConf, int: Int)
-//
-//  trait AbstractProduct
-//
-//  case class AbstractProductImpl(@AutoConf testConf: TestConf) extends AbstractProduct
-//
-//  trait FullyAbstractProduct {
-//    @AutoConf
-//    def testConf: TestConf
-//  }
-//
-//  type TestConfAlias = TestConf
-//
-//  trait TestFactory {
-//    def make(int: Int): ConcreteProduct
-//
-//    def makeTrait(): FullyAbstractProduct
-//
-//    @With[AbstractProductImpl]
-//    def makeTraitWith(): AbstractProduct
-//  }
-//
-//  trait FullyAbstractGenericConfProduct[T] {
-//    @AutoConf
-//    def testConf: T
-//  }
-//
-//  trait TestGenericConfFactory[T] {
-//    def x: TestDependency
-//
-//    def make(): FullyAbstractGenericConfProduct[T]
-//  }
-//
-//  case class TestDependency(testConf: TestConf @AutoConf)
-//
-//  trait TestTrait {
-//    def x: TestDependency
-//
-//    @AutoConf
-//    def testConf: TestConf
-//  }
-//
-//}
+package izumi.distage.config
+
+import izumi.distage.model.definition.With
+
+object ConfigFixtures {
+
+  case class TestConf(flag: Boolean)
+
+  case class ConcreteProduct(testConf: TestConf, int: Int)
+
+  trait AbstractProduct
+
+  case class AbstractProductImpl(testConf: TestConf) extends AbstractProduct
+
+  trait FullyAbstractProduct {
+    def testConf: TestConf
+  }
+
+  type TestConfAlias = TestConf
+
+  trait TestFactory {
+    def make(int: Int): ConcreteProduct
+
+    def makeTrait(): FullyAbstractProduct
+
+    @With[AbstractProductImpl]
+    def makeTraitWith(): AbstractProduct
+  }
+
+  trait FullyAbstractGenericConfProduct[T] {
+    def testConf: T
+  }
+
+  trait TestGenericConfFactory[T] {
+    def x: TestDependency
+
+    def make(): FullyAbstractGenericConfProduct[T]
+  }
+
+  case class TestDependency(testConf: TestConf)
+
+  trait TestTrait {
+    def x: TestDependency
+
+    def testConf: TestConf
+  }
+
+}

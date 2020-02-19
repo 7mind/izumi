@@ -1,7 +1,7 @@
 package izumi.distage
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.{BootstrapModule, ModuleBase, ModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
@@ -18,20 +18,21 @@ class InjectorDefaultImpl
   parentFactory: InjectorFactory,
 ) extends Injector {
 
-  private val planner: Planner = parentContext.get[Planner]
-  private val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
-  private val bsModule: BootstrapModule = parentContext.get[BootstrapModule]
+  private[this] val planner: Planner = parentContext.get[Planner]
+  private[this] val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
+  private[this] val bsModule: BootstrapModule = parentContext.get[BootstrapModule]
+  private[this] val activation: Activation = parentContext.get[Activation]
 
   override def plan(input: PlannerInput): OrderedPlan = {
-    planner.plan(addImpl(input))
+    planner.plan(addSelfInfo(input))
   }
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    planner.planNoRewrite(addImpl(input))
+    planner.planNoRewrite(addSelfInfo(input))
   }
 
   override def prepare(input: PlannerInput): PrePlan = {
-    planner.prepare(addImpl(input))
+    planner.prepare(addSelfInfo(input))
   }
 
   override def freeze(plan: PrePlan): SemiPlan = {
@@ -58,14 +59,15 @@ class InjectorDefaultImpl
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 
-  private def addImpl(input: PlannerInput): PlannerInput = {
-    val reflectionModule = new ModuleDef {
+  private def addSelfInfo(input: PlannerInput): PlannerInput = {
+    val selfReflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)
+      make[Activation].fromValue(activation)
       make[Bootloader]
     }
 
-    input.copy(bindings = input.bindings overridenBy reflectionModule)
+    input.copy(bindings = input.bindings overridenBy selfReflectionModule)
   }
 }

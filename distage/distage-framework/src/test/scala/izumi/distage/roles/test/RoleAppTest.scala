@@ -1,5 +1,6 @@
 package izumi.distage.roles.test
 
+import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
@@ -14,13 +15,15 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.test.fixtures.Fixture.{IntegrationResource0, IntegrationResource1, TestResource, XXX_ResourceEffectsRecorder}
+import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec
   with WithProperties {
@@ -47,7 +50,7 @@ class RoleAppTest extends AnyWordSpec
     }
   }
 
-  val logLevel = "crit"
+  val logLevel = "warn"
   //val logLevel = "info"
 
   "Role Launcher" should {
@@ -97,6 +100,40 @@ class RoleAppTest extends AnyWordSpec
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
       assert(probe.resources.getCheckedResources().toSet.size == 2)
       assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource], probe.locator.get[IntegrationResource1]))
+    }
+
+    "be able to read activations from config" in {
+      new RoleAppMain.Silent(new TestLauncher)
+        .main(Array(
+        "-ll", logLevel,
+        ":" + TestRole03.id,
+      ))
+    }
+
+    "override config activations from command-line" in {
+      val err = Try {
+        new RoleAppMain.Silent(new TestLauncher)
+          .main(Array(
+            "-ll", logLevel,
+            "-u", "axiscomponentaxis:incorrect",
+            ":" + TestRole03.id,
+          ))
+      }.failed.get
+      assert(err.getMessage.contains(TestRole03.expectedError))
+    }
+
+    "be able to override list configs using system properties" in {
+      withProperties(
+        "listconf.ints.0" -> "3",
+        "listconf.ints.1" -> "2",
+        "listconf.ints.2" -> "1",
+      ) {
+        new RoleAppMain.Silent(new TestLauncher)
+          .main(Array(
+            "-ll", logLevel,
+            ":" + TestRole04.id,
+          ))
+      }
     }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
@@ -237,10 +274,12 @@ class RoleAppTest extends AnyWordSpec
       assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
 
       assert(roleCfgMinRestored.getString("testservice2.strval") == "xxx")
+      assert(roleCfgMinRestored.getString("testservice.overridenInt") == "111")
     }
+
   }
 
-  private def cfg(role: String, version: ArtifactVersion) = {
+  private def cfg(role: String, version: ArtifactVersion): File = {
     Paths.get(prefix, s"$role-${version.version}.json").toFile
   }
 }

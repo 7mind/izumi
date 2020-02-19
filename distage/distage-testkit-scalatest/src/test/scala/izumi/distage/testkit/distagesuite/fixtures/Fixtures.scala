@@ -6,6 +6,9 @@ import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.StandardAxis.Env
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -29,7 +32,13 @@ abstract class MockAppPlugin[F[_] : TagK] extends PluginDef {
   make[MockCache[F]]
   make[MockCachedUserService[F]]
   make[ApplePaymentProvider[F]]
+  make[ActiveComponent].from(TestActiveComponent).tagged(Env.Test)
+  make[ActiveComponent].from(ProdActiveComponent).tagged(Env.Prod)
 }
+
+trait ActiveComponent
+case object TestActiveComponent extends ActiveComponent
+case object ProdActiveComponent extends ActiveComponent
 
 class MockPostgresCheck[F[_]]() extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
@@ -60,3 +69,11 @@ class ApplePaymentProvider[F[_]] extends IntegrationCheck {
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])
+
+class ForcedRootProbe {
+  var started = false
+}
+class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe)
+  extends DIResource.SelfNoClose[F, ForcedRootResource[F]] {
+  override def acquire: F[Unit] = DIEffect[F].maybeSuspend(forcedRootProbe.started = true)
+}

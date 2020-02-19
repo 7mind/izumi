@@ -48,9 +48,7 @@ libraryDependencies ++= Seq(
   "io.7mind.izumi" %% "logstage-adapter-slf4j " % "$izumi.version$",
   // Route LogStage logs to Slf4J
   "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
-  
-  // Idealingua Runtime Dependencies (for use with the Idealingua compiler)
-  "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$",
+
 )
 ```
 @@@
@@ -69,6 +67,7 @@ Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
 * [PPER](pper/00_pper.md)
+
 
 @@@
 

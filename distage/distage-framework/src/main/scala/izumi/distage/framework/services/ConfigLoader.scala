@@ -2,8 +2,9 @@ package izumi.distage.framework.services
 
 import java.io.File
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import distage.config.AppConfig
+import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigSource, ResourceConfigKind}
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -11,41 +12,44 @@ import izumi.logstage.api.IzLogger
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Default config resources:
+  *   - $roleName.conf
+  *   - $roleName-reference.conf
+  *   - $roleName-reference-dev.conf
+  *   - application.conf
+  *   - application-reference.conf
+  *   - application-reference-dev.conf
+  *   - common.conf
+  *   - common-reference.conf
+  *   - common-reference-dev.conf
+  */
 trait ConfigLoader {
-  def buildConfig(): AppConfig
+  def loadConfig(): AppConfig
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(buildConfig())
+  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
 }
 
 object ConfigLoader {
-
-  /**
-   * default config locations:
-   *   - common.conf
-   *   - common-reference.conf
-   *   - common-reference-dev.conf
-   *   - $roleName.conf
-   *   - $roleName-reference.conf
-   *   - $roleName-reference-dev.conf
-   */
   class LocalFSImpl(
     logger: IzLogger,
-    primaryConfig: Option[File],
-    roleConfigs: Map[String, Option[File]],
+    baseConfig: Option[File],
+    moreConfigs: Map[String, Option[File]],
   ) extends ConfigLoader {
 
-    import LocalFSImpl._
+    protected def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
-    def buildConfig(): AppConfig = {
-      val commonConfigFile = toConfig("common", primaryConfig)
+    def loadConfig(): AppConfig = {
+      val commonConfigFiles = baseConfig.fold(
+        defaultBaseConfigs.flatMap(toConfig(_, baseConfig))
+      )(f => Seq(ConfigSource.File(f)))
 
-      val roleConfigFiles = roleConfigs.flatMap {
-        case (roleName, roleConfig) =>
-          toConfig(roleName, roleConfig)
-      }
-        .toList
+      val roleConfigFiles = moreConfigs.flatMap {
+        case (referenceName, maybeConfigFile) =>
+          toConfig(referenceName, maybeConfigFile)
+      }.toList
 
-      val allConfigs = roleConfigFiles ++ commonConfigFile
+      val allConfigs = roleConfigFiles ++ commonConfigFiles
 
       val cfgInfo = allConfigs.map {
         case r: ConfigSource.Resource =>
@@ -96,14 +100,6 @@ object ConfigLoader {
       AppConfig(config)
     }
 
-    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-      Seq(
-        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
-      )
-    }
-
     protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
       roleConfigs.foldLeft(ConfigFactory.empty()) {
         case (acc, (src, cfg)) =>
@@ -113,23 +109,40 @@ object ConfigLoader {
     }
 
     protected def verifyConfigs(src: ConfigSource, cfg: Config, acc: Config): Unit = {
-      val duplicateKeys = acc.entrySet().asScala.map(_.getKey).intersect(cfg.entrySet().asScala.map(_.getKey))
+      val duplicateKeys = getKeys(acc) intersect getKeys(cfg)
       if (duplicateKeys.nonEmpty) {
         src match {
           case ConfigSource.Resource(_, ResourceConfigKind.Development) =>
             logger.debug(s"Some keys in supplied ${src -> "development config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
-
           case _ =>
             logger.warn(s"Some keys in supplied ${src -> "config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
         }
       }
     }
 
-    private def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
-      maybeConfigFile.fold(defaultConfigReferences(name)) {
-        f =>
-          Seq(ConfigSource.File(f))
+    protected def getKeys(c: Config): collection.Set[String] = {
+      if (c.isResolved) {
+        c.entrySet().asScala.map(_.getKey)
+      } else {
+        Try {
+          c.resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+        }.toOption.filter(_.isResolved) match {
+          case Some(value) => value.entrySet().asScala.map(_.getKey)
+          case None => Set.empty
+        }
       }
+    }
+
+    protected def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
+      maybeConfigFile.fold(defaultConfigReferences(name))(f => Seq(ConfigSource.File(f)))
+    }
+
+    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+      Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
+      )
     }
   }
 

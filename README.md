@@ -15,7 +15,7 @@
 ---
 
 <p align="center">
-  <a href="https://www.buymeacoffee.com/7mind"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Izumi"/></a>  
+  <a href="https://www.buymeacoffee.com/7mind"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Izumi"/></a>
 </p>
 
 ---
@@ -35,7 +35,7 @@ including the following components:
 
 1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Transparent and debuggable Dependency Injection framework for Pure FP Scala,
 2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Automatic structural logs from Scala string interpolations,
-3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition, Data Modeling and RPC Language, optimized for fast prototyping – like gRPC, but with a human face. Currently generates servers and clients for Go, TypeScript, C# and Scala,
+3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) (moved to [7mind/idealingua-v1](https://github.com/7mind/idealingua-v1)) – API Definition, Data Modeling and RPC Language, optimized for fast prototyping – like gRPC, but with a human face. Currently generates servers and clients for Go, TypeScript, C# and Scala,
 4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) (moved to [7mind/sbtgen](https://github.com/7mind/sbtgen)) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven)
 5. [Percept-Plan-Execute-Repeat (PPER)](https://izumi.7mind.io/latest/release/doc/pper/) – a pattern that enables modeling very complex domains and orchestrate deadly complex processes a lot easier than you're used to.
 
@@ -90,6 +90,15 @@ In the future we are going to (or may) implement more tools based on PPER approa
 1. Best in the world build system
 2. Best in the world cluster orchestration tool
 3. Best in the world load testing/macro-benchmark tool
+
+Adopters
+========
+
+Are you using Izumi? Please consider opening a pull request to list your organization here:
+
+[![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
+
+[![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
 
 Credits
 =======

@@ -51,17 +51,25 @@ jobs:
             - script: |
                 bash sbtgen.sc --js
                 bash .build.sh secrets site
-        - job: publishAlien
-          displayName: 'Publish non-scala artifacts'
+#        - job: publish
+#          displayName: 'Publish to Maven Central'
+#          dependsOn:
+#            - build_212
+#            - build_213
+#          steps:
+#            - script: |
+#                bash sbtgen.sc --js --native
+#                bash .build.sh scala-all secrets publishScala
+        - job: publish211
+          displayName: 'Publish to Maven Central (2.11)'
+          dependsOn:
+            - build_212
           steps:
             - script: |
-                bash .build.sh 2.12 secrets publishIDL
-            - script: |
-                echo "Adding dummy cache directories so cache task wouldn't fail"
-                mkdir -p $COURSIER_CACHE
-                mkdir -p $IVY_CACHE_FOLDER
+                bash sbtgen.sc --js --native
+                bash .build.sh 2.11 secrets publishScala
         - job: publish212
-          displayName: 'Publish to Maven Central 2.12'
+          displayName: 'Publish to Maven Central (2.12)'
           dependsOn:
             - build_212
           steps:
@@ -69,7 +77,7 @@ jobs:
                 bash sbtgen.sc --js
                 bash .build.sh 2.12 secrets publishScala
         - job: publish213
-          displayName: 'Publish to Maven Central 2.13'
+          displayName: 'Publish to Maven Central (2.13)'
           dependsOn:
             - build_213
           steps:

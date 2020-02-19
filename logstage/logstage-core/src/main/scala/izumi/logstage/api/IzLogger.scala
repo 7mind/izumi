@@ -2,6 +2,7 @@ package izumi.logstage.api
 
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractMacroLogger, LogRouter, RoutingLogger}
+import izumi.logstage.api.rendering.AnyEncoded
 
 class IzLogger
 (
@@ -10,12 +11,11 @@ class IzLogger
 ) extends RoutingLogger with AbstractMacroLogger {
 
   override def withCustomContext(context: CustomContext): IzLogger = new IzLogger(router, customContext + context)
-  final def withCustomContext(context: (String, Any)*): IzLogger = withCustomContext(context.toMap)
-  final def withCustomContext(context: Map[String, Any]): IzLogger = withCustomContext(CustomContext(context))
+  final def withCustomContext(context: (String, AnyEncoded)*): IzLogger = withCustomContextMap(context.toMap)
+  final def withCustomContextMap(context: Map[String, AnyEncoded]): IzLogger = withCustomContext(CustomContext.fromMap(context))
 
   final def apply(context: CustomContext): IzLogger = withCustomContext(context)
-  final def apply(context: (String, Any)*): IzLogger = withCustomContext(context.toMap)
-  final def apply(context: Map[String, Any]): IzLogger = withCustomContext(context)
+  final def apply(context: (String, AnyEncoded)*): IzLogger = withCustomContextMap(context.toMap)
 }
 
 object IzLogger extends IzLoggerConvenienceApi {
@@ -25,3 +25,7 @@ object IzLogger extends IzLoggerConvenienceApi {
     new IzLogger(r, context)
   }
 }
+
+
+
+

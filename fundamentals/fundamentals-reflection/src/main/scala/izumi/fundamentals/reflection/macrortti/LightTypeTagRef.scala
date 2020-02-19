@@ -45,7 +45,7 @@ sealed trait LightTypeTagRef {
       reference match {
         case reference: AppliedNamedReference => appliedNamedReference(reference)
         case LightTypeTagRef.IntersectionReference(refs) =>
-          LightTypeTagRef.IntersectionReference(refs.map(appliedNamedReference))
+          LightTypeTagRef.maybeIntersection(refs.map(appliedNamedReference))
         case LightTypeTagRef.Refinement(reference, decls) =>
           LightTypeTagRef.Refinement(appliedReference(reference), decls)
       }
@@ -74,7 +74,7 @@ sealed trait LightTypeTagRef {
 
   @tailrec
   @inline
-  private[this] def getName(render: SymName => String, self: LightTypeTagRef): String = {
+  private[this] final def getName(render: SymName => String, self: LightTypeTagRef): String = {
     self match {
       case Lambda(_, output) => getName(render, output)
       case NameReference(ref, _, _) => render(ref)
@@ -96,7 +96,7 @@ sealed trait LightTypeTagRef {
           val prefixes = refs.map(_.getPrefix).collect {
             case Some(p: AppliedNamedReference) => p
           }
-          if (prefixes.nonEmpty) Some(IntersectionReference(prefixes)) else None
+          if (prefixes.nonEmpty) Some(maybeIntersection(prefixes)) else None
         case Refinement(reference, _) => getPrefix(reference)
       }
     }
@@ -204,27 +204,41 @@ object LightTypeTagRef {
     def asName: NameReference
   }
 
-  final case class IntersectionReference(refs: Set[AppliedNamedReference]) extends AppliedReference {
+  // cannot make constructor private because of boopickle
+  final case class IntersectionReference /*private*/ (refs: Set[AppliedNamedReference]) extends AppliedReference {
     override def toString: String = this.render()
   }
 
-  final case class NameReference(ref: SymName, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  def maybeIntersection(refs: Set[AppliedNamedReference]): AppliedReference = {
+    val eradicate = Set[AppliedNamedReference](
+      LightTypeTagInheritance.tpeAny,
+      LightTypeTagInheritance.tpeAnyRef,
+      LightTypeTagInheritance.tpeObject
+    )
+    val normalized = refs.diff(eradicate)
+    normalized.toList match {
+      case Nil =>
+        LightTypeTagInheritance.tpeAny
+      case head :: Nil =>
+        head
+      case _ =>
+        IntersectionReference(normalized)
+    }
+  }
+
+  final case class NameReference(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None) extends AppliedNamedReference {
     override def asName: NameReference = this
 
     override def toString: String = this.render()
   }
   object NameReference {
-    def apply(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
     def apply(tpeName: String): NameReference = NameReference(SymTypeName(tpeName))
   }
 
-  final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None) extends AppliedNamedReference {
     override def asName: NameReference = NameReference(SymTypeName(ref), prefix = prefix)
 
     override def toString: String = this.render()
-  }
-  object FullReference {
-    def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
 
   final case class TypeParam(ref: AbstractReference, variance: Variance) {

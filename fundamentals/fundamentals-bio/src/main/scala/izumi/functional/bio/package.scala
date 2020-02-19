@@ -40,7 +40,6 @@ package object bio extends BIOSyntax {
   }
 
   private[bio] sealed trait BIOFunctorInstances
-
   object BIOFunctorInstances {
     // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
     @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
