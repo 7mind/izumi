@@ -26,10 +26,10 @@ import izumi.logstage.distage.LogstageModule
 import scala.util._
 
 
-class ConfigWriter[F[_] : DIEffect]
+class ConfigWriter[F[_]: DIEffect]
 (
   logger: IzLogger,
-  launcherVersion: ArtifactVersion@Id("launcher-version"),
+  launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
   //appModule: ModuleBase@Id("application.module"),

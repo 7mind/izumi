@@ -217,7 +217,3 @@ val myLogger = IzLogger()
 // configure SLF4j to use the same router that `myLogger` uses
 StaticLogRouter.instance.setup(myLogger.router)
 ```
-
-@@@ index
-
-@@@

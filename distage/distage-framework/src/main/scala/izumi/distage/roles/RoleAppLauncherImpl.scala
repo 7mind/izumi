@@ -21,7 +21,7 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.logstage.api.IzLogger
+import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.api.logger.LogRouter
 
 import scala.reflect.ClassTag
@@ -58,8 +58,11 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def defaultActivations: Activation = StandardAxis.prodActivation
   protected def requiredActivations: Activation = Activation.empty
 
+  protected def defaultLogLevel: Log.Level = Log.Level.Info
+  protected def defaultLogFormatJson: Boolean = false
+
   def launch(parameters: RawAppArgs): Unit = {
-    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters)
+    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel = Log.Level.Info)
     showBanner(earlyLogger, referenceLibraryInfo)
 
     val bsPlugins = makeBootstrapPluginLoader().load(bootstrapPluginConfig)
@@ -72,7 +75,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     earlyLogger.info(s"Loaded ${bsDefinition.bindings.size -> "bootstrap bindings"}...")
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
-    val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config)
+    val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
 
     val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
     val appDefinition = mergeStrategy.merge(appPlugins)
@@ -201,7 +204,6 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
 
   protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
     val maybeGlobalConfig = parameters.globalParameters.findValue(Options.configParam).asFile
-
     val roleConfigs = parameters.roles.map {
       roleParams =>
         roleParams.role -> roleParams.roleParameters.findValue(Options.configParam).asFile

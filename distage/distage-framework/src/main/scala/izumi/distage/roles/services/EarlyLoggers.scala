@@ -11,17 +11,14 @@ import izumi.logstage.api.{IzLogger, Log}
 import scala.util.Try
 
 object EarlyLoggers {
-  private[this] final val defaultLogLevel = Log.Level.Info
-  private[this] final val defaultLogFormatJson = false
-
-  def makeEarlyLogger(parameters: RawAppArgs): IzLogger = {
-    val rootLogLevel = getRootLogLevel(parameters.globalParameters)
+  def makeEarlyLogger(parameters: RawAppArgs, defaultLogLevel: Log.Level): IzLogger = {
+    val rootLogLevel = getRootLogLevel(parameters.globalParameters, defaultLogLevel)
     IzLogger(rootLogLevel)("phase" -> "early")
   }
 
-  def makeLateLogger(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig): IzLogger = {
-    val rootLogLevel = getRootLogLevel(parameters.globalParameters)
-    val logJson = getLogFormatJson(parameters.globalParameters)
+  def makeLateLogger(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig, defaultLogLevel: Log.Level, defaultLogFormatJson: Boolean): IzLogger = {
+    val rootLogLevel = getRootLogLevel(parameters.globalParameters, defaultLogLevel)
+    val logJson = getLogFormatJson(parameters.globalParameters, defaultLogFormatJson)
     val loggerConfig = Try(config.config.getConfig("logger")).getOrElse(ConfigFactory.empty("Couldn't parse `logger` configuration"))
     val router = new SimpleLoggerConfigurator(earlyLogger)
       .makeLogRouter(
@@ -33,13 +30,13 @@ object EarlyLoggers {
     IzLogger(router)("phase" -> "late")
   }
 
-  private def getRootLogLevel(parameters: RawEntrypointParams): Level = {
+  private def getRootLogLevel(parameters: RawEntrypointParams, defaultLogLevel: Log.Level): Level = {
     parameters.findValue(Options.logLevelRootParam)
       .map(v => Log.Level.parseSafe(v.value, defaultLogLevel))
       .getOrElse(defaultLogLevel)
   }
 
-  private def getLogFormatJson(parameters: RawEntrypointParams): Boolean = {
+  private def getLogFormatJson(parameters: RawEntrypointParams, defaultLogFormatJson: Boolean): Boolean = {
     parameters.findValue(Options.logFormatParam)
       .map(_.value == "json")
       .getOrElse(defaultLogFormatJson)

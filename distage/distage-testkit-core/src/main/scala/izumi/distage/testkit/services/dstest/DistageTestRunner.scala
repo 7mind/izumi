@@ -27,6 +27,7 @@ import izumi.fundamentals.platform.language.CodePosition
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
+import logstage.Log
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -65,7 +66,7 @@ class DistageTestRunner[F[_] : TagK]
         }
         val config = loader.buildConfig()
 
-        val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config)
+        val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, Log.Level.Info, defaultLogFormatJson = false)
 
         val checker = new IntegrationChecker.Impl[F](testRunnerLogger)
         testRunnerLogger.info(s"Processing env ${env.hashCode() -> "id"} with ${tests.size -> "tests"} in ${TagK[F].tag -> "monad"}, ${env.configPackage}, ${env.activation}")
