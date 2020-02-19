@@ -28,7 +28,7 @@ object RoleAppPlanner {
                           bsModule: BootstrapModule,
                           logger: IzLogger,
                           bootloader: Bootloader,
-                         ) extends RoleAppPlanner[F] { self =>
+                        ) extends RoleAppPlanner[F] { self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
@@ -45,7 +45,7 @@ object RoleAppPlanner {
       val app = bootloader.boot(BootConfig(
         bootstrap = _ => bsModule,
         appModule = _.overridenBy(additionalModule),
-        gcMode = _ => GCMode.GCRoots(runtimeGcRoots),
+        gcMode = _ => GCMode(runtimeGcRoots),
       ))
 
       val appPlan = app.injector.trisectByKeys(app.module.drop(runtimeGcRoots), appMainRoots) {

@@ -4,4 +4,6 @@ trait Renderable[T]  {
   def render(value: T): String
 }
 
-object Renderable extends WithRenderableSyntax
+object Renderable extends WithRenderableSyntax {
+  @inline def apply[T: Renderable]: Renderable[T] = implicitly
+}

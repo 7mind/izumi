@@ -1,17 +1,21 @@
 package izumi.distage.roles
 
+import java.io.File
+
 import distage._
+import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.framework.services.{ActivationInfoExtractor, ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
+import izumi.distage.framework.services._
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppLauncher.Options
+import izumi.distage.roles.RoleAppLauncherImpl.ActivationConfig
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
@@ -44,6 +48,7 @@ import scala.reflect.ClassTag
   * 15. Run finalizers
   * 16. Shutdown executors
   */
+// FIXME: rewrite using DI https://github.com/7mind/izumi/issues/779
 abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
@@ -59,6 +64,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
 
   protected def defaultLogLevel: Log.Level = Log.Level.Info
   protected def defaultLogFormatJson: Boolean = false
+
+  protected def configActivationSection: String = "activation"
 
   def launch(parameters: RawAppArgs): Unit = {
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
@@ -92,7 +99,11 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     validate(bsModule, appModule)
 
     val activationInfo = parseActivationInfo(lateLogger, appModule)
-    val activation = new RoleAppActivationParser().parseActivation(lateLogger, parameters, activationInfo, defaultActivations ++ requiredActivations)
+    val activation = {
+      defaultActivations ++
+        requiredActivations ++
+        parseActivation(lateLogger, parameters, roles, config, activationInfo)
+    }
 
     val options = planningOptions(parameters)
     val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger.router)
@@ -100,7 +111,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     val finalBsModule = moduleProvider.bootstrapModules().merge overridenBy bsModule overridenBy bsOverride
     val finalAppModule = moduleProvider.appModules().merge overridenBy appModule overridenBy appOverride
     val roots = gcRoots(roles)
-    val planner = makePlanner(options, finalBsModule, lateLogger, Injector.bootloader(PlannerInput(finalAppModule, roots), activation))
+    val bootloader = Injector.bootloader(PlannerInput(finalAppModule, roots), activation)
+    val planner = makePlanner(options, finalBsModule, lateLogger, bootloader)
     planner.makePlan(roots)
   }
 
@@ -123,7 +135,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     StartupPlanExecutor(injector, new IntegrationChecker.Impl[F](lateLogger))
   }
 
-  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, @unused activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
+  protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
     new ModuleProvider.Impl[F](
       logRouter = logRouter,
       config = config,
@@ -131,6 +143,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
       options = options,
       args = parameters,
       activationInfo = activationInfo,
+      activation = activation,
     )
   }
 
@@ -151,28 +164,24 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val roleProvider = new RoleProvider.Impl(logger, activeRoleNames)
     val roles = roleProvider.getInfo(bindings)
-    printRoleInfo(logger, roles)
+
+    logger.info(s"Available ${roles.render() -> "roles"}")
 
     val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
     if (missing.nonEmpty) {
       logger.crit(s"Missing ${missing.niceList() -> "roles"}")
       throw new DIAppBootstrapException(s"Unknown roles: $missing")
     }
+    if (roles.requiredRoleBindings.isEmpty) {
+      throw new DIAppBootstrapException(
+        s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
+          |
+          |Available roles: ${roles.render()}""".stripMargin)
+    }
 
     roles
   }
 
-  protected def printRoleInfo(logger: IzLogger, roles: RolesInfo): Unit = {
-    val requestedNames = roles.requiredRoleBindings.map(_.descriptor.id)
-
-    val availableRoleInfo = roles.availableRoleBindings.map {
-      r =>
-        val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
-        s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.source.getOrElse("N/A")}"
-    }.sorted
-
-    logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
-  }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {
     def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {
@@ -194,17 +203,46 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     if (appModule.bindings.isEmpty) throw new DIAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
   }
 
-  protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
+  protected def makeConfigLoader(earlyLogger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
+    val (maybeGlobalConfig, roleConfigs) = makeConfigLoaderParameters(parameters)
+    new ConfigLoader.LocalFSImpl(earlyLogger, maybeGlobalConfig, roleConfigs)
+  }
+
+  protected def makeConfigLoaderParameters(parameters: RawAppArgs): (Option[File], Map[String, Option[File]]) = {
     val maybeGlobalConfig = parameters.globalParameters.findValue(Options.configParam).asFile
     val roleConfigs = parameters.roles.map {
       roleParams =>
         roleParams.role -> roleParams.roleParameters.findValue(Options.configParam).asFile
     }
-    new ConfigLoader.LocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
+    (maybeGlobalConfig, roleConfigs.toMap)
   }
 
-  protected def parseActivationInfo(logger: IzLogger, appModule: ModuleBase): ActivationInfo = {
-    ActivationInfoExtractor.findAvailableChoices(logger, appModule)
+  protected def parseActivationInfo(lateLogger: IzLogger, appModule: ModuleBase): ActivationInfo = {
+    ActivationInfoExtractor.findAvailableChoices(lateLogger, appModule)
   }
 
+  /** Note, besides overriding this method, activation parsing strategy can also be changed by using bootstrap modules or plugins
+    * and adding a binding for `make[Activation]` */
+  protected def parseActivation(lateLogger: IzLogger, parameters: RawAppArgs, @unused rolesInfo: RolesInfo, config: AppConfig, activationInfo: ActivationInfo): Activation = {
+    val parser = new RoleAppActivationParser.Impl(lateLogger)
+
+    val cmdChoices = parameters.globalParameters.findValues(Options.use).map(_.value.split2(':'))
+    val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
+
+    val configChoices = if (config.config.hasPath(configActivationSection)) {
+      ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).choices
+    } else Map.empty
+    val configActivations = parser.parseActivation(configChoices, activationInfo)
+
+    configActivations ++ cmdActivations // commandline choices override values in config
+  }
+
+}
+
+object RoleAppLauncherImpl {
+
+  final case class ActivationConfig(choices: Map[String, String])
+  object ActivationConfig {
+    implicit val diConfigReader: DIConfigReader[ActivationConfig] = DIConfigReader[Map[String, String]].map(ActivationConfig(_))
+  }
 }

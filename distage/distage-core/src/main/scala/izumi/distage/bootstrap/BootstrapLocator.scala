@@ -27,6 +27,10 @@ import izumi.fundamentals.reflection.Tags.TagK
 final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = {
+    // `bootstrapActivation` will be used when planning bootstrap environment,
+    // if BootstrapModule defines its own Activation, the new Activation will
+    // be used for real plans in the `Injector`. Otherwise `bootstrapActivation`
+    // will be used in both.
     val bindings1 = new BootstrapModuleDef {
       make[Activation].fromValue(bootstrapActivation)
     }.overridenBy(bindings0)

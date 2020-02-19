@@ -8,6 +8,7 @@ import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
+import izumi.distage.model.definition.Activation
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.AbstractRole
@@ -31,19 +32,21 @@ object ModuleProvider {
     options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
+    activation: Activation,
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
-      val rolesModule = new BootstrapModuleDef {
+      val roleInfoModule = new BootstrapModuleDef {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
+        make[Activation].named("initial").fromValue(activation) // make initial activation available to bootstrap plugins FIXME: remove after adding mutators, will become redundant
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
 
-      val autosetModule = AutoSetModule()
+      val collectRolesModule = AutoSetModule()
         .register[AbstractRole[F]]
 
       val resourceRewriter = new BootstrapModuleDef {
@@ -52,23 +55,26 @@ object ModuleProvider {
           .add[ResourceRewriter]
       }
 
+      val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
+
       Seq(
-        Seq(
-          autosetModule,
-          rolesModule,
-          resourceRewriter,
-          loggerModule,
-        ),
-        if (options.addGraphVizDump) Seq(new GraphDumpBootstrapModule()) else Seq.empty,
-      ).flatten
+        collectRolesModule,
+        roleInfoModule,
+        resourceRewriter,
+        loggerModule,
+        graphvizDumpModule,
+        appConfigModule.morph[BootstrapModule], // make config available for bootstrap plugins
+      )
     }
 
     def appModules(): Seq[Module] = {
       Seq(
-        AppConfigModule(config),
+        appConfigModule,
         IdentityDIEffectModule,
       )
     }
+
+    private[this] def appConfigModule: AppConfigModule = AppConfigModule(config)
   }
 
 }
