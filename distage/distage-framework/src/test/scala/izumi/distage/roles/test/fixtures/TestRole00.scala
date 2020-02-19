@@ -51,6 +51,7 @@ object roles {
 
     override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
       logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
+      assert(conf.overridenInt == 111)
     }) {
       _ =>
         DIEffect[F].maybeSuspend {

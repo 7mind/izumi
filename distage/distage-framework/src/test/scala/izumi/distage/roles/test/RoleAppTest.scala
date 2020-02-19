@@ -47,7 +47,7 @@ class RoleAppTest extends AnyWordSpec
     }
   }
 
-  val logLevel = "crit"
+  val logLevel = "warn"
   //val logLevel = "info"
 
   "Role Launcher" should {
@@ -237,6 +237,7 @@ class RoleAppTest extends AnyWordSpec
       assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
 
       assert(roleCfgMinRestored.getString("testservice2.strval") == "xxx")
+      assert(roleCfgMinRestored.getString("testservice.overridenInt") == "111")
     }
   }
 
