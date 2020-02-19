@@ -14,11 +14,6 @@ object GCMode {
     GCMode.GCRoots(roots)
   }
 
-  @deprecated("Use GCMode.apply(set)", "will be removed in 0.10.2")
-  def fromSet(roots: Set[DIKey]): GCMode = {
-    if (roots.nonEmpty) GCRoots(roots) else NoGC
-  }
-
   final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")
 
