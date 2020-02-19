@@ -5,7 +5,8 @@ import java.nio.charset.StandardCharsets
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymTermName, SymTypeName}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference, SymName}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
 
 /**
@@ -227,6 +228,8 @@ object LightTypeTag {
   private[macrortti] val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
     import izumi.thirdparty.internal.boopickle.Default._
 
+    implicit lazy val symTypeName: Pickler[SymTypeName] = generatePickler[SymTypeName]
+    implicit lazy val symTermName: Pickler[SymTermName] = generatePickler[SymTermName]
     implicit lazy val symName: Pickler[SymName] = generatePickler[SymName]
     implicit lazy val appliedRefSerializer: Pickler[AppliedReference] = generatePickler[AppliedReference]
     implicit lazy val nameRefSerializer: Pickler[NameReference] = generatePickler[NameReference]
