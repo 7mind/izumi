@@ -34,7 +34,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       injector.produce(plan).unsafeGet()
     }
 
-    assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/13 operations failed"))
+    assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/14 operations failed"))
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}

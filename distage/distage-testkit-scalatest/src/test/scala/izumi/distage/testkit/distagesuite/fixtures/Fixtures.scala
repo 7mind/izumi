@@ -6,6 +6,7 @@ import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -29,7 +30,13 @@ abstract class MockAppPlugin[F[_] : TagK] extends PluginDef {
   make[MockCache[F]]
   make[MockCachedUserService[F]]
   make[ApplePaymentProvider[F]]
+  make[ActiveComponent].from(TestActiveComponent).tagged(Env.Test)
+  make[ActiveComponent].from(ProdActiveComponent).tagged(Env.Prod)
 }
+
+trait ActiveComponent
+case object TestActiveComponent extends ActiveComponent
+case object ProdActiveComponent extends ActiveComponent
 
 class MockPostgresCheck[F[_]]() extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()

@@ -2,7 +2,7 @@ package izumi.distage.framework.services
 
 import java.io.File
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import distage.config.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigSource, ResourceConfigKind}
 import izumi.fundamentals.platform.resources.IzResources
@@ -25,28 +25,28 @@ import scala.util.{Failure, Success, Try}
   *   - common-reference-dev.conf
   */
 trait ConfigLoader {
-  def buildConfig(): AppConfig
+  def loadConfig(): AppConfig
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(buildConfig())
+  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
 }
 
 object ConfigLoader {
   class LocalFSImpl(
     logger: IzLogger,
     baseConfig: Option[File],
-    roleConfigs: Map[String, Option[File]],
+    moreConfigs: Map[String, Option[File]],
   ) extends ConfigLoader {
 
     protected def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
-    def buildConfig(): AppConfig = {
+    def loadConfig(): AppConfig = {
       val commonConfigFiles = baseConfig.fold(
         defaultBaseConfigs.flatMap(toConfig(_, baseConfig))
       )(f => Seq(ConfigSource.File(f)))
 
-      val roleConfigFiles = roleConfigs.flatMap {
-        case (roleName, roleConfig) =>
-          toConfig(roleName, roleConfig)
+      val roleConfigFiles = moreConfigs.flatMap {
+        case (referenceName, maybeConfigFile) =>
+          toConfig(referenceName, maybeConfigFile)
       }.toList
 
       val allConfigs = roleConfigFiles ++ commonConfigFiles
@@ -109,14 +109,26 @@ object ConfigLoader {
     }
 
     protected def verifyConfigs(src: ConfigSource, cfg: Config, acc: Config): Unit = {
-      val duplicateKeys = acc.entrySet().asScala.map(_.getKey).intersect(cfg.entrySet().asScala.map(_.getKey))
+      val duplicateKeys = getKeys(acc) intersect getKeys(cfg)
       if (duplicateKeys.nonEmpty) {
         src match {
           case ConfigSource.Resource(_, ResourceConfigKind.Development) =>
             logger.debug(s"Some keys in supplied ${src -> "development config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
-
           case _ =>
             logger.warn(s"Some keys in supplied ${src -> "config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
+        }
+      }
+    }
+
+    protected def getKeys(c: Config): collection.Set[String] = {
+      if (c.isResolved) {
+        c.entrySet().asScala.map(_.getKey)
+      } else {
+        Try {
+          c.resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+        }.toOption.filter(_.isResolved) match {
+          case Some(value) => value.entrySet().asScala.map(_.getKey)
+          case None => Set.empty
         }
       }
     }

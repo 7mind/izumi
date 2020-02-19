@@ -50,8 +50,7 @@ object IntegrationChecker {
       val bad = instances.collect { case (ick, None) => ick }
 
       if (bad.isEmpty) {
-        P
-          .parTraverse[IntegrationCheck, Either[ResourceCheck.Failure, Unit]](good)(runCheck)
+        P.parTraverse(good)(runCheck)
           .flatMap {
             results =>
               results.collect { case Left(failure) => failure } match {

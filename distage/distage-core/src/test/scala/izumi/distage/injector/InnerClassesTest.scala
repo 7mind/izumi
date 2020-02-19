@@ -167,13 +167,13 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     FactoryConstructor[testProviderModule.TestFactory]
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.target[testProviderModule.TestFactory](new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestFactory]
     })
 
     val context = mkInjector().produce(definition).unsafeGet()
-    assert(context.instances.size == 2 + 5)
+    assert(context.instances.size == 2)
 
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
   }

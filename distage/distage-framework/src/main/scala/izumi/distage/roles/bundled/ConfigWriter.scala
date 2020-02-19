@@ -114,7 +114,6 @@ class ConfigWriter[F[_]: DIEffect]
       new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
-    //val newAppModule = appModule
     val plans = context.reboot(cfg).makePlan(Set(roleDIKey))
 
     def getConfig(plan: OrderedPlan): Option[Config] = {

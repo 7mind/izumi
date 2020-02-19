@@ -23,7 +23,6 @@ object BootstrapFactory {
 
       val moreConfigs = Map(
         s"$lastPackage-test" -> None,
-        "application" -> None,
       )
       new ConfigLoader.LocalFSImpl(logger, None, moreConfigs)
     }

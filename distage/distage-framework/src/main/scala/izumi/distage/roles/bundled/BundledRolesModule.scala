@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.time.IzTime
 
 import scala.reflect.ClassTag
 
-abstract class DistageRolesModule[F[_]: TagK] extends ModuleDef {
+abstract class BundledRolesModule[F[_]: TagK] extends ModuleDef {
   make[ConfigWriter[F]]
   make[Help[F]]
   make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(versionString))
@@ -30,10 +30,10 @@ abstract class DistageRolesModule[F[_]: TagK] extends ModuleDef {
   }
 }
 
-object DistageRolesModule {
-  def apply[F[_]: TagK](version: String): DistageRolesModule[F] = {
+object BundledRolesModule {
+  def apply[F[_]: TagK](version: String): BundledRolesModule[F] = {
     val v = version
-    new DistageRolesModule { override def versionString: String = v }
+    new BundledRolesModule { override def versionString: String = v }
   }
 }
 

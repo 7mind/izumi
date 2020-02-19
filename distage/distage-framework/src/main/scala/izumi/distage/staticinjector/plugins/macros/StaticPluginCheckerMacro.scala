@@ -6,14 +6,14 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
+import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.PlannerInput
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.services.RoleAppActivationParser
 import izumi.distage.staticinjector.plugins.ModuleRequirements
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.IzLogger
 
@@ -137,12 +137,13 @@ object StaticPluginCheckerMacro {
     val module = config overridenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
     val logger = IzLogger.NullLogger
-    val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
-    val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Activation.empty)
 
-    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap overridenBy new BootstrapModuleDef {
-      make[Activation].fromValue(activation)
-    })
+    val activation = {
+      val activationInfo = ActivationInfoExtractor.findAvailableChoices(logger, module)
+      new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
+    }
+
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap, activation)
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)

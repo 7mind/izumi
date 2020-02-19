@@ -9,7 +9,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
-import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
+import izumi.distage.testkit.distagesuite.fixtures.{ActiveComponent, ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository, TestActiveComponent}
 import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
@@ -205,7 +205,7 @@ final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
 
 abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F]  {
-  "test overloading of `in`" in {
+  "test overloading of `in`" in { () =>
     // `in` with Unit return type is ok
     assertCompiles(""" "test" in { println(""); () }  """)
     // `in` with Assertion return type is ok
@@ -221,3 +221,14 @@ abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalates
 final class OverloadingTestCIO extends OverloadingTest[CIO]
 final class OverloadingTestTask extends OverloadingTest[Task]
 final class OverloadingTestIdentity extends OverloadingTest[Identity]
+
+abstract class ActivationTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+  "resolve bindings for the same key via activation axis" in {
+    activeComponent: ActiveComponent =>
+      assert(activeComponent == TestActiveComponent)
+  }
+}
+
+final class ActivationTestCIO extends ActivationTest[CIO]
+final class ActivationTestTask extends ActivationTest[Task]
+final class ActivationTestIdentity extends ActivationTest[Identity]
