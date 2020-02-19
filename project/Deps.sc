@@ -136,15 +136,15 @@ object Izumi {
   object Targets {
     // switch order to use 2.13 in IDEA
     val targetScala = Seq(scala212, scala213)
-    val targetScalaN = Seq(scala212, scala213, scala211)
+    val targetScalaWith211 = Seq(scala212, scala213, scala211)
     //    val targetScala = Seq(scala213, scala212)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
     )
-    private val jvmPlatformNative = PlatformEnv(
+    private val jvmPlatformWith211 = PlatformEnv(
       platform = Platform.Jvm,
-      language = targetScalaN,
+      language = targetScalaWith211,
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
@@ -154,9 +154,9 @@ object Izumi {
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
       ),
     )
-    private val jsPlatformN = PlatformEnv(
+    private val jsPlatformWith211 = PlatformEnv(
       platform = Platform.Js,
-      language = targetScalaN,
+      language = targetScalaWith211,
       settings = Seq(
         "coverageEnabled" := false,
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
@@ -167,6 +167,8 @@ object Izumi {
       language = Seq(scala211),
       settings = Seq(
         "coverageEnabled" := false,
+        "test" in Platform.Native := "{}".raw,
+        "test" in(SettingScope.Test, Platform.Native) := "{}".raw,
       ),
     )
     private val jvmPlatformSbt = PlatformEnv(
@@ -177,7 +179,7 @@ object Izumi {
       ),
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
-    final val crossNative = Seq(jvmPlatformNative, jsPlatformN, nativePlatform)
+    final val crossNativeWith211 = Seq(jvmPlatformWith211, jsPlatformWith211, nativePlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
     final val jvmSbt = Seq(jvmPlatformSbt)
@@ -232,10 +234,7 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
-        "test" in Platform.Native := "{}".raw,
-        "test" in(SettingScope.Test, Platform.Native) := "{}".raw,
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-        //"testOptions" in (SettingScope.Test, Platform.Jvm) ++= s"""Seq(Tests.Argument("-u"), Tests.Argument(s"$${target.value}/junit-xml-$${scalaVersion.value}"))""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
@@ -403,7 +402,7 @@ object Izumi {
     ),
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
-    defaultPlatforms = Targets.crossNative,
+    defaultPlatforms = Targets.crossNativeWith211,
     enableProjectSharedAggSettings = false,
     settings = Seq(
       "crossScalaVersions" := "Nil".raw,
