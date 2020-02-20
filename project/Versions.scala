@@ -22,7 +22,7 @@ object V {
   val http4s = "0.21.1"
 
   // java-only dependencies below
-  val classgraph = "4.8.64"
+  val classgraph = "4.8.65"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
