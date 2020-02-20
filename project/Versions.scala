@@ -1,4 +1,3 @@
-import sbt.librarymanagement.CrossVersion
 object V {
   // foundation
   val collection_compat = "2.1.4"
