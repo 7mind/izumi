@@ -2,6 +2,7 @@ package com.github.pshirshov.configapp
 
 import distage.config.ConfigModuleDef
 import izumi.distage.model.PlannerInput
+import pureconfig.ConfigReader
 
 import scala.collection.immutable.ListSet
 
@@ -17,6 +18,21 @@ case class BackticksCaseClass(`boo-lean`: Boolean)
 case class SealedCaseClass(sealedTrait1: SealedTrait1)
 
 case class TupleCaseClass(tuple: (Int, String, Boolean, Option[Either[Boolean, List[String]]]))
+
+case class CustomCaseClass(
+                            customObject: CustomObject,
+                            mapCustomObject: Map[String, CustomObject],
+                            mapListCustomObject: Map[String, List[CustomObject]],
+                          )
+
+case class CustomObject(value: Int)
+object CustomObject {
+  implicit val pureconfigReader: ConfigReader[CustomObject] = ConfigReader.fromStringOpt {
+    case "eaaxacaca" => Some(CustomObject(453))
+    case "a" => Some(CustomObject(45))
+    case _ => Some(CustomObject(1))
+  }
+}
 
 sealed trait SealedTrait1
 object SealedTrait {
@@ -45,6 +61,7 @@ object TestConfigReaders {
 
   final val optDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[OptionCaseClass]]
+    makeConfig[OptionCaseClass]("OptionCaseClass")
   })
 
   final val backticksDefinition = PlannerInput.noGc(new ConfigModuleDef {
@@ -59,5 +76,15 @@ object TestConfigReaders {
 
   final val tupleDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[TupleCaseClass]]
+    makeConfig[TupleCaseClass]("TupleCaseClass")
+  })
+
+  final val customCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
+    {
+      import izumi.distage.config.codec.PureconfigAutoDerive.exportedReader._
+      implicitly[ConfigReader[CustomCaseClass]]
+    }
+    make[Service[CustomCaseClass]]
+    makeConfig[CustomCaseClass]("CustomCaseClass")
   })
 }
