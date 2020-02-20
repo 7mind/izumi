@@ -21,11 +21,10 @@ object PureconfigAutoDerive {
     def combine[A: ProductHint](ctx: CaseClass[ConfigReader, A]): ConfigReader[A] = MagnoliaConfigReader.combine(ctx)
     def dispatch[A: CoproductHint](ctx: SealedTrait[ConfigReader, A]): ConfigReader[A] = MagnoliaConfigReader.dispatch(ctx)
 
-//    @debug("Class")
     implicit def exportReader[A]: Exported[ConfigReader[A]] = macro ExportedMagnolia.materializeImpl[A]
     // Wrap the output of Magnolia in an Exported to force it to a lower priority.
     // This seems to work, despite magnolia hardcode checks for `macroApplication` symbol
-    // and relying on getting an diverging implicit expansion error for auto-mode.
+    // and relying on getting a diverging implicit expansion error for auto-mode.
     // Thankfully at least it doesn't check the output type of its `macroApplication`
     object ExportedMagnolia {
       def materializeImpl[A](c: blackbox.Context)(implicit t: c.WeakTypeTag[A]): c.Expr[Exported[ConfigReader[A]]] = {
