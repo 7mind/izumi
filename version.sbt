@@ -1,1 +1,1 @@
-version in ThisBuild := "0.10.2-M8-ZIORC16"
+version in ThisBuild := "0.10.2-ZIORC16-SNAPSHOT"
