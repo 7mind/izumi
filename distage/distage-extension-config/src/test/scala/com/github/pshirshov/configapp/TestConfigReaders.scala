@@ -80,10 +80,6 @@ object TestConfigReaders {
   })
 
   final val customCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
-    {
-      import izumi.distage.config.codec.PureconfigAutoDerive.exportedReader._
-      implicitly[ConfigReader[CustomCaseClass]]
-    }
     make[Service[CustomCaseClass]]
     makeConfig[CustomCaseClass]("CustomCaseClass")
   })
