@@ -56,7 +56,7 @@ class DistageTestRunner[F[_]: TagK]
             env.configOverrides match {
               case None => c
               case Some(overrides) =>
-                AppConfig(overrides.config.resolveWith(c.config))
+                AppConfig(overrides.config.withFallback(c.config).resolve())
             }
         }
         val config = configLoader.loadConfig()

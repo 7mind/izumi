@@ -15,19 +15,19 @@ object V {
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
-  val circe_derivation = "0.12.0-M7"
+  val circe_derivation = "0.13.0-M1"
   val pureconfig = "0.12.2"
   val jawn = "1.0.0"
 
   val http4s = "0.21.1"
 
   // java-only dependencies below
-  val classgraph = "4.8.64"
+  val classgraph = "4.8.65"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
   val scala_java_time = "2.0.0-RC3"
-  val docker_java = "3.2.0-rc4"
+  val docker_java = "3.2.0-rc5"
 }
