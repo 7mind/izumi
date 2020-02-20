@@ -111,21 +111,32 @@ class ConfigTest extends AnyWordSpec {
 //      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
 //    }
 //
-//    "resolve config tuples" in {
-//      val context = Injector(mkConfigModule("tuple-test.conf"))
-//        .produceUnsafe(TestConfigReaders.tupleDefinition)
-//
-//      assert(context.get[Service[TupleCaseClass]].conf == TupleCaseClass(tuple = (1, "two", false, Some(Right(List("r"))))))
-//    }
-//
-//    "resolve config options (missing field)" in {
-//      val injector = Injector.Standard(mkConfigModule("opt-test-missing.conf"))
-//      val plan = injector.plan(TestConfigReaders.optDefinition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
-//    }
+    "resolve config tuples" in {
+      val context = Injector()
+        .produce(mkConfigModule("tuple-test.conf")(TestConfigReaders.tupleDefinition)).unsafeGet()
+
+      assert(context.get[Service[TupleCaseClass]].conf == TupleCaseClass(tuple = (1, "two", false, Some(Right(List("r"))))))
+    }
+
+    "resolve using custom codecs" in {
+      val context = Injector()
+        .produce(mkConfigModule("custom-codec-test.conf")(TestConfigReaders.customCodecDefinition)).unsafeGet()
+
+      assert(context.get[Service[CustomCaseClass]].conf == CustomCaseClass(
+        CustomObject(453),
+        Map("a" -> CustomObject(453), "b" -> CustomObject(45)),
+        Map("x" -> List(CustomObject(45), CustomObject(453), CustomObject(1)))
+      ))
+    }
+
+    "resolve config options (missing field)" in {
+      val injector = Injector.Standard()
+      val plan = injector.plan(mkConfigModule("opt-test-missing.conf")(TestConfigReaders.optDefinition))
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+    }
 
     "resolve backticks" in {
       val context = Injector()
@@ -147,7 +158,7 @@ class ConfigTest extends AnyWordSpec {
       assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
       assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
     }
-//
+
 //    "Inject config works for trait methods" in {
 //      import ConfigFixtures._
 //
