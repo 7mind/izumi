@@ -10,7 +10,9 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
 
-class ConfigTest extends AnyWordSpec {
+import scala.collection.immutable.ListSet
+
+final class ConfigTest extends AnyWordSpec {
   def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
     p.copy(bindings = p.bindings ++ mkModule(ConfigFactory.load(path)))
   }
@@ -56,15 +58,15 @@ class ConfigTest extends AnyWordSpec {
 
       assert(context.get[Set[TestAppService]].size == 5)
     }
-//
-//    "resolve config references in set elements" in {
-//      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
-//      val plan = injector.plan(TestConfigApp.setDefinition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
-//    }
+
+    "resolve config references in set elements" in {
+      val injector = Injector(new ConfigPathExtractorModule)
+      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.setDefinition))
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
+    }
 
     "resolve config maps" in {
       val injector = Injector()
@@ -72,45 +74,46 @@ class ConfigTest extends AnyWordSpec {
 
       val context = injector.produce(plan).unsafeGet()
 
+      // FIXME: pureconfig can't read specialized map types
 //      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[_, _]])
       assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[Map[_, _]])
       assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
       assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
     }
 
-//    "The order is not preserved in config maps due to limitations of typesafe-config" in {
-//      val context = Injector(mkConfigModule("map-test.conf")).produceUnsafe(TestConfigReaders.mapDefinition)
-//
-//      assert(context.get[Service[MapCaseClass]].conf.mymap.toList.map(_._1) != List("service1", "service2", "service3", "service4", "service5", "service6"))
-//      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
-//    }
-//
-//    "resolve config lists" in {
-//      val injector = Injector.Standard(mkConfigModule("list-test.conf"))
-//      val plan = injector.plan(TestConfigReaders.listDefinition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
-//      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
-//      assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
-//        Set(
-//          Wrapper(HostPort(80, "localhost"))
-//          , Wrapper(HostPort(8080, "localhost"))
-//          , Wrapper(HostPort(8888, "localhost"))
-//        )
-//      )
-//    }
-//
-//    "resolve config options" in {
-//      val injector = Injector.Standard(mkConfigModule("opt-test.conf"))
-//      val plan = injector.plan(TestConfigReaders.optDefinition)
-//
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
-//    }
-//
+    "The order is not preserved in config maps due to limitations of typesafe-config" in {
+      val context = Injector().produce(mkConfigModule("map-test.conf")(TestConfigReaders.mapDefinition)).unsafeGet()
+
+      assert(context.get[Service[MapCaseClass]].conf.mymap.toList.map(_._1) != List("service1", "service2", "service3", "service4", "service5", "service6"))
+      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
+    }
+
+    "resolve config lists" in {
+      val injector = Injector()
+      val plan = injector.plan(mkConfigModule("list-test.conf")(TestConfigReaders.listDefinition))
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
+        Set(
+          Wrapper(HostPort(80, "localhost"))
+        , Wrapper(HostPort(8080, "localhost"))
+        , Wrapper(HostPort(8888, "localhost"))
+        )
+      )
+    }
+
+    "resolve config options" in {
+      val injector = Injector()
+      val plan = injector.plan(mkConfigModule("opt-test.conf")(TestConfigReaders.optDefinition))
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+    }
+
     "resolve config tuples" in {
       val context = Injector()
         .produce(mkConfigModule("tuple-test.conf")(TestConfigReaders.tupleDefinition)).unsafeGet()
@@ -130,7 +133,7 @@ class ConfigTest extends AnyWordSpec {
     }
 
     "resolve config options (missing field)" in {
-      val injector = Injector.Standard()
+      val injector = Injector()
       val plan = injector.plan(mkConfigModule("opt-test-missing.conf")(TestConfigReaders.optDefinition))
 
       val context = injector.produce(plan).unsafeGet()
@@ -158,47 +161,6 @@ class ConfigTest extends AnyWordSpec {
       assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
       assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
     }
-
-//    "Inject config works for trait methods" in {
-//      import ConfigFixtures._
-//
-//      val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
-//
-//      val definition = PlannerInput.noGc(new ModuleDef {
-//        make[TestDependency]
-//        make[TestTrait]
-//      })
-//      val plan = injector.plan(definition)
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
-//      assert(context.get[TestTrait].testConf == TestConf(true))
-//      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
-//    }
-//
-//    "Inject config works for concrete and abstract factory products and factory methods" in {
-//      import ConfigFixtures._
-//
-//      val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
-//
-//      val definition = PlannerInput.noGc(new ModuleDef {
-//        make[TestDependency]
-//        make[TestFactory]
-//        make[TestGenericConfFactory[TestConfAlias]]
-//      })
-//      val plan = injector.plan(definition)
-//      val context = injector.produce(plan).unsafeGet()
-//
-//      val factory = context.get[TestFactory]
-//      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
-//      assert(factory.makeTrait().testConf == TestConf(true))
-//      assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
-//
-//      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
-//
-//      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
-//      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
-//    }
 
   }
 

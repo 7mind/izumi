@@ -57,6 +57,7 @@ object TestConfigReaders {
 
   final val listDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[ListCaseClass]]
+    makeConfig[ListCaseClass]("ListCaseClass")
   })
 
   final val optDefinition = PlannerInput.noGc(new ConfigModuleDef {
