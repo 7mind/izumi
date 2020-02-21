@@ -12,8 +12,7 @@ class PlanCircularDependencyCheck(
   def verify(plan: OrderedPlan): Unit = {
     if (options.warnOnCircularDeps) {
       val allProxies = plan.steps.collect {
-        case s: ExecutableOp.ProxyOp.MakeProxy =>
-          s
+        case s: ExecutableOp.ProxyOp.MakeProxy if !s.byNameAllowed => s
       }
 
       allProxies.foreach {
