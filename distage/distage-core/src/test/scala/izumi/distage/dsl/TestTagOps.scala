@@ -14,7 +14,7 @@ object TestTagOps {
   object TestAxis extends Axis {
     override def name: String = "test"
 
-    abstract class TestAxis(implicit val axis: Axis) extends AxisValue
+    abstract class TestAxis extends AxisValueDef
     final case class TestTag(t: String) extends TestAxis {
       override def id: String = t
     }
