@@ -81,8 +81,9 @@ object TestConfigApp {
     make[TestConfigApp]
   })
 
-  final val setDefinition = PlannerInput.noGc(definition.bindings ++ new ModuleDef {
-    many[TestAppService]
-      .add[DataPuller1]
+  final val setDefinition = PlannerInput.noGc(new ConfigModuleDef {
+    many[TestAppService].add[DataPuller1]
+    makeConfigNamed[HostPort]("DataPuller1.target")
+    makeConfigNamed[HostPort]("DataPuller1.source")
   })
 }
