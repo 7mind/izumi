@@ -4,7 +4,8 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import distage.config.AppConfig
-import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigSource, ResourceConfigKind}
+import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
+import izumi.distage.model.exceptions.DIException
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -81,23 +82,25 @@ object ConfigLoader {
       val (good, bad) = loaded.partition(_._2.isSuccess)
 
       if (bad.nonEmpty) {
-        val failures = bad.collect {
+        val failuresList = bad.collect {
           case (s, Failure(f)) =>
             s"$s: $f"
         }
+        val failures = failuresList.niceList()
 
-        logger.error(s"Failed to load configs: ${failures.niceList() -> "failures"}")
+        logger.error(s"Failed to load configs: $failures")
+        throw new ConfigLoaderException(s"Failed to load configs: failures=$failures", failuresList)
+      } else {
+        val folded = foldConfigs(good.collect {
+          case (src, Success(c)) => src -> c
+        })
+
+        val config = ConfigFactory.systemProperties()
+          .withFallback(folded)
+          .resolve()
+
+        AppConfig(config)
       }
-
-      val folded = foldConfigs(good.collect {
-        case (src, Success(c)) => src -> c
-      })
-
-      val config = ConfigFactory.systemProperties()
-        .withFallback(folded)
-        .resolve()
-
-      AppConfig(config)
     }
 
     protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
@@ -162,6 +165,8 @@ object ConfigLoader {
         override def toString: String = s"file:$file"
       }
     }
+
+    final class ConfigLoaderException(message: String, val failures: List[String]) extends DIException(message)
   }
 
 }
