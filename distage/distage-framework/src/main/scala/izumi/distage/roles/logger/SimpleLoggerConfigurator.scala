@@ -3,6 +3,8 @@ package izumi.distage.roles.logger
 import com.typesafe.config.Config
 import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.roles.logger.SimpleLoggerConfigurator.SinksConfig
+import izumi.logstage.api.Log.Level.Warn
+import izumi.logstage.api.Log.Message
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
@@ -11,7 +13,7 @@ import izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, 
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 
-import scala.util.{Failure, Success}
+import scala.util.Try
 
 class SimpleLoggerConfigurator(
   exceptionLogger: IzLogger,
@@ -49,14 +51,21 @@ class SimpleLoggerConfigurator(
   }
 
   private[this] def readConfig(config: Config): SinksConfig = {
-    SinksConfig.configReader.decodeConfigValue(config.root) match {
-      case Failure(exception) =>
-        exceptionLogger.warn(s"Failed to read `logger` config section, using defaults: $exception")
-        SinksConfig(Map.empty, None, json = None, None)
+    Try(config.getConfig("logger")).toEither
+      .left.map(_ => Message("No `logger` section in config. Using defaults."))
+      .flatMap { config =>
+        SinksConfig.configReader.decodeConfigValue(config.root).toEither.left.map {
+          exception =>
+            Message(s"Failed to parse `logger` config section into ${classOf[SinksConfig] -> "type"}. Using defaults. $exception")
+        }
+      } match {
+        case Left(errMessage) =>
+          exceptionLogger.log(Warn)(errMessage)
+          SinksConfig(Map.empty, None, None, None)
 
-      case Success(value) =>
-        value
-    }
+        case Right(value) =>
+          value
+      }
   }
 }
 

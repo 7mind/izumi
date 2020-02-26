@@ -12,7 +12,6 @@ import izumi.logstage.sink.QueueingSink.CountingStep
 
 import scala.concurrent.duration._
 
-
 class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
   extends LogSink
     with AutoCloseable {
