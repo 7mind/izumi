@@ -32,13 +32,14 @@ trait ConfigLoader {
 }
 
 object ConfigLoader {
+  val defaultBaseConfigs = Seq("application", "common")
+
   class LocalFSImpl(
     logger: IzLogger,
     baseConfig: Option[File],
     moreConfigs: Map[String, Option[File]],
+    defaultBaseConfigs: Seq[String],
   ) extends ConfigLoader {
-
-    protected def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
     def loadConfig(): AppConfig = {
       val commonConfigFiles = baseConfig.fold(

@@ -66,6 +66,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   protected def defaultLogFormatJson: Boolean = false
 
   protected def configActivationSection: String = "activation"
+  protected def defaultBaseConfigs: Seq[String] = ConfigLoader.defaultBaseConfigs
 
   def launch(parameters: RawAppArgs): Unit = {
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
@@ -205,7 +206,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
 
   protected def makeConfigLoader(earlyLogger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
     val (maybeGlobalConfig, roleConfigs) = makeConfigLoaderParameters(parameters)
-    new ConfigLoader.LocalFSImpl(earlyLogger, maybeGlobalConfig, roleConfigs)
+    new ConfigLoader.LocalFSImpl(earlyLogger, maybeGlobalConfig, roleConfigs, defaultBaseConfigs)
   }
 
   protected def makeConfigLoaderParameters(parameters: RawAppArgs): (Option[File], Map[String, Option[File]]) = {

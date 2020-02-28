@@ -19,7 +19,7 @@ trait BootstrapFactory {
 object BootstrapFactory {
   object Impl extends BootstrapFactory {
     def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader = {
-      new ConfigLoader.LocalFSImpl(logger, None, Map(configResourceName -> None))
+      new ConfigLoader.LocalFSImpl(logger, None, Map(configResourceName -> None), ConfigLoader.defaultBaseConfigs)
     }
 
     def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
