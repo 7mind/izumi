@@ -58,10 +58,10 @@ final case class TestConfig( // general options
                              pluginConfig: PluginConfig,
                              bootstrapPluginConfig: PluginConfig = PluginConfig.empty,
                              activation: Activation = StandardAxis.testProdActivation,
-                             memoizationRoots: Set[_ <: DIKey] = Set.empty,
-                             forcedRoots: Set[_ <: DIKey] = Set.empty,
                              moduleOverrides: Module = Module.empty,
                              bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+                             memoizationRoots: Set[_ <: DIKey] = Set.empty,
+                             forcedRoots: Set[_ <: DIKey] = Set.empty,
 
                              // parallelism options
                              parallelEnvs: Boolean = true,
