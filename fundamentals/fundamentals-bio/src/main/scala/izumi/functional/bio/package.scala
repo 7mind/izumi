@@ -34,8 +34,9 @@ package object bio extends BIOSyntax {
     **/
   trait BIOFunctor[F[_, +_]] extends BIOFunctorInstances {
     def map[E, A, B](r: F[E, A])(f: A => B): F[E, B]
-    @inline def as[E, A, B](r: F[E, A])(v: => B): F[E, B] = map(r)(_ => v)
-    @inline def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
+
+    def as[E, A, B](r: F[E, A])(v: => B): F[E, B] = map(r)(_ => v)
+    def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
     @inline final def widen[E, A, A1](r: F[E, A])(implicit @deprecated("unused", "") ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
   }
 
@@ -55,7 +56,7 @@ package object bio extends BIOSyntax {
 
   trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
     def bimap[E, A, E2, A2](r: F[E, A])(f: E => E2, g: A => A2): F[E2, A2]
-    @inline def leftMap[E, A, E2](r: F[E, A])(f: E => E2): F[E2, A] = bimap(r)(f, identity)
+    def leftMap[E, A, E2](r: F[E, A])(f: E => E2): F[E2, A] = bimap(r)(f, identity)
 
     @inline final def widenError[E, A, E1](r: F[E, A])(implicit @deprecated("unused","") ev: E <:< E1): F[E1, A] = r.asInstanceOf[F[E1, A]]
     @inline final def widenBoth[E, A, E1, A1](r: F[E, A])(implicit @deprecated("unused","") ev: E <:< E1, @deprecated("unused", "") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
@@ -76,11 +77,11 @@ package object bio extends BIOSyntax {
     def traverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
     @inline final def forever[E, A](r: F[E, A]): F[E, Nothing] = *>(r, forever(r))
-    @inline def traverse_[E, A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = void(traverse(l)(f))
-    @inline def sequence[E, A, B](l: Iterable[F[E, A]]): F[E, List[A]] = traverse(l)(identity)
-    @inline def sequence_[E](l: Iterable[F[E, Unit]]): F[E, Unit] = void(traverse(l)(identity))
+    def traverse_[E, A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = void(traverse(l)(f))
+    def sequence[E, A, B](l: Iterable[F[E, A]]): F[E, List[A]] = traverse(l)(identity)
+    def sequence_[E](l: Iterable[F[E, Unit]]): F[E, Unit] = void(traverse(l)(identity))
 
-    @inline final val unit: F[Nothing, Unit] = pure(())
+    final val unit: F[Nothing, Unit] = pure(())
     @inline final def traverse[E, A, B](o: Option[A])(f: A => F[E, B]): F[E, Option[B]] = o match {
       case Some(a) => map(f(a))(Some(_))
       case None => pure(None)
@@ -96,52 +97,26 @@ package object bio extends BIOSyntax {
 
   trait BIOError[F[+_, +_]] extends BIOGuarantee[F] {
     def fail[E](v: => E): F[E, Nothing]
-    def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B]
+    def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2]
     def catchSome[E, A, E2 >: E, A2 >: A](r: F[E, A])(f: PartialFunction[E, F[E2, A2]]): F[E2, A2]
-//    def catchSome[E, A](r: F[_ <: E, _ <: A])(f: PartialFunction[_ <: E, F[E, A]]): F[E, A]
 
     def fromEither[E, V](effect: => Either[E, V]): F[E, V]
     def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A]
     def fromTry[A](effect: => Try[A]): F[Throwable, A]
 
-    @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(pure), succ.andThen(pure))
-
-    @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
-    @inline def tapError[E, A, E1 >: E](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
-
-    @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
-    @inline def flip[E, A](r: F[E, A]): F[A, E] = redeem(r)(pure, fail(_))
+    def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = catchAll(map(r)(succ))(e => pure(err(e)))
+    def tapError[E, A, E1 >: E](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
+    def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
 
     // defaults
-    @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))
+    override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = catchAll(map(r)(g))(e => fail(f(e)))
   }
 
   trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
     def flatMap[E, A, E2 >: E, B](r: F[E, A])(f: A => F[E2, B]): F[E2, B]
     def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
 
-    // defaults
-    @inline def tap[E, A, E2 >: E](r: F[E, A])(f: A => F[E2, Unit]): F[E2, A] = flatMap[E, A, E2, A](r)(a => as(f(a))(a))
-
-    @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
-      flatMap(r)(a => pure(f(a)))
-    }
-
-    /** execute two operations in order, return result of second operation */
-    @inline override def *>[E, A, B](f: F[E, A], next: => F[E, B]): F[E, B] = {
-      flatMap(f)(_ => next)
-    }
-
-    /** execute two operations in order, same as `*>`, but return result of first operation */
-    @inline override def <*[E, A, B](f: F[E, A], next: => F[E, B]): F[E, A] = {
-      flatMap(f)(a => map(next)(_ => a))
-    }
-
-    /** execute two operations in order, map their results */
-    @inline override def map2[E, A, B, C](r1: F[E, A], r2: => F[E, B])(f: (A, B) => C): F[E, C] = {
-      flatMap(r1)(a => map(r2)(b => f(a, b)))
-    }
-
+    def tap[E, A, E2 >: E](r: F[E, A])(f: A => F[E2, Unit]): F[E2, A] = flatMap[E, A, E2, A](r)(a => as(f(a))(a))
     @inline final def when[E, E1](cond: F[E, Boolean])(ifTrue: F[E1, Unit])(implicit ev: E <:< E1): F[E1, Unit] = {
       ifThenElse(cond)(ifTrue, unit)
     }
@@ -151,13 +126,26 @@ package object bio extends BIOSyntax {
     @inline final def ifThenElse[E, E1, A](cond: F[E, Boolean])(ifTrue: F[E1, A], ifFalse: F[E1, A])(implicit ev: E <:< E1): F[E1, A] = {
       flatMap(widenError(cond)(ev))(if (_) ifTrue else ifFalse)
     }
+
+    // defaults
+    override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = flatMap(r)(a => pure(f(a)))
+    override def *>[E, A, B](f: F[E, A], next: => F[E, B]): F[E, B] = flatMap(f)(_ => next)
+    override def <*[E, A, B](f: F[E, A], next: => F[E, B]): F[E, A] = flatMap(f)(a => map(next)(_ => a))
+    override def map2[E, A, B, C](r1: F[E, A], r2: => F[E, B])(f: (A, B) => C): F[E, C] = flatMap(r1)(a => map(r2)(b => f(a, b)))
   }
 
   trait BIOMonadError[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
-    @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
+    def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = {
+      flatMap(attempt(r))(_.fold(err, succ))
+    }
+
+    def flip[E, A](r: F[E, A]): F[A, E] = {
+      redeem(r)(pure, fail(_))
+    }
+    def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
       redeem(r)(e => flatMap(f(e))(fail(_)), pure)
     }
-    @inline def tapBoth[E, A, E2 >: E](r: F[E, A])(err: E => F[E2, Unit], succ: A => F[E2, Unit]): F[E2, A] = {
+    def tapBoth[E, A, E2 >: E](r: F[E, A])(err: E => F[E2, Unit], succ: A => F[E2, Unit]): F[E2, A] = {
       tap(tapError[E, A, E2](r)(err))(succ)
     }
     /** for-comprehensions sugar:
@@ -168,7 +156,7 @@ package object bio extends BIOSyntax {
       *   } yield ()
       * }}}
       */
-    @inline def withFilter[E, A](r: F[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): F[E, A] = {
+    def withFilter[E, A](r: F[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): F[E, A] = {
       flatMap(r)(a => if (predicate(a)) pure(a) else fail(new NoSuchElementException("The value doesn't satisfy the predicate")))
     }
   }
@@ -176,12 +164,12 @@ package object bio extends BIOSyntax {
   trait BIOBracket[F[+_, +_]] extends BIOMonadError[F] {
     def bracketCase[E, A, B](acquire: F[E, A])(release: (A, BIOExit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B]
 
-    @inline def bracket[E, A, B](acquire: F[E, A])(release: A => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
+    def bracket[E, A, B](acquire: F[E, A])(release: A => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
       bracketCase[E, A, B](acquire)((a, _) => release(a))(use)
     }
 
     // defaults
-    @inline override def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A] = {
+    override def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A] = {
       bracket(unit)(_ => cleanup)(_ => f)
     }
   }
@@ -201,27 +189,25 @@ package object bio extends BIOSyntax {
   }
 
   trait BIO[F[+_, +_]] extends BIOPanic[F] {
-    type Or[+E, +A] = F[E, A]
-    type Just[+A] = F[Nothing, A]
+    final type Or[+E, +A] = F[E, A]
+    final type Just[+A] = F[Nothing, A]
 
     def syncThrowable[A](effect: => A): F[Throwable, A]
     def sync[A](effect: => A): F[Nothing, A]
 
     @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
-    // defaults
-    @inline def suspend[A](effect: => F[Throwable, A]): F[Throwable, A] = flatten(syncThrowable(effect))
+    def suspend[A](effect: => F[Throwable, A]): F[Throwable, A] = flatten(syncThrowable(effect))
 
-    @inline override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
+    // defaults
+    override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
       case Left(e) => fail(e): F[E, A]
       case Right(v) => pure(v): F[E, A]
     }
-
-    @inline override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A] = {
+    override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A] = {
       flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
     }
-
-    @inline override def fromTry[A](effect: => Try[A]): F[Throwable, A] = {
+    override def fromTry[A](effect: => Try[A]): F[Throwable, A] = {
       syncThrowable(effect.get)
     }
   }
@@ -247,15 +233,13 @@ package object bio extends BIOSyntax {
 
     def uninterruptible[E, A](r: F[E, A]): F[E, A]
 
-
     // defaults
-    @inline def never: F[Nothing, Nothing] = async(_ => ())
+    def never: F[Nothing, Nothing] = async(_ => ())
 
-    @inline def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
-    @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
+    def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
+    def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
     @inline final def fromFuture[A](mkFuture: => Future[A]): F[Throwable, A] = fromFuture(_ => mkFuture)
-
   }
 
   trait BIOTemporal[F[+_, +_]] extends BIOAsync[F] with BIOTemporalInstances {
@@ -335,4 +319,3 @@ package object bio extends BIOSyntax {
   }
 
 }
-

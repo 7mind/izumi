@@ -70,14 +70,11 @@ object BIOSyntax {
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A, E2, A2](r)(h)
     @inline final def catchSome[E2 >: E, A2 >: A](h: PartialFunction[E, F[E2, A2]]): F[E2, A2] = F.catchSome[E, A, E2, A2](r)(h)
 
-    @inline final def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[E, A, E2, B](r)(err, succ)
     @inline final def redeemPure[B](err: E => B, succ: A => B): F[Nothing, B] = F.redeemPure(r)(err, succ)
 
     @inline final def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.tapError[E, A, E1](r)(f)
 
     @inline final def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
-
-    @inline final def flip: F[A, E] = F.flip(r)
   }
 
   class BIOMonadErrorOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonadError[F]) extends BIOErrorOps(r) {
@@ -86,7 +83,10 @@ object BIOSyntax {
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
+    @inline final def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[E, A, E2, B](r)(err, succ)
+
     @inline final def leftFlatMap[E2](f: E => F[Nothing, E2]): F[E2, A] = F.leftFlatMap(r)(f)
+    @inline final def flip: F[A, E] = F.flip(r)
 
     @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[E, A, E2](r)(err, succ)
 
@@ -179,12 +179,12 @@ object BIOSyntax {
   trait BIOImplicitPuns2 extends BIOImplicitPuns3 {
     @inline implicit final def BIO[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
     /**
-     * Shorthand for [[BIO#syncThrowable]]
-     *
-     * {{{
-     *   BIO(println("Hello world!"))
-     * }}}
-     * */
+      * Shorthand for [[BIO#syncThrowable]]
+      *
+      * {{{
+      *   BIO(println("Hello world!"))
+      * }}}
+      */
     @inline final def BIO[F[+_, +_], A](effect: => A)(implicit F: BIO[F]): F[Throwable, A] = F.syncThrowable(effect)
     @inline final def BIO[F[+_, +_]: BIO]: BIO[F] = implicitly
   }

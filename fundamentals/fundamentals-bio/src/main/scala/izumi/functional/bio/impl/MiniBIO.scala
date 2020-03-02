@@ -30,7 +30,7 @@ import scala.language.implicitConversions
   * }}}
   * */
 sealed trait MiniBIO[+E, +A] {
-  def run(): BIOExit[E, A] = {
+  final def run(): BIOExit[E, A] = {
 
     final class Catcher[E0, A0, E1, B](
                                         val recover: BIOExit.Failure[E0] => MiniBIO[E1, B]
@@ -127,6 +127,8 @@ object MiniBIO {
         case BIOExit.Error(e, _) => err(e)
       }, succ)
     }
+
+    override def catchAll[E, A, E2, A2 >: A](r: MiniBIO[E, A])(f: E => MiniBIO[E2, A2]): MiniBIO[E2, A2] = redeem(r)(f, pure)
 
     override def catchSome[E, A, E2 >: E, A2 >: A](r: MiniBIO[E, A])(f: PartialFunction[E, MiniBIO[E2, A2]]): MiniBIO[E2, A2] = {
       Redeem[E, A, E2, A2](r, {

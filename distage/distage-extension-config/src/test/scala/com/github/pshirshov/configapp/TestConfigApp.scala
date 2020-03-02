@@ -4,7 +4,6 @@ import distage.Id
 import distage.config.{AppConfig, ConfigModuleDef}
 import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
 import izumi.fundamentals.platform.language.Quirks
 
 // application
