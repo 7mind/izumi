@@ -156,7 +156,7 @@ object Izumi {
       language = targetScala,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
     private val jsPlatformWith211 = PlatformEnv(
@@ -164,7 +164,7 @@ object Izumi {
       language = targetScalaWith211,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
     private val nativePlatform = PlatformEnv(
