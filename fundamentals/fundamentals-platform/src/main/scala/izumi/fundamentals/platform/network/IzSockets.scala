@@ -60,7 +60,7 @@ object IzSockets {
         (ss, new InetSocketAddress(address, ss.getLocalPort))
       }
 
-    } collect { case (socket, address) => socket.close(); address }
+    }.collect { case (socket, address) => socket.close(); address }
   }
 
   def temporaryServerHostnameAndPort(interface: String = RANDOM_LOOPBACK_ADDRESS): (String, Int) = {

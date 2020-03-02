@@ -1,5 +1,6 @@
 package izumi.distage.docker
 
+import java.net.ConnectException
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
@@ -21,14 +22,15 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
-trait ContainerDef {
+trait ContainerDef { self =>
   type Tag
   type Container = DockerContainer[Tag]
   type Config = ContainerConfig[Tag]
 
   def config: Config
 
-  /** For binding in `ModuleDef`:
+  /**
+    * For binding in `ModuleDef`:
     *
     * {{{
     * object KafkaDocker extends ContainerDef
@@ -48,8 +50,15 @@ trait ContainerDef {
     tag.discard()
     DockerContainer.resource[F](this)
   }
-}
 
+  final def copy(config: Config): ContainerDef.Aux[self.Tag] = {
+    @inline def c = config
+    new ContainerDef {
+      override type Tag = self.Tag
+      override def config: Config = c
+    }
+  }
+}
 object ContainerDef {
   type Aux[T] = ContainerDef {type Tag = T}
 }
@@ -67,7 +76,7 @@ final case class DockerContainer[Tag](
 
 object DockerContainer {
   def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
-    new Resource[F, conf.Tag](conf)(_, _)(_, _)
+    new Resource[F, conf.Tag](conf.config, _, _)(_, _)
   }
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[DIResource[F, DockerContainer[T]]]) extends AnyVal {
@@ -82,36 +91,35 @@ object DockerContainer {
 
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
-  final class Resource[F[_]: DIEffect: DIEffectAsync, T]
-  (
-    containerDecl: ContainerDef.Aux[T],
-  )(
+  final class Resource[F[_]: DIEffect: DIEffectAsync, T](
+    config: ContainerConfig[T],
     clientw: DockerClientWrapper[F],
     logger: IzLogger,
   ) extends DIResource[F, DockerContainer[T]] {
 
     private[this] val client = clientw.client
-    private[this] val config = containerDecl.config
 
-    implicit class DockerPortEx(port: DockerPort) {
-      def toExposedPort: ExposedPort = {
-        port match {
-          case DockerPort.TCP(number) =>
-            ExposedPort.tcp(number)
-          case DockerPort.UDP(number) =>
-            ExposedPort.udp(number)
-        }
+    private[this] def toExposedPort(port: DockerPort): ExposedPort = {
+      port match {
+        case DockerPort.TCP(number) =>
+          ExposedPort.tcp(number)
+        case DockerPort.UDP(number) =>
+          ExposedPort.udp(number)
       }
     }
 
-    override def acquire: F[DockerContainer[T]] = {
+    private[this] def shouldReuse(config: ContainerConfig[T]): Boolean = {
+      config.reuse && clientw.clientConfig.allowReuse
+    }
+
+    override def acquire: F[DockerContainer[T]] = DIEffect[F].suspendF {
       val ports = config.ports.map {
         containerPort =>
           val local = IzSockets.temporaryLocalPort()
-          val bp = containerPort.toExposedPort
+          val bp = toExposedPort(containerPort)
           val binding = new PortBinding(Ports.Binding.bindPort(local), bp)
           val stableLabels = Map(
-            "distage.reuse" -> config.reuse.toString,
+            "distage.reuse" -> shouldReuse(config).toString,
             s"distage.port.${containerPort.protocol}.${containerPort.number}.defined" -> "true",
           )
           val labels = Map(
@@ -120,53 +128,17 @@ object DockerContainer {
           PortDecl(containerPort, local, binding, stableLabels ++ labels)
       }
 
-      if (config.reuse && clientw.clientConfig.allowReuse) {
-        for {
-          containers <- DIEffect[F]
-            .maybeSuspend {
-              // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-              try {
-                client.listContainersCmd()
-                  .withAncestorFilter(List(config.image).asJava)
-                  .withStatusFilter(List("running").asJava)
-                  .exec()
-              } catch {
-                case c: java.net.ConnectException =>
-                  throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
-              }
-            }
-            .map(_.asScala.toList.sortBy(_.getId))
-
-          candidates = containers.view.flatMap {
-            c =>
-              val inspection = client.inspectContainerCmd(c.getId).exec()
-              mapContainerPorts(inspection) match {
-                case Left(value) =>
-                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
-                  Seq.empty
-                case Right(value) =>
-                  Seq((c, inspection, value))
-              }
-          }
-            .find {
-              case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty
-            }
-          existing <- candidates match {
-            case Some((c, inspection, existingPorts)) =>
-              for {
-                unverified <- DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), inspection.getName, existingPorts, config, clientw.clientConfig, Map.empty))
-                container <- await(unverified)
-              } yield {
-                container
-              }
-            case None =>
-              doRun(ports)
-          }
-        } yield {
-          existing
-        }
+      if (shouldReuse(config)) {
+        runReused(ports)
       } else {
         doRun(ports)
+      }
+    }
+    override def release(resource: DockerContainer[T]): F[Unit] = {
+      if (!shouldReuse(resource.containerConfig)) {
+        clientw.destroyContainer(resource.id)
+      } else {
+        DIEffect[F].unit
       }
     }
 
@@ -186,17 +158,73 @@ object DockerContainer {
         }
       }.flatMap {
         case HealthCheckResult.JustRunning =>
-          logger.info(s"$container looks alive...")
-          DIEffect[F].pure(container)
+          DIEffect[F].maybeSuspend {
+            logger.info(s"$container looks alive...")
+            container
+          }
+
         case HealthCheckResult.WithPorts(ports) =>
           val out = container.copy(availablePorts = ports)
-          logger.info(s"${out -> "container"} looks good...")
-        DIEffect[F].pure(out)
+          DIEffect[F].maybeSuspend {
+            logger.info(s"${out -> "container"} looks good...")
+            out
+          }
+
         case HealthCheckResult.Failed(t) =>
           DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
-        case HealthCheckResult.Uknnown =>
+
+        case HealthCheckResult.Unknown =>
           DIEffectAsync[F].sleep(config.healthCheckInterval).flatMap(_ => await(container))
       }
+    }
+
+    private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
+      for {
+        containers <- DIEffect[F].maybeSuspend {
+          // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+          try {
+            client.listContainersCmd()
+              .withAncestorFilter(List(config.image).asJava)
+              .withStatusFilter(List("running").asJava)
+              .exec()
+          } catch {
+            case c: ConnectException =>
+              throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+          }
+        }.map(_.asScala.toList.sortBy(_.getId))
+
+        candidates = {
+          val portSet = ports.map(_.port).toSet
+          containers.iterator.flatMap {
+            c =>
+              val inspection = client.inspectContainerCmd(c.getId).exec()
+              mapContainerPorts(inspection) match {
+                case Left(value) =>
+                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                  Seq.empty
+                case Right(value) =>
+                  Seq((c, inspection, value))
+              }
+          }.find {
+            case (_, _, eports) =>
+              portSet.diff(eports.keySet).isEmpty
+          }
+        }
+        existing <- candidates match {
+          case Some((c, inspection, existingPorts)) =>
+            val unverified = DockerContainer[T](
+              id = ContainerId(c.getId),
+              name = inspection.getName,
+              ports = existingPorts,
+              containerConfig = config,
+              clientConfig = clientw.clientConfig,
+              availablePorts = Map.empty,
+            )
+            await(unverified)
+          case None =>
+            doRun(ports)
+        }
+      } yield existing
     }
 
     @silent("deprecated")
@@ -246,6 +274,7 @@ object DockerContainer {
           maybeMappedPorts match {
             case Left(value) =>
               throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
+
             case Right(mappedPorts) =>
               val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
               logger.debug(s"Created $container from ${config.image}...")
@@ -273,17 +302,7 @@ object DockerContainer {
           }
         }
         result <- await(out)
-      } yield {
-        result
-      }
-    }
-
-    override def release(resource: DockerContainer[T]): F[Unit] = {
-      if (!resource.containerConfig.reuse) {
-        clientw.destroyContainer(resource.id)
-      } else {
-        DIEffect[F].unit
-      }
+      } yield result
     }
 
     private def mapContainerPorts(inspection: InspectContainerResponse): Either[Seq[DockerPort], Map[DockerPort, Seq[ServicePort]]] = {
@@ -293,11 +312,9 @@ object DockerContainer {
       val ports = config.ports.map {
         containerPort =>
           val mappings = for {
-            exposed <- Option(network.getPorts.getBindings.get(containerPort.toExposedPort)).toSeq
+            exposed <- Option(network.getPorts.getBindings.get(toExposedPort(containerPort))).toSeq
             port <- exposed
-          } yield {
-            port
-          }
+          } yield port
           (containerPort, mappings)
       }
 
