@@ -20,7 +20,6 @@ object Docker {
     def protocol: String
     override def toString: String = s"$protocol:$number"
   }
-
   object DockerPort {
     final case class TCP(number: Int) extends DockerPort {
       override def protocol: String = "tcp"
@@ -30,37 +29,11 @@ object Docker {
     }
   }
 
-  final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
-
-  final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
-
-  final case class ClientConfig(
-                                 readTimeoutMs: Int,
-                                 connectTimeoutMs: Int,
-                                 allowReuse: Boolean,
-                                 useRemote: Boolean,
-                                 useRegistry: Boolean,
-                                 remote: Option[RemoteDockerConfig],
-                                 registry: Option[DockerRegistryConfig],
-                               )
-
-  sealed trait HealthCheckResult
-  object HealthCheckResult {
-    sealed trait Running extends HealthCheckResult
-    final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
-    case object JustRunning extends Running
-    case object Uknnown extends HealthCheckResult
-    final case class Failed(t: Throwable) extends HealthCheckResult
-  }
-
-
-
-  final case class Mount(host: String, container: String, noCopy: Boolean = false)
-
-  trait ContainerNetwork {
-    def name: String
-  }
-
+  /**
+    * @param reuse    If true and [[ClientConfig#allowReuse]] is also true, keeps container alive after tests.
+    *                 If false, the container will be shut down.
+    *                 default: true
+    */
   final case class ContainerConfig[T](
                                        image: String,
                                        ports: Seq[DockerPort],
@@ -78,5 +51,38 @@ object Docker {
                                        healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
                                        portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
                                      )
+
+  /**
+    * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after tests.
+    *                     If false, the container will be shut down.
+    */
+  final case class ClientConfig(
+                                 readTimeoutMs: Int,
+                                 connectTimeoutMs: Int,
+                                 allowReuse: Boolean,
+                                 useRemote: Boolean,
+                                 useRegistry: Boolean,
+                                 remote: Option[RemoteDockerConfig],
+                                 registry: Option[DockerRegistryConfig],
+                               )
+
+  final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
+
+  final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
+
+  sealed trait HealthCheckResult
+  object HealthCheckResult {
+    case object Unknown extends HealthCheckResult
+
+    final case class Failed(t: Throwable) extends HealthCheckResult
+
+    sealed trait Running extends HealthCheckResult
+    case object JustRunning extends Running
+    final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
+  }
+
+  final case class Mount(host: String, container: String, noCopy: Boolean = false)
+
+  final case class ContainerNetwork(name: String)
 
 }
