@@ -11,5 +11,5 @@ object PV {
   val scala_js_version = "0.6.32"
   val scala_native_version = "0.4.0-M2"
   val crossproject_version = "1.0.0"
-  val scalajs_bundler_version = "0.17.0"
+  val scalajs_bundler_version = "0.14.0"
 }
