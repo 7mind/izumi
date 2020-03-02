@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.50`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.52`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -156,7 +156,7 @@ object Izumi {
       language = targetScala,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
     private val jsPlatformWith211 = PlatformEnv(
@@ -164,7 +164,7 @@ object Izumi {
       language = targetScalaWith211,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
     private val nativePlatform = PlatformEnv(
