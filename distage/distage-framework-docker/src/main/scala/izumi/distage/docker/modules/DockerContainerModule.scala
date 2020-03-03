@@ -14,6 +14,8 @@ class DockerContainerModule[F[_]: TagK] extends ModuleDef {
 }
 
 object DockerContainerModule {
+  def apply[F[_]: TagK]: DockerContainerModule[F] = new DockerContainerModule[F]
+
   final val config = new ConfigModuleDef {
     makeConfig[Docker.ClientConfig]("docker")
   }
