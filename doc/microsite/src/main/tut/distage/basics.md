@@ -453,7 +453,7 @@ You need to use effect-aware `Injector.produceF` method to use effect bindings.
 
 distage can instantiate traits and structural types. All unimplemented fields in a trait or a refinement are filled in from the object graph.
 
-This can be used to create ZIO Environment cakes with required dependencies - https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
+This can be used to create ZIO Environment cakes with required dependencies.
 
 Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
 and can be summoned at need. 
@@ -527,6 +527,68 @@ val main = Injector()
   .useEffect
 
 new zio.DefaultRuntime{}.unsafeRun(main)
+```
+
+Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
+the dependency in each method. This pattern can be generalized by implementing an instance of `cats.Contravariant` for your services
+and using it to turn environment dependencies into constructor parameters – that way ZIO Environment can be used uniformly
+for declaration of dependencies, but the dependencies used inside the service do not leak to other services calling it.
+Details: https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
+
+Example:
+
+```scala mdoc:reset:to-string
+import cats.Contravariant
+import distage.{GCMode, Injector, ModuleDef, ProviderMagnet, Tag, TagK, TraitConstructor}
+import zio.{Task, UIO, URIO, ZIO}
+
+trait Dependee[-R] {
+def x(y: String): URIO[R, Int]
+}
+trait Depender[-R] {
+def y: URIO[R, String]
+}
+implicit val contra1: Contravariant[Dependee] = new Contravariant[Dependee] {
+  def contramap[A, B](fa: Dependee[A])(f: B => A): Dependee[B] = new Dependee[B] { def x(y: String) = fa.x(y).provideSome(f) }
+}
+implicit val contra2: Contravariant[Depender] = new Contravariant[Depender] {
+  def contramap[A, B](fa: Depender[A])(f: B => A): Depender[B] = new Depender[B] { def y = fa.y.provideSome(f) }
+}
+
+trait DependeeR { def dependee: Dependee[Any] }
+trait DependerR { def depender: Depender[Any] }
+object dependee extends Dependee[DependeeR] { def x(y: String) = ZIO.accessM(_.dependee.x(y)) }
+object depender extends Depender[DependerR] { def y            = ZIO.accessM(_.depender.y) }
+
+// cycle
+object dependerImpl extends Depender[DependeeR] {
+  def y: URIO[DependeeR, String] = dependee.x("hello").map(_.toString)
+}
+object dependeeImpl extends Dependee[DependerR] {
+  def x(y: String): URIO[DependerR, Int] = if (y == "hello") UIO(5) else depender.y.map(y.length + _.length)
+}
+
+/** Fulfill the environment dependencies of a service from the object graph */
+def fullfill[R: Tag: TraitConstructor, M[_]: TagK: Contravariant](service: M[R]): ProviderMagnet[M[Any]] = {
+  TraitConstructor[R].provider
+    .map(depsCakeR => Contravariant[M].contramap(service)(_ => depsCakeR))
+}
+
+val module = new ModuleDef {
+  make[Depender[Any]].from(fullfill(dependerImpl))
+  make[Dependee[Any]].from(fullfill(dependeeImpl))
+}
+
+Injector()
+  .produceF[Task](module, GCMode.target[Dependee[Any]])
+  .use {
+    _.run(TraitConstructor[DependeeR].provider.map {
+      (for {
+        r <- dependee.x("zxc")
+        _ <- Task(println(s"result: $r"))
+      } yield ()).provide(_)
+    })
+  }.fold(_ => 1, _ => 0)
 ```
 
 If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
