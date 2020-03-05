@@ -63,16 +63,16 @@ trait BIOCatsConversions9 {
   * 2.13 seems to overweigh this rule compared to 2.12
   * So we "disjoin" the types from each other such that they're not "related", by *checks notes*... mixing some empty traits in
   */
-private[bio] sealed trait S1
-private[bio] sealed trait S2
-private[bio] sealed trait S3
-private[bio] sealed trait S4
-private[bio] sealed trait S5
-private[bio] sealed trait S6
-private[bio] sealed trait S7
-private[bio] sealed trait S8
-private[bio] sealed trait S9
-private[bio] sealed trait S10
+private[bio] sealed trait S1 extends Any
+private[bio] sealed trait S2 extends Any
+private[bio] sealed trait S3 extends Any
+private[bio] sealed trait S4 extends Any
+private[bio] sealed trait S5 extends Any
+private[bio] sealed trait S6 extends Any
+private[bio] sealed trait S7 extends Any
+private[bio] sealed trait S8 extends Any
+private[bio] sealed trait S9 extends Any
+private[bio] sealed trait S10 extends Any
 
 object BIOCatsConversions {
 
