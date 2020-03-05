@@ -24,7 +24,7 @@ object BootstrapFactory {
 
     def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
       // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-      new ModuleProvider.Impl[F](
+      new ModuleProvider.Impl(
         logRouter = logRouter,
         config = config,
         roles = roles,

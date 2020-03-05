@@ -1,6 +1,5 @@
 package izumi.distage.dsl
 
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{Axis, BindingTag}
 import izumi.fundamentals.platform.build.ExposedTestScope
 

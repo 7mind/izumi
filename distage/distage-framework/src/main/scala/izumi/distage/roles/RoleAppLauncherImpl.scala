@@ -137,7 +137,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   }
 
   protected def makeModuleProvider(options: PlanningOptions, parameters: RawAppArgs, activationInfo: ActivationInfo, activation: Activation, roles: RolesInfo, config: AppConfig, logRouter: LogRouter): ModuleProvider = {
-    new ModuleProvider.Impl[F](
+    new ModuleProvider.Impl(
       logRouter = logRouter,
       config = config,
       roles = roles,

@@ -1,6 +1,6 @@
 package izumi.distage.framework.services
 
-import distage.{AutoSetModule, BootstrapModule, BootstrapModuleDef, Module, TagK}
+import distage.{BootstrapModule, BootstrapModuleDef, Module}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.effect.modules.IdentityDIEffectModule
@@ -11,7 +11,6 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import izumi.distage.roles.model.AbstractRole
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.logger.LogRouter
@@ -24,7 +23,7 @@ trait ModuleProvider {
 
 object ModuleProvider {
 
-  class Impl[F[_]: TagK]
+  class Impl
   (
     logRouter: LogRouter,
     config: AppConfig,
@@ -46,9 +45,6 @@ object ModuleProvider {
 
       val loggerModule = new LogstageModule(logRouter, true)
 
-      val collectRolesModule = AutoSetModule()
-        .register[AbstractRole[F]]
-
       val resourceRewriter = new BootstrapModuleDef {
         make[RewriteRules].fromValue(options.rewriteRules)
         many[PlanningHook]
@@ -58,7 +54,6 @@ object ModuleProvider {
       val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
 
       Seq(
-        collectRolesModule,
         roleInfoModule,
         resourceRewriter,
         loggerModule,
