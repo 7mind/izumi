@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
-import zio.{IO, Promise, Ref, Semaphore}
+import cats.effect.concurrent.Semaphore
+import zio.{IO, Promise, Ref, Task}
 
 trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {
   def mkRef[A](a: A): F[Nothing, BIORef[F, A]]
@@ -16,7 +17,11 @@ object BIOPrimitivesInstances {
       override def mkRef[A](a: A): IO[Nothing, BIORef[IO, A]]                = Ref.make(a).map(BIORef.fromZIO)
       override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]]       = mkPromise[Nothing, Unit]
       override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]]        = Promise.make[E, A].map(BIOPromise.fromZIO)
-      override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = Semaphore.make(permits).map(BIOSemaphore.fromZIO)
+      override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = {
+        Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent)
+          .map(BIOSemaphore.fromCats[IO])
+          .orTerminate
+      }
     }
   }
 }

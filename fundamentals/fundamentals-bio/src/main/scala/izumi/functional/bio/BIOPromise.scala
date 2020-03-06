@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import zio.{IO, Promise}
 
-trait BIOPromise[F[_, _], E, A] {
+trait BIOPromise[+F[+_, +_], E, A] {
   def await: F[E, A]
   def poll: F[Nothing, Option[F[E, A]]]
 

@@ -1,9 +1,8 @@
 package izumi.functional.bio
 
-import com.github.ghik.silencer.silent
-import zio.{IO, Semaphore}
+import cats.effect.concurrent.Semaphore
 
-trait BIOSemaphore[F[_, _]] {
+trait BIOSemaphore[+F[_, _]] {
   def acquire: F[Nothing, Unit]
   def release: F[Nothing, Unit]
 
@@ -12,13 +11,12 @@ trait BIOSemaphore[F[_, _]] {
 }
 
 object BIOSemaphore {
-  @silent("deprecated")
-  def fromZIO(semaphore: Semaphore): BIOSemaphore[IO] =
-    new BIOSemaphore[IO] {
-      override def acquire: IO[Nothing, Unit] = semaphore.acquire
-      override def release: IO[Nothing, Unit] = semaphore.release
+  def fromCats[F[+_, +_]: BIOPanic](semaphore: Semaphore[F[Throwable, ?]]): BIOSemaphore[F] =
+    new BIOSemaphore[F] {
+      override def acquire: F[Nothing, Unit] = semaphore.acquire.orTerminate
+      override def release: F[Nothing, Unit] = semaphore.release.orTerminate
 
-      override def acquireN(n: Long): IO[Nothing, Unit] = semaphore.acquireN(n)
-      override def releaseN(n: Long): IO[Nothing, Unit] = semaphore.releaseN(n)
+      override def acquireN(n: Long): F[Nothing, Unit] = semaphore.acquireN(n).orTerminate
+      override def releaseN(n: Long): F[Nothing, Unit] = semaphore.releaseN(n).orTerminate
     }
 }

@@ -96,7 +96,7 @@ trait ModuleDefDSL
 object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
-    final def from[I <: T: Tag: AnyConstructor]: AfterBind =
+    final def from[I <: T: AnyConstructor]: AfterBind =
       from(AnyConstructor[I].provider)
 
     final def from[I <: T: Tag](function: => I): AfterBind =
@@ -174,8 +174,8 @@ object ModuleDefDSL {
       *
       * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
       */
-    final def from[I <: T: Tag](function: ProviderMagnet[I]): AfterBind =
-      bind(ImplDef.ProviderImpl(SafeType.get[I], function.get))
+    final def from[I <: T](function: ProviderMagnet[I]): AfterBind =
+      bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /**
       * Bind by reference to another bound key
@@ -213,7 +213,7 @@ object ModuleDefDSL {
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
     final def fromEffect[F[_]: TagK, I <: T: Tag](function: ProviderMagnet[F[I]]): AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], function.get)))
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(function.get.ret, function.get)))
 
     /**
       * Bind to result of executing an effect bound to a key at `F[I]`

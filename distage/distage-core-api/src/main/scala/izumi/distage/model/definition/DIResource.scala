@@ -532,6 +532,14 @@ object DIResource {
     ProviderMagnet.lift(fromZIO(managed))
   }
 
+  /**
+    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    */
+  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
+  implicit final def providerFromZIONothing[R, A](managed: => ZManaged[R, Nothing, A])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
+    ProviderMagnet.lift(fromZIO(managed))
+  }
+
   /** Support binding various FP libraries' Resource types in `.fromResource` */
   trait AdaptProvider[A] {
     type Out
