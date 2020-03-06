@@ -433,7 +433,7 @@ val kvStoreModule = new ModuleDef {
 }
 
 val io = Injector()
-  .produceRunF(kvStoreModule) {
+  .produceRunF[Task, String](kvStoreModule) {
     kv: KVStore[IO] =>
       for {
         _    <- kv.put("apple", "pie")
