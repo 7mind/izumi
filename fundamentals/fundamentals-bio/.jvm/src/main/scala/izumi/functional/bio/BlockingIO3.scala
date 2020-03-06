@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadPoolExecutor
 
 import zio.blocking.Blocking
 import zio.internal.Executor
-import zio.{IO, UIO, ZIO}
+import zio.{Has, IO, ZIO}
 
 trait BlockingIO3[F[_, _, _]] extends BlockingIOInstances {
 
@@ -36,36 +36,33 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
   def BlockingZIO3FromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
     val executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
-    val blocking = new Blocking {
-      override val blocking: Blocking.Service[Any] = new Blocking.Service[Any] {
-        override val blockingExecutor: ZIO[Any, Nothing, Executor] = UIO.succeed(executor)
-      }
+    val blocking: Blocking.Service = new Blocking.Service {
+      override val blockingExecutor: Executor = executor
     }
-    blockingIOZIO3Blocking(blocking)
+    blockingIOZIO3Blocking(Has(blocking))
   }
 
   // FIXME: bad encoding for lifting to 2-parameters...
-  implicit def blockingIOZIOBlocking[R](implicit serviceBlocking: Blocking): BlockingIO[ZIO[R, +?, +?]] = {
-    blockingIOZIO3Blocking(serviceBlocking).asInstanceOf[BlockingIO[ZIO[R, +?, +?]]]
+  implicit def blockingIOZIOBlocking[R](implicit blocking: Blocking): BlockingIO[ZIO[R, +?, +?]] = {
+    blockingIOZIO3Blocking(blocking).asInstanceOf[BlockingIO[ZIO[R, +?, +?]]]
   }
 
-  implicit final def blockingIOZIO3Blocking(implicit serviceBlocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
-    override def shiftBlocking[R, E, A](f: ZIO[R, E ,A]): ZIO[R, E, A] = serviceBlocking.blocking.blocking(f)
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = serviceBlocking.blocking.blocking(IO(f))
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = serviceBlocking.blocking.effectBlocking(f)
+  implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+    val b: Blocking.Service = blocking.get
+    override def shiftBlocking[R, E, A](f: ZIO[R, E ,A]): ZIO[R, E, A] = b.blocking(f)
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
   }
 }
 
 trait LowPriorityBlockingIOInstances {
   type ZIOBlocking = { type l[-R, +E, +A] = ZIO[R with Blocking, E, A] }
 
-  implicit def blockingIOZIOR[R]: BlockingIO[ZIO[R with Blocking, +?, +?]] = {
-    blockingIOZIO3R.asInstanceOf[BlockingIO[ZIO[R with Blocking, +?, +?]]]
-  }
+  implicit def blockingIOZIOR[R]: BlockingIO[ZIO[R with Blocking, +?, +?]] = blockingIOZIO3R.asInstanceOf[BlockingIO[ZIO[R with Blocking, +?, +?]]]
 
-  implicit final def blockingIOZIO3R: BlockingIO3[ZIOBlocking#l] = new BlockingIO3[ZIOBlocking#l] {
-    override def shiftBlocking[R, E, A](f: ZIO[R with Blocking, E, A]): ZIO[R with Blocking, E, A] = ZIO.accessM(_.blocking.blocking(f))
-    override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = ZIO.accessM(_.blocking.blocking(IO(f)))
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = ZIO.accessM(_.blocking.effectBlocking(f))
+  implicit final val blockingIOZIO3R: BlockingIO3[ZIOBlocking#l] = new BlockingIO3[ZIOBlocking#l] {
+    override def shiftBlocking[R, E, A](f: ZIO[R with Blocking, E, A]): ZIO[R with Blocking, E, A] = zio.blocking.blocking(f)
+    override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlocking(f)
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlockingInterrupt(f)
   }
 }

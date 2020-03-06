@@ -1,15 +1,17 @@
 package izumi.functional.bio.impl
 
-import java.util.concurrent.{CompletionException, CompletionStage}
+import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber, BIOTemporal}
+import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber, BIOTemporal, __PlatformSpecific}
+import zio.ZIO.ZIOWithFilterOps
 import zio.clock.Clock
+import zio.compatrc18.zio_succeed_Now.succeedNow
 import zio.duration.Duration.fromScala
-import zio.{Schedule, Task, ZIO}
+import zio.{Schedule, ZIO}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{ExecutionContext, ExecutionException, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object BIOZio extends BIOZio[Any]
@@ -17,13 +19,13 @@ object BIOZio extends BIOZio[Any]
 class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
-  @inline override final def pure[A](a: A): IO[Nothing, A] = ZIO.succeed(a)
+  @inline override final def pure[A](a: A): IO[Nothing, A] = succeedNow(a)
   @inline override final def sync[A](effect: => A): IO[Nothing, A] = ZIO.effectTotal(effect)
   @inline override final def syncThrowable[A](effect: => A): IO[Throwable, A] = ZIO.effect(effect)
   @inline override final def suspend[A](effect: => IO[Throwable, A]): IO[Throwable, A] = ZIO.effectSuspend(effect)
 
-  @inline override final def fail[E](v: => E): IO[E, Nothing] = ZIO.effectTotal(v).flatMap[R, E, Nothing](ZIO.fail)
-  @inline override final def terminate(v: => Throwable): IO[Nothing, Nothing] = ZIO.effectTotal(v).flatMap[R, Nothing, Nothing](ZIO.die)
+  @inline override final def fail[E](v: => E): IO[E, Nothing] = ZIO.fail(v)
+  @inline override final def terminate(v: => Throwable): IO[Nothing, Nothing] = ZIO.die(v)
 
   @inline override final def fromEither[L, R0](v: => Either[L, R0]): IO[L, R0] = ZIO.fromEither(v)
   @inline override final def fromTry[A](effect: => Try[A]): IO[Throwable, A] = ZIO.fromTry(effect)
@@ -44,21 +46,20 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   @inline override final def flatten[E, A](r: IO[E, IO[E, A]]): IO[E, A] = ZIO.flatten(r)
   @inline override final def *>[E, A, B](f: IO[E, A], next: => IO[E, B]): IO[E, B] = f *> next
   @inline override final def <*[E, A, B](f: IO[E, A], next: => IO[E, B]): IO[E, A] = f <* next
-  @inline override final def map2[E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = {
-    r1.zipWith(ZIO.effectSuspendTotal(r2))(f)
-  }
+  @inline override final def map2[E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = r1.zipWith(r2)(f)
 
   @inline override final def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[E, A, E2, A2 >: A](r: IO[E, A])(f: E => IO[E2, A2]): IO[E2, A2] = r.catchAll(f)
   @inline override final def catchSome[E, A, E2 >: E, A2 >: A](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E2, A2]]): ZIO[R, E2, A2] = r.catchSome(f)
-  @inline override final def withFilter[E, A](r: IO[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): IO[E, A] = r.withFilter(predicate)
+  @inline override final def withFilter[E, A](r: IO[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): IO[E, A] =
+    new ZIOWithFilterOps(r).withFilter(predicate)(ev)
 
   @inline override final def guarantee[E, A](f: IO[E, A])(cleanup: IO[Nothing, Unit]): IO[E, A] = f.ensuring(cleanup)
   @inline override final def attempt[E, A](r: IO[E, A]): IO[Nothing, Either[E, A]] = r.either
   @inline override final def redeemPure[E, A, B](r: IO[E, A])(err: E => B, succ: A => B): IO[Nothing, B] = r.fold(err, succ)
 
   @inline override final def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
-    ZIO.bracket(acquire)(v => release(v))(use)
+    ZIO.bracket(acquire)(release)(use)
   }
 
   @inline override final def bracketCase[E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
@@ -77,29 +78,27 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   @inline override final def yieldNow: IO[Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: IO[Nothing, Nothing] = ZIO.never
 
-  @inline override final def race[E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = {
-    r1.raceAttempt(r2)
-  }
+  @inline override final def race[E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = r1.raceFirst(r2)
 
   @inline override final def racePair[E, A, B](r1: IO[E, A], r2: IO[E, B]): IO[E, Either[(A, BIOFiber[ZIO[R, +?, +?], E, B]), (BIOFiber[ZIO[R, +?, +?], E, A], B)]] = {
     (r1 raceWith r2)(
-      { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIO.succeed).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
-      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIO.succeed).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
+      { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
+      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
     )
   }
 
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
-    ZIO.effectAsync(cb => register(cb apply _.fold(ZIO.fail, ZIO.succeed)))
+    ZIO.effectAsync(cb => register(cb apply _.fold(ZIO.fail(_), succeedNow)))
   }
 
   @inline override final def asyncF[E, A](register: (Either[E, A] => Unit) => ZIO[R, E, Unit]): ZIO[R, E, A] = {
-    ZIO.effectAsyncM(cb => register(cb apply _.fold(ZIO.fail, ZIO.succeed)))
+    ZIO.effectAsyncM(cb => register(cb apply _.fold(ZIO.fail(_), succeedNow)))
   }
 
   @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): IO[E, A] = {
     ZIO.effectAsyncInterrupt[R, E, A] {
       cb =>
-        val canceler = register(cb apply _.fold(ZIO.fail, ZIO.succeed))
+        val canceler = register(cb apply _.fold(ZIO.fail(_), succeedNow))
         Left(canceler)
     }
   }
@@ -109,37 +108,7 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   }
 
   @inline override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): IO[Throwable, A] = {
-    def unwrapDone[T](isFatal: Throwable => Boolean)(f: java.util.concurrent.Future[T]): Task[T] = {
-      try Task.succeed(f.get()) catch catchFromGet(isFatal)
-    }
-    def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
-      case e: CompletionException =>
-        Task.fail(e.getCause)
-      case e: ExecutionException =>
-        Task.fail(e.getCause)
-      case _: InterruptedException =>
-        Task.interrupt
-      case e if !isFatal(e) =>
-        Task.fail(e)
-    }
-    ZIO.effect(javaFuture).flatMap[R, Throwable, A](javaFuture => Task.effectSuspendTotalWith { p =>
-      val cf = javaFuture.toCompletableFuture
-      if (cf.isDone) {
-        unwrapDone(p.fatal)(cf)
-      } else {
-        Task.effectAsync {
-          cb =>
-            val _ = javaFuture.handle[Unit] {
-              (v: A, t: Throwable) =>
-                val io = Option(t).fold[Task[A]](Task.succeed(v)) {
-                  t =>
-                    catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t))
-                }
-                cb(io)
-            }
-        }
-      }
-    })
+    __PlatformSpecific.fromFutureJava(javaFuture)
   }
 
   @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
@@ -150,10 +119,9 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f)
 }
 
-class BIOTemporalZio[R](private val clockService: Clock) extends BIOZio[R] with BIOTemporal[ZIO[R, +?, +?]] {
-
+class BIOTemporalZio[R](private val clock: Clock) extends BIOZio[R] with BIOTemporal[ZIO[R, +?, +?]] {
   @inline override final def sleep(duration: Duration): ZIO[R, Nothing, Unit] = {
-    ZIO.sleep(fromScala(duration)).provide(clockService)
+    ZIO.sleep(fromScala(duration)).provide(clock)
   }
 
   @inline override final def retryOrElse[A, E, A2 >: A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A2]): ZIO[R, E2, A2] =
@@ -162,11 +130,11 @@ class BIOTemporalZio[R](private val clockService: Clock) extends BIOZio[R] with 
 
       r.provide(env)
         .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
-        .provide(clockService)
+        .provide(clock)
     }
 
   @inline override final def timeout[E, A](r: ZIO[R, E, A])(duration: Duration): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](r.provide(_).timeout(fromScala(duration)).provide(clockService))
+    ZIO.accessM[R](r.provide(_).timeout(fromScala(duration)).provide(clock))
   }
 
 }

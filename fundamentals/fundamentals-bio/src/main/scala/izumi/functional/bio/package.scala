@@ -286,9 +286,7 @@ package object bio extends BIOSyntax {
           //  unless wrapped in `interruptible`
           //  see: https://github.com/zio/zio/issues/945
           .interruptible
-          .nonDaemon
-          .fork
-          .daemon
+          .forkDaemon
           .map(BIOFiber.fromZIO)
     }
   }

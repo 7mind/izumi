@@ -57,7 +57,8 @@ trait ZIODIEffectModule extends ModuleDef {
   make[BIOTemporal[IO]].from {
     r: zio.clock.Clock => BIOTemporalInstances.BIOTemporalZio[Any](r)
   }
-  make[zio.clock.Clock].fromValue(zio.clock.Clock.Live)
+
+  make[zio.clock.Clock].from(zio.clock.compatrc18.zio_Clock_Live.live)
 
   make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
   make[BIORunner[IO]].using[ZIORunner]
