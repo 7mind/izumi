@@ -4,6 +4,7 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.ProviderMagnet
@@ -144,13 +145,16 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceUseEffect[F[_], A](
-    private val resource: DIResourceBase[F, F[A]],
-  ) extends AnyVal {
-    def useEffect(implicit F: DIEffect[F]): F[A] = {
+  implicit final class DIResourceUseEffect[F[_], A](private val resource: DIResourceBase[F, F[A]]) extends AnyVal {
+    def useEffect(implicit F: DIEffect[F]): F[A] =
       resource.use(identity)
-    }
   }
+
+  implicit final class DIResourceLocatorRun[F[_]](private val resource: DIResourceBase[F, Locator]) extends AnyVal {
+    def run[B](function: ProviderMagnet[F[B]])(implicit F: DIEffect[F]): F[B] =
+      resource.use(_.run(function))
+  }
+
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     @inline def a = acquire; @inline def r = release
