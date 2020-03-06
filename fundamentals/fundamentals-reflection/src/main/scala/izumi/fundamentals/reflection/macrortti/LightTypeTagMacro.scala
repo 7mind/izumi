@@ -1,5 +1,7 @@
 package izumi.fundamentals.reflection.macrortti
 
+import java.nio.charset.StandardCharsets
+
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.{DebugProperties, ReflectionUtil, TrivialMacroLogger}
@@ -56,14 +58,14 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
 
     @inline def serialize[A: Pickler](a: A): String = {
       val bytes = PickleImpl(a).toByteBuffer.array()
-      new String(bytes, 0, bytes.length, "ISO-8859-1")
+      new String(bytes, 0, bytes.length, StandardCharsets.ISO_8859_1)
     }
 
     val hashCodeRef = res.hashCode()
     val strRef = serialize(res.ref)(LightTypeTag.lttRefSerializer)
     val strDBs = serialize(SubtypeDBs(res.basesdb, res.idb))(LightTypeTag.subtypeDBsSerializer)
 
-    c.Expr[LightTypeTag](q"_root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($hashCodeRef: _root_.scala.Int, $strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)")
+    c.Expr[LightTypeTag](q"_root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($hashCodeRef: _root_.scala.Int, $strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String, 0: _root_.scala.Int)")
   }
 
   @inline final def unpackArgStruct(t: Type): Type = {

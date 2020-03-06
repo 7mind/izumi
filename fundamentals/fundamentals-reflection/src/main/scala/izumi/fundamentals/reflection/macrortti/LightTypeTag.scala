@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymTermName, SymTypeName}
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference, SymName}
@@ -193,7 +194,7 @@ object LightTypeTag {
     LightTypeTag(ref, mergedBasesDB, mergedInheritanceDb)
   }
 
-  def parse[T](hashCode: Int, refString: String, basesString: String): LightTypeTag = {
+  def parse[T](hashCode: Int, refString: String, basesString: String, @unused version: Int): LightTypeTag = {
     lazy val shared = {
       subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes(StandardCharsets.ISO_8859_1)))
     }
