@@ -188,7 +188,7 @@ object DockerContainer {
               .withStatusFilter(List("running").asJava)
               .exec()
           } catch {
-            case c: ConnectException =>
+            case c: Throwable =>
               throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
           }
         }.map(_.asScala.toList.sortBy(_.getId))
