@@ -433,9 +433,8 @@ val kvStoreModule = new ModuleDef {
 }
 
 val io = Injector()
-  .produceGetF[Task, KVStore[IO]](kvStoreModule)
-  .use {
-    kv =>
+  .produceRunF(kvStoreModule) {
+    kv: KVStore[IO] =>
       for {
         _    <- kv.put("apple", "pie")
         res1 <- kv.get("apple")
@@ -580,14 +579,13 @@ val module = new ModuleDef {
 }
 
 Injector()
-  .produceF[Task](module, GCMode.target[Dependee[Any]])
-  .use {
-    _.run(TraitConstructor[DependeeR].provider.map {
+  .produceRunF(module) {
+    TraitConstructor[DependeeR].provider.map {
       (for {
         r <- dependee.x("zxc")
         _ <- Task(println(s"result: $r"))
       } yield ()).provide(_)
-    })
+    }
   }.fold(_ => 1, _ => 0)
 ```
 
@@ -654,13 +652,15 @@ object PlusedInt {
 }
 
 Injector()
-  .produceGet[PlusedInt](new ModuleDef {
+  .produceRun(new ModuleDef {
     make[Int].named("a").from(1)
     make[Int].named("b").from(2)
     make[Pluser]
     make[PlusedInt].from[PlusedInt.Impl]
-  })
-  .use(_.result)
+  }) {
+    plusedInt: PlusedInt => 
+      plusedInt.result
+  }
 ```
 
 Abstract classes or traits without obvious concrete subclasses
