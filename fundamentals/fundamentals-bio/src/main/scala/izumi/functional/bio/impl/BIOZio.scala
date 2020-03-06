@@ -3,7 +3,7 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber, BIOTemporal}
+import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber, BIOTemporal, __PlatformSpecific}
 import zio.ZIO.ZIOWithFilterOps
 import zio.clock.Clock
 import zio.compatrc18.zio_succeed_Now.succeedNow
@@ -108,7 +108,7 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   }
 
   @inline override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): IO[Throwable, A] = {
-    ZIO.fromCompletionStage(javaFuture)
+    __PlatformSpecific.fromFutureJava(javaFuture)
   }
 
   @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
