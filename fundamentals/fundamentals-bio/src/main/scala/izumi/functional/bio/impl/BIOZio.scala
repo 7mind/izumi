@@ -78,10 +78,10 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   @inline override final def yieldNow: IO[Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: IO[Nothing, Nothing] = ZIO.never
 
-  @inline override final def race[E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = r1.raceFirst(r2)
+  @inline override final def race[E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = r1.interruptible.raceFirst(r2.interruptible)
 
   @inline override final def racePair[E, A, B](r1: IO[E, A], r2: IO[E, B]): IO[E, Either[(A, BIOFiber[ZIO[R, +?, +?], E, B]), (BIOFiber[ZIO[R, +?, +?], E, A], B)]] = {
-    (r1 raceWith r2)(
+    (r1.interruptible raceWith r2.interruptible)(
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
       { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
     )
@@ -113,10 +113,10 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
 
   @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f)
-  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f)
-  @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f)
-  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f)
+  @inline override final def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f(_).interruptible)
+  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 }
 
 class BIOTemporalZio[R](private val clock: Clock) extends BIOZio[R] with BIOTemporal[ZIO[R, +?, +?]] {
@@ -134,7 +134,7 @@ class BIOTemporalZio[R](private val clock: Clock) extends BIOZio[R] with BIOTemp
     }
 
   @inline override final def timeout[E, A](r: ZIO[R, E, A])(duration: Duration): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](r.provide(_).timeout(fromScala(duration)).provide(clock))
+    ZIO.accessM[R](e => race(r.provide(e).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
   }
 
 }
