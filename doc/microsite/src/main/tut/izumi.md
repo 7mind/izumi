@@ -40,8 +40,6 @@ libraryDependencies ++= Seq(
   
   // LogStage core library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
-  // Configure LogStage with Typesafe Config
-  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
   // Write logs as JSON
   "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$",
   // Route Slf4J logs to LogStage

@@ -28,8 +28,6 @@ libraryDependencies ++= Seq(
   "io.7mind.izumi" %% "logstage-rendering-circe" % "$izumi.version$",
   // Router from Slf4j to LogStage
   "io.7mind.izumi" %% "logstage-adapter-slf4j" % "$izumi.version$",
-  // Configure LogStage with Typesafe Config
-  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
   // LogStage integration with DIStage
   "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
   // Router from LogStage to Slf4J
