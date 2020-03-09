@@ -7,7 +7,7 @@ import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import com.github.ghik.silencer.silent
 import distage.TagK
-import izumi.distage.docker.Docker.{ContainerConfig => _, _}
+import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -21,7 +21,8 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
-trait ContainerDef { self =>
+trait ContainerDef {
+  self =>
   type Tag
   type Container = DockerContainer[Tag]
   type Config = ContainerConfig[Tag]
@@ -59,17 +60,17 @@ trait ContainerDef { self =>
   }
 }
 object ContainerDef {
-  type Aux[T] = ContainerDef {type Tag = T}
+  type Aux[T] = ContainerDef { type Tag = T }
 }
 
 final case class DockerContainer[Tag](
-                                       id: Docker.ContainerId,
-                                       name: String,
-                                       ports: Map[Docker.DockerPort, Seq[ServicePort]],
-                                       containerConfig: ContainerConfig[Tag],
-                                       clientConfig: ClientConfig,
-                                       availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
-                                     ) {
+  id: Docker.ContainerId,
+  name: String,
+  ports: Map[Docker.DockerPort, Seq[ServicePort]],
+  containerConfig: ContainerConfig[Tag],
+  clientConfig: ClientConfig,
+  availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
+) {
   override def toString: String = s"$name:${id.name} ports=${ports.mkString("{", ", ", "}")} available=${availablePorts.mkString("{", ", ", "}")}"
 }
 
@@ -182,7 +183,8 @@ object DockerContainer {
         containers <- DIEffect[F].maybeSuspend {
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
-            client.listContainersCmd()
+            client
+              .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(List("running").asJava)
               .exec()
@@ -241,7 +243,7 @@ object DockerContainer {
       for {
         out <- DIEffect[F].maybeSuspend {
           val cmd = Value(baseCmd)
-            .mut(config.name){case (n, c) => c.withName(n)}
+            .mut(config.name) { case (n, c) => c.withName(n) }
             .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
             .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
             .mut(config.env.nonEmpty)(_.withEnv(config.env.map {
@@ -285,12 +287,14 @@ object DockerContainer {
 
                 config.networks.map {
                   network =>
-                    existedNetworks.find(_.getName == network.name).fold {
-                      logger.debug(s"Going to create $network ...")
-                      client.createNetworkCmd().withName(network.name).exec().getId
-                    }(_.getId)
+                    existedNetworks
+                      .find(_.getName == network.name).fold {
+                        logger.debug(s"Going to create $network ...")
+                        client.createNetworkCmd().withName(network.name).exec().getId
+                      }(_.getId)
                 }.foreach {
-                  client.connectToNetworkCmd()
+                  client
+                    .connectToNetworkCmd()
                     .withContainerId(container.id.name)
                     .withNetworkId(_)
                     .exec()

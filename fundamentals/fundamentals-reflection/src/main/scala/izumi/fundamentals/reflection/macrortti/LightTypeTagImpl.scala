@@ -11,6 +11,7 @@ import izumi.fundamentals.reflection.{DebugProperties, SingletonUniverse}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.reflectiveCalls
 import scala.reflect.api.Universe
 
 object LightTypeTagImpl {
@@ -35,17 +36,22 @@ object LightTypeTagImpl {
   sealed trait Broken[T, S] {
     def toSet: Set[T]
   }
+
   object Broken {
+
     final case class Single[T, S](t: T) extends Broken[T, S] {
       override def toSet: Set[T] = Set(t)
     }
+
     final case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
       override def toSet: Set[T] = tpes
     }
+
   }
+
 }
 
-final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolean, logger: TrivialLogger) {
+final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: Boolean, logger: TrivialLogger) {
 
   import u._
 
@@ -220,7 +226,6 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
         case _ =>
           Seq.empty
       })
-//      val prefix = getPre(tpe)
 
       val next = (tpe.typeArgs ++ tpe.dealias.resultType.typeArgs ++ more).filterNot(inh.contains)
       next.foreach(a => extract(a, inh))
@@ -339,7 +344,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
       UniRefinement.breakRefinement(t) match {
         case Broken.Compound(tpes, decls) =>
-          val parts = tpes.map(p => unpack(p, rules) : AppliedReference)
+          val parts = tpes.map(p => unpack(p, rules): AppliedReference)
 
           val intersection = LightTypeTagRef.maybeIntersection(parts)
 
@@ -513,14 +518,21 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       case c: ConstantTypeApi =>
         NameReference(SymLiteral(c.value.value), boundaries, prefix)
       case s: SingleTypeApi if s.sym != NoSymbol =>
-        NameReference(symName(s.sym),  boundaries, prefix)
+        NameReference(symName(s.sym), boundaries, prefix)
       case _ =>
         NameReference(symName(typeSymbol), boundaries, prefix)
     }
   }
 
   private def symName(sym: u.Symbol): SymName = {
-    val base = sym.fullName
+    val o = sym.owner
+    val base = if (o.asInstanceOf[ {def hasMeaninglessName: Boolean}].hasMeaninglessName) {
+
+      sym.name.decodedName.toString
+    } else {
+      sym.fullName
+    }
+
     if (sym.isTerm || sym.isModuleClass || sym.typeSignature.isInstanceOf[u.SingletonTypeApi]) {
       SymTermName(base)
     } else {
@@ -539,7 +551,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
     * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
   @tailrec
-  protected[this] final def norm(x: Type): Type = {
+  // ReflectionUtil.norm but with added logging
+  protected[this] def norm(x: Type): Type = {
     x match {
       case RefinedType(t :: Nil, m) if m.isEmpty =>
         logger.log(s"Stripped empty refinement of type $t. member scope $m")
