@@ -40,7 +40,7 @@ abstract class LightTypeTag
   final def decompose: Set[LightTypeTag] = {
     ref match {
       case LightTypeTagRef.IntersectionReference(refs) =>
-        refs.map(r => LightTypeTag.apply(r, bases(), inheritanceDb()))
+        refs.map(r => LightTypeTag(r, basesdb, idb))
       case _ =>
         Set(this)
     }
