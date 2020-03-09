@@ -27,6 +27,8 @@ private[izumi] object RuntimeAPI {
               case f: FullReference =>
                 f.parameters.map(_.ref).flatMap(unpack).toSet ++ f.prefix.toSet.flatMap(unpack) + f.asName
             }
+          case UnionReference(refs) =>
+            refs.flatMap(unpack)
           case IntersectionReference(refs) =>
             refs.flatMap(unpack)
           case Refinement(reference, decls) =>
@@ -94,17 +96,18 @@ private[izumi] object RuntimeAPI {
     private def replaceApplied(reference: AppliedReference): AbstractReference = {
       reference match {
         case IntersectionReference(refs) =>
-          val replaced = refs.map(replaceNamed).map(r => ensureAppliedNamed(reference, r))
+          val replaced = refs.map(replaceApplied).map(r => ensureApplied(reference, r))
           maybeIntersection(replaced)
+        case UnionReference(refs) =>
+          val replaced = refs.map(replaceApplied).map(r => ensureApplied(reference, r))
+          maybeUnion(replaced)
         case Refinement(base, decls) =>
-
           val rdecls = decls.map {
             case RefinementDecl.Signature(name, input, output) =>
               RefinementDecl.Signature(name, input.map(p => ensureApplied(reference, replaceRefs(p))), ensureApplied(reference, replaceRefs(output)))
             case RefinementDecl.TypeMember(name, ref) =>
               RefinementDecl.TypeMember(name, replaceRefs(ref))
           }
-
           Refinement(ensureApplied(base, replaceApplied(base)), rdecls.toSet)
         case n: AppliedNamedReference =>
           replaceNamed(n)
@@ -158,15 +161,6 @@ private[izumi] object RuntimeAPI {
           reference
         case o =>
           throw new IllegalStateException(s"Expected applied reference but got $o while processing $context")
-      }
-    }
-
-    private def ensureAppliedNamed(context: AbstractReference, ref: AbstractReference): AppliedNamedReference = {
-      ref match {
-        case reference: AppliedNamedReference =>
-          reference
-        case o =>
-          throw new IllegalStateException(s"Expected named applied reference but got $o while processing $context")
       }
     }
   }

@@ -31,6 +31,8 @@ trait LTTRenderables extends WithRenderableSyntax {
     override def render(value: AppliedReference): String = value match {
       case a: AppliedNamedReference =>
         a.render()
+      case u: UnionReference =>
+        u.render()
       case i: IntersectionReference =>
         i.render()
       case r: Refinement =>
@@ -107,6 +109,12 @@ trait LTTRenderables extends WithRenderableSyntax {
   implicit lazy val r_IntersectionReference: Renderable[IntersectionReference] = new Renderable[IntersectionReference] {
     override def render(value: IntersectionReference): String = {
       value.refs.map(_.render()).mkString("{", " & ", "}")
+    }
+  }
+
+  implicit lazy val r_UnionReference: Renderable[UnionReference] = new Renderable[UnionReference] {
+    override def render(value: UnionReference): String = {
+      value.refs.map(_.render()).mkString("{", " | ", "}")
     }
   }
 

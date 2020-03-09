@@ -24,7 +24,9 @@ object LightTypeTagInheritance {
 }
 
 final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
+
   import LightTypeTagInheritance._
+
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = LightTypeTag.mergeIDBs(self.idb, other.idb)
   private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = LightTypeTag.mergeIDBs(self.basesdb, other.basesdb)
 
@@ -87,12 +89,15 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
           }
         )
 
+      // lambdas
       case (_: AppliedNamedReference, t: Lambda) =>
         isChild(ctx.next(t.input))(selfT, t.output)
       case (s: Lambda, t: AppliedNamedReference) =>
         isChild(ctx.next(s.input))(s.output, t)
       case (s: Lambda, o: Lambda) =>
         s.input.size == o.input.size && isChild(ctx.next(s.normalizedParams.map(p => LambdaParameter(p.ref.name))))(s.normalizedOutput, o.normalizedOutput)
+
+      // intersections
       case (s: IntersectionReference, t: IntersectionReference) =>
         // yeah, this shit is quadratic
         s.refs.forall {
@@ -107,6 +112,22 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       case (s: LightTypeTagRef, o: IntersectionReference) =>
         o.refs.forall(t => ctx.isChild(s, t))
 
+      // unions
+      case (s: UnionReference, t: UnionReference) =>
+        // yeah, this shit is quadratic
+        s.refs.exists {
+          c =>
+            t.refs.forall {
+              p =>
+                ctx.isChild(c, p)
+            }
+        }
+      case (s: UnionReference, t: LightTypeTagRef) =>
+        s.refs.forall(c => ctx.isChild(c, t))
+      case (s: LightTypeTagRef, o: UnionReference) =>
+        o.refs.exists(t => ctx.isChild(s, t))
+
+      // refinements
       case (s: Refinement, t: Refinement) =>
         ctx.isChild(s.reference, t.reference) && t.decls.diff(s.decls).isEmpty
       case (s: Refinement, t: LightTypeTagRef) =>

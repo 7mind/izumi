@@ -45,7 +45,9 @@ sealed trait LightTypeTagRef {
       reference match {
         case reference: AppliedNamedReference => appliedNamedReference(reference)
         case LightTypeTagRef.IntersectionReference(refs) =>
-          LightTypeTagRef.maybeIntersection(refs.map(appliedNamedReference))
+          LightTypeTagRef.maybeIntersection(refs.map(appliedReference))
+        case LightTypeTagRef.UnionReference(refs) =>
+          LightTypeTagRef.maybeUnion(refs.map(appliedReference))
         case LightTypeTagRef.Refinement(reference, decls) =>
           LightTypeTagRef.Refinement(appliedReference(reference), decls)
       }
@@ -80,6 +82,7 @@ sealed trait LightTypeTagRef {
       case NameReference(ref, _, _) => render(ref)
       case FullReference(ref, _, _) => render(SymTypeName(ref))
       case IntersectionReference(refs) => refs.map(_.shortName).mkString(" & ")
+      case UnionReference(refs) => refs.map(_.shortName).mkString(" | ")
       case Refinement(reference, _) => getName(render, reference)
     }
   }
@@ -94,9 +97,14 @@ sealed trait LightTypeTagRef {
         case FullReference(_, _, prefix) => prefix
         case IntersectionReference(refs) =>
           val prefixes = refs.map(_.getPrefix).collect {
-            case Some(p: AppliedNamedReference) => p
+            case Some(p: AppliedReference) => p
           }
           if (prefixes.nonEmpty) Some(maybeIntersection(prefixes)) else None
+        case UnionReference(refs) =>
+          val prefixes = refs.map(_.getPrefix).collect {
+            case Some(p: AppliedReference) => p
+          }
+          if (prefixes.nonEmpty) Some(maybeUnion(prefixes)) else None
         case Refinement(reference, _) => getPrefix(reference)
       }
     }
@@ -119,6 +127,8 @@ sealed trait LightTypeTagRef {
       case FullReference(_, parameters, _) =>
         parameters.map(_.ref)
       case IntersectionReference(_) =>
+        Nil
+      case UnionReference(_) =>
         Nil
       case Refinement(reference, _) =>
         reference.typeArgs
@@ -205,17 +215,22 @@ object LightTypeTagRef {
   }
 
   // cannot make constructor private because of boopickle
-  final case class IntersectionReference /*private*/ (refs: Set[AppliedNamedReference]) extends AppliedReference {
+  final case class IntersectionReference /*private*/ (refs: Set[AppliedReference]) extends AppliedReference {
     override def toString: String = this.render()
   }
 
-  private[this] val eradicate = Set[AppliedNamedReference](
+  final case class UnionReference /*private*/ (refs: Set[AppliedReference]) extends AppliedReference {
+    override def toString: String = this.render()
+  }
+
+
+  private[this] val eradicate = Set[AppliedReference](
     LightTypeTagInheritance.tpeAny,
     LightTypeTagInheritance.tpeAnyRef,
     LightTypeTagInheritance.tpeObject
   )
 
-  def maybeIntersection(refs: Set[AppliedNamedReference]): AppliedReference = {
+  def maybeIntersection(refs: Set[AppliedReference]): AppliedReference = {
     val normalized = refs.diff(eradicate)
     normalized.toList match {
       case Nil =>
@@ -224,6 +239,18 @@ object LightTypeTagRef {
         head
       case _ =>
         IntersectionReference(normalized)
+    }
+  }
+
+  def maybeUnion(refs: Set[AppliedReference]): AppliedReference = {
+    val normalized = refs.diff(eradicate)
+    normalized.toList match {
+      case Nil =>
+        LightTypeTagInheritance.tpeAny
+      case head :: Nil =>
+        head
+      case _ =>
+        UnionReference(normalized)
     }
   }
 

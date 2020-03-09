@@ -1,6 +1,5 @@
 package izumi.distage.docker
 
-import java.net.ConnectException
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
@@ -8,7 +7,7 @@ import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import com.github.ghik.silencer.silent
 import distage.TagK
-import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
+import izumi.distage.docker.Docker.{ContainerConfig => _, _}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
