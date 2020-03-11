@@ -4,6 +4,7 @@ import java.util.concurrent.CompletionStage
 
 import cats.~>
 import izumi.functional.bio.impl.{BIOTemporalZio, BIOZio}
+import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import zio.ZIO
 
@@ -12,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util.Try
 
-package object bio extends BIOSyntax {
+package object bio extends BIOSyntax with BIO3Syntax {
 
   /**
     * A convenient dependent summoner for BIO* hierarchy.
@@ -26,6 +27,7 @@ package object bio extends BIOSyntax {
     *
     */
   @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
+  @inline override final def FR[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 
   /**
     * NOTE: The left type parameter is not forced to be covariant
@@ -44,7 +46,7 @@ package object bio extends BIOSyntax {
   private[bio] sealed trait BIOFunctorInstances
   object BIOFunctorInstances {
     // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-    @inline implicit final def BIOZIO[R]: BIOZio = BIOZio.asInstanceOf[BIOZio]
+    @inline implicit final val BIOZIO: BIOZio = BIOZio.asInstanceOf[BIOZio]
 
     @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(
       implicit BIOPrimitives: BIOPrimitives[F]
@@ -188,7 +190,7 @@ package object bio extends BIOSyntax {
 
     // defaults
     override def guarantee[R, E, A](f: F[R, E, A])(cleanup: F[R, Nothing, Unit]): F[R, E, A] = {
-      bracket(unit)(_ => cleanup)(_ => f)
+      bracket[R, E, Unit, A](unit)(_ => cleanup)(_ => f)
     }
   }
 
@@ -247,7 +249,7 @@ package object bio extends BIOSyntax {
 
     /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
     def race[R, E, A](r1: F[R, E, A], r2: F[R, E, A]): F[R, E, A]
-    def racePair[R, E, A, B](fa: F[R, E, A], fb: F[R, E, B]): F[R, E, Either[(A, BIOFiber[F[R, +?, +?], E, B]), (BIOFiber[F[R, +?, +?], E, A], B)]]
+    def racePair[R, E, A, B](fa: F[R, E, A], fb: F[R, E, B]): F[R, E, Either[(A, BIOFiber3[F[-?, +?, +?], R, E, B]), (BIOFiber3[F[-?, +?, +?], R, E, A], B)]]
 
     def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
     def parTraverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
@@ -294,7 +296,7 @@ package object bio extends BIOSyntax {
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
-    def fork[R, E, A](f: F[R, E, A]): F[R, Nothing, BIOFiber[F[Any, +?, +?], E, A]]
+    def fork[R, E, A](f: F[R, E, A]): F[R, Nothing, BIOFiber3[F[-?, +?, +?], R, E, A]]
   }
 
   private[bio] sealed trait BIOForkInstances
@@ -303,7 +305,7 @@ package object bio extends BIOSyntax {
     implicit def BIOForkZioIO[R]: BIOFork[ZIO[R, +?, +?]] = BIOForkZio.asInstanceOf[BIOFork[ZIO[R, +?, +?]]]
 
     implicit object BIOForkZio extends BIOFork3[ZIO] {
-      override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber[ZIO[Any, +?, +?], E, A]] =
+      override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber3[ZIO[-?, +?, +?], R, E, A]] =
         f
         // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
         //  unless wrapped in `interruptible`
@@ -314,6 +316,7 @@ package object bio extends BIOSyntax {
   }
 
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
+  type BIOFiber[F[+_, +_], E, A] = BIOFiber3[Lambda[(`-R`, `E`, `+A`) => F[E, A]], Any, E, A]
 
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
   object BlockingIO {
@@ -326,15 +329,26 @@ package object bio extends BIOSyntax {
   object SyncSafe2 {
     def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
+  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, ?]]
+  object SyncSafe3 {
+    def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
+  }
 
   type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
   object Clock2 {
     def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
+  }
+  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, ?]]
+  object Clock3 {
+    def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
   type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
   object Entropy2 {
     def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
-
+  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
+  object Entropy3 {
+    def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
+  }
 }

@@ -3,7 +3,7 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOExit, BIOFiber, BIOTemporal, BIOTemporal3, __PlatformSpecific}
+import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOTemporal, BIOTemporal3, __PlatformSpecific}
 import zio.ZIO.ZIOWithFilterOps
 import zio.clock.Clock
 import zio.compatrc18.zio_succeed_Now.succeedNow
@@ -80,7 +80,7 @@ class BIOZio extends BIOAsync3[ZIO[-?, +?, +?]] {
 
   @inline override final def race[R, E, A](r1: IO[R, E, A], r2: IO[R, E, A]): IO[R, E, A] = r1.interruptible.raceFirst(r2.interruptible)
 
-  @inline override final def racePair[R, E, A, B](r1: IO[R, E, A], r2: IO[R, E, B]): IO[R, E, Either[(A, BIOFiber[ZIO[R, +?, +?], E, B]), (BIOFiber[ZIO[R, +?, +?], E, A], B)]] = {
+  @inline override final def racePair[R, E, A, B](r1: IO[R, E, A], r2: IO[R, E, B]): IO[R, E, Either[(A, BIOFiber3[ZIO[-?, +?, +?], R, E, B]), (BIOFiber3[ZIO[-?, +?, +?], R, E, A], B)]] = {
     (r1.interruptible raceWith r2.interruptible)(
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
       { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) }

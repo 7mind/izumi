@@ -18,7 +18,7 @@ object BIOPrimitivesInstances {
       override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]]       = mkPromise[Nothing, Unit]
       override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]]        = Promise.make[E, A].map(BIOPromise.fromZIO)
       override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = {
-        Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent)
+        Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent[IO])
           .map(BIOSemaphore.fromCats[IO])
           .orTerminate
       }
