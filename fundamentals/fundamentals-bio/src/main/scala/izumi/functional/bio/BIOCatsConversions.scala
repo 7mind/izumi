@@ -132,7 +132,7 @@ object BIOCatsConversions {
   class BIOCatsBracket[F[+_, +_]](override val F: BIOPanic[F]) extends BIOCatsMonadError[F, Throwable](F) with cats.effect.Bracket[F[Throwable, ?], Throwable] {
 
     @inline override final def bracketCase[A, B](acquire: F[Throwable, A])(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
-      F.bracketCase[Throwable, A, B](acquire)(
+      F.bracketCase[Any, Throwable, A, B](acquire)(
         (a, e) => F.orTerminate {
           release(a, e match {
             case BIOExit.Success(_) => ExitCase.Completed

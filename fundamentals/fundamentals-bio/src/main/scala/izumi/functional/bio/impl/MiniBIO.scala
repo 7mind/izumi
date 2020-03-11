@@ -29,17 +29,18 @@ import scala.language.implicitConversions
   *   println(time)
   * }}}
   * */
-sealed trait MiniBIO[+E, +A] {
+
+sealed trait MiniBIO[-R, +E, +A] {
   final def run(): BIOExit[E, A] = {
 
-    final class Catcher[E0, A0, E1, B](
-                                        val recover: BIOExit.Failure[E0] => MiniBIO[E1, B]
-                                      , f: A0 => MiniBIO[E1, B]
-                                      ) extends (A0 => MiniBIO[E1, B]) {
-      override def apply(a: A0): MiniBIO[E1, B] = f(a)
+    final class Catcher[R0, E0, A0, E1, B](
+      val recover: BIOExit.Failure[E0] => MiniBIO[R0, E1, B],
+      f: A0 => MiniBIO[R0, E1, B]
+    ) extends (A0 => MiniBIO[R0, E1, B]) {
+      override def apply(a: A0): MiniBIO[R, E1, B] = f(a)
     }
 
-    @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): BIOExit[Any, Any] = op match {
+    @tailrec def runner(op: MiniBIO[Any, Any, Any], stack: List[Any => MiniBIO[Any, Any, Any]]): BIOExit[Any, Any] = op match {
 
       case MiniBIO.FlatMap(io, f) =>
         runner(io, f :: stack)
@@ -48,18 +49,20 @@ sealed trait MiniBIO[+E, +A] {
         runner(io, new Catcher(err, succ) :: stack)
 
       case MiniBIO.Sync(a) =>
-        val exit = try { a() } catch {
-          case t: Throwable =>
-            BIOExit.Termination(t, Trace.empty)
-        }
+        val exit =
+          try { a() } catch {
+            case t: Throwable =>
+              BIOExit.Termination(t, Trace.empty)
+          }
         exit match {
           case BIOExit.Success(value) =>
             stack match {
               case flatMap :: stackRest =>
-                val nextIO = try { flatMap(value) } catch {
-                  case t: Throwable =>
-                    Fail.terminate(t)
-                }
+                val nextIO =
+                  try { flatMap(value) } catch {
+                    case t: Throwable =>
+                      Fail.terminate(t)
+                  }
                 runner(nextIO, stackRest)
 
               case Nil =>
@@ -70,10 +73,12 @@ sealed trait MiniBIO[+E, +A] {
             runner(Fail.halt(failure), stack)
         }
       case MiniBIO.Fail(e) =>
-        val err = try e() catch {
-          case t: Throwable =>
-            BIOExit.Termination(t, Trace.empty)
-        }
+        val err =
+          try e()
+          catch {
+            case t: Throwable =>
+              BIOExit.Termination(t, Trace.empty)
+          }
         val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[_, _, _, _]])
         catcher match {
           case value :: stackRest =>
@@ -117,7 +122,8 @@ object MiniBIO {
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
 
     override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync {
-      () => try { BIOExit.Success(effect) } catch { case e: Throwable => BIOExit.Error(e, Trace.empty) }
+      () =>
+        try { BIOExit.Success(effect) } catch { case e: Throwable => BIOExit.Error(e, Trace.empty) }
     }
     override def sync[A](effect: => A): MiniBIO[Nothing, A] = Sync(() => BIOExit.Success(effect))
 
@@ -133,18 +139,19 @@ object MiniBIO {
     override def catchSome[E, A, E2 >: E, A2 >: A](r: MiniBIO[E, A])(f: PartialFunction[E, MiniBIO[E2, A2]]): MiniBIO[E2, A2] = {
       Redeem[E, A, E2, A2](r, {
         case BIOExit.Termination(t, e, c) => Fail.halt(BIOExit.Termination(t, e, c))
-        case exit@BIOExit.Error(e, _) => f.applyOrElse(e, (_: E) => Fail.halt(exit))
+        case exit @ BIOExit.Error(e, _) => f.applyOrElse(e, (_: E) => Fail.halt(exit))
       }, pure)
     }
 
     override def bracketCase[E, A, B](acquire: MiniBIO[E, A])(release: (A, BIOExit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
       // does not propagate error in release in case `use` fails, propagates only error from `use`
-      flatMap(acquire)(a =>
-        Redeem[E, B, E, B](
-          io = use(a)
-        , err = e => Redeem[Nothing, Unit, E, Nothing](release(a, e), err = _ => Fail(() => e), succ = _ => Fail(() => e))
-        , succ = v => map(release(a, BIOExit.Success(v)))(_ => v)
-        )
+      flatMap(acquire)(
+        a =>
+          Redeem[E, B, E, B](
+            io = use(a),
+            err = e => Redeem[Nothing, Unit, E, Nothing](release(a, e), err = _ => Fail(() => e), succ = _ => Fail(() => e)),
+            succ = v => map(release(a, BIOExit.Success(v)))(_ => v)
+          )
       )
     }
 
@@ -153,8 +160,9 @@ object MiniBIO {
     }
 
     override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] = {
-      val x = l.foldLeft(pure(Nil): MiniBIO[E, List[B]]) { (acc, a) =>
-        flatMap(acc)(list => map(f(a))(_ :: list))
+      val x = l.foldLeft(pure(Nil): MiniBIO[E, List[B]]) {
+        (acc, a) =>
+          flatMap(acc)(list => map(f(a))(_ :: list))
       }
       map(x)(_.reverse)
     }
