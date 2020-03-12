@@ -1,20 +1,9 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOFunctor, BIOMonad, BIOMonadError, BIOPrimitives, BIOTemporal, F}
-import izumi.fundamentals.bio.test.masking._
+import izumi.functional.bio.{BIO, BIOFork, BIOFork3, BIOFunctor, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
-
-object masking {
-  import izumi.functional.bio.{BIOFork, BIOFork3, BIOPrimitives3}
-
-  type Primitives[F[+_, +_]] = BIOPrimitives[F]
-  type Fork[F[+_, +_]] = BIOFork[F]
-  type Fork3[F[-_, +_, +_]] = BIOFork3[F]
-  type BIOMonad3[F[-_, +_, +_]] = BIOMonad[F[Any, +?, +?]]
-  type Primitives3[F[-_, +_, +_]] = BIOPrimitives3[F]
-}
 
 class BIOSyntaxTest extends AnyWordSpec {
 
@@ -67,7 +56,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.IO]
   }
 
-  "F summoner examples" in {
+  "F / FR summonera examples" in {
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
@@ -77,13 +66,14 @@ class BIOSyntaxTest extends AnyWordSpec {
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
     }
-    def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: Primitives: Fork]: F[Nothing, Int] = {
+    def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: BIOPrimitives: BIOFork]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
-        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-      }.flatMap(_.join)
+          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+        }.flatMap(_.join)
     }
-    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[F[-_, +_, +_]: BIOMonad3: Primitives3: Fork3]: F[Any, Nothing, Int] = {
-      F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join)
+    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[F[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]
+      : F[Nothing, Nothing, Int] = {
+      FR.fork(FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join)
     }
     lazy val _ = (
       x,

@@ -1,6 +1,7 @@
 package izumi.functional.bio.syntax
 
-import izumi.functional.bio._
+import izumi.functional.bio.{BIOExit, BIOFiber3, BIOPrimitives3}
+import izumi.functional.bio.instances._
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
 
 import scala.concurrent.duration.{Duration, FiniteDuration}

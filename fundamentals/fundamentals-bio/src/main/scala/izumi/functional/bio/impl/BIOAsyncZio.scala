@@ -3,7 +3,8 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
+import izumi.functional.bio.instances.BIOAsync3
+import izumi.functional.bio.{BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
 import zio.ZIO
 import zio.ZIO.ZIOWithFilterOps
 import zio.compatrc18.zio_succeed_Now.succeedNow
@@ -77,7 +78,10 @@ class BIOAsyncZio extends BIOAsync3[ZIO[-?, +?, +?]] {
 
   @inline override final def race[R, E, A](r1: IO[R, E, A], r2: IO[R, E, A]): IO[R, E, A] = r1.interruptible.raceFirst(r2.interruptible)
 
-  @inline override final def racePair[R, E, A, B](r1: IO[R, E, A], r2: IO[R, E, B]): IO[R, E, Either[(A, BIOFiber3[ZIO[-?, +?, +?], R, E, B]), (BIOFiber3[ZIO[-?, +?, +?], R, E, A], B)]] = {
+  @inline override final def racePair[R, E, A, B](
+    r1: IO[R, E, A],
+    r2: IO[R, E, B]
+  ): IO[R, E, Either[(A, BIOFiber3[ZIO[-?, +?, +?], R, E, B]), (BIOFiber3[ZIO[-?, +?, +?], R, E, A], B)]] = {
     (r1.interruptible raceWith r2.interruptible)(
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
       { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), succeedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
@@ -110,9 +114,10 @@ class BIOAsyncZio extends BIOAsync3[ZIO[-?, +?, +?]] {
 
   @inline override final def uninterruptible[R, E, A](r: IO[R, E, A]): IO[R, E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[R, E, B]): IO[R, E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
-  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[R, E, B]): IO[R, E, List[B]] =
+    ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] =
+    ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
   @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f(_).interruptible)
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 }
-

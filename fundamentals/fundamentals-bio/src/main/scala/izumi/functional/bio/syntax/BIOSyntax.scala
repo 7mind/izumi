@@ -1,6 +1,7 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
+import izumi.functional.bio.instances.BIOPrimitives
 import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -150,7 +151,6 @@ object BIOSyntax {
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(r)(duration)
     @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] =
       F.flatMap(timeout(duration): F[E1, Option[A]])(_.fold[F[E1, A]](F.fail(e))(F.pure))
-
   }
 
   final class BIOForkOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
