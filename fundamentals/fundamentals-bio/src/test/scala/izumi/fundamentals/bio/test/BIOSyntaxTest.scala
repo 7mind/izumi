@@ -1,5 +1,6 @@
 package izumi.fundamentals.bio.test
 
+import izumi.functional.bio.instances.BIOPrimitives
 import izumi.functional.bio.{BIO, BIOFork, BIOFork3, BIOFunctor, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -67,13 +68,15 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.map(z[F])(_ => ())
     }
     def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: BIOPrimitives: BIOFork]: F[Nothing, Int] = {
-      F.fork[Any, Nothing, Int] {
-          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      F.fork {
+        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
         }.flatMap(_.join)
     }
     def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[F[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]
       : F[Nothing, Nothing, Int] = {
-      FR.fork(FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join)
+      FR.fork {
+        FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      }.flatMap(_.join)
     }
     lazy val _ = (
       x,

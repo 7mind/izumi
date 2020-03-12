@@ -1,6 +1,6 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{BIOFunctor, BIOMonad3, BlockingIO, BlockingIO3, BlockingIOInstances, F, FR}
+import izumi.functional.bio.{BIOFunctor, BIOMonad, BIOMonad3, BlockingIO, BlockingIO3, BlockingIOInstances, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 import zio.blocking.Blocking

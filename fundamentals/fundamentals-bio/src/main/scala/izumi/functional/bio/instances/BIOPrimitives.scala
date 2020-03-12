@@ -1,7 +1,7 @@
 package izumi.functional.bio.instances
 
 import cats.effect.concurrent.Semaphore
-import izumi.functional.bio.{BIOPromise, BIORef, BIOSemaphore, catz}
+import izumi.functional.bio._
 import zio.{IO, Promise, Ref, Task}
 
 trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {

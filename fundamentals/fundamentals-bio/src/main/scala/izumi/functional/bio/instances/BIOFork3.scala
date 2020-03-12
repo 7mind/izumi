@@ -8,9 +8,6 @@ trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
 
 private[bio] sealed trait BIOForkInstances
 object BIOForkInstances {
-  // FIXME: bad encoding for lifting to 2-parameters...
-  implicit def BIOForkZioIO[R]: BIOFork[ZIO[R, +?, +?]] = BIOForkZio.asInstanceOf[BIOFork[ZIO[R, +?, +?]]]
-
   implicit object BIOForkZio extends BIOFork3[ZIO] {
     override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber3[ZIO[-?, +?, +?], R, E, A]] =
       f

@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
-import izumi.functional.bio.{BIOExit, BIOFiber3, BIOPrimitives3}
-import izumi.functional.bio.instances._
+import izumi.functional.bio._
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -178,7 +177,7 @@ object BIO3Syntax {
       new BIO3Syntax.BIOFork3Ops[F, R, E, A](self)
     @inline final def BIOFork3[F[-_, +_, +_]: BIOFork3]: BIOFork3[F] = implicitly
 
-    @inline final def BIOPrimitives3[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives[F[Any, +?, +?]] = implicitly
+    @inline final def BIOPrimitives3[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
   }
   trait BIO3ImplicitPuns1 extends BIO3ImplicitPuns2 {
     @inline implicit final def BIOAsync3[F[-_, +_, +_]: BIOAsync3, R, E, A](self: F[R, E, A]): BIO3Syntax.BIOAsync3Ops[F, R, E, A] =
