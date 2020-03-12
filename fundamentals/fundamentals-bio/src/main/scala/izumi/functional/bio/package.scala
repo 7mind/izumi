@@ -3,7 +3,7 @@ package izumi.functional
 import java.util.concurrent.CompletionStage
 
 import cats.~>
-import izumi.functional.bio.impl.{BIOTemporalZio, BIOZio}
+import izumi.functional.bio.impl.{BIOTemporalZio, BIOAsyncZio}
 import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import zio.ZIO
@@ -46,7 +46,8 @@ package object bio extends BIOSyntax with BIO3Syntax {
   private[bio] sealed trait BIOFunctorInstances
   object BIOFunctorInstances {
     // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-    @inline implicit final val BIOZIO: BIOZio = BIOZio.asInstanceOf[BIOZio]
+    @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
+    @inline implicit final def BIOZIO3: BIOAsync3[ZIO] = BIOAsyncZio.asInstanceOf[BIOAsync3[ZIO]].asInstanceOf[BIOAsync3[ZIO]]
 
     @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(
       implicit BIOPrimitives: BIOPrimitives[F]
@@ -291,7 +292,8 @@ package object bio extends BIOSyntax with BIO3Syntax {
 
   private[bio] sealed trait BIOTemporalInstances
   object BIOTemporalInstances {
-    implicit def BIOTemporalZio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO[-?, +?, +?]] = new BIOTemporalZio(clockService)
+    implicit def BIOTemporalZio[R](implicit clockService: zio.clock.Clock): BIOTemporal[ZIO[R, +?, +?]] = new BIOTemporalZio(clockService).asInstanceOf[BIOTemporal[ZIO[R, +?, +?]]]
+    implicit def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO[-?, +?, +?]] = new BIOTemporalZio(clockService)
   }
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
@@ -316,7 +318,7 @@ package object bio extends BIOSyntax with BIO3Syntax {
   }
 
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
-  type BIOFiber[F[+_, +_], E, A] = BIOFiber3[Lambda[(`-R`, `E`, `+A`) => F[E, A]], Any, E, A]
+  type BIOFiber[F[+_, +_], E, A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], Any, E, A]
 
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
   object BlockingIO {

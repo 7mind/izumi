@@ -3,20 +3,17 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOTemporal, BIOTemporal3, __PlatformSpecific}
+import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
+import zio.ZIO
 import zio.ZIO.ZIOWithFilterOps
-import zio.clock.Clock
 import zio.compatrc18.zio_succeed_Now.succeedNow
-import zio.duration.Duration.fromScala
-import zio.{Schedule, ZIO}
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-object BIOZio extends BIOZio
+object BIOAsyncZio extends BIOAsyncZio
 
-class BIOZio extends BIOAsync3[ZIO[-?, +?, +?]] {
+class BIOAsyncZio extends BIOAsync3[ZIO[-?, +?, +?]] {
   private[this] final type IO[R, +E, +A] = ZIO[R, E, A]
 
   @inline override final def pure[A](a: A): IO[Any, Nothing, A] = succeedNow(a)
@@ -119,22 +116,3 @@ class BIOZio extends BIOAsync3[ZIO[-?, +?, +?]] {
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 }
 
-class BIOTemporalZio(private val clock: Clock) extends BIOZio with BIOTemporal3[ZIO[-?, +?, +?]] {
-  @inline override final def sleep(duration: Duration): ZIO[Any, Nothing, Unit] = {
-    ZIO.sleep(fromScala(duration)).provide(clock)
-  }
-
-  @inline override final def retryOrElse[R, A, E, A2 >: A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A2]): ZIO[R, E2, A2] =
-    ZIO.accessM { env =>
-      val zioDuration = Schedule.duration(fromScala(duration))
-
-      r.provide(env)
-        .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
-        .provide(clock)
-    }
-
-  @inline override final def timeout[R, E, A](r: ZIO[R, E, A])(duration: Duration): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](e => race(r.provide(e).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
-  }
-
-}

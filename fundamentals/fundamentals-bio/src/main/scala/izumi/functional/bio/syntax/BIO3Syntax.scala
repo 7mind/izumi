@@ -23,7 +23,7 @@ trait BIO3Syntax extends BIO3ImplicitPuns {
 
 object BIO3Syntax {
 
-  class BIOFunctor3Ops[F[_, _, +_], R, E, A](protected[this] val r: F[R, E, A])(implicit protected[this] val F: BIOFunctor3[F]) {
+  class BIOFunctor3Ops[F[-_, _, +_], R, E, A](protected[this] val r: F[R, E, A])(implicit protected[this] val F: BIOFunctor3[F]) {
     @inline final def map[B](f: A => B): F[R, E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): F[R, E, B] = F.map(r)(_ => b)
