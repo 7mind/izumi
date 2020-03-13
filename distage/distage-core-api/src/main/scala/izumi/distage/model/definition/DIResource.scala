@@ -484,12 +484,17 @@ object DIResource {
     final def evalTap[G[x] >: F[x]: DIEffect](f: OuterResource => G[Unit]): DIResourceBase[G, OuterResource] = evalMap[G, OuterResource](a => DIEffect[G].map(f(a))(_ => a))
 
     /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = logAcquireImpl[G, OuterResource](this: this.type)(f)
+    final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = wrapAcquireImpl[G, OuterResource](this: this.type)(f)
 
     /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = logReleaseImpl[G, OuterResource](this: this.type)(f)
+    final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = wrapReleaseImpl[G, OuterResource](this: this.type)(f)
 
     final def void: DIResourceBase[F, Unit] = map(_ => ())
+
+    @deprecated("Use wrapAcquire", "will be removed in 0.10.3")
+    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = wrapAcquire(f)
+    @deprecated("Use wrapRelease", "will be removed in 0.10.3")
+    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = wrapRelease(f)
   }
 
   object DIResourceBase {
@@ -633,6 +638,10 @@ object DIResource {
 
     new DIResourceBase[F, B] {
       override type InnerResource = InnerResource0
+      sealed trait InnerResource0 {
+        def extract: B
+        def deallocate: F[Unit]
+      }
       override def acquire: F[InnerResource] = {
         bracketOnError(self.acquire)(self.release) {
           inner1 =>
@@ -652,11 +661,6 @@ object DIResource {
       }
       override def release(resource: InnerResource): F[Unit] = resource.deallocate
       override def extract(resource: InnerResource): B = resource.extract
-
-      sealed trait InnerResource0 {
-        def extract: B
-        def deallocate: F[Unit]
-      }
     }
   }
 
@@ -666,7 +670,7 @@ object DIResource {
   }
 
   @inline
-  private[this] final def logAcquireImpl[F[_], A](self: DIResourceBase[F, A])(f: (=> F[self.InnerResource]) => F[self.InnerResource]): DIResourceBase[F, A] = {
+  private[this] final def wrapAcquireImpl[F[_], A](self: DIResourceBase[F, A])(f: (=> F[self.InnerResource]) => F[self.InnerResource]): DIResourceBase[F, A] = {
     new DIResourceBase[F, A] {
       override final type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = f(self.acquire)
@@ -676,7 +680,7 @@ object DIResource {
   }
 
   @inline
-  private[this] final def logReleaseImpl[F[_], A](self: DIResourceBase[F, A])(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]): DIResourceBase[F, A] = {
+  private[this] final def wrapReleaseImpl[F[_], A](self: DIResourceBase[F, A])(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]): DIResourceBase[F, A] = {
     new DIResourceBase[F, A] {
       override final type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = self.acquire
