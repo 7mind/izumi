@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
-import izumi.functional.bio.instances.BIOPrimitives
 import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 
 import scala.concurrent.duration.{Duration, FiniteDuration}

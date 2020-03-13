@@ -1,8 +1,8 @@
 package izumi.functional.bio.instances
 
 import izumi.functional.bio.impl.BIOAsyncZio
-import izumi.functional.bio.{BIOAsync, BIOFork, BIOFunctor, BIOPrimitives3, BlockingIO, BlockingIO3}
-import zio.{IO, ZIO}
+import izumi.functional.bio._
+import zio.ZIO
 
 import scala.language.implicitConversions
 
@@ -20,23 +20,22 @@ object BIOFunctorInstances {
 //  @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
 
   @inline implicit final def BIOZIO: BIOAsyncZio = BIOAsyncZio.asInstanceOf[BIOAsyncZio]
-  @inline implicit final def BIOZIOR[R0]: BIOAsync[Lambda[(`+E`, `+A`) => ZIO[R0, E, A]]] =
-    BIOAsyncZio.asInstanceOf[BIOAsync[Lambda[(`+E`, `+A`) => ZIO[R0, E, A]]]]
+  @inline implicit final def BIOZIOR[R0]: BIOAsync[ZIO[R0, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R0, +?, +?]]]
 
   @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(
     implicit BIOPrimitives: BIOPrimitives[F]
   ): BIOPrimitives.type = BIOPrimitives
-  @inline implicit final def AttachBIOPrimitives3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F])(
-    implicit BIOPrimitives: BIOPrimitives3[F]
+  @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(
+    implicit BIOPrimitives: BIOPrimitives3[FR]
   ): BIOPrimitives.type = BIOPrimitives
 
   @inline implicit final def AttachBIOFork[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
-  @inline implicit final def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F[-?, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type =
+  @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR[-?, +?, +?]])(implicit BIOFork: BIOFork3[FR]): BIOFork.type =
     BIOFork
 
   @inline implicit final def AttachBlockingIO[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BlockingIO: BlockingIO[F]): BlockingIO.type =
     BlockingIO
-  @inline implicit final def AttachBlockingIO3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F[-?, +?, +?]])(
-    implicit BlockingIO: BlockingIO3[F]
+  @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR[-?, +?, +?]])(
+    implicit BlockingIO: BlockingIO3[FR]
   ): BlockingIO.type = BlockingIO
 }

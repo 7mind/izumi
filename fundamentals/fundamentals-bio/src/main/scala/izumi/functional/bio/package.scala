@@ -17,7 +17,7 @@ package object bio extends BIOSyntax with BIO3Syntax {
     *
     */
   @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
-  @inline override final def FR[FR[-_, +_, +_]](implicit FR: instances.BIOFunctor3[FR]): FR.type = FR
+  @inline override final def FR[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 
   /**
     * NOTE: The left type parameter is not forced to be covariant
@@ -71,8 +71,8 @@ package object bio extends BIOSyntax with BIO3Syntax {
     def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
-  type BIOPrimitives[F[+_, +_]] = instances.BIOPrimitives[F]
-  type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives[F[Any, +?, +?]]
+  type BIOPrimitives[F[+_, +_]] = instances.BIOPrimitives3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives3[F]
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
