@@ -68,12 +68,14 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: BIOPrimitives: BIOFork]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
-          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-        }.flatMap(_.join)
+        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      }.flatMap(_.join) *>
+      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+        .fork.flatMap(_.join)
     }
-    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]
-      : FR[Nothing, Nothing, Int] = {
-      FR.fork(FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join)
+    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]: FR[Nothing, Nothing, Int] = {
+      FR.fork(FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
+      FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
     lazy val _ = (
       x[zio.IO],

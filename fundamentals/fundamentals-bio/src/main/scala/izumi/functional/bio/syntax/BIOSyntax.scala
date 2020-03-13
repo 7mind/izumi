@@ -61,8 +61,8 @@ object BIOSyntax {
   }
 
   final class BIOMonadOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonad[F]) extends BIOApplicativeOps(r) {
-    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E, A, E1, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E, A, Any, E1, B](r)(f0)
+    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E, A, Any, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
   }
@@ -79,8 +79,8 @@ object BIOSyntax {
   }
 
   class BIOMonadErrorOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonadError[F]) extends BIOErrorOps(r) {
-    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E, A, E1, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E, A, Any, E1, B](r)(f0)
+    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E, A, Any, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
@@ -91,8 +91,8 @@ object BIOSyntax {
 
     @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[Any, E, A, E2](r)(err, succ)
 
-    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[Any, E, A, E1, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[Any, E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
+    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[Any, E, A, Any, E1, A1](r)(F.fromEither[E1, A1](_))
+    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[Any, E, A, Any, E1, A1](r)(F.fromOption(errorOnNone)(_))
 
     /** for-comprehensions sugar:
       *
@@ -152,7 +152,7 @@ object BIOSyntax {
       F.flatMap(timeout(duration): F[E1, Option[A]])(_.fold[F[E1, A]](F.fail(e))(F.pure))
   }
 
-  final class BIOForkOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
+  final class BIOForkOps[F[+_, +_], +E, +A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
     @inline final def fork: F[Nothing, BIOFiber[F, E, A]] = F.fork(r)
   }
 

@@ -7,7 +7,7 @@ import zio.{Schedule, ZIO}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class BIOTemporalZio(private val clock: Clock) extends BIOAsyncZio with BIOTemporal3[ZIO[-?, +?, +?]] {
+class BIOTemporalZio(private val clock: Clock) extends BIOAsyncZio with BIOTemporal3[ZIO] {
   @inline override final def sleep(duration: Duration): ZIO[Any, Nothing, Unit] = {
     ZIO.sleep(fromScala(duration)).provide(clock)
   }

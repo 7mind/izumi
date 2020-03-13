@@ -67,8 +67,8 @@ object BIO3Syntax {
 
   final class BIOMonad3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonad3[FR])
     extends BIOApplicative3Ops(r) {
-    @inline final def flatMap[E1 >: E, B](f0: A => FR[R, E1, B]): FR[R, E1, B] = F.flatMap[R, E, A, E1, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R, E1, A] = F.flatMap[R, E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R, E, A, R1, E1, B](r)(f0)
+    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< FR[R, E1, A1]): FR[R, E1, A1] = F.flatten(F.widen(r))
   }
@@ -87,8 +87,8 @@ object BIO3Syntax {
 
   class BIOMonadError3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonadError3[FR])
     extends BIOError3Ops(r) {
-    @inline final def flatMap[E1 >: E, B](f0: A => FR[R, E1, B]): FR[R, E1, B] = F.flatMap[R, E, A, E1, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R, E1, A] = F.flatMap[R, E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R, E, A, R1, E1, B](r)(f0)
+    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< FR[R, E1, A1]): FR[R, E1, A1] = F.flatten(F.widen(r))
 
@@ -99,9 +99,9 @@ object BIO3Syntax {
 
     @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => FR[R, E1, Unit])(succ: A => FR[R, E2, Unit]): FR[R, E2, A] = F.tapBoth[R, E, A, E2](r)(err, succ)
 
-    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R, E1, A1] = F.flatMap[R, E, A, E1, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R, E1, A1] =
-      F.flatMap[R, E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
+    @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R, E, A, R1, E1, A1](r)(F.fromEither[E1, A1](_))
+    @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
+      F.flatMap[R, E, A, R1, E1, A1](r)(F.fromOption(errorOnNone)(_))
 
     /** for-comprehensions sugar:
       *
@@ -165,8 +165,8 @@ object BIO3Syntax {
 
   }
 
-  final class BIOFork3Ops[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOFork3[FR]) {
-    @inline final def fork: FR[R, Nothing, BIOFiber3[FR[-?, +?, +?], R, E, A]] = F.fork(r)
+  final class BIOFork3Ops[FR[-_, +_, +_], -R, +E, +A](private val r: FR[R, E, A])(implicit private val F: BIOFork3[FR]) {
+    @inline final def fork: FR[R, Nothing, BIOFiber3[FR, E, A]] = F.fork(r)
   }
 
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {

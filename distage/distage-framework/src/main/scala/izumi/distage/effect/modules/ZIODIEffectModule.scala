@@ -7,11 +7,9 @@ import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
-import izumi.functional.bio.impl.BIOTemporalZio
-import izumi.functional.bio.instances.BIOPrimitives3
 import izumi.logstage.api.IzLogger
-import zio.{IO, ZIO}
 import zio.internal.tracing.TracingConfig
+import zio.{IO, ZIO}
 
 import scala.concurrent.ExecutionContext
 
@@ -43,7 +41,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOTransZio[IO]]
   addImplicit[BIOFork[IO]]
   addImplicit[SyncSafe2[IO]]
-  addImplicit[BIOPrimitives3[IO]]
+  addImplicit[BIOPrimitives[IO]]
 
   addImplicit[BIOFunctor3[ZIO]]
   addImplicit[BIOBifunctor3[ZIO]]
@@ -57,8 +55,8 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIO3[ZIO]]
   addImplicit[BIOAsync3[ZIO]]
   make[BIOTemporal3[ZIO]].from {
-    r: zio.clock.Clock =>
-      new BIOTemporalZio(r)
+    implicit r: zio.clock.Clock =>
+      implicitly[BIOTemporal3[ZIO]]
   }
 
   addImplicit[BIOFunctor[IO]]
@@ -73,7 +71,8 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIO[IO]]
   addImplicit[BIOAsync[IO]]
   make[BIOTemporal[IO]].from {
-    (_: BIOTemporal3[IO]).asInstanceOf[BIOTemporal[IO]]
+    implicit r: zio.clock.Clock =>
+      implicitly[BIOTemporal[IO]]
   }
 
   make[zio.clock.Clock].from(zio.clock.compatrc18.zio_Clock_Live.live)

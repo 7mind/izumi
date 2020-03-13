@@ -6,7 +6,7 @@ import zio.ZIO
 
 import scala.language.implicitConversions
 
-trait BIOFunctor3[F[-_, _, +_]] extends BIOFunctorInstances {
+trait BIOFunctor3[F[_, _, +_]] extends BIOFunctorInstances {
   def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B]
 
   def as[R, E, A, B](r: F[R, E, A])(v: => B): F[R, E, B] = map(r)(_ => v)
@@ -15,27 +15,20 @@ trait BIOFunctor3[F[-_, _, +_]] extends BIOFunctorInstances {
 }
 
 private[bio] sealed trait BIOFunctorInstances
-object BIOFunctorInstances {
+object BIOFunctorInstances extends BIOFunctorInstancesLowPriority {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
 //  @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
 
-  @inline implicit final def BIOZIO: BIOAsyncZio = BIOAsyncZio.asInstanceOf[BIOAsyncZio]
+  @inline implicit final def BIOZIO: BIOAsync3[ZIO] = BIOAsyncZio
   @inline implicit final def BIOZIOR[R0]: BIOAsync[ZIO[R0, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R0, +?, +?]]]
 
-  @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(
-    implicit BIOPrimitives: BIOPrimitives[F]
-  ): BIOPrimitives.type = BIOPrimitives
-  @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(
-    implicit BIOPrimitives: BIOPrimitives3[FR]
-  ): BIOPrimitives.type = BIOPrimitives
-
+  @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOPrimitives: BIOPrimitives3[FR]): BIOPrimitives.type = BIOPrimitives
   @inline implicit final def AttachBIOFork[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
-  @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR[-?, +?, +?]])(implicit BIOFork: BIOFork3[FR]): BIOFork.type =
-    BIOFork
+  @inline implicit final def AttachBlockingIO[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BlockingIO: BlockingIO[F]): BlockingIO.type = BlockingIO
+}
 
-  @inline implicit final def AttachBlockingIO[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BlockingIO: BlockingIO[F]): BlockingIO.type =
-    BlockingIO
-  @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR[-?, +?, +?]])(
-    implicit BlockingIO: BlockingIO3[FR]
-  ): BlockingIO.type = BlockingIO
+sealed trait BIOFunctorInstancesLowPriority {
+  @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
+  @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOFork: BIOFork3[FR]): BIOFork.type = BIOFork
+  @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 }

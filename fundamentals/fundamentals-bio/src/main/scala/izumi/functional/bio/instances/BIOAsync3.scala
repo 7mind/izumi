@@ -20,7 +20,7 @@ trait BIOAsync3[F[-_, +_, +_]] extends BIO3[F] {
 
   /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
   def race[R, E, A](r1: F[R, E, A], r2: F[R, E, A]): F[R, E, A]
-  def racePair[R, E, A, B](fa: F[R, E, A], fb: F[R, E, B]): F[R, E, Either[(A, BIOFiber3[F[-?, +?, +?], R, E, B]), (BIOFiber3[F[-?, +?, +?], R, E, A], B)]]
+  def racePair[R, E, A, B](fa: F[R, E, A], fb: F[R, E, B]): F[R, E, Either[(A, BIOFiber3[F, E, B]), (BIOFiber3[F, E, A], B)]]
 
   def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
   def parTraverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]

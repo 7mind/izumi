@@ -31,7 +31,6 @@ trait BIOTemporal3[F[-_, +_, +_]] extends BIOAsync3[F] with BIOTemporalInstances
 
 private[bio] sealed trait BIOTemporalInstances
 object BIOTemporalInstances {
-  implicit def BIOTemporalZio[R](implicit clockService: zio.clock.Clock): BIOTemporal[ZIO[R, +?, +?]] =
-    new BIOTemporalZio(clockService).asInstanceOf[BIOTemporal[ZIO[R, +?, +?]]]
-  implicit def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO[-?, +?, +?]] = new BIOTemporalZio(clockService)
+  implicit def BIOTemporalZio[R](implicit clockService: zio.clock.Clock): BIOTemporal[ZIO[R, +?, +?]] = new BIOTemporalZio(clockService).asInstanceOf[BIOTemporal[ZIO[R, +?, +?]]]
+  implicit def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO] = new BIOTemporalZio(clockService)
 }

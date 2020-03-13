@@ -2,12 +2,9 @@ package izumi.fundamentals.reflection.test
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
-import org.scalatest.exceptions.TestFailedException
 
 import scala.collection.immutable.ListSet
 import scala.collection.{BitSet, immutable, mutable}
-
-
 
 class LightTypeTagTest extends TagAssertions {
   import TestModel._

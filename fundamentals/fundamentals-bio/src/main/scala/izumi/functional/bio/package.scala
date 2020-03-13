@@ -25,10 +25,10 @@ package object bio extends BIOSyntax with BIO3Syntax {
     * on it.
     **/
   type BIOFunctor[F[_, +_]] = instances.BIOFunctor3[Lambda[(`-R`, `E`, `+A`) => F[E, A]]]
-  type BIOFunctor3[F[-_, +_, +_]] = instances.BIOFunctor3[F]
+  type BIOFunctor3[F[_, _, +_]] = instances.BIOFunctor3[F]
 
   type BIOBifunctor[F[+_, +_]] = instances.BIOBifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOBifunctor3[F[-_, +_, +_]] = instances.BIOBifunctor3[F]
+  type BIOBifunctor3[F[_, +_, +_]] = instances.BIOBifunctor3[F]
 
   type BIOApplicative[F[+_, +_]] = instances.BIOApplicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOApplicative3[F[-_, +_, +_]] = instances.BIOApplicative3[F]
@@ -64,15 +64,16 @@ package object bio extends BIOSyntax with BIO3Syntax {
   type BIOFork3[F[-_, +_, +_]] = instances.BIOFork3[F]
 
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
-  type BIOFiber[F[+_, +_], E, A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], Any, E, A]
+  type BIOFiber[F[+_, +_], +E, +A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
 
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
   object BlockingIO {
     def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
-  type BIOPrimitives[F[+_, +_]] = instances.BIOPrimitives3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives3[F]
+//  type BIOPrimitives1[F[+_]] = instances.BIOPrimitives[Lambda[(`+E`, `+A`) => F[A]]]
+  type BIOPrimitives[F[+_, +_]] = instances.BIOPrimitives[F]
+  type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives[F[Any, +?, +?]]
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
