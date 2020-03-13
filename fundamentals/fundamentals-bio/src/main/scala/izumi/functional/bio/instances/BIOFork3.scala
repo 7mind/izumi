@@ -3,7 +3,7 @@ import izumi.functional.bio.{BIOFiber, BIOFiber3, BIOFork}
 import zio.ZIO
 
 trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
-  def fork[R, E, A](f: F[R, E, A]): F[R, Nothing, BIOFiber3[F[-?, +?, +?], R, E, A]]
+  def fork[R, E, A](f: F[R, E, A]): F[R, Nothing, BIOFiber3[F, R, E, A]]
 }
 
 private[bio] sealed trait BIOForkInstances

@@ -165,7 +165,7 @@ object BIO3Syntax {
   }
 
   final class BIOFork3Ops[F[-_, +_, +_], R, E, A](private val r: F[R, E, A])(implicit private val F: BIOFork3[F]) {
-    @inline final def fork: F[R, Nothing, BIOFiber3[F[-?, +?, +?], R, E, A]] = F.fork(r)
+    @inline final def fork: F[R, Nothing, BIOFiber3[F, R, E, A]] = F.fork(r)
   }
 
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {

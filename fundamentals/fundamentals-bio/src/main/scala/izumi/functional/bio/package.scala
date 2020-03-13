@@ -96,29 +96,29 @@ package object bio extends BIOSyntax with BIO3Syntax {
 
   type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives[F[Any, +?, +?]]
 
-  trait SyncSafe2[F[_, _]] extends SyncSafe[F[Nothing, ?]]
+  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
     def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
-  trait SyncSafe3[F[_, _, _]] extends SyncSafe[F[Any, Nothing, ?]]
+  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, ?]]
   object SyncSafe3 {
     def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
   }
 
-  trait Clock2[F[_, _]] extends Clock[F[Nothing, ?]]
+  type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
   object Clock2 {
     def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
   }
-  trait Clock3[F[_, _, _]] extends Clock[F[Any, Nothing, ?]]
+  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, ?]]
   object Clock3 {
     def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
-  trait Entropy2[F[_, _]] extends Entropy[F[Nothing, ?]]
+  type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
   object Entropy2 {
     def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
-  trait Entropy3[F[_, _, _]] extends Entropy[F[Any, Nothing, ?]]
+  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
   object Entropy3 {
     def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }

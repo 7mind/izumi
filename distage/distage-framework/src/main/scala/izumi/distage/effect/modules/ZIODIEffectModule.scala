@@ -7,7 +7,7 @@ import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
-import izumi.functional.bio.instances.BIOPrimitives
+import izumi.functional.bio.instances.{BIOPrimitives, BIOTemporalInstances}
 import izumi.logstage.api.IzLogger
 import zio.IO
 import zio.internal.tracing.TracingConfig

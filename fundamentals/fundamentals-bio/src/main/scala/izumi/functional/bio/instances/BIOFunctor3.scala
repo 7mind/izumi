@@ -17,16 +17,16 @@ trait BIOFunctor3[F[-_, _, +_]] extends BIOFunctorInstances {
 private[bio] sealed trait BIOFunctorInstances
 object BIOFunctorInstances {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-  @inline implicit final def BIOZIO3[R]: BIOAsync3[ZIO[R, E, A]] = BIOAsyncZio.asInstanceOf[BIOAsyncZio]
+  @inline implicit final def BIOZIO3: BIOAsync3[ZIO] = BIOAsyncZio
 
   @inline implicit final def AttachBIOPrimitives3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F])(
     implicit BIOPrimitives: BIOPrimitives3[F]
   ): BIOPrimitives.type = BIOPrimitives
 
-  @inline implicit final def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F[-?, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type =
+  @inline implicit final def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F])(implicit BIOFork: BIOFork3[F]): BIOFork.type =
     BIOFork
 
-  @inline implicit final def AttachBlockingIO3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F[-?, +?, +?]])(
+  @inline implicit final def AttachBlockingIO3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[F])(
     implicit BlockingIO: BlockingIO3[F]
   ): BlockingIO.type = BlockingIO
 }
