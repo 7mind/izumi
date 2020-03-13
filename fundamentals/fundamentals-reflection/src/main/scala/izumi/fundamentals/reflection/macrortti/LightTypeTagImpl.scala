@@ -3,11 +3,11 @@ package izumi.fundamentals.reflection.macrortti
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.reflection.DebugProperties
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.{Broken, globalCache}
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiteral, SymTermName, SymTypeName}
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
-import izumi.fundamentals.reflection.{DebugProperties, SingletonUniverse}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
