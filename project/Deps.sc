@@ -401,7 +401,10 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.fundamentalsJsonCirce,
-        libs = circe ++ Seq(jawn in Scope.Compile.js),
+        libs = circe ++ Seq(
+          jawn in Scope.Compile.js,
+          scala_reflect in Scope.Provided.all,
+        ),
         depends = Projects.fundamentals.basics,
         platforms = Targets.cross,
       ),
