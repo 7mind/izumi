@@ -7,6 +7,7 @@ import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
+import izumi.functional.bio.impl.BIOTemporalZio
 import izumi.functional.bio.instances.BIOPrimitives
 import izumi.logstage.api.IzLogger
 import zio.IO
@@ -56,7 +57,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIO[IO]]
   addImplicit[BIOAsync[IO]]
   make[BIOTemporal[IO]].from {
-    r: zio.clock.Clock => BIOTemporalInstances.BIOTemporalZio[Any](r)
+    r: zio.clock.Clock => new BIOTemporalZio(r).asInstanceOf[BIOTemporal[IO]]
   }
 
   make[zio.clock.Clock].from(zio.clock.compatrc18.zio_Clock_Live.live)

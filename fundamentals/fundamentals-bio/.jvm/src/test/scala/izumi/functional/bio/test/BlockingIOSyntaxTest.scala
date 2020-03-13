@@ -1,5 +1,6 @@
 package izumi.functional.bio.test
 
+import izumi.functional.bio.instances.{BIOAsync3, BIOFunctorInstances}
 import izumi.functional.bio.{BIOFunctor, BIOMonad3, BlockingIO, BlockingIO3, BlockingIOInstances, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
@@ -15,7 +16,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   }
   val _: ZIO[Blocking, Throwable, Int] = {
     implicit val blocking: Blocking = zio.Runtime.unsafeFromLayer(Blocking.live).environment
-    `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOBlocking#l]
+    `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOBlocking#l](BIOFunctorInstances.BIOZIO.asInstanceOf[BIOAsync3[BlockingIOInstances.ZIOBlocking#l]], implicitly)
     `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
   }
 

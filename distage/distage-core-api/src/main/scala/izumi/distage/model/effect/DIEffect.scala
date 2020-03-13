@@ -115,7 +115,7 @@ object DIEffect extends LowPriorityDIEffectInstances {
         F.bracket(acquire = suspendF(acquire))(release = release(_).orTerminate)(use = use)
       }
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracketCase[Throwable, A, B](acquire = suspendF(acquire))(release = {
+        F.bracketCase[Any, Throwable, A, B](acquire = suspendF(acquire))(release = {
           case (a, exit) => exit match {
             case BIOExit.Success(_) => release(a, None).orTerminate
             case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate

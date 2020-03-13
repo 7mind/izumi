@@ -2,7 +2,7 @@ package izumi.functional.bio.instances
 
 import izumi.functional.bio.impl.BIOAsyncZio
 import izumi.functional.bio.{BIOAsync, BIOFork, BIOFunctor, BIOPrimitives3, BlockingIO, BlockingIO3}
-import zio.ZIO
+import zio.{IO, ZIO}
 
 import scala.language.implicitConversions
 
@@ -17,8 +17,11 @@ trait BIOFunctor3[F[-_, _, +_]] extends BIOFunctorInstances {
 private[bio] sealed trait BIOFunctorInstances
 object BIOFunctorInstances {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-  @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
-  @inline implicit final def BIOZIO3: BIOAsyncZio = BIOAsyncZio.asInstanceOf[BIOAsyncZio]
+//  @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
+
+  @inline implicit final def BIOZIO: BIOAsyncZio = BIOAsyncZio.asInstanceOf[BIOAsyncZio]
+  @inline implicit final def BIOZIOR[R0]: BIOAsync[Lambda[(`+E`, `+A`) => ZIO[R0, E, A]]] =
+    BIOAsyncZio.asInstanceOf[BIOAsync[Lambda[(`+E`, `+A`) => ZIO[R0, E, A]]]]
 
   @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(
     implicit BIOPrimitives: BIOPrimitives[F]
