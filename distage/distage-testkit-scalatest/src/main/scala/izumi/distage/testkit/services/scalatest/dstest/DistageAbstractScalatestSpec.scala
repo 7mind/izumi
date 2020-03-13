@@ -89,7 +89,11 @@ object DistageAbstractScalatestSpec {
       takeIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
@@ -109,15 +113,11 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip[T: Tag](@unused function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
@@ -168,7 +168,11 @@ object DistageAbstractScalatestSpec {
       takeBIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
@@ -188,15 +192,11 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip(@unused function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
-    def skip[T: Tag](@unused function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip[T: Tag](@unused function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def skip(@unused function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
