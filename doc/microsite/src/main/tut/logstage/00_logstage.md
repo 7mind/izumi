@@ -157,12 +157,11 @@ Example:
 
 ```scala mdoc:reset
 import logstage.{IzLogger, LogstageZIO}
-import zio.{IO, DefaultRuntime}
+import zio.IO
 
 val log = LogstageZIO.withFiberId(IzLogger())
 
-val rts = new DefaultRuntime {}
-rts.unsafeRun {
+zio.Runtime.default.unsafeRun {
   log.info(s"Hey! I'm logging with ${log}stage!")
 }
 ```

@@ -443,7 +443,7 @@ val io = Injector()
       } yield res1 + res2
   }
 
-new zio.DefaultRuntime{}.unsafeRun(io)
+zio.Runtime.default.unsafeRun(io)
 ```
 
 You need to use effect-aware `Injector.produceF` method to use effect bindings.
@@ -462,8 +462,10 @@ Example:
 ```scala mdoc:reset:to-string
 import distage.{DIKey, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
-import zio.console.{Console, putStrLn}
+import zio.console.Console
 import zio.{UIO, URIO, ZIO, Ref, Task}
+
+def putStrLn(s: String): URIO[{ def console: Console.Service }, Unit] = ZIO.accessM(_.console.putStrLn(s))
 
 trait Hello {
   def hello: UIO[String]
@@ -517,7 +519,7 @@ def provideCake[R: TraitConstructor, A: Tag](fn: R => A): ProviderMagnet[A] = {
 val definition = new ModuleDef {
   make[Hello].fromResource(provideCake(makeHello.provide(_)))
   make[World].fromEffect(makeWorld)
-  make[Console.Service[Any]].fromValue(Console.Live.console)
+  make[Console.Service].fromValue(Console.Service.live)
   make[UIO[Unit]].from(provideCake(turboFunctionalHelloWorld.provide))
 }
 
@@ -525,7 +527,7 @@ val main = Injector()
   .produceGetF[Task, UIO[Unit]](definition)
   .useEffect
 
-new zio.DefaultRuntime{}.unsafeRun(main)
+zio.Runtime.global.unsafeRun(main)
 ```
 
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
