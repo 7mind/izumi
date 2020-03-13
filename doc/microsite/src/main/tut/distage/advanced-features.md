@@ -325,6 +325,63 @@ Injector()
 
 Since version `0.10`, support for path-dependent types with a non-value (type) prefix hasn't reimplemented after a rewrite of the internals, see issue: https://github.com/7mind/izumi/issues/764
 
+However, there's a gotcha with value prefixes, when seen by distage they're based on the **literal variable name** of the prefix,
+not the full type information available to the compiler, therefore the following usage will fail:
+
+```scala mdoc:to-string
+def pathModule(p: Path) = new ModuleDef {
+  make[p.A]
+}
+
+val path1 = new Path
+val path2 = new Path
+```
+
+```scala mdoc:to-string:crash
+Injector()
+  .produceRun(pathModule(path1) ++ pathModule(path2)) {
+    (p1a: path1.A, p2a: path2.A) =>
+      println((p1a, p2a))
+  }
+```
+
+This will fail because while `path1.A` and `p.A` inside `new ModuleDef` are the same type, the varialbes
+`path1` & `p` are spelled differently and this causes a mismatch.
+
+There's one way to workaround this - turn the type member `A` into a type parameter using the [Aux Pattern](http://gigiigig.github.io/posts/2015/09/13/aux-pattern.html),
+and then for that type parameter in turn, summon the type information using `Tag` implicit (as described in @ref[Tagless Final Style chapter](basics.md#tagless-final-style))
+and summon the constructor using the `ClassConstructor` implicit, example:
+
+```scala mdoc:to-string:reset:invisible
+class Path {
+  class A
+}
+```
+
+```scala mdoc:to-string
+import distage.{ClassConstructor, GCMode, ModuleDef, Injector, Tag}
+
+object Path {
+  type Aux[A0] = Path { type A = A0 }
+}
+
+def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
+  make[A]
+}
+
+val path1 = new Path
+val path2 = new Path
+
+Injector()
+  .produceRun(pathModule(path1) ++ pathModule(path2)) {
+    (p1a: path1.A, p2a: path2.A) =>
+      println((p1a, p2a))
+  }
+```
+
+Now the example works, because the `A` inside `pathModule` is `path1.A` & `path2.A` respectively, the same as it is later
+in `produceRun`
+
 ### Depending on Locator
 
 Objects can depend on the outer object graph that contains them (@scaladoc[Locator](izumi.distage.model.Locator)), by including a @scaladoc[LocatorRef](izumi.distage.model.recursive.LocatorRef) parameter:
