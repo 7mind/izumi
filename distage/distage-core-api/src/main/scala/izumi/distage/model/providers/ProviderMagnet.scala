@@ -34,14 +34,13 @@ import scala.language.implicitConversions
   *   make[Unit].from(constructor(_))
   * }}}
   *
-  * Function value with annotated signature:
+  * Function value with an annotated signature:
   *
   * {{{
   *   val constructor: (Int @Id("special"), String @Id("special")) => Unit = (_, _) => ()
   *
   *   make[Unit].from(constructor)
   * }}}
-  *
   *
   * Annotation processing is done by a macro and macros are rarely perfect,
   * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _) or (method(_))
@@ -83,8 +82,9 @@ import scala.language.implicitConversions
   * ProviderMagnet forms an applicative functor via its [[ProviderMagnet.pure]] & [[map2]] methods
   *
   * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
+  * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
   */
-final case class ProviderMagnet[+A](get: Provider) {
+case class ProviderMagnet[+A](get: Provider) {
   def map[B: Tag](f: A => B): ProviderMagnet[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[A])))
   }
@@ -160,15 +160,17 @@ object ProviderMagnet {
 
   def pure[A: Tag](a: A): ProviderMagnet[A] = lift(a)
 
-  def lift[A: Tag](a: => A): ProviderMagnet[A] = {
-    new ProviderMagnet[A](
-      Provider.ProviderImpl[A](
-        parameters = Seq.empty,
-        ret = SafeType.get[A],
-        originalFun = () => a,
-        fun = (_: Seq[Any]) => a,
-        isGenerated = false,
-      )
+  def lift[A: Tag](a: => A): ProviderMagnet[A] = new ProviderMagnet[A](lift0(a))
+
+  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = new ProviderMagnet[A](singleton0(a))
+
+  def lift0[A: Tag](a: => A): Provider.ProviderImpl[A] = {
+    Provider.ProviderImpl[A](
+      parameters = Seq.empty,
+      ret = SafeType.get[A],
+      originalFun = () => a,
+      fun = (_: Seq[Any]) => a,
+      isGenerated = false,
     )
   }
 
@@ -189,14 +191,13 @@ object ProviderMagnet {
     )
   }
 
-  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
-    new ProviderMagnet[A](
-      Provider.ProviderImpl[A](
-        parameters = Seq.empty,
-        ret = SafeType.get[A],
-        fun = (_: Seq[Any]) => a,
-        isGenerated = true,
-      )
+
+  def singleton0[A <: Singleton: Tag](a: A): Provider.ProviderImpl[A] = {
+    Provider.ProviderImpl[A](
+      parameters = Seq.empty,
+      ret = SafeType.get[A],
+      fun = (_: Seq[Any]) => a,
+      isGenerated = true,
     )
   }
 

@@ -8,6 +8,7 @@ import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.ProjectAttributeMacro
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class ProviderMagnetTest extends AnyWordSpec {
@@ -345,11 +346,11 @@ class ProviderMagnetTest extends AnyWordSpec {
       assert(p1 == p2)
     }
 
-    "progression test: FAILS to handle case class .apply references with argument annotations" in {
-      val fn = ProviderMagnet.apply(ClassArgAnn.apply _).get
+    "should be unequal after .map of generated function" in {
+      val p1 = ClassConstructor[Some[Int]]
+      val p2 = p1.map(identity)
 
-      assert(!fn.diKeys.contains(DIKey.get[String].named("classargann1")))
-      assert(!fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
+      assert(p1 != p2)
     }
 
     "fail on multiple conflicting annotations on the same parameter" in {
@@ -357,8 +358,21 @@ class ProviderMagnetTest extends AnyWordSpec {
       assertTypeError("ProviderMagnet.apply(defconfannfn2 _)")
     }
 
+    "progression test: Can't handle case class .apply references with argument annotations" in {
+      val fn = ProviderMagnet.apply(ClassArgAnn.apply _).get
+
+      intercept[TestFailedException] {
+        assert(fn.diKeys.contains(DIKey.get[String].named("classargann1")))
+      }
+      intercept[TestFailedException] {
+        assert(fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
+      }
+    }
+
     "progression test: Can't expand functions with implicit arguments" in {
-      assertTypeError("ProviderMagnet.apply(defimplicitfn _)")
+      intercept[TestFailedException] {
+        assertCompiles("ProviderMagnet.apply(defimplicitfn _)")
+      }
     }
   }
 

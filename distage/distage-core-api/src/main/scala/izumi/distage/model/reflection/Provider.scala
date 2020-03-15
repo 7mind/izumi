@@ -5,14 +5,11 @@ import izumi.distage.model.exceptions.UnsafeCallArgsMismatched
 trait DIFunction {
   def parameters: Seq[Association.Parameter]
   def argTypes: Seq[SafeType]
-  def diKeys: Seq[DIKey]
+  def arity: Int
 
   def ret: SafeType
 
-  def originalFun: AnyRef
   def fun: Seq[Any] => Any
-  def arity: Int
-
   def isGenerated: Boolean
 
   def unsafeApply(refs: Seq[TypedRef[_]]): Any = {
@@ -20,7 +17,7 @@ trait DIFunction {
     fun(args)
   }
 
-  private[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
+  protected[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters.zip(refs).map {
       case (param, TypedRef(v, tpe, isByName)) =>
 
@@ -54,13 +51,20 @@ trait DIFunction {
 }
 
 trait Provider extends DIFunction {
+  def parameters: Seq[Association.Parameter]
+  def ret: SafeType
+
+  def originalFun: AnyRef
+
+  def isGenerated: Boolean
+
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
   def addUnused(keys: Seq[DIKey]): Provider
 
-  override final def diKeys: Seq[DIKey] = parameters.map(_.key)
-  override final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
-  override final val arity: Int = parameters.size
+  final def diKeys: Seq[DIKey] = parameters.map(_.key)
+  final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
+  final val arity: Int = parameters.size
 
   private def eqField: AnyRef = if (isGenerated) ret else originalFun
   override final def equals(obj: Any): Boolean = {

@@ -1,9 +1,8 @@
 package izumi.distage.constructors.macros
 
-import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{Provider, ReflectionProvider}
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.model.reflection.{Provider, ReflectionProvider}
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.tailrec
@@ -12,7 +11,7 @@ import scala.reflect.macros.blackbox
 abstract class ClassConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[ProviderMagnet[T]] = {
+  def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[Provider.ProviderImpl[T]] = {
     val associations = reflectionProvider.constructorParameterLists(targetType)
     generateProvider[T](associations)(args => q"new $targetType(...$args)")
   }
@@ -30,7 +29,7 @@ object ClassConstructorMacros {
 abstract class TraitConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[ProviderMagnet[T]] = {
+  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[Provider.ProviderImpl[T]] = {
     val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
     val traitParameters = methods.map(_.asParameter)
 
@@ -244,7 +243,7 @@ abstract class ConstructorMacrosBase {
   }
 
   def generateProvider[T: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
-                                        (fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
+                                        (fun: List[List[Tree]] => Tree): c.Expr[Provider.ProviderImpl[T]] = {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 
@@ -265,17 +264,13 @@ abstract class ConstructorMacrosBase {
       })
     }
 
-    c.Expr[ProviderMagnet[T]] {
-      q"""{
-          new ${weakTypeOf[ProviderMagnet[T]]}(
-            new ${weakTypeOf[Provider.ProviderImpl[T]]}(
-              ${Liftable.liftList.apply(parameters.flatten)},
-              ${liftTypeToSafeType(weakTypeOf[T])},
-              { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },
-              true,
-            )
-          )
-        }"""
+    c.Expr[Provider.ProviderImpl[T]] {
+      q"""new ${weakTypeOf[Provider.ProviderImpl[T]]}(
+            ${Liftable.liftList.apply(parameters.flatten)},
+            ${liftTypeToSafeType(weakTypeOf[T])},
+            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },
+            true,
+          )"""
     }
   }
 

@@ -8,7 +8,7 @@ import izumi.distage.model.plan.Wiring.MonadicWiring._
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
-import izumi.distage.model.reflection.{Association, DIKey, Provider}
+import izumi.distage.model.reflection.{Association, DIFunction, DIKey}
 import izumi.fundamentals.platform.strings.IzString._
 
 trait OpFormatter {
@@ -133,7 +133,7 @@ object OpFormatter {
       }
     }
 
-    private def formatFunction(provider: Provider): String = {
+    private def formatFunction(provider: DIFunction): String = {
       s"${provider.fun}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 

@@ -2,6 +2,7 @@ package izumi.distage.constructors.macros
 
 import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
@@ -25,7 +26,7 @@ object ClassConstructorMacro {
           case _ => q"${t.termSymbol}"
         }
         c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.singleton[$targetType]($term)) }"
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.singleton0[$targetType]($term)) }"
         }
 
       case _ =>
@@ -42,7 +43,7 @@ object ClassConstructorMacro {
 
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val provider: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
+        val provider: c.Expr[Provider.ProviderImpl[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
 
         val res = c.Expr[ClassConstructor[T]](q"{ new ${weakTypeOf[ClassConstructor[T]]}($provider) }")
         logger.log(s"Final syntax tree of class for $targetType:\n$res")

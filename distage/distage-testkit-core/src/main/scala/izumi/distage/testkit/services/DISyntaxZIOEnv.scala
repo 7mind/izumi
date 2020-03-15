@@ -45,11 +45,11 @@ import scala.language.implicitConversions
   */
 trait DISyntaxZIOEnv {
   implicit def zioToFn[R: TraitConstructor, E: Tag, A: Tag](zio: ZIO[R, E, A]): ProviderMagnet[IO[E, A]] = {
-    TraitConstructor[R].provider.map(zio.provide)
+    TraitConstructor[R].map(zio.provide)
   }
 
   def args[R: Tag: TraitConstructor, E: Tag, A: Tag](zio: ProviderMagnet[ZIO[R, E, A]]): ProviderMagnet[IO[E, A]] = {
-    zio.map2(TraitConstructor[R].provider)(_.provide(_))
+    zio.map2(TraitConstructor[R])(_.provide(_))
   }
 }
 

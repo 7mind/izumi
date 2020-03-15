@@ -15,7 +15,7 @@ object AnyConstructorMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
     import c.universe._
-    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}]((${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}).provider)""")
+    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}]((${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}))""")
   }
 
   def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL[T]] = {
@@ -77,7 +77,7 @@ object AnyConstructorMacro {
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
 
-            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructor[T](c)})"""
+            mkAnyConstructor[T](c).tree
           } else {
             logger.log(s"For $tpe found `.from`-like calls, generating ERROR constructor: $nonwhiteListedMethods")
 
