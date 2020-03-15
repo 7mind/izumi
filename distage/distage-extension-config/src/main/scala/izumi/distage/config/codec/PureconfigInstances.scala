@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
 object PureconfigInstances extends PureconfigInstances
 trait PureconfigInstances {
   /** Override pureconfig's default `snake-case` fields – force CamelCase product-hint */
-  implicit def forceCamelCaseProductHint[T]: ProductHint[T] = camelCaseProductHint.asInstanceOf[ProductHint[T]]
+  @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = camelCaseProductHint.asInstanceOf[ProductHint[T]]
 
   /** Override pureconfig's default `type` field type discriminator for sealed traits.
     * Instead, use `circe`-like format with a single-key object. Example:
@@ -33,10 +33,10 @@ trait PureconfigInstances {
     *   }
     * }}}
     */
-  implicit def forceCirceLikeCoproductHint[T]: CoproductHint[T] = circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
+  @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
 
-  private[this] val camelCaseProductHint: ProductHint[Any] = ProductHint(fieldMapping = ConfigFieldMapping(CamelCase, CamelCase))
-  private[this] val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
+  private[this] final val camelCaseProductHint: ProductHint[Any] = ProductHint(fieldMapping = ConfigFieldMapping(CamelCase, CamelCase))
+  private[this] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
     override def from(cur: ConfigCursor, name: String): Result[Option[ConfigCursor]] = {
       for {
         objCur <- cur.asObjectCursor
@@ -50,7 +50,7 @@ trait PureconfigInstances {
   }
 
   // use `Exported` so that if user imports their own instances, user instances will have higher priority
-  implicit final val memorySizeDecoder: Exported[pureconfig.ConfigReader[ConfigMemorySize]] = Exported {
+  implicit final lazy val memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
     cur: ConfigCursor =>
       try Right(cur.value.atKey("m").getMemorySize("m")) catch {
         case NonFatal(ex) =>
