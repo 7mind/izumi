@@ -1,7 +1,9 @@
 # https://aka.ms/yaml
 
 pr:
-- develop
+  branches:
+    include:
+    - '*'
 
 trigger:
   tags:
