@@ -2,16 +2,15 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.initial.PrePlan
-import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan, Wiring}
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final class PlanningHookAggregate
 (
   hooks: Set[PlanningHook]
 ) extends PlanningHook {
 
-  override def hookWiring(binding: Binding.ImplBinding, wiring: RuntimeDIUniverse.Wiring): RuntimeDIUniverse.Wiring = {
+  override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
     hooks.foldLeft(wiring) {
       case (acc, hook) =>
         hook.hookWiring(binding, acc)

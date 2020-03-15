@@ -195,7 +195,7 @@ object LightTypeTag {
   }
 
   def parse[T](hashCode: Int, refString: String, basesString: String, @unused version: Int): LightTypeTag = {
-    lazy val shared = {
+    lazy val shared: SubtypeDBs = {
       subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes(StandardCharsets.ISO_8859_1)))
     }
 

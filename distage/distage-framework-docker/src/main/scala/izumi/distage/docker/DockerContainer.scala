@@ -4,10 +4,9 @@ import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
-import com.github.dockerjava.core.command.PullImageResultCallback
 import com.github.ghik.silencer.silent
 import distage.TagK
-import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
+import izumi.distage.docker.Docker._
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -25,7 +24,7 @@ trait ContainerDef {
   self =>
   type Tag
   type Container = DockerContainer[Tag]
-  type Config = ContainerConfig[Tag]
+  type Config = Docker.ContainerConfig[Tag]
 
   def config: Config
 
@@ -67,7 +66,7 @@ final case class DockerContainer[Tag](
   id: Docker.ContainerId,
   name: String,
   ports: Map[Docker.DockerPort, Seq[ServicePort]],
-  containerConfig: ContainerConfig[Tag],
+  containerConfig: Docker.ContainerConfig[Tag],
   clientConfig: ClientConfig,
   availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
 ) {
@@ -92,7 +91,7 @@ object DockerContainer {
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
   final class Resource[F[_]: DIEffect: DIEffectAsync, T](
-    config: ContainerConfig[T],
+    config: Docker.ContainerConfig[T],
     clientw: DockerClientWrapper[F],
     logger: IzLogger,
   ) extends DIResource[F, DockerContainer[T]] {
@@ -108,7 +107,7 @@ object DockerContainer {
       }
     }
 
-    private[this] def shouldReuse(config: ContainerConfig[T]): Boolean = {
+    private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
       config.reuse && clientw.clientConfig.allowReuse
     }
 
@@ -228,7 +227,6 @@ object DockerContainer {
       } yield existing
     }
 
-    @silent("deprecated")
     private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client
@@ -236,12 +234,13 @@ object DockerContainer {
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map {
-        case Mount(h, c, true) => new Bind(h, new Volume(c), true)
-        case Mount(h, c, _) => new Bind(h, new Volume(c))
+        case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
+        case Docker.Mount(h, c, _) => new Bind(h, new Volume(c))
       }
 
       for {
         out <- DIEffect[F].maybeSuspend {
+          @silent("method.*Bind.*deprecated")
           val cmd = Value(baseCmd)
             .mut(config.name) { case (n, c) => c.withName(n) }
             .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
@@ -260,7 +259,7 @@ object DockerContainer {
           logger.info(s"Going to pull `${config.image}`...")
           client
             .pullImageCmd(config.image)
-            .exec(new PullImageResultCallback())
+            .start()
             .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
 
           logger.debug(s"Going to create container from image `${config.image}`...")

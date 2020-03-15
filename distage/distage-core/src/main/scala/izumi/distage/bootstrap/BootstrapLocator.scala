@@ -14,8 +14,7 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFaili
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import izumi.distage.provisioning._
@@ -42,7 +41,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
       .bootstrapPlanner(bootstrapActivation)
       .plan(PlannerInput.noGc(bindings))
   }
-  override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
+  override lazy val index: Map[DIKey, Any] = super.index
 
   private[this] val bootstrappedContext: Locator = {
     val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
@@ -62,7 +61,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 
   override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
-  override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] = {
+  override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
     Option(_instances.get()) match {
       case Some(_) =>
         index.get(key)

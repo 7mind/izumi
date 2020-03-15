@@ -7,8 +7,7 @@ import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.model.planning.PlanMergingPolicy.{DIKeyConflictResolution, WithResolve}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.PruningPlanMergingPolicyDefaultImpl.PlanMergingPolicyDefaultImpl
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.fundamentals.platform.language.unused
@@ -27,7 +26,7 @@ class PruningPlanMergingPolicyDefaultImpl
   protected def logHandleIssues(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed]): Unit = {}
   protected def logPruningSuccesfulResolve(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed], @unused erased: Map[DIKey, Set[SemiplanOp]]): Unit = {}
 
-  override protected def resolveConflict(plan: PrePlan, key: RuntimeDIUniverse.DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
+  override protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)
 
     val filtered = operations.filter {

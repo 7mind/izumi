@@ -4,7 +4,7 @@ import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.SemiPlan
 import izumi.distage.model.plan.initial.PrePlan
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 trait PlanMergingPolicy {
   def freeze(plan: PrePlan): SemiPlan

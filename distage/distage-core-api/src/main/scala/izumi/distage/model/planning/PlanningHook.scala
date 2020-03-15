@@ -3,7 +3,7 @@ package izumi.distage.model.planning
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
+import izumi.distage.model.plan.Wiring
 import izumi.fundamentals.platform.language.Quirks._
 
 trait PlanningHook {

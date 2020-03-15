@@ -1,5 +1,5 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.DIKey
 
-class MissingRootsException(message: String, val roots: Set[RuntimeDIUniverse.DIKey]) extends DIException(message)
+class MissingRootsException(message: String, val roots: Set[DIKey]) extends DIException(message)

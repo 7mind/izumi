@@ -2,8 +2,9 @@ package izumi.distage.model.reflection.macros
 
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.Provider
+import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
-import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
@@ -84,7 +85,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
         val fun = $fun
 
         new ${weakTypeOf[ProviderMagnet[R]]}(
-          new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
+          new ${weakTypeOf[Provider.ProviderImpl[R]]}(
             $parametersNoByName,
             ${liftTypeToSafeType(weakTypeOf[R])},
             fun,

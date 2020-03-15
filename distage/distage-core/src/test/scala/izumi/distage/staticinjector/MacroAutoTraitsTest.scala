@@ -6,7 +6,7 @@ import izumi.distage.fixtures.TypesCases.TypesCase3
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import izumi.distage.model.reflection.TypedRef
 import org.scalatest.wordspec.AnyWordSpec
 
 class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {

@@ -3,7 +3,7 @@ package izumi.distage.model.plan.impl
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 
 private[plan] object AbstractPlanOps {
   def resolveImports[OpType <: ExecutableOp](f: PartialFunction[ImportDependency, Seq[OpType]], steps: Vector[OpType]): Vector[ExecutableOp] =

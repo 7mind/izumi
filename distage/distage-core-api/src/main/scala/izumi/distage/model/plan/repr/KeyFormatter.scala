@@ -1,6 +1,6 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, SafeType}
 
 trait KeyFormatter {
   def formatKey(key: DIKey): String

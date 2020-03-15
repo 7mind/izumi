@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanSplittingOps
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner extends PlanSplittingOps {

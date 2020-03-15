@@ -8,7 +8,7 @@ import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.reflection.Tags.TagK
 
 trait PlanInterpreter {

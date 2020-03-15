@@ -2,7 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.MissingInstanceException
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.reflection.Tags.Tag
 
 trait AbstractLocator extends Locator {

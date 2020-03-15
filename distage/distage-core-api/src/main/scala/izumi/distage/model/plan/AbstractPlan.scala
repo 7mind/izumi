@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.impl.{OrderedPlanExtensions, OrderedPlanOps, PlanLazyOps, SemiPlanExtensions, SemiPlanOps}
 import izumi.distage.model.plan.topology.PlanTopology
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAPI[OpType] with PlanLazyOps[OpType] {
   def definition: ModuleBase

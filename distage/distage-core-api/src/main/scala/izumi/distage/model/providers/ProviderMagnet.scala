@@ -2,8 +2,8 @@ package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Association.Parameter
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.Association.Parameter
+import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag

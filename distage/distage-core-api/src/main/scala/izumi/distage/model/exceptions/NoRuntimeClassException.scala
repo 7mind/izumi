@@ -1,12 +1,12 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.{DIKey, SafeType}
 
 class NoRuntimeClassException(
-                               val operation: RuntimeDIUniverse.DIKey,
-                               val key: RuntimeDIUniverse.SafeType,
+                               val operation: DIKey,
+                               val key: SafeType,
                              ) extends DIException(
   s"Cannot build proxy for operation $operation: runtime class is not available for $key"
 ) {
-  def this(operation: RuntimeDIUniverse.DIKey) = this(operation, operation.tpe)
+  def this(operation: DIKey) = this(operation, operation.tpe)
 }

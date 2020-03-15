@@ -2,7 +2,7 @@ package izumi.distage.model.plan.topology
 
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 import scala.collection.mutable
 

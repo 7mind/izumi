@@ -7,24 +7,24 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  protected[this] val runtimeDIUniverse: Tree = q"_root_.izumi.distage.model.reflection.universe.RuntimeDIUniverse"
+  protected[this] val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
 
   def liftTypeToSafeType(tpe: TypeNative): Tree = {
-    q"{ $runtimeDIUniverse.SafeType.get[${Liftable.liftType(tpe)}] }"
+    q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe)}] }"
   }
 
   // DIKey
 
   protected[this] implicit val liftableTypeKey: Liftable[DIKey.TypeKey] = {
     case DIKey.TypeKey(tpe) => q"""
-    { new $runtimeDIUniverse.DIKey.TypeKey(${liftTypeToSafeType(tpe.typeNative)}) }
+    { new $modelReflectionPkg.DIKey.TypeKey(${liftTypeToSafeType(tpe.typeNative)}) }
       """
   }
 
   protected[this] implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
     case idKey: DIKey.IdKey[_] =>
       val lifted = idKey.idContract.liftable(idKey.id)
-      q"""{ new $runtimeDIUniverse.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
+      q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
   }
 
   protected[this] implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
@@ -43,7 +43,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // (annotations always empty currently)
   protected[this] implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
-      q"""{ $runtimeDIUniverse.SymbolInfo(
+      q"""{ $modelReflectionPkg.SymbolInfo(
       name = ${info.name},
       finalResultType = ${liftTypeToSafeType(info.nonByNameFinalResultType)},
       isByName = ${info.isByName},
@@ -55,7 +55,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(symbol, key) =>
-      q"new $runtimeDIUniverse.Association.Parameter($symbol, $key)"
+      q"new $modelReflectionPkg.Association.Parameter($symbol, $key)"
   }
 
 }

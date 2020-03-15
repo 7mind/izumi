@@ -1,11 +1,11 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.SafeType
 
 class IncompatibleTypesException(
-                                  message: String
-                                  , val expected: RuntimeDIUniverse.SafeType
-                                  , val got: RuntimeDIUniverse.SafeType
+                                  message: String,
+                                  val expected: SafeType,
+                                  val got: SafeType,
                                 ) extends DIException(message)
 
 

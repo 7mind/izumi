@@ -3,7 +3,7 @@ package izumi.distage.model.plan.impl
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{AbstractPlan, ExecutableOp}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 private[plan] trait PlanLazyOps[OpType <: ExecutableOp] {
   this: AbstractPlan[OpType] =>

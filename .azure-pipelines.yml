@@ -1,5 +1,10 @@
 # https://aka.ms/yaml
 
+pr:
+  branches:
+    include:
+    - '*'
+
 trigger:
   tags:
     include:

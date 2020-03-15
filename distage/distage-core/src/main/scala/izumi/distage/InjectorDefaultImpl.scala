@@ -8,7 +8,7 @@ import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.fundamentals.reflection.Tags.TagK
 
@@ -47,15 +47,15 @@ class InjectorDefaultImpl
     planner.finish(semiPlan)
   }
 
-  override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
+  override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
   }
 
-  override private[distage] def produceFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Locator] = {
+  override private[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Locator] = {
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  override private[distage] def produceDetailedFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 

@@ -4,22 +4,22 @@ import cats.Applicative
 import cats.kernel.Monoid
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.reflection.Tags.Tag
 
 private[plan] object PlanCatsSyntaxImpl {
 
   final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
-    def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
+    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
       plan.resolveImportsF[F] {
         case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
       }
   }
 
   final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
-    def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
+    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
       plan.resolveImportsF[F] {
         case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
       }
@@ -41,7 +41,7 @@ private[plan] object PlanCatsSyntaxImpl {
   import cats.syntax.traverse._
 
   @inline
-  final def resolveImportsImpl[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[ExecutableOp]): F[Vector[ExecutableOp]] =
+  final def resolveImportsImpl[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[ExecutableOp]): F[Vector[ExecutableOp]] =
     steps.traverse {
       case i: ImportDependency =>
         f.lift(i).map {
@@ -52,7 +52,7 @@ private[plan] object PlanCatsSyntaxImpl {
     }
 
   @inline
-  final def resolveImportsImpl1[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[SemiplanOp]): F[Vector[SemiplanOp]] =
+  final def resolveImportsImpl1[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[SemiplanOp]): F[Vector[SemiplanOp]] =
     steps.traverse {
       case i: ImportDependency =>
         f.lift(i).map {

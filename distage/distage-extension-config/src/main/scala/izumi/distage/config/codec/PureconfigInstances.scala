@@ -50,10 +50,11 @@ trait PureconfigInstances {
   }
 
   // use `Exported` so that if user imports their own instances, user instances will have higher priority
-  implicit final val memorySizeDecoder: Exported[pureconfig.ConfigReader[ConfigMemorySize]] = Exported((cur: ConfigCursor) => {
-    try Right(cur.value.atKey("m").getMemorySize("m")) catch {
-      case NonFatal(ex) =>
-        Result.fail(error.ConvertFailure(CannotConvert(cur.value.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
-    }
-  })
+  implicit final val memorySizeDecoder: Exported[pureconfig.ConfigReader[ConfigMemorySize]] = Exported {
+    cur: ConfigCursor =>
+      try Right(cur.value.atKey("m").getMemorySize("m")) catch {
+        case NonFatal(ex) =>
+          Result.fail(error.ConvertFailure(CannotConvert(cur.value.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
+      }
+  }
 }

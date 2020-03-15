@@ -1,7 +1,6 @@
 package distage
 
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, planning}
 import izumi.fundamentals.reflection.Tags
@@ -73,11 +72,11 @@ trait Distage {
   val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
-  type DIKey = RuntimeDIUniverse.DIKey
-  val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey
+  type DIKey = model.reflection.DIKey
+  val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
-  type SafeType = RuntimeDIUniverse.SafeType
-  val SafeType: RuntimeDIUniverse.SafeType.type = RuntimeDIUniverse.SafeType
+  type SafeType = model.reflection.SafeType
+  val SafeType: model.reflection.SafeType.type = model.reflection.SafeType
 
   type ModuleBase = model.definition.ModuleBase
   val ModuleBase: model.definition.ModuleBase.type = model.definition.ModuleBase

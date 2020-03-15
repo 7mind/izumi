@@ -3,7 +3,7 @@ package izumi.distage.model.definition
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.reflection.Tags.Tag
 

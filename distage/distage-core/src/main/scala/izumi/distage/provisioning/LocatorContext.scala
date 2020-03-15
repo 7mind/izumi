@@ -3,7 +3,7 @@ package izumi.distage.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.{Provision, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 
 final case class LocatorContext
 (
