@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigValue}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.fundamentals.reflection.Tags.Tag
+import pureconfig.ConfigReader
 import pureconfig.error.ConfigReaderException
 
 import scala.reflect.ClassTag
@@ -80,21 +81,23 @@ trait DIConfigReader[A] {
 object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   @inline def apply[T: DIConfigReader]: DIConfigReader[T] = implicitly
 
-  @inline def derive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
+  def derived[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] =
     DIConfigReader.deriveFromPureconfigConfigReader[T](implicitly, dec.value)
-  }
 
-  implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: pureconfig.ConfigReader[T]): DIConfigReader[T] = {
+  implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
     cv =>
       dec.from(cv) match {
         case Left(errs) => Failure(ConfigReaderException[T](errs))
         case Right(value) => Success(value)
       }
   }
+
+  @deprecated("Use derived", "will be removed in 0.10.3")
+  def derive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = derived[T]
 }
 
-trait LowPriorityDIConfigReaderInstances {
-  @inline implicit def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
+sealed trait LowPriorityDIConfigReaderInstances {
+  implicit final def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
     DIConfigReader.deriveFromPureconfigConfigReader(implicitly, dec.value)
   }
 }
