@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 
 sealed trait NewObjectOp
 object NewObjectOp {

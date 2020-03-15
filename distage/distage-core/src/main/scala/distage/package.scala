@@ -1,5 +1,4 @@
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, planning}
 import izumi.fundamentals.reflection.Tags
@@ -71,11 +70,11 @@ package object distage extends Distage {
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
-  override type DIKey = RuntimeDIUniverse.DIKey
-  override val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey
+  override type DIKey = model.reflection.DIKey
+  override val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
-  override type SafeType = RuntimeDIUniverse.SafeType
-  override val SafeType: RuntimeDIUniverse.SafeType.type = RuntimeDIUniverse.SafeType
+  override type SafeType = model.reflection.SafeType
+  override val SafeType: model.reflection.SafeType.type = model.reflection.SafeType
 
   override type ModuleBase = model.definition.ModuleBase
   override val ModuleBase: model.definition.ModuleBase.type = model.definition.ModuleBase

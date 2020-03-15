@@ -2,12 +2,11 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.exceptions.{MissingRefException, NoRuntimeClassException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
+import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Wiring}
+import izumi.distage.model.reflection.{Association, DIKey, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific
@@ -46,7 +45,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific
     throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: RuntimeDIUniverse.Association.Parameter): (Class[_], Any) = {
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: Association.Parameter): (Class[_], Any) = {
     val clazz: Class[_] = if (param.isByName) {
       classOf[Function0[_]]
     } else if (param.wasGeneric) {

@@ -3,7 +3,7 @@ package izumi.distage.provisioning.strategies.cglib
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty, Params}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.proxy.{Callback, Enhancer}
 

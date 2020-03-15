@@ -11,7 +11,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   "support tagless final style module definitions" in {
     import HigherKindsCase1._
 
-    case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
+    case class Definition[F[_]: TagK : Pointed](getResult: Int) extends ModuleDef {
       // TODO: hmmm, what to do with this
       addImplicit[Pointed[F]]
 

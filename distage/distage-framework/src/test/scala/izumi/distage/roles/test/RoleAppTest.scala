@@ -145,7 +145,7 @@ class RoleAppTest extends AnyWordSpec
         many[TestResource]
           .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
-      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
+      val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
@@ -181,7 +181,7 @@ class RoleAppTest extends AnyWordSpec
         many[TestResource]
           .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
-      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
+      val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
@@ -217,7 +217,7 @@ class RoleAppTest extends AnyWordSpec
           .ref[TestResource with AutoCloseable]
         make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule
-      val roots = Set(DIKey.get[Set[TestResource]] : DIKey)
+      val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,

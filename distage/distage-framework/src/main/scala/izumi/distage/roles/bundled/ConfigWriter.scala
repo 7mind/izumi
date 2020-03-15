@@ -11,7 +11,7 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}

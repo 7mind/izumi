@@ -1,6 +1,6 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.model.reflection.SafeType
 
 class IncompatibleEffectTypesException(val provisionerEffectType: SafeType, val actionEffectType: SafeType) extends DIException(
   s"""Incompatible effect types: Can't execute effect in `$actionEffectType` which is neither Identity, nor a subtype of the effect that Provisioner was launched in: `$provisionerEffectType`

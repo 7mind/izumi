@@ -1,7 +1,7 @@
 package izumi.distage.roles.model.meta
 
 import izumi.distage.model.definition.Binding
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.distage.roles.model.RoleDescriptor
 import izumi.fundamentals.platform.resources.IzArtifact
 

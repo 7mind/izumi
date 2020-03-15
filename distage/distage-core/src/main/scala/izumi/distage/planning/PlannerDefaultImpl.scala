@@ -10,7 +10,7 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value

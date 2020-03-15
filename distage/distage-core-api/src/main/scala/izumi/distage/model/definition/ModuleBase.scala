@@ -3,7 +3,7 @@ package izumi.distage.model.definition
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.unused
 
@@ -180,7 +180,7 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_] : CatsPartialOrderHash]: K[T] = {
+  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
     import cats.instances.set._
 
     new PartialOrder[T] with Hash[T] {
@@ -196,14 +196,14 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_] : CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T]: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
 
 private object ModuleBaseInstances {
 
-  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T] : ModuleMake] extends BoundedSemilattice[T] {
+  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T]: ModuleMake] extends BoundedSemilattice[T] {
     def empty: T = ModuleMake[T].empty
     def combine(x: T, y: T): T = x ++ y
   }

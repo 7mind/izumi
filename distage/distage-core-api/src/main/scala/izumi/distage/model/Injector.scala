@@ -5,7 +5,7 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.GCMode
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 

@@ -1,6 +1,6 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}

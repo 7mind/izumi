@@ -221,7 +221,7 @@ object BIOSyntax {
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
   trait BIOImplicitPuns11 {
-    @inline implicit final def BIOFunctor[F[_, + _] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
+    @inline implicit final def BIOFunctor[F[_, + _]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOFunctor[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
   }
 

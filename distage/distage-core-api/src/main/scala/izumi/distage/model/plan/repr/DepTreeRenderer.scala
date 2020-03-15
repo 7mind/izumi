@@ -5,7 +5,7 @@ import izumi.distage.model.plan.topology.DepTreeNode._
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 import scala.collection.mutable
 

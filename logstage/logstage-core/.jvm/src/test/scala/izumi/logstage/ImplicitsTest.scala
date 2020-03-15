@@ -16,7 +16,7 @@ class ImplicitsTest extends AnyWordSpec {
     val log: LogIO[cats.effect.IO] = LogIO.fromLogger(IzLogger())
     log.discard()
 
-    def logIO[F[_] : Sync]: LogIO[F] = LogIO.fromLogger(IzLogger())
+    def logIO[F[_]: Sync]: LogIO[F] = LogIO.fromLogger(IzLogger())
 
     logIO[cats.effect.IO]
   }
@@ -38,11 +38,11 @@ class ImplicitsTest extends AnyWordSpec {
     val log: LogBIO[zio.IO] = LogBIO.fromLogger(IzLogger())
     log.discard()
 
-    def logIO[F[+ _, + _] : BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
+    def logIO[F[+ _, + _]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
 
     logIO[zio.IO]
 
-    def logBIO[F[+ _, + _] : BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
+    def logBIO[F[+ _, + _]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
 
     logBIO[zio.IO]
   }
@@ -75,7 +75,7 @@ class ImplicitsTest extends AnyWordSpec {
       """)
   }
 
-  def logIO[F[_] : LogIO](): F[Unit] = LogIO[F].info("abc")
+  def logIO[F[_]: LogIO](): F[Unit] = LogIO[F].info("abc")
 
   def logThrowable[F[+ _, _]]()(implicit f: LogIO[F[Throwable, ?]]): F[Throwable, Unit] = f.info("cba")
 

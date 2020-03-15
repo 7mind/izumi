@@ -6,8 +6,8 @@ import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 
 import scala.jdk.CollectionConverters._
 

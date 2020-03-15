@@ -8,7 +8,7 @@ import izumi.distage.model.definition.DIResource.makeSimple
 import izumi.distage.model.definition.ImplDef.DirectImplDef
 import izumi.distage.model.definition._
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.reflection.Tags.Tag

@@ -3,7 +3,7 @@ package izumi.distage.model.provisioning.proxies
 import izumi.distage.model.exceptions.NoopProvisionerImplCalled
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 
 trait ProxyProvider {
   def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit

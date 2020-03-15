@@ -2,7 +2,7 @@ package izumi.distage.model.planning
 
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.topology.PlanTopology
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 
 trait PlanAnalyzer {
   def topology(ops: Seq[ExecutableOp]): PlanTopology

@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.reflection.Tags.Tag
 
 sealed trait GCMode {

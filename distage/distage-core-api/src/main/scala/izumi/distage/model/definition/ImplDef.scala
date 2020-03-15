@@ -1,7 +1,7 @@
 package izumi.distage.model.definition
 
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, SafeType}
+import izumi.distage.model.reflection.{DIKey, Provider, SafeType}
 
 sealed trait ImplDef {
   def implType: SafeType
