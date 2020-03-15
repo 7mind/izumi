@@ -629,7 +629,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "io.circe" %% "circe-parser" % V.circe,
       "io.circe" %% "circe-literal" % V.circe,
       "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
-      "io.circe" %% "circe-derivation" % V.circe_derivation
+      "io.circe" %% "circe-derivation" % V.circe_derivation,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1034,6 +1035,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
+      "com.propensive" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )

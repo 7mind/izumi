@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import distage.{Tag, TagK, TagKK}
+import distage.{TagK, TagKK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.TestConfig
