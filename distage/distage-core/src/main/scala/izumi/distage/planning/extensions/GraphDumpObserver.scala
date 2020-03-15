@@ -10,7 +10,6 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import izumi.fundamentals.graphs.dotml.Digraph
 import izumi.fundamentals.platform.language.Quirks._
@@ -151,11 +150,11 @@ final class GraphDumpObserver
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
+              case Wiring.SingletonWiring.Function(_, _) =>
                 "lambda"
-              case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
+              case Wiring.SingletonWiring.Instance(_, _) =>
                 "instance"
-              case RuntimeDIUniverse.Wiring.SingletonWiring.Reference(_, _, weak) =>
+              case Wiring.SingletonWiring.Reference(_, _, weak) =>
                 if (weak) {
                   attrs.put("style", "filled,dashed")
                 }

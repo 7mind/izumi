@@ -7,7 +7,6 @@ import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
 import distage.TagK
 import izumi.distage.docker.Docker._
-import izumi.distage.docker.Docker
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -235,12 +234,13 @@ object DockerContainer {
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map {
-        case Mount(h, c, true) => new Bind(h, new Volume(c), true)
-        case Mount(h, c, _) => new Bind(h, new Volume(c))
+        case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
+        case Docker.Mount(h, c, _) => new Bind(h, new Volume(c))
       }
 
       for {
         out <- DIEffect[F].maybeSuspend {
+          @silent("method.*Bind.*deprecated")
           val cmd = Value(baseCmd)
             .mut(config.name) { case (n, c) => c.withName(n) }
             .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))

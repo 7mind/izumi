@@ -223,9 +223,9 @@ class TagTest extends AnyWordSpec with XY[String] {
     }
 
     "Tag.auto.T kind inference macro works for known cases" in {
-      def x[T[_] : Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[T]]
+      def x[T[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[T]]
 
-      def x2[T[_, _] : Tag.auto.T]: TagKK[T] = implicitly[Tag.auto.T[T]]
+      def x2[T[_, _]: Tag.auto.T]: TagKK[T] = implicitly[Tag.auto.T[T]]
 
       def x3[T[_, _, _[_[_], _], _[_], _]](implicit x: Tag.auto.T[T]): Tag.auto.T[T] = x
 
@@ -241,7 +241,7 @@ class TagTest extends AnyWordSpec with XY[String] {
     }
 
     "Work for an abstract type with available TagKK" in {
-      def t1[F[_, _] : TagKK, T: Tag, G: Tag] = Tag[F[T, G]]
+      def t1[F[_, _]: TagKK, T: Tag, G: Tag] = Tag[F[T, G]]
 
       assert(t1[ZOBA[Int, ?, ?], Int, String].tag == fromRuntime[ZOBA[Int, Int, String]])
     }
@@ -249,7 +249,7 @@ class TagTest extends AnyWordSpec with XY[String] {
     "Handle Tags outside of a predefined set" in {
       type TagX[T[_, _, _[_[_], _], _[_], _]] = HKTag[ {type Arg[A, B, C[_[_], _], D[_], E] = T[A, B, C, D, E]}]
 
-      def testTagX[F[_, _, _[_[_], _], _[_], _] : TagX, A: Tag, B: Tag, C[_[_], _] : TagTK, D[_] : TagK, E: Tag] = Tag[F[A, B, C, D, E]]
+      def testTagX[F[_, _, _[_[_], _], _[_], _]: TagX, A: Tag, B: Tag, C[_[_], _]: TagTK, D[_]: TagK, E: Tag] = Tag[F[A, B, C, D, E]]
 
       val value = testTagX[T2, Int, String, OptionT, List, Boolean]
       assert(value.tag == fromRuntime[T2[Int, String, OptionT, List, Boolean]])
@@ -265,14 +265,14 @@ class TagTest extends AnyWordSpec with XY[String] {
 
     "Work for any configuration of parameters" in {
 
-      def t1[A: Tag, B: Tag, C: Tag, D: Tag, E: Tag, F[_] : TagK]: Tag[T1[A, B, C, D, E, F]] = Tag[T1[A, B, C, D, E, F]]
+      def t1[A: Tag, B: Tag, C: Tag, D: Tag, E: Tag, F[_]: TagK]: Tag[T1[A, B, C, D, E, F]] = Tag[T1[A, B, C, D, E, F]]
 
       type ZOB[A, B, C] = Either[B, C]
 
       assert(t1[Int, Boolean, ZOB[Unit, Int, Int], TagK[Option], Nothing, ZOB[Unit, Int, ?]].tag
         == fromRuntime[T1[Int, Boolean, Either[Int, Int], TagK[Option], Nothing, Either[Int, ?]]])
 
-      def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_] : TagK, SD: Tag, GG[A] <: L[A] : TagK, ZZZ[_, _] : TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
+      def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_]: TagK, SD: Tag, GG[A] <: L[A]: TagK, ZZZ[_, _]: TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
 
       assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, XY, TagTest.this.Z, YX, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tag
@@ -280,7 +280,7 @@ class TagTest extends AnyWordSpec with XY[String] {
     }
 
     "handle Swap type lambda" in {
-      def t1[F[_, _] : TagKK, A: Tag, B: Tag] = Tag[F[A, B]]
+      def t1[F[_, _]: TagKK, A: Tag, B: Tag] = Tag[F[A, B]]
 
       assert(t1[Swap, Int, String].tag == fromRuntime[Either[String, Int]])
     }
@@ -296,7 +296,7 @@ class TagTest extends AnyWordSpec with XY[String] {
     }
 
     "Assemble from higher than TagKK tags" in {
-      def tag[T[_[_], _] : TagTK, F[_] : TagK, A: Tag] = Tag[T[F, A]]
+      def tag[T[_[_], _]: TagTK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
 
       assert(tag[OptionT, Option, Int].tag == fromRuntime[OptionT[Option, Int]])
     }

@@ -10,7 +10,7 @@ import izumi.distage.model.provisioning.proxies.{ProxyDispatcher, ProxyProvider}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK

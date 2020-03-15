@@ -6,7 +6,7 @@ import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
 import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.language.unused
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific

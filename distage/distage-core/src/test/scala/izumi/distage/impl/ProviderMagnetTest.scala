@@ -4,7 +4,7 @@ import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.ProjectAttributeMacro
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._

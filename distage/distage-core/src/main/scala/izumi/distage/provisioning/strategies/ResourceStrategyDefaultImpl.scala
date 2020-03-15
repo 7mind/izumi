@@ -7,7 +7,7 @@ import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, Missing
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, identityEffectType}
+import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK
@@ -22,7 +22,7 @@ class ResourceStrategyDefaultImpl
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor
 
-    val isEffect = actionEffectType != identityEffectType
+    val isEffect = actionEffectType != SafeType.identityEffectType
     if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
       throw new IncompatibleEffectTypesException(provisionerEffectType, actionEffectType)
     }

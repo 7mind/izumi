@@ -3,12 +3,13 @@ package izumi.distage.planning
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{Binding, ImplDef}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.Wiring
+import izumi.distage.model.plan.Wiring.SingletonWiring._
+import izumi.distage.model.plan.Wiring._
 import izumi.distage.model.plan.initial.{NextOps, PrePlan}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
+import izumi.distage.model.reflection.DIKey
 
 trait BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps

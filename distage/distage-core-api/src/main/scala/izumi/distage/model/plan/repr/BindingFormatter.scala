@@ -1,7 +1,7 @@
 package izumi.distage.model.plan.repr
 
 import izumi.distage.model.definition.{Binding, BindingTag, ImplDef}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey.SetElementKey
+import izumi.distage.model.reflection.DIKey.SetElementKey
 
 trait BindingFormatter {
   def formatBinding(binding: Binding): String

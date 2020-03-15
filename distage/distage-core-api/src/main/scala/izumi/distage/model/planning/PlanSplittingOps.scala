@@ -2,7 +2,7 @@ package izumi.distage.model.planning
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.distage.model.{Planner, PlannerInput}
 
 trait PlanSplittingOps {

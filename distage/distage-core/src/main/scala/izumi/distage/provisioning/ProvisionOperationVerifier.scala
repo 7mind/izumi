@@ -4,7 +4,7 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.language.Quirks
 
 trait ProvisionOperationVerifier {

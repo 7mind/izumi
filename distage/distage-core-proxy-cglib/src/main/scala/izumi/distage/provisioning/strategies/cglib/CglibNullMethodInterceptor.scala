@@ -3,7 +3,7 @@ package izumi.distage.provisioning.strategies.cglib
 import java.lang.reflect.Method
 
 import izumi.distage.model.exceptions.MissingRefException
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // we use this to be able to display something for uninitialized proxies

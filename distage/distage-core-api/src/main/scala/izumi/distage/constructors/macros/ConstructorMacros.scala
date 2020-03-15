@@ -1,9 +1,9 @@
 package izumi.distage.constructors.macros
 
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.ReflectionProvider
+import izumi.distage.model.reflection.{Provider, ReflectionProvider}
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
-import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.tailrec
@@ -268,7 +268,7 @@ abstract class ConstructorMacrosBase {
     c.Expr[ProviderMagnet[T]] {
       q"""{
           new ${weakTypeOf[ProviderMagnet[T]]}(
-            new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[T]]}(
+            new ${weakTypeOf[Provider.ProviderImpl[T]]}(
               ${Liftable.liftList.apply(parameters.flatten)},
               ${liftTypeToSafeType(weakTypeOf[T])},
               { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },

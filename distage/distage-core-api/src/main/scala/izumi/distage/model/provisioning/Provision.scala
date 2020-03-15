@@ -2,7 +2,7 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 
 import scala.collection.{Map, Seq, mutable}
 

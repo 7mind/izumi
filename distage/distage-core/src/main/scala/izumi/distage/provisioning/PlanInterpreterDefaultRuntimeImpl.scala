@@ -13,7 +13,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.fundamentals.reflection.Tags.TagK
 
@@ -206,7 +206,7 @@ class PlanInterpreterDefaultRuntimeImpl
     F.traverse_(monadicOps) {
       op =>
         val actionEffectType = op.effectHKTypeCtor
-        val isEffect = actionEffectType != identityEffectType
+        val isEffect = actionEffectType != SafeType.identityEffectType
 
         if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
           addFailure(ProvisioningFailure(op, new IncompatibleEffectTypesException(provisionerEffectType, actionEffectType)))

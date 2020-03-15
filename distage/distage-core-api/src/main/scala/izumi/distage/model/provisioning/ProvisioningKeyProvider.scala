@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 
 trait ProvisioningKeyProvider {
   /** Return the object referred by `key` if available

@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.GCMode
 import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks._

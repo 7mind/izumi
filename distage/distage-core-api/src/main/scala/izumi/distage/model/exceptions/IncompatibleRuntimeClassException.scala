@@ -1,9 +1,9 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.DIKey
 
 class IncompatibleRuntimeClassException(
-                                         val expected: RuntimeDIUniverse.DIKey,
+                                         val expected: DIKey,
                                          val got: Class[_],
                                          val clue: String,
                                        ) extends DIException(

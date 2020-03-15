@@ -1,6 +1,6 @@
 package izumi.distage.roles.model.meta
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.reflection.DIKey
 import izumi.functional.Renderable
 
 final case class RolesInfo(

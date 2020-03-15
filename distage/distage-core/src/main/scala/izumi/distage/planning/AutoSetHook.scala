@@ -2,10 +2,10 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan, Wiring}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.collection.immutable.ListSet

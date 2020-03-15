@@ -9,6 +9,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruc
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.topology.DependencyGraph
@@ -16,8 +17,7 @@ import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection._
 import izumi.distage.model.{Locator, definition}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}

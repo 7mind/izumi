@@ -4,7 +4,7 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.DIKey
 
 import scala.collection.mutable
 
@@ -41,7 +41,7 @@ class SanityCheckerDefaultImpl
     val (proxies, single) = ops.partition(_.isInstanceOf[ProxyOp.InitProxy])
 
     val (uniqOps, nonUniqueOps) = single
-      .foldLeft((mutable.ArrayBuffer[RuntimeDIUniverse.DIKey](), mutable.HashSet[RuntimeDIUniverse.DIKey]())) {
+      .foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
         case ((unique, nonunique), s: CreateSet) =>
           (unique, nonunique += s.target)
         case ((unique, nonunique), s) =>
@@ -60,14 +60,14 @@ class SanityCheckerDefaultImpl
     }
   }
 
-  private def assertNoDuplicateKeys(keys: Seq[RuntimeDIUniverse.DIKey]): Unit = {
+  private def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
     val dupes = duplicates(keys)
     if (dupes.nonEmpty) {
       throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $dupes!", dupes)
     }
   }
 
-  private def duplicates(keys: Seq[RuntimeDIUniverse.DIKey]): Map[RuntimeDIUniverse.DIKey, Int] = {
+  private def duplicates(keys: Seq[DIKey]): Map[DIKey, Int] = {
     val counted = keys
       .groupBy(k => k)
       .map(t => (t._1, t._2.length))
