@@ -144,12 +144,12 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "test 4 (should be ignored)" in {
       _: ApplePaymentProvider[F] =>
-        assert(???)
+        assert(false)
     }
 
     "test 5 (should be ignored)" skip {
       _: MockCachedUserService[F] =>
-        assert(???)
+        assert(false)
     }
 
     "test 6 (should be ignored)" in {

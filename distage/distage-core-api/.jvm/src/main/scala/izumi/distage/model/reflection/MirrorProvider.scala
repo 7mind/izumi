@@ -2,7 +2,6 @@ package izumi.distage.model.reflection
 
 import java.lang.reflect.Modifier
 
-import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.reflection.TypeUtil
 
 trait MirrorProvider {

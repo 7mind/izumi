@@ -25,6 +25,12 @@ case class CustomCaseClass(
                             mapListCustomObject: Map[String, List[CustomObject]],
                           )
 
+case class PrivateCaseClass(
+                             private val `private-custom-field-name`: String
+                           ) {
+  val customFieldName = `private-custom-field-name`
+}
+
 case class CustomObject(value: Int)
 object CustomObject {
   implicit val pureconfigReader: ConfigReader[CustomObject] = ConfigReader.fromStringOpt {
@@ -83,5 +89,10 @@ object TestConfigReaders {
   final val customCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[CustomCaseClass]]
     makeConfig[CustomCaseClass]("CustomCaseClass")
+  })
+
+  final val privateFieldsCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
+    make[Service[PrivateCaseClass]]
+    makeConfig[PrivateCaseClass]("PrivateCaseClass")
   })
 }
