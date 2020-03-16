@@ -3,7 +3,8 @@ package izumi.distage.testkit.scalatest
 import izumi.distage.testkit.scalatest.AssertBIO.AssertBIOMacro
 import izumi.functional.bio.BIO
 import org.scalactic.{Prettifier, source}
-import org.scalatest.{Assertion, DistageAssertionsMacro}
+import org.scalatest.Assertion
+import org.scalatest.distage.DistageAssertionsMacro
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox

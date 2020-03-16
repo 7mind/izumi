@@ -21,6 +21,10 @@ object V {
 
   val http4s = "0.21.1"
 
+  // good to drop - scala
+  val scala_java_time = "2.0.0-RC3"
+  val scalamock = "4.4.0"
+
   // java-only dependencies below
   val classgraph = "4.8.65"
   val slf4j = "1.7.30"
@@ -28,6 +32,5 @@ object V {
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val scala_java_time = "2.0.0-RC3"
   val docker_java = "3.2.0"
 }

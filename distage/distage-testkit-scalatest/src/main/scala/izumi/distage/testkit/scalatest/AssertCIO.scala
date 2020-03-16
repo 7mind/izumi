@@ -4,7 +4,8 @@ import cats.effect.IO
 import izumi.distage.testkit.scalatest.AssertCIO.AssertCIOMacro
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
-import org.scalatest.{Assertion, DistageAssertionsMacro}
+import org.scalatest.Assertion
+import org.scalatest.distage.DistageAssertionsMacro
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
