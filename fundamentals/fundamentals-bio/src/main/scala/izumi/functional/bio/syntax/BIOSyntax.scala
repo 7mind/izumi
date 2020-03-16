@@ -215,11 +215,7 @@ object BIOSyntax {
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
   trait BIOImplicitPuns11 {
-<<<<<<< HEAD:fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/syntax/BIOSyntax.scala
     @inline implicit final def BIOFunctor[F[_, +_] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
-=======
-    @inline implicit final def BIOFunctor[F[_, + _]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
->>>>>>> origin/develop:fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/BIOSyntax.scala
     @inline final def BIOFunctor[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
   }
 
