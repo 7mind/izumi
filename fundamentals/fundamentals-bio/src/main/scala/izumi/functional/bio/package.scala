@@ -18,7 +18,6 @@ package object bio extends BIOSyntax with BIO3Syntax {
     */
   @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
   @inline override final def FR[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
-  @inline override final def FRE[FR[-_, +_, +_]](implicit FRE: BIOAsk[FR]): FRE.type = FRE
 
   /**
     * NOTE: The left type parameter is not forced to be covariant

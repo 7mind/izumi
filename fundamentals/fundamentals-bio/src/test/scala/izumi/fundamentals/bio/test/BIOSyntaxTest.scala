@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR, FRE}
+import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -88,12 +88,12 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "FR: Local/Ask summoners examples" in {
     def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
-      FR.unit *> FRE.access{
+      FR.unit *> FR.access{
         _: Int => ()
       }
     }
-    def y[FR[-_, +_, +_]: BIOLocal]: FR[Any, Throwable, Unit] = {
-      FRE.accessThrowable {
+    def y[FR[-_, +_, +_]: BIOMonad3: BIOLocal]: FR[Any, Throwable, Unit] = {
+      FR.accessThrowable {
         _: Int => ()
       }.provide(4)
     }
