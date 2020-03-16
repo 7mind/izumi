@@ -17,8 +17,6 @@ trait BIOFunctor3[F[_, _, +_]] extends BIOFunctorInstances {
 private[bio] sealed trait BIOFunctorInstances
 object BIOFunctorInstances extends BIOFunctorInstancesLowPriority {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-//  @inline implicit final def BIOZIO[R]: BIOAsync[ZIO[R, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R, +?, +?]]]
-
   @inline implicit final def BIOZIOR[R0]: BIOAsync[ZIO[R0, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R0, +?, +?]]]
 
   @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
