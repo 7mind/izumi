@@ -1,4 +1,4 @@
-package org.scalatest
+package org.scalatest.distage
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -7,10 +7,11 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
-import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
+import org.scalatest._
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
@@ -66,7 +67,7 @@ object ScalatestInitWorkaround {
 
 }
 
-abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMonoIO: TagK[F]) extends Suite with AbstractDistageSpec[F] {
+abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMonoIO: TagK[F]) extends TestSuite with AbstractDistageSpec[F] {
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time
@@ -75,6 +76,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
+  override protected def withFixture(test: NoArgTest): Outcome = throw new UnsupportedOperationException
 
   override def run(testName: Option[String], args: Args): Status = {
     DistageTestsRegistrySingleton.registerSuiteReporter(suiteId)(SuiteReporter(args.tracker, args.reporter))

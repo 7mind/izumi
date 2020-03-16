@@ -115,6 +115,10 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         F.maybeSuspend(assert(set.size == 3))
     }
 
+    "support tests with no deps" in {
+      F.unit
+    }
+
     "test 1" in {
       service: MockUserRepository[F] =>
         for {
