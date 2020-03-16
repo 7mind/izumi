@@ -77,6 +77,6 @@ object SimpleLoggerConfigurator {
                                 layout: Option[String],
                               )
   object SinksConfig {
-    implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derive
+    implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived
   }
 }

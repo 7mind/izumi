@@ -84,7 +84,7 @@ import scala.language.implicitConversions
   * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
   * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
   */
-case class ProviderMagnet[+A](get: Provider) {
+final case class ProviderMagnet[+A](get: Provider) {
   def map[B: Tag](f: A => B): ProviderMagnet[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[A])))
   }
