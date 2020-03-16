@@ -58,6 +58,8 @@ trait ZIODIEffectModule extends ModuleDef {
     implicit r: zio.clock.Clock =>
       implicitly[BIOTemporal3[ZIO]]
   }
+  addImplicit[BIOAsk[ZIO]]
+  addImplicit[BIOLocal[ZIO]]
 
   addImplicit[BIOFunctor[IO]]
   addImplicit[BIOBifunctor[IO]]
