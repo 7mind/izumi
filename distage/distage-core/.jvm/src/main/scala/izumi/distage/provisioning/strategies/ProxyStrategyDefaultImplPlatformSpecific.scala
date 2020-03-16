@@ -6,6 +6,7 @@ import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.{Association, DIKey, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
 
@@ -23,8 +24,8 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific
     } else {
       val allArgsAsNull: Array[(Class[_], Any)] = {
         op.op match {
-          case WiringOp.CallProvider(_, Wiring.SingletonWiring.Function(provider, params), _) if provider.isGenerated =>
-            // for generated constructors, try to fetch known dependencies from the object graph
+          case WiringOp.CallProvider(_, Wiring.SingletonWiring.Function(provider, params), _) if provider.providerType eq ProviderType.Class =>
+            // for class constructors, try to fetch known dependencies from the object graph
             params.map(fetchNonforwardRefParamWithClass(context, op.forwardRefs, _)).toArray
           case _ =>
             // otherwise fill everything with nulls

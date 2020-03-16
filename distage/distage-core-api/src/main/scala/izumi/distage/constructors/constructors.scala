@@ -9,27 +9,25 @@ import izumi.fundamentals.reflection.Tags.WeakTag
 
 import scala.language.experimental.{macros => enableMacros}
 
-sealed trait AnyConstructor[T] extends AnyConstructorOptionalMakeDSL[T] {
-  def provider: ProviderMagnet[T]
-}
-final case class ClassConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
-final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
-final case class FactoryConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
+sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T]
+final class ClassConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
+final class TraitConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
+final class FactoryConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
 
 object AnyConstructor {
-  def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly
+  def apply[T](implicit ctor: AnyConstructor[T]): ProviderMagnet[T] = ctor.provider
 
   implicit def materialize[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 }
 
 object ClassConstructor {
-  def apply[T: ClassConstructor]: ClassConstructor[T] = implicitly
+  def apply[T](implicit ctor: ClassConstructor[T]): ProviderMagnet[T] = ctor.provider
 
   implicit def materialize[T]: ClassConstructor[T] = macro ClassConstructorMacro.mkClassConstructor[T]
 }
 
 object TraitConstructor {
-  def apply[T: TraitConstructor]: TraitConstructor[T] = implicitly
+  def apply[T](implicit ctor: TraitConstructor[T]): ProviderMagnet[T] = ctor.provider
 
   implicit def materialize[T]: TraitConstructor[T] = macro TraitConstructorMacro.mkTraitConstructor[T]
 
@@ -43,28 +41,29 @@ object TraitConstructor {
 }
 
 object FactoryConstructor {
-  def apply[T: FactoryConstructor]: FactoryConstructor[T] = implicitly
+  def apply[T](implicit ctor: FactoryConstructor[T]): ProviderMagnet[T] = ctor.provider
 
   implicit def materialize[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
 }
 
-private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] {
+private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {
   def provider: ProviderMagnet[T]
 }
 object AnyConstructorOptionalMakeDSL {
-  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL[T] = {
-    new AnyConstructorOptionalMakeDSL[T] {
-      val provider: ProviderMagnet[T] = ProviderMagnet.lift(throwError(tpe, nonWhitelistedMethods, scaladoc = false))
-    }
+  private[constructors] final class Impl[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
+
+  @inline def apply[T](providerMagnet: ProviderMagnet[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
+    new AnyConstructorOptionalMakeDSL.Impl[T](providerMagnet)
   }
 
-  def throwError(tpe: String, nonWhitelistedMethods: List[String], scaladoc: Boolean): Nothing = {
+  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL.Impl[T] = {
+    AnyConstructorOptionalMakeDSL[T](ProviderMagnet.lift(throwError(tpe, nonWhitelistedMethods)))
+  }
+
+  def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {
     import izumi.fundamentals.platform.strings.IzString._
 
     throw new UnsupportedDefinitionException(
-      (if (scaladoc)
-        """This method was generated for ScalaDoc: if you're seeing this error,
-          |then AnyConstructorMacro mistook your compiler's behavior for running under Scaladoc, please report this as a bug!""".stripMargin else "") +
       s"""`make[$tpe]` DSL failure: Called an empty error constructor, because constructor for $tpe WAS NOT generated.
          |Because after `make` there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
          |
@@ -74,11 +73,5 @@ object AnyConstructorOptionalMakeDSL {
     )
   }
 
-  def apply[T](anyConstructor: AnyConstructor[T]): AnyConstructorOptionalMakeDSL[T] = {
-    new AnyConstructorOptionalMakeDSL[T] {
-      val provider: ProviderMagnet[T] = anyConstructor.provider
-    }
-  }
-
-  implicit def materialize[T]: AnyConstructorOptionalMakeDSL[T] = macro AnyConstructorMacro.anyConstructorOptionalMakeDSL[T]
+  implicit def materialize[T]: AnyConstructorOptionalMakeDSL.Impl[T] = macro AnyConstructorMacro.anyConstructorOptionalMakeDSL[T]
 }

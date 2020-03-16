@@ -134,7 +134,7 @@ object OpFormatter {
     }
 
     private def formatFunction(provider: Provider): String = {
-      s"${provider.fun}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
+      s"${provider.funString}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
     //    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {

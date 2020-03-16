@@ -9,10 +9,10 @@ import izumi.fundamentals.reflection.Tags.Tag
 
 object Bindings {
   def binding[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
-    provider[T](AnyConstructor[T].provider)
+    provider[T](AnyConstructor[T])
 
   def binding[T: Tag, I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
-    provider[T](AnyConstructor[I].provider)
+    provider[T](AnyConstructor[I])
 
   def binding[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[I], instance), Set.empty, pos.get.position)
@@ -30,7 +30,7 @@ object Bindings {
     EmptySetBinding(DIKey.get[Set[T]], Set.empty, pos.get.position)
 
   def setElement[T: Tag, I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
-    setElementProvider[T](AnyConstructor[I].provider)
+    setElementProvider[T](AnyConstructor[I])
   }
 
   def setElement[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SetElementBinding = {

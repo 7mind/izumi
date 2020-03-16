@@ -78,7 +78,7 @@ object Binding {
 
   implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
     def withImpl[T: Tag: AnyConstructor]: R =
-      withImpl[T](AnyConstructor[T].provider)
+      withImpl[T](AnyConstructor[T])
 
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))
