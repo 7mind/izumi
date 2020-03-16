@@ -75,6 +75,9 @@ package object bio extends BIOSyntax with BIO3Syntax {
   type BIOPrimitives[F[+_, +_]] = instances.BIOPrimitives[F]
   type BIOPrimitives3[F[-_, +_, +_]] = instances.BIOPrimitives[F[Any, +?, +?]]
 
+  type BIOAsk[F[-_, +_, +_]] = instances.BIOAsk[F]
+  type BIOLocal[F[-_, +_, +_]] = instances.BIOLocal[F]
+
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
     def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly

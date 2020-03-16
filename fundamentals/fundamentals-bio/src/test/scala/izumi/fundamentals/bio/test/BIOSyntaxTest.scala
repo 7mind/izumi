@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOFork, BIOFork3, BIOFunctor, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
+import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -56,7 +56,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.IO]
   }
 
-  "F / FR summonera examples" in {
+  "F / FR summoners examples" in {
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
@@ -83,6 +83,23 @@ class BIOSyntaxTest extends AnyWordSpec {
       z[zio.IO],
       `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+    )
+  }
+
+  "FR: Local/Ask summoners examples" in {
+    def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
+      FR.unit *> FR.access{
+        _: Int => ()
+      }
+    }
+    def y[FR[-_, +_, +_]: BIOLocal] = {
+      FR.access{
+        _: Int => ()
+      }.provide(4)
+    }
+    lazy val _ = (
+      x[zio.ZIO],
+//      y[zio.ZIO],
     )
   }
 }

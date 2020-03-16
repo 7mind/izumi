@@ -4,13 +4,13 @@ trait BIOApplicative3[F[-_, +_, +_]] extends BIOBifunctor3[F] {
   def pure[A](a: A): F[Any, Nothing, A]
 
   /** execute two operations in order, map their results */
-  def map2[R, E, A, B, C](firstOp: F[R, E, A], secondOp: => F[R, E, B])(f: (A, B) => C): F[R, E, C]
+  def map2[R, R1 <: R, E, E1 >: E, A, B, C](firstOp: F[R, E, A], secondOp: => F[R1, E1, B])(f: (A, B) => C): F[R1, E1, C]
 
   /** execute two operations in order, return result of second operation */
-  def *>[R, E, A, B](firstOp: F[R, E, A], secondOp: => F[R, E, B]): F[R, E, B]
+  def *>[R, R1 <: R, E, E1 >: E, A, B](firstOp: F[R, E, A], secondOp: => F[R1, E1, B]): F[R1, E1, B]
 
   /** execute two operations in order, same as `*>`, but return result of first operation */
-  def <*[R, E, A, B](firstOp: F[R, E, A], secondOp: => F[R, E, B]): F[R, E, A]
+  def <*[R, R1 <: R, E, E1 >: E, A, B](firstOp: F[R, E, A], secondOp: => F[R1, E1, B]): F[R1, E1, A]
 
   def traverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
 

@@ -17,7 +17,9 @@ trait BIOMonad3[F[-_, +_, +_]] extends BIOApplicative3[F] {
 
   // defaults
   override def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B] = flatMap(r)(a => pure(f(a)))
-  override def *>[R, E, A, B](f: F[R, E, A], next: => F[R, E, B]): F[R, E, B] = flatMap(f)(_ => next)
-  override def <*[R, E, A, B](f: F[R, E, A], next: => F[R, E, B]): F[R, E, A] = flatMap(f)(a => map(next)(_ => a))
-  override def map2[R, E, A, B, C](r1: F[R, E, A], r2: => F[R, E, B])(f: (A, B) => C): F[R, E, C] = flatMap(r1)(a => map(r2)(b => f(a, b)))
+  override def *>[R, R1 <: R, E, E1 >: E, A, B](f: F[R, E, A], next: => F[R1, E1, B]): F[R1, E1, B] = flatMap[R, E, A, R1, E1, B](f)(_ => next)
+  override def <*[R, R1 <: R, E, E1 >: E, A, B](f: F[R, E, A], next: => F[R1, E1, B]): F[R1, E1, A] = flatMap[R, E, A, R1, E1, A](f)(a => map(next)(_ => a))
+  override def map2[R, R1 <: R, E, E1 >: E, A, B, C](r1: F[R, E, A], r2: => F[R1, E1, B])(f: (A, B) => C): F[R1, E1, C] = {
+    flatMap[R, E, A, R1, E1, C](r1)(a => map(r2)(b => f(a, b)))
+  }
 }

@@ -629,7 +629,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "io.circe" %% "circe-parser" % V.circe,
       "io.circe" %% "circe-literal" % V.circe,
       "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
-      "io.circe" %% "circe-derivation" % V.circe_derivation
+      "io.circe" %% "circe-derivation" % V.circe_derivation,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(

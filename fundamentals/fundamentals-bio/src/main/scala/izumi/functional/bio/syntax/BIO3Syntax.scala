@@ -3,6 +3,7 @@ package izumi.functional.bio.syntax
 import izumi.functional.bio.{BIOExit, BIOFiber3, BIOPrimitives3}
 import izumi.functional.bio.instances._
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
+import zio.NeedsEnv
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -24,7 +25,7 @@ trait BIO3Syntax extends BIO3ImplicitPuns {
 
 object BIO3Syntax {
 
-  class BIOFunctor3Ops[FR[-_, _, +_], R, E, A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOFunctor3[FR]) {
+  class BIOFunctor3Ops[FR[_, _, +_], R, E, A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOFunctor3[FR]) {
     @inline final def map[B](f: A => B): FR[R, E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
@@ -46,16 +47,16 @@ object BIO3Syntax {
     extends BIOBifunctor3Ops(r) {
 
     /** execute two operations in order, return result of second operation */
-    @inline final def *>[E1 >: E, B](f0: => FR[R, E1, B]): FR[R, E1, B] = F.*>(r, f0)
+    @inline final def *>[R1 <: R, E1 >: E, B](f0: => FR[R1, E1, B]): FR[R1, E1, B] = F.*>(r, f0)
 
     /** execute two operations in order, same as `*>`, but return result of first operation */
-    @inline final def <*[E1 >: E, B](f0: => FR[R, E1, B]): FR[R, E1, A] = F.<*(r, f0)
+    @inline final def <*[R1 <: R, E1 >: E, B](f0: => FR[R1, E1, B]): FR[R1, E1, A] = F.<*(r, f0)
 
     /** execute two operations in order, return result of both operations */
-    @inline final def zip[E2 >: E, B, C](r2: => FR[R, E2, B]): FR[R, E2, (A, B)] = F.map2(r, r2)(_ -> _)
+    @inline final def zip[R1 <: R, E1 >: E, B, C](r2: => FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.map2(r, r2)(_ -> _)
 
     /** execute two operations in order, map their results */
-    @inline final def map2[E2 >: E, B, C](r2: => FR[R, E2, B])(f: (A, B) => C): FR[R, E2, C] = F.map2(r, r2)(f)
+    @inline final def map2[R1 <: R, E1 >: E, B, C](r2: => FR[R1, E1, B])(f: (A, B) => C): FR[R1, E1, C] = F.map2(r, r2)(f)
 
     @inline final def forever: FR[R, E, Nothing] = F.forever(r)
   }
@@ -169,6 +170,14 @@ object BIO3Syntax {
     @inline final def fork: FR[R, Nothing, BIOFiber3[FR, E, A]] = F.fork(r)
   }
 
+  final class BIOLocalOps[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
+    @inline final def scope(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A] = F.scope(r)(env)
+    @inline final def local(f: R => R)(implicit ev: NeedsEnv[R]): FR[R, E, A] = F.local(r)(f)
+
+    @inline final def provide(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A]= F.provide(r)(env)
+    @inline final def provideSome[R0](f: R0 => R)(implicit ev: NeedsEnv[R]): FR[R0, E, A]= F.provideSome(r)(f)
+  }
+
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {
     @inline implicit final def BIOTemporal3[FR[-_, +_, +_]: BIOTemporal3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOTemporal3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOTemporal3Ops[FR, R, E, A](self)
@@ -178,12 +187,18 @@ object BIO3Syntax {
       new BIO3Syntax.BIOFork3Ops[FR, R, E, A](self)
     @inline final def BIOFork3[FR[-_, +_, +_]: BIOFork3]: BIOFork3[FR] = implicitly
 
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] =
+      new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
+    @inline final def BIOLocal[FR[-_, +_, +_]: BIOLocal]: BIOLocal[FR] = implicitly
+
     @inline final def BIOPrimitives3[FR[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[FR] = implicitly
   }
   trait BIO3ImplicitPuns1 extends BIO3ImplicitPuns2 {
     @inline implicit final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOAsync3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOAsync3Ops[FR, R, E, A](self)
     @inline final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3]: BIOAsync3[FR] = implicitly
+
+    @inline final def BIOAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
   }
   trait BIO3ImplicitPuns2 extends BIO3ImplicitPuns3 {
     @inline implicit final def BIO3[FR[-_, +_, +_]: BIO3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIO3Ops[FR, R, E, A] = new BIO3Syntax.BIO3Ops[FR, R, E, A](self)
@@ -238,9 +253,9 @@ object BIO3Syntax {
     @inline final def BIOBifunctor3[FR[-_, +_, +_]: BIOBifunctor3]: BIOBifunctor3[FR] = implicitly
   }
   trait BIO3ImplicitPuns11 {
-    @inline implicit final def BIOFunctor3[FR[-_, _, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
+    @inline implicit final def BIOFunctor3[FR[_, _, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOFunctor3[FR[-_, _, +_]: BIOFunctor3]: BIOFunctor3[FR] = implicitly
+    @inline final def BIOFunctor3[FR[_, _, +_]: BIOFunctor3]: BIOFunctor3[FR] = implicitly
   }
 
 }
