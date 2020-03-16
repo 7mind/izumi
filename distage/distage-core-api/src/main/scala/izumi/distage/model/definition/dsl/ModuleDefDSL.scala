@@ -97,7 +97,7 @@ object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
     final def from[I <: T: AnyConstructor]: AfterBind =
-      from(AnyConstructor[I].provider)
+      from(AnyConstructor[I])
 
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(ProviderMagnet.lift(function))
@@ -119,6 +119,7 @@ object ModuleDefDSL {
       * }}}
       *
       * Method reference:
+      *
       * {{{
       *   def constructor(@Id("special") i: Int): Unit = ()
       *
@@ -127,13 +128,13 @@ object ModuleDefDSL {
       *   make[Unit].from(constructor(_))
       * }}}
       *
-      * Function value (possibly with annotated signature):
+      * Function value with an annotated signature:
+      *
       * {{{
       *   val constructor: (Int @Id("special"), String @Id("special")) => Unit = (_, _) => ()
       *
       *   make[Unit].from(constructor)
       * }}}
-      *
       *
       * Annotation processing is done by a macro and macros are rarely perfect,
       * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _) or (method(_))
@@ -173,6 +174,7 @@ object ModuleDefDSL {
       * }}}
       *
       * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+      * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
       */
     final def from[I <: T](function: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
@@ -273,7 +275,7 @@ object ModuleDefDSL {
       *      - [[DIResource]]
       */
     final def fromResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R]): AfterBind = {
-      fromResource[R](AnyConstructor[R].provider)
+      fromResource[R](AnyConstructor[R])
     }
 
     final def fromResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
@@ -318,7 +320,7 @@ object ModuleDefDSL {
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
     final def add[I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
-      add[I](AnyConstructor[I].provider)
+      add[I](AnyConstructor[I])
 
     final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(ProviderMagnet.lift(function))
@@ -401,7 +403,7 @@ object ModuleDefDSL {
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
     final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
-      addResource[R](AnyConstructor[R].provider)
+      addResource[R](AnyConstructor[R])
 
     final def addResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._

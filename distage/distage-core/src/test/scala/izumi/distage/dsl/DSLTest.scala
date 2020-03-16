@@ -382,7 +382,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
             ImplDef.ResourceImpl(
               SafeType.get[ImplXYZ],
               SafeType.getK[Identity],
-              ImplDef.ProviderImpl(SafeType.get[X], ClassConstructor[X].provider.get),
+              ImplDef.ProviderImpl(SafeType.get[X], ClassConstructor[X].get),
             ),
             Set.empty,
             SourceFilePosition.unknown

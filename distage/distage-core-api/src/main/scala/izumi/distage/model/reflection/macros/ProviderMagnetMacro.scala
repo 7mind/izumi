@@ -3,6 +3,7 @@ package izumi.distage.model.reflection.macros
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.Provider
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
@@ -35,7 +36,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[ProviderMagnet[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R](associations, fun, false)
+    val result = generateProvider[R](associations, fun)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
@@ -70,10 +71,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
       )
   }
 
-  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter],
-                                         fun: Tree,
-                                         isGenerated: Boolean,
-                                        ): c.Expr[ProviderMagnet[R]] = {
+  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter], fun: Tree): c.Expr[ProviderMagnet[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftTypeToSafeType, liftableParameter}
 
@@ -90,7 +88,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
             ${liftTypeToSafeType(weakTypeOf[R])},
             fun,
             { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
-            $isGenerated,
+            ${symbolOf[ProviderType.Function.type].asClass.module},
           )
         )
       }"""

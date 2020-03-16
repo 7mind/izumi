@@ -12,7 +12,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class MacroAutoTraitsTest extends AnyWordSpec with MkInjector {
 
   "construct a basic trait" in {
-    val traitCtor = AnyConstructor[Aaa].provider.get
+    val traitCtor = AnyConstructor[Aaa].get
 
     val value = traitCtor.unsafeApply(Seq(TypedRef.byName(5), TypedRef.byName(false))).asInstanceOf[Aaa]
 

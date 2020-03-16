@@ -32,5 +32,5 @@ object V {
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val docker_java = "3.2.0"
+  val docker_java = "3.2.1"
 }
