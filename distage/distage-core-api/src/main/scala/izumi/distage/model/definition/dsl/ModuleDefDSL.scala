@@ -97,7 +97,7 @@ object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
     final def from[I <: T: AnyConstructor]: AfterBind =
-      from(AnyConstructor[I]: ProviderMagnet[I])
+      from(AnyConstructor[I])
 
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(ProviderMagnet.lift(function))
