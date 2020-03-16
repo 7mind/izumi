@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.reflection.{Association, DIFunction, DIKey, SafeType}
+import izumi.distage.model.reflection.{Association, DIKey, Provider, SafeType}
 import izumi.fundamentals.platform.language.unused
 
 sealed trait Wiring {
@@ -17,7 +17,7 @@ object Wiring {
     override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
   }
   object SingletonWiring {
-    final case class Function(provider: DIFunction, associations: Seq[Association.Parameter]) extends SingletonWiring {
+    final case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
       override final def instanceType: SafeType = provider.ret
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Function = this.copy(associations = this.associations.map(a => a.withKey(f(a))))

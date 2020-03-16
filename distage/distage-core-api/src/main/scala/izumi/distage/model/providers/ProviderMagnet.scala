@@ -3,6 +3,7 @@ package izumi.distage.model.providers
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import izumi.distage.model.reflection.Association.Parameter
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.fundamentals.platform.language.Quirks._
@@ -152,7 +153,7 @@ object ProviderMagnet {
         parameters = Seq.empty,
         ret = key.tpe,
         fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
-        isGenerated = false,
+        providerType = ProviderType.Function,
       )
     )
 
@@ -160,18 +161,25 @@ object ProviderMagnet {
 
   def pure[A: Tag](a: A): ProviderMagnet[A] = lift(a)
 
-  def lift[A: Tag](a: => A): ProviderMagnet[A] = new ProviderMagnet[A](lift0(a))
+  def lift[A: Tag](a: => A): ProviderMagnet[A] = {
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        parameters = Seq.empty,
+        ret = SafeType.get[A],
+        originalFun = () => a,
+        fun = (_: Seq[Any]) => a,
+        providerType = ProviderType.Function,
+      ))
+  }
 
-  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = new ProviderMagnet[A](singleton0(a))
-
-  def lift0[A: Tag](a: => A): Provider.ProviderImpl[A] = {
-    Provider.ProviderImpl[A](
-      parameters = Seq.empty,
-      ret = SafeType.get[A],
-      originalFun = () => a,
-      fun = (_: Seq[Any]) => a,
-      isGenerated = false,
-    )
+  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        parameters = Seq.empty,
+        ret = SafeType.get[A],
+        fun = (_: Seq[Any]) => a,
+        providerType = ProviderType.Singleton,
+      ))
   }
 
   def single[A: Tag, B: Tag](f: A => B): ProviderMagnet[B] = {
@@ -186,18 +194,8 @@ object ProviderMagnet {
         ret = retTpe,
         originalFun = f,
         fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
-        isGenerated = false,
+        providerType = ProviderType.Function,
       )
-    )
-  }
-
-
-  def singleton0[A <: Singleton: Tag](a: A): Provider.ProviderImpl[A] = {
-    Provider.ProviderImpl[A](
-      parameters = Seq.empty,
-      ret = SafeType.get[A],
-      fun = (_: Seq[Any]) => a,
-      isGenerated = true,
     )
   }
 
@@ -210,7 +208,7 @@ object ProviderMagnet {
         parameters = Seq(Parameter(symbolInfo, key)),
         ret = tpe,
         fun = (_: Seq[Any]).head,
-        isGenerated = false,
+        providerType = ProviderType.Function,
       )
     )
   }

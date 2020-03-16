@@ -346,11 +346,24 @@ class ProviderMagnetTest extends AnyWordSpec {
       assert(p1 == p2)
     }
 
-    "should be unequal after .map of generated function" in {
+    "should be unequal after .map" in {
       val p1 = ClassConstructor[Some[Int]]
       val p2 = p1.map(identity)
+      val p3 = p2.map(identity)
 
       assert(p1 != p2)
+      assert(p2 != p3)
+    }
+
+    "should be unequal after .addUnused" in {
+      val p1 = ClassConstructor[Some[Int]]
+      val p2 = p1.addDependency[Int]
+      val p3 = p2.addDependency[String]
+      val p4 = p3.addDependency[Unit]
+
+      assert(p1 != p2)
+      assert(p2 != p3)
+      assert(p3 != p4)
     }
 
     "fail on multiple conflicting annotations on the same parameter" in {
