@@ -16,7 +16,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   }
   val _: ZIO[Blocking, Throwable, Int] = {
     implicit val blocking: Blocking = zio.Runtime.unsafeFromLayer(Blocking.live).environment
-    `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOBlocking#l]
+    `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOWithBlocking]
     `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
   }
 
@@ -33,7 +33,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
       implicit val blocking: Blocking = zio.Runtime.unsafeFromLayer(Blocking.live).environment
       assert(new X[zio.IO].hello != null)
     }
-    assert(new X3[BlockingIOInstances.ZIOBlocking#l].hello != null)
+    assert(new X3[BlockingIOInstances.ZIOWithBlocking].hello != null)
   }
 
 }

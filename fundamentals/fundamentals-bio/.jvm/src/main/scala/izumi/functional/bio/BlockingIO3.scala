@@ -56,11 +56,11 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 }
 
 trait LowPriorityBlockingIOInstances {
-  type ZIOBlocking = { type l[-R, +E, +A] = ZIO[R with Blocking, E, A] }
+  type ZIOWithBlocking[-R, +E, +A] = ZIO[R with Blocking, E, A]
 
-  implicit def blockingIOZIOR[R]: BlockingIO[ZIO[R with Blocking, +?, +?]] = blockingIOZIO3R.asInstanceOf[BlockingIO[ZIO[R with Blocking, +?, +?]]]
+  implicit final def blockingIOZIOR[R]: BlockingIO[ZIO[R with Blocking, +?, +?]] = blockingIOZIO3R.asInstanceOf[BlockingIO[ZIO[R with Blocking, +?, +?]]]
 
-  implicit final val blockingIOZIO3R: BlockingIO3[ZIOBlocking#l] = new BlockingIO3[ZIOBlocking#l] {
+  implicit final val blockingIOZIO3R: BlockingIO3[ZIOWithBlocking] = new BlockingIO3[ZIOWithBlocking] {
     override def shiftBlocking[R, E, A](f: ZIO[R with Blocking, E, A]): ZIO[R with Blocking, E, A] = zio.blocking.blocking(f)
     override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlocking(f)
     override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlockingInterrupt(f)
