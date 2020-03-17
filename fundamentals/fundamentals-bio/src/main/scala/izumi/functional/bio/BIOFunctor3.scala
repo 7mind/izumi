@@ -37,11 +37,14 @@ sealed trait BIOFunctorInstancesLowPriority1 extends BIOFunctorInstancesLowPrior
 
 sealed trait BIOFunctorInstancesLowPriority2 {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-  @inline implicit final def BIOZIO: BIOAsync[ZIO] = BIOAsyncZio
+  @inline implicit final def BIOZIO: BIOAsync3[ZIO] = BIOAsyncZio
 //  @inline implicit final def BIOZIOR[R]: BIOAsync[ZIO[R, +?, +?]] = convert3To2(BIOAsyncZio)
 
   @inline implicit final def BIOConvert3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R0](
-    implicit BIOFunctor3: C[FR] with BIOFunctor3[FR] { type Divergence = Nondivergent }
-  ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with BIOFunctor[FR[R0, +?, +?]] { type Divergence = Divergent } =
-    BIOFunctor3.asInstanceOf[C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with BIOFunctor[FR[R0, +?, +?]] { type Divergence = Divergent }]
+    implicit BIOFunctor3: C[FR] with BIOFunctor3[FR] {
+      type Divergence = Nondivergent
+    }
+  ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with BIOFunctor[FR[R0, +?, +?]] {
+    type Divergence = Divergent
+  } = BIOFunctor3.asInstanceOf[C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with BIOFunctor[FR[R0, +?, +?]] { type Divergence = Divergent }]
 }
