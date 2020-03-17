@@ -8,8 +8,8 @@ import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
 import izumi.logstage.api.IzLogger
-import zio.IO
 import zio.internal.tracing.TracingConfig
+import zio.{IO, ZIO}
 
 import scala.concurrent.ExecutionContext
 
@@ -23,25 +23,53 @@ trait ZIODIEffectModule extends ModuleDef {
 
   make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
   make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
-  make[ThreadPoolExecutor].named("zio.cpu")
-    .fromResource { () =>
+  make[ThreadPoolExecutor].named("zio.cpu").fromResource {
+    () =>
       val coresOr2 = Runtime.getRuntime.availableProcessors() max 2
       DIResource.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
-    }
-  make[ThreadPoolExecutor].named("zio.io")
-    .fromResource { () =>
+  }
+  make[ThreadPoolExecutor].named("zio.io").fromResource {
+    () =>
       DIResource.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
-    }
+  }
 
-  make[BlockingIO[IO]].from {
+  make[BlockingIO3[ZIO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.io") =>
-      BlockingIOInstances.BlockingZIOFromThreadPool[Any](blockingPool)
+      BlockingIOInstances.BlockingZIOFromThreadPool(blockingPool)
+  }
+  make[BlockingIO[IO]].from {
+    implicit b: BlockingIO3[ZIO] =>
+      implicitly[BlockingIO[IO]]
   }
 
   addImplicit[BIOTransZio[IO]]
+  addImplicit[BIOFork3[ZIO]]
   addImplicit[BIOFork[IO]]
+  addImplicit[SyncSafe3[ZIO]]
   addImplicit[SyncSafe2[IO]]
+  addImplicit[BIOPrimitives3[ZIO]]
   addImplicit[BIOPrimitives[IO]]
+
+  addImplicit[BIOFunctor3[ZIO]]
+  addImplicit[BIOBifunctor3[ZIO]]
+  addImplicit[BIOApplicative3[ZIO]]
+  addImplicit[BIOGuarantee3[ZIO]]
+  addImplicit[BIOError3[ZIO]]
+  addImplicit[BIOMonad3[ZIO]]
+  addImplicit[BIOMonadError3[ZIO]]
+  addImplicit[BIOBracket3[ZIO]]
+  addImplicit[BIOPanic3[ZIO]]
+  addImplicit[BIO3[ZIO]]
+  addImplicit[BIOAsync3[ZIO]]
+  make[BIOTemporal3[ZIO]].from {
+    implicit r: zio.clock.Clock =>
+      implicitly[BIOTemporal3[ZIO]]
+  }
+  addImplicit[BIOAsk[ZIO]]
+  addImplicit[BIOMonadAsk[ZIO]]
+  addImplicit[BIOLocal[ZIO]]
+  addImplicit[BIOProfunctor[ZIO]]
+  addImplicit[BIOArrow[ZIO]]
 
   addImplicit[BIOFunctor[IO]]
   addImplicit[BIOBifunctor[IO]]
@@ -55,7 +83,8 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIO[IO]]
   addImplicit[BIOAsync[IO]]
   make[BIOTemporal[IO]].from {
-    r: zio.clock.Clock => BIOTemporalInstances.BIOTemporalZio[Any](r)
+    implicit r: zio.clock.Clock =>
+      implicitly[BIOTemporal[IO]]
   }
 
   make[zio.clock.Clock].from(zio.Has(zio.clock.Clock.Service.live))
@@ -75,10 +104,7 @@ trait ZIODIEffectModule extends ModuleDef {
       }
   }
   make[ZIORunner].from {
-    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"),
-     handler: FailureHandler,
-     tracingConfig: TracingConfig,
-    ) =>
+    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
       BIORunner.createZIO(
         cpuPool = cpuPool,
         handler = handler,

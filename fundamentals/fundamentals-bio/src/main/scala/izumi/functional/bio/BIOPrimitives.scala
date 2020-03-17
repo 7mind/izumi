@@ -9,19 +9,20 @@ trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {
   def mkPromise[E, A]: F[Nothing, BIOPromise[F, E, A]]
   def mkSemaphore(permits: Long): F[Nothing, BIOSemaphore[F]]
 }
+object BIOPrimitives {
+  def apply[F[+_, +_]: BIOPrimitives]: BIOPrimitives[F] = implicitly
+}
 
 private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances {
-  implicit val zioPrimitives: BIOPrimitives[IO] = {
-    new BIOPrimitives[IO] {
-      override def mkRef[A](a: A): IO[Nothing, BIORef[IO, A]]                = Ref.make(a).map(BIORef.fromZIO)
-      override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]]       = mkPromise[Nothing, Unit]
-      override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]]        = Promise.make[E, A].map(BIOPromise.fromZIO)
-      override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = {
-        Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent)
-          .map(BIOSemaphore.fromCats[IO])
-          .orTerminate
-      }
+  implicit val BIOPrimitivesZio: BIOPrimitives[IO] = new BIOPrimitives[IO] {
+    override def mkRef[A](a: A): IO[Nothing, BIORef[IO, A]] = Ref.make(a).map(BIORef.fromZIO)
+    override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]] = mkPromise[Nothing, Unit]
+    override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]] = Promise.make[E, A].map(BIOPromise.fromZIO)
+    override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = {
+      Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent[IO])
+        .map(BIOSemaphore.fromCats[IO])
+        .orTerminate
     }
   }
 }
