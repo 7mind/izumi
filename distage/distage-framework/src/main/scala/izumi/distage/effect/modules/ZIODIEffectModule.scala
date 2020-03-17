@@ -59,6 +59,7 @@ trait ZIODIEffectModule extends ModuleDef {
       implicitly[BIOTemporal3[ZIO]]
   }
   addImplicit[BIOAsk[ZIO]]
+  addImplicit[BIOMonadAsk[ZIO]]
   addImplicit[BIOLocal[ZIO]]
 
   addImplicit[BIOFunctor[IO]]
