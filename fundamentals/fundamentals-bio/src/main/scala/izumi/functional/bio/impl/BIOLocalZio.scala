@@ -1,6 +1,6 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.{=!=, BIOLocal, BIOMonad3}
+import izumi.functional.bio.{BIOLocal, BIOMonad3}
 import zio.{NeedsEnv, ZIO}
 
 object BIOLocalZio extends BIOLocalZio
@@ -13,6 +13,6 @@ class BIOLocalZio extends BIOLocal[ZIO] {
 
   @inline override final def access[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A] = ZIO.accessM(f)
 
-  @inline override final def provide[R, E, A](fr: ZIO[R, E, A])(r: => R)(implicit ev: R =!= Any): ZIO[Any, E, A] = fr.provide(r)(NeedsEnv)
-  @inline override final def contramap[R, E, A, R0](fr: ZIO[R, E, A])(f: R0 => R)(implicit ev1: R0 =!= Any, ev2: R =!= Any): ZIO[R0, E, A] = fr.provideSome(f)(NeedsEnv)
+  @inline override final def provide[R, E, A](fr: ZIO[R, E, A])(r: => R): ZIO[Any, E, A] = fr.provide(r)(NeedsEnv)
+  @inline override final def contramap[R, E, A, R0](fr: ZIO[R, E, A])(f: R0 => R): ZIO[R0, E, A] = fr.provideSome(f)(NeedsEnv)
 }

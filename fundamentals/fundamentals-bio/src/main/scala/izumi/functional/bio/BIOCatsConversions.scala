@@ -4,6 +4,7 @@ import cats.Eval
 import cats.effect.{CancelToken, Concurrent, ExitCase, Fiber}
 import izumi.functional.bio.BIOCatsConversions._
 import izumi.functional.bio.BIOFiber._
+import izumi.functional.bio.SpecificityHelper.{S1, S10, S2, S3, S4, S5, S6, S7, S8, S9}
 
 import scala.util.Either
 
@@ -62,23 +63,6 @@ trait BIOCatsConversions9 {
     Fork: BIOFork[F]
   ): cats.effect.Concurrent[F[Throwable, ?]] with S10 = new BIOCatsConcurrent[F](F, Fork)
 }
-
-/**
-  * Just packaging conversions into implicit priority traits is not enough,
-  * scalac also has a rule that the most specific return type wins, for some reason. /_\
-  * 2.13 seems to overweigh this rule compared to 2.12
-  * So we "disjoin" the types from each other such that they're not "related", by *checks notes*... mixing some empty traits in
-  */
-private[bio] sealed trait S1 extends Any
-private[bio] sealed trait S2 extends Any
-private[bio] sealed trait S3 extends Any
-private[bio] sealed trait S4 extends Any
-private[bio] sealed trait S5 extends Any
-private[bio] sealed trait S6 extends Any
-private[bio] sealed trait S7 extends Any
-private[bio] sealed trait S8 extends Any
-private[bio] sealed trait S9 extends Any
-private[bio] sealed trait S10 extends Any
 
 object BIOCatsConversions {
 

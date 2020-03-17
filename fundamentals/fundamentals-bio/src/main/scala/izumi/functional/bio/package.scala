@@ -3,8 +3,6 @@ package izumi.functional
 import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
-import scala.annotation.implicitAmbiguous
-
 package object bio extends BIO3Syntax with BIOSyntax {
 
   /**
@@ -90,13 +88,5 @@ package object bio extends BIO3Syntax with BIOSyntax {
 
   @inline private[bio] final def convert3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R](instance: C[FR]): C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
     instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
-  }
-
-  trait =!=[A, B] extends Serializable
-  object =!= {
-    implicit def neq[A, B] : A =!= B = new =!=[A, B] {}
-    @implicitAmbiguous("Can not prove that type ${A} not equal ${A}.")
-    implicit def neqAmbig1[A] : A =!= A = new =!=[A, A] {}
-    implicit def neqAmbig2[A] : A =!= A = new =!=[A, A] {}
   }
 }
