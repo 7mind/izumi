@@ -168,7 +168,7 @@ object BIO3Syntax {
     @inline final def fork: FR[R, Nothing, BIOFiber3[FR, E, A]] = F.fork(r)
   }
 
-  class BIOProfunctorOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOProfunctor[FR]) {
+  class BIOProfunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOProfunctor[FR]) {
     @inline final def dimap[R1, A1](f: R1 => R)(g: A => A1): FR[R1, E, A1] = F.dimap(r)(f)(g)
   }
 
