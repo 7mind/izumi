@@ -4,6 +4,7 @@ import cats.data.Kleisli
 import zio.ZIO
 
 trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances {
+  val InnerF: BIOFunctor3[FR]
   def ask[R]: FR[R, Nothing, R]
 
   @inline final def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, ?], R, A]): FR[R, E, A] = accessM(k.run)

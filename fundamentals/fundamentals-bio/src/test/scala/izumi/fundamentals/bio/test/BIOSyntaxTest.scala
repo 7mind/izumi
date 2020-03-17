@@ -94,9 +94,9 @@ class BIOSyntaxTest extends AnyWordSpec {
           ()
       }
     }
-    def y[FR[-_, +_, +_]: BIOMonad3: BIOLocal]: FR[Any, Throwable, Unit] = {
-      F.fromKleisli {
-        F.accessThrowable {
+    def y[FR[-_, +_, +_]: BIOLocal]: FR[Any, Throwable, Unit] = {
+      F[FR].fromKleisli {
+        F[FR].accessThrowable {
           _: Int =>
             ()
         }.toKleisli
