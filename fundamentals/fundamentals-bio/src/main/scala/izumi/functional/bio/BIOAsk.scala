@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.PredefinedHelper.Predefined
+import izumi.functional.bio.impl.BIOAsyncZio
 import zio.ZIO
 
-trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances {
+trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances with PredefinedHelper {
   val InnerF: BIOApplicative3[FR]
   def ask[R]: FR[R, Nothing, R]
 
@@ -12,5 +14,5 @@ trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances {
 
 private[bio] sealed trait BIOAskInstances
 object BIOAskInstances {
-  @inline implicit final def BIOLocalZio: BIOArrow[ZIO] = impl.BIOArrowZio
+  @inline implicit final def BIOLocalZio: Predefined.Of[BIOLocal[ZIO]] = Predefined(BIOAsyncZio)
 }

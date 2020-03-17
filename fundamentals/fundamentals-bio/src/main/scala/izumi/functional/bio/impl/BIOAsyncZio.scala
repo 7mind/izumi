@@ -3,17 +3,17 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
-import zio.ZIO
+import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, BIOMonad3, __PlatformSpecific}
 import zio.ZIO.ZIOWithFilterOps
 import zio.internal.ZIOSucceedNow
+import zio.{NeedsEnv, ZIO}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object BIOAsyncZio extends BIOAsyncZio
 
-class BIOAsyncZio extends BIOAsync3[ZIO] {
+class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def pure[A](a: A): ZIO[Any, Nothing, A] = ZIOSucceedNow(a)
   @inline override final def sync[A](effect: => A): ZIO[Any, Nothing, A] = ZIO.effectTotal(effect)
   @inline override final def syncThrowable[A](effect: => A): ZIO[Any, Throwable, A] = ZIO.effect(effect)
@@ -111,10 +111,27 @@ class BIOAsyncZio extends BIOAsync3[ZIO] {
 
   @inline override final def uninterruptible[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] =
-    ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
-  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] =
-    ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
   @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f(_).interruptible)
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
+
+  @inline override final val InnerF: BIOMonad3[ZIO] = this
+
+  @inline override final def ask[R]: ZIO[R, Nothing, R] = ZIO.environment
+  @inline override final def askWith[R, A](f: R => A): ZIO[R, Nothing, A] = ZIO.access(f)
+
+  @inline override final def provide[R, E, A](fr: ZIO[R, E, A])(r: => R): ZIO[Any, E, A] = fr.provide(r)(NeedsEnv)
+  @inline override final def contramap[R, E, A, R0](fr: ZIO[R, E, A])(f: R0 => R): ZIO[R0, E, A] = fr.provideSome(f)(NeedsEnv)
+
+  @inline override final def access[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A] = ZIO.accessM(f)
+
+  @inline override final def dimap[R1, E, A1, R2, A2](fab: ZIO[R1, E, A1])(f: R2 => R1)(g: A1 => A2): ZIO[R2, E, A2] = fab.provideSome(f).map(g)
+
+  @inline override final def fromFunction[R, A](f: R => A): ZIO[R, Nothing, A] = ZIO.fromFunction(f)
+  @inline override final def andThen[R, R1, E, A](f: ZIO[R, E, R1], g: ZIO[R1, E, A]): ZIO[R, E, A] = f >>> g
+  @inline override final def asking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, (A, R)] = f.onFirst
+
+  @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] =  (f +++ g).map(_.merge)
+  @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
 }

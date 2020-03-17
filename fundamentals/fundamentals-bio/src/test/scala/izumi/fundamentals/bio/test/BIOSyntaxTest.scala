@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
+import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOFunctor3, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, F}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -98,11 +98,17 @@ class BIOSyntaxTest extends AnyWordSpec {
           true
       }
     }
-    def onlyAskX[FR[-_, +_, +_]: BIOMonadAsk]: FR[Int, Nothing, Unit] = {
+    def onlyMonadAsk[FR[-_, +_, +_]: BIOMonadAsk]: FR[Int, Nothing, Unit] = {
       F.unit <* F.askWith {
         _: Int =>
           true
       }
+    }
+    def onlyAsk[FR[-_, +_, +_]: BIOAsk]: FR[Int, Nothing, Unit] = {
+      F.askWith {
+        _: Int =>
+          true
+      } *> F.unit
     }
     def y[FR[-_, +_, +_]: BIOLocal]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
@@ -112,7 +118,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4)
     }
-    def z[FR[-_, +_, +_]: BIOArrow]: FR[String, Throwable, Int] = {
+    def z[FR[-_, +_, +_]: BIOArrow: BIOAsk: BIOFunctor3]: FR[String, Throwable, Int] = {
       F.askWith {
         _: Int =>
           ()
@@ -121,11 +127,23 @@ class BIOSyntaxTest extends AnyWordSpec {
           4
       }(_ => 1)
     }
-    val _ = (
+    def profunctorOnly[FR[-_, +_, +_]: BIOProfunctor]: FR[String, Throwable, Int] = {
+      F.contramap( ??? : FR[Unit, Throwable, Int] ) {
+        _: Int =>
+          ()
+      }.dimap {
+        _: String =>
+          4
+      }(_ => 1)
+        .map(_ + 2)
+    }
+    lazy val _ = (
       x[zio.ZIO],
-      onlyAskX[zio.ZIO],
+      onlyMonadAsk[zio.ZIO],
+      onlyAsk[zio.ZIO],
       y[zio.ZIO],
       z[zio.ZIO],
+      profunctorOnly[zio.ZIO],
     )
   }
 }

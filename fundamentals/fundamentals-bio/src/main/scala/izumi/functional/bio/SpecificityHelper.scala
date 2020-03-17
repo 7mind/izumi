@@ -19,4 +19,5 @@ private[bio] object SpecificityHelper {
   private[bio] trait S10 extends Any
   @inline private[bio] def S1[A, A1 >: A](a: A): A1 with S1 = a.asInstanceOf[A1 with S1]
   @inline private[bio] def S2[A, A1 >: A](a: A): A1 with S2 = a.asInstanceOf[A1 with S2]
+  @inline private[bio] def S3[A, A1 >: A](a: A): A1 with S3 = a.asInstanceOf[A1 with S3]
 }
