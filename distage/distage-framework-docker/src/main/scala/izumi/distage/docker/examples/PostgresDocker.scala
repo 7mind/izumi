@@ -10,7 +10,7 @@ object PostgresDocker extends ContainerDef {
 
   override def config: Config = {
     ContainerConfig(
-      image = "library/postgres:12.2",
+      image = "library/postgres:latest",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
       reuse = true,

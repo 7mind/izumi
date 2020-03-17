@@ -9,7 +9,7 @@ object DynamoDocker extends ContainerDef {
 
   override def config: Config = {
     ContainerConfig(
-      image = "amazon/dynamodb-local:1.12.0",
+      image = "amazon/dynamodb-local:latest",
       ports = Seq(primaryPort),
     )
   }

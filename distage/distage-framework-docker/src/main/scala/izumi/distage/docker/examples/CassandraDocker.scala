@@ -10,12 +10,8 @@ object CassandraDocker extends ContainerDef {
 
   override def config: Config = {
     ContainerConfig(
-      image = "cassandra:3.0.16",
-      ports = Seq(primaryPort),
-      env = Map(
-        "CASSANDRA_VERSION" -> "3.0.16",
-        "CASSANDRA_CONFIG" -> "/etc/cassandra"
-      )
+      image = "cassandra:latest",
+      ports = Seq(primaryPort)
     )
   }
 }
