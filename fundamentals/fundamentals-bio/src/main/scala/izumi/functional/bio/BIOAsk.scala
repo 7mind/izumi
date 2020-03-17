@@ -12,5 +12,5 @@ trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances {
 
 private[bio] sealed trait BIOAskInstances
 object BIOAskInstances {
-  @inline implicit final def BIOLocalZio: BIOLocal[ZIO] = impl.BIOLocalZio
+  @inline implicit final def BIOLocalZio: BIOArrow[ZIO] = impl.BIOArrowZio
 }

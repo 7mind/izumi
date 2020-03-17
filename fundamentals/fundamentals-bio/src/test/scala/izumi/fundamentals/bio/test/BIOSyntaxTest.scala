@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
+import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -93,7 +93,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         _: Int =>
           true
       } *>
-        F.unit *> F.askWith {
+      F.unit *> F.askWith {
         _: Int =>
           true
       }
@@ -112,10 +112,20 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4)
     }
+    def z[FR[-_, +_, +_]: BIOArrow]: FR[String, Throwable, Int] = {
+      F.askWith {
+        _: Int =>
+          ()
+      }.dimap {
+        _: String =>
+          4
+      }(_ => 1)
+    }
     val _ = (
       x[zio.ZIO],
       onlyAskX[zio.ZIO],
       y[zio.ZIO],
+      z[zio.ZIO],
     )
   }
 }

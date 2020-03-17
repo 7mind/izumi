@@ -1,11 +1,11 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.{BIOLocal, BIOMonad3}
+import izumi.functional.bio.{BIOArrow, BIOMonad3}
 import zio.{NeedsEnv, ZIO}
 
-object BIOLocalZio extends BIOLocalZio
+object BIOArrowZio extends BIOArrowZio
 
-class BIOLocalZio extends BIOLocal[ZIO] {
+class BIOArrowZio extends BIOArrow[ZIO] {
   @inline override final val InnerF: BIOMonad3[ZIO] = BIOAsyncZio
 
   @inline override final def ask[R]: ZIO[R, Nothing, R] = ZIO.environment
