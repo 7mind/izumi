@@ -1,6 +1,5 @@
 package izumi.fundamentals.bio.test
 
-import cats.data.Kleisli
 import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
 import org.scalatest.wordspec.AnyWordSpec
 
