@@ -2,7 +2,7 @@ package izumi.functional.bio.syntax
 
 import cats.data.Kleisli
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
-import izumi.functional.bio.{BIO3, BIOApplicative3, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOPrimitives3, BIOTemporal3}
+import izumi.functional.bio.{BIO3, BIOApplicative3, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOTemporal3}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -189,8 +189,6 @@ object BIO3Syntax {
     @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] = new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
     @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A])(implicit d1: DummyImplicit): BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A] = new BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A](self)
     @inline final def BIOLocal[FR[-_, +_, +_]: BIOLocal]: BIOLocal[FR] = implicitly
-
-    @inline final def BIOPrimitives3[FR[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[FR] = implicitly
   }
   trait BIO3ImplicitPuns1 extends BIO3ImplicitPuns2 {
     @inline implicit final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOAsync3Ops[FR, R, E, A] =

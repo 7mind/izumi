@@ -33,14 +33,21 @@ trait ZIODIEffectModule extends ModuleDef {
       DIResource.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
   }
 
-  make[BlockingIO[IO]].from {
+  make[BlockingIO3[ZIO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.io") =>
-      BlockingIOInstances.BlockingZIOFromThreadPool[Any](blockingPool)
+      BlockingIOInstances.BlockingZIOFromThreadPool(blockingPool)
+  }
+  make[BlockingIO[IO]].from {
+    implicit b: BlockingIO3[ZIO] =>
+      implicitly[BlockingIO[IO]]
   }
 
   addImplicit[BIOTransZio[IO]]
+  addImplicit[BIOFork3[ZIO]]
   addImplicit[BIOFork[IO]]
+  addImplicit[SyncSafe3[ZIO]]
   addImplicit[SyncSafe2[IO]]
+  addImplicit[BIOPrimitives3[ZIO]]
   addImplicit[BIOPrimitives[IO]]
 
   addImplicit[BIOFunctor3[ZIO]]

@@ -22,19 +22,14 @@ trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
     * **/
   def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
 }
-
 object BlockingIO3 {
   def apply[F[-_, +_, +_]: BlockingIO3]: BlockingIO3[F] = implicitly
 }
 
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends LowPriorityBlockingIOInstances {
-  // FIXME: bad encoding for lifting to 2-parameters...
-  def BlockingZIOFromThreadPool[R](blockingPool: ThreadPoolExecutor): BlockingIO[ZIO[R, +?, +?]] = {
-    convert3To2(BlockingZIO3FromThreadPool(blockingPool))
-  }
 
-  def BlockingZIO3FromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
+  def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
     val executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
     val blocking: Blocking.Service = new Blocking.Service {
       override val blockingExecutor: Executor = executor

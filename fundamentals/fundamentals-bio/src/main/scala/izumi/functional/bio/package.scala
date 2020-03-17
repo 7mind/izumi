@@ -56,8 +56,10 @@ package object bio extends BIO3Syntax with BIOSyntax {
     def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
-//  type BIOPrimitives1[F[+_]] = instances.BIOPrimitives[Lambda[(`+E`, `+A`) => F[A]]]
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
+  object BIOPrimitives3 {
+    def apply[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
+  }
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {

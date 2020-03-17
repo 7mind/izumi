@@ -9,6 +9,9 @@ trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {
   def mkPromise[E, A]: F[Nothing, BIOPromise[F, E, A]]
   def mkSemaphore(permits: Long): F[Nothing, BIOSemaphore[F]]
 }
+object BIOPrimitives {
+  def apply[F[+_, +_]: BIOPrimitives]: BIOPrimitives[F] = implicitly
+}
 
 private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances {
