@@ -170,7 +170,7 @@ object BIO3Syntax {
 
   final class BIOLocalOps[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
     @inline final def provide(env: => R)(implicit ev: R =!= Any): FR[Any, E, A]= F.provide(r)(env)
-    @inline final def provideSome[R0](f: R0 => R)(implicit ev: R0 =!= Any): FR[R0, E, A]= F.provideSome(r)(f)
+    @inline final def provideSome[R0](f: R0 => R)(implicit ev: R0 =!= Any): FR[R0, E, A]= F.contramap(r)(f)
   }
 
   final class BIOLocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {

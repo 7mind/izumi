@@ -6,8 +6,8 @@ trait BIOAsk[FR[-_, +_, +_]] extends BIOAskInstances {
   val InnerF: BIOApplicative3[FR]
   def ask[R]: FR[R, Nothing, R]
 
-  def access[R, A](f: R => A): FR[R, Nothing, A]
-  def accessThrowable[R, A](f: R => A): FR[R, Throwable, A]
+  // defaults
+  def askWith[R, A](f: R => A): FR[R, Nothing, A] = InnerF.map[R, Nothing, R, A](ask)(f)
 }
 
 private[bio] sealed trait BIOAskInstances

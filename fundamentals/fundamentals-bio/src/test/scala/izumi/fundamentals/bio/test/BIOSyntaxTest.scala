@@ -93,20 +93,20 @@ class BIOSyntaxTest extends AnyWordSpec {
         _: Int =>
           true
       } *>
-        F.unit *> F.access {
+        F.unit *> F.askWith {
         _: Int =>
           true
       }
     }
     def onlyAskX[FR[-_, +_, +_]: BIOMonadAsk]: FR[Int, Nothing, Unit] = {
-      F.unit <* F.access {
+      F.unit <* F.askWith {
         _: Int =>
           true
       }
     }
     def y[FR[-_, +_, +_]: BIOLocal]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
-        F.accessThrowable {
+        F.askWith {
           _: Int =>
             ()
         }.toKleisli
