@@ -68,6 +68,8 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOAsk[ZIO]]
   addImplicit[BIOMonadAsk[ZIO]]
   addImplicit[BIOLocal[ZIO]]
+  addImplicit[BIOProfunctor[ZIO]]
+  addImplicit[BIOArrow[ZIO]]
 
   addImplicit[BIOFunctor[IO]]
   addImplicit[BIOBifunctor[IO]]
