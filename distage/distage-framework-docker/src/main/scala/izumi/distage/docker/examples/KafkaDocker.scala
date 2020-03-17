@@ -16,7 +16,6 @@ object KafkaDocker extends ContainerDef {
         "KAFKA_ADVERTISED_HOST_NAME" -> "127.0.0.1"
       ),
       networks = Seq(ZookeeperDocker.zookeeperNetwork),
-      reuse = false
     )
   }
 }
@@ -24,11 +23,7 @@ object KafkaDocker extends ContainerDef {
 class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
   make[KafkaDocker.Container].fromResource {
     (zookeeperDocker: ZookeeperDocker.Container, wr: DockerClientWrapper[F], log: IzLogger, eff: DIEffect[F], effAsync: DIEffectAsync[F]) =>
-      val conf = zookeeperDocker.containerConfig.name.fold(KafkaDocker.config) {
-        name =>
-          val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"$name:2181")
-          KafkaDocker.config.copy(env = zkEnv)
-      }
-      new DockerContainer.Resource[F, KafkaDocker.Tag](conf, wr, log)(eff, effAsync)
+      val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
+      new DockerContainer.Resource[F, KafkaDocker.Tag](KafkaDocker.config.copy(env = zkEnv), wr, log)(eff, effAsync)
   }
 }

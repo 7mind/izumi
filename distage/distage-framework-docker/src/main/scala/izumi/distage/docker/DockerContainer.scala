@@ -66,6 +66,7 @@ object ContainerDef {
 final case class DockerContainer[Tag](
   id: Docker.ContainerId,
   name: String,
+  hostName: String,
   ports: Map[Docker.DockerPort, Seq[ServicePort]],
   containerConfig: ContainerConfig[Tag],
   clientConfig: ClientConfig,
@@ -220,6 +221,7 @@ object DockerContainer {
               containerConfig = config,
               clientConfig = clientw.clientConfig,
               availablePorts = Map.empty,
+              hostName = inspection.getConfig.getHostName
             )
             await(unverified)
           case None =>
@@ -270,6 +272,7 @@ object DockerContainer {
           client.startContainerCmd(res.getId).exec()
 
           val inspection = client.inspectContainerCmd(res.getId).exec()
+          val hostName = inspection.getConfig.getHostName
           val maybeMappedPorts = mapContainerPorts(inspection)
 
           maybeMappedPorts match {
@@ -277,7 +280,7 @@ object DockerContainer {
               throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
 
             case Right(mappedPorts) =>
-              val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
+              val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, hostName, mappedPorts, config, clientw.clientConfig, Map.empty)
               logger.debug(s"Created $container from ${config.image}...")
 
               if (config.networks.nonEmpty) {
