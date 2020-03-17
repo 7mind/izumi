@@ -115,6 +115,10 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         F.maybeSuspend(assert(set.size == 3))
     }
 
+    "support tests with no deps" in {
+      F.unit
+    }
+
     "test 1" in {
       service: MockUserRepository[F] =>
         for {
@@ -144,12 +148,12 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "test 4 (should be ignored)" in {
       _: ApplePaymentProvider[F] =>
-        assert(???)
+        assert(false)
     }
 
     "test 5 (should be ignored)" skip {
       _: MockCachedUserService[F] =>
-        assert(???)
+        assert(false)
     }
 
     "test 6 (should be ignored)" in {

@@ -14,7 +14,8 @@ import scala.collection.immutable.ListSet
 
 final class ConfigTest extends AnyWordSpec {
   def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
-    p.copy(bindings = p.bindings ++ mkModule(ConfigFactory.load(path)))
+    p.copy(bindings = p.bindings ++
+      mkModule(ConfigFactory.load(path, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.noSystem())))
   }
 
   def mkModule(config: Config): AppConfigModule = {
@@ -146,6 +147,13 @@ final class ConfigTest extends AnyWordSpec {
         .produce(mkConfigModule("backticks-test.conf")(TestConfigReaders.backticksDefinition)).unsafeGet()
 
       assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
+    }
+
+    "resolve case classes with private fields" in {
+      val context = Injector()
+        .produce(mkConfigModule("private-fields-test.conf")(TestConfigReaders.privateFieldsCodecDefinition)).unsafeGet()
+
+      assert(context.get[Service[PrivateCaseClass]].conf == PrivateCaseClass("super secret value"))
     }
 
     "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {

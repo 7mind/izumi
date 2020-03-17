@@ -1,4 +1,4 @@
-package org.scalatest
+package izumi.distage.testkit.services.scalatest.dstest
 
 import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.{Done, Running}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}

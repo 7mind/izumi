@@ -1,9 +1,10 @@
 package izumi.distage.constructors.macros
 
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{Provider, ReflectionProvider}
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.model.reflection.{Provider, ReflectionProvider}
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.tailrec
@@ -14,7 +15,7 @@ abstract class ClassConstructorMacros extends ConstructorMacrosBase {
 
   def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[ProviderMagnet[T]] = {
     val associations = reflectionProvider.constructorParameterLists(targetType)
-    generateProvider[T](associations)(args => q"new $targetType(...$args)")
+    generateProvider[T, ProviderType.Class.type](associations)(args => q"new $targetType(...$args)")
   }
 }
 object ClassConstructorMacros {
@@ -34,7 +35,7 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
     val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
     val traitParameters = methods.map(_.asParameter)
 
-    generateProvider[T](classParameters :+ traitParameters) {
+    generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
       argss => q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
         val methodDefs = methods.zip(argss.last).map {
           case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
@@ -243,8 +244,8 @@ abstract class ConstructorMacrosBase {
     }
   }
 
-  def generateProvider[T: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
-                                        (fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
+  def generateProvider[T: c.WeakTypeTag, P <: ProviderType with Singleton: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
+                                                                                         (fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 
@@ -272,7 +273,7 @@ abstract class ConstructorMacrosBase {
               ${Liftable.liftList.apply(parameters.flatten)},
               ${liftTypeToSafeType(weakTypeOf[T])},
               { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },
-              true,
+             ${symbolOf[P].asClass.module},
             )
           )
         }"""

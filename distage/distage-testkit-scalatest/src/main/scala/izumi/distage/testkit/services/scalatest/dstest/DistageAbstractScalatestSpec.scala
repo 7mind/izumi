@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import distage.{Tag, TagK, TagKK}
+import distage.{TagK, TagKK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.TestConfig
@@ -8,10 +8,12 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks, unused}
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, unused}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
-import org.scalatest.{Assertion, TestCancellation}
+import org.scalatest.Assertion
+import org.scalatest.distage.TestCancellation
+import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
 
 import scala.language.implicitConversions
 
@@ -25,8 +27,9 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   }
 }
 
+@org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
 trait DistageAbstractScalatestSpec[F[_]]
-  extends ScalatestWords
+  extends ShouldVerb with MustVerb with CanVerb
     with DistageTestEnv
     with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
@@ -42,15 +45,19 @@ trait DistageAbstractScalatestSpec[F[_]]
   protected def distageSuiteId: String = this.getClass.getName
 
   //
-  protected[distage] var context: Option[SuiteContext] = None
+  private[distage] var context: Option[SuiteContext] = None
 
-  override def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
-    Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
+  implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
+    override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
+      registerBranch(left, verb, f)
+    }
+  }
+
+  protected def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
     this.context = Some(SuiteContext(description, verb))
     fun()
     this.context = None
   }
-  //
 
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
     new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
@@ -64,6 +71,24 @@ object DistageAbstractScalatestSpec {
     }
   }
 
+  trait LowPriorityIdentityOverloads[F[_]] extends DISyntaxBase[F] {
+    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in(value: => Unit)(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+
+    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+      takeAny(() => value, pos.get)
+    }
+  }
+
   class DSWordSpecStringWrapper[F[_]](
                                        context: Option[SuiteContext],
                                        suiteName: String,
@@ -73,7 +98,7 @@ object DistageAbstractScalatestSpec {
                                        env: TestEnvironment,
                                      )(
                                        implicit override val tagMonoIO: TagK[F],
-                                     ) extends DISyntaxBase[F] {
+                                     ) extends DISyntaxBase[F] with LowPriorityIdentityOverloads[F] {
 
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -85,51 +110,23 @@ object DistageAbstractScalatestSpec {
       reg.registerTest(function, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(function: ProviderMagnet[F[Unit]])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
+    def in(function: ProviderMagnet[F[Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
-    }
-
-    def in(value: => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(value: => F[Unit])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO(() => value, pos.get)
     }
 
-    def in(value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(() => value, pos.get)
+    def in(value: => F[Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeIO(() => value, pos.get)
     }
 
-    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeAny(() => value, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
+    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
@@ -151,7 +148,7 @@ object DistageAbstractScalatestSpec {
                                              env: TestEnvironment,
                                            )(
                                              implicit override val tagBIO: TagKK[F],
-                                           ) extends DISyntaxBIOBase[F] {
+                                           ) extends DISyntaxBIOBase[F] with LowPriorityIdentityOverloads[F[Throwable, ?]] {
     override val tagMonoIO: TagK[F[Throwable, ?]] = TagK[F[Throwable, ?]]
 
     override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
@@ -164,51 +161,23 @@ object DistageAbstractScalatestSpec {
       reg.registerTest(fAsThrowable, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(function: ProviderMagnet[F[_, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
+    def in(function: ProviderMagnet[F[_, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
-    }
-
-    def in(value: => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(value: => F[_, Unit])(implicit pos: CodePositionMaterializer): Unit = {
       takeBIO(() => value, pos.get)
     }
 
-    def in(value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(() => value, pos.get)
+    def in(value: => F[_, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value, pos.get)
     }
 
-    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeAny(() => value, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => Unit)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    def skip(@unused value: => Assertion)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit, dummyImplicit2: DummyImplicit): Unit = {
+    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
       takeFunIO(cancel, pos.get)
     }
 

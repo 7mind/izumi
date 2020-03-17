@@ -1,7 +1,8 @@
-package org.scalatest
+package org.scalatest.distage
 
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
+import org.scalatest.{Assertion, AssertionsMacro}
 
 import scala.reflect.macros.{blackbox, whitebox}
 

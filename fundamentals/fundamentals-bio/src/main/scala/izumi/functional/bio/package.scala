@@ -50,13 +50,12 @@ package object bio extends BIOSyntax with BIO3Syntax {
   type BIOTemporal[F[+_, +_]] = BIOTemporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
   type BIOFiber[F[+_, +_], +E, +A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
 
-  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+  type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO {
-    def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
+    def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
 //  type BIOPrimitives1[F[+_]] = instances.BIOPrimitives[Lambda[(`+E`, `+A`) => F[A]]]
@@ -87,6 +86,10 @@ package object bio extends BIOSyntax with BIO3Syntax {
   type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
   object Entropy3 {
     def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
+  }
+
+  @inline private[bio] final def convert3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R](instance: C[FR]): C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
+    instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
 
   trait =!=[A, B] extends Serializable

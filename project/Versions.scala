@@ -16,9 +16,14 @@ object V {
   val circe_generic_extras = "0.13.0"
   val circe_derivation = "0.13.0-M2"
   val pureconfig = "0.12.3"
+  val magnolia = "0.12.8"
   val jawn = "1.0.0"
 
   val http4s = "0.21.1"
+
+  // good to drop - scala
+  val scala_java_time = "2.0.0-RC3"
+  val scalamock = "4.4.0"
 
   // java-only dependencies below
   val classgraph = "4.8.65"
@@ -27,6 +32,5 @@ object V {
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val scala_java_time = "2.0.0-RC3"
-  val docker_java = "3.2.0"
+  val docker_java = "3.2.1"
 }

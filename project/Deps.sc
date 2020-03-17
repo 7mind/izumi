@@ -17,6 +17,7 @@ object Izumi {
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
+    val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
     val classgraph = Version.VExpr("V.classgraph")
@@ -24,6 +25,7 @@ object Izumi {
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val cglib_nodep = Version.VExpr("V.cglib_nodep")
     val scala_java_time = Version.VExpr("V.scala_java_time")
+    val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
   }
 
@@ -77,6 +79,7 @@ object Izumi {
       circe_derivation,
     ).map(_ in Scope.Compile.all)
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
+    final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
@@ -104,6 +107,7 @@ object Izumi {
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.js
+    final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
@@ -442,7 +446,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
         platforms = Targets.jvm,
@@ -492,7 +496,10 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
-        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        libs = allMonadsOptional ++ Seq(
+          scalamock in Scope.Test.all,
+          scalatest.dependency in Scope.Compile.all,
+        ),
         depends =
           Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),

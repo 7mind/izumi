@@ -90,7 +90,8 @@ class DistageTestRunner[F[_]: TagK]
           distageTest =>
             val keys = distageTest.test.get.diKeys.toSet
             val testRoots = keys ++ env.forcedRoots
-            distageTest -> injector.plan(PlannerInput(appModule, testRoots))
+            val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, testRoots)) else OrderedPlan.empty
+            distageTest -> plan
         }
 
         val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet

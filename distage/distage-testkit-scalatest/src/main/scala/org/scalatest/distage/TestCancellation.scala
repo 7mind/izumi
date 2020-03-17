@@ -1,4 +1,4 @@
-package org.scalatest
+package org.scalatest.distage
 
 import org.scalatest.exceptions.TestCanceledException
 

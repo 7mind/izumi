@@ -1,13 +1,15 @@
 package izumi.distage.config.codec
 
+import pureconfig.ConfigReader
+
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 /** Derive `pureconfig.ConfigReader` for A and for its fields recursively with `pureconfig-magnolia` */
-final class PureconfigAutoDerive[A](val value: pureconfig.ConfigReader[A]) extends AnyVal
+final class PureconfigAutoDerive[A](val value: ConfigReader[A]) extends AnyVal
 
 object PureconfigAutoDerive {
-  @inline def apply[A](implicit ev: PureconfigAutoDerive[A]): pureconfig.ConfigReader[A] = ev.value
+  @inline def apply[A](implicit ev: PureconfigAutoDerive[A]): ConfigReader[A] = ev.value
 
   implicit def materialize[A]: PureconfigAutoDerive[A] = macro PureconfigAutoDeriveMacro.materializeImpl[A]
 

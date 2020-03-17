@@ -15,10 +15,10 @@ object AnyConstructorMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
     import c.universe._
-    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}]((${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}).provider)""")
+    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}](${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}.provider)""")
   }
 
-  def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL[T]] = {
+  def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] = {
     import c.universe._
 
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
@@ -62,7 +62,7 @@ object AnyConstructorMacro {
 
     val tpe = weakTypeOf[T]
 
-    c.Expr[AnyConstructorOptionalMakeDSL[T]] {
+    c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] {
       maybeNonwhiteListedMethods match {
         case None =>
           c.abort(c.enclosingPosition,
@@ -77,7 +77,7 @@ object AnyConstructorMacro {
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
 
-            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructor[T](c)})"""
+            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructor[T](c)}.provider)"""
           } else {
             logger.log(s"For $tpe found `.from`-like calls, generating ERROR constructor: $nonwhiteListedMethods")
 

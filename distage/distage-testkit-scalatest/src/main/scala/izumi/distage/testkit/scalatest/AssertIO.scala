@@ -3,7 +3,8 @@ package izumi.distage.testkit.scalatest
 import izumi.distage.testkit.scalatest.AssertIO.AssertIOMacro
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
-import org.scalatest.{Assertion, DistageAssertionsMacro}
+import org.scalatest.Assertion
+import org.scalatest.distage.DistageAssertionsMacro
 import zio.IO
 
 import scala.language.experimental.macros

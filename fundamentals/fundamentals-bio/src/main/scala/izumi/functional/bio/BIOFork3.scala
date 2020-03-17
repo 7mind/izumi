@@ -7,10 +7,7 @@ trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
 }
 
 private[bio] sealed trait BIOForkInstances
-object BIOForkInstances {
-  // FIXME: bad encoding for lifting to 2-parameters...
-  implicit def BIOForkZioIO[R]: BIOFork[ZIO[R, +?, +?]] = BIOForkZio.asInstanceOf[BIOFork[ZIO[R, +?, +?]]]
-
+object BIOForkInstances extends LowPriorityBIOForkInstances {
   implicit object BIOForkZio extends BIOFork3[ZIO] {
     override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber3[ZIO, E, A]] =
       f
@@ -21,4 +18,8 @@ object BIOForkInstances {
         .forkDaemon
         .map(BIOFiber.fromZIO)
   }
+}
+
+sealed trait LowPriorityBIOForkInstances {
+  @inline implicit final def BIOFork3To2[FR[-_, +_, +_], R](implicit BIOFork3: BIOFork3[FR]): BIOFork[FR[R, +?, +?]] = convert3To2(BIOFork3)
 }
