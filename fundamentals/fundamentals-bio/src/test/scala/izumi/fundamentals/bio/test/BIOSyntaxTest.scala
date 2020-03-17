@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F, FR}
+import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -61,7 +61,8 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.when(false)(F.unit)
     }
     def y[F[+_, +_]: BIOTemporal] = {
-      F.timeout(F.forever(F.unit))(5.seconds)
+      F.timeout(F.forever(F.unit))(5.seconds) *>
+      F.map(z[F])(_ => ())
     }
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
@@ -74,8 +75,8 @@ class BIOSyntaxTest extends AnyWordSpec {
         .fork.flatMap(_.join)
     }
     def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]: FR[Nothing, Nothing, Int] = {
-      FR.fork(FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
-      FR.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
+      F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
+      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
     lazy val _ = (
       x[zio.IO],
@@ -88,12 +89,12 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "FR: Local/Ask summoners examples" in {
     def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
-      FR.unit *> FR.access{
+      F.unit *> F.access{
         _: Int => ()
       }
     }
     def y[FR[-_, +_, +_]: BIOMonad3: BIOLocal]: FR[Any, Throwable, Unit] = {
-      FR.accessThrowable {
+      F.accessThrowable {
         _: Int => ()
       }.provide(4)
     }

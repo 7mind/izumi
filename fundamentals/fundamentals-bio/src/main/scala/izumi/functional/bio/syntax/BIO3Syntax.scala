@@ -20,7 +20,7 @@ trait BIO3Syntax extends BIO3ImplicitPuns {
     * }}}
     *
     */
-  def FR[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
+  def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 }
 
 object BIO3Syntax {

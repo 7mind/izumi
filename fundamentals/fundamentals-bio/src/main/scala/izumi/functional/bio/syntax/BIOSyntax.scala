@@ -8,18 +8,6 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
 trait BIOSyntax extends BIOImplicitPuns {
-  /**
-    * A convenient dependent summoner for BIO* hierarchy.
-    * Auto-narrows to the most powerful available class:
-    *
-    * {{{
-    *   def y[F[+_, +_]: BIOTemporal] = {
-    *     F.timeout(5.seconds)(F.forever(F.unit))
-    *   }
-    * }}}
-    *
-    */
-  def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 }
 
 object BIOSyntax {
