@@ -20,7 +20,7 @@ import scala.util.Either
   * }}}
   */
 trait BIOCatsConversions extends BIOCatsConversions1 {
-  @inline implicit final def BIOToFunctor[F[_, +_], E](implicit F0: BIOFunctor[F]): cats.Functor[F[E, ?]] with S1 = new BIOCatsFunctor[F, E] {
+  @inline implicit final def BIOToFunctor[F[+_, +_], E](implicit F0: BIOFunctor[F]): cats.Functor[F[E, ?]] with S1 = new BIOCatsFunctor[F, E] {
     override val F: BIOFunctor[F] = F0
   }
 }
@@ -82,7 +82,7 @@ private[bio] sealed trait S10 extends Any
 
 object BIOCatsConversions {
 
-  trait BIOCatsFunctor[F[_, +_], E] extends cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 {
+  trait BIOCatsFunctor[F[+_, +_], E] extends cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 {
     def F: BIOFunctor[F]
 
     @inline override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)

@@ -25,7 +25,7 @@ trait BIO3Syntax extends BIO3ImplicitPuns {
 
 object BIO3Syntax {
 
-  class BIOFunctor3Ops[FR[_, _, +_], R, E, A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOFunctor3[FR]) {
+  class BIOFunctor3Ops[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOFunctor3[FR]) {
     @inline final def map[B](f: A => B): FR[R, E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
@@ -33,7 +33,7 @@ object BIO3Syntax {
     @inline final def widen[A1](implicit @deprecated("unused", "") ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
   }
 
-  class BIOBifunctor3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBifunctor3[FR])
+  class BIOBifunctor3Ops[+FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBifunctor3[FR])
     extends BIOFunctor3Ops(r) {
     @inline final def leftMap[E2](f: E => E2): FR[R, E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
@@ -43,7 +43,7 @@ object BIO3Syntax {
       r.asInstanceOf[FR[R, E1, A1]]
   }
 
-  class BIOApplicative3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOApplicative3[FR])
+  class BIOApplicative3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOApplicative3[FR])
     extends BIOBifunctor3Ops(r) {
 
     /** execute two operations in order, return result of second operation */
@@ -61,44 +61,44 @@ object BIO3Syntax {
     @inline final def forever: FR[R, E, Nothing] = F.forever(r)
   }
 
-  class BIOGuarantee3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOGuarantee3[FR])
+  class BIOGuarantee3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOGuarantee3[FR])
     extends BIOApplicative3Ops(r) {
-    @inline final def guarantee(cleanup: FR[R, Nothing, Unit]): FR[R, E, A] = F.guarantee(r)(cleanup)
+    @inline final def guarantee[R1 <: R](cleanup: FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guarantee(r, cleanup)
   }
 
-  final class BIOMonad3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonad3[FR])
+  final class BIOMonad3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonad3[FR])
     extends BIOApplicative3Ops(r) {
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R, E, A, R1, E1, B](r)(f0)
-    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
 
-    @inline final def flatten[E1 >: E, A1](implicit ev: A <:< FR[R, E1, A1]): FR[R, E1, A1] = F.flatten(F.widen(r))
+    @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
   }
 
-  class BIOError3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOError3[FR])
+  class BIOError3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOError3[FR])
     extends BIOGuarantee3Ops(r) {
-    @inline final def catchAll[E2, A2 >: A](h: E => FR[R, E2, A2]): FR[R, E2, A2] = F.catchAll[R, E, A, E2, A2](r)(h)
-    @inline final def catchSome[E2 >: E, A2 >: A](h: PartialFunction[E, FR[R, E2, A2]]): FR[R, E2, A2] = F.catchSome[R, E, A, E2, A2](r)(h)
+    @inline final def catchAll[R1 <: R, E2, A2 >: A](h: E => FR[R1, E2, A2]): FR[R1, E2, A2] = F.catchAll[R1, E, A, E2, A2](r)(h)
+    @inline final def catchSome[R1 <: R, E2 >: E, A2 >: A](h: PartialFunction[E, FR[R1, E2, A2]]): FR[R1, E2, A2] = F.catchSome[R1, E, A, E2, A2](r)(h)
 
     @inline final def redeemPure[B](err: E => B, succ: A => B): FR[R, Nothing, B] = F.redeemPure(r)(err, succ)
 
-    @inline final def tapError[E1 >: E](f: E => FR[R, E1, Unit]): FR[R, E1, A] = F.tapError[R, E, A, E1](r)(f)
+    @inline final def tapError[R1 <: R, E1 >: E](f: E => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tapError[R1, E, A, E1](r)(f)
 
     @inline final def attempt: FR[R, Nothing, Either[E, A]] = F.attempt(r)
   }
 
-  class BIOMonadError3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonadError3[FR])
+  class BIOMonadError3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOMonadError3[FR])
     extends BIOError3Ops(r) {
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R, E, A, R1, E1, B](r)(f0)
-    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.flatMap[R, E, A, R1, E1, A](r)(a => F.map(f0(a))(_ => a))
 
-    @inline final def flatten[E1 >: E, A1](implicit ev: A <:< FR[R, E1, A1]): FR[R, E1, A1] = F.flatten(F.widen(r))
+    @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
 
-    @inline final def redeem[E2, B](err: E => FR[R, E2, B], succ: A => FR[R, E2, B]): FR[R, E2, B] = F.redeem[R, E, A, E2, B](r)(err, succ)
+    @inline final def redeem[R1 <: R, E2, B](err: E => FR[R1, E2, B], succ: A => FR[R1, E2, B]): FR[R1, E2, B] = F.redeem[R1, E, A, E2, B](r)(err, succ)
 
-    @inline final def leftFlatMap[E2](f: E => FR[R, Nothing, E2]): FR[R, E2, A] = F.leftFlatMap(r)(f)
+    @inline final def leftFlatMap[R1 <: R, E2](f: E => FR[R1, Nothing, E2]): FR[R1, E2, A] = F.leftFlatMap[R1, E, A, E2](r)(f)
     @inline final def flip: FR[R, A, E] = F.flip(r)
 
-    @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => FR[R, E1, Unit])(succ: A => FR[R, E2, Unit]): FR[R, E2, A] = F.tapBoth[R, E, A, E2](r)(err, succ)
+    @inline final def tapBoth[R1 <: R, E1 >: E, E2 >: E1](err: E => FR[R1, E1, Unit])(succ: A => FR[R1, E2, Unit]): FR[R1, E2, A] = F.tapBoth[R1, E, A, E2](r)(err, succ)
 
     @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R, E, A, R1, E1, A1](r)(F.fromEither[E1, A1](_))
     @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
@@ -115,13 +115,13 @@ object BIO3Syntax {
     @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E1): FR[R, E1, A] = F.withFilter[R, E1, A](r)(predicate)
   }
 
-  class BIOBracket3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBracket3[FR])
+  class BIOBracket3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBracket3[FR])
     extends BIOMonadError3Ops(r) {
-    @inline final def bracket[E1 >: E, B](release: A => FR[R, Nothing, Unit])(use: A => FR[R, E1, B]): FR[R, E1, B] =
-      F.bracket(r: FR[R, E1, A])(release)(use)
+    @inline final def bracket[R1 <: R, E1 >: E, B](release: A => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
+      F.bracket(r: FR[R1, E1, A])(release)(use)
   }
 
-  class BIOPanic3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOPanic3[FR])
+  class BIOPanic3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOPanic3[FR])
     extends BIOBracket3Ops(r) {
     @inline final def sandbox: FR[R, BIOExit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxBIOExit: FR[R, Nothing, BIOExit[E, A]] = F.redeemPure(F.sandbox(r))(identity, BIOExit.Success(_))
@@ -145,18 +145,18 @@ object BIO3Syntax {
     @inline final def orTerminate(implicit ev: E <:< Throwable): FR[R, Nothing, A] = F.catchAll(r)(F.terminate(_))
   }
 
-  class BIO3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIO3[FR]) extends BIOPanic3Ops(r) {
-    @inline final def bracketAuto[E1 >: E, B](use: A => FR[R, E1, B])(implicit ev: A <:< AutoCloseable): FR[R, E1, B] =
-      F.bracket[R, E1, A, B](r)(c => F.sync(c.close()))(use)
+  class BIO3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIO3[FR]) extends BIOPanic3Ops(r) {
+    @inline final def bracketAuto[R1 <: R, E1 >: E, B](use: A => FR[R1, E1, B])(implicit ev: A <:< AutoCloseable): FR[R1, E1, B] =
+      F.bracket[R1, E1, A, B](r)(c => F.sync(c.close()))(use)
   }
 
-  class BIOAsync3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) {
-    @inline final def race[E1 >: E, A1 >: A](that: FR[R, E1, A1]): FR[R, E1, A1] = F.race(r, that)
+  class BIOAsync3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) {
+    @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
   }
 
-  final class BIOTemporal3Ops[FR[-_, +_, +_], R, E, A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOTemporal3[FR])
+  final class BIOTemporal3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOTemporal3[FR])
     extends BIOAsync3Ops(r) {
-    @inline final def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => FR[R, E2, A2]): FR[R, E2, A2] = F.retryOrElse[R, A, E, A2, E2](r)(duration, orElse)
+    @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: => FR[R1, E2, A2]): FR[R1, E2, A2] = F.retryOrElse[R1, A, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E2 >: E, A2](onTimeout: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E2, A2] =
       F.repeatUntil[R, E2, A2](new BIOFunctor3Ops(r)(F).widen)(onTimeout, sleep, maxAttempts)
 
@@ -170,9 +170,9 @@ object BIO3Syntax {
     @inline final def fork: FR[R, Nothing, BIOFiber3[FR, E, A]] = F.fork(r)
   }
 
-  final class BIOLocalOps[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
+  final class BIOLocalOps[FR[-_, +_, +_], -R, +E, +A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
     @inline final def scope(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A] = F.scope(r)(env)
-    @inline final def local(f: R => R)(implicit ev: NeedsEnv[R]): FR[R, E, A] = F.local(r)(f)
+    @inline final def local[R1 <: R](f: R => R1)(implicit ev: NeedsEnv[R]): FR[R1, E, A] = F.local(r)(f)
 
     @inline final def provide(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A]= F.provide(r)(env)
     @inline final def provideSome[R0](f: R0 => R)(implicit ev: NeedsEnv[R]): FR[R0, E, A]= F.provideSome(r)(f)
@@ -253,9 +253,9 @@ object BIO3Syntax {
     @inline final def BIOBifunctor3[FR[-_, +_, +_]: BIOBifunctor3]: BIOBifunctor3[FR] = implicitly
   }
   trait BIO3ImplicitPuns11 {
-    @inline implicit final def BIOFunctor3[FR[_, _, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
+    @inline implicit final def BIOFunctor3[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOFunctor3[FR[_, _, +_]: BIOFunctor3]: BIOFunctor3[FR] = implicitly
+    @inline final def BIOFunctor3[FR[-_, +_, +_]: BIOFunctor3]: BIOFunctor3[FR] = implicitly
   }
 
 }

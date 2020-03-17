@@ -50,7 +50,7 @@ class BIOAsyncZio extends BIOAsync3[ZIO] {
   @inline override final def withFilter[R, E, A](r: ZIO[R, E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): ZIO[R, E, A] =
     new ZIOWithFilterOps(r).withFilter(predicate)(ev)
 
-  @inline override final def guarantee[R, E, A](f: ZIO[R, E, A])(cleanup: ZIO[R, Nothing, Unit]): ZIO[R, E, A] = f.ensuring(cleanup)
+  @inline override final def guarantee[R, E, A](f: ZIO[R, E, A], cleanup: ZIO[R, Nothing, Unit]): ZIO[R, E, A] = f.ensuring(cleanup)
   @inline override final def attempt[R, E, A](r: ZIO[R, E, A]): ZIO[R, Nothing, Either[E, A]] = r.either
   @inline override final def redeemPure[R, E, A, B](r: ZIO[R, E, A])(err: E => B, succ: A => B): ZIO[R, Nothing, B] = r.fold(err, succ)
 

@@ -24,7 +24,7 @@ trait BIOSyntax extends BIOImplicitPuns {
 
 object BIOSyntax {
 
-  class BIOFunctorOps[+F[_, +_], E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOFunctor[F]) {
+  class BIOFunctorOps[+F[+_, +_], E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOFunctor[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
@@ -215,8 +215,8 @@ object BIOSyntax {
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
   trait BIOImplicitPuns11 {
-    @inline implicit final def BIOFunctor[F[_, +_] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
-    @inline final def BIOFunctor[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
+    @inline implicit final def BIOFunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
+    @inline final def BIOFunctor[F[+_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
   }
 
 }
