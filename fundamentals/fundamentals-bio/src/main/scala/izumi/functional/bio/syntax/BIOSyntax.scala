@@ -7,8 +7,7 @@ import scala.annotation.unchecked.uncheckedVariance
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
-trait BIOSyntax extends BIOImplicitPuns {
-}
+trait BIOSyntax extends BIOImplicitPuns
 
 object BIOSyntax {
 

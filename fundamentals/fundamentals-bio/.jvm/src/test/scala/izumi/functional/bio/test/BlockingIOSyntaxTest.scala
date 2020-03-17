@@ -1,9 +1,9 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{BIOAsync3, BIOFunctor, BIOFunctorInstances, BIOMonad3, BlockingIO, BlockingIO3, BlockingIOInstances, F}
+import izumi.functional.bio.{BIOFunctor, BIOMonad3, BlockingIO, BlockingIO3, BlockingIOInstances, F}
 import org.scalatest.wordspec.AnyWordSpec
-import zio.{Has, ZIO}
 import zio.blocking.Blocking
+import zio.{Has, ZIO}
 
 class BlockingIOSyntaxTest extends AnyWordSpec {
 
@@ -15,8 +15,9 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   }
   val _: ZIO[Blocking, Throwable, Int] = {
     implicit val blocking: Blocking = Has(Blocking.Service.live)
-    `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOWithBlocking](BIOFunctorInstances.BIOZIO.asInstanceOf[BIOAsync3[BlockingIOInstances.ZIOWithBlocking]], implicitly)
+    `attach BlockingIO methods to a trifunctor BIO`[ZIO]
     `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
+    `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +?, +?]]
   }
 
   "BlockingIO.apply is callable" in {

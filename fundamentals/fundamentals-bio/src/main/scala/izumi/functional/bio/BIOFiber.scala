@@ -9,7 +9,7 @@ trait BIOFiber3[F[-_, +_, +_], +E, +A] {
   def interrupt: F[Any, Nothing, BIOExit[E, A]]
 }
 
-object BIOFiber {
+object BIOFiber3 {
   def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] =
     new BIOFiber3[ZIO, E, A] {
       override val join: IO[E, A] = f.join
@@ -23,4 +23,8 @@ object BIOFiber {
       override def join: FR[Any, Throwable, A] = bioFiber.join
     }
   }
+}
+
+object BIOFiber {
+  @inline def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] = BIOFiber3.fromZIO(f)
 }
