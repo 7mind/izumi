@@ -1,6 +1,6 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
+
 import cats.~>
-import izumi.functional.bio.BIOExit
 
 trait BIOPanic3[F[-_, +_, +_]] extends BIOBracket3[F] with BIOPanicSyntax {
   def terminate(v: => Throwable): F[Any, Nothing, Nothing]

@@ -1,4 +1,5 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
+
 import scala.util.Try
 
 trait BIOError3[F[-_, +_, +_]] extends BIOGuarantee3[F] {

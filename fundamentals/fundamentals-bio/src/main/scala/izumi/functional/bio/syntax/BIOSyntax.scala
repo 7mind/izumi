@@ -46,7 +46,7 @@ object BIOSyntax {
   }
 
   class BIOGuaranteeOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOGuarantee[F]) extends BIOApplicativeOps(r) {
-    @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r)(cleanup)
+    @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r, cleanup)
   }
 
   final class BIOMonadOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonad[F]) extends BIOApplicativeOps(r) {

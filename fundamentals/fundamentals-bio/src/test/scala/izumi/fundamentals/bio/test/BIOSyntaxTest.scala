@@ -1,5 +1,6 @@
 package izumi.fundamentals.bio.test
 
+import cats.data.Kleisli
 import izumi.functional.bio.{BIO, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -69,12 +70,12 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: BIOPrimitives: BIOFork]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
-        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-      }.flatMap(_.join) *>
-      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-        .fork.flatMap(_.join)
+          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+        }.flatMap(_.join) *>
+      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
-    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]: FR[Nothing, Nothing, Int] = {
+    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: BIOMonad3: BIOPrimitives3: BIOFork3]
+      : FR[Nothing, Nothing, Int] = {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
@@ -89,13 +90,17 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "FR: Local/Ask summoners examples" in {
     def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
-      F.unit *> F.access{
-        _: Int => ()
+      F.unit *> F.access {
+        _: Int =>
+          ()
       }
     }
     def y[FR[-_, +_, +_]: BIOMonad3: BIOLocal]: FR[Any, Throwable, Unit] = {
-      F.accessThrowable {
-        _: Int => ()
+      F.fromKleisli {
+        F.accessThrowable {
+          _: Int =>
+            ()
+        }.toKleisli
       }.provide(4)
     }
     lazy val _ = (

@@ -1,5 +1,5 @@
-package izumi.functional.bio.instances
-import izumi.functional.bio.{BIOFiber, BIOFiber3, BIOFork}
+package izumi.functional.bio
+
 import zio.ZIO
 
 trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {

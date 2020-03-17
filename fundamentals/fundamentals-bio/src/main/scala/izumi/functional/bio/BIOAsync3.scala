@@ -1,8 +1,6 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
 
 import java.util.concurrent.CompletionStage
-
-import izumi.functional.bio.BIOFiber3
 
 import scala.concurrent.{ExecutionContext, Future}
 

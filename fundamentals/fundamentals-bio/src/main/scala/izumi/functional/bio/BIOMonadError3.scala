@@ -1,4 +1,4 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
 
 trait BIOMonadError3[F[-_, +_, +_]] extends BIOError3[F] with BIOMonad3[F] {
   def redeem[R, E, A, E2, B](r: F[R, E, A])(err: E => F[R, E2, B], succ: A => F[R, E2, B]): F[R, E2, B] = {

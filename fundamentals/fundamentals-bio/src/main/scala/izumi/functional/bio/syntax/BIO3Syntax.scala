@@ -1,9 +1,8 @@
 package izumi.functional.bio.syntax
 
-import izumi.functional.bio.{BIOExit, BIOFiber3, BIOPrimitives3}
-import izumi.functional.bio.instances._
+import cats.data.Kleisli
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
-import zio.NeedsEnv
+import izumi.functional.bio.{=!=, BIO3, BIOApplicative3, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOPrimitives3, BIOTemporal3}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -163,19 +162,20 @@ object BIO3Syntax {
     @inline final def timeout(duration: Duration): FR[R, E, Option[A]] = F.timeout(r)(duration)
     @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): FR[R, E1, A] =
       F.flatMap(timeout(duration): FR[R, E1, Option[A]])(_.fold[FR[R, E1, A]](F.fail(e))(F.pure))
-
   }
 
   final class BIOFork3Ops[FR[-_, +_, +_], -R, +E, +A](private val r: FR[R, E, A])(implicit private val F: BIOFork3[FR]) {
     @inline final def fork: FR[R, Nothing, BIOFiber3[FR, E, A]] = F.fork(r)
   }
 
-  final class BIOLocalOps[FR[-_, +_, +_], -R, +E, +A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
-    @inline final def scope(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A] = F.scope(r)(env)
-    @inline final def local[R1 <: R](f: R => R1)(implicit ev: NeedsEnv[R]): FR[R1, E, A] = F.local(r)(f)
+  final class BIOLocalOps[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
+    @inline final def scope(env: => R)(implicit ev: R =!= Any): FR[Any, E, A] = F.scope(r)(env)
+    @inline final def local[R1 <: R](f: R => R1)(implicit ev: R =!= Any): FR[R1, E, A] = F.local(r)(f)
 
-    @inline final def provide(env: => R)(implicit ev: NeedsEnv[R]): FR[Any, E, A]= F.provide(r)(env)
-    @inline final def provideSome[R0](f: R0 => R)(implicit ev: NeedsEnv[R]): FR[R0, E, A]= F.provideSome(r)(f)
+    @inline final def toKleisli(implicit ev: R =!= Any): Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
+
+    @inline final def provide(env: => R)(implicit ev: R =!= Any): FR[Any, E, A]= F.provide(r)(env)
+    @inline final def provideSome[R0](f: R0 => R)(implicit ev: R0 =!= Any): FR[R0, E, A]= F.provideSome(r)(f)
   }
 
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {

@@ -1,7 +1,7 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
 
+import izumi.functional.bio
 import izumi.functional.bio.impl.BIOAsyncZio
-import izumi.functional.bio._
 import zio.ZIO
 
 import scala.language.implicitConversions
@@ -19,7 +19,7 @@ object BIOFunctorInstances extends BIOFunctorInstancesLowPriority {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
   @inline implicit final def BIOZIOR[R0]: BIOAsync[ZIO[R0, +?, +?]] = BIOAsyncZio.asInstanceOf[BIOAsync[ZIO[R0, +?, +?]]]
 
-  @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
+  @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOPrimitives: bio.BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
   @inline implicit final def AttachBIOFork[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
   @inline implicit final def AttachBlockingIO[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BlockingIO: BlockingIO[F]): BlockingIO.type = BlockingIO
 }
@@ -27,7 +27,7 @@ object BIOFunctorInstances extends BIOFunctorInstancesLowPriority {
 sealed trait BIOFunctorInstancesLowPriority {
   @inline implicit final def BIOZIO: BIOAsync3[ZIO] = BIOAsyncZio
 
-  @inline implicit final def AttachBIOAsk[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOAsk: BIOAsk[FR]): BIOAsk.type = BIOAsk
+  @inline implicit final def AttachBIOAsk[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOAsk: bio.BIOAsk[FR]): BIOAsk.type = BIOAsk
 
   @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOPrimitives: BIOPrimitives3[FR]): BIOPrimitives.type = BIOPrimitives
   @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOFork: BIOFork3[FR]): BIOFork.type = BIOFork

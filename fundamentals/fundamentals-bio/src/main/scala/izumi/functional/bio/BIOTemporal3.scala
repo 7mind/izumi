@@ -1,6 +1,5 @@
-package izumi.functional.bio.instances
+package izumi.functional.bio
 
-import izumi.functional.bio.BIOTemporal
 import izumi.functional.bio.impl.BIOTemporalZio
 import zio.ZIO
 

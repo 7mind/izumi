@@ -1,6 +1,6 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.instances.BIOTemporal3
+import izumi.functional.bio.BIOTemporal3
 import zio.clock.Clock
 import zio.duration.Duration.fromScala
 import zio.{Schedule, ZIO}

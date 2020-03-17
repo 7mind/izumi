@@ -3,8 +3,7 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.instances.BIOAsync3
-import izumi.functional.bio.{BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
+import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, __PlatformSpecific}
 import zio.ZIO
 import zio.ZIO.ZIOWithFilterOps
 import zio.internal.ZIOSucceedNow
@@ -40,9 +39,9 @@ class BIOAsyncZio extends BIOAsync3[ZIO] {
   @inline override final def tap[R, E, A, R1 <: R, E2 >: E](r: ZIO[R, E, A])(f: A => ZIO[R1, E2, Unit]): ZIO[R1, E2, A] = r.tap(f)
   @inline override final def tapBoth[R, E, A, E2 >: E](r: ZIO[R, E, A])(err: E => ZIO[R, E2, Unit], succ: A => ZIO[R, E2, Unit]): ZIO[R, E2, A] = r.tapBoth(err, succ)
   @inline override final def flatten[R, E, A](r: ZIO[R, E, ZIO[R, E, A]]): ZIO[R, E, A] = ZIO.flatten(r)
-  @inline override final def *>[R, R1 <: R, E, E1 >: E, A, B](f: ZIO[R, E, A], next: => ZIO[R1, E1, B]): ZIO[R1, E1, B] = f *> next
-  @inline override final def <*[R, R1 <: R, E, E1 >: E, A, B](f: ZIO[R, E, A], next: => ZIO[R1, E1, B]): ZIO[R1, E1, A] =  f <* next
-  @inline override final def map2[R, R1 <: R, E, E1 >: E, A, B, C](r1: ZIO[R, E, A], r2: => ZIO[R1, E1, B])(f: (A, B) => C): ZIO[R1, E1, C] = r1.zipWith(r2)(f)
+  @inline override final def *>[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, B] = f *> next
+  @inline override final def <*[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, A] =  f <* next
+  @inline override final def map2[R, E, A, B, C](r1: ZIO[R, E, A], r2: => ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = r1.zipWith(r2)(f)
 
   @inline override final def redeem[R, E, A, E2, B](r: ZIO[R, E, A])(err: E => ZIO[R, E2, B], succ: A => ZIO[R, E2, B]): ZIO[R, E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[R, E, A, E2, A2 >: A](r: ZIO[R, E, A])(f: E => ZIO[R, E2, A2]): ZIO[R, E2, A2] = r.catchAll(f)
