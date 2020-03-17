@@ -10,7 +10,7 @@ object KafkaDocker extends ContainerDef {
   val primaryPort: DockerPort.TCP = DockerPort.TCP(9092)
   override def config: Config = {
     ContainerConfig(
-      image = "wurstmeister/kafka:latest",
+      image = "wurstmeister/kafka:2.12-2.4.1",
       ports = Seq(primaryPort),
       env = Map(
         "KAFKA_ADVERTISED_HOST_NAME" -> "127.0.0.1"

@@ -10,7 +10,7 @@ object CassandraDocker extends ContainerDef {
 
   override def config: Config = {
     ContainerConfig(
-      image = "cassandra:latest",
+      image = "cassandra:3.11.6",
       ports = Seq(primaryPort)
     )
   }
