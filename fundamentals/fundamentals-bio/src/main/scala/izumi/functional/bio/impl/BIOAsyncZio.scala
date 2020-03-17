@@ -128,7 +128,6 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
 
   @inline override final def dimap[R1, E, A1, R2, A2](fab: ZIO[R1, E, A1])(f: R2 => R1)(g: A1 => A2): ZIO[R2, E, A2] = fab.provideSome(f).map(g)
 
-  @inline override final def fromFunction[R, A](f: R => A): ZIO[R, Nothing, A] = ZIO.fromFunction(f)
   @inline override final def andThen[R, R1, E, A](f: ZIO[R, E, R1], g: ZIO[R1, E, A]): ZIO[R, E, A] = f >>> g
   @inline override final def asking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, (A, R)] = f.onFirst
 

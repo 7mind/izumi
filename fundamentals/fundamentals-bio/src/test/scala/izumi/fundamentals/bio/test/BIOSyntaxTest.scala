@@ -118,7 +118,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4)
     }
-    def z[FR[-_, +_, +_]: BIOArrow: BIOAsk: BIOFunctor3]: FR[String, Throwable, Int] = {
+    def arrowAsk[FR[-_, +_, +_]: BIOArrow: BIOAsk]: FR[String, Throwable, Int] = {
       F.askWith {
         _: Int =>
           ()
@@ -142,7 +142,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       onlyMonadAsk[zio.ZIO],
       onlyAsk[zio.ZIO],
       y[zio.ZIO],
-      z[zio.ZIO],
+      arrowAsk[zio.ZIO],
       profunctorOnly[zio.ZIO],
     )
   }
