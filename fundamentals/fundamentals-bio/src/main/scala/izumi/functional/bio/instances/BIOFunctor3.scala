@@ -6,7 +6,7 @@ import zio.ZIO
 
 import scala.language.implicitConversions
 
-trait BIOFunctor3[F[_, _, +_]] extends BIOFunctorInstances {
+trait BIOFunctor3[F[-_, +_, +_]] extends BIOFunctorInstances {
   def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B]
 
   def as[R, E, A, B](r: F[R, E, A])(v: => B): F[R, E, B] = map(r)(_ => v)

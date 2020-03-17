@@ -1,6 +1,6 @@
 package izumi.functional.bio.instances
 
-trait BIOBifunctor3[F[_, +_, +_]] extends BIOFunctor3[F] {
+trait BIOBifunctor3[F[-_, +_, +_]] extends BIOFunctor3[F] {
   def bimap[R, E, A, E2, A2](r: F[R, E, A])(f: E => E2, g: A => A2): F[R, E2, A2]
   def leftMap[R, E, A, E2](r: F[R, E, A])(f: E => E2): F[R, E2, A] = bimap(r)(f, identity)
 

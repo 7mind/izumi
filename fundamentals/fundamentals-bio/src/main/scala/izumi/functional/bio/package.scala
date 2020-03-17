@@ -16,19 +16,18 @@ package object bio extends BIOSyntax with BIO3Syntax {
     * }}}
     *
     */
-  @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
-  @inline override final def FR[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
+  @inline override final def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 
   /**
     * NOTE: The left type parameter is not forced to be covariant
     * because [[BIOFunctor]] does not yet expose any operations
     * on it.
     **/
-  type BIOFunctor[F[_, +_]] = instances.BIOFunctor3[Lambda[(`-R`, `E`, `+A`) => F[E, A]]]
-  type BIOFunctor3[F[_, _, +_]] = instances.BIOFunctor3[F]
+  type BIOFunctor[F[+_, +_]] = instances.BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOFunctor3[F[-_, +_, +_]] = instances.BIOFunctor3[F]
 
   type BIOBifunctor[F[+_, +_]] = instances.BIOBifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOBifunctor3[F[_, +_, +_]] = instances.BIOBifunctor3[F]
+  type BIOBifunctor3[F[-_, +_, +_]] = instances.BIOBifunctor3[F]
 
   type BIOApplicative[F[+_, +_]] = instances.BIOApplicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOApplicative3[F[-_, +_, +_]] = instances.BIOApplicative3[F]
