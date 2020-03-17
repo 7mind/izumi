@@ -4,6 +4,7 @@ import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.SpecificityHelper.{S1, S2}
 import izumi.functional.bio.impl.BIOAsyncZio
+import zio.ZIO
 
 import scala.language.implicitConversions
 
@@ -36,7 +37,7 @@ sealed trait BIOFunctorInstancesLowPriority1 extends BIOFunctorInstancesLowPrior
 
 sealed trait BIOFunctorInstancesLowPriority2 {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
-  @inline implicit final def BIOZIO: BIOAsyncZio.type = BIOAsyncZio
+  @inline implicit final def BIOZIO: BIOAsync[ZIO] = BIOAsyncZio
 //  @inline implicit final def BIOZIOR[R]: BIOAsync[ZIO[R, +?, +?]] = convert3To2(BIOAsyncZio)
 
   @inline implicit final def BIOConvert3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R0](
