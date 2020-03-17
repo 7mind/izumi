@@ -5,7 +5,7 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
 import scala.annotation.implicitAmbiguous
 
-package object bio extends BIOSyntax with BIO3Syntax {
+package object bio extends BIO3Syntax with BIOSyntax {
 
   /**
     * A convenient dependent summoner for BIO* hierarchy.
@@ -18,14 +18,14 @@ package object bio extends BIOSyntax with BIO3Syntax {
     * }}}
     *
     */
-  @inline override final def F[FR[-_, +_, +_]](implicit FR: bio.BIOFunctor3[FR]): FR.type = FR
+  @inline override final def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 
   /**
     * NOTE: The left type parameter is not forced to be covariant
     * because [[BIOFunctor]] does not yet expose any operations
     * on it.
     **/
-  type BIOFunctor[F[+_, +_]] = bio.BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOFunctor[F[+_, +_]] = BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
   type BIOBifunctor[F[+_, +_]] = BIOBifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 

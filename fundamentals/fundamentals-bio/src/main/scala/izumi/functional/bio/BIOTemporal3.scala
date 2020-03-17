@@ -29,9 +29,11 @@ trait BIOTemporal3[F[-_, +_, +_]] extends BIOAsync3[F] with BIOTemporalInstances
 }
 
 private[bio] sealed trait BIOTemporalInstances
-object BIOTemporalInstances extends LowPriorityBIOTemporalInstances {
+object BIOTemporalInstances /*extends LowPriorityBIOTemporalInstances */{
   @inline implicit final def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO] = new BIOTemporalZio(clockService)
+//  @inline implicit final def BIOTemporalZio[R](implicit clockService: zio.clock.Clock): BIOTemporal[ZIO[R, +?, +?]] = convert3To2(BIOTemporalInstances.BIOTemporal3Zio)
 }
-sealed trait LowPriorityBIOTemporalInstances {
-  @inline implicit final def BIOTemporal3To2[FR[-_, +_, +_], R](implicit BIOTemporal3: BIOTemporal3[FR]): BIOTemporal[FR[R, +?, +?]] = convert3To2(BIOTemporal3)
-}
+
+//sealed trait LowPriorityBIOTemporalInstances {
+//  @inline implicit final def BIOTemporal3To2[FR[-_, +_, +_], R](implicit BIOTemporal3: BIOTemporal3[FR]): BIOTemporal[FR[R, +?, +?]] = convert3To2(BIOTemporal3)
+//}

@@ -169,13 +169,12 @@ object BIO3Syntax {
   }
 
   final class BIOLocalOps[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
-    @inline final def scope(env: => R)(implicit ev: R =!= Any): FR[Any, E, A] = F.scope(r)(env)
-    @inline final def local[R1 <: R](f: R => R1)(implicit ev: R =!= Any): FR[R1, E, A] = F.local(r)(f)
-
-    @inline final def toKleisli(implicit ev: R =!= Any): Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
-
     @inline final def provide(env: => R)(implicit ev: R =!= Any): FR[Any, E, A]= F.provide(r)(env)
     @inline final def provideSome[R0](f: R0 => R)(implicit ev: R0 =!= Any): FR[R0, E, A]= F.provideSome(r)(f)
+  }
+
+  final class BIOLocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
+    @inline final def toKleisli(implicit ev: R =!= Any): Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
   }
 
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {
@@ -187,8 +186,8 @@ object BIO3Syntax {
       new BIO3Syntax.BIOFork3Ops[FR, R, E, A](self)
     @inline final def BIOFork3[FR[-_, +_, +_]: BIOFork3]: BIOFork3[FR] = implicitly
 
-    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] =
-      new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] = new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A])(implicit d1: DummyImplicit): BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A] = new BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A](self)
     @inline final def BIOLocal[FR[-_, +_, +_]: BIOLocal]: BIOLocal[FR] = implicitly
 
     @inline final def BIOPrimitives3[FR[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[FR] = implicitly

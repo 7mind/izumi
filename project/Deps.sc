@@ -145,8 +145,8 @@ object Izumi {
   object Targets {
     // switch order to use 2.13 in IDEA
     val targetScala = Seq(scala212, scala213)
+//    val targetScala = Seq(scala213, scala212)
     val targetScalaWith211 = Seq(scala212, scala213, scala211)
-    //    val targetScala = Seq(scala213, scala212)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
@@ -240,6 +240,7 @@ object Izumi {
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
         "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
+        "scalacOptions" in SettingScope.Build += s"""-Xlog-implicits""",
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
@@ -260,7 +261,6 @@ object Izumi {
           ),
           SettingKey.Default := Const.EmptySeq
         ),
-        "scalacOptions" += "-P:silencer:globalFilters=inside.of.package.objects"
       )
 
     }

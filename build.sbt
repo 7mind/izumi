@@ -90,7 +90,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -199,7 +198,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -295,7 +293,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -402,7 +399,6 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -504,7 +500,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -603,7 +598,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -709,7 +703,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -815,7 +808,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -914,7 +906,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1013,7 +1004,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1115,7 +1105,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1217,7 +1206,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1318,7 +1306,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1416,7 +1403,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1523,7 +1509,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1629,7 +1614,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1733,7 +1717,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1838,7 +1821,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1943,7 +1925,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2042,7 +2023,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2144,7 +2124,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2245,7 +2224,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2420,7 +2398,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2518,7 +2495,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-P:silencer:globalFilters=inside.of.package.objects",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10"
@@ -2754,7 +2730,8 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    scalacOptions in ThisBuild += """-Xmacro-settings:scalatest-version=VExpr(V.scalatest)"""
+    scalacOptions in ThisBuild += """-Xmacro-settings:scalatest-version=VExpr(V.scalatest)""",
+    scalacOptions in ThisBuild += "-Xlog-implicits"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

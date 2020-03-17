@@ -1,12 +1,13 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.{=!=, BIOFunctor3, BIOLocal}
+import izumi.functional.bio.{=!=, BIOLocal, BIOMonad3}
 import zio.{NeedsEnv, ZIO}
 
 object BIOLocalZio extends BIOLocalZio
 
 class BIOLocalZio extends BIOLocal[ZIO] {
-  @inline override val InnerF: BIOFunctor3[ZIO] = implicitly
+  @inline override val InnerF: BIOMonad3[ZIO] = BIOAsyncZio
+
   @inline override def provide[R, E, A](fr: ZIO[R, E, A])(r: => R)(implicit ev: R =!= Any): ZIO[Any, E, A] = fr.provide(r)(NeedsEnv)
   @inline override def provideSome[R, E, A, R0](fr: ZIO[R, E, A])(f: R0 => R)(implicit ev1: R0 =!= Any, ev2: R =!= Any): ZIO[R0, E, A] = fr.provideSome(f)(NeedsEnv)
 
