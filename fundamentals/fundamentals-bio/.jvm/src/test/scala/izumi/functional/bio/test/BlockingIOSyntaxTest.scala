@@ -3,7 +3,7 @@ package izumi.functional.bio.test
 import izumi.functional.bio.{BIOFunctor, BlockingIO, BlockingIO3, BlockingIOInstances, F}
 import izumi.fundamentals.bio.test.masking.BIOMonad3
 import org.scalatest.wordspec.AnyWordSpec
-import zio.ZIO
+import zio.{Has, ZIO}
 import zio.blocking.Blocking
 
 class BlockingIOSyntaxTest extends AnyWordSpec {
@@ -15,7 +15,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
     F.syncBlocking(2)
   }
   val _: ZIO[Blocking, Throwable, Int] = {
-    implicit val blocking: Blocking = zio.Runtime.unsafeFromLayer(Blocking.live).environment
+    implicit val blocking: Blocking = Has(Blocking.Service.live)
     `attach BlockingIO methods to a trifunctor BIO`[BlockingIOInstances.ZIOWithBlocking]
     `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
   }
@@ -30,7 +30,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
 
     assert(new X[zio.ZIO[Blocking, +?, +?]].hello != null)
     locally {
-      implicit val blocking: Blocking = zio.Runtime.unsafeFromLayer(Blocking.live).environment
+      implicit val blocking: Blocking = Has(Blocking.Service.live)
       assert(new X[zio.IO].hello != null)
     }
     assert(new X3[BlockingIOInstances.ZIOWithBlocking].hello != null)

@@ -5,7 +5,6 @@ import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.DistageSpecScalatest
 import izumi.fundamentals.platform.functional.Identity
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.Assertion
 
 final class ScalaMockCompatTest extends DistageSpecScalatest[Identity] with MockFactory {
 

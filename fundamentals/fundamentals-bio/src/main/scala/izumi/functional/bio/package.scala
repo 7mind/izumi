@@ -275,11 +275,8 @@ package object bio extends BIOSyntax {
   }
 
   private[bio] sealed trait BIOForkInstances
-  object BIOForkInstances {
-    // FIXME: bad encoding for lifting to 2-parameters...
-    implicit def BIOForkZioIO[R]: BIOFork[ZIO[R, +?, +?]] = BIOForkZio.asInstanceOf[BIOFork[ZIO[R, +?, +?]]]
-
-    implicit object BIOForkZio extends BIOFork3[ZIO] {
+  object BIOForkInstances extends LowPriorityBIOForkInstances {
+    implicit val BIOForkZio: BIOFork3[ZIO] = new BIOFork3[ZIO] {
       override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber[ZIO[Any, +?, +?], E, A]] =
         f
           // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
@@ -290,13 +287,16 @@ package object bio extends BIOSyntax {
           .map(BIOFiber.fromZIO)
     }
   }
+  sealed trait LowPriorityBIOForkInstances {
+    @inline implicit final def BIOFork3To2[FR[-_, +_, +_], R](implicit BIOFork3: BIOFork3[FR]): BIOFork[FR[R, +?, +?]] = convert3To2(BIOFork3)
+  }
 
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+  type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO {
-    def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
+    def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
@@ -314,6 +314,10 @@ package object bio extends BIOSyntax {
   type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
   object Entropy2 {
     def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
+  }
+
+  @inline private[bio] final def convert3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R](instance: C[FR]): C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
+    instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
 
 }
