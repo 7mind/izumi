@@ -38,7 +38,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       parallelTests = true,
       parallelEnvs = true,
       moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
-      testRunnerLogLevel = Log.Level.Debug
+      testRunnerLogLevel = Log.Level.Info
     )
   }
 }

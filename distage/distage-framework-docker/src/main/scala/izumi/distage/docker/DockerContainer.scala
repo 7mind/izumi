@@ -84,6 +84,30 @@ object DockerContainer {
   }
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[ContainerResource[F, T]]) extends AnyVal {
+    /**
+     * Could modify config on fly with usage of [[ProviderMagnet]].
+     * Usage example:
+     * {{{
+     *   KafkaDocker.make[F].modifyConfig {
+     *       (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network) => old: KafkaDocker.Config =>
+     *         val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
+     *         val zkNet = KafkaDocker.config.networks + net
+     *         old.copy(env = zkEnv, networks = zkNet)
+     *     }
+     * }}}
+     *
+    */
+    def modifyConfig(
+      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
+    )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
+      tag2.discard()
+      self.zip(modify).map {
+        case (that, f) =>
+          import that._
+          that.copy(config = f(that.config))
+      }
+    }
+
     def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
@@ -92,14 +116,29 @@ object DockerContainer {
       self.addDependency[DockerContainer[T2]]
     }
 
+    def connectToNetwork[T2](
+      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]]
+    ): ProviderMagnet[ContainerResource[F, T]] = {
+      tag1.discard()
+      modifyConfig {
+        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
+      }
+    }
+
     def connectToNetwork(
       networkDecl: ContainerNetworkDef
-    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]], tag2: distage.Tag[ContainerResource[F, T]]): ProviderMagnet[ContainerResource[F, T]] = {
-      self.flatAp {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => that: ContainerResource[F, T] =>
-          import that._
-          val newConf = that.config.copy(networks = that.config.networks + net)
-          that.copy(config = newConf)
+    )(
+      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]]
+    ): ProviderMagnet[ContainerResource[F, T]] = {
+      tag1.discard()
+      modifyConfig {
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
       }
     }
   }
@@ -112,8 +151,8 @@ object DockerContainer {
     logger: IzLogger,
   )(
     implicit
-    val ef: DIEffect[F],
-    val efA: DIEffectAsync[F]
+    val F: DIEffect[F],
+    val P: DIEffectAsync[F]
   ) extends DIResource[F, DockerContainer[T]] {
 
     private[this] val client = clientw.client
@@ -131,7 +170,7 @@ object DockerContainer {
       config.reuse && clientw.clientConfig.allowReuse
     }
 
-    override def acquire: F[DockerContainer[T]] = DIEffect[F].suspendF {
+    override def acquire: F[DockerContainer[T]] = F.suspendF {
       val ports = config.ports.map {
         containerPort =>
           val local = IzSockets.temporaryLocalPort()
@@ -157,12 +196,12 @@ object DockerContainer {
       if (!shouldReuse(resource.containerConfig)) {
         clientw.destroyContainer(resource.id)
       } else {
-        DIEffect[F].unit
+        F.unit
       }
     }
 
     def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
-      DIEffect[F].maybeSuspend {
+      F.maybeSuspend {
         logger.debug(s"Awaiting until $container gets alive")
         try {
           val status = client.inspectContainerCmd(container.id.name).exec()
@@ -177,23 +216,23 @@ object DockerContainer {
         }
       }.flatMap {
         case HealthCheckResult.JustRunning =>
-          DIEffect[F].maybeSuspend {
+          F.maybeSuspend {
             logger.info(s"$container looks alive...")
             container
           }
 
         case HealthCheckResult.WithPorts(ports) =>
           val out = container.copy(availablePorts = ports)
-          DIEffect[F].maybeSuspend {
+          F.maybeSuspend {
             logger.info(s"${out -> "container"} looks good...")
             out
           }
 
         case HealthCheckResult.Failed(t) =>
-          DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
+          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
 
         case HealthCheckResult.Unknown =>
-          DIEffectAsync[F].sleep(config.healthCheckInterval).flatMap(_ => await(container))
+          P.sleep(config.healthCheckInterval).flatMap(_ => await(container))
       }
     }
 
@@ -206,7 +245,7 @@ object DockerContainer {
         config.pullTimeout.toSeconds.toInt
       ) {
         for {
-          containers <- DIEffect[F].maybeSuspend {
+          containers <- F.maybeSuspend {
             // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
             try {
               client
@@ -268,7 +307,7 @@ object DockerContainer {
       }
 
       for {
-        out <- DIEffect[F].maybeSuspend {
+        out <- F.maybeSuspend {
           @silent("method.*Bind.*deprecated")
           val cmd = Value(baseCmd)
             .mut(config.name) { case (n, c) => c.withName(n) }
