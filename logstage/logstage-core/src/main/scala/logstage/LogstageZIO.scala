@@ -5,13 +5,16 @@ import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
 import logstage.LogstageCats.WrappedLogIO
-import zio.{IO, ZIO}
+import zio.{Has, IO, ZIO}
 
 object LogstageZIO {
 
+  /** Lets you carry LogBIO capability in environment */
+  object log extends LogBIO3EnvInstance[ZIO](_.get) with LogBIO[ZIO[Has[LogBIO[IO]], ?, ?]]
+
   def withFiberId(logger: AbstractLogger): LogBIO[IO] = {
     new WrappedLogIO[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
-      override def withCustomContext(context: CustomContext): LogIO[IO[Nothing, ?]] = {
+      override def withCustomContext(context: CustomContext): LogBIO[IO] = {
         withFiberId(logger.withCustomContext(context))
       }
 
@@ -24,7 +27,7 @@ object LogstageZIO {
     }
   }
 
-  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO[ZIO[R, Nothing, ?]] = {
+  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogBIO[ZIO[R, ?, ?]] = {
     new WrappedLogIO[ZIO[R, Nothing, ?]](logger)(SyncSafe[ZIO[R, Nothing, ?]]) {
       override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, ?]] = {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
