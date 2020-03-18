@@ -2,22 +2,43 @@ package izumi.distage.injector
 
 import distage.{Id, TagK3}
 import izumi.distage.constructors.{ClassConstructor, HasConstructor}
+import izumi.distage.fixtures.TraitCases.TraitCase2.{Dependency1, Dependency2, Trait1, Trait2}
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.DIResource.TrifunctorHasResourceTag
 import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.reflection.TypedRef
 import izumi.functional.bio.{BIOApplicative, BIOAsk, BIOLocal, F}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
-import zio.{Has, Task, ZIO, ZLayer, ZManaged}
+import zio.{Has, IO, Task, ZIO, ZLayer, ZManaged}
 
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
   type HasInt = Has[Int]
   type HasX[B] = Has[B]
   type HasIntBool = HasInt with HasX[Boolean]
+
+  def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1}
+
+  def getDep1[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency1], Nothing, Dependency1] =
+    F.askWith((_: Has[Dependency1]).get)
+  def getDep2[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency2], Nothing, Dependency2] =
+    F.askWith((_: Has[Dependency2]).get)
+
+  final class ResourceHasImpl[F[-_, +_, +_]: BIOLocal](
+  ) extends DIResource.LiftF(for {
+      d1 <- getDep1
+      d2 <- getDep2
+    } yield new Trait2 {val dep1 = d1; val dep2 = d2})
+
+  final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
+    d1: Dependency1,
+  ) extends DIResource.LiftF[F[Throwable, ?], Trait1](
+    F.pure(trait1(d1))
+  )
 
   "HasConstructor" should {
 
@@ -139,6 +160,15 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           d1: Dependency1 =>
             ZLayer.succeed(new Trait1 { val dep1 = d1})
         }
+
+        make[Trait2].named("classbased").fromHas[ResourceHasImpl[ZIO]]
+        make[Trait1].named("classbased").fromHas[ResourceEmptyHasImpl[IO]]
+
+        many[Trait2].addHas[ResourceHasImpl[ZIO]]
+        many[Trait1].addHas[ResourceEmptyHasImpl[IO]]
+
+        addImplicit[BIOApplicative[IO]]
+        addImplicit[BIOLocal[ZIO]]
       })
 
       val injector = mkNoCyclesInjector()
@@ -154,31 +184,28 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val instantiated1 = context.get[Trait3 { def dep1: Dependency1 }]
       assert(instantiated1.dep2 eq context.get[Dependency2])
 
+      val instantiated10 = context.get[Trait2]
+      assert(instantiated10.dep2 eq context.get[Dependency2])
+
       val instantiated2 = context.get[Trait1]
       assert(instantiated2 ne null)
+
+      val instantiated3 = context.get[Trait2]("classbased")
+      assert(instantiated3.dep2 eq context.get[Dependency2])
+
+      val instantiated4 = context.get[Trait1]("classbased")
+      assert(instantiated4 ne null)
+
+      val instantiated5 = context.get[Set[Trait2]].head
+      assert(instantiated5.dep2 eq context.get[Dependency2])
+
+      val instantiated6 = context.get[Set[Trait1]].head
+      assert(instantiated6 ne null)
     }
 
     "polymorphic ZIOHas injection" in {
       import TraitCase2._
 
-      def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1}
-
-      def getDep1[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency1], Nothing, Dependency1] =
-        F.askWith((_: Has[Dependency1]).get)
-      def getDep2[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency2], Nothing, Dependency2] =
-        F.askWith((_: Has[Dependency2]).get)
-
-      final class ResourceHasImpl[F[-_, +_, +_]: BIOLocal](
-      ) extends DIResource.LiftF(for {
-          d1 <- getDep1
-          d2 <- getDep2
-        } yield new Trait2 {val dep1 = d1; val dep2 = d2})
-
-      final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
-        d1: Dependency1,
-      ) extends DIResource.LiftF[F[Nothing, ?], Trait1](
-        F.pure(trait1(d1))
-      )
       def definition[F[-_, +_, +_]: TagK3: BIOLocal] = PlannerInput.noGc(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
@@ -193,8 +220,11 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           override val dep2 = d2
           override val dep3 = d3
         }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3])
-        make[Trait2].fromHas(ClassConstructor[ResourceHasImpl[F]])
-        make[Trait1].fromHas(ClassConstructor[ResourceEmptyHasImpl[F[Any, +?, +?]]])
+        make[Trait2].fromHas[ResourceHasImpl[F]]
+        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
+
+        many[Trait2].addHas[ResourceHasImpl[F]]
+        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
       })
 
       val injector = mkNoCyclesInjector()
@@ -210,8 +240,17 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val instantiated1 = context.get[Trait3 { def dep1: Dependency1 }]
       assert(instantiated1.dep2 eq context.get[Dependency2])
 
+      val instantiated10 = context.get[Trait2]
+      assert(instantiated10.dep2 eq context.get[Dependency2])
+
       val instantiated2 = context.get[Trait1]
       assert(instantiated2 ne null)
+
+      val instantiated3 = context.get[Set[Trait2]].head
+      assert(instantiated3.dep2 eq context.get[Dependency2])
+
+      val instantiated4 = context.get[Set[Trait1]].head
+      assert(instantiated4 ne null)
     }
 
     "can handle AnyVals" in {

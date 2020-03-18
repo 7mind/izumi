@@ -4,17 +4,18 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
+import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.functional.bio.{BIOLocal, BIOMonad3}
+import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.TagMacro
-import izumi.fundamentals.reflection.Tags.{Tag, TagK}
-import zio.{Exit, Has, Reservation, ZIO, ZLayer, ZManaged}
+import izumi.fundamentals.reflection.Tags.{Tag, TagK, TagK3}
+import zio._
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -728,7 +729,6 @@ object DIResource {
     implicit def tagK: TagK[F]
     implicit def tagA: Tag[A]
   }
-
   object ResourceTag extends ResourceTagLowPriority {
     @inline def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
@@ -742,8 +742,7 @@ object DIResource {
       }
     }
   }
-
-  trait ResourceTagLowPriority {
+  sealed trait ResourceTagLowPriority {
     /**
       * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
       * a workaround for highlighting in Intellij IDEA
@@ -755,8 +754,59 @@ object DIResource {
     implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
   }
 
+  trait TrifunctorHasResourceTag[R0, T] {
+    type F[-RR, +E, +A]
+    type R
+    type E
+    type A <: T
+    implicit def tagBIOLocal: Tag[BIOLocal[F]]
+    implicit def tagFull: Tag[DIResourceBase[F[Any, E, ?], A]]
+    implicit def ctorR: HasConstructor[R]
+    implicit def ev: R0 <:< DIResourceBase[F[R, E, ?], A]
+    implicit def resourceTag: ResourceTag[DIResourceBase[F[Any, E, ?], A]]
+  }
+  import scala.annotation.unchecked.{uncheckedVariance => v}
+  object TrifunctorHasResourceTag extends TrifunctorHasResourceTagLowPriority {
+
+    implicit def trifunctorResourceTag[R1 <: DIResourceBase[F0[R0, E0, ?], A0], F0[_, _, _]: TagK3, R0: HasConstructor, E0: Tag, A0 <: A1: Tag, A1]
+    : TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, E0, ?], A0], A1] {
+      type R = R0
+      type E = E0
+      type A = A0
+      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+    } = new TrifunctorHasResourceTag[R1, A1] { self =>
+      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+      type R = R0
+      type E = E0
+      type A = A0
+      val tagBIOLocal: Tag[BIOLocal[F]] = implicitly
+      val ctorR: HasConstructor[R0] = implicitly
+      val tagFull: Tag[DIResourceBase[F0[Any, E0, ?], A0]] = implicitly
+      val ev: R1 <:< DIResourceBase[F0[R0, E0, ?], A0] = implicitly
+      val resourceTag: ResourceTag[DIResourceBase[F0[Any, E0, ?], A0]] = new ResourceTag[DIResourceBase[F0[Any, E0, ?], A0]] {
+        type F[A] = F0[Any, E0, A]
+        type A = A0
+        val tagFull: Tag[DIResourceBase[F0[Any, E0, ?], A0]] = self.tagFull
+        val tagK: TagK[F0[Any, E0, ?]] =  TagK[F0[Any, E0, ?]]
+        val tagA: Tag[A0] = implicitly
+      }
+    }
+  }
+  sealed trait TrifunctorHasResourceTagLowPriority extends TrifunctorHasResourceTagLowPriority1 {
+    implicit def trifunctorResourceTagNothing[R1 <: DIResourceBase[F0[R0, Nothing, ?], A0], F0[_, _, _]: TagK3, R0: HasConstructor, A0 <: A1: Tag, A1]
+    : TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, Nothing, ?], A0], A1] {
+      type R = R0
+      type E = Nothing
+      type A = A0
+      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+    } = TrifunctorHasResourceTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
+  }
+  sealed trait TrifunctorHasResourceTagLowPriority1 {
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any], T]: TrifunctorHasResourceTag[R, T] = macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+  }
+
   object ResourceTagMacro {
-    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
+    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[Nothing] = {
       val tagMacro = new TagMacro(c)
       tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
       val tagTrace = tagMacro.getImplicitError()
