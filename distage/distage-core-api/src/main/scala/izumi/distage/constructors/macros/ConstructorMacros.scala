@@ -22,7 +22,33 @@ object ClassConstructorMacros {
   type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = ClassConstructorMacros {val c: C; val u: U}
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): ClassConstructorMacros.Aux[c0.type, u0.type] = {
     new ClassConstructorMacros {
-      val c: c0.type = c0;
+      val c: c0.type = c0
+      val u: u0.type = u0
+    }
+  }
+}
+
+abstract class HasConstructorMacros extends ConstructorMacrosBase {
+  import c.universe._
+
+  def hasConstructorAssertion(targetType: Type): Unit = {
+    val (good, bad) = ReflectionUtil
+      .intersectionTypeMembers[c.universe.type](targetType)
+      .partition(tpe => tpe.typeConstructor.typeSymbol.fullName == "zio.Has")
+    if (bad.nonEmpty) {
+      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has`: $bad (${bad.map(_.typeSymbol)})")
+    }
+    if (good.isEmpty) {
+      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` type constructors in it, type was $targetType (${targetType.typeSymbol}")
+    }
+  }
+
+}
+object HasConstructorMacros {
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = HasConstructorMacros {val c: C; val u: U}
+  def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): HasConstructorMacros.Aux[c0.type, u0.type] = {
+    new HasConstructorMacros {
+      val c: c0.type = c0
       val u: u0.type = u0
     }
   }
@@ -46,18 +72,12 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
   }
 
   def traitConstructorAssertion(targetType: Type): Unit = {
-    object NonConstructible {
-      def unapply(arg: List[Type]): Option[Type] = arg.collectFirst(isNonConstructibleType)
-    }
-    def isNonConstructibleType: PartialFunction[Type, Type] = {
-      case RefinedType(NonConstructible(tpe), _) => tpe
-      case tpe if tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal => tpe
-    }
-
-    isNonConstructibleType.lift(targetType).foreach {
-      err =>
-        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
-    }
+    ReflectionUtil
+      .intersectionTypeMembers[c.universe.type](targetType)
+      .find(tpe => tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal)
+      .foreach { err =>
+        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter or a final class $err (${err.typeSymbol}) in type constructor position")
+      }
   }
 
   def symbolToTrait(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.SingletonWiring.Trait = {
@@ -74,7 +94,7 @@ object TraitConstructorMacros {
   type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = TraitConstructorMacros {val c: C; val u: U}
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): TraitConstructorMacros.Aux[c0.type, u0.type] = {
     new TraitConstructorMacros {
-      val c: c0.type = c0;
+      val c: c0.type = c0
       val u: u0.type = u0
     }
   }
@@ -179,7 +199,7 @@ object FactoryConstructorMacros {
   type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = FactoryConstructorMacros {val c: C; val u: U}
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): FactoryConstructorMacros.Aux[c0.type, u0.type] = {
     new FactoryConstructorMacros {
-      val c: c0.type = c0;
+      val c: c0.type = c0
       val u: u0.type = u0
     }
   }
@@ -244,8 +264,9 @@ abstract class ConstructorMacrosBase {
     }
   }
 
-  def generateProvider[T: c.WeakTypeTag, P <: ProviderType with Singleton: c.WeakTypeTag](parameters: List[List[u.Association.Parameter]])
-                                                                                         (fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
+  def generateProvider[T: c.WeakTypeTag, P <: ProviderType with Singleton: c.WeakTypeTag](
+    parameters: List[List[u.Association.Parameter]]
+  )(fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 

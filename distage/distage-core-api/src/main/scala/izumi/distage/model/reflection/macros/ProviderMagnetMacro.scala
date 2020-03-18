@@ -7,7 +7,7 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
+import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.reflect.macros.blackbox
 
@@ -97,7 +97,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Association.Parameter] = {
     def association(p: Symbol): Association.Parameter = {
-      reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p))
+      reflectionProvider.parameterToAssociation(SymbolInfo.Runtime(p))
     }
 
     val lambdaParams = lambdaArgs.map(association)
@@ -141,15 +141,8 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
   protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
     widenFunctionObject(sig).typeArgs.init.map {
       tpe =>
-        val symbol = SymbolInfo.Static(
-          name = c.freshName(tpe.typeSymbol.name.toString),
-          finalResultType = tpe,
-          annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
-          isByName = tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == definitions.ByNameParamClass,
-          wasGeneric = tpe.typeSymbol.isParameter,
-        )
-
-        reflectionProvider.associationFromParameter(symbol)
+        val symbol = SymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
+        reflectionProvider.parameterToAssociation(symbol)
     }
   }
 
