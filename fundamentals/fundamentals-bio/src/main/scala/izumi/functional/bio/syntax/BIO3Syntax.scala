@@ -210,6 +210,9 @@ object BIO3Syntax {
     @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A] = new BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A](self)
     @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice]: BIOArrowChoice[FR] = implicitly
+
+    @inline implicit final def BIOMonadAsk[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
+    @inline final def BIOMonadAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
   }
   trait BIO3ImplicitPuns2 extends BIO3ImplicitPuns3 {
     @inline implicit final def BIO3[FR[-_, +_, +_]: BIO3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIO3Ops[FR, R, E, A] = new BIO3Syntax.BIO3Ops[FR, R, E, A](self)
@@ -234,7 +237,6 @@ object BIO3Syntax {
     @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOProfunctorOps[FR, R, E, A] = new BIO3Syntax.BIOProfunctorOps[FR, R, E, A](self)
     @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor]: BIOProfunctor[FR] = implicitly
-
   }
   trait BIO3ImplicitPuns4 extends BIO3ImplicitPuns5 {
     @inline implicit final def BIOBracket3[FR[-_, +_, +_]: BIOBracket3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOBracket3Ops[FR, R, E, A] = new BIO3Syntax.BIOBracket3Ops[FR, R, E, A](self)

@@ -104,6 +104,12 @@ class BIOSyntaxTest extends AnyWordSpec {
           true
       }
     }
+    def onlyMonadAskAccess[FR[-_, +_, +_]: BIOMonadAsk]: FR[Int, Nothing, Unit] = {
+      F.unit <* F.access {
+        _: Int =>
+          F.unit
+      }
+    }
     def onlyAsk[FR[-_, +_, +_]: BIOAsk]: FR[Int, Nothing, Unit] = {
       F.askWith {
         _: Int =>
@@ -140,6 +146,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     lazy val _ = (
       x[zio.ZIO],
       onlyMonadAsk[zio.ZIO],
+      onlyMonadAskAccess[zio.ZIO],
       onlyAsk[zio.ZIO],
       y[zio.ZIO],
       arrowAsk[zio.ZIO],
