@@ -15,15 +15,16 @@ object KafkaDocker extends ContainerDef {
       env = Map(
         "KAFKA_ADVERTISED_HOST_NAME" -> "127.0.0.1"
       ),
-      networks = Seq(ZookeeperDocker.zookeeperNetwork),
+      reuse = false
     )
   }
 }
 
 class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
   make[KafkaDocker.Container].fromResource {
-    (zookeeperDocker: ZookeeperDocker.Container, wr: DockerClientWrapper[F], log: IzLogger, eff: DIEffect[F], effAsync: DIEffectAsync[F]) =>
+    (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network, wr: DockerClientWrapper[F], log: IzLogger, eff: DIEffect[F], effAsync: DIEffectAsync[F]) =>
       val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
-      new DockerContainer.Resource[F, KafkaDocker.Tag](KafkaDocker.config.copy(env = zkEnv), wr, log)(eff, effAsync)
+      val zkNet = KafkaDocker.config.networks + net
+      new DockerContainer.ContainerResource[F, KafkaDocker.Tag](KafkaDocker.config.copy(env = zkEnv, networks = zkNet), wr, log)(eff, effAsync)
   }
 }

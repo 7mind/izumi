@@ -31,6 +31,10 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   }
 
   include(new CassandraDockerModule[Task])
+
+  make[KafkaZookeeperNetwork.Network].fromResource{
+    KafkaZookeeperNetwork.make[Task]
+  }
   include(new ZookeeperDockerModule[Task])
   include(new KafkaDockerModule[Task])
 

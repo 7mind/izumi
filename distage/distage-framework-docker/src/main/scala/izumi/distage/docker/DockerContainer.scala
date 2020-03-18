@@ -58,6 +58,7 @@ trait ContainerDef {
     }
   }
 }
+
 object ContainerDef {
   type Aux[T] = ContainerDef { type Tag = T }
 }
@@ -76,7 +77,7 @@ final case class DockerContainer[Tag](
 
 object DockerContainer {
   def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
-    new Resource[F, conf.Tag](conf.config, _, _)(_, _)
+    new ContainerResource[F, conf.Tag](conf.config, _, _)(_, _)
   }
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[DIResource[F, DockerContainer[T]]]) extends AnyVal {
@@ -87,14 +88,30 @@ object DockerContainer {
     def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
       self.addDependency[DockerContainer[T2]]
     }
+
+    def connectToNetwork(
+      networkDecl: ContainerNetworkDef
+    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]], tag2: distage.Tag[DIResource[F, DockerContainer[T]]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+      self.flatAp {
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => that: DIResource[F, DockerContainer[T]] =>
+          val containerResource = that.asInstanceOf[ContainerResource[F, T]]
+          import containerResource._
+          val newConf = containerResource.config.copy(networks = containerResource.config.networks + net)
+          containerResource.copy(config = newConf) : DIResource[F, DockerContainer[T]]
+      }
+    }
   }
 
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
-  final class Resource[F[_]: DIEffect: DIEffectAsync, T](
+  final case class ContainerResource[F[_], T](
     config: Docker.ContainerConfig[T],
     clientw: DockerClientWrapper[F],
     logger: IzLogger,
+  )(
+    implicit
+    val ef: DIEffect[F],
+    val efA: DIEffectAsync[F]
   ) extends DIResource[F, DockerContainer[T]] {
 
     private[this] val client = clientw.client
@@ -281,26 +298,14 @@ object DockerContainer {
             case Right(mappedPorts) =>
               val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, hostName, mappedPorts, config, clientw.clientConfig, Map.empty)
               logger.debug(s"Created $container from ${config.image}...")
-
-              if (config.networks.nonEmpty) {
-                logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
-
-                val existedNetworks: List[Network] = client.listNetworksCmd().exec().asScala.toList
-
-                config.networks.map {
-                  network =>
-                    existedNetworks
-                      .find(_.getName == network.name).fold {
-                        logger.debug(s"Going to create $network ...")
-                        client.createNetworkCmd().withName(network.name).exec().getId
-                      }(_.getId)
-                }.foreach {
+              logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+              config.networks.foreach {
+                network =>
                   client
                     .connectToNetworkCmd()
                     .withContainerId(container.id.name)
-                    .withNetworkId(_)
+                    .withNetworkId(network.id)
                     .exec()
-                }
               }
 
               container
