@@ -12,7 +12,7 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
-import zio.{Has, IO, Task, UIO, ZLayer, ZManaged}
+import zio._
 
 object ZIOResourcesTest {
   class Res { var initialized = false }

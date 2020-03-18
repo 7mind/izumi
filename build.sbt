@@ -1018,7 +1018,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
 lazy val `distage-extension-config` = project.in(file("distage/distage-extension-config"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core` % "test->compile,test"
+    `distage-core` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(

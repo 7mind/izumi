@@ -449,7 +449,7 @@ object Izumi {
         name = Projects.distage.config,
         libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ tin Scope.Test.all),
+          Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
       ),
       Artifact(
