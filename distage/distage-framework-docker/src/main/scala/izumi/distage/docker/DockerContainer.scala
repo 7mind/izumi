@@ -7,8 +7,10 @@ import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
 import distage.TagK
 import izumi.distage.docker.Docker._
+import izumi.distage.docker.DockerContainer.ContainerResource
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
@@ -46,7 +48,7 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Container]): ProviderMagnet[DIResource[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }
@@ -59,6 +61,7 @@ trait ContainerDef {
     }
   }
 }
+
 object ContainerDef {
   type Aux[T] = ContainerDef { type Tag = T }
 }
@@ -76,26 +79,80 @@ final case class DockerContainer[Tag](
 }
 
 object DockerContainer {
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
-    new Resource[F, conf.Tag](conf.config, _, _)(_, _)
+  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => ContainerResource[F, conf.Tag] = {
+    new ContainerResource[F, conf.Tag](conf.config, _, _)(_, _)
   }
 
-  implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[DIResource[F, DockerContainer[T]]]) extends AnyVal {
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+  implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[ContainerResource[F, T]]) extends AnyVal {
+    /**
+     * Could modify config on fly with usage of [[ProviderMagnet]].
+     * Usage example:
+     * {{{
+     *   KafkaDocker.make[F].modifyConfig {
+     *       (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network) => old: KafkaDocker.Config =>
+     *         val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
+     *         val zkNet = KafkaDocker.config.networks + net
+     *         old.copy(env = zkEnv, networks = zkNet)
+     *     }
+     * }}}
+     *
+    */
+    def modifyConfig(
+      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
+    )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
+      tag2.discard()
+      self.zip(modify).map {
+        case (that, f) =>
+          import that._
+          that.copy(config = f(that.config))
+      }
+    }
+
+    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
 
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[T2]]
+    }
+
+    def connectToNetwork[T2](
+      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]]
+    ): ProviderMagnet[ContainerResource[F, T]] = {
+      tag1.discard()
+      modifyConfig {
+        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
+      }
+    }
+
+    def connectToNetwork(
+      networkDecl: ContainerNetworkDef
+    )(
+      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]]
+    ): ProviderMagnet[ContainerResource[F, T]] = {
+      tag1.discard()
+      modifyConfig {
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
+      }
     }
   }
 
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
-  final class Resource[F[_]: DIEffect: DIEffectAsync, T](
+  final case class ContainerResource[F[_], T](
     config: Docker.ContainerConfig[T],
     clientw: DockerClientWrapper[F],
     logger: IzLogger,
+  )(
+    implicit
+    val F: DIEffect[F],
+    val P: DIEffectAsync[F]
   ) extends DIResource[F, DockerContainer[T]] {
 
     private[this] val client = clientw.client
@@ -113,7 +170,7 @@ object DockerContainer {
       config.reuse && clientw.clientConfig.allowReuse
     }
 
-    override def acquire: F[DockerContainer[T]] = DIEffect[F].suspendF {
+    override def acquire: F[DockerContainer[T]] = F.suspendF {
       val ports = config.ports.map {
         containerPort =>
           val local = IzSockets.temporaryLocalPort()
@@ -139,12 +196,12 @@ object DockerContainer {
       if (!shouldReuse(resource.containerConfig)) {
         clientw.destroyContainer(resource.id)
       } else {
-        DIEffect[F].unit
+        F.unit
       }
     }
 
     def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
-      DIEffect[F].maybeSuspend {
+      F.maybeSuspend {
         logger.debug(s"Awaiting until $container gets alive")
         try {
           val status = client.inspectContainerCmd(container.id.name).exec()
@@ -159,23 +216,23 @@ object DockerContainer {
         }
       }.flatMap {
         case HealthCheckResult.JustRunning =>
-          DIEffect[F].maybeSuspend {
+          F.maybeSuspend {
             logger.info(s"$container looks alive...")
             container
           }
 
         case HealthCheckResult.WithPorts(ports) =>
           val out = container.copy(availablePorts = ports)
-          DIEffect[F].maybeSuspend {
+          F.maybeSuspend {
             logger.info(s"${out -> "container"} looks good...")
             out
           }
 
         case HealthCheckResult.Failed(t) =>
-          DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
+          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
 
         case HealthCheckResult.Unknown =>
-          DIEffectAsync[F].sleep(config.healthCheckInterval).flatMap(_ => await(container))
+          P.sleep(config.healthCheckInterval).flatMap(_ => await(container))
       }
     }
 
@@ -188,7 +245,7 @@ object DockerContainer {
         config.pullTimeout.toSeconds.toInt
       ) {
         for {
-          containers <- DIEffect[F].maybeSuspend {
+          containers <- F.maybeSuspend {
             // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
             try {
               client
@@ -250,7 +307,7 @@ object DockerContainer {
       }
 
       for {
-        out <- DIEffect[F].maybeSuspend {
+        out <- F.maybeSuspend {
           @silent("method.*Bind.*deprecated")
           val cmd = Value(baseCmd)
             .mut(config.name) { case (n, c) => c.withName(n) }
@@ -290,26 +347,14 @@ object DockerContainer {
             case Right(mappedPorts) =>
               val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, hostName, mappedPorts, config, clientw.clientConfig, Map.empty)
               logger.debug(s"Created $container from ${config.image}...")
-
-              if (config.networks.nonEmpty) {
-                logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
-
-                val existedNetworks: List[Network] = client.listNetworksCmd().exec().asScala.toList
-
-                config.networks.map {
-                  network =>
-                    existedNetworks
-                      .find(_.getName == network.name).fold {
-                        logger.debug(s"Going to create $network ...")
-                        client.createNetworkCmd().withName(network.name).exec().getId
-                      }(_.getId)
-                }.foreach {
+              logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+              config.networks.foreach {
+                network =>
                   client
                     .connectToNetworkCmd()
                     .withContainerId(container.id.name)
-                    .withNetworkId(_)
+                    .withNetworkId(network.id)
                     .exec()
-                }
               }
 
               container

@@ -2,6 +2,8 @@ package izumi.distage.docker
 
 import java.util.concurrent.TimeUnit
 
+import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
+
 import scala.concurrent.duration.FiniteDuration
 
 object Docker {
@@ -35,36 +37,36 @@ object Docker {
     *                 default: true
     */
   final case class ContainerConfig[T](
-                                       image: String,
-                                       ports: Seq[DockerPort],
-                                       name: Option[String] = None,
-                                       env: Map[String, String] = Map.empty,
-                                       cmd: Seq[String] = Seq.empty,
-                                       entrypoint: Seq[String] = Seq.empty,
-                                       cwd: Option[String] = None,
-                                       user: Option[String] = None,
-                                       mounts: Seq[Mount] = Seq.empty,
-                                       networks: Seq[ContainerNetwork] = Seq.empty,
-                                       reuse: Boolean = true,
-                                       healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
-                                       pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
-                                       portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
-                                     )
+    image: String,
+    ports: Seq[DockerPort],
+    name: Option[String] = None,
+    env: Map[String, String] = Map.empty,
+    cmd: Seq[String] = Seq.empty,
+    entrypoint: Seq[String] = Seq.empty,
+    cwd: Option[String] = None,
+    user: Option[String] = None,
+    mounts: Seq[Mount] = Seq.empty,
+    networks: Set[ContainerNetwork[_]] = Set.empty,
+    reuse: Boolean = true,
+    healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+    pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
+    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
+    portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
+  )
 
   /**
     * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after tests.
     *                     If false, the container will be shut down.
     */
   final case class ClientConfig(
-                                 readTimeoutMs: Int,
-                                 connectTimeoutMs: Int,
-                                 allowReuse: Boolean,
-                                 useRemote: Boolean,
-                                 useRegistry: Boolean,
-                                 remote: Option[RemoteDockerConfig],
-                                 registry: Option[DockerRegistryConfig],
-                               )
+    readTimeoutMs: Int,
+    connectTimeoutMs: Int,
+    allowReuse: Boolean,
+    useRemote: Boolean,
+    useRegistry: Boolean,
+    remote: Option[RemoteDockerConfig],
+    registry: Option[DockerRegistryConfig],
+  )
 
   final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
 
@@ -82,7 +84,4 @@ object Docker {
   }
 
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
-
-  final case class ContainerNetwork(name: String)
-
 }
