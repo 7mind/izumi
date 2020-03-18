@@ -106,7 +106,7 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
-    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.js
+    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
@@ -440,7 +440,10 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq(zio_core in Scope.Test.all),
+        libs = Seq(
+          zio_core in Scope.Test.all,
+          scala_java_time in Scope.Test.js,
+        ),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
@@ -517,7 +520,7 @@ object Izumi {
         name = Projects.logstage.core,
         libs = Seq(scala_reflect in Scope.Provided.all) ++
           allMonadsOptional ++
-          Seq(scala_java_time),
+          Seq(scala_java_time in Scope.Compile.js),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
