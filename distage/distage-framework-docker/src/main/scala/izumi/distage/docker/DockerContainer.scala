@@ -23,7 +23,7 @@ import izumi.logstage.api.IzLogger
 
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 trait ContainerDef {
   self =>
@@ -183,20 +183,23 @@ object DockerContainer {
       }
     }
 
-    private[this] def withLocalMutex[E](waitForMillis: Int = 1000, maxAttempts: Int = 10)(eff: F[E]): F[E] = {
-      @tailrec
-      def acquireExclusiveLock(chanel: FileChannel, attempts: Int = 0): Option[FileLock] = {
-        logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for ${config.image}.")
-        (try {
-          Option(chanel.tryLock())
-        } catch {
-          case _: OverlappingFileLockException => None
-        }) match {
-          case v@Some(_) => v
+    private[this] def withLocalMutex[E](waitFor: FiniteDuration = 1.second, maxAttempts: Int = 10)(eff: F[E]): F[E] = {
+      def acquireExclusiveLock(chanel: FileChannel, attempts: Int = 0): F[E] = {
+        DIEffect[F].maybeSuspend {
+          logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for ${config.image}.")
+          try {
+            Option(chanel.tryLock())
+          } catch {
+            case _: OverlappingFileLockException => None
+          }
+        }.flatMap {
+          case Some(v) =>
+            eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
           case None if attempts < maxAttempts =>
-            Thread.sleep(waitForMillis)
-            acquireExclusiveLock(chanel, attempts + 1)
-          case _ => None
+            DIEffectAsync[F].sleep(waitFor).flatMap(_ => acquireExclusiveLock(chanel, attempts + 1))
+          case _ =>
+            logger.warn(s"Cannot acquire lock for image ${config.image} after $attempts. This may lead to creation of a new container duplicate.")
+            eff
         }
       }
 
@@ -206,12 +209,7 @@ object DockerContainer {
       file.createNewFile()
       file.deleteOnExit()
       DIEffect[F].bracketAuto(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
-        acquireExclusiveLock(_) match {
-          case Some(v) => eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
-          case None =>
-            logger.warn(s"Cannot acquire lock for image ${config.image} after $maxAttempts. This may lead to creation of a new container duplicate.")
-            eff
-        }
+        acquireExclusiveLock(_)
       }
     }
 
