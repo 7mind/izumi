@@ -2,7 +2,8 @@ package izumi.distage.impl
 
 import java.io.ByteArrayInputStream
 
-import izumi.distage.model.definition.DIResource
+import distage.DIResource
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
 import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
 import izumi.fundamentals.platform.functional.Identity
@@ -66,6 +67,13 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
         assert(i.read() == -1)
     }
     assert(!open)
+
+    Then("ModuleDef syntax works")
+    new ModuleDef {
+      make[Some[Int]]
+      make[None.type]
+      make[Int].from(0)
+    }
 
 //    Then("DIResource.toCats doesn't work")
 //    assertDoesNotCompile("resource.toCats")

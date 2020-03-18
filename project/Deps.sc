@@ -106,7 +106,7 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
-    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.js
+    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
@@ -398,7 +398,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
+        libs = allMonadsOptional,
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
@@ -440,14 +440,16 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq.empty,
+        libs = allMonadsTest ++ Seq(
+          scala_java_time in Scope.Test.js,
+        ),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
         libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ tin Scope.Test.all),
+          Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
       ),
       Artifact(
@@ -516,9 +518,8 @@ object Izumi {
       Artifact(
         name = Projects.logstage.core,
         libs = Seq(scala_reflect in Scope.Provided.all) ++
-          Seq(cats_core, zio_core).map(_ in Scope.Optional.all) ++
-          Seq(scala_java_time) ++
-          allMonadsTest,
+          allMonadsOptional ++
+          Seq(scala_java_time in Scope.Compile.js),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(

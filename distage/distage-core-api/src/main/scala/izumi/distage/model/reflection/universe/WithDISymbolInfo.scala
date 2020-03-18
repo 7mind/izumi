@@ -79,6 +79,17 @@ trait WithDISymbolInfo {
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }
+    object Static {
+      def syntheticFromType(transformName: String => String)(tpe: TypeNative): SymbolInfo.Static = {
+        SymbolInfo.Static(
+          name = transformName(tpe.typeSymbol.name.toString),
+          finalResultType = tpe,
+          annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
+          isByName = tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == u.definitions.ByNameParamClass,
+          wasGeneric = tpe.typeSymbol.isParameter,
+        )
+      }
+    }
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
       def findUniqueAnnotation(annType: TypeNative): Option[u.Annotation] = {

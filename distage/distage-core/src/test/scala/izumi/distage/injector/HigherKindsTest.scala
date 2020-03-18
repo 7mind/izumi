@@ -12,7 +12,6 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import HigherKindsCase1._
 
     case class Definition[F[_]: TagK : Pointed](getResult: Int) extends ModuleDef {
-      // TODO: hmmm, what to do with this
       addImplicit[Pointed[F]]
 
       make[TestTrait].from[TestServiceClass[F]]

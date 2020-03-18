@@ -26,28 +26,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  // dependencykeyprovider
-
-  private[this] def keyFromParameter(parameterSymbol: SymbolInfo): DIKey.BasicKey = {
-    val typeKey = if (parameterSymbol.isByName) {
-      DIKey.TypeKey(SafeType.create(parameterSymbol.finalResultType.typeArgs.head.finalResultType))
-    } else {
-      DIKey.TypeKey(SafeType.create(parameterSymbol.finalResultType))
-    }
-
-    withIdKeyFromAnnotation(parameterSymbol, typeKey)
-  }
-
-  override def associationFromParameter(parameterSymbol: SymbolInfo): Association.Parameter = {
-    val key = keyFromParameter(parameterSymbol)
-    Association.Parameter(parameterSymbol, key)
-  }
-
-  private[this] def keyFromMethod(methodSymbol: SymbolInfo): DIKey.BasicKey = {
-    val typeKey = DIKey.TypeKey(SafeType.create(methodSymbol.finalResultType))
-    withIdKeyFromAnnotation(methodSymbol, typeKey)
-  }
-
   private[this] def withIdKeyFromAnnotation(parameterSymbol: SymbolInfo, typeKey: DIKey.TypeKey): DIKey.BasicKey = {
     parameterSymbol.findUniqueAnnotation(typeOfIdAnnotation) match {
       case Some(Id(name)) =>
@@ -57,7 +35,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case None =>
         typeKey
     }
-  } // reflectionprovider
+  }
 
   override def symbolToWiring(tpe: TypeNative): Wiring = {
     tpe match {
@@ -70,6 +48,15 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
       case _ =>
         mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
+    }
+  }
+
+  override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
+    deepIntersection.map {
+      hasTpe =>
+        val tpe = ReflectionUtil.norm(u.u)(hasTpe.dealias).typeArgs.head
+        val syntheticSymbolInfo = SymbolInfo.Static.syntheticFromType(transformName)(tpe)
+        Association.Parameter(syntheticSymbolInfo, keyFromSymbolResultType(syntheticSymbolInfo))
     }
   }
 
@@ -96,7 +83,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
   }
   override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
-    selectConstructorArguments(tpe).toList.flatten.map(_.map(associationFromParameter))
+    selectConstructorArguments(tpe).toList.flatten.map(_.map(parameterToAssociation))
   }
 
   private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): Wiring.SingletonWiring = {
@@ -161,20 +148,38 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     declaredAbstractMethods.map(methodToAssociation(tpe, _))
   }
 
-  private[this] def methodToAssociation(tpe: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
-    val methodSymb = SymbolInfo.Runtime(method, tpe, wasGeneric = false)
-    Association.AbstractMethod(methodSymb, keyFromMethod(methodSymb))
+  override def parameterToAssociation(parameterSymbol: SymbolInfo): Association.Parameter = {
+    val key = keyFromParameter(parameterSymbol)
+    Association.Parameter(parameterSymbol, key)
   }
 
-  private object ConcreteSymbol {
+  private[this] def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
+    val methodSymb = SymbolInfo.Runtime(method, definingClass, wasGeneric = false)
+    Association.AbstractMethod(methodSymb, keyFromSymbolResultType(methodSymb))
+  }
+
+  private[this] def keyFromParameter(parameterSymbol: SymbolInfo): DIKey.BasicKey = {
+    val paramType = if (parameterSymbol.isByName) {
+      parameterSymbol.finalResultType.typeArgs.head.finalResultType
+    } else parameterSymbol.finalResultType
+    val typeKey = DIKey.TypeKey(SafeType.create(paramType))
+    withIdKeyFromAnnotation(parameterSymbol, typeKey)
+  }
+
+  private[this] def keyFromSymbolResultType(methodSymbol: SymbolInfo): DIKey.BasicKey = {
+    val typeKey = DIKey.TypeKey(SafeType.create(methodSymbol.finalResultType))
+    withIdKeyFromAnnotation(methodSymbol, typeKey)
+  }
+
+  private[this] object ConcreteSymbol {
     def unapply(arg: TypeNative): Option[TypeNative] = Some(arg).filter(isConcrete)
   }
 
-  private object AbstractSymbol {
+  private[this] object AbstractSymbol {
     def unapply(arg: TypeNative): Option[TypeNative] = Some(arg).filter(isWireableAbstract)
   }
 
-  private object FactorySymbol {
+  private[this] object FactorySymbol {
     def unapply(arg: TypeNative): Option[(List[SymbNative], List[MethodSymbNative])] = {
       Some(arg)
         .filter(isFactory)

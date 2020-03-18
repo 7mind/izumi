@@ -10,13 +10,13 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures.{ActiveComponent, ApplePaymentProvider, ForcedRootProbe, ForcedRootResource, MockCache, MockCachedUserService, MockUserRepository, TestActiveComponent}
-import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest, DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.exceptions.TestFailedException
-import zio.Task
+import zio.{Has, Task, ZIO}
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
@@ -36,6 +36,34 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
       service: MockUserRepository[Task] =>
         for {
           _ <- Task(assert(service != null))
+        } yield ()
+    }
+  }
+
+}
+
+class DistageTestExampleBIOEnv extends DistageBIOEnvSpecScalatest[ZIO] with DistageMemoizeExample[Task] with AssertIO {
+
+  val service = ZIO.access[Has[MockUserRepository[Task]]](_.get)
+
+  "distage test runner" should {
+    "support trifunctor env" in {
+      for {
+        service <- service
+        _ <- assertIO(service != null)
+      } yield ()
+    }
+
+    "support empty env" in {
+      assertIO(true)
+    }
+
+    "support mixing parameters & env" in {
+      cached: MockCachedUserService[Task] =>
+        for {
+          service <- service
+          _ <- assertIO(cached != null)
+          _ <- assertIO(service != null)
         } yield ()
     }
   }

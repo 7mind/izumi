@@ -1,6 +1,7 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{TagK, TagKK}
+import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.TestConfig
@@ -8,7 +9,9 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
+import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, unused}
+import izumi.fundamentals.reflection.Tags.TagK3
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
 import org.scalatest.Assertion
@@ -87,6 +90,18 @@ object DistageAbstractScalatestSpec {
     def in(value: => Assertion)(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
+
+    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
+      takeFunIO(cancel, pos.get)
+    }
+
+    private def cancel(F: DIEffect[F]): F[Nothing] = {
+      F.maybeSuspend(cancelNow())
+    }
+
+    private def cancelNow(): Nothing = {
+      TestCancellation.cancel(Some("test skipped!"), None, 1)
+    }
   }
 
   class DSWordSpecStringWrapper[F[_]](
@@ -125,18 +140,6 @@ object DistageAbstractScalatestSpec {
     def in(value: => F[Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(() => value, pos.get)
     }
-
-    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
-    }
-
-    private def cancel(eff: DIEffect[F]): F[Nothing] = {
-      eff.maybeSuspend(cancelNow())
-    }
-
-    private def cancelNow(): Nothing = {
-      TestCancellation.cancel(Some("test skipped!"), None, 1)
-    }
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
@@ -148,8 +151,8 @@ object DistageAbstractScalatestSpec {
                                              env: TestEnvironment,
                                            )(
                                              implicit override val tagBIO: TagKK[F],
+                                             implicit override val tagMonoIO: TagK[F[Throwable, ?]],
                                            ) extends DISyntaxBIOBase[F] with LowPriorityIdentityOverloads[F[Throwable, ?]] {
-    override val tagMonoIO: TagK[F[Throwable, ?]] = TagK[F[Throwable, ?]]
 
     override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -176,17 +179,64 @@ object DistageAbstractScalatestSpec {
     def in(value: => F[_, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
     }
+  }
 
-    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(cancel, pos.get)
+  class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
+                                             context: Option[SuiteContext],
+                                             suiteName: String,
+                                             suiteId: String,
+                                             testname: String,
+                                             reg: TestRegistration[F[Any, Throwable, ?]],
+                                             env: TestEnvironment,
+                                           )(
+                                             implicit override val tagBIO: TagKK[F[Any, ?, ?]],
+                                             implicit override val tagMonoIO: TagK[F[Any, Throwable, ?]]
+                                           ) extends DISyntaxBIOBase[F[Any, +?, +?]] with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
+
+    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Any, Throwable, _]], pos: CodePosition): Unit = {
+      val id = TestId(
+        context.map(_.toName(testname)).getOrElse(testname),
+        suiteName,
+        suiteId,
+        suiteName,
+      )
+      reg.registerTest(fAsThrowable, env, pos, id)
     }
 
-    private def cancel(F: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
-      F.maybeSuspend(cancelNow())
+    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+      takeBIO(function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+        case ((eff, r), f) => f.provide(eff)(r)
+      }, pos.get)
     }
 
-    private def cancelNow(): Nothing = {
-      TestCancellation.cancel(Some("test skipped!"), None, 1)
+    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+        case ((eff, r), f) => f.provide(eff)(r)
+      }, pos.get)
+    }
+
+    def in[R: HasConstructor](value: => F[R, _, Unit])(implicit pos: CodePositionMaterializer): Unit = {
+      takeBIO(ProviderMagnet.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    }
+
+    def in[R: HasConstructor](value: => F[R, _, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(ProviderMagnet.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    }
+
+    def in(function: ProviderMagnet[F[Any, _, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+      takeBIO(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[F[Any, _, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function, pos.get)
+    }
+
+    def in(value: => F[Any, _, Unit])(implicit pos: CodePositionMaterializer): Unit = {
+      takeBIO(() => value, pos.get)
+    }
+
+    def in(value: => F[Any, _, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value, pos.get)
     }
   }
 

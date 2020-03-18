@@ -4,6 +4,7 @@ import cats.data.Kleisli
 
 trait BIOMonadAsk[FR[-_, +_, +_]] extends BIOAsk[FR] with BIOMonadAskSyntax {
   override val InnerF: BIOMonad3[FR]
+
   def access[R, E, A](f: R => FR[R, E, A]): FR[R, E, A]
 }
 

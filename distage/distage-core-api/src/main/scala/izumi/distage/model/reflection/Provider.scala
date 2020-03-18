@@ -74,6 +74,7 @@ object Provider {
   object ProviderType {
     case object Class extends ProviderType
     case object Trait extends ProviderType
+    case object ZIOHas extends ProviderType
     case object Factory extends ProviderType
     case object Singleton extends ProviderType
     case object Function extends ProviderType

@@ -229,19 +229,6 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     assert(instantiated1.widgetId == instantiated2)
   }
 
-  "structural types are supported in class strategy" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[ {def a: Int}]
-      make[Int].from(5)
-    })
-
-    val injector = mkInjector()
-    val context = injector.produce(definition).unsafeGet()
-
-    val instantiated = context.get[ {def a: Int}]
-    assert(instantiated.a == context.get[Int])
-  }
-
   "empty refinements are supported in class strategy" in {
     import TypesCase4._
 

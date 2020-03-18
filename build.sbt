@@ -925,7 +925,10 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test
     )
   )
   .settings(
@@ -1015,7 +1018,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
 lazy val `distage-extension-config` = project.in(file("distage/distage-extension-config"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core` % "test->compile,test"
+    `distage-core` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1843,10 +1846,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional
     )
   )
   .settings(

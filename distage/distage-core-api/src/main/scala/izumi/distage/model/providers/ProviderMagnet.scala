@@ -9,6 +9,7 @@ import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
 
+import scala.annotation.unchecked.uncheckedVariance
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 
@@ -90,13 +91,15 @@ final case class ProviderMagnet[+A](get: Provider) {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[A])))
   }
 
-  def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
-    implicit val rTag: Tag[A] = getRetTag
-    rTag.discard() // used for assembling Tag[(A, B)] below
+  def zip[B](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
+    implicit val tagA: Tag[A] = this.getRetTag
+    implicit val tagB: Tag[B] = that.getRetTag
+    tagA.discard() // used for assembling Tag[(A, B)] below
+    tagB.discard()
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
-  def map2[B: Tag, C: Tag](that: ProviderMagnet[B])(f: (A, B) => C): ProviderMagnet[C] = {
+  def map2[B, C: Tag](that: ProviderMagnet[B])(f: (A, B) => C): ProviderMagnet[C] = {
     zip(that).map[C](f.tupled)
   }
 
@@ -119,7 +122,7 @@ final case class ProviderMagnet[+A](get: Provider) {
 
   def addDependencies(keys: Seq[DIKey]): ProviderMagnet[A] = copy[A](get = get.addUnused(keys))
 
-  @inline private[this] def getRetTag: Tag[A] = Tag(get.ret.cls, get.ret.tag)
+  @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
 
 object ProviderMagnet {
@@ -160,6 +163,8 @@ object ProviderMagnet {
   def identity[A: Tag]: ProviderMagnet[A] = identityKey(DIKey.get[A]).asInstanceOf[ProviderMagnet[A]]
 
   def pure[A: Tag](a: A): ProviderMagnet[A] = lift(a)
+
+  def unit: ProviderMagnet[Unit] = pure(())
 
   def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](

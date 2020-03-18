@@ -1,6 +1,5 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.reflection.TypeUtil
 
 trait MirrorProvider {

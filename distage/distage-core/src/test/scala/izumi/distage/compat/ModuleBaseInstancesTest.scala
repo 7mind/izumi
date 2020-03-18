@@ -1,4 +1,4 @@
-package izumi.distage.testkit.catstest
+package izumi.distage.compat
 
 import cats.implicits._
 import izumi.distage.fixtures.BasicCases._
@@ -6,7 +6,7 @@ import izumi.distage.model.definition.Bindings.binding
 import izumi.distage.model.definition._
 import org.scalatest.wordspec.AnyWordSpec
 
-class ModuleBaseInstancesTest extends AnyWordSpec {
+final class ModuleBaseInstancesTest extends AnyWordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal & Eq.eqv operations between different types of binding dsls" in {
       import BasicCase1._
