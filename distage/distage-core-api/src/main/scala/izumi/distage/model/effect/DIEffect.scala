@@ -14,6 +14,7 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
   def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
   def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B]
+  final def bracketAuto[A <: AutoCloseable, B](acquire: => F[A])(use: A => F[B]): F[B] = bracket(acquire)(a => maybeSuspend(a.close()))(use)
 
   /** A weaker version of `delay`. Does not guarantee _actual_
     * suspension of side-effects, because DIEffect[Identity] is allowed */
