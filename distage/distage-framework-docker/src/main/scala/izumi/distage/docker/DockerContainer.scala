@@ -1,5 +1,8 @@
 package izumi.distage.docker
 
+import java.io.File
+import java.nio.channels.{FileChannel, FileLock, OverlappingFileLockException}
+import java.nio.file.{Files, StandardOpenOption}
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
@@ -18,7 +21,9 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 trait ContainerDef {
   self =>
@@ -178,55 +183,89 @@ object DockerContainer {
       }
     }
 
-    private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
-      for {
-        containers <- DIEffect[F].maybeSuspend {
-          // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-          try {
-            client
-              .listContainersCmd()
-              .withAncestorFilter(List(config.image).asJava)
-              .withStatusFilter(List("running").asJava)
-              .exec()
-          } catch {
-            case c: Throwable =>
-              throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
-          }
-        }.map(_.asScala.toList.sortBy(_.getId))
+    private[this] def withLocalMutex[E](waitForMillis: Int = 1000, maxAttempts: Int = 10)(eff: F[E]): F[E] = {
+      @tailrec
+      def acquireExclusiveLock(chanel: FileChannel, attempts: Int = 0): Option[FileLock] = {
+        logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for ${config.image}.")
+        (try {
+          Option(chanel.tryLock())
+        } catch {
+          case _: OverlappingFileLockException => None
+        }) match {
+          case v@Some(_) => v
+          case None if attempts < maxAttempts =>
+            Thread.sleep(waitForMillis)
+            acquireExclusiveLock(chanel, attempts + 1)
+          case _ => None
+        }
+      }
 
-        candidates = {
-          val portSet = ports.map(_.port).toSet
-          containers.iterator.flatMap {
-            c =>
-              val inspection = client.inspectContainerCmd(c.getId).exec()
-              mapContainerPorts(inspection) match {
-                case Left(value) =>
-                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
-                  Seq.empty
-                case Right(value) =>
-                  Seq((c, inspection, value))
-              }
-          }.find {
-            case (_, _, eports) =>
-              portSet.diff(eports.keySet).isEmpty
-          }
-        }
-        existing <- candidates match {
-          case Some((c, inspection, existingPorts)) =>
-            val unverified = DockerContainer[T](
-              id = ContainerId(c.getId),
-              name = inspection.getName,
-              ports = existingPorts,
-              containerConfig = config,
-              clientConfig = clientw.clientConfig,
-              availablePorts = Map.empty,
-              hostName = inspection.getConfig.getHostName
-            )
-            await(unverified)
+      val tmpDir = System.getProperty("java.io.tmpdir")
+      val filename = s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}.tmp"
+      val file = new File(s"$tmpDir/$filename")
+      file.createNewFile()
+      file.deleteOnExit()
+      DIEffect[F].bracketAuto(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
+        acquireExclusiveLock(_) match {
+          case Some(v) => eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
           case None =>
-            doRun(ports)
+            logger.warn(s"Cannot acquire lock for image ${config.image} after $maxAttempts. This may lead to creation of a new container duplicate.")
+            eff
         }
-      } yield existing
+      }
+    }
+
+    private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
+      withLocalMutex() {
+        for {
+          containers <- DIEffect[F].maybeSuspend {
+            // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+            try {
+              client
+                .listContainersCmd()
+                .withAncestorFilter(List(config.image).asJava)
+                .withStatusFilter(List("running").asJava)
+                .exec()
+            } catch {
+              case c: Throwable =>
+                throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+            }
+          }.map(_.asScala.toList.sortBy(_.getId))
+
+          candidates = {
+            val portSet = ports.map(_.port).toSet
+            containers.iterator.flatMap {
+              c =>
+                val inspection = client.inspectContainerCmd(c.getId).exec()
+                mapContainerPorts(inspection) match {
+                  case Left(value) =>
+                    logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                    Seq.empty
+                  case Right(value) =>
+                    Seq((c, inspection, value))
+                }
+            }.find {
+              case (_, _, eports) =>
+                portSet.diff(eports.keySet).isEmpty
+            }
+          }
+          existing <- candidates match {
+            case Some((c, inspection, existingPorts)) =>
+              val unverified = DockerContainer[T](
+                id = ContainerId(c.getId),
+                name = inspection.getName,
+                ports = existingPorts,
+                containerConfig = config,
+                clientConfig = clientw.clientConfig,
+                availablePorts = Map.empty,
+                hostName = inspection.getConfig.getHostName
+              )
+              await(unverified)
+            case None =>
+              doRun(ports)
+          }
+        } yield existing
+      }
     }
 
     private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
