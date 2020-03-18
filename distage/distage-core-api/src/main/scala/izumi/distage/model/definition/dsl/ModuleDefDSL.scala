@@ -491,14 +491,24 @@ object ModuleDefDSL {
         })
       }
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /**
+        * Adds a dependency on `BIOLocal[F]`
+        *
+        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
+        * Integration checks on DIResource will be lost
+        */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I]): AfterBind = {
         dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
           (r: R, F: BIOLocal[F]) => provideDIResource(F)(resource, r)
         })
       }
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /**
+        * Adds a dependency on `BIOLocal[F]`
+        *
+        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
+        * Integration checks on DIResource will be lost
+        */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit d1: DummyImplicit): AfterBind = {
         dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((resource, r), f) => provideDIResource(f)(resource, r)

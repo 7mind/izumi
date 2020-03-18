@@ -1,19 +1,18 @@
 package izumi.distage.injector
 
 import distage.{Id, TagK3}
-import izumi.distage.constructors.{ClassConstructor, HasConstructor}
+import izumi.distage.constructors.HasConstructor
 import izumi.distage.fixtures.TraitCases.TraitCase2.{Dependency1, Dependency2, Trait1, Trait2}
-import izumi.distage.fixtures.TypesCases._
 import izumi.distage.fixtures.TraitCases._
+import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.DIResource.TrifunctorHasResourceTag
 import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.reflection.TypedRef
 import izumi.functional.bio.{BIOApplicative, BIOAsk, BIOLocal, F}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
-import zio.{Has, IO, Task, ZIO, ZLayer, ZManaged}
+import zio._
 
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
