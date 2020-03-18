@@ -1,8 +1,5 @@
 package izumi.distage.docker
 
-import java.io.File
-import java.nio.channels.{FileChannel, FileLock, OverlappingFileLockException}
-import java.nio.file.{Files, StandardOpenOption}
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
@@ -21,9 +18,8 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.logstage.api.IzLogger
 
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 trait ContainerDef {
   self =>
@@ -183,46 +179,14 @@ object DockerContainer {
       }
     }
 
-    private[this] def withLocalMutex[E](waitFor: FiniteDuration = 1.second, maxAttempts: Int = 10)(eff: F[E]): F[E] = {
-      def acquireAndRun(chanel: FileChannel, attempts: Int = 0): F[E] = {
-        DIEffect[F].maybeSuspend {
-          logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for ${config.image}.")
-          try {
-            Option(chanel.tryLock())
-          } catch {
-            case _: OverlappingFileLockException => None
-          }
-        }.flatMap {
-          case Some(v) =>
-            eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
-          case None if attempts < maxAttempts =>
-            DIEffectAsync[F].sleep(waitFor).flatMap(_ => acquireAndRun(chanel, attempts + 1))
-          case _ =>
-            logger.warn(s"Cannot acquire lock for image ${config.image} after $attempts. This may lead to creation of a new container duplicate.")
-            eff
-        }
-      }
-
-      val tmpDir = System.getProperty("java.io.tmpdir")
-      val filename = s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}.tmp"
-      val file = new File(s"$tmpDir/$filename")
-      file.createNewFile()
-      DIEffect[F].bracket(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
-        ch =>
-          DIEffect[F].definitelyRecover{
-            DIEffect[F].maybeSuspend {
-              ch.close()
-              file.delete()
-              ()
-            }
-          }(_ => DIEffect[F].unit)
-      } {
-        acquireAndRun(_)
-      }
-    }
-
     private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
-      withLocalMutex() {
+      logger.info(s"Running container with reused option with ${config.pullTimeout}.")
+      FileLockMutex.withLocalMutex(
+        s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
+        logger,
+        1.second,
+        config.pullTimeout.toSeconds.toInt
+      ) {
         for {
           containers <- DIEffect[F].maybeSuspend {
             // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)

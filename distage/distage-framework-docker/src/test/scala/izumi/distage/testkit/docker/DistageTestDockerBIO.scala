@@ -12,7 +12,7 @@ import izumi.logstage.api.Log
 import zio.IO
 
 // this tests needed to check mutex for reusable containers during parallel test runs
-class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
+abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
   // ignore docker tests on CI (nested docker trouble)
   if (!EnvVarsCI.isIzumiCI()) {
     "distage test runner should start only one container for reusable" should {
@@ -37,29 +37,24 @@ class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       memoizationRoots = Set(DIKey.get[PgSvcExample]),
       parallelTests = true,
       parallelEnvs = true,
+      moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
       testRunnerLogLevel = Log.Level.Debug
     )
   }
 }
 
-final class DistageTestDockerBIO1 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO2 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO3 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO4 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO5 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO6 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO7 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO8 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO9 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO10 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO11 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO12 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO13 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO14 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-final class DistageTestDockerBIO15 extends DistageTestDockerBIO { override protected def config: TestConfig = DistageTestDockerBIO.randomEnv(super.config) }
-
-object DistageTestDockerBIO {
-  def randomEnv(testConfig: TestConfig): TestConfig = testConfig.copy(
-    moduleOverrides = testConfig.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) }
-  )
-}
+final class DistageTestDockerBIO1 extends DistageTestDockerBIO
+final class DistageTestDockerBIO2 extends DistageTestDockerBIO
+final class DistageTestDockerBIO3 extends DistageTestDockerBIO
+final class DistageTestDockerBIO4 extends DistageTestDockerBIO
+final class DistageTestDockerBIO5 extends DistageTestDockerBIO
+final class DistageTestDockerBIO6 extends DistageTestDockerBIO
+final class DistageTestDockerBIO7 extends DistageTestDockerBIO
+final class DistageTestDockerBIO8 extends DistageTestDockerBIO
+final class DistageTestDockerBIO9 extends DistageTestDockerBIO
+final class DistageTestDockerBIO10 extends DistageTestDockerBIO
+final class DistageTestDockerBIO11 extends DistageTestDockerBIO
+final class DistageTestDockerBIO12 extends DistageTestDockerBIO
+final class DistageTestDockerBIO13 extends DistageTestDockerBIO
+final class DistageTestDockerBIO14 extends DistageTestDockerBIO
+final class DistageTestDockerBIO15 extends DistageTestDockerBIO
