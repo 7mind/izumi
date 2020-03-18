@@ -13,6 +13,10 @@ trait BIOLocal[FR[-_, +_, +_]] extends BIOMonadAsk[FR] with BIOArrowChoice[FR] w
     case Left(a)  => InnerF.map(provide(f)(a))(Left(_))
     case Right(b) => InnerF.map(provide(g)(b))(Right(_)): FR[Either[RL, RR], E, Either[AL, AR]]
   }
+  override def askWith[R, A](f: R => A): FR[R, Nothing, A] = InnerF.map(ask[R])(f)
+  override def andThen[R, R1, E, A](f: FR[R, E, R1], g: FR[R1, E, A]): FR[R, E, A] = InnerF.flatMap(f)(provide(g)(_))
+  override def asking[R, E, A](f: FR[R, E, A]): FR[R, E, (A, R)] = InnerF.map2(ask[R], f)((r, a) => (a, r))
+  override def access[R, E, A](f: R => FR[R, E, A]): FR[R, E, A] = InnerF.flatMap(ask[R])(f)
 }
 
 private[bio] sealed trait BIOLocalInstances

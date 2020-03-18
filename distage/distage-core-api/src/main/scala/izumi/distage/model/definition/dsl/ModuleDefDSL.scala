@@ -270,14 +270,14 @@ object ModuleDefDSL {
       *
       *   val myResource: Resource[IO, Unit] = Resource.make(IO(println("Acquiring!")))(IO(println("Releasing!")))
       *
-      *   make[Unit].from(myResource)
+      *   make[Unit].fromResource(myResource)
       * }}}
       *
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[DIResource]]
       */
     final def fromResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R]): AfterBind = {
-      fromResource[R](AnyConstructor[R])
+      fromResource(AnyConstructor[R])
     }
 
     final def fromResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
@@ -317,66 +317,6 @@ object ModuleDefDSL {
 
     protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
-  }
-  object MakeDSLBase {
-    implicit final class MakeFromZIOHas[T, AfterBind](private val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I]): AfterBind = {
-        dsl.fromEffect[IO[E, ?], I](HasConstructor[R].map(effect.provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZIO[R, E, I]]): AfterBind = {
-        dsl.fromEffect[IO[E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
-      }
-
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
-        dsl.fromResource(HasConstructor[R].map(resource.provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZManaged[R, E, I]])(implicit d1: DummyImplicit): AfterBind = {
-        dsl.fromResource(function.map2(HasConstructor[R])(_.provide(_)))
-      }
-
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](layer: ZLayer[R, E, Has[I]]): AfterBind = {
-        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get).provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](function: ProviderMagnet[ZLayer[R, E, Has[I]]]): AfterBind = {
-        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
-      }
-
-      /** Adds a dependency on `BIOLocal[F]` */
-      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
-          (r, F: BIOLocal[F]) => F.provide(effect)(r)
-        })
-      }
-
-      /** Adds a dependency on `BIOLocal[F]` */
-      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I] (function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
-          case ((effect, r), f) => f.provide(effect)(r)
-        })
-      }
-
-      /** Adds a dependency on `BIOLocal[F]` */
-      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I]): AfterBind = {
-        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
-          (r: R, F: BIOLocal[F]) => provide(F)(resource, r)
-        })
-      }
-
-      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit d1: DummyImplicit): AfterBind = {
-        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
-          case ((resource, r), f) => provide(f)(resource, r)
-        })
-      }
-
-      @inline private[this] def provide[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: DIResourceBase[F[R, E, ?], A], r: R): DIResourceBase[F[Any, E, ?], A] = {
-        new DIResourceBase[F[Any, E, ?], A] {
-          override type InnerResource = resource.InnerResource
-          override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
-          override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
-          override def extract(rr: InnerResource): A = resource.extract(rr)
-        }
-      }
-    }
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
@@ -494,6 +434,71 @@ object ModuleDefDSL {
 
     protected[this] def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
     protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
+  }
+
+  object MakeDSLBase {
+    implicit final class MakeFromZIOHas[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal with MakeFromHasLowPriorityOverloads[T, AfterBind] {
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I]): AfterBind = {
+        dsl.fromEffect[IO[E, ?], I](HasConstructor[R].map(effect.provide))
+      }
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZIO[R, E, I]]): AfterBind = {
+        dsl.fromEffect[IO[E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
+      }
+
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
+        dsl.fromResource(HasConstructor[R].map(resource.provide))
+      }
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZManaged[R, E, I]])(implicit d1: DummyImplicit): AfterBind = {
+        dsl.fromResource(function.map2(HasConstructor[R])(_.provide(_)))
+      }
+
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](layer: ZLayer[R, E, Has[I]]): AfterBind = {
+        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get).provide))
+      }
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](function: ProviderMagnet[ZLayer[R, E, Has[I]]]): AfterBind = {
+        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
+      }
+    }
+    sealed trait MakeFromHasLowPriorityOverloads[T, AfterBind] extends Any {
+      protected[this] def dsl: MakeDSLBase[T, AfterBind]
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
+        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          (r, F: BIOLocal[F]) => F.provide(effect)(r)
+        })
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
+        dsl.fromEffect[F[Any, E, ?], I] (function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((effect, r), f) => f.provide(effect)(r)
+        })
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I]): AfterBind = {
+        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          (r: R, F: BIOLocal[F]) => provide(F)(resource, r)
+        })
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit d1: DummyImplicit): AfterBind = {
+        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((resource, r), f) => provide(f)(resource, r)
+        })
+      }
+
+      @inline private[this] def provide[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: DIResourceBase[F[R, E, ?], A], r: R): DIResourceBase[F[Any, E, ?], A] = {
+        new DIResourceBase[F[Any, E, ?], A] {
+          override type InnerResource = resource.InnerResource
+          override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
+          override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
+          override def extract(rr: InnerResource): A = resource.extract(rr)
+        }
+      }
+    }
   }
 
   // DSL state machine

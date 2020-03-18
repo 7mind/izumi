@@ -1,15 +1,17 @@
 package izumi.distage.injector
 
-import distage.Id
-import izumi.distage.constructors.HasConstructor
+import distage.{Id, TagK3}
+import izumi.distage.constructors.{ClassConstructor, HasConstructor}
 import izumi.distage.fixtures.TypesCases._
+import izumi.distage.fixtures.TraitCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.reflection.TypedRef
+import izumi.functional.bio.{BIOApplicative, BIOAsk, BIOLocal, F}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
-import zio.{Has, Task, ZIO}
+import zio.{Has, Task, ZIO, ZLayer, ZManaged}
 
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
@@ -112,7 +114,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     }
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
-      import izumi.distage.fixtures.TraitCases.TraitCase2._
+      import TraitCase2._
 
       def getDep1 = ZIO.access[Has[Dependency1]](_.get)
       def getDep2 = ZIO.access[Has[Dependency2]](_.get)
@@ -129,6 +131,14 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           override val dep2 = d2
           override val dep3 = d3
         })
+        make[Trait2].fromHas(for {
+          d1 <- ZManaged.access[Has[Dependency1]](_.get)
+          d2 <- ZManaged.access[Has[Dependency2]](_.get)
+        } yield new Trait2 {val dep1 = d1; val dep2 = d2})
+        make[Trait1].fromHas {
+          d1: Dependency1 =>
+            ZLayer.succeed(new Trait1 { val dep1 = d1})
+        }
       })
 
       val injector = mkNoCyclesInjector()
@@ -140,10 +150,72 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       assert(instantiated.dep1 eq context.get[Dependency1])
       assert(instantiated.dep2 eq context.get[Dependency2])
       assert(instantiated.dep3 eq context.get[Dependency3])
+
+      val instantiated1 = context.get[Trait3 { def dep1: Dependency1 }]
+      assert(instantiated1.dep2 eq context.get[Dependency2])
+
+      val instantiated2 = context.get[Trait1]
+      assert(instantiated2 ne null)
+    }
+
+    "polymorphic ZIOHas injection" in {
+      import TraitCase2._
+
+      def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1}
+
+      def getDep1[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency1], Nothing, Dependency1] =
+        F.askWith((_: Has[Dependency1]).get)
+      def getDep2[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency2], Nothing, Dependency2] =
+        F.askWith((_: Has[Dependency2]).get)
+
+      final class ResourceHasImpl[F[-_, +_, +_]: BIOLocal](
+      ) extends DIResource.LiftF(for {
+          d1 <- getDep1
+          d2 <- getDep2
+        } yield new Trait2 {val dep1 = d1; val dep2 = d2})
+
+      final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
+        d1: Dependency1,
+      ) extends DIResource.LiftF[F[Nothing, ?], Trait1](
+        F.pure(trait1(d1))
+      )
+      def definition[F[-_, +_, +_]: TagK3: BIOLocal] = PlannerInput.noGc(new ModuleDef {
+        make[Dependency1]
+        make[Dependency2]
+        make[Dependency3]
+        addImplicit[BIOLocal[F]]
+        addImplicit[BIOApplicative[F[Any, +? , +?]]]
+        make[Trait3 { def dep1: Dependency1 }].fromHas((d3: Dependency3) => (for {
+          d1 <- getDep1
+          d2 <- getDep2
+        } yield new Trait3 {
+          override val dep1 = d1
+          override val dep2 = d2
+          override val dep3 = d3
+        }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3])
+        make[Trait2].fromHas(ClassConstructor[ResourceHasImpl[F]])
+        make[Trait1].fromHas(ClassConstructor[ResourceEmptyHasImpl[F[Any, +?, +?]]])
+      })
+
+      val injector = mkNoCyclesInjector()
+      val plan = injector.plan(definition[ZIO])
+      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+
+      val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
+
+      assert(instantiated.dep1 eq context.get[Dependency1])
+      assert(instantiated.dep2 eq context.get[Dependency2])
+      assert(instantiated.dep3 eq context.get[Dependency3])
+
+      val instantiated1 = context.get[Trait3 { def dep1: Dependency1 }]
+      assert(instantiated1.dep2 eq context.get[Dependency2])
+
+      val instantiated2 = context.get[Trait1]
+      assert(instantiated2 ne null)
     }
 
     "can handle AnyVals" in {
-      import izumi.distage.fixtures.TraitCases.TraitCase6._
+      import TraitCase6._
 
       val definition = PlannerInput.noGc(new ModuleDef {
         make[Dep]
