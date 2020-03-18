@@ -3,7 +3,6 @@ package izumi.functional.bio
 import cats.Eval
 import cats.effect.{CancelToken, Concurrent, ExitCase, Fiber}
 import izumi.functional.bio.BIOCatsConversions._
-import izumi.functional.bio.BIOFiber._
 import izumi.functional.bio.SpecificityHelper.{S1, S10, S2, S3, S4, S5, S6, S7, S8, S9}
 
 import scala.util.Either

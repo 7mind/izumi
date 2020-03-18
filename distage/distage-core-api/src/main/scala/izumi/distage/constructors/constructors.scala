@@ -6,7 +6,6 @@ import izumi.distage.model.exceptions.{TraitInitializationFailedException, Unsup
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.reflection.Tags.WeakTag
-import zio.Has
 
 import scala.language.experimental.{macros => enableMacros}
 
@@ -51,7 +50,9 @@ object FactoryConstructor {
 object HasConstructor {
   def apply[T](implicit ctor: HasConstructor[T]): ProviderMagnet[T] = ctor.provider
 
-  implicit def materialize[T <: Has[_]]: HasConstructor[T] = macro HasConstructorMacro.mkHasConstructor[T]
+  val empty: HasConstructor[Any] = new HasConstructor(ProviderMagnet.unit)
+
+  implicit def materialize[T]: HasConstructor[T] = macro HasConstructorMacro.mkHasConstructor[T]
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {

@@ -31,15 +31,13 @@ object ClassConstructorMacros {
 abstract class HasConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def hasConstructorAssertion(targetType: Type): Unit = {
-    val (good, bad) = ReflectionUtil
-      .intersectionTypeMembers[c.universe.type](targetType)
-      .partition(tpe => tpe.typeConstructor.typeSymbol.fullName == "zio.Has")
+  def ziohasConstructorAssertion(targetType: Type, deepIntersection: List[Type]): Unit = {
+    val (good, bad) = deepIntersection.partition(tpe => tpe.typeConstructor.typeSymbol.fullName == "zio.Has")
     if (bad.nonEmpty) {
-      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has`: $bad (${bad.map(_.typeSymbol)})")
+      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has` or `Any`: $bad (${bad.map(_.typeSymbol)})")
     }
     if (good.isEmpty) {
-      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` type constructors in it, type was $targetType (${targetType.typeSymbol}")
+      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` or `Any` type constructors in it, type was $targetType (${targetType.typeSymbol}")
     }
   }
 
@@ -73,7 +71,7 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
 
   def traitConstructorAssertion(targetType: Type): Unit = {
     ReflectionUtil
-      .intersectionTypeMembers[c.universe.type](targetType)
+      .deepIntersectionTypeMembers[c.universe.type](targetType)
       .find(tpe => tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal)
       .foreach { err =>
         c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter or a final class $err (${err.typeSymbol}) in type constructor position")
@@ -240,7 +238,7 @@ abstract class ConstructorMacrosBase {
                                           constructorParameters: List[List[Tree]],
                                           methodImpls: List[Tree],
                                         ): Tree = {
-    val parents = ReflectionUtil.intersectionTypeMembers[u.u.type](targetType)
+    val parents = ReflectionUtil.deepIntersectionTypeMembers[u.u.type](targetType)
     parents match {
       case parent :: Nil =>
         if (methodImpls.isEmpty) {

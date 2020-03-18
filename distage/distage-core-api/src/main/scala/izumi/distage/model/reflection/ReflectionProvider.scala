@@ -10,7 +10,7 @@ trait ReflectionProvider {
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
   def symbolToWiring(tpe: TypeNative): Wiring
-  def zioHasParameters(transformName: String => String)(tpe: TypeNative): List[Association.Parameter]
+  def zioHasParameters(transformName: String => String)(deepIntersection: List[TypeNative]): List[Association.Parameter]
 
   def isConcrete(tpe: TypeNative): Boolean
   def isWireableAbstract(tpe: TypeNative): Boolean

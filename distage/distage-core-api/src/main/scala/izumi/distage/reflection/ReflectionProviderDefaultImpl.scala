@@ -51,9 +51,10 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def zioHasParameters(transformName: String => String)(tpe: u.TypeNative): List[u.Association.Parameter] = {
-    ReflectionUtil.intersectionTypeMembers[u.u.type](tpe).map {
-      tpe =>
+  override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
+    deepIntersection.map {
+      hasTpe =>
+        val tpe = ReflectionUtil.norm(u.u)(hasTpe.dealias).typeArgs.head
         val syntheticSymbolInfo = SymbolInfo.Static.syntheticFromType(transformName)(tpe)
         Association.Parameter(syntheticSymbolInfo, keyFromSymbolResultType(syntheticSymbolInfo))
     }

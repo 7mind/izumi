@@ -51,6 +51,9 @@ trait Distage {
   type FactoryConstructor[T] = constructors.FactoryConstructor[T]
   val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
 
+  type HasConstructor[T] = constructors.HasConstructor[T]
+  val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
+
   type GCMode = model.plan.GCMode
   val GCMode: model.plan.GCMode.type = model.plan.GCMode
 

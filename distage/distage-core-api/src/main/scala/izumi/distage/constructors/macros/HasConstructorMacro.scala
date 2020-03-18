@@ -6,13 +6,12 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
-import zio.Has
 
 import scala.reflect.macros.blackbox
 
 object HasConstructorMacro {
 
-  def mkHasConstructor[T <: Has[_]: c.WeakTypeTag](c: blackbox.Context): c.Expr[HasConstructor[T]] = {
+  def mkHasConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[HasConstructor[T]] = {
     val macroUniverse = StaticDIUniverse(c)
     val impls = HasConstructorMacros(c)(macroUniverse)
     import c.universe._
@@ -20,26 +19,36 @@ object HasConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("HasConstructor", targetType)
-    hasConstructorAssertion(targetType)
+    val deepIntersection = ReflectionUtil
+      .deepIntersectionTypeMembers[c.universe.type](targetType)
+      .filter(_ ne definitions.AnyTpe)
 
-    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+    targetType match {
+      case definitions.AnyTpe =>
+        c.Expr[HasConstructor[T]](q"_root_.izumi.distage.constructors.HasConstructor.empty")
 
-    val params = reflectionProvider.zioHasParameters(c.freshName)(targetType)
-    val provider: c.Expr[ProviderMagnet[T]] = {
-      generateProvider[T, ProviderType.ZIOHas.type](params :: Nil) {
-        case (headParam :: params) :: Nil =>
-          params.foldLeft(q"_root_.zio.Has.apply($headParam)") {
-            (expr, arg) => q"$expr.add($arg)"
+      case _ =>
+        ziohasConstructorAssertion(targetType, deepIntersection)
+
+        val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
+        val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+
+        val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
+        val provider: c.Expr[ProviderMagnet[T]] = {
+          generateProvider[T, ProviderType.ZIOHas.type](params :: Nil) {
+            case (headParam :: params) :: Nil =>
+              params.foldLeft(q"_root_.zio.Has.apply($headParam)") {
+                (expr, arg) => q"$expr.add($arg)"
+              }
+            case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type ${targetType} in HasConstructorMacro")
           }
-        case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type ${targetType} in HasConstructorMacro")
-      }
+        }
+
+        val res = c.Expr[HasConstructor[T]](q"{ new ${weakTypeOf[HasConstructor[T]]}($provider) }")
+        logger.log(s"Final syntax tree of HasConstructor for $targetType:\n$res")
+
+        res
     }
-
-    val res = c.Expr[HasConstructor[T]](q"{ new ${weakTypeOf[HasConstructor[T]]}($provider) }")
-    logger.log(s"Final syntax tree of HasConstructor for $targetType:\n$res")
-
-    res
   }
 
 }

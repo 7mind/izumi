@@ -1,64 +1,10 @@
 package izumi.fundamentals.reflection
 
-import java.lang.reflect.Method
-
 import scala.annotation.tailrec
-import scala.language.reflectiveCalls
-import scala.reflect.api
-import scala.reflect.api.{Mirror, TypeCreator, Universe}
-import scala.reflect.internal.Symbols
+import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.{universe => ru}
-import scala.util.{Failure, Success, Try}
 
 object ReflectionUtil {
-  final class MethodMirrorException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
-
-  def toJavaMethod(definingClass: ru.Type, methodSymbol: ru.Symbol): Method = {
-    // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
-    val method = methodSymbol.asMethod
-    definingClass match {
-      case r: ru.RefinedTypeApi =>
-        throw new MethodMirrorException(
-          s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}")
-
-      case o =>
-        toJavaMethod((scala.reflect.runtime.currentMirror: ru.Mirror).runtimeClass(o), method) match {
-          case Failure(exception) =>
-            throw new MethodMirrorException(s"Failed to reflect method: $methodSymbol in $definingClass", exception)
-          case Success(value) =>
-            value
-        }
-    }
-  }
-
-  def toJavaMethod(clazz: Class[_], methodSymbol: ru.MethodSymbol): Try[Method] = {
-    Try {
-      val mirror = ru.runtimeMirror(clazz.getClassLoader)
-      val privateMirror = mirror.asInstanceOf[ {
-        def methodToJava(sym: Symbols#MethodSymbol): Method
-      }]
-      val javaMethod = privateMirror.methodToJava(methodSymbol.asInstanceOf[Symbols#MethodSymbol])
-      javaMethod
-    }
-  }
-
-  def typeToTypeTag[T](u: Universe)(tpe: u.Type, mirror: Mirror[u.type]): u.TypeTag[T] = {
-    val creator: TypeCreator = new reflect.api.TypeCreator {
-      def apply[U <: SingletonUniverse](m: Mirror[U]): U#Type = {
-        assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
-        tpe.asInstanceOf[U#Type]
-      }
-    }
-
-    u.TypeTag(mirror, creator)
-  }
-
-  implicit final class WeakTypeTagMigrate[T](private val weakTypeTag: Universe#WeakTypeTag[T]) extends AnyVal {
-    def migrate[V <: SingletonUniverse](m: api.Mirror[V]): m.universe.WeakTypeTag[T] = {
-      weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
-    }
-  }
 
   def deannotate[U <: SingletonUniverse](typ: U#Type): U#Type = {
     typ match {
@@ -78,6 +24,18 @@ object ReflectionUtil {
     x match {
       case RefinedType(t :: Nil, m) if m.isEmpty => norm(u)(t)
       case AnnotatedType(_, t) => norm(u)(t)
+      case _ => x
+    }
+  }
+
+  /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
+    * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
+    * So we just strip it when we get it. */
+  @tailrec
+  final def normSingleton[U <: SingletonUniverse](x: U#Type): U#Type = {
+    x match {
+      case r: U#RefinedTypeApi if (r.parents.drop(1) eq Nil) && r.decls.isEmpty => normSingleton[U](r.asInstanceOf[U#Type])
+      case a: U#AnnotatedTypeApi => normSingleton[U](a.underlying)
       case _ => x
     }
   }
@@ -149,10 +107,10 @@ object ReflectionUtil {
     tpe1.dealias =:= tpe1
   }
 
-  def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
+  def deepIntersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
     def go(tpe: U#Type): List[U#Type] = {
       tpe match {
-        case r: U#RefinedTypeApi => r.parents.flatMap(intersectionTypeMembers[U](_: U#Type))
+        case r: U#RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers[U](normSingleton[U](t.dealias): U#Type))
         case _ => List(tpe)
       }
     }

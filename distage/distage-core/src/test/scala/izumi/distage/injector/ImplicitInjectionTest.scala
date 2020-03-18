@@ -47,7 +47,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
   }
 
-  "Progression test: As of now, implicit parameters are injected from DI object graph, not from Scala's lexical implicit scope" in {
+  "Implicit parameters are injected from the DI object graph, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
     val definition = PlannerInput.noGc(new ModuleDef {

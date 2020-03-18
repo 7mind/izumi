@@ -398,7 +398,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
+        libs = allMonadsOptional,
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
@@ -440,7 +440,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq.empty,
+        libs = Seq(zio_core in Scope.Test.all),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
@@ -516,9 +516,8 @@ object Izumi {
       Artifact(
         name = Projects.logstage.core,
         libs = Seq(scala_reflect in Scope.Provided.all) ++
-          Seq(cats_core, zio_core).map(_ in Scope.Optional.all) ++
-          Seq(scala_java_time) ++
-          allMonadsTest,
+          allMonadsOptional ++
+          Seq(scala_java_time),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
