@@ -8,6 +8,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.functional.bio.{BIOLocal, BIOMonad3}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.unused
@@ -137,7 +138,7 @@ trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
 object DIResource {
   import cats.effect.Resource
 
-  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+  implicit final class DIResourceUse[F[_], +A](private val resource: DIResourceBase[F, A]) extends AnyVal {
     def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
@@ -227,7 +228,7 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+  implicit final class DIResourceCatsSyntax[+F[_], +A](private val resource: DIResourceBase[F, A]) extends AnyVal {
     /** Convert [[DIResource]] to [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
       Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
@@ -256,7 +257,7 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceSimpleSyntax[A](private val resource: DIResourceBase[Identity, A]) extends AnyVal {
+  implicit final class DIResourceSimpleSyntax[+A](private val resource: DIResourceBase[Identity, A]) extends AnyVal {
     def toEffect[F[_]: DIEffect]: DIResourceBase[F, A] = {
       new DIResourceBase[F, A] {
         override type InnerResource = resource.InnerResource
@@ -267,7 +268,7 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceFlatten[F[_], A](private val resource: DIResourceBase[F, DIResourceBase[F, A]]) extends AnyVal {
+  implicit final class DIResourceFlatten[F[_], +A](private val resource: DIResourceBase[F, DIResourceBase[F, A]]) extends AnyVal {
     def flatten(implicit F: DIEffect[F]): DIResourceBase[F, A] = resource.flatMap(identity)
   }
 

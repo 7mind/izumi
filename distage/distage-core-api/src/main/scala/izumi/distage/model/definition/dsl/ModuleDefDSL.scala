@@ -15,7 +15,7 @@ import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.fundamentals.reflection.Tags.{Tag, TagK, TagK3}
-import zio.{IO, ZIO}
+import zio.{Has, IO, ZIO, ZLayer, ZManaged}
 
 /**
   * DSL for defining module Bindings.
@@ -327,28 +327,56 @@ object ModuleDefDSL {
         dsl.fromEffect[IO[E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
       }
 
-//      def fromHas[F0[_, _], R, F[_], I <: T](effect: F0[R, I])(implicit R: DIRunReader.Aux[F0, F], tagK: TagK[F], tagI: Tag[I], ctor: HasConstructor[R]): AfterBind = {
-//        dsl.fromEffect[F, I](HasConstructor[R].map(R.provide(effect)(_)))
-//      }
-//      def fromHas[F0[_, _], R, F[_], I <: T](function: ProviderMagnet[F0[R, I]])(implicit R: DIRunReader.Aux[F0, F], tagK: TagK[F], tagI: Tag[I], ctor: HasConstructor[R]): AfterBind = {
-//        dsl.fromEffect[F, I](function.map2(HasConstructor[R])(R.provide(_)(_)))
-//      }
-
-      def fromHas[F[-_, +_, +_]: TagK3: BIOLocal, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map(effect.provide(_)))
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
+        dsl.fromResource(HasConstructor[R].map(resource.provide))
       }
-      def fromHas[F[-_, +_, +_]: TagK3: BIOLocal, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZManaged[R, E, I]])(implicit d1: DummyImplicit): AfterBind = {
+        dsl.fromResource(function.map2(HasConstructor[R])(_.provide(_)))
+      }
+
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](layer: ZLayer[R, E, Has[I]]): AfterBind = {
+        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get).provide))
+      }
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](function: ProviderMagnet[ZLayer[R, E, Has[I]]]): AfterBind = {
+        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
+        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          (r, F: BIOLocal[F]) => F.provide(effect)(r)
+        })
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
+        dsl.fromEffect[F[Any, E, ?], I] (function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((effect, r), f) => f.provide(effect)(r)
+        })
+      }
+
+      /** Adds a dependency on `BIOLocal[F]` */
+      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I]): AfterBind = {
+        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          (r: R, F: BIOLocal[F]) => provide(F)(resource, r)
+        })
+      }
+
+      def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit d1: DummyImplicit): AfterBind = {
+        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((resource, r), f) => provide(f)(resource, r)
+        })
+      }
+
+      @inline private[this] def provide[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: DIResourceBase[F[R, E, ?], A], r: R): DIResourceBase[F[Any, E, ?], A] = {
+        new DIResourceBase[F[Any, E, ?], A] {
+          override type InnerResource = resource.InnerResource
+          override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
+          override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
+          override def extract(rr: InnerResource): A = resource.extract(rr)
+        }
       }
     }
-//    implicit final class MakeFromHasKleisli[T, AfterBind](private val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
-//      def fromHasKleisli[F[_]: TagK, R: HasConstructor, E: Tag, I <: T: Tag](effect: Kleisli[F, R, I]): AfterBind = {
-//        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map(effect.provide(_)))
-//      }
-//      def fromHas[F[-_, +_, +_]: TagK3: BIOLocal, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
-//        dsl.fromEffect[F[Any, E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
-//      }
-//    }
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
