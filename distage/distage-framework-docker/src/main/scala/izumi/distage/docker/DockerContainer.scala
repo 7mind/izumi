@@ -184,7 +184,7 @@ object DockerContainer {
     }
 
     private[this] def withLocalMutex[E](waitFor: FiniteDuration = 1.second, maxAttempts: Int = 10)(eff: F[E]): F[E] = {
-      def acquireExclusiveLock(chanel: FileChannel, attempts: Int = 0): F[E] = {
+      def acquireAndRun(chanel: FileChannel, attempts: Int = 0): F[E] = {
         DIEffect[F].maybeSuspend {
           logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for ${config.image}.")
           try {
@@ -196,7 +196,7 @@ object DockerContainer {
           case Some(v) =>
             eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
           case None if attempts < maxAttempts =>
-            DIEffectAsync[F].sleep(waitFor).flatMap(_ => acquireExclusiveLock(chanel, attempts + 1))
+            DIEffectAsync[F].sleep(waitFor).flatMap(_ => acquireAndRun(chanel, attempts + 1))
           case _ =>
             logger.warn(s"Cannot acquire lock for image ${config.image} after $attempts. This may lead to creation of a new container duplicate.")
             eff
@@ -217,7 +217,7 @@ object DockerContainer {
             }
           }(_ => DIEffect[F].unit)
       } {
-        acquireExclusiveLock(_)
+        acquireAndRun(_)
       }
     }
 
