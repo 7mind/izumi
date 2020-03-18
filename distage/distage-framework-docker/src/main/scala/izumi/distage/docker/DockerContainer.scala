@@ -7,8 +7,10 @@ import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
 import distage.TagK
 import izumi.distage.docker.Docker._
+import izumi.distage.docker.DockerContainer.ContainerResource
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
@@ -45,7 +47,7 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Container]): ProviderMagnet[DIResource[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }
@@ -76,28 +78,27 @@ final case class DockerContainer[Tag](
 }
 
 object DockerContainer {
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
+  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => ContainerResource[F, conf.Tag] = {
     new ContainerResource[F, conf.Tag](conf.config, _, _)(_, _)
   }
 
-  implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[DIResource[F, DockerContainer[T]]]) extends AnyVal {
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+  implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[ContainerResource[F, T]]) extends AnyVal {
+    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
 
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[T2]]
     }
 
     def connectToNetwork(
       networkDecl: ContainerNetworkDef
-    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]], tag2: distage.Tag[DIResource[F, DockerContainer[T]]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
+    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]], tag2: distage.Tag[ContainerResource[F, T]]): ProviderMagnet[ContainerResource[F, T]] = {
       self.flatAp {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => that: DIResource[F, DockerContainer[T]] =>
-          val containerResource = that.asInstanceOf[ContainerResource[F, T]]
-          import containerResource._
-          val newConf = containerResource.config.copy(networks = containerResource.config.networks + net)
-          containerResource.copy(config = newConf) : DIResource[F, DockerContainer[T]]
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => that: ContainerResource[F, T] =>
+          import that._
+          val newConf = that.config.copy(networks = that.config.networks + net)
+          that.copy(config = newConf)
       }
     }
   }
