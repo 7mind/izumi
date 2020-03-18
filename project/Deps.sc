@@ -440,8 +440,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq(
-          zio_core in Scope.Test.all,
+        libs = allMonadsTest ++ Seq(
           scala_java_time in Scope.Test.js,
         ),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),

@@ -1,4 +1,4 @@
-package izumi.distage.testkit.catstest
+package izumi.distage.compat
 
 import cats.Id
 import cats.effect._
@@ -16,7 +16,7 @@ import izumi.distage.model.recursive.Bootloader
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
-class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
+final class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
 
   "cats-effect extensions" should {
     "work" in {

@@ -13,7 +13,7 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.TagMacro
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
-import zio.{Exit, Reservation, ZIO, ZManaged}
+import zio.{Exit, Has, Reservation, ZIO, ZLayer, ZManaged}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -530,6 +530,7 @@ object DIResource {
         fromCats(resource)
     }
   }
+
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
@@ -543,6 +544,21 @@ object DIResource {
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZIONothing[R, A](managed: => ZManaged[R, Nothing, A])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
     ProviderMagnet.lift(fromZIO(managed))
+  }
+
+  /**
+    * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
+    */
+  implicit final def providerFromZLayerHas1[R, E, A: zio.Tagged](layer: => ZLayer[R, E, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
+    ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
+  }
+
+  /**
+    * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
+    */
+  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
+  implicit final def providerFromZLayerNothingHas1[R, A: zio.Tagged](layer: => ZLayer[R, Nothing, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
+    ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
   }
 
   /** Support binding various FP libraries' Resource types in `.fromResource` */
@@ -613,6 +629,21 @@ object DIResource {
         }
       }
     }
+
+    /**
+      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      */
+    implicit final def providerFromZLayerProvider[R, E, A: zio.Tagged]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], FromZIO[R, E, A]] = {
+      new AdaptProvider[ZLayer[R, E, Has[A]]] {
+        type Out = DIResource.FromZIO[R, E, A]
+
+        override def apply(a: ProviderMagnet[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[FromZIO[R, E, A]] = {
+          import tag.tagFull
+          a.map(layer => fromZIO(layer.map(_.get).build))
+        }
+      }
+    }
+
   }
 
   @inline

@@ -926,6 +926,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test
     )
   )

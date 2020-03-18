@@ -1,4 +1,4 @@
-package izumi.distage.testkit.catstest
+package izumi.distage.compat
 
 import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
@@ -6,8 +6,8 @@ import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.model.plan.GCMode
-import izumi.distage.testkit.catstest.CatsResourcesTest._
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.compat.CatsResourcesTest._
+import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -19,15 +19,12 @@ object CatsResourcesTest {
   class DBConnection
   class MessageQueueConnection
 
-  class MyApp(db: DBConnection, mq: MessageQueueConnection) {
-    db.discard()
-    mq.discard()
-
+  class MyApp(@unused db: DBConnection, @unused mq: MessageQueueConnection) {
     val run = IO(println("Hello World!"))
   }
 }
 
-class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
+final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()

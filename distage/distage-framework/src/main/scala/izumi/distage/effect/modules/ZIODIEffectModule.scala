@@ -8,8 +8,10 @@ import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
 import izumi.logstage.api.IzLogger
+import zio.blocking.Blocking
+import zio.internal.Executor
 import zio.internal.tracing.TracingConfig
-import zio.{IO, ZIO}
+import zio.{Has, IO, ZIO}
 
 import scala.concurrent.ExecutionContext
 
@@ -33,14 +35,15 @@ trait ZIODIEffectModule extends ModuleDef {
       DIResource.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
   }
 
-  make[BlockingIO3[ZIO]].from {
+  make[zio.blocking.Blocking.Service].from {
     blockingPool: ThreadPoolExecutor @Id("zio.io") =>
-      BlockingIOInstances.BlockingZIOFromThreadPool(blockingPool)
+      new Blocking.Service {
+        override val blockingExecutor: Executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
+      }
   }
-  make[BlockingIO[IO]].from {
-    implicit b: BlockingIO3[ZIO] =>
-      implicitly[BlockingIO[IO]]
-  }
+  make[zio.blocking.Blocking].from(Has(_: Blocking.Service))
+  make[BlockingIO3[ZIO]].from(BlockingIOInstances.blockingIOZIO3Blocking(_: zio.blocking.Blocking))
+  make[BlockingIO[IO]].from(BlockingIOInstances.blockingIO3To2[ZIO, Any](_: BlockingIO3[ZIO]))
 
   addImplicit[BIOTransZio[IO]]
   addImplicit[BIOFork3[ZIO]]
@@ -87,7 +90,8 @@ trait ZIODIEffectModule extends ModuleDef {
       implicitly[BIOTemporal[IO]]
   }
 
-  make[zio.clock.Clock].from(zio.Has(zio.clock.Clock.Service.live))
+  make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)
+  make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
 
   make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
   make[BIORunner[IO]].using[ZIORunner]
