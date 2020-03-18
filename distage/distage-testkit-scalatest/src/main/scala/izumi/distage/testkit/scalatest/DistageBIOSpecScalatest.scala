@@ -16,5 +16,5 @@ abstract class DistageBIOSpecScalatest[F[+_, +_]](implicit val tagBIO: TagKK[F])
   }
 
   // disable single-parameter syntax by removing `implicit`
-  override protected def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F[Throwable, *]] = super.convertToWordSpecStringWrapperDS(s)
+  override protected def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F[Throwable, ?]] = super.convertToWordSpecStringWrapperDS(s)
 }
