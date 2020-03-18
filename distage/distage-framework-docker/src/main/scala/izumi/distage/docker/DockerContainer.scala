@@ -207,8 +207,16 @@ object DockerContainer {
       val filename = s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}.tmp"
       val file = new File(s"$tmpDir/$filename")
       file.createNewFile()
-      file.deleteOnExit()
-      DIEffect[F].bracketAuto(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
+      DIEffect[F].bracket(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
+        ch =>
+          DIEffect[F].definitelyRecover{
+            DIEffect[F].maybeSuspend {
+              ch.close()
+              file.delete()
+              ()
+            }
+          }(_ => DIEffect[F].unit)
+      } {
         acquireExclusiveLock(_)
       }
     }
