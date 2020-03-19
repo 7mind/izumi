@@ -44,7 +44,7 @@ Key semantic features:
 Overview
 --------
 
-The following graphic shows the current BIO hierarchy. Note that alll the trifuncto `BIO*3` typeclasses
+The following graphic shows the current BIO hierarchy. Note that alll the trifunctor `BIO*3` typeclasses
 have bifunctor `BIO*` counterparts.
 
 ![BIO-hierarchy](media/bio-hierarchy.svg)
