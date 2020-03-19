@@ -33,7 +33,8 @@ import scala.language.implicitConversions
   *     for {
   *       _    <- store.purchasePet("Zab", 213)
   *       pets <- pets.myPets
-  *     } yield assert(pets.contains("Zab"))
+  *       _    <- assertIO(pets.contains("Zab"))
+  *     } yield ()
   *     // : ZIO[PetStoreEnv with PetsEnv, Throwable, Unit]
   *   }
   * }}}
@@ -46,8 +47,9 @@ import scala.language.implicitConversions
   *     for {
   *       _    <- store.purchasePet("Zab", 213)
   *       pets <- pets.myPets
-  *     } yield assert(pets.contains("Zab"))
-  *     // : ZIO[PetStoreEnv with PetsEnv, Throwable, Unit]
+  *       _    <- assertIO(pets.contains("Zab"))
+  *     } yield ()
+  *     // : ZIO[PetsEnv, Throwable, Unit]
   *   }
   * }}}
   */

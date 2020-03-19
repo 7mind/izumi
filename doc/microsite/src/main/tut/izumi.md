@@ -15,7 +15,7 @@ including the following components:
 3. @ref[**distage-framework-docker**](distage/distage-framework-docker.md) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. @ref[**LogStage**](logstage/00_logstage.md) – Automatic structural logs from Scala string interpolations,
 5. @ref[**BIO**](bio/00_bio.md) - A typeclass hierarchy for tagless final style with Bifunctor and Trifunctor effect types. Focused on ergonomics, ease of use with zero boilerplate.
-6. @ref[**izumi-reflect**](https://github.com/zio/izumi-reflect) (moved to [zio/izumi-reflect](https://github.com/zio/izumi-reflect)) - Portable, lightweight and kind-polymorphic alternative to `scala-reflect`'s Typetag for Scala, Scala.js, Scala Native and ([soon](https://github.com/7mind/dotty-typetag-research)) Dotty
+6. [**izumi-reflect**](https://github.com/zio/izumi-reflect) (moved to [zio/izumi-reflect](https://github.com/zio/izumi-reflect)) - Portable, lightweight and kind-polymorphic alternative to `scala-reflect`'s Typetag for Scala, Scala.js, Scala Native and ([soon](https://github.com/7mind/dotty-typetag-research)) Dotty
 7. @ref[**IdeaLingua**](idealingua/00_idealingua.md) (moved to [7mind/idealingua-v1](https://github.com/7mind/idealingua-v1)) – API Definition, Data Modeling and RPC language, optimized for fast prototyping – like gRPC or Swagger, but with a human face. Generates RPC servers and clients for Go, TypeScript, C# and Scala,
 8. @ref[**Opinionated SBT plugins**](sbt/00_sbt.md) (moved to [7mind/sbtgen](https://github.com/7mind/sbtgen)) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven)
 9. @ref[**Percept-Plan-Execute-Repeat (PPER)**](pper/00_pper.md) – A pattern that enables modeling very complex domains and orchestrate deadly complex processes a lot easier than you're used to.
@@ -66,6 +66,7 @@ Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 
 * [distage](distage/00_distage.md)
 * [LogStage](logstage/00_logstage.md)
+* [BIO](bio/00_bio.md)
 * [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
