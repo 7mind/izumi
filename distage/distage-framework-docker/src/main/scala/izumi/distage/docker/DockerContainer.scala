@@ -45,7 +45,11 @@ trait ContainerDef {
     * }
     * }}}
     *
-    * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
+    * To kill all containers spawned by distage, use the following command:
+    *
+    * {{{
+    *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
+    * }}}
     *
     */
   final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
@@ -85,18 +89,23 @@ object DockerContainer {
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: ProviderMagnet[ContainerResource[F, T]]) extends AnyVal {
     /**
-     * Could modify config on fly with usage of [[ProviderMagnet]].
-     * Usage example:
-     * {{{
-     *   KafkaDocker.make[F].modifyConfig {
-     *       (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network) => old: KafkaDocker.Config =>
-     *         val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
-     *         val zkNet = KafkaDocker.config.networks + net
-     *         old.copy(env = zkEnv, networks = zkNet)
-     *     }
-     * }}}
-     *
-    */
+      * Allows you to modify [[ContainerConfig]] while summoning additional dependencies from the object graph using [[ProviderMagnet]].
+      *
+      * Example:
+      *
+      * {{{
+      *   KafkaDocker
+      *     .make[F]
+      *     .modifyConfig {
+      *       (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network) =>
+      *         (old: KafkaDocker.Config) =>
+      *           val zkEnv = KafkaDocker.config.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
+      *           val zkNet = KafkaDocker.config.networks + net
+      *           old.copy(env = zkEnv, networks = zkNet)
+      *     }
+      * }}}
+      *
+      */
     def modifyConfig(
       modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
     )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
@@ -145,7 +154,7 @@ object DockerContainer {
 
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
-  final case class ContainerResource[F[_], T](
+  case class ContainerResource[F[_], T](
     config: Docker.ContainerConfig[T],
     clientw: DockerClientWrapper[F],
     logger: IzLogger,

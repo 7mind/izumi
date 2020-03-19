@@ -2,6 +2,7 @@ package izumi.distage.docker
 
 import java.util.concurrent.TimeUnit
 
+import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 
 import scala.concurrent.duration.FiniteDuration
@@ -32,9 +33,42 @@ object Docker {
   }
 
   /**
+    * Parameters that define the behavior of this docker container,
+    * Will be interpreted by [[DockerContainer.ContainerResource]]
+    *
+    * @param image    Docker Image to use
+    *
+    * @param ports    Ports to map on the docker container
+    *
+    * @param networks Docker networks to connect this container to
+    *
     * @param reuse    If true and [[ClientConfig#allowReuse]] is also true, keeps container alive after tests.
     *                 If false, the container will be shut down.
     *                 default: true
+
+    * @param healthCheck The function to use to test if a container has started already,
+    *                    by default probes to check if all [[ports]] are open and proceeds if so.
+    *
+    * @param healthCheckInterval Sleep interval between [[healthCheck]]s
+    *                            default: 1 second
+    *
+    * @param portProbeTimeout Sleep interval between port probes in the default [[healthCheck]]
+    *                         default: 200 milliseconds
+    *
+    * @param pullTimeout Maximum amount of time to wait for `docker pull` to download the image
+    *                    default: 120 seconds
+    *
+    * @param name     Name of the container, if left at `None` Docker will generate a random name
+    *
+    * @param env      Setup environment variables visible inside docker container
+    *
+    * @param entrypoint Docker entrypoint to use
+    *
+    * @param cwd      Working directory to use inside the docker container
+    *
+    * @param mounts   Host paths mounted to Volumes inside the docker container
+    *
+    *
     */
   final case class ContainerConfig[T](
     image: String,
@@ -55,8 +89,26 @@ object Docker {
   )
 
   /**
+    * Client configuration that will be read from HOCON config.
+    * See `docker-reference.conf` for an example configuration.
+    * You can `include` the reference configuration if you want to use defaults.
+    *
     * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after tests.
     *                     If false, the container will be shut down.
+
+    * @param remote       Options to connect to a Remote Docker Daemon,
+    *                     will try to connect to remote docker if [[useRemote]] is `true`
+    *
+    * @param registry     Options to connect to custom Docker Registry host,
+    *                     will try to connect to specified registry, instead of the default if [[useRegistry]] is `true`
+    *
+    * @param readTimeoutMs    Read timeout in milliseconds
+    *
+    * @param connectTimeoutMs Connect timeout in milliseconds
+    *
+    * @param useRemote        Connect to Remote Docker Daemon
+    *
+    * @param useRegistry      Connect to speicifed Docker Registry
     */
   final case class ClientConfig(
     readTimeoutMs: Int,
@@ -67,6 +119,9 @@ object Docker {
     remote: Option[RemoteDockerConfig],
     registry: Option[DockerRegistryConfig],
   )
+  object ClientConfig {
+    implicit val distageConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.derived
+  }
 
   final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
 

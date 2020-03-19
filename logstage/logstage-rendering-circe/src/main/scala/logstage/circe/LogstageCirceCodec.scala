@@ -3,15 +3,18 @@ package logstage.circe
 import io.circe.{Encoder, Json, JsonNumber, JsonObject}
 import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 
-class LogstageCirceCodec[T : Encoder] extends LogstageCodec[T] {
+class LogstageCirceCodec[T: Encoder] extends LogstageCodec[T] {
   override def write(value: T, writer: LogstageWriter): Unit = {
-    LogstageCirceCodec.LogstageCirceJsonCodec.write(implicitly[Encoder[T]].apply(value), writer)
+    LogstageCirceJsonCodec.write(Encoder[T].apply(value), writer)
   }
 }
 
 object LogstageCirceCodec {
-  implicit object LogstageCirceJsonCodec extends LogstageCodec[Json] {
+  def apply[T: Encoder]: LogstageCodec[T] = derived[T]
 
+  def derived[T: Encoder]: LogstageCodec[T] = new LogstageCirceCodec[T]
+
+  val LogstageCirceJsonCodec: LogstageCodec[Json] = new LogstageCodec[Json] {
     def folder(writer: LogstageWriter): Json.Folder[Unit] = new Json.Folder[Unit] {
       override def onNull: Unit = writer.writeNull()
 

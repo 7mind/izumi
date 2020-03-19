@@ -22,6 +22,9 @@ package object logstage extends LogStage {
   override type StaticLogRouter = api.routing.StaticLogRouter
   override val StaticLogRouter: api.routing.StaticLogRouter.type = api.routing.StaticLogRouter
 
+  override type LogstageCodec[-T] = izumi.logstage.api.rendering.LogstageCodec[T]
+  override val LogstageCodec: izumi.logstage.api.rendering.LogstageCodec.type = izumi.logstage.api.rendering.LogstageCodec
+
   override type Log = api.Log.type
   override final val Log: api.Log.type = api.Log
 
