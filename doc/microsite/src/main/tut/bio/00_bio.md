@@ -1,40 +1,10 @@
 ---
 out: index.html
 ---
-LogStage
-========
+BIO
+===
 
-LogStage is a zero-cost structural logging framework for Scala & Scala.js
-
-Key features:
-
-1. LogStage extracts structure from ordinary string interpolations in your log messages with zero changes to code.
-2. LogStage uses macros to extract log structure, its faster at runtime than a typical reflective structural logging frameworks,
-3. Log contexts
-4. Console, File and SLF4J sinks included, File sink supports log rotation,
-5. Human-readable output and JSON output included,
-6. Method-level logging granularity. Can configure methods `com.example.Service.start` and `com.example.Service.doSomething` independently,
-7. Slf4J adapters: route legacy Slf4J logs into LogStage router
-
-Dependencies
-------------
-
-@@@vars
-```scala
-libraryDependencies ++= Seq(
-  // LogStage core library
-  "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
-  // Json output
-  "io.7mind.izumi" %% "logstage-rendering-circe" % "$izumi.version$",
-  // Router from Slf4j to LogStage
-  "io.7mind.izumi" %% "logstage-adapter-slf4j" % "$izumi.version$",
-  // LogStage integration with DIStage
-  "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
-  // Router from LogStage to Slf4J
-  "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
-)
-```
-@@@
+BIO is a set of typeclasses and algebras
 
 Overview
 --------
