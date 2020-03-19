@@ -39,18 +39,8 @@ libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.
 
 @@@
 
-Add a configuration file in HOCON format:
 
-```hocon
-# resources/application.conf
-conf {
-    name = "John"
-    age = 33
-    other = true
-}
-```
-
-Parse it into case classes and summon into your object graph:
+Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance bound to `AppConfig` into case classes:
 
 ```scala mdoc:reset-object:to-string
 import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
@@ -67,32 +57,48 @@ final class ConfigPrinter(conf: Conf, otherConf: OtherConf @Id("other")) {
   }
 }
 
-// load
-val config = ConfigFactory.defaultApplication()
+val module = new ConfigModuleDef {
+  make[ConfigPrinter]
 
-// declare paths to parse
-val configModule = new ConfigModuleDef {
+  // declare paths to parse
   makeConfig[Conf]("conf")
   makeConfig[OtherConf]("conf").named("other")
+ 
+  // add config instance
+  make[AppConfig].from(AppConfig(ConfigFactory.parseString(
+    """conf {
+      |  name = "John"
+      |  age = 33
+      |  other = true
+      |}""".stripMargin
+  )))
 }
 
-// add config itself to the graph
-val appConfigModule = AppConfigModule(config)
-
-val appModule = new ModuleDef {
-  make[ConfigPrinter]
-}
-
-Injector().produceGet[ConfigPrinter](
-  Seq(appModule, configModule, appConfigModule).merge
-).use {
-  configPrinter =>
+Injector().produceRun(module) {
+  configPrinter: ConfigPrinter =>
     configPrinter.print()
 } 
 ```
 
-Automatic derivation of config codecs is based on [circe-config](https://github.com/circe/circe-config) & [circe-derivation](https://github.com/circe/circe-derivation). 
-[Circe](https://github.com/circe/circe) codecs for a type will be reused if they exist.
+Automatic derivation of config codecs is based on [pureconfig-magnolia](https://github.com/pureconfig/pureconfig).
+Pureconfig codecs for a type will be used if they exist.
+
+Default configuration in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles
+will try to read the configurations from resources with names:
+
+```
+- $roleName.conf
+- $roleName-reference.conf
+- $roleName-reference-dev.conf
+- application.conf
+- application-reference.conf
+- application-reference-dev.conf
+- common.conf
+- common-reference.conf
+- common-reference-dev.conf
+```
+
+In order. You don't have to supply an `AppConfig` in tests or roles, unless you want to override default behavior.
 
 ### Plugins
 
