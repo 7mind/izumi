@@ -44,7 +44,7 @@ Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance 
 
 ```scala mdoc:reset-object:to-string
 import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
-import distage.config.{AppConfigModule, ConfigModuleDef}
+import distage.config.{AppConfig, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory
 
 final case class Conf(name: String, age: Int)

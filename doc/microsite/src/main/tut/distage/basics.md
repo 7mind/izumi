@@ -448,13 +448,11 @@ zio.Runtime.default.unsafeRun(io)
 
 You need to use effect-aware `Injector.produceF` method to use effect bindings.
 
-### Auto-Traits
+### ZIO Has Bindings
 
-distage can instantiate traits and structural types. All unimplemented fields in a trait or a refinement are filled in from the object graph.
+You can inject into ZIO Environment using `make[_].fromHas` syntax 
 
-This can be used to create ZIO Environment cakes with required dependencies.
-
-Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
+zio.Has implementations are derived at compile-time by @scaladoc[HasConstructor](izumi.distage.constructors.HasConstructor) macro
 and can be summoned at need. 
 
 Example:
@@ -462,10 +460,8 @@ Example:
 ```scala mdoc:reset:to-string
 import distage.{DIKey, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
-import zio.console.Console
-import zio.{UIO, URIO, ZIO, Ref, Task}
-
-def putStrLn(s: String): URIO[{ def console: Console.Service }, Unit] = ZIO.accessM(_.console.putStrLn(s))
+import zio.console.{putStrLn, Console}
+import zio.{UIO, URIO, ZIO, Ref, Task, Has}
 
 trait Hello {
   def hello: UIO[String]
@@ -477,9 +473,9 @@ trait World {
 // Environment forwarders that allow
 // using service functions from everywhere
 
-val hello: URIO[{def hello: Hello}, String] = ZIO.accessM(_.hello.hello)
+val hello: URIO[Has[Hello], String] = ZIO.accessM(_.get.hello)
 
-val world: URIO[{def world: World}, String] = ZIO.accessM(_.world.world)
+val world: URIO[Has[World], String] = ZIO.accessM(_.get.world)
 
 // service implementations
 
@@ -502,7 +498,7 @@ val makeWorld = {
 
 // the main function
 
-val turboFunctionalHelloWorld = {
+val turboFunctionalHelloWorld: URIO[Has[Hello] with Has[World] with Has[Console.Service], Unit] = {
   for {
     hello <- hello
     world <- world
@@ -510,24 +506,17 @@ val turboFunctionalHelloWorld = {
   } yield ()
 }
 
-// a generic function that creates an `R` trait where all fields are populated from the object graph
-
-def provideCake[R: TraitConstructor, A: Tag](fn: R => A): ProviderMagnet[A] = {
-  TraitConstructor[R].provider.map(fn)
-}
-
 val definition = new ModuleDef {
-  make[Hello].fromResource(provideCake(makeHello.provide(_)))
-  make[World].fromEffect(makeWorld)
-  make[Console.Service].fromValue(Console.Service.live)
-  make[UIO[Unit]].from(provideCake(turboFunctionalHelloWorld.provide))
+  make[Hello].fromHas(makeHello)
+  make[World].fromHas(makeWorld)
+  make[Console.Service].fromHas(Console.live)
+  make[Unit].fromHas(turboFunctionalHelloWorld)
 }
 
 val main = Injector()
-  .produceGetF[Task, UIO[Unit]](definition)
-  .useEffect
+  .produceRunF[Task, Unit](definition)((_: Unit) => Task.unit)
 
-zio.Runtime.global.unsafeRun(main)
+zio.Runtime.default.unsafeRun(main)
 ```
 
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
@@ -540,8 +529,8 @@ Example:
 
 ```scala mdoc:reset:to-string
 import cats.Contravariant
-import distage.{GCMode, Injector, ModuleDef, ProviderMagnet, Tag, TagK, TraitConstructor}
-import zio.{Task, UIO, URIO, ZIO}
+import distage.{GCMode, Injector, ModuleDef, ProviderMagnet, Tag, TagK, HasConstructor}
+import zio.{Task, UIO, URIO, ZIO, Has}
 
 trait Dependee[-R] {
 def x(y: String): URIO[R, Int]
@@ -556,22 +545,25 @@ implicit val contra2: Contravariant[Depender] = new Contravariant[Depender] {
   def contramap[A, B](fa: Depender[A])(f: B => A): Depender[B] = new Depender[B] { def y = fa.y.provideSome(f) }
 }
 
-trait DependeeR { def dependee: Dependee[Any] }
-trait DependerR { def depender: Depender[Any] }
-object dependee extends Dependee[DependeeR] { def x(y: String) = ZIO.accessM(_.dependee.x(y)) }
-object depender extends Depender[DependerR] { def y            = ZIO.accessM(_.depender.y) }
+type DependeeR = Has[Dependee[Any]]
+type DependerR = Has[Depender[Any]]
+object dependee extends Dependee[DependeeR] { def x(y: String) = ZIO.accessM(_.get.x(y)) }
+object depender extends Depender[DependerR] { def y            = ZIO.accessM(_.get.y) }
 
 // cycle
 object dependerImpl extends Depender[DependeeR] {
   def y: URIO[DependeeR, String] = dependee.x("hello").map(_.toString)
 }
 object dependeeImpl extends Dependee[DependerR] {
-  def x(y: String): URIO[DependerR, Int] = if (y == "hello") UIO(5) else depender.y.map(y.length + _.length)
+  def x(y: String): URIO[DependerR, Int] = {
+    if (y == "hello") UIO(5) 
+    else depender.y.map(y.length + _.length)
+  }
 }
 
 /** Fulfill the environment dependencies of a service from the object graph */
-def fullfill[R: Tag: TraitConstructor, M[_]: TagK: Contravariant](service: M[R]): ProviderMagnet[M[Any]] = {
-  TraitConstructor[R].provider
+def fullfill[R: Tag: HasConstructor, M[_]: TagK: Contravariant](service: M[R]): ProviderMagnet[M[Any]] = {
+  HasConstructor[R]
     .map(depsCakeR => Contravariant[M].contramap(service)(_ => depsCakeR))
 }
 
@@ -582,7 +574,7 @@ val module = new ModuleDef {
 
 Injector()
   .produceRunF(module) {
-    TraitConstructor[DependeeR].provider.map {
+    HasConstructor[DependeeR].map {
       (for {
         r <- dependee.x("zxc")
         _ <- Task(println(s"result: $r"))
@@ -590,6 +582,13 @@ Injector()
     }
   }.fold(_ => 1, _ => 0)
 ```
+
+### Auto-Traits
+
+distage can instantiate traits and structural types. All unimplemented fields in a trait or a refinement are filled in from the object graph.
+
+Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
+and can be summoned at need. 
 
 If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
 

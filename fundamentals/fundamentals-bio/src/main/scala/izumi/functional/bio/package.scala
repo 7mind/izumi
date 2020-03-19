@@ -51,6 +51,10 @@ package object bio extends BIO3Syntax with BIOSyntax {
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
   type BIOFiber[F[+_, +_], +E, +A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
 
+  type BIORef3[F[-_, +_, +_], A] = BIORef[F[Any, +?, +?], A]
+  type BIOPromise3[F[-_, +_, +_], E, A] = BIOPromise[F[Any, +?, +?], E, A]
+  type BIOSemaphore3[F[-_, +_, +_]] = BIOSemaphore[F[Any, +?, +?]]
+
   type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO {
     def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly

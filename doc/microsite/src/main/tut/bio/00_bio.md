@@ -1,186 +1,50 @@
 ---
 out: index.html
 ---
+
 BIO
 ===
 
-BIO is a set of typeclasses and algebras
+BIO is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
+
+Key syntactic features:
+
+1. Ergonomic `F` summoner that is a single point of entry to all methods in the hierarchy
+2. No syntax imports. Syntax is automatically available whenever any typeclass from the hierarchy is menthioned.
+
+These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
+
+```scala mdoc:to-string
+import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+
+def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+  F.mkRef(0)
+   .flatMap(ref => ref.update(_ + i) *> ref.get)
+
+// update ref from the environment and return result
+def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+  F.access {
+    ref => 
+      for {
+        _   <- ref.update(_ + i)
+        res <- ref.get
+      } yield res
+  }
+```
+
+Key semantic features:
+
+1. Typed error handling with bifunctor effect types
+2. Automatic conversions to equivalent `cats.effect` instances in `import izumi.functional.bio.catz._`
+3. Automatic adaptation of trifunctor typeclasses to bifunctor typeclasses when required
+4. No ambiguous implicit errors. It's legal to have both `BIOMonad3` and `BIOMonadAsk` as constraints,
+    despite the fact that `BIOMonadAsk` provides a `BIOMonad3`: `def adderEnv[F[-_, +_, +_]: BIOMonad3: BIOMonadAsk] // would still work`
+5. Wrappers for primitive concurrent data structures: `BIORef`, `BIOPromise`, `BIOSemaphore`
 
 Overview
 --------
 
-The following snippet:
+The following graphic shows the current BIO hierarchy. Note that alll the trifuncto `BIO*3` typeclasses
+have bifunctor `BIO*` counterparts.
 
-```scala mdoc:reset
-import logstage.IzLogger
-import scala.util.Random
-
-val logger = IzLogger()
-
-val justAnArg = "example"
-val justAList = List[Any](10, "green", "bottles")
-
-logger.trace(s"Argument: $justAnArg, another arg: $justAList")
-
-// custom name, not based on `val` name
-
-logger.info(s"Named expression: ${Random.nextInt() -> "random number"}")
-
-// print result without a name
-
-logger.warn(s"Invisible argument: ${Random.nextInt() -> "random number" -> null}")
-
-// add following fields to all messages printed by a new logger value
-
-val ctxLogger = logger("userId" -> "user@google.com", "company" -> "acme")
-val delta = Random.nextInt(1000)
-
-ctxLogger.info(s"Processing time: $delta")
-```
-
-Will look like this in string form:
-
-![logstage-sample-output-string](media/00-logstage-sample-output-string.png)
-
-And like this in JSON:
-
-![logstage-sample-output-string](media/00-logstage-sample-output-json.png)
-
-Note:
-
-1. JSON formatter is type aware!
-2. Each JSON message contains `@class` field with holds a unique `event class` identifier.
-   All events produced by the same source code line will share the same `event class`.
-   
-Syntax Reference
-------------
-
-1. Simple variable:
-   ```scala
-   logger.info(s"My message: $argument")
-   ```
-
-2. Chain:
-   ```scala
-   logger.info(s"My message: ${call.method} ${access.value}")
-   ```
-
-3. Named expression:
-   ```scala
-   logger.info(s"My message: ${Some.expression -> "argname"}")
-   ```
-
-4. Invisible named expression:
-   ```scala
-   logger.info(s"My message: ${Some.expression -> "argname" -> null}")
-   ```
-
-5) De-camelcased name:
-   ```scala
-   logger.info(${camelCaseName-> ' '})
-   ```
-
-
-Basic setup
------------
-
-```scala mdoc:reset
-import logstage.{ConsoleSink, IzLogger, Trace}
-import logstage.circe.LogstageCirceRenderingPolicy
-
-val textSink = ConsoleSink.text(colored = true)
-val jsonSink = ConsoleSink(LogstageCirceRenderingPolicy(prettyPrint = true))
-
-val sinks = List(jsonSink, textSink)
-
-val logger: IzLogger = IzLogger(Trace, sinks)
-val contextLogger: IzLogger = logger("key" -> "value")
-
-logger.info("Hey")
-
-contextLogger.info(s"Hey")
-```
-
-Log algebras
-------------
-
-`LogIO` and `LogBIO` algebras provide a purely-functional API for one- and two-parameter effect types respectively:
-
-```scala mdoc:reset
-import logstage.{IzLogger, LogIO}
-import cats.effect.IO
-
-val logger = IzLogger()
-
-val log = LogIO.fromLogger[IO](logger)
-
-log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
-```
-
-```
-I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
-```
-
-`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
-
-Example: 
-
-```scala mdoc:reset
-import logstage.{IzLogger, LogstageZIO}
-import zio.IO
-
-val log = LogstageZIO.withFiberId(IzLogger())
-
-zio.Runtime.default.unsafeRun {
-  log.info(s"Hey! I'm logging with ${log}stage!")
-}
-```
-
-```
-I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
-```
-
-`LogIO`/`LogBIO` algebras can be extended with custom context using their `.apply` method, same as `IzLogger`:
-
-```scala mdoc:reset
-import com.example.Entity
-
-def load(entity: Entity): cats.effect.IO[Unit] = cats.effect.IO.unit
-```
-
-```scala mdoc
-import cats.effect.IO
-import cats.implicits._
-import logstage.LogIO
-import io.circe.Printer
-import io.circe.syntax._
-
-def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
-  val ctxLog = log("ID" -> entity.id, "entityAsJSON" -> entity.asJson.printWith(Printer.spaces2))
-
-  load(entity).handleErrorWith {
-    case error =>
-      ctxLog.error(s"Failed to import entity: $error.").void
-      // JSON message includes `ID` and `entityAsJSON` fields
-  }
-}
-```
-
-SLF4J Router
-------------
-
-When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
-
-Due to the global mutable nature of `slf4j`, to configure slf4j logging you'll
-have to mutate a global singleton `StaticLogRouter`. Replace its `LogRouter`
-with the same one you use elsewhere in your application to use the same configuration for Slf4j. 
-
-```scala mdoc:reset
-import logstage.IzLogger
-import izumi.logstage.api.routing.StaticLogRouter
-
-val myLogger = IzLogger()
-
-// configure SLF4j to use the same router that `myLogger` uses
-StaticLogRouter.instance.setup(myLogger.router)
-```
+![BIO-hierarchy](media/bio-hierarchy.svg)

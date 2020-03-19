@@ -31,16 +31,16 @@ object leaderboard {
   }
 
   object zioenv {
-    import zio.{IO, ZIO, URIO}
+    import zio.{IO, ZIO, URIO, Has}
     import repo.Ladder
-    trait LadderEnv { def ladder: Ladder[IO] }
-    trait RndEnv { def rnd: Rnd[IO] }
+    type LadderEnv = Has[Ladder[IO]]
+    type RndEnv = Has[Rnd[IO]]
     object ladder extends Ladder[ZIO[LadderEnv, ?, ?]] {
-      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.ladder.submitScore(userId, score))
-      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.ladder.getScores)
+      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.get.submitScore(userId, score))
+      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.get.getScores)
     }
     object rnd extends Rnd[ZIO[RndEnv, ?, ?]] {
-      override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.rnd.apply[A])
+      override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.get.apply[A])
     }
   }
 }
@@ -61,14 +61,13 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOSpecScalatest}
-import izumi.distage.testkit.services.DISyntaxZIOEnv
+import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
-import zio.IO
+import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv with AssertIO {
+abstract class LeaderboardTest extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
   override def config = super.config.copy(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
@@ -139,6 +138,30 @@ abstract class LadderTest extends LeaderboardTest {
           assertIO(user2Rank < user1Rank)
         } else IO.unit
       } yield ()
+    }
+
+    // you can also mix arguments and env at the same time
+    "assign a higher position in the list to a higher score 2" in {
+      ladder: Ladder[IO] =>
+          for {
+            user1  <- rnd[UserId]
+            score1 <- rnd[Score]
+            user2  <- rnd[UserId]
+            score2 <- rnd[Score]
+    
+            _      <- ladder.submitScore(user1, score1)
+            _      <- ladder.submitScore(user2, score2)
+            scores <- ladder.getScores
+    
+            user1Rank = scores.indexWhere(_._1 == user1)
+            user2Rank = scores.indexWhere(_._1 == user2)
+    
+            _ <- if (score1 > score2) {
+              assertIO(user1Rank < user2Rank)
+            } else if (score2 > score1) {
+              assertIO(user2Rank < user1Rank)
+            } else IO.unit
+          } yield ()
     }
   }
 
