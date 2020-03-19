@@ -7,4 +7,5 @@ trait Strict {
   val IzStrictLogger: api.strict.IzStrictLogger.type = api.strict.IzStrictLogger
 
   type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, ?]]
+  type LogBIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, ?]]
 }

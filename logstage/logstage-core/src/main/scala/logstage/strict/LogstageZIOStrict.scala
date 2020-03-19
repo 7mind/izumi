@@ -5,9 +5,12 @@ import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
 import logstage.strict.LogstageCatsStrict.WrappedLogIOStrict
-import zio.{IO, ZIO}
+import zio.{Has, IO, ZIO}
 
 object LogstageZIOStrict {
+
+  /** Lets you carry LogBIO capability in environment */
+  object log extends LogBIO3StrictEnvInstance[ZIO](_.get) with LogBIOStrict[ZIO[Has[LogBIOStrict[IO]], ?, ?]]
 
   def withFiberIdStrict(logger: AbstractLogger): LogBIOStrict[IO] = {
     new WrappedLogIOStrict[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
@@ -34,5 +37,5 @@ object LogstageZIOStrict {
         dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
       }
     }
-  }  
+  }
 }
