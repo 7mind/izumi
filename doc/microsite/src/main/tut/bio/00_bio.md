@@ -10,7 +10,7 @@ BIO is a set of typeclasses and algebras for programming in tagless final style 
 Key syntactic features:
 
 1. Ergonomic `F` summoner that is a single point of entry to all methods in the hierarchy
-2. No syntax imports. Syntax is automatically available whenever any typeclass from the hierarchy is mentioned.
+2. Import-less syntax. Syntax is automatically available whenever any typeclass from the hierarchy is mentioned.
 
 These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
 
@@ -40,6 +40,16 @@ Key semantic features:
 4. No ambiguous implicit errors. It's legal to have both `BIOMonad3` and `BIOMonadAsk` as constraints,
     despite the fact that `BIOMonadAsk` provides a `BIOMonad3`: `def adderEnv[F[-_, +_, +_]: BIOMonad3: BIOMonadAsk] // would still work`
 5. Wrappers for primitive concurrent data structures: `BIORef`, `BIOPromise`, `BIOSemaphore`
+
+To use it, add `fundamentals-bio` library:
+
+@@@vars
+
+```scala
+libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
+```
+
+@@@
 
 Overview
 --------
