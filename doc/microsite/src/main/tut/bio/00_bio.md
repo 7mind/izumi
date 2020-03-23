@@ -59,16 +59,16 @@ have bifunctor `BIO*` counterparts.
 
 ![BIO-hierarchy](media/bio-hierarchy.svg)
 
-@ref[(image)](media/bio-hierarchy.svg)
+[(image)](media/bio-hierarchy.svg)
 
 Auxiliary algebras:
 
 ![algebras](media/algebras.svg)
 
-@ref[(image)](media/algebras.svg)
+[(image)](media/algebras.svg)
 
 Relationship hierarchy:
 
 ![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
 
-@ref[(image)](media/bio-relationship-hierarchy.svg)
+[(image)](media/bio-relationship-hierarchy.svg)
