@@ -3,6 +3,7 @@ package izumi.functional.bio
 import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
+import izumi.functional.bio.SpecificityHelper._
 import izumi.functional.bio.impl.BIOAsyncZio
 import zio.ZIO
 
@@ -11,7 +12,7 @@ import scala.language.implicitConversions
 trait BIORoot extends DivergenceHelper with PredefinedHelper
 
 object BIORoot extends BIORootInstancesLowPriority1 {
-  @inline implicit final def BIOConvertFromBIOMonadAsk[FR[-_, +_, +_]](implicit BIOMonadAsk: NotPredefined.Of[BIOMonadAsk[FR]]): BIOMonad3[FR] = BIOMonadAsk.InnerF
+  @inline implicit final def BIOConvertFromBIOMonadAsk[FR[-_, +_, +_]](implicit BIOMonadAsk: NotPredefined.Of[BIOMonadAsk[FR]]): BIOMonad3[FR] with S1 = S1(BIOMonadAsk.InnerF)
 
   @inline implicit final def AttachBIOLocal[FR[-_, +_, +_], R](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOLocal: BIOLocal[FR]): BIOLocal.type = BIOLocal
   @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOPrimitives: BIOPrimitives3[FR]): BIOPrimitives.type = BIOPrimitives
@@ -25,7 +26,7 @@ object BIORoot extends BIORootInstancesLowPriority1 {
 }
 
 sealed trait BIORootInstancesLowPriority1 extends BIORootInstancesLowPriority2 {
-  @inline implicit final def BIOConvertFromBIOAsk[FR[-_, +_, +_]](implicit BIOAsk: NotPredefined.Of[BIOAsk[FR]]): BIOApplicative3[FR] = BIOAsk.InnerF
+  @inline implicit final def BIOConvertFromBIOAsk[FR[-_, +_, +_]](implicit BIOAsk: NotPredefined.Of[BIOAsk[FR]]): BIOApplicative3[FR] with S2 = S2(BIOAsk.InnerF)
 
   @inline implicit final def AttachBIOArrowChoice[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOArrowChoice: BIOArrowChoice[FR]): BIOArrowChoice.type = BIOArrowChoice
   @inline implicit final def AttachBIOArrow[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOArrow: BIOArrow[FR]): BIOArrow.type = BIOArrow
@@ -33,7 +34,7 @@ sealed trait BIORootInstancesLowPriority1 extends BIORootInstancesLowPriority2 {
 }
 
 sealed trait BIORootInstancesLowPriority2 extends BIORootInstancesLowPriority3 {
-  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] = BIOProfunctor.InnerF
+  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] with S3 = S3(BIOProfunctor.InnerF)
 
   @inline implicit final def AttachBIOProfunctor[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOProfunctor: BIOProfunctor[FR]): BIOProfunctor.type = BIOProfunctor
   @inline implicit final def AttachBIOAsk[FR[-_, +_, +_], R](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOAsk: BIOAsk[FR]): BIOAsk.type = BIOAsk
@@ -41,7 +42,7 @@ sealed trait BIORootInstancesLowPriority2 extends BIORootInstancesLowPriority3 {
 }
 
 sealed trait BIORootInstancesLowPriority3 extends BIORootInstancesLowPriority4 {
-  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] = BIOBifunctor.InnerF
+  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] with S4 = S4(BIOBifunctor.InnerF)
 }
 
 sealed trait BIORootInstancesLowPriority4 extends BIORootInstancesLowPriority5 {

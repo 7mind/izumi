@@ -178,6 +178,27 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
+    def docExamples = {
+      import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+
+      def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+        F.mkRef(0)
+         .flatMap(ref => ref.update(_ + i) *> ref.get)
+
+      // update ref from the environment and return result
+      def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+        F.access {
+          ref =>
+            for {
+              _   <- ref.update(_ + i)
+              res <- ref.get
+            } yield res
+        }
+      lazy val _ = (
+        adder[zio.IO](1),
+        adderEnv[zio.ZIO](1),
+      )
+    }
     implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
     lazy val _ = (
       x[zio.ZIO],
@@ -190,6 +211,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       biotemporalPlusLocal[zio.ZIO],
       biomonadPlusLocal[zio.ZIO],
       bifunctorOnly[zio.ZIO],
+      docExamples,
     )
   }
 }
