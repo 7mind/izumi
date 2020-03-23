@@ -8,4 +8,8 @@ trait DivergenceHelper {
 object DivergenceHelper {
   type Divergent
   type Nondivergent
+  object Divergent {
+    type Of[A] = A { type Divergence = Divergent }
+    @inline def apply[A <: DivergenceHelper, A1 >: A](a: A): Divergent.Of[A1] = a.asInstanceOf[Divergent.Of[A1]]
+  }
 }

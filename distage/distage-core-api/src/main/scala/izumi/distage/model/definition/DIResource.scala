@@ -755,7 +755,7 @@ object DIResource {
   }
 
   trait TrifunctorHasResourceTag[R0, T] {
-    type F[-RR, +E, +A]
+    type F[-RR, +EE, +AA]
     type R
     type E
     type A <: T
@@ -773,9 +773,9 @@ object DIResource {
       type R = R0
       type E = E0
       type A = A0
-      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
     } = new TrifunctorHasResourceTag[R1, A1] { self =>
-      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
       type R = R0
       type E = E0
       type A = A0
@@ -784,7 +784,7 @@ object DIResource {
       val tagFull: Tag[DIResourceBase[F0[Any, E0, ?], A0]] = implicitly
       val ev: R1 <:< DIResourceBase[F0[R0, E0, ?], A0] = implicitly
       val resourceTag: ResourceTag[DIResourceBase[F0[Any, E0, ?], A0]] = new ResourceTag[DIResourceBase[F0[Any, E0, ?], A0]] {
-        type F[A] = F0[Any, E0, A]
+        type F[AA] = F0[Any, E0, AA]
         type A = A0
         val tagFull: Tag[DIResourceBase[F0[Any, E0, ?], A0]] = self.tagFull
         val tagK: TagK[F0[Any, E0, ?]] =  TagK[F0[Any, E0, ?]]
@@ -798,7 +798,7 @@ object DIResource {
       type R = R0
       type E = Nothing
       type A = A0
-      type F[-RR, +E, +A] = F0[RR @v, E @v, A @v]
+      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
     } = TrifunctorHasResourceTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
   }
   sealed trait TrifunctorHasResourceTagLowPriority1 {

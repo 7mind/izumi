@@ -92,6 +92,8 @@ class BIOSyntaxTest extends AnyWordSpec {
     zio.IO.effectTotal(List(4)).flatMap{
       F.traverse(_)(_ => zio.IO.unit)
     } *> F.unit
+    implicitly[BIOBifunctor3[zio.ZIO]]
+    implicitly[BIOBifunctor[zio.IO]]
   }
 
   "FR: Local/Ask summoners examples" in {
