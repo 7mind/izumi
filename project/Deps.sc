@@ -398,7 +398,9 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = allMonadsOptional,
+        libs = allMonadsOptional ++ Seq(
+          scala_java_time in Scope.Test.js,
+        ),
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
