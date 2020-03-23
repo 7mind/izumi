@@ -1,0 +1,84 @@
+<svg version="1.1" baseProfile="full" width="1327" height="199" viewbox="0 0 1327 199" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font-weight:bold; font-size:12pt; font-family:'Calibri', Helvetica, sans-serif;;stroke-width:3;stroke-linejoin:round;stroke-linecap:round">
+  <title >nomnoml</title>
+  <desc >[cats.effect.*]&lt;:--[BIOCatsConversions]
+
+[BIOFiber]&lt;:--[BIOFork3]
+[BIOFork3]&lt;:--[BIOFork]
+
+[BlockingIO3]&lt;:--[BlockingIO]
+
+[BIOPromise]&lt;:--[BIOPrimitives3]
+[BIOSemaphore]&lt;:--[BIOPrimitives3]
+[BIORef]&lt;:--[BIOPrimitives3]
+[BIOPrimitives3]&lt;:--[BIOPrimitives]
+
+[Entropy3]&lt;:--[Entropy2]
+[Entropy2]&lt;:--[Entropy]
+
+[Clock3]&lt;:--[Clock2]
+[Clock2]&lt;:--[Clock]
+
+[BIORunner]</desc>
+  <path d="M107 44.5 L107 64.5 L107 84.5 L107 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M112.3 57.8 L107 57.8 L101.7 57.8 L107 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M286.5 44.5 L286.5 64.5 L286.5 84.5 L286.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M291.8 57.8 L286.5 57.8 L281.2 57.8 L286.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M286.5 115.5 L286.5 135.5 L286.5 155.5 L286.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M291.8 128.8 L286.5 128.8 L281.2 128.8 L286.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M433 44.5 L433 64.5 L433 84.5 L433 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M438.3 57.8 L433 57.8 L427.7 57.8 L433 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M589 44.5 L589 64.5 L679.4 84.5 L679.4 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M594.3 57.8 L589 57.8 L583.7 57.8 L589 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M749.5 44.5 L749.5 64.5 L749.5 84.5 L749.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M754.8 57.8 L749.5 57.8 L744.2 57.8 L749.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M891 44.5 L891 64.5 L811.3 84.5 L811.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M896.3 57.8 L891 57.8 L885.7 57.8 L891 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M749.5 115.5 L749.5 135.5 L749.5 155.5 L749.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M754.8 128.8 L749.5 128.8 L744.2 128.8 L749.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M1013.5 44.5 L1013.5 64.5 L1013.5 84.5 L1013.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M1018.8 57.8 L1013.5 57.8 L1008.2 57.8 L1013.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M1013.5 115.5 L1013.5 135.5 L1013.5 155.5 L1013.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M1018.8 128.8 L1013.5 128.8 L1008.2 128.8 L1013.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M1136 44.5 L1136 64.5 L1136 84.5 L1136 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M1141.3 57.8 L1136 57.8 L1130.7 57.8 L1136 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M1136 115.5 L1136 135.5 L1136 155.5 L1136 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M1141.3 128.8 L1136 128.8 L1130.7 128.8 L1136 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <rect x="37.5" y="13.5" height="31" width="140" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="107.5" y="35" style="fill: #33322E;text-anchor: middle;">cats.effect.*</text>
+  <rect x="13.5" y="84.5" height="31" width="187" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="107" y="106" style="fill: #33322E;text-anchor: middle;">BIOCatsConversions</text>
+  <rect x="240.5" y="13.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="286.5" y="35" style="fill: #33322E;text-anchor: middle;">BIOFiber</text>
+  <rect x="240.5" y="84.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="286.5" y="106" style="fill: #33322E;text-anchor: middle;">BIOFork3</text>
+  <rect x="245.5" y="155.5" height="31" width="83" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="287" y="177" style="fill: #33322E;text-anchor: middle;">BIOFork</text>
+  <rect x="372.5" y="13.5" height="31" width="121" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="433" y="35" style="fill: #33322E;text-anchor: middle;">BlockingIO3</text>
+  <rect x="377.5" y="84.5" height="31" width="111" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="433" y="106" style="fill: #33322E;text-anchor: middle;">BlockingIO</text>
+  <rect x="533.5" y="13.5" height="31" width="111" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="589" y="35" style="fill: #33322E;text-anchor: middle;">BIOPromise</text>
+  <rect x="675.5" y="84.5" height="31" width="149" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="750" y="106" style="fill: #33322E;text-anchor: middle;">BIOPrimitives3</text>
+  <rect x="684.5" y="13.5" height="31" width="130" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="749.5" y="35" style="fill: #33322E;text-anchor: middle;">BIOSemaphore</text>
+  <rect x="854.5" y="13.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="891" y="35" style="fill: #33322E;text-anchor: middle;">BIORef</text>
+  <rect x="679.5" y="155.5" height="31" width="140" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="749.5" y="177" style="fill: #33322E;text-anchor: middle;">BIOPrimitives</text>
+  <rect x="967.5" y="13.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1013.5" y="35" style="fill: #33322E;text-anchor: middle;">Entropy3</text>
+  <rect x="967.5" y="84.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1013.5" y="106" style="fill: #33322E;text-anchor: middle;">Entropy2</text>
+  <rect x="972.5" y="155.5" height="31" width="83" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1014" y="177" style="fill: #33322E;text-anchor: middle;">Entropy</text>
+  <rect x="1099.5" y="13.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1136" y="35" style="fill: #33322E;text-anchor: middle;">Clock3</text>
+  <rect x="1099.5" y="84.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1136" y="106" style="fill: #33322E;text-anchor: middle;">Clock2</text>
+  <rect x="1104.5" y="155.5" height="31" width="64" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1136.5" y="177" style="fill: #33322E;text-anchor: middle;">Clock</text>
+  <rect x="1212.5" y="13.5" height="31" width="102" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="1263.5" y="35" style="fill: #33322E;text-anchor: middle;">BIORunner</text>
+</svg>

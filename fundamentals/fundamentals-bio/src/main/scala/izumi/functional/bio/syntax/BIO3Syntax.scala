@@ -32,18 +32,16 @@ object BIO3Syntax {
     @inline final def widen[A1](implicit @deprecated("unused", "") ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
   }
 
-  class BIOBifunctor3Ops[+FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBifunctor3[FR])
-    extends BIOFunctor3Ops(r) {
+  final class BIOBifunctor3Ops[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOBifunctor3[FR]) {
     @inline final def leftMap[E2](f: E => E2): FR[R, E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
 
-    @inline final def widenError[E1](implicit @deprecated("unused", "") ev: E <:< E1): FR[R, E1, A] = r.asInstanceOf[FR[R, E1, A]]
-    @inline final def widenBoth[E1, A1](implicit @deprecated("unused", "") ev: E <:< E1, @deprecated("unused", "") ev2: A <:< A1): FR[R, E1, A1] =
-      r.asInstanceOf[FR[R, E1, A1]]
+    @inline final def widenError[E1 >: E]: FR[R, E1, A] = r
+    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused","") ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
   }
 
   class BIOApplicative3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOApplicative3[FR])
-    extends BIOBifunctor3Ops(r) {
+    extends BIOFunctor3Ops(r) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[R1 <: R, E1 >: E, B](f0: => FR[R1, E1, B]): FR[R1, E1, B] = F.*>(r, f0)
@@ -75,6 +73,12 @@ object BIO3Syntax {
 
   class BIOError3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOError3[FR])
     extends BIOGuarantee3Ops(r) {
+    @inline final def leftMap[E2](f: E => E2): FR[R, E2, A] = F.leftMap(r)(f)
+    @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
+
+    @inline final def widenError[E1 >: E]: FR[R, E1, A] = r
+    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused","") ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
+
     @inline final def catchAll[R1 <: R, E2, A2 >: A](h: E => FR[R1, E2, A2]): FR[R1, E2, A2] = F.catchAll[R1, E, A, E2, A2](r)(h)
     @inline final def catchSome[R1 <: R, E2 >: E, A2 >: A](h: PartialFunction[E, FR[R1, E2, A2]]): FR[R1, E2, A2] = F.catchSome[R1, E, A, E2, A2](r)(h)
 
@@ -183,8 +187,8 @@ object BIO3Syntax {
   }
 
   final class BIOLocalOps[FR[-_, +_, +_], -R, +E, +A](protected[this] override val r: FR[R, E, A])(implicit override protected[this] val F: BIOLocal[FR]) extends BIOArrowChoiceOps(r) {
-    @inline final def provide(env: => R): FR[Any, E, A]= F.provide(r)(env)
-    @inline final def contramap[R0 <: R](f: R0 => R): FR[R0, E, A]= F.contramap(r)(f)
+    @inline final def provide(env: => R): FR[Any, E, A] = F.provide(r)(env)
+    @inline final def contramap[R0 <: R](f: R0 => R): FR[R0, E, A] = F.contramap(r)(f)
   }
 
   final class BIOLocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: BIOLocal[FR]) {
@@ -197,22 +201,10 @@ object BIO3Syntax {
 
     @inline implicit final def BIOFork3[FR[-_, +_, +_]: BIOFork3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFork3Ops[FR, R, E, A] = new BIO3Syntax.BIOFork3Ops[FR, R, E, A](self)
     @inline final def BIOFork3[FR[-_, +_, +_]: BIOFork3]: BIOFork3[FR] = implicitly
-
-    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] = new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
-    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
-    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A])(implicit d1: DummyImplicit): BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A] = new BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A](self)
-    @inline final def BIOLocal[FR[-_, +_, +_]: BIOLocal]: BIOLocal[FR] = implicitly
   }
   trait BIO3ImplicitPuns1 extends BIO3ImplicitPuns2 {
     @inline implicit final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOAsync3Ops[FR, R, E, A] = new BIO3Syntax.BIOAsync3Ops[FR, R, E, A](self)
     @inline final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3]: BIOAsync3[FR] = implicitly
-
-    @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A] = new BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A](self)
-    @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice]: BIOArrowChoice[FR] = implicitly
-
-    @inline implicit final def BIOMonadAsk[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
-    @inline final def BIOMonadAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
   }
   trait BIO3ImplicitPuns2 extends BIO3ImplicitPuns3 {
     @inline implicit final def BIO3[FR[-_, +_, +_]: BIO3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIO3Ops[FR, R, E, A] = new BIO3Syntax.BIO3Ops[FR, R, E, A](self)
@@ -225,60 +217,77 @@ object BIO3Syntax {
       */
     @inline final def BIO3[FR[-_, +_, +_], A](effect: => A)(implicit F: BIO3[FR]): FR[Any, Throwable, A] = F.syncThrowable(effect)
     @inline final def BIO3[FR[-_, +_, +_]: BIO3]: BIO3[FR] = implicitly
-
-    @inline implicit final def BIOArrow[FR[-_, +_, +_]: BIOArrow, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowOps[FR, R, E, A] = new BIO3Syntax.BIOArrowOps[FR, R, E, A](self)
-    @inline implicit final def BIOArrow[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOArrow[FR[-_, +_, +_]: BIOArrow]: BIOArrow[FR] = implicitly
   }
   trait BIO3ImplicitPuns3 extends BIO3ImplicitPuns4 {
     @inline implicit final def BIOPanic3[FR[-_, +_, +_]: BIOPanic3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOPanic3Ops[FR, R, E, A] = new BIO3Syntax.BIOPanic3Ops[FR, R, E, A](self)
     @inline final def BIOPanic3[FR[-_, +_, +_]: BIOPanic3]: BIOPanic3[FR] = implicitly
-
-    @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOProfunctorOps[FR, R, E, A] = new BIO3Syntax.BIOProfunctorOps[FR, R, E, A](self)
-    @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor]: BIOProfunctor[FR] = implicitly
   }
   trait BIO3ImplicitPuns4 extends BIO3ImplicitPuns5 {
     @inline implicit final def BIOBracket3[FR[-_, +_, +_]: BIOBracket3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOBracket3Ops[FR, R, E, A] = new BIO3Syntax.BIOBracket3Ops[FR, R, E, A](self)
     @inline final def BIOBracket3[FR[-_, +_, +_]: BIOBracket3]: BIOBracket3[FR] = implicitly
-
-    @inline implicit final def BIOAsk[FR[-_, +_, +_]: BIOApplicative3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOApplicative3Ops[FR, R, E, A] = new BIO3Syntax.BIOApplicative3Ops[FR, R, E, A](self)
-    @inline final def BIOAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
   }
   trait BIO3ImplicitPuns5 extends BIO3ImplicitPuns6 {
-    @inline implicit final def BIOMonadError3[FR[-_, +_, +_]: BIOMonadError3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonadError3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOMonadError3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOMonadError3[FR[-_, +_, +_]: BIOMonadError3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonadError3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonadError3Ops[FR, R, E, A](self)
     @inline final def BIOMonadError3[FR[-_, +_, +_]: BIOMonadError3]: BIOMonadError3[FR] = implicitly
   }
   trait BIO3ImplicitPuns6 extends BIO3ImplicitPuns7 {
-    @inline implicit final def BIOError3[FR[-_, +_, +_]: BIOError3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOError3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOError3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOError3[FR[-_, +_, +_]: BIOError3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOError3Ops[FR, R, E, A] = new BIO3Syntax.BIOError3Ops[FR, R, E, A](self)
     @inline final def BIOError3[FR[-_, +_, +_]: BIOError3]: BIOError3[FR] = implicitly
   }
   trait BIO3ImplicitPuns7 extends BIO3ImplicitPuns8 {
-    @inline implicit final def BIOGuarantee3[FR[-_, +_, +_]: BIOGuarantee3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOGuarantee3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOGuarantee3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOGuarantee3[FR[-_, +_, +_]: BIOGuarantee3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOGuarantee3Ops[FR, R, E, A] = new BIO3Syntax.BIOGuarantee3Ops[FR, R, E, A](self)
     @inline final def BIOGuarantee3[FR[-_, +_, +_]: BIOGuarantee3]: BIOGuarantee3[FR] = implicitly
   }
   trait BIO3ImplicitPuns8 extends BIO3ImplicitPuns9 {
-    @inline implicit final def BIOMonad3[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOMonad3[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
     @inline final def BIOMonad3[FR[-_, +_, +_]: BIOMonad3]: BIOMonad3[FR] = implicitly
   }
   trait BIO3ImplicitPuns9 extends BIO3ImplicitPuns10 {
-    @inline implicit final def BIOApplicative3[FR[-_, +_, +_]: BIOApplicative3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOApplicative3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOApplicative3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOApplicative3[FR[-_, +_, +_]: BIOApplicative3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOApplicative3Ops[FR, R, E, A] = new BIO3Syntax.BIOApplicative3Ops[FR, R, E, A](self)
     @inline final def BIOApplicative3[FR[-_, +_, +_]: BIOApplicative3]: BIOApplicative3[FR] = implicitly
   }
   trait BIO3ImplicitPuns10 extends BIO3ImplicitPuns11 {
-    @inline implicit final def BIOBifunctor3[FR[-_, +_, +_]: BIOBifunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOBifunctor3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOBifunctor3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOBifunctor3[FR[-_, +_, +_]: BIOBifunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOBifunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOBifunctor3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOBifunctor3[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOBifunctor3[FR[-_, +_, +_]: BIOBifunctor3]: BIOBifunctor3[FR] = implicitly
   }
-  trait BIO3ImplicitPuns11 {
-    @inline implicit final def BIOFunctor3[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
+  trait BIO3ImplicitPuns11 extends BIOImplicitPuns12 {
+    @inline implicit final def BIOFunctor3[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOFunctor3[FR[-_, +_, +_]: BIOFunctor3]: BIOFunctor3[FR] = implicitly
+  }
+  trait BIOImplicitPuns12 extends BIOImplicitPuns13 {
+    // Note, as long as these auxilary conversions to BIOMonad/Applicative/Functor syntaxes etc.
+    // have the same output type as BIOMonad3/etc conversions above, they will avoid the specificity rule
+    // and _will not_ clash (because the outputs are equal, not <:<).
+    // If you merge them into `BIOLocalSyntax with BIOMonad3`, they _will_ start clashing
+
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOLocalOps[FR, R, E, A] = new BIO3Syntax.BIOLocalOps[FR, R, E, A](self)
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOLocal[FR[-_, +_, +_]: BIOLocal, R, E, A](self: FR[R, E, A])(implicit d1: DummyImplicit): BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A] = new BIO3Syntax.BIOLocalOpsKleisliSyntax[FR, R, E, A](self)
+    @inline final def BIOLocal[FR[-_, +_, +_]: BIOLocal]: BIOLocal[FR] = implicitly
+  }
+  trait BIOImplicitPuns13 extends BIOImplicitPuns14 {
+    @inline implicit final def BIOMonadAsk[FR[-_, +_, +_]: BIOMonad3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOMonad3Ops[FR, R, E, A] = new BIO3Syntax.BIOMonad3Ops[FR, R, E, A](self)
+    @inline final def BIOMonadAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
+  }
+  trait BIOImplicitPuns14 extends BIOImplicitPuns15 {
+    @inline implicit final def BIOAsk[FR[-_, +_, +_]: BIOApplicative3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOApplicative3Ops[FR, R, E, A] = new BIO3Syntax.BIOApplicative3Ops[FR, R, E, A](self)
+    @inline final def BIOAsk[FR[-_, +_, +_]: BIOAsk]: BIOAsk[FR] = implicitly
+  }
+  trait BIOImplicitPuns15 extends BIOImplicitPuns16 {
+    @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A] = new BIO3Syntax.BIOArrowChoiceOps[FR, R, E, A](self)
+    @inline implicit final def BIOArrowChoice[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
+    @inline final def BIOArrowChoice[FR[-_, +_, +_]: BIOArrowChoice]: BIOArrowChoice[FR] = implicitly
+  }
+  trait BIOImplicitPuns16 extends BIOImplicitPuns17 {
+    @inline implicit final def BIOArrow[FR[-_, +_, +_]: BIOArrow, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowOps[FR, R, E, A] = new BIO3Syntax.BIOArrowOps[FR, R, E, A](self)
+    @inline implicit final def BIOArrow[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
+    @inline final def BIOArrow[FR[-_, +_, +_]: BIOArrow]: BIOArrow[FR] = implicitly
+  }
+  trait BIOImplicitPuns17 {
+    @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOProfunctorOps[FR, R, E, A] = new BIO3Syntax.BIOProfunctorOps[FR, R, E, A](self)
+    @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: BIOFunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] = new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
+    @inline final def BIOProfunctor[FR[-_, +_, +_]: BIOProfunctor]: BIOProfunctor[FR] = implicitly
   }
 
 }

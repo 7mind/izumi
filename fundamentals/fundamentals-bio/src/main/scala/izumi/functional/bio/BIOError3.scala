@@ -2,7 +2,9 @@ package izumi.functional.bio
 
 import scala.util.Try
 
-trait BIOError3[F[-_, +_, +_]] extends BIOGuarantee3[F] {
+trait BIOError3[F[-_, +_, +_]] extends BIOGuarantee3[F] with BIOBifunctor3[F] {
+  override val InnerF: BIOFunctor3[F] = this
+
   def fail[E](v: => E): F[Any, E, Nothing]
   def catchAll[R, E, A, E2, A2 >: A](r: F[R, E, A])(f: E => F[R, E2, A2]): F[R, E2, A2]
   def catchSome[R, E, A, E2 >: E, A2 >: A](r: F[R, E, A])(f: PartialFunction[E, F[R, E2, A2]]): F[R, E2, A2]

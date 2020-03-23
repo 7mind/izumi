@@ -57,7 +57,7 @@ trait BIOCatsConversions8 extends BIOCatsConversions9 {
 }
 trait BIOCatsConversions9 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
-    implicit @deprecated("unused", "unused") ev: BIOFunctor[F],
+    implicit @deprecated("unused", "") ev: BIOFunctor[F],
     F: BIOAsync[F],
     Fork: BIOFork[F]
   ): cats.effect.Concurrent[F[Throwable, ?]] with S10 = new BIOCatsConcurrent[F](F, Fork)
@@ -80,7 +80,7 @@ object BIOCatsConversions {
     @inline override final def leftMap[A, B, C](fab: F[A, B])(f: A => C): F[C, B] = F.leftMap(fab)(f)
   }
 
-  trait BIOCatsApplicative[F[+_, +_], E] extends cats.Applicative[F[E, ?]] with BIOCatsFunctor[F, E] with BIOCatsBifunctor[F] {
+  trait BIOCatsApplicative[F[+_, +_], E] extends cats.Applicative[F[E, ?]] with BIOCatsFunctor[F, E] {
     override def F: BIOApplicative[F]
 
     @inline override final def ap[A, B](ff: F[E, A => B])(fa: F[E, A]): F[E, B] = F.map2(ff, fa)(_.apply(_))

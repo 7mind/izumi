@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-trait BIOApplicative3[F[-_, +_, +_]] extends BIOBifunctor3[F] {
+trait BIOApplicative3[F[-_, +_, +_]] extends BIOFunctor3[F] {
   def pure[A](a: A): F[Any, Nothing, A]
 
   /** execute two operations in order, map their results */

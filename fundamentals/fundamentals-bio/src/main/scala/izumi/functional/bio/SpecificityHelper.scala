@@ -20,4 +20,10 @@ private[bio] object SpecificityHelper {
   @inline private[bio] def S1[A, A1 >: A](a: A): A1 with S1 = a.asInstanceOf[A1 with S1]
   @inline private[bio] def S2[A, A1 >: A](a: A): A1 with S2 = a.asInstanceOf[A1 with S2]
   @inline private[bio] def S3[A, A1 >: A](a: A): A1 with S3 = a.asInstanceOf[A1 with S3]
+  @inline private[bio] def S4[A, A1 >: A](a: A): A1 with S4 = a.asInstanceOf[A1 with S4]
+  @inline private[bio] def S5[A, A1 >: A](a: A): A1 with S5 = a.asInstanceOf[A1 with S5]
+  @inline private[bio] def S6[A, A1 >: A](a: A): A1 with S6 = a.asInstanceOf[A1 with S6]
+  @inline private[bio] def S7[A, A1 >: A](a: A): A1 with S7 = a.asInstanceOf[A1 with S7]
+  @inline private[bio] def S8[A, A1 >: A](a: A): A1 with S8 = a.asInstanceOf[A1 with S8]
+  @inline private[bio] def S9[A, A1 >: A](a: A): A1 with S9 = a.asInstanceOf[A1 with S9]
 }

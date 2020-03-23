@@ -37,7 +37,7 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
     blockingIOZIO3Blocking(Has(blocking))
   }
 
-  implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+  @inline implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
     val b: Blocking.Service = blocking.get
     override def shiftBlocking[R, E, A](f: ZIO[R, E ,A]): ZIO[R, E, A] = b.blocking(f)
     override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
@@ -48,7 +48,7 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 sealed trait LowPriorityBlockingIOInstances extends LowPriorityBlockingIOInstances1 {
   type ZIOWithBlocking[-R, +E, +A] = ZIO[R with Blocking, E, A]
 
-  @inline implicit final def blockingIOZIOR[R]: BlockingIO[ZIOWithBlocking[R, +?, +?]] = convert3To2[BlockingIO3, ZIOWithBlocking, R](blockingIOZIO3R)
+  @inline implicit final def blockingIOZIOR[R]: BlockingIO[ZIOWithBlocking[R, +?, +?]] = cast3To2[BlockingIO3, ZIOWithBlocking, R](blockingIOZIO3R)
 
   implicit final val blockingIOZIO3R: BlockingIO3[ZIOWithBlocking] = new BlockingIO3[ZIOWithBlocking] {
     override def shiftBlocking[R, E, A](f: ZIO[R with Blocking, E, A]): ZIO[R with Blocking, E, A] = zio.blocking.blocking(f)
@@ -58,5 +58,5 @@ sealed trait LowPriorityBlockingIOInstances extends LowPriorityBlockingIOInstanc
 }
 
 sealed trait LowPriorityBlockingIOInstances1 {
-  @inline implicit final def blockingIO3To2[FR[-_, +_, +_], R](implicit BlockingIO3: BlockingIO3[FR]): BlockingIO[FR[R, +?, +?]] = convert3To2(BlockingIO3)
+  @inline implicit final def blockingIO3To2[FR[-_, +_, +_], R](implicit BlockingIO3: BlockingIO3[FR]): BlockingIO[FR[R, +?, +?]] = cast3To2(BlockingIO3)
 }

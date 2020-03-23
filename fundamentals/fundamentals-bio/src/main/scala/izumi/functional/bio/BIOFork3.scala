@@ -21,5 +21,5 @@ object BIOForkInstances extends LowPriorityBIOForkInstances {
 }
 
 sealed trait LowPriorityBIOForkInstances {
-  @inline implicit final def BIOFork3To2[FR[-_, +_, +_], R](implicit BIOFork3: BIOFork3[FR]): BIOFork[FR[R, +?, +?]] = convert3To2(BIOFork3)
+  @inline implicit final def BIOFork3To2[FR[-_, +_, +_], R](implicit BIOFork3: BIOFork3[FR]): BIOFork[FR[R, +?, +?]] = cast3To2(BIOFork3)
 }
