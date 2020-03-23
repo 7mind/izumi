@@ -3,7 +3,6 @@ package izumi.functional.bio.syntax
 import izumi.functional.bio._
 import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 
-import scala.annotation.unchecked.uncheckedVariance
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
@@ -11,7 +10,7 @@ trait BIOSyntax extends BIOImplicitPuns
 
 object BIOSyntax {
 
-  class BIOFunctorOps[+F[+_, +_], E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOFunctor[F]) {
+  class BIOFunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOFunctor[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
@@ -19,7 +18,7 @@ object BIOSyntax {
     @inline final def widen[A1](implicit @deprecated("unused","") ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
   }
 
-  class BIOBifunctorOps[+F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOBifunctor[F]) extends BIOFunctorOps[F, E @uncheckedVariance, A](r) {
+  final class BIOBifunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOBifunctor[F]) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
@@ -27,7 +26,7 @@ object BIOSyntax {
     @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused","") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  class BIOApplicativeOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOApplicative[F]) extends BIOBifunctorOps(r) {
+  class BIOApplicativeOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOApplicative[F]) extends BIOFunctorOps(r) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>(r, f0)
@@ -56,6 +55,12 @@ object BIOSyntax {
   }
 
   class BIOErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOError[F]) extends BIOGuaranteeOps(r) {
+    @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
+    @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
+
+    @inline final def widenError[E1 >: E]: F[E1, A] = r
+    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused","") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
+
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A, E2, A2](r)(h)
     @inline final def catchSome[E2 >: E, A2 >: A](h: PartialFunction[E, F[E2, A2]]): F[E2, A2] = F.catchSome[Any, E, A, E2, A2](r)(h)
 
@@ -197,6 +202,7 @@ object BIOSyntax {
   }
   trait BIOImplicitPuns10 extends BIOImplicitPuns11 {
     @inline implicit final def BIOBifunctor[F[+_, +_]: BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
+    @inline implicit final def BIOBifunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
   trait BIOImplicitPuns11 {

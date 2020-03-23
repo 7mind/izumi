@@ -11,8 +11,8 @@ trait BIOMonad3[F[-_, +_, +_]] extends BIOApplicative3[F] {
   @inline final def unless[R, E, E1](cond: F[R, E, Boolean])(ifFalse: F[R, E1, Unit])(implicit ev: E <:< E1): F[R, E1, Unit] = {
     ifThenElse(cond)(unit, ifFalse)
   }
-  @inline final def ifThenElse[R, E, E1, A](cond: F[R, E, Boolean])(ifTrue: F[R, E1, A], ifFalse: F[R, E1, A])(implicit ev: E <:< E1): F[R, E1, A] = {
-    flatMap(widenError(cond)(ev))(if (_) ifTrue else ifFalse)
+  @inline final def ifThenElse[R, E, E1, A](cond: F[R, E, Boolean])(ifTrue: F[R, E1, A], ifFalse: F[R, E1, A])(implicit @deprecated("unused","") ev: E <:< E1): F[R, E1, A] = {
+    flatMap(cond.asInstanceOf[F[R, E1, Boolean]])(if (_) ifTrue else ifFalse)
   }
 
   // defaults

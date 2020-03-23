@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOFork, BIOFork3, BIOFunctor, BIOFunctor3, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, F}
+import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -92,6 +92,8 @@ class BIOSyntaxTest extends AnyWordSpec {
     zio.IO.effectTotal(List(4)).flatMap{
       F.traverse(_)(_ => zio.IO.unit)
     } *> F.unit
+    implicitly[BIOBifunctor3[zio.ZIO]]
+    implicitly[BIOBifunctor[zio.IO]]
   }
 
   "FR: Local/Ask summoners examples" in {
@@ -150,6 +152,54 @@ class BIOSyntaxTest extends AnyWordSpec {
       }(_ => 1)
         .map(_ + 2)
     }
+    def bifunctorOnly[FR[-_, +_, +_]: BIOBifunctor3]: FR[Unit, Int, Int] = {
+      F.leftMap( ??? : FR[Unit, Int, Int] ) {
+        _: Int =>
+          ()
+      }.bimap({
+        _: Unit =>
+          4
+      }, _ => 1)
+        .map(_ + 2)
+    }
+    def biotemporalPlusLocal[FR[-_, +_, +_]: BIOTemporal3: BIOLocal]: FR[Any, Throwable, Unit] = {
+      F.fromKleisli {
+        F.askWith {
+          _: Int =>
+            ()
+        }.toKleisli
+      }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
+    }
+    def biomonadPlusLocal[FR[-_, +_, +_]: BIOMonad3: BIOBifunctor3: BIOLocal]: FR[Any, Throwable, Unit] = {
+      F.fromKleisli {
+        F.askWith {
+          _: Int =>
+            ()
+        }.toKleisli
+      }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
+    }
+    def docExamples = {
+      import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+
+      def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+        F.mkRef(0)
+         .flatMap(ref => ref.update(_ + i) *> ref.get)
+
+      // update ref from the environment and return result
+      def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+        F.access {
+          ref =>
+            for {
+              _   <- ref.update(_ + i)
+              res <- ref.get
+            } yield res
+        }
+      lazy val _ = (
+        adder[zio.IO](1),
+        adderEnv[zio.ZIO](1),
+      )
+    }
+    implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
     lazy val _ = (
       x[zio.ZIO],
       onlyMonadAsk[zio.ZIO],
@@ -158,6 +208,10 @@ class BIOSyntaxTest extends AnyWordSpec {
       y[zio.ZIO],
       arrowAsk[zio.ZIO],
       profunctorOnly[zio.ZIO],
+      biotemporalPlusLocal[zio.ZIO],
+      biomonadPlusLocal[zio.ZIO],
+      bifunctorOnly[zio.ZIO],
+      docExamples,
     )
   }
 }

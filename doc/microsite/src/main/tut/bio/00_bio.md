@@ -46,7 +46,7 @@ To use it, add `fundamentals-bio` library:
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$"
 ```
 
 @@@
@@ -54,7 +54,21 @@ libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.
 Overview
 --------
 
-The following graphic shows the current BIO hierarchy. Note that alll the trifunctor `BIO*3` typeclasses
+The following graphic shows the current BIO inheritance hierarchy. Note that all the trifunctor `BIO*3` typeclasses
 have bifunctor `BIO*` counterparts.
 
 ![BIO-hierarchy](media/bio-hierarchy.svg)
+
+[(image)](media/bio-hierarchy.svg)
+
+Auxiliary algebras:
+
+![algebras](media/algebras.svg)
+
+[(image)](media/algebras.svg)
+
+Relationship hierarchy:
+
+![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
+
+[(image)](media/bio-relationship-hierarchy.svg)
