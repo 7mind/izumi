@@ -87,6 +87,13 @@ class BIOSyntaxTest extends AnyWordSpec {
     )
   }
 
+  "Support BIO syntax for ZIO with wildcard import" in {
+    import izumi.functional.bio._
+    zio.IO.effectTotal(List(4)).flatMap{
+      F.traverse(_)(_ => zio.IO.unit)
+    } *> F.unit
+  }
+
   "FR: Local/Ask summoners examples" in {
     def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
       F.unit *> F.ask[Int].map {
