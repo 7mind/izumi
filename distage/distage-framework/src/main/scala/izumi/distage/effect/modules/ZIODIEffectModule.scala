@@ -49,7 +49,6 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOFork3[ZIO]]
   addImplicit[BIOFork[IO]]
   addImplicit[SyncSafe3[ZIO]]
-  addImplicit[SyncSafe2[IO]]
   addImplicit[BIOPrimitives3[ZIO]]
   addImplicit[BIOPrimitives[IO]]
 
