@@ -178,7 +178,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
-    def docExamples = {
+    def docExamples() = {
       import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
 
       def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
@@ -211,7 +211,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       biotemporalPlusLocal[zio.ZIO],
       biomonadPlusLocal[zio.ZIO],
       bifunctorOnly[zio.ZIO],
-      docExamples,
+      docExamples(),
     )
   }
 }
