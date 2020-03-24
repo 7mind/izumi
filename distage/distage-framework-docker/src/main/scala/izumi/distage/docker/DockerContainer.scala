@@ -5,12 +5,9 @@ import java.util.concurrent.TimeUnit
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
-import distage.TagK
 import izumi.distage.docker.Docker._
-import izumi.distage.docker.DockerContainer.ContainerResource
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
@@ -22,53 +19,6 @@ import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-
-trait ContainerDef {
-  self =>
-  type Tag
-  type Container = DockerContainer[Tag]
-  type Config = Docker.ContainerConfig[Tag]
-
-  def config: Config
-
-  /**
-    * For binding in `ModuleDef`:
-    *
-    * {{{
-    * object KafkaDocker extends ContainerDef
-    * object ZookeeperDocker extends ContainerDef
-    *
-    * make[KafkaDocker.Container].fromResource {
-    *   KafkaDocker
-    *     .make[F]
-    *     .dependOnDocker(ZookeeperDocker)
-    * }
-    * }}}
-    *
-    * To kill all containers spawned by distage, use the following command:
-    *
-    * {{{
-    *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
-    * }}}
-    *
-    */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
-    tag.discard()
-    DockerContainer.resource[F](this)
-  }
-
-  final def copy(config: Config): ContainerDef.Aux[self.Tag] = {
-    @inline def c = config
-    new ContainerDef {
-      override type Tag = self.Tag
-      override def config: Config = c
-    }
-  }
-}
-
-object ContainerDef {
-  type Aux[T] = ContainerDef { type Tag = T }
-}
 
 final case class DockerContainer[Tag](
   id: Docker.ContainerId,
@@ -247,11 +197,10 @@ object DockerContainer {
 
     private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       logger.info(s"Running container with reused option with ${config.pullTimeout}.")
-      FileLockMutex.withLocalMutex(
+      FileLockMutex.withLocalMutex(logger)(
         s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
-        logger,
-        1.second,
-        config.pullTimeout.toSeconds.toInt
+        waitFor = 1.second,
+        maxAttempts = config.pullTimeout.toSeconds.toInt
       ) {
         for {
           containers <- F.maybeSuspend {

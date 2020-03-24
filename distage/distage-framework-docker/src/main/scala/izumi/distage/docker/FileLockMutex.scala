@@ -11,45 +11,45 @@ import izumi.logstage.api.IzLogger
 import scala.concurrent.duration._
 
 object FileLockMutex {
-  def withLocalMutex[F[_]: DIEffect: DIEffectAsync, E](
+
+  def withLocalMutex[F[_], E](logger: IzLogger)(
     filename: String,
-    logger: IzLogger,
-    waitFor: FiniteDuration = 1.second,
-    maxAttempts: Int = 10
-  )(eff: F[E]): F[E] = {
-    def acquireAndRun(chanel: FileChannel, attempts: Int = 0): F[E] = {
-      DIEffect[F].maybeSuspend {
+    waitFor: FiniteDuration,
+    maxAttempts: Int,
+  )(effect: F[E])(implicit
+    F: DIEffect[F],
+    P: DIEffectAsync[F],
+  ): F[E] = {
+    def acquireAndRun(channel: FileChannel, attempts: Int = 0): F[E] = {
+      F.maybeSuspend {
         logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for $filename.")
         try {
-          Option(chanel.tryLock())
+          Option(channel.tryLock())
         } catch {
           case _: OverlappingFileLockException => None
         }
       }.flatMap {
         case Some(v) =>
-          eff.guarantee(DIEffect[F].maybeSuspend(v.close()))
+          effect.guarantee(F.maybeSuspend(v.close()))
         case None if attempts < maxAttempts =>
-          DIEffectAsync[F].sleep(waitFor).flatMap(_ => acquireAndRun(chanel, attempts + 1))
+          P.sleep(waitFor).flatMap(_ => acquireAndRun(channel, attempts + 1))
         case _ =>
           logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
-          eff
+          effect
       }
     }
 
-    val tmpDir = System.getProperty("java.io.tmpdir")
-    val file = new File(s"$tmpDir/$filename.tmp")
-    file.createNewFile()
-    DIEffect[F].bracket(DIEffect[F].maybeSuspend(FileChannel.open(file.toPath, StandardOpenOption.WRITE))) {
-      ch =>
-        DIEffect[F].definitelyRecover {
-          DIEffect[F].maybeSuspend {
-            ch.close()
-            file.delete()
-            ()
-          }
-        }(_ => DIEffect[F].unit)
-    } {
-      acquireAndRun(_)
-    }
+      F.bracket(
+        acquire = F.maybeSuspend {
+          val tmpDir = System.getProperty("java.io.tmpdir")
+          val file = new File(s"$tmpDir/$filename.tmp")
+          val newFileCreated = file.createNewFile()
+          if (newFileCreated) file.deleteOnExit()
+          FileChannel.open(file.toPath, StandardOpenOption.WRITE)
+        }
+      )(release = ch => F.definitelyRecover(F.maybeSuspend(ch.close()))(_ => F.unit)) {
+        acquireAndRun(_)
+      }
   }
+
 }
