@@ -12,6 +12,7 @@ import izumi.logstage.api.IzLogger
 import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 
 trait ContainerNetworkDef {
   self =>
@@ -62,7 +63,7 @@ object ContainerNetworkDef {
 
     override def acquire: F[ContainerNetwork[T]] = {
       if (config.reuse) {
-        FileLockMutex.withLocalMutex(prefix, logger) {
+        FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
           val labelsSet = stableLabels.toSet
           val existedNetworks = client.listNetworksCmd().exec().asScala.toList
           existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
