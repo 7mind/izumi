@@ -26,7 +26,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -80,7 +80,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -92,7 +92,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1",
       "2.11.12"
     )
@@ -134,7 +134,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -188,7 +188,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -200,7 +200,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1",
       "2.11.12"
     )
@@ -229,7 +229,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -283,7 +283,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -295,7 +295,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1",
       "2.11.12"
     )
@@ -335,7 +335,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -389,7 +389,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -401,7 +401,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1",
       "2.11.12"
     )
@@ -436,7 +436,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -490,7 +490,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -502,7 +502,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1",
       "2.11.12"
     )
@@ -534,7 +534,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -588,7 +588,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -600,7 +600,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -639,7 +639,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -693,7 +693,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -705,7 +705,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -744,7 +744,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -798,7 +798,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -810,7 +810,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -842,7 +842,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -896,7 +896,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -908,7 +908,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -943,7 +943,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -997,7 +997,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1009,7 +1009,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1044,7 +1044,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1098,7 +1098,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1110,7 +1110,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1145,7 +1145,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1199,7 +1199,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1211,7 +1211,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1245,7 +1245,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1299,7 +1299,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1311,7 +1311,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1342,7 +1342,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1396,7 +1396,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1408,7 +1408,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1448,7 +1448,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1502,7 +1502,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1514,7 +1514,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1553,7 +1553,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1607,7 +1607,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1619,7 +1619,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1656,7 +1656,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1710,7 +1710,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1722,7 +1722,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1760,7 +1760,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1814,7 +1814,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1826,7 +1826,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1862,7 +1862,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1916,7 +1916,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1928,7 +1928,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -1960,7 +1960,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2014,7 +2014,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2026,7 +2026,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -2061,7 +2061,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2115,7 +2115,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2127,7 +2127,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -2161,7 +2161,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2215,7 +2215,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2227,7 +2227,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -2335,7 +2335,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2389,7 +2389,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2401,7 +2401,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     )
   )
@@ -2432,7 +2432,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
+      case (_, "2.12.11") => Seq(
         "-Xsource:2.13",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2486,7 +2486,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.10") => Seq(
+      case (false, "2.12.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2498,7 +2498,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10"
+      "2.12.11"
     ),
     coverageEnabled := false
   )
@@ -2540,7 +2540,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2564,7 +2564,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2588,7 +2588,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2605,7 +2605,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2622,7 +2622,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2636,7 +2636,7 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2668,7 +2668,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.10",
+      "2.12.11",
       "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2713,7 +2713,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.11",
     organization in ThisBuild := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
