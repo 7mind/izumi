@@ -3,7 +3,7 @@ object V {
   val collection_compat = "2.1.4"
 
   val kind_projector = "0.11.0"
-  val silencer = "1.4.4"
+  val silencer = "1.6.0"
 
   val scalatest = "3.1.1"
 
