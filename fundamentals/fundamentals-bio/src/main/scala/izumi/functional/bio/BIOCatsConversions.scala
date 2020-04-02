@@ -126,8 +126,8 @@ object BIOCatsConversions {
     @inline override final def bracketCase[A, B](
       acquire: F[Throwable, A]
     )(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
-      F.bracketCase[Any, Throwable, A, B](acquire)(
-        (a, e) =>
+      F.bracketCase(acquire)(
+        (a, e: BIOExit[Throwable, B]) =>
           F.orTerminate {
             release(a, e match {
               case BIOExit.Success(_) => ExitCase.Completed

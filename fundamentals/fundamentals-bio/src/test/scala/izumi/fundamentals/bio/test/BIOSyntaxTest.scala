@@ -18,17 +18,51 @@ class BIOSyntaxTest extends AnyWordSpec {
   "BIO.widen/widenError is callable" in {
     def x[F[+_, +_]: BIO]: F[Throwable, AnyVal] = {
       identity[F[Throwable, AnyVal]] {
-        BIO[F].pure(None: Option[Int]).flatMap {
+        F.pure(None: Option[Int]).flatMap {
           _.fold(
-            BIO[F].unit.widenError[Throwable].widen[AnyVal]
+            F.unit.widenError[Throwable].widen[AnyVal]
           )(
-            _ => BIO[F].fail(new RuntimeException)
+            _ => F.fail(new RuntimeException)
           )
         }
       }
     }
 
     x[zio.IO]
+  }
+
+  "BIOBracket.bracketCase & guaranteeCase are callable" in {
+    import izumi.functional.bio.BIOBracket
+    import izumi.functional.bio.BIOExit
+
+    def x[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+      F.pure(None).bracketCase(release = {
+        (_, _: BIOExit[Throwable, Int]) => F.unit
+      })(_ => F.pure(1))
+    }
+    def y[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+      F.pure(None).bracketCase[Throwable, Int] {
+        case (_, BIOExit.Success(x)) => F.pure(x).as(())
+        case (_, _) => F.unit
+      } (_ => F.pure(1))
+    }
+    def z[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+      F.pure(1).guaranteeCase {
+        case BIOExit.Success(x) => F.pure(x).as(())
+        case _ => F.unit
+      }
+    }
+    def zz[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+      F.pure(1).widenError[Throwable].guaranteeCase {
+        case BIOExit.Success(x) => F.pure(x).as(())
+        case _ => F.unit
+      }.widenError[Throwable]
+    }
+
+    x[zio.IO]
+    y[zio.IO]
+    z[zio.IO]
+    zz[zio.IO]
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
