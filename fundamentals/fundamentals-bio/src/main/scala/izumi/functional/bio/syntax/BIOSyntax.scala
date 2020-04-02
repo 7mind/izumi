@@ -99,8 +99,9 @@ object BIOSyntax {
   }
 
   class BIOBracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOBracket[F]) extends BIOMonadErrorOps(r) {
-    @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
-      F.bracket(r: F[E1, A])(release)(use)
+    @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
+    @inline final def bracketCase[E1 >: E, B](release: (A, BIOExit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
+    @inline final def guaranteeCase(cleanup: BIOExit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
   }
 
   class BIOPanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOPanic[F]) extends BIOBracketOps(r) {

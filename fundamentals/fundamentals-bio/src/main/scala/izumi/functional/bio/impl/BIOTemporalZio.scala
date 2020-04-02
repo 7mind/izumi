@@ -25,5 +25,4 @@ class BIOTemporalZio(private val clock: Clock) extends BIOAsyncZio with BIOTempo
   @inline override final def timeout[R, E, A](r: ZIO[R, E, A])(duration: Duration): ZIO[R, E, Option[A]] = {
     ZIO.accessM[R](e => race(r.provide(e).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
   }
-
 }

@@ -22,7 +22,8 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def fail[E](v: => E): ZIO[Any, E, Nothing] = ZIO.fail(v)
   @inline override final def terminate(v: => Throwable): ZIO[Any, Nothing, Nothing] = ZIO.die(v)
 
-  @inline override final def fromEither[L, R0](v: => Either[L, R0]): ZIO[Any, L, R0] = ZIO.fromEither(v)
+  @inline override final def fromEither[E, A](effect: => Either[E, A]): ZIO[Any, E, A] = ZIO.fromEither(effect)
+  @inline override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): ZIO[Any, E, A] = ZIO.fromEither(effect.toRight(errorOnNone))
   @inline override final def fromTry[A](effect: => Try[A]): ZIO[Any, Throwable, A] = ZIO.fromTry(effect)
 
   @inline override final def void[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, Unit] = r.unit
@@ -56,9 +57,11 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def bracket[R, E, A, B](acquire: ZIO[R, E, A])(release: A => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
     ZIO.bracket(acquire)(release)(use)
   }
-
   @inline override final def bracketCase[R, E, A, B](acquire: ZIO[R, E, A])(release: (A, BIOExit[E, B]) => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
-    ZIO.bracketExit[R, E, A, B](acquire, { case (a, exit) => release(a, ZIOExit.toBIOExit(exit)) }, use)
+    ZIO.bracketExit[R, E, A, B](acquire, (a, exit) => release(a, ZIOExit.toBIOExit(exit)), use)
+  }
+  @inline override final def guaranteeCase[R, E, A](f: ZIO[R, E, A], cleanup: BIOExit[E, A] => ZIO[R, Nothing, Unit]): ZIO[R, E, A] = {
+    f.onExit(cleanup apply ZIOExit.toBIOExit(_))
   }
 
   @inline override final def traverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreach(l)(f)
@@ -73,8 +76,9 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: ZIO[Any, Nothing, Nothing] = ZIO.never
 
-  @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = r1.interruptible.raceFirst(r2.interruptible)
-
+  @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
+    r1.interruptible.raceFirst(r2.interruptible)
+  }
   @inline override final def racePair[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B]
@@ -88,11 +92,9 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): ZIO[Any, E, A] = {
     ZIO.effectAsync(cb => register(cb apply _.fold(ZIO.fail(_), ZIOSucceedNow)))
   }
-
   @inline override final def asyncF[R, E, A](register: (Either[E, A] => Unit) => ZIO[R, E, Unit]): ZIO[R, E, A] = {
     ZIO.effectAsyncM(cb => register(cb apply _.fold(ZIO.fail(_), ZIOSucceedNow)))
   }
-
   @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): ZIO[Any, E, A] = {
     ZIO.effectAsyncInterrupt[Any, E, A] {
       cb =>
@@ -104,7 +106,6 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def fromFuture[A](mkFuture: ExecutionContext => Future[A]): ZIO[Any, Throwable, A] = {
     ZIO.fromFuture(mkFuture)
   }
-
   @inline override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): ZIO[Any, Throwable, A] = {
     __PlatformSpecific.fromFutureJava(javaFuture)
   }

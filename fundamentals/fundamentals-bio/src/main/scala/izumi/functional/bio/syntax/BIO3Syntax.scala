@@ -120,8 +120,9 @@ object BIO3Syntax {
 
   class BIOBracket3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOBracket3[FR])
     extends BIOMonadError3Ops(r) {
-    @inline final def bracket[R1 <: R, E1 >: E, B](release: A => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
-      F.bracket(r: FR[R1, E1, A])(release)(use)
+    @inline final def bracket[R1 <: R, E1 >: E, B](release: A => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] = F.bracket(r: FR[R1, E1, A])(release)(use)
+    @inline final def bracketCase[R1 <: R, E1 >: E, B](release: (A, BIOExit[E1, B]) => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] = F.bracketCase(r: FR[R1, E1, A])(release)(use)
+    @inline final def guaranteeCase[R1 <: R](cleanup: BIOExit[E, A] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeCase(r, cleanup)
   }
 
   class BIOPanic3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOPanic3[FR])
@@ -150,7 +151,7 @@ object BIO3Syntax {
 
   class BIO3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIO3[FR]) extends BIOPanic3Ops(r) {
     @inline final def bracketAuto[R1 <: R, E1 >: E, B](use: A => FR[R1, E1, B])(implicit ev: A <:< AutoCloseable): FR[R1, E1, B] =
-      F.bracket[R1, E1, A, B](r)(c => F.sync(c.close()))(use)
+      F.bracket(r: FR[R1, E1, A])(c => F.sync(c.close()))(use)
   }
 
   class BIOAsync3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) {

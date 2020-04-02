@@ -8,7 +8,7 @@ trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
 
 private[bio] sealed trait BIOForkInstances
 object BIOForkInstances extends LowPriorityBIOForkInstances {
-  implicit object BIOForkZio extends BIOFork3[ZIO] {
+  implicit val BIOForkZio: BIOFork3[ZIO] = new BIOFork3[ZIO] {
     override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber3[ZIO, E, A]] =
       f
       // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
