@@ -34,12 +34,7 @@ object PluginConfig {
   def const(plugin: PluginBase): PluginConfig = const(Seq(plugin))
   lazy val empty: PluginConfig = const(Nil)
 
-  private[this] lazy val cacheEnabled: Boolean = {
-    import izumi.fundamentals.platform.strings.IzString._
-    System
-      .getProperty(DebugProperties.`izumi.distage.plugins.cache`)
-      .asBoolean(true)
-  }
+  private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.asBoolean(true)
 }
 
 

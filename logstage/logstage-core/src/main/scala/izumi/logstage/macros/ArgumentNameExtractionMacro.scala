@@ -1,25 +1,25 @@
 package izumi.logstage.macros
 
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log.LogArg
+import izumi.logstage.api.rendering.LogstageCodec
 
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
-import izumi.fundamentals.platform.strings.IzString._
-import izumi.logstage.api.rendering.LogstageCodec
-
 import scala.util.{Failure, Success}
 
-
 class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict: Boolean) {
-  private final val applyDebug = DebugProperties.`izumi.debug.macro.logstage`.asBoolean(false)
+  private[this] final val applyDebug = DebugProperties.`izumi.debug.macro.logstage`.asBoolean(false)
 
-  @inline private[this] final def debug(arg: c.universe.Tree, s: => String): Unit = {
+  import ExtractedName._
+  import c.universe._
+
+  @inline private[this] final def debug(arg: Tree, s: => String): Unit = {
     if (applyDebug) {
       c.warning(arg.pos, s)
     }
   }
-
-  import ExtractedName._
 
   val example: String =
     s"""1) Simple variable:
@@ -35,13 +35,9 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
        |""".stripMargin
 
 
-  protected[macros] def recoverArgNames(args: Seq[c.Tree]): c.Expr[List[LogArg]] = {
-    import c.universe._
-
-
-
+  private[macros] def recoverArgNames(args: Seq[Tree]): c.Expr[List[LogArg]] = {
     object Arrow {
-      def unapply(arg: c.universe.Tree): Option[TypeApply] = {
+      def unapply(arg: Tree): Option[TypeApply] = {
         arg match {
           case t@TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())) => Some(t)
           case _ => None
@@ -50,7 +46,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
 
     object ArrowPair {
-      def unapply(arg: c.universe.Tree): Option[(c.universe.Tree, c.universe.Tree)] = {
+      def unapply(arg: Tree): Option[(Tree, Tree)] = {
         arg match {
           case Apply(TypeApply(
           Select(
@@ -68,14 +64,14 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
 
 
     object ArrowArg {
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], ExtractedName)] = {
+      def unapply(arg: Tree): Option[(Tree, ExtractedName)] = {
         arg match {
           case ArrowPair(expr, Literal(Constant(char: Char))) => // ${value -> ' '}
-            Some((c.Expr(expr), NChar(char)))
+            Some((expr, NChar(char)))
           case ArrowPair(expr, Literal(Constant(name: String))) => // ${value -> "name"}
-            Some((c.Expr(expr), NString(name)))
+            Some((expr, NString(name)))
           case ArrowPair(expr@NameSeq(names), Literal(Constant(null))) => // ${value -> null}
-            Some((c.Expr(expr), NString(names.last)))
+            Some((expr, NString(names.last)))
           case _ =>
             None
         }
@@ -83,11 +79,10 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
 
     object HiddenArrowArg {
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], ExtractedName)] = {
+      def unapply(arg: Tree): Option[(Tree, ExtractedName)] = {
         arg match {
           case ArrowPair(expr, Literal(Constant(null))) => // ${value -> "name" -> null}
             ArrowArg.unapply(expr)
-
           case _ =>
             None
         }
@@ -95,147 +90,135 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
 
     object NameSeq {
-      def unapply(arg: c.universe.Tree): Option[Seq[String]] = {
+      def unapply(arg: Tree): Option[Seq[String]] = {
         extract(arg, Seq.empty)
       }
 
 
       @tailrec
-      private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
+      private[this] def extract(arg: Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
-          case c.universe.Select(Ident(TermName("scala")), TermName("Predef")) =>
+          case Select(Ident(TermName("scala")), TermName("Predef")) =>
             debug(arg, s"END-PREDEF")
             Some(acc)
 
-          case c.universe.Select(e, TermName(s)) => // ${x.value}
-            debug(arg, s"B1: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
+          case Select(e, TermName(s)) => // ${x.value}
+            debug(arg, s"B1: arg=${showRaw(arg)} e=${showRaw(e)}, s='$s', acc=$acc")
             extract(e, s +: acc)
 
-          case Apply(c.universe.Select(e, TermName(s)), List()) => // ${x.getSomething}
-            debug(arg, s"B2: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
+          case Apply(Select(e, TermName(s)), List()) => // ${x.getSomething}
+            debug(arg, s"B2: arg=${showRaw(arg)} e=${showRaw(e)}, s='$s', acc=$acc")
             extract(e, s +: acc)
 
-          case Apply(c.universe.Select(e, _), Ident(TermName(s)) :: Nil) => // ${Predef.ops(x).getSomething}
-            debug(arg, s"B2-1: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
+          case Apply(Select(e, _), Ident(TermName(s)) :: Nil) => // ${Predef.ops(x).getSomething}
+            debug(arg, s"B2-1: arg=${showRaw(arg)} e=${showRaw(e)}, s='$s', acc=$acc")
             extract(e, s +: acc)
 
-          case c.universe.This(TypeName(s)) =>
-            debug(arg, s"END-THIS: arg=${c.universe.showRaw(arg)} s='$s', acc=$acc")
+          case This(TypeName(s)) =>
+            debug(arg, s"END-THIS: arg=${showRaw(arg)} s='$s', acc=$acc")
             if (s.isEmpty) {
               Some("this" +: acc)
             } else {
               Some(s +: acc)
             }
 
-          case c.universe.Ident(TermName(s)) =>
-            debug(arg, s"END-NAME: arg=${c.universe.showRaw(arg)} s='$s', acc=$acc")
+          case Ident(TermName(s)) =>
+            debug(arg, s"END-NAME: arg=${showRaw(arg)} s='$s', acc=$acc")
             Some(s +: acc)
 
           case _ =>
-            debug(arg, s"END-NONE, arg=${c.universe.showRaw(arg)}, acc=$acc")
+            debug(arg, s"END-NONE, arg=${showRaw(arg)}, acc=$acc")
             None
         }
       }
     }
 
-    val expressions = args.map(a => c.Expr(a)).map {
-      param =>
-        param.tree match {
-          case NameSeq(seq) =>
-            reifiedExtracted(param, seq)
+    val expressions = args.map {
+      case param @ NameSeq(seq) =>
+        reifiedExtracted(param, seq)
 
-          case ArrowArg(expr, name) => // ${x -> "name"}
-            name match {
-              case NChar(ch) if ch == ' ' =>
-                expr.tree match {
-                  case NameSeq(seq) =>
-                    reifiedExtracted(expr, seq.map(_.camelToUnderscores.replace('_', ' ')))
-                  case _ =>
-                    reifiedExtracted(expr, Seq(ch.toString))
-                }
-              case NChar(ch) =>
-                c.abort(param.tree.pos,
-                  s"""Unsupported mapping: $ch
-                     |
-                     |You have the following ways to assign a name:
-                     |$example
-                     |""".stripMargin)
-
-              case NString(s) =>
-                reifiedExtracted(expr, Seq(s))
+      case param @ ArrowArg(tree, name) => // ${x -> "name"}
+        name match {
+          case NChar(ch) if ch == ' ' =>
+            tree match {
+              case NameSeq(seq) =>
+                reifiedExtracted(tree, seq.map(_.camelToUnderscores.replace('_', ' ')))
+              case _ =>
+                reifiedExtracted(tree, Seq(ch.toString))
             }
-
-          case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
-            reifiedExtractedHidden(expr, name.str)
-
-          case t@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
-            c.warning(t.pos,
-              s"""Constant expression as a logger argument: $v, this makes no sense.
+          case NChar(ch) =>
+            c.abort(param.pos,
+              s"""Unsupported mapping: $ch
                  |
-                 |But Logstage expects you to use string interpolations instead, such as:
+                 |You have the following ways to assign a name:
                  |$example
                  |""".stripMargin)
 
-            reifiedPrefixed(param, "UNNAMED")
-
-          case v =>
-            c.warning(v.pos,
-              s"""Expression as a logger argument: $v
-                 |
-                 |But Logstage expects you to use string interpolations instead, such as:
-                 |$example
-                 |
-                 |Tree: ${c.universe.showRaw(v)}
-                 |""".stripMargin)
-            reifiedPrefixedValue(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
+          case NString(s) =>
+            reifiedExtracted(tree, Seq(s))
         }
+
+      case HiddenArrowArg(tree, name) => // ${x -> "name" -> null }
+        reifiedExtractedHidden(tree, name.str)
+
+      case param @ (t@Literal(Constant(v))) => // ${2+2}
+        c.warning(t.pos,
+          s"""Constant expression as a logger argument: $v, this makes no sense.
+             |
+             |But Logstage expects you to use string interpolations instead, such as:
+             |$example
+             |""".stripMargin)
+
+        reifiedPrefixedValue(param, param, "UNNAMED")
+
+      case v =>
+        c.warning(v.pos,
+          s"""Expression as a logger argument: $v
+             |
+             |But Logstage expects you to use string interpolations instead, such as:
+             |$example
+             |
+             |Tree: ${showRaw(v)}
+             |""".stripMargin)
+        reifiedPrefixedValue(Literal(Constant(showCode(v))), v, "EXPRESSION")
     }
 
     c.Expr[List[LogArg]] {
-      q"List(..$expressions)"
+      q"_root_.scala.collection.immutable.List(..$expressions)"
     }
   }
-
-
-  private def reifiedPrefixed(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
-    reifiedPrefixedValue(param, param, prefix)
-  }
-
-  private def reifiedPrefixedValue(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
-    import c.universe._
+  private[this] def reifiedPrefixedValue(param: Tree, value: Tree, prefix: String): Expr[LogArg] = {
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
+    val paramExpr = c.Expr[Any](param)
+    val valueExpr = c.Expr[Any](value)
     reify {
-      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hiddenName = false, findCodec(param).splice)
+      LogArg(Seq(s"${prefixRepr.splice}:${paramExpr.splice}"), valueExpr.splice, hiddenName = false, findCodec(value).splice)
     }
   }
 
-
-  private def reifiedExtractedHidden(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
-    import c.universe._
+  private[this] def reifiedExtractedHidden(param: Tree, s: String): Expr[LogArg] = {
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
+    val expr = c.Expr[Any](param)
     reify {
-      LogArg(Seq(paramRepTree.splice), param.splice, hiddenName = true, findCodec(param).splice)
+      LogArg(Seq(paramRepTree.splice), expr.splice, hiddenName = true, findCodec(param).splice)
     }
   }
 
-  private def reifiedExtracted(param: c.Expr[Any], s: Seq[String]): c.universe.Expr[LogArg] = {
-    import c.universe._
+  private[this] def reifiedExtracted(param: Tree, s: Seq[String]): Expr[LogArg] = {
     val list = c.Expr[Seq[String]](q"List(..$s)")
-
+    val expr = c.Expr[Any](param)
     reify {
-      LogArg(list.splice, param.splice, hiddenName = false, findCodec(param).splice)
+      LogArg(list.splice, expr.splice, hiddenName = false, findCodec(param).splice)
     }
   }
 
-  private def findCodec(param: c.Expr[Any]): c.Expr[Option[LogstageCodec[Any]]] = {
-    import c.universe._
-    val maybeCodec = scala.util.Try(c.inferImplicitValue(appliedType(weakTypeOf[LogstageCodec[Nothing]].typeConstructor, param.tree.tpe), silent = false))
-    debug(param.tree, s"Logstage codec for argument $param: ${param.tree.tpe} == $maybeCodec")
+  private[this] def findCodec(param: Tree, tpe: Type): Expr[Option[LogstageCodec[Any]]] = {
+    val maybeCodec = scala.util.Try(c.inferImplicitValue(appliedType(weakTypeOf[LogstageCodec[Nothing]].typeConstructor, tpe), silent = false))
+    debug(param, s"Logstage codec for argument $param of type `$tpe` == $maybeCodec")
 
     val tc = maybeCodec match {
-      case Failure(exception) if strict =>
-        c.error(param.tree.pos, s"Implicit search failed for parameter ${c.universe.showCode(param.tree)}: ${param.tree.tpe}")
-        throw exception
+      case Failure(_) if strict =>
+        c.abort(param.pos, s"Implicit search failed for `logstage.LogstageCodec[$tpe]` for parameter `${showCode(param)}` of type `$tpe`")
       case Failure(_) =>
         None
       case Success(value) =>
@@ -244,5 +227,5 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
 
     c.Expr[Option[LogstageCodec[Any]]](q"$tc")
   }
+  @inline private[this] def findCodec(param: Tree): Expr[Option[LogstageCodec[Any]]] = findCodec(param, param.tpe)
 }
-

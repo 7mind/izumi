@@ -8,6 +8,6 @@ import izumi.fundamentals.platform.properties
   * @see [[DebugProperties]]
   */
 object DebugProperties extends properties.DebugProperties {
-  final val `izumi.debug.macro.distage.constructors` = "izumi.debug.macro.distage.constructors"
-  final val `izumi.debug.macro.distage.providermagnet` = "izumi.debug.macro.distage.providermagnet"
+  final val `izumi.debug.macro.distage.constructors` = Property("izumi.debug.macro.distage.constructors")
+  final val `izumi.debug.macro.distage.providermagnet` = Property("izumi.debug.macro.distage.providermagnet")
 }

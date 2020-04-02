@@ -9,5 +9,5 @@ import izumi.fundamentals.platform.properties
   */
 object DebugProperties extends properties.DebugProperties {
   /** Scan classpath only once per test run */
-  final val `izumi.distage.plugins.cache` = "izumi.distage.plugins.cache"
+  final val `izumi.distage.plugins.cache` = Property("izumi.distage.plugins.cache")
 }

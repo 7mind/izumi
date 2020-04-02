@@ -116,9 +116,10 @@ object Log {
                           , dynamic: DynamicContext
                           , customContext: CustomContext
                           ) {
-    def +(that: CustomContext): Context = {
+    def ++(that: CustomContext): Context = {
       copy(customContext = customContext + that)
     }
+    def +(that: CustomContext): Context = ++(that)
   }
   object Context {
     /** Record surrounding source code location, current thread and timestamp */
@@ -156,15 +157,16 @@ object Log {
   final case class Message(template: StringContext, args: LogContext) {
     def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
 
-    def +(that: Message): Message = Message(StringContext(template.parts ++ that.template.parts: _*), args ++ that.args)
+    def ++(that: Message): Message = Message(StringContext(template.parts ++ that.template.parts: _*), args ++ that.args)
+    def +(that: Message): Message = ++(that)
   }
-
   object Message {
     /** Construct [[Message]] from a string interpolation */
     implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
 
     def empty: Message = Message(new StringContext(""), Nil)
   }
+
   object StrictMessage {
     /** Construct [[Message]] from a string interpolation */
     implicit def apply(message: String): Message = macro LogMessageMacroStrict.logMessageMacro

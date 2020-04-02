@@ -11,10 +11,9 @@ import scala.util.{Failure, Success, Try}
 
 trait LogFormat {
   @inline def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter
-
   @inline def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage
 
-  @inline protected[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String
+  @inline private[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String
 }
 
 
@@ -48,7 +47,7 @@ object LogFormat {
       RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.toSeq, unbalancedArgs.toSeq)
     }
 
-    @inline protected[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String = {
+    @inline private[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String = {
       val key = wrapped(withColor, Console.GREEN, name)
       val v = argToString(value, withColor)
       s"$key=$v"

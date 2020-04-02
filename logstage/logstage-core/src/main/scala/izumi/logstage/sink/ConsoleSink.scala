@@ -13,17 +13,13 @@ class ConsoleSink(policy: RenderingPolicy) extends LogSink {
 
 object ConsoleSink {
   def apply(policy: RenderingPolicy): ConsoleSink = new ConsoleSink(policy)
-
   def text(colored: Boolean = true): ConsoleSink = if (colored) ColoredConsoleSink else SimpleConsoleSink
 
-  final val ColoredConsoleSink = new ConsoleSink(coloringPolicy())
-  final val SimpleConsoleSink = new ConsoleSink(simplePolicy())
+  object ColoredConsoleSink extends ConsoleSink(coloringPolicy())
+  object SimpleConsoleSink extends ConsoleSink(simplePolicy())
 
-  protected[logstage] def coloringPolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
-    new StringRenderingPolicy(RenderingOptions(), renderingLayout)
-  }
-
-  protected[logstage] def simplePolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
-    new StringRenderingPolicy(RenderingOptions(withExceptions = false, colored = false), renderingLayout)
-  }
+  private[logstage] def coloringPolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy =
+    new StringRenderingPolicy(RenderingOptions.default, renderingLayout)
+  private[logstage] def simplePolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy =
+    new StringRenderingPolicy(RenderingOptions.simple, renderingLayout)
 }

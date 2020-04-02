@@ -1,7 +1,6 @@
 import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.logstage.api.logger.AbstractLogger
 import izumi.logstage.{api, sink}
-import logstage.strict.LogIOStrict
 import zio.Has
 
 package object logstage extends LogStage {

@@ -147,7 +147,7 @@ val logger = IzLogger()
 
 val log = LogIO.fromLogger[IO](logger)
 
-log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
+log.info(s"Hey! I'm logging with ${log}stage!")
 ```
 
 ```
@@ -217,9 +217,7 @@ import zio.IO
 
 val log = LogstageZIO.withFiberId(IzLogger())
 
-zio.Runtime.default.unsafeRun {
-  log.info(s"Hey! I'm logging with ${log}stage!")
-}
+log.info(s"Hey! I'm logging with ${log}stage!")
 ```
 
 ```
@@ -241,12 +239,46 @@ class Service[F[-_, +_, +_]: LogBIOEnv] {
   }
 }
 
-zio.Runtime.default.unsafeRun {
-  implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
-  new Service[ZIO]
-    .fn
-    .provide(Has(LogBIO3.fromLogger(IzLogger())))
+implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
+new Service[ZIO]
+  .fn
+  .provide(Has(LogBIO3.fromLogger(IzLogger())))
+```
+
+Custom JSON rendering with LogstageCodec
+----------------------------------------
+
+If you define an instance of `LogstageCodec` for your type, it will be used when rendering your logs to JSON instead of the default renderer.
+
+You can derive instances of `LogstageCodec` from Circe codecs with `logstage-rendering-circe` or write them manually.
+
+Example:
+
+```scala mdoc:reset:to-string
+import io.circe.Codec
+import io.circe.derivation
+import logstage.LogstageCodec
+import logstage.circe.LogstageCirceCodec
+
+final case class KV(key: String, value: Int)
+
+object KV {
+  implicit val circeCodec: Codec[KV] = derivation.deriveCodec[KV]
+  implicit val logstageCodec: LogstageCodec[KV] = LogstageCirceCodec.derived[KV]
 }
+```
+
+If you want to make sure that all values in your interpolations are rendered using `LogstageCodec` instead of default renderer,
+use `IzStrictLogger`/`LogIOStrict` types from `logstage.strict` package:
+
+```scala mdoc:to-string
+import logstage.strict.IzStrictLogger
+import logstage.ConsoleSink
+import logstage.circe.LogstageCirceRenderingPolicy
+
+val logger = IzStrictLogger(sink = ConsoleSink(LogstageCirceRenderingPolicy()))
+
+logger.info(s"Got ${KV("key", 7) -> "KeyValue"}")
 ```
 
 SLF4J Router

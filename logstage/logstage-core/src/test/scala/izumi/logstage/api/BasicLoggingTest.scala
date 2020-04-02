@@ -61,7 +61,7 @@ class BasicLoggingTest extends AnyWordSpec {
 
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
-      val p = new StringRenderingPolicy(RenderingOptions(colored = false))
+      val p = new StringRenderingPolicy(RenderingOptions.default.copy(colored = false))
       val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false, None), LogArg(Seq("[a2]"), 2, hiddenName = false, None))))
       assert(rendered.endsWith("begin [a_1]=1 end {{ [a_2]=2 }}"))
     }

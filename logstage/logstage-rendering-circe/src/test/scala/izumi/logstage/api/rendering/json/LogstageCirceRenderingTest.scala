@@ -3,17 +3,16 @@ package izumi.logstage.api.rendering.json
 import io.circe.literal._
 import io.circe.parser._
 import io.circe.{Codec, Json}
-import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
+import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.{IzLogger, TestSink}
 import izumi.logstage.sink.{ConsoleSink, ExampleService}
 import org.scalatest.wordspec.AnyWordSpec
 
-
 class LogstageCirceRenderingTest extends AnyWordSpec {
   import LogstageCirceRenderingTest._
 
-  val debug = false
+  val debug = true
 
   "Log macro" should {
     "support console sink with json output policy" in {
@@ -41,10 +40,14 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
                 case None =>
                   fail(s"not an object: $value")
               }
-
           }
       }
 
+      assert {
+        renderedMessages.exists(
+          x => x.contains("\"map\" : {") && x.contains(raw""""Str" : "Branch(\"subtypes are fine in strict\")"""")
+        )
+      }
     }
 
     "support strict logging" in {
@@ -106,9 +109,8 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
 
 object LogstageCirceRenderingTest {
   case class WithCustomCodec()
-
   object WithCustomCodec {
-    implicit val Codec: LogstageCodec[WithCustomCodec] = (_: WithCustomCodec, writer: LogstageWriter) => {
+    implicit val Codec: LogstageCodec[WithCustomCodec] = { (writer, _) =>
       writer.openMap()
       writer.write("a")
       writer.openList()
@@ -120,10 +122,9 @@ object LogstageCirceRenderingTest {
   }
 
   case class WithCustomDerivedCodec(a: Int, b: String, c: List[Map[String, String]])
-
   object WithCustomDerivedCodec {
-    implicit val JsonCodec: Codec.AsObject[WithCustomDerivedCodec] = _root_.io.circe.derivation.deriveCodec[WithCustomDerivedCodec]
-    implicit val LsCodec: LogstageCodec[WithCustomDerivedCodec] = _root_.logstage.circe.fromCirce[WithCustomDerivedCodec]
+    implicit val JsonCodec: Codec.AsObject[WithCustomDerivedCodec] = io.circe.derivation.deriveCodec[WithCustomDerivedCodec]
+    implicit val LsCodec: LogstageCodec[WithCustomDerivedCodec] = logstage.circe.fromCirce[WithCustomDerivedCodec]
   }
 
 }

@@ -3,8 +3,8 @@ package izumi.logstage.api.rendering
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.exceptions.IzThrowable
 import izumi.fundamentals.platform.jvm.IzJvm
-import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.platform.time.IzTimeSafe
+import izumi.logstage.DebugProperties
 import izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
 import izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
 import izumi.logstage.api.{Log, rendering}
@@ -16,17 +16,17 @@ class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer
     val colorsEnabled = any(
       all(
         options.colored,
-        System.getProperty("izumi.logstage.rendering.colored").asBoolean(true),
+        DebugProperties.`izumi.logstage.rendering.colored`.asBoolean(true),
         IzJvm.terminalColorsEnabled,
       ),
-      System.getProperty("izumi.logstage.rendering.colored.forced").asBoolean(false),
+      DebugProperties.`izumi.logstage.rendering.colored.forced`.asBoolean(false),
     )
 
 
     options.copy(colored = colorsEnabled)
   }
 
-  private val renderer = template match {
+  private val renderer: Renderer.Aggregate = template match {
     case Some(value) =>
       value
     case None =>
@@ -66,7 +66,7 @@ class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer
 }
 
 object StringRenderingPolicy {
-  val template = new Renderer.Aggregate(Seq(
+  val template: Renderer.Aggregate = new Renderer.Aggregate(Seq(
     new Styler.LevelColor(Seq(
       new Extractor.Level(1),
       Extractor.Space,

@@ -15,12 +15,10 @@ import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
 trait DistageTestEnv {
-  protected[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig): TestEnvironment = {
+  private[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig): TestEnvironment = {
     val roles = loadRoles(logger)
     val mergeStrategy = makeMergeStrategy(logger)
     val pluginLoader = makePluginloader(logger)
-
-    import izumi.fundamentals.platform.strings.IzString._
     def doMake(): TestEnvironment = {
       makeEnv(logger, testConfig, pluginLoader, roles, mergeStrategy)
     }
@@ -32,7 +30,7 @@ trait DistageTestEnv {
     }
   }
 
-  protected[distage] def makeEnv(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
+  private[distage] def makeEnv(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
