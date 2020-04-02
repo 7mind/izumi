@@ -1,14 +1,14 @@
 package izumi.logstage.api.logger
 
 import izumi.logstage.macros.LogIOMacroMethods._
-import logstage.UnsafeLogIO
+import logstage.LogIO
 
 import scala.language.experimental.macros
 
 trait AbstractMacroLoggerF[F[_]] {
-  this: UnsafeLogIO[F] =>
+  this: LogIO[F] =>
 
-  /** Aliases for [[UnsafeLogIO#log]] that look better in Intellij */
+  /** Aliases for [[logstage.LogIO#log]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacro[F]
   final def debug(message: String): F[Unit] = macro scDebugMacro[F]
   final def info(message: String): F[Unit] = macro scInfoMacro[F]

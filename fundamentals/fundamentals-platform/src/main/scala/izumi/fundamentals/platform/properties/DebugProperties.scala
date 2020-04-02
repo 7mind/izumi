@@ -1,5 +1,8 @@
 package izumi.fundamentals.platform.properties
+
 import izumi.fundamentals.platform.strings.IzString._
+
+import scala.language.implicitConversions
 
 /**
   * Marker trait for objects that hold names of Java Properties
@@ -14,11 +17,15 @@ import izumi.fundamentals.platform.strings.IzString._
   * }}}
   */
 trait DebugProperties {
-  case class Property protected (name: String) {
-    def asBoolean(default: Boolean): Boolean = {
-      System.getProperty(name).asBoolean().getOrElse(default)
-    }
-  }
+  @inline final def Property(name: String): BooleanProperty = new BooleanProperty(name)
 }
 
+final case class BooleanProperty(name: String) extends AnyVal {
+  def asBoolean(default: Boolean): Boolean = {
+    System.getProperty(name).asBoolean().getOrElse(default)
+  }
+}
+object BooleanProperty {
+  @inline implicit def asString(property: BooleanProperty): String = property.name
+}
 

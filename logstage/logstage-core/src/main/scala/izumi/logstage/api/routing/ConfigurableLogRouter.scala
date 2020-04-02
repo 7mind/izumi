@@ -43,18 +43,20 @@ class ConfigurableLogRouter
 
 object ConfigurableLogRouter {
   final def apply(threshold: Log.Level, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
-    apply(threshold, Seq(sink), levels)
+    ConfigurableLogRouter(threshold, Seq(sink), levels)
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink]): ConfigurableLogRouter = {
-    apply(threshold, sinks, Map.empty[String, Log.Level])
+    ConfigurableLogRouter(threshold, sinks, Map.empty[String, Log.Level])
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
     val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap
     val rootConfig = LoggerPathConfig(threshold, sinks)
     val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
-    val router = new ConfigurableLogRouter(configService)
+    val router = ConfigurableLogRouter(configService)
     router
   }
+
+  final def apply(logConfigService: LogConfigService): ConfigurableLogRouter = new ConfigurableLogRouter(logConfigService)
 }

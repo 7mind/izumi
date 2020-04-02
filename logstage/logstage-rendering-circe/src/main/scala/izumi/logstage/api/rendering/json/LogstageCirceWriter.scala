@@ -4,7 +4,6 @@ import io.circe.Json
 import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 import izumi.fundamentals.platform.language.Quirks._
 
-
 class LogstageCirceWriter extends LogstageWriter {
   import LogstageCirceWriter._
   private val stack = scala.collection.mutable.Stack[Token]()
@@ -111,7 +110,7 @@ object LogstageCirceWriter {
   }
   def write(codec: LogstageCodec[Any], value: Any): Json = {
     val writer = new LogstageCirceWriter()
-    codec.write(value, writer)
+    codec.write(writer, value)
     writer.translate()
   }
 }

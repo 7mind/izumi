@@ -55,7 +55,7 @@ object LogIOMacroMethods {
     doLog(c)(message, Log.Level.Crit, strict = true)
   }
 
-  private[this] def doLog[F[_]](c: blackbox.Context {type PrefixType = LogIO[F]})(message: c.Expr[String], level: Level, strict: Boolean) = {
+  private[this] def doLog[F[_]](c: blackbox.Context {type PrefixType = LogIO[F]})(message: c.Expr[String], level: Level, strict: Boolean): c.universe.Expr[F[Unit]] = {
     val m: c.Expr[Message] = new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
     val l = level match {
       case Level.Trace =>

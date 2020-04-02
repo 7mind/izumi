@@ -11,7 +11,6 @@ object Styler {
 
   case class StringLimits(minimized: Option[Int], elipsed: Boolean, size: Option[Int])
 
-
   abstract class Transformer(sub: Seq[Renderer]) extends Styler {
     override final def render(entry: Log.Entry, context: RenderingOptions): LETree = {
       LETree.TextNode(transform(new Aggregate(sub).render(entry, context)))
@@ -19,7 +18,6 @@ object Styler {
 
     protected def transform(out: String): String
   }
-
 
   class TrailingSpace(sub: Seq[Renderer]) extends Transformer(sub) {
     override protected def transform(out: String): String = {
@@ -32,25 +30,16 @@ object Styler {
   }
 
   sealed trait TrimType
-
   object TrimType {
-
     case object Left extends TrimType
-
     case object Right extends TrimType
-
     case object Center extends TrimType
-
   }
 
   sealed trait PadType
-
   object PadType {
-
     case object Left extends PadType
-
     case object Right extends PadType
-
   }
 
   class AdaptivePad(sub: Seq[Renderer], initialLength: Int, pad: PadType, symbol: Char) extends Transformer(sub) {
@@ -140,7 +129,6 @@ object Styler {
       }
     }
   }
-
 
 }
 

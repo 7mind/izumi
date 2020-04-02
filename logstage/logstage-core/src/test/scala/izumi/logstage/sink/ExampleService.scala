@@ -4,13 +4,18 @@ import com.github.ghik.silencer.silent
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.sink.ExampleService.ExampleDTO
 import logstage.LogIO
+import logstage.strict.LogIOStrict
+import org.scalatest.Assertions
+import org.scalatest.exceptions.TestFailedException
 
 import scala.util.Random
 
 @ExposedTestScope
 @silent("[Ee]xpression.*logger")
+@silent("missing interpolator")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 
@@ -43,6 +48,7 @@ class ExampleService(logger: IzLogger) {
     testExceptions()
     testCornercases()
     runMonadic()
+    runStrict()
   }
 
   def triggerManyMessages(): Unit = {
@@ -73,10 +79,6 @@ class ExampleService(logger: IzLogger) {
   }
 
   private def runMonadic(): Unit = {
-    implicit val thunkSyncSafe: SyncSafe[Function0] = new SyncSafe[Function0] {
-      override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
-    }
-
     implicit val logF: LogIO[Function0] = LogIO.fromLogger(logger)
     val suspended = LogIO[Function0].crit("Suspended message: clap your hands!")
 
@@ -84,10 +86,54 @@ class ExampleService(logger: IzLogger) {
     suspended()
   }
 
+  private def runStrict(): Unit = {
+    final case class NoInstance(x: Int)
+    final case class YesInstance(x: Int)
+    object YesInstance {
+      implicit val codec: LogstageCodec[YesInstance] = _ write _.x
+    }
+    sealed trait Sealed
+    object Sealed {
+      implicit val codec: LogstageCodec[Sealed] = (writer, s) => s match {
+        case Branch(x) => writer.write(s"""Branch("$x")""")
+      }
+      final case class Branch(x: String) extends Sealed
+    }
+
+    val logStrict: LogIOStrict[Function0] = LogIOStrict.fromLogger(logger)
+    import Assertions._
+
+    val exc = intercept[TestFailedException]{
+      assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
+    }
+    assert(exc.getMessage() contains "Implicit search failed")
+    val basic = {
+      val instance = YesInstance(1)
+      logStrict.crit(s"Suspended message: clap your hands! $instance")
+    }
+    val expressionsOk = logStrict.crit(s"Suspended message: clap your hands! ${YesInstance(2)}")
+    val subtypesOk = {
+      val branch = Sealed.Branch("subtypes are fine in strict")
+      logStrict.crit(s"Suspended message: clap your hands! $branch")
+    }
+    val mapsOk = {
+      val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
+      logStrict.crit(s"Suspended message: clap your hands! $map")
+    }
+    basic()
+    expressionsOk()
+    subtypesOk()
+    mapsOk()
+  }
+
   private def makeException(message: String): RuntimeException = {
     val exception = new RuntimeException(message)
     exception.setStackTrace(exception.getStackTrace.slice(0, 3))
     exception
+  }
+
+  implicit val thunkSyncSafe: SyncSafe[Function0] = new SyncSafe[Function0] {
+    override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
   }
 }
 

@@ -5,14 +5,14 @@ import izumi.logstage.api.Log.{LogArg, Message}
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
-class LogMessageMacro(c: blackbox.Context) extends LogMessageMacro0(c, false)
+final class LogMessageMacro(override val c: blackbox.Context) extends LogMessageMacro0(c, false)
 
-class LogMessageMacroStrict(c: blackbox.Context) extends LogMessageMacro0(c, true)
+final class LogMessageMacroStrict(override val c: blackbox.Context) extends LogMessageMacro0(c, true)
 
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
-  private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
+  private[this] final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
 
-  def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
+  final def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
     import c.universe._
 
     message.tree match {
@@ -28,32 +28,25 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     import c.universe._
 
     sealed trait Chunk {
-      def tree: c.Tree
+      def tree: Tree
     }
-
     object Chunk {
-
       sealed trait Primary extends Chunk
-
       sealed trait AbstractElement extends Chunk
 
-
-      case class Element(lit: c.universe.Literal) extends Primary with AbstractElement {
-        override def tree: c.Tree = lit
+      final case class Element(lit: Literal) extends Primary with AbstractElement {
+        override def tree: Tree = lit
       }
-
-      case class Argument(tree: c.Tree) extends Primary
-
-      case class ExprElement(tree: c.Tree) extends Chunk with AbstractElement
-
+      final case class Argument(tree: Tree) extends Primary
+      final case class ExprElement(tree: Tree) extends AbstractElement
     }
 
     case class Out(parts: Seq[Chunk.Primary]) {
-      def arguments: Seq[c.Tree] = {
+      def arguments: Seq[Tree] = {
         balanced.collect { case Chunk.Argument(expr) => expr }
       }
 
-      def makeStringContext(isMultiline: Boolean): c.Tree = {
+      def makeStringContext(isMultiline: Boolean): Tree = {
         val elements = balanced.collect { case e: Chunk.AbstractElement => e.tree }
         val listExpr = if (isMultiline)
           c.Expr[Seq[String]](q"Seq(..$elements).map(_.stripMargin)")
@@ -105,9 +98,9 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     }
 
     object PlusExtractor {
-      def unapply(arg: c.universe.Tree): Option[Out] = {
+      def unapply(arg: Tree): Option[Out] = {
         arg match {
-          case Apply(Select(applyselect, TermName("$plus")), args: List[c.Tree]) =>
+          case Apply(Select(applyselect, TermName("$plus")), args: List[Tree]) =>
             val sub = applyselect match {
               case PlusExtractor(out) =>
                 out
@@ -124,7 +117,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
                 Some(sub.copy(parts = sub.parts :+ chunk))
 
               case _ =>
-                c.warning(c.enclosingPosition, s"Something is wrong with this expression, please report this as a bug: $applyselect, ${c.universe.showRaw(applyselect)}")
+                c.warning(c.enclosingPosition, s"Something is wrong with this expression, please report this as a bug: $applyselect, ${showRaw(applyselect)}")
                 Some(sub)
             }
 
@@ -132,7 +125,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         }
       }
 
-      private def toChunk(head: c.universe.Tree): Chunk.Primary = {
+      private def toChunk(head: Tree): Chunk.Primary = {
         val chunk = head match {
           case t@Literal(Constant(_: String)) =>
             Chunk.Element(t)
@@ -151,13 +144,13 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         val sc = lst.makeStringContext(isMultiline)
         reifyContext(sc, namedArgs)
 
-      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
+      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[Tree]) =>
         // qq causes a weird warning here
         //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         reifyContext(stringContext, namedArgs)
 
-      case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]))), TermName("stripMargin")) =>
+      case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[Tree]))), TermName("stripMargin")) =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
         reifyContext(sc, namedArgs)
@@ -166,7 +159,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
       case Select(Apply(_, List(Typed(tree, _))), TermName("stripMargin")) =>
         processExpr(tree, isMultiline = true)
 
-      case Literal(c.universe.Constant(s)) =>
+      case Literal(Constant(s)) =>
         val emptyArgs = reify(List.empty)
         val sc = q"_root_.scala.StringContext(${s.toString})"
         reifyContext(sc, emptyArgs)
@@ -181,7 +174,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
 
         val emptyArgs = reify(List.empty)
         /* reify {
-          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
+          val repr = c.Expr[String](Literal(Constant(showCode(other)))).splice
           ...
         */
         val sc = q"_root_.scala.StringContext($other)"
@@ -189,7 +182,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     }
   }
 
-  private[this] def reifyContext(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
+  private[this] def reifyContext(stringContext: c.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
     import c.universe._
     reify {
       Message(
