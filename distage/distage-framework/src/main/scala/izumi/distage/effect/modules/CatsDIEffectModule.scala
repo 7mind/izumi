@@ -4,6 +4,7 @@ import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, ContextShift, 
 import cats.{Applicative, Functor, Monad, MonadError, Parallel}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.functional.mono.SyncSafe
 
 object CatsDIEffectModule extends CatsDIEffectModule
 
@@ -27,6 +28,7 @@ trait CatsDIEffectModule extends ModuleDef {
   addImplicit[Sync[IO]]
   addImplicit[Async[IO]]
   addImplicit[Effect[IO]]
+  addImplicit[SyncSafe[IO]]
 
   make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
   make[ConcurrentEffect[IO]]
