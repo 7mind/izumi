@@ -1,13 +1,13 @@
-package logstage.strict
+package logstage
 
 import izumi.functional.bio.SyncSafe3
 import izumi.logstage.api.logger.AbstractLogger
 
-object LogBIO3Strict {
-  def apply[F[_, _, _]: LogBIO3Strict]: LogBIO3Strict[F] = implicitly
+object LogBIO3 {
+  def apply[F[_, _, _]: LogBIO3]: LogBIO3[F] = implicitly
 
-  def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): LogBIO3Strict[F] = {
-    LogIOStrict.fromLogger(logger)
+  def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): LogBIO3[F] = {
+    LogIO.fromLogger(logger)
   }
 
   /**
@@ -21,5 +21,5 @@ object LogBIO3Strict {
     *   }
     * }}}
     */
-  @inline def log[F[_, _, _]](implicit l: LogBIO3Strict[F]): l.type = l
+  @inline def log[F[_, _, _]](implicit l: LogBIO3[F]): l.type = l
 }

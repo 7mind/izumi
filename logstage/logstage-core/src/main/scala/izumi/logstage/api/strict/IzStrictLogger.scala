@@ -5,11 +5,9 @@ import izumi.logstage.api.logger.{AbstractMacroStrictLogger, LogRouter, RoutingL
 import izumi.logstage.api.rendering.StrictEncoded
 import izumi.logstage.api.{IzLogger, IzLoggerConvenienceApi, Log}
 
-
-class IzStrictLogger
-(
-  override val router: LogRouter
-, override val customContext: Log.CustomContext
+class IzStrictLogger(
+  override val router: LogRouter,
+  override val customContext: Log.CustomContext,
 ) extends RoutingLogger with AbstractMacroStrictLogger {
 
   override def withCustomContext(context: CustomContext): IzLogger = new IzLogger(router, customContext + context)
@@ -22,10 +20,6 @@ class IzStrictLogger
 
 }
 
-object IzStrictLogger extends IzLoggerConvenienceApi {
-  override type Logger = IzStrictLogger
-
-  override protected def make(r: LogRouter, context: CustomContext): IzStrictLogger = {
-    new IzStrictLogger(r, context)
-  }
+object IzStrictLogger extends IzLoggerConvenienceApi[IzStrictLogger] {
+  override protected def make(r: LogRouter, context: CustomContext): IzStrictLogger = new IzStrictLogger(r, context)
 }

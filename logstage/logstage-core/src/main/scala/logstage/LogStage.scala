@@ -21,7 +21,7 @@ trait LogStage {
   type StaticLogRouter = api.routing.StaticLogRouter
   val StaticLogRouter: api.routing.StaticLogRouter.type = api.routing.StaticLogRouter
 
-  type LogstageCodec[-T] = izumi.logstage.api.rendering.LogstageCodec[T]
+  type LogstageCodec[T] = izumi.logstage.api.rendering.LogstageCodec[T]
   val LogstageCodec: izumi.logstage.api.rendering.LogstageCodec.type = izumi.logstage.api.rendering.LogstageCodec
 
   type Log = api.Log.type

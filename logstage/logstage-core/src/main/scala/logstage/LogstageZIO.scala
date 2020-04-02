@@ -9,8 +9,23 @@ import zio.{Has, IO, ZIO}
 
 object LogstageZIO {
 
-  /** Lets you carry LogBIO capability in environment */
-  object log extends LogBIO3EnvInstance[ZIO](_.get) with LogBIO[ZIO[Has[LogBIO[IO]], ?, ?]]
+  type LogZIO = Has[LogBIO3[ZIO]]
+  object LogZIO {
+    type Service = LogBIO3[ZIO]
+  }
+  /**
+    * Lets you carry LogZIO capability in environment
+    *
+    * {{{
+    *   import logstage.LogstageZIO.log
+    *   import zio.ZIO
+    *
+    *   def fn[F[-_, +_, +_]]: ZIO[LogZIO, Nothing, Unit] = {
+    *     log.info(s"I'm logging with ${log}stage!")
+    *   }
+    * }}}
+    */
+  object log extends LogBIOEnvInstance[ZIO](_.get)
 
   def withFiberId(logger: AbstractLogger): LogBIO[IO] = {
     new WrappedLogIO[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
