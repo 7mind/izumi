@@ -81,7 +81,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   override def run(testName: Option[String], args: Args): Status = {
     DistageTestsRegistrySingleton.registerSuiteReporter(suiteId)(SuiteReporter(args.tracker, args.reporter))
     // If, we're running under sbt, scan the classpath manually to add all tests
-    // in neighboring packages before starting anything, because sbt runner
+    // in the classloader before starting anything, because sbt runner
     // instantiates & runs tests at the same time, so when `run` is called
     // NOT all tests have been registered, so we must force all tests, otherwise
     // we can't be sure.

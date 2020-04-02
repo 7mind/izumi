@@ -93,8 +93,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.11",
-      "2.13.1",
-      "2.11.12"
+      "2.13.1"
     )
   )
   .disablePlugins(AssemblyPlugin)
@@ -122,7 +121,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     unmanagedSourceDirectories in Compile := (unmanagedSourceDirectories in Compile).value.flatMap {
       dir =>
        Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
-         case Some((2, 11)) => "_2.11"
          case Some((2, 12)) => "_2.12"
          case Some((2, 13)) => "_2.13"
          case _             => "_3.0"
@@ -201,8 +199,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.11",
-      "2.13.1",
-      "2.11.12"
+      "2.13.1"
     )
   )
   .disablePlugins(AssemblyPlugin)
@@ -296,8 +293,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.11",
-      "2.13.1",
-      "2.11.12"
+      "2.13.1"
     )
   )
   .disablePlugins(AssemblyPlugin)
@@ -322,7 +318,6 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
     unmanagedSourceDirectories in Compile := (unmanagedSourceDirectories in Compile).value.flatMap {
       dir =>
        Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
-         case Some((2, 11)) => "_2.11"
          case Some((2, 12)) => "_2.12"
          case Some((2, 13)) => "_2.13"
          case _             => "_3.0"
@@ -402,8 +397,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.11",
-      "2.13.1",
-      "2.11.12"
+      "2.13.1"
     )
   )
   .disablePlugins(AssemblyPlugin)
@@ -503,8 +497,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.11",
-      "2.13.1",
-      "2.11.12"
+      "2.13.1"
     )
   )
   .disablePlugins(AssemblyPlugin)

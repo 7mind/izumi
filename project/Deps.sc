@@ -130,7 +130,6 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala211 = ScalaVersion("2.11.12")
   final val scala212 = ScalaVersion("2.12.11")
   final val scala213 = ScalaVersion("2.13.1")
 
@@ -146,14 +145,9 @@ object Izumi {
     // switch order to use 2.13 in IDEA
     val targetScala = Seq(scala212, scala213)
 //    val targetScala = Seq(scala213, scala212)
-    val targetScalaWith211 = Seq(scala212, scala213, scala211)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
-    )
-    private val jvmPlatformWith211 = PlatformEnv(
-      platform = Platform.Jvm,
-      language = targetScalaWith211,
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
@@ -161,23 +155,6 @@ object Izumi {
       settings = Seq(
         "coverageEnabled" := false,
         "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
-      ),
-    )
-    private val jsPlatformWith211 = PlatformEnv(
-      platform = Platform.Js,
-      language = targetScalaWith211,
-      settings = Seq(
-        "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
-      ),
-    )
-    private val nativePlatform = PlatformEnv(
-      platform = Platform.Native,
-      language = Seq(scala211),
-      settings = Seq(
-        "coverageEnabled" := false,
-        "test" in Platform.Native := "{}".raw,
-        "test" in(SettingScope.Test, Platform.Native) := "{}".raw,
       ),
     )
     private val jvmPlatformSbt = PlatformEnv(
@@ -188,7 +165,6 @@ object Izumi {
       ),
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
-    final val crossNativeWith211 = Seq(jvmPlatformWith211, jsPlatformWith211, nativePlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
     final val jvmSbt = Seq(jvmPlatformSbt)
@@ -342,7 +318,6 @@ object Izumi {
       """(unmanagedSourceDirectories in Compile).value.flatMap {
         |  dir =>
         |   Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
-        |     case Some((2, 11)) => "_2.11"
         |     case Some((2, 12)) => "_2.12"
         |     case Some((2, 13)) => "_2.13"
         |     case _             => "_3.0"
@@ -416,7 +391,7 @@ object Izumi {
     ),
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
-    defaultPlatforms = Targets.crossNativeWith211,
+    defaultPlatforms = Targets.cross,
     enableProjectSharedAggSettings = false,
     settings = Seq(
       "crossScalaVersions" := "Nil".raw,
