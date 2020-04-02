@@ -120,7 +120,6 @@ object Log {
       copy(customContext = customContext + that)
     }
   }
-
   object Context {
     /** Record surrounding source code location, current thread and timestamp */
     @inline final def recordContext(logLevel: Log.Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): Context = {
@@ -163,9 +162,13 @@ object Log {
   object Message {
     /** Construct [[Message]] from a string interpolation */
     implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
+
+    def empty: Message = Message(new StringContext(""), Nil)
   }
   object StrictMessage {
     /** Construct [[Message]] from a string interpolation */
     implicit def apply(message: String): Message = macro LogMessageMacroStrict.logMessageMacro
+
+    def empty: Message = Message.empty
   }
 }

@@ -5,7 +5,11 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.CustomContext
 import zio.Has
 
-class LogBIO3EnvInstance[F[-_, +_, +_]](get: Has[LogBIO3[F]] => LogBIO3[F])(implicit F: BIOMonadAsk[F]) extends LogBIO[F[Has[LogBIO3[F]], ?, ?]] {
+class LogBIOEnvInstance[F[-_, +_, +_]](
+  get: Has[LogBIO3[F]] => LogBIO3[F]
+)(implicit
+  F: BIOMonadAsk[F]
+) extends LogBIOEnv[F] {
   override def log(entry: Log.Entry): F[Has[LogBIO3[F]], Nothing, Unit] =
     F.access(get(_).log(entry))
   override def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Has[LogBIO3[F]], Nothing, Unit] =
@@ -21,6 +25,6 @@ class LogBIO3EnvInstance[F[-_, +_, +_]](get: Has[LogBIO3[F]] => LogBIO3[F])(impl
   override def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Has[LogBIO3[F]], Nothing, Log.Context] =
     F.access(get(_).createContext(logLevel, customContext))
   override def withCustomContext(context: CustomContext): LogBIO[F[Has[LogBIO3[F]], ?, ?]] = {
-    new LogBIO3EnvInstance[F](get(_).withCustomContext(context))
+    new LogBIOEnvInstance[F](get(_).withCustomContext(context))
   }
 }

@@ -5,16 +5,26 @@ import izumi.logstage.api.logger.{LogRouter, LogSink, RoutingLogger}
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink
 
-trait IzLoggerConvenienceApi {
+trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
   final val Level: Log.Level.type = Log.Level
-  type Logger <: RoutingLogger
-  protected final def make(r: LogRouter): Logger = make(r, CustomContext.empty)
-  protected def make(r: LogRouter, context: CustomContext): Logger
+
+  /**
+    * Lets you refer to an implicit logger's methods without naming a variable
+    *
+    * {{{
+    *   import logstage.IzLogger.log
+    *
+    *   def fn(implicit logger: IzLogger): Unit = {
+    *     log.info(s"I'm logging with ${log}stage!")
+    *   }
+    * }}}
+    */
+  @inline final def log(implicit izLogger: IzLogger): izLogger.type = izLogger
 
   /**
     * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
     */
-  final def apply(threshold: Log.Level = IzLogger.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): Logger = {
+  final def apply(threshold: Log.Level = Log.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): Logger = {
     val r = ConfigurableLogRouter(threshold, sink, levels)
     make(r)
   }
@@ -47,4 +57,6 @@ trait IzLoggerConvenienceApi {
     */
   final lazy val DebugLogger = make(LogRouter.debugRouter)
 
+  private[this] final def make(r: LogRouter): Logger = make(r, CustomContext.empty)
+  protected def make(r: LogRouter, context: CustomContext): Logger
 }

@@ -6,7 +6,11 @@ import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{CustomContext, Level}
 import zio.Has
 
-class LogBIO3StrictEnvInstance[F[-_, +_, +_]](get: Has[LogBIO3Strict[F]] => LogBIO3Strict[F])(implicit F: BIOMonadAsk[F]) extends LogBIOStrict[F[Has[LogBIO3Strict[F]], ?, ?]] {
+class LogBIOEnvStrictInstance[F[-_, +_, +_]](
+  get: Has[LogBIO3Strict[F]] => LogBIO3Strict[F]
+)(implicit
+  F: BIOMonadAsk[F]
+) extends LogBIOEnvStrict[F] {
   override def log(entry: Log.Entry): F[Has[LogBIO3Strict[F]], Nothing, Unit] =
     F.access(get(_).log(entry))
   override def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Has[LogBIO3Strict[F]], Nothing, Unit] =
@@ -22,6 +26,6 @@ class LogBIO3StrictEnvInstance[F[-_, +_, +_]](get: Has[LogBIO3Strict[F]] => LogB
   override def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Has[LogBIO3Strict[F]], Nothing, Log.Context] =
     F.access(get(_).createContext(logLevel, customContext))
   override def withCustomContext(context: CustomContext): LogBIOStrict[F[Has[LogBIO3Strict[F]], ?, ?]] = {
-    new LogBIO3StrictEnvInstance[F](get(_).withCustomContext(context))
+    new LogBIOEnvStrictInstance[F](get(_).withCustomContext(context))
   }
 }

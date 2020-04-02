@@ -1,6 +1,9 @@
 ---
 out: index.html
 ---
+
+@@toc { depth=2 }
+
 LogStage
 ========
 
@@ -41,7 +44,7 @@ Overview
 
 The following snippet:
 
-```scala mdoc:reset
+```scala mdoc:to-string:reset
 import logstage.IzLogger
 import scala.util.Random
 
@@ -114,7 +117,7 @@ Syntax Reference
 Basic setup
 -----------
 
-```scala mdoc:reset
+```scala mdoc:to-string:reset
 import logstage.{ConsoleSink, IzLogger, Trace}
 import logstage.circe.LogstageCirceRenderingPolicy
 
@@ -134,9 +137,9 @@ contextLogger.info(s"Hey")
 Log algebras
 ------------
 
-`LogIO` and `LogBIO` algebras provide a purely-functional API for one- and two-parameter effect types respectively:
+`LogIO`, `LogBIO` & `LogBIO3` algebras provide a purely-functional API for one-, two-, and three-parameter effect types respectively:
 
-```scala mdoc:reset
+```scala mdoc:to-string:reset
 import logstage.{IzLogger, LogIO}
 import cats.effect.IO
 
@@ -151,34 +154,15 @@ log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
 I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
 ```
 
-`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
-
-Example: 
-
-```scala mdoc:reset
-import logstage.{IzLogger, LogstageZIO}
-import zio.IO
-
-val log = LogstageZIO.withFiberId(IzLogger())
-
-zio.Runtime.default.unsafeRun {
-  log.info(s"Hey! I'm logging with ${log}stage!")
-}
-```
-
-```
-I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
-```
-
 `LogIO`/`LogBIO` algebras can be extended with custom context using their `.apply` method, same as `IzLogger`:
 
-```scala mdoc:reset
+```scala mdoc:reset:invisible
 import com.example.Entity
 
 def load(entity: Entity): cats.effect.IO[Unit] = cats.effect.IO.unit
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 import cats.effect.IO
 import cats.implicits._
 import logstage.LogIO
@@ -196,6 +180,75 @@ def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
 }
 ```
 
+`LogIO.log`/`LogBIO.log`/`LogBIO3.log`/`IzLogger.log` let you refer to an implicit logger's methods without naming a variable
+
+```scala mdoc:to-string:reset
+import logstage.LogIO
+import logstage.LogIO.log
+
+def fn[F[_]: LogIO]: F[Unit] = {
+  log.info(s"I'm logging with ${log}stage!")
+}
+```
+
+ZIO environment support
+-----------------------
+
+`LogstageZIO.log` lets you carry `LogZIO` capability in environment.
+
+Example:
+
+```scala mdoc:to-string:reset
+import logstage.LogstageZIO.{LogZIO, log}
+import zio.ZIO
+
+val fn: ZIO[LogZIO, Nothing, Unit] = {
+  log.info(s"I'm logging with ${log}stage!")
+}
+```
+
+`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
+
+Example: 
+
+```scala mdoc:to-string:reset
+import logstage.{IzLogger, LogstageZIO}
+import zio.IO
+
+val log = LogstageZIO.withFiberId(IzLogger())
+
+zio.Runtime.default.unsafeRun {
+  log.info(s"Hey! I'm logging with ${log}stage!")
+}
+```
+
+```
+I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
+```
+
+`LogBIO3.log` extends environment support to trifunctor effect types with an instance of `BIOMonadAsk[F]` typeclass (from @ref[BIO](../bio/00_bio.md))
+
+Example:
+
+```scala mdoc:to-string:reset
+import logstage.{LogBIO3, LogBIOEnv, IzLogger}
+import logstage.LogBIOEnv.log
+import zio.{Has, ZIO}
+
+class Service[F[-_, +_, +_]: LogBIOEnv] {
+  val fn: F[Has[LogBIO3[F]], Nothing, Unit] = {
+    log.info(s"I'm logging with ${log}stage!")
+  }
+}
+
+zio.Runtime.default.unsafeRun {
+  implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
+  new Service[ZIO]
+    .fn
+    .provide(Has(LogBIO3.fromLogger(IzLogger())))
+}
+```
+
 SLF4J Router
 ------------
 
@@ -205,7 +258,7 @@ Due to the global mutable nature of `slf4j`, to configure slf4j logging you'll
 have to mutate a global singleton `StaticLogRouter`. Replace its `LogRouter`
 with the same one you use elsewhere in your application to use the same configuration for Slf4j. 
 
-```scala mdoc:reset
+```scala mdoc:to-string:reset
 import logstage.IzLogger
 import izumi.logstage.api.routing.StaticLogRouter
 

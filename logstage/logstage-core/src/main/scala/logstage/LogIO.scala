@@ -21,7 +21,20 @@ trait LogIO[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
 }
 
 object LogIO {
-  def apply[F[_]: LogIO]: LogIO[F] = implicitly
+  @inline def apply[F[_]](implicit l: LogIO[F]): l.type = l
+
+  /**
+    * Lets you refer to an implicit logger's methods without naming a variable
+    *
+    * {{{
+    *   import logstage.LogIO.log
+    *
+    *   def fn[F[_]: LogIO]: F[Unit] = {
+    *     log.info(s"I'm logging with ${log}stage!")
+    *   }
+    * }}}
+    */
+  @inline def log[F[_]](implicit l: LogIO[F]): l.type = l
 
   def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
     new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F]) with LogIO[F] {
