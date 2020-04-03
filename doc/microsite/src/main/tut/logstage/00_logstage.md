@@ -239,10 +239,12 @@ class Service[F[-_, +_, +_]: LogBIOEnv] {
   }
 }
 
-implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
-new Service[ZIO]
-  .fn
-  .provide(Has(LogBIO3.fromLogger(IzLogger())))
+zio.Runtime.default.unsafeRun {
+  implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
+  new Service[ZIO]
+    .fn
+    .provide(Has(LogBIO3.fromLogger(IzLogger())))
+}
 ```
 
 Custom JSON rendering with LogstageCodec
