@@ -12,8 +12,8 @@ import izumi.distage.model.Locator
   *
   * Summoning the entire Locator is usually an anti-pattern, but may sometimes be necessary.
   */
-class LocatorRef {
-  private[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
+class LocatorRef(instance: Option[Locator]) {
+  private[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator](instance.orNull)
 
   def get: Locator = ref.get()
 }

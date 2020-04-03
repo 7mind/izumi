@@ -2,8 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.model.provisioning.PlanInterpreter
-import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.provisioning.{PlanInterpreter, Provision}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.reflection.Tags.TagK
@@ -11,7 +10,7 @@ import izumi.fundamentals.reflection.Tags.TagK
 final class LocatorDefaultImpl[F[_]](
   val plan: OrderedPlan,
   val parent: Option[Locator],
-  private val dependencyMap: ProvisionImmutable[F],
+  private val dependencyMap: Provision[F],
 ) extends AbstractLocator {
   override protected def lookupLocalUnsafe(key: DIKey): Option[Any] =
     dependencyMap.get(key)

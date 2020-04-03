@@ -53,7 +53,8 @@ class PlanInterpreterDefaultRuntimeImpl
 
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
-    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], new LocatorRef())
+    val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
+    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], new LocatorRef(Some(locator)))
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
@@ -114,20 +115,16 @@ class PlanInterpreterDefaultRuntimeImpl
       _ <- verifyEffectType[F](otherSteps, addFailure = f => F.maybeSuspend(mutFailures += f))
 
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
+      immutable = mutProvisioningContext.toImmutable
       res <- if (failedImportsOrEffects) {
-        F.maybeSuspend(Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
+        F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
       } else {
         F.traverse_(otherSteps)(processStep)
           .flatMap { _ =>
             F.maybeSuspend {
-              val context = mutProvisioningContext.toImmutable
-
               if (mutFailures.nonEmpty) {
-                Left(FailedProvision[F](context, plan, parentContext, mutFailures.toVector))
+                Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
               } else {
-                val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
-                locator.get[LocatorRef].ref.set(locator)
-
                 Right(locator)
               }
             }
