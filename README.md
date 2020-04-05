@@ -104,6 +104,10 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 
 [![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
 
+Projects powered by Izumi
+==========================
+- [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely functional way.
+
 Credits
 =======
 
