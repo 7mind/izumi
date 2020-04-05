@@ -75,6 +75,63 @@ class BasicLoggingTest extends AnyWordSpec {
 
       assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false,  Some(LogstageCodec.LogstageCodecInt)), LogArg(Seq("s"), "hi", hiddenName = false,  Some(LogstageCodec.LogstageCodecString)))))
     }
+    "allow concatenating Log.Message" should {
+      "multiple parts" in {
+        val msg1 = Message(s"begin1${1.1}middle1${1.2}end1")
+        val msg2 = Message(s"begin2 ${2.1} middle2 ${2.2} end2 ")
+        val msg3 = Message(s" begin3${3.1}middle3 ${3.2}end3")
+
+        val msgConcatenated = msg1 + msg2 + msg3
+
+        assert(msgConcatenated.template.parts == Seq(
+          "begin1",
+          "middle1",
+          "end1begin2 ",
+          " middle2 ",
+          " end2  begin3",
+          "middle3 ",
+          "end3",
+        ))
+
+        assert(msgConcatenated.args.map(_.value) == Seq(1.1, 1.2, 2.1, 2.2, 3.1, 3.2))
+      }
+      "one part" in {
+        val msg1 = Message(s"begin1")
+        val msg2 = Message(s"${2}")
+        val msg3 = Message(s"end3")
+
+        val msgConcatenated = msg1 + msg2 + msg3
+
+        assert(msgConcatenated.template.parts == Seq(
+          "begin1",
+          "end3",
+        ))
+      }
+      "zero parts" in {
+        val msgOnePart = Message(s"onePart")
+        val msgZeroParts = Message("")
+        val msgEmpty = Message.empty
+
+        assert((msgOnePart + msgZeroParts).template.parts == Seq(
+          "onePart"
+        ))
+        assert((msgZeroParts + msgOnePart).template.parts == Seq(
+          "onePart"
+        ))
+
+        assert((msgOnePart + msgEmpty).template.parts == Seq(
+          "onePart"
+        ))
+        assert((msgEmpty + msgOnePart).template.parts == Seq(
+          "onePart"
+        ))
+
+        assert((msgEmpty + msgEmpty).template.parts == Seq(""))
+        assert((msgZeroParts + msgZeroParts).template.parts == Seq(""))
+        assert((msgEmpty + msgZeroParts).template.parts == Seq(""))
+        assert((msgZeroParts + msgEmpty).template.parts == Seq(""))
+      }
+    }
   }
 
   private def render(p: StringRenderingPolicy, m: Message) = {
