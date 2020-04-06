@@ -8,7 +8,7 @@ class MissingInstanceException(message: String, val key: DIKey) extends DIExcept
 object MissingInstanceException {
   def format(target: DIKey, references: Set[DIKey]): String = {
     s"""Instance is not available in the object graph: $target.
-       |Required by refs:${references.niceList()}""".stripMargin
+       |Required by refs:${references.niceList(prefix = "* ")}""".stripMargin
   }
 }
 
