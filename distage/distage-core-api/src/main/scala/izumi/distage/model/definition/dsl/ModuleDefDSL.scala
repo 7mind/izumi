@@ -673,13 +673,11 @@ object ModuleDefDSL {
     }
 
     def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
-      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
-      addOp(Modify[T, I](SafeType.get[I], ProviderMagnet.single(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
+      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
-    def modify[I <: T: Tag](f: ProviderMagnet[T => I]): MakeDSLUnnamedAfterFrom[T] = {
-      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
-      addOp(Modify[T, I](SafeType.get[I], f.ap(ProviderMagnet.identity[T])))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
+      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
   }
@@ -713,13 +711,11 @@ object ModuleDefDSL {
     }
 
     def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
-      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
-      addOp(Modify[T, I](SafeType.get[I], ProviderMagnet.single(f)))(new MakeDSLNamedAfterFrom[T](_, key))
+      addOp(Modify[T](_.map(f)))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
-    def modify[I <: T: Tag](f: ProviderMagnet[T => I]): MakeDSLNamedAfterFrom[T] = {
-      implicit val tagT: Tag[T] = Tag(key.tpe.cls, key.tpe.tag)
-      addOp(Modify[T, I](SafeType.get[I], f.ap(ProviderMagnet.identity[T])))(new MakeDSLNamedAfterFrom[T](_, key))
+    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
+      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
   }
