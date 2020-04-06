@@ -1,5 +1,7 @@
 package izumi.distage.provisioning
 
+import java.util.concurrent.atomic.AtomicReference
+
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
@@ -54,7 +56,8 @@ class PlanInterpreterDefaultRuntimeImpl
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
     val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
-    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], new LocatorRef(Some(locator)))
+    val locatorRef = new LocatorRef(new AtomicReference[Locator](locator))
+    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
@@ -125,8 +128,10 @@ class PlanInterpreterDefaultRuntimeImpl
               if (mutFailures.nonEmpty) {
                 Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
               } else {
-                //val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
-                Right(locator)
+                val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
+                locatorRef.unsafe.set(finalLocator)
+                locatorRef.safe.set(finalLocator)
+                Right(finalLocator)
               }
             }
         }
