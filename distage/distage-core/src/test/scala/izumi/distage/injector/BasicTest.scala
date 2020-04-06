@@ -68,9 +68,9 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[TestClass0]
       make[TestClass2].from {
         (ref: LocatorRef, test: TestClass0) =>
-          assert(ref.unstableMutableLocator.instances.nonEmpty)
+          assert(ref.unsafeUnstableMutableLocator.instances.nonEmpty)
           assert(test != null)
-          assert(ref.unstableMutableLocator.get[TestClass0] eq test)
+          assert(ref.unsafeUnstableMutableLocator.get[TestClass0] eq test)
           TestClass2(test)
       }
     })

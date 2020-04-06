@@ -56,7 +56,7 @@ class PlanInterpreterDefaultRuntimeImpl
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
     val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
-    val locatorRef = new LocatorRef(new AtomicReference[Locator](locator))
+    val locatorRef = new LocatorRef(new AtomicReference(Left(locator)))
     mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
 
     val mutExcluded = mutable.Set.empty[DIKey]
@@ -129,9 +129,9 @@ class PlanInterpreterDefaultRuntimeImpl
                 Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
               } else {
                 val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
-                locatorRef.unsafe.set(finalLocator)
-                locatorRef.safe.set(finalLocator)
-                Right(finalLocator)
+                val res = Right(finalLocator)
+                locatorRef.ref.set(res)
+                res
               }
             }
         }

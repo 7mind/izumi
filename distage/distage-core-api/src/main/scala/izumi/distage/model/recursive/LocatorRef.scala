@@ -14,12 +14,9 @@ import izumi.distage.model.reflection.DIKey
   *
   * Summoning the entire Locator is usually an anti-pattern, but may sometimes be necessary.
   */
-class LocatorRef(private[distage] val unsafe: AtomicReference[Locator]) {
-  private[distage] val safe: AtomicReference[Locator] = new AtomicReference[Locator](null)
-
-  def get: Locator = Option(safe.get()).getOrElse(throw new MissingInstanceException("Stable locator is not ready yet", DIKey.get[Locator]))
-
-  def unstableMutableLocator: Locator = unsafe.get()
+class LocatorRef(private[distage] val ref: AtomicReference[Either[Locator, Locator]]) {
+  def get: Locator = ref.get().getOrElse(throw new MissingInstanceException("Stable locator is not ready yet", DIKey.get[Locator]))
+  def unsafeUnstableMutableLocator(): Locator = ref.get().merge
 }
 
 
