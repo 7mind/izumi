@@ -156,6 +156,13 @@ final class ConfigTest extends AnyWordSpec {
       assert(context.get[Service[PrivateCaseClass]].conf == PrivateCaseClass("super secret value"))
     }
 
+    "resolve case classes with partially private fields" in {
+      val context = Injector()
+        .produce(mkConfigModule("partially-private-fields-test.conf")(TestConfigReaders.partiallyPrivateFieldsCodecDefinition)).unsafeGet()
+
+      assert(context.get[Service[PartiallyPrivateCaseClass]].conf == PartiallyPrivateCaseClass("super secret value", true))
+    }
+
     "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {
       // FIXME: pureconfig-magnolia can't read enumerations properly
       val context1 =

@@ -30,6 +30,12 @@ case class PrivateCaseClass(
                            ) {
   val customFieldName = `private-custom-field-name`
 }
+case class PartiallyPrivateCaseClass(
+                             private val `private-custom-field-name`: String,
+                             publicField: Boolean,
+                           ) {
+  val customFieldName = `private-custom-field-name`
+}
 
 case class CustomObject(value: Int)
 object CustomObject {
@@ -94,5 +100,10 @@ object TestConfigReaders {
   final val privateFieldsCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
     make[Service[PrivateCaseClass]]
     makeConfig[PrivateCaseClass]("PrivateCaseClass")
+  })
+
+  final val partiallyPrivateFieldsCodecDefinition = PlannerInput.noGc(new ConfigModuleDef {
+    make[Service[PartiallyPrivateCaseClass]]
+    makeConfig[PartiallyPrivateCaseClass]("PartiallyPrivateCaseClass")
   })
 }
