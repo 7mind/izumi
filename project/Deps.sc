@@ -15,6 +15,7 @@ object Izumi {
     val cats_effect = Version.VExpr("V.cats_effect")
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
+    val monix_bio = Version.VExpr("V.monix_bio")
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
@@ -92,6 +93,7 @@ object Izumi {
       zio_core,
       zio_interop_cats,
     )
+    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
@@ -373,10 +375,10 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = allMonadsOptional ++ Seq(
-            scala_java_time in Scope.Test.js
-          ),
-        depends = Seq(Projects.fundamentals.language),
+        libs = allMonadsOptional ++ Seq(monix_bio in Scope.Compile.all) ++ Seq(
+          scala_java_time in Scope.Test.js,
+        ),
+        depends = Seq.empty,
         platforms = Targets.cross,
       ),
       Artifact(

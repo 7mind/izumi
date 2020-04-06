@@ -532,7 +532,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional
+      "dev.zio" %% "zio" % V.zio % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio
     )
   )
   .settings(
