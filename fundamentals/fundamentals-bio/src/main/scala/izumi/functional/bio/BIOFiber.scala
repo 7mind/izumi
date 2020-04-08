@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.BIOExit.ZIOExit
+import monix.bio
 import zio.{Fiber, IO, ZIO}
 
 trait BIOFiber3[F[-_, +_, +_], +E, +A] {
@@ -27,4 +28,9 @@ object BIOFiber3 {
 
 object BIOFiber {
   @inline def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] = BIOFiber3.fromZIO(f)
+  @inline def fromMonix[E, A](f: monix.bio.Fiber[E, A]): BIOFiber[monix.bio.BIO, E, A] = new BIOFiber[monix.bio.BIO, E, A] {
+    override def join: bio.BIO[E, A] = f.join
+    override def observe: bio.BIO[Nothing, BIOExit[E, A]] = ???
+    override def interrupt: bio.BIO[Nothing, BIOExit[E, A]] = ???
+  }
 }
