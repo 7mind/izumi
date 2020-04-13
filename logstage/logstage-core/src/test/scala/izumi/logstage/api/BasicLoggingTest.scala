@@ -131,6 +131,17 @@ class BasicLoggingTest extends AnyWordSpec {
         assert((msgEmpty + msgZeroParts).template.parts == Seq(""))
         assert((msgZeroParts + msgEmpty).template.parts == Seq(""))
       }
+      "empty StringContext" in {
+        val msgEmptyStringContext = Message(StringContext(), Nil)
+        val msgOnePart = Message(s"onePart")
+
+        assert((msgOnePart + msgEmptyStringContext).template.parts == Seq(
+          "onePart"
+        ))
+        assert((msgEmptyStringContext + msgOnePart).template.parts == Seq(
+          "onePart"
+        ))
+      }
     }
   }
 

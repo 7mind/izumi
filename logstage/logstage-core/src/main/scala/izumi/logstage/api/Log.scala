@@ -158,15 +158,19 @@ object Log {
     def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
 
     def ++(that: Message): Message = {
-      // this ain't pretty but avoids multiple iterations on the same parts collection compared to using .init/.tail
-      val (thisInit, thisTails) = template.parts.splitAt(template.parts.length - 1)
-      val thisTail = thisTails.head
+      if (that.template.parts.isEmpty) this
+      else if (template.parts.isEmpty) that
+      else {
+        // this ain't pretty but avoids multiple iterations on the same parts collection compared to using .init/.tail
+        val (thisInit, thisTails) = template.parts.splitAt(template.parts.length - 1)
+        val thisTail = thisTails.head
 
-      val (thatHeads, thatTail) = that.template.parts.splitAt(1)
-      val thatHead = thatHeads.head
+        val (thatHeads, thatTail) = that.template.parts.splitAt(1)
+        val thatHead = thatHeads.head
 
-      val parts = (thisInit :+ (thisTail + thatHead)) ++ thatTail
-      Message(StringContext(parts: _ *), args ++ that.args)
+        val parts = (thisInit :+ (thisTail + thatHead)) ++ thatTail
+        Message(StringContext(parts: _ *), args ++ that.args)
+      }
     }
     def +(that: Message): Message = ++(that)
   }
