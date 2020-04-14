@@ -51,7 +51,10 @@ class LightTypeTagTest extends TagAssertions {
       assertSame(LTT[Object with Option[String]], LTT[Option[String]])
       assertSame(LTT[Any with Option[String]], LTT[Option[String]])
       assertSame(LTT[AnyRef with Option[String]], LTT[Option[String]])
+    }
 
+    "support self-intersection (X with X)" in {
+      assertSame(`LTT`[String with String], `LTT`[String])
     }
 
     "support subtype checks" in {

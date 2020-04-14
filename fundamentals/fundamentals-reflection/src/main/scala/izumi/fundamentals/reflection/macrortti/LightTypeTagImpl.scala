@@ -354,9 +354,14 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
             intersection
           }
 
-        case _ =>
-          // we intentionally ignore breakRefinement result here, it breaks lambdas
-          unpack(t.dealias.resultType, rules)
+        case Broken.Single(t1) =>
+          t match {
+            case p if p.takesTypeArgs =>
+              // we intentionally ignore breakRefinement result here, it breaks lambdas
+              unpack(p, rules)
+            case _ =>
+              unpack(t1, rules)
+          }
       }
     }
 
