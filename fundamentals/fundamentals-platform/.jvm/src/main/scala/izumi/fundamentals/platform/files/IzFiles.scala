@@ -110,7 +110,7 @@ object IzFiles {
     names.forall(which(_).nonEmpty)
   }
 
-  def which(name: String): Option[Path] = {
+  def which(name: String, morePaths: Seq[String] = Seq.empty): Option[Path] = {
     val candidates = IzOs.osType match {
       case OsType.Windows =>
         Seq("exe", "com", "bat").map(ext => s"$name.$ext")
@@ -118,6 +118,6 @@ object IzFiles {
         Seq(name)
     }
 
-    find(candidates, IzOs.path)
+    find(candidates, IzOs.path ++ morePaths)
   }
 }
