@@ -1,6 +1,6 @@
 package izumi.distage.docker
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
@@ -159,12 +159,13 @@ object DockerContainer {
       }
     }
 
-    def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
+    def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
       F.maybeSuspend {
-        logger.debug(s"Awaiting until $container gets alive")
+        logger.debug(s"Awaiting until $container can be considered alive...")
         try {
           val status = client.inspectContainerCmd(container.id.name).exec()
           if (status.getState.getRunning) {
+            logger.debug(s"Container $container is running, trying healthcheck...")
             config.healthCheck.check(logger, container)
           } else {
             HealthCheckResult.Failed(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
@@ -190,8 +191,16 @@ object DockerContainer {
         case HealthCheckResult.Failed(t) =>
           F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
 
-        case HealthCheckResult.Unknown =>
-          P.sleep(config.healthCheckInterval).flatMap(_ => await(container))
+        case HealthCheckResult.Unknown | HealthCheckResult.SocketTimeout =>
+          val max = config.healthCheckMaxAttempts
+          val next = attempt + 1
+          if (max >= next) {
+            logger.debug(s"Container $container healthcheck uncertain, retrying $next/$max...")
+            P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+          } else {
+            F.fail(new TimeoutException(s"Container $container didn't start after $max attempts, failing"))
+          }
+
       }
     }
 
@@ -245,7 +254,7 @@ object DockerContainer {
                 availablePorts = Map.empty,
                 hostName = inspection.getConfig.getHostName
               )
-              await(unverified)
+              await(unverified, 0)
             case None =>
               doRun(ports)
           }
@@ -318,7 +327,7 @@ object DockerContainer {
               container
           }
         }
-        result <- await(out)
+        result <- await(out, 0)
       } yield result
     }
 

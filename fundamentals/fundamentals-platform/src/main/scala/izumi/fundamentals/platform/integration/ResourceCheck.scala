@@ -23,10 +23,4 @@ object ResourceCheck {
     }
   }
 
-//  object ResourceUnavailable {
-//    def apply(description: String, cause: Option[Throwable]): ResourceUnavailable = {
-//      new ResourceUnavailable(description, cause)
-//    }
-//  }
-
 }

@@ -83,6 +83,7 @@ object Docker {
     networks: Set[ContainerNetwork[_]] = Set.empty,
     reuse: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+    healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
@@ -129,13 +130,15 @@ object Docker {
 
   sealed trait HealthCheckResult
   object HealthCheckResult {
-    case object Unknown extends HealthCheckResult
-
     final case class Failed(t: Throwable) extends HealthCheckResult
 
     sealed trait Running extends HealthCheckResult
-    case object JustRunning extends Running
-    final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
+    /**/ final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
+    /**/ case object JustRunning extends Running
+
+    sealed trait Uncertain extends HealthCheckResult
+    /**/ case object Unknown extends Uncertain
+    /**/ case object SocketTimeout extends Uncertain
   }
 
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
