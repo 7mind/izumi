@@ -34,7 +34,7 @@ trait ContainerDef {
     * }}}
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DockerContainer.ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }

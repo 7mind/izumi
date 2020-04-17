@@ -27,7 +27,7 @@ object ContainerHealthCheck {
   case class UnavailablePorts(unavailablePorts: Map[DockerPort, List[(AvailablePort, Option[Throwable])]])
 
   case class VerifiedContainerConnectivity(availablePorts: Map[DockerPort, NonEmptyList[AvailablePort]]) {
-    override def toString: String = s"{accessible ports=$availablePorts}"
+    override def toString: String = s"accessible=$availablePorts"
   }
 
   object VerifiedContainerConnectivity {

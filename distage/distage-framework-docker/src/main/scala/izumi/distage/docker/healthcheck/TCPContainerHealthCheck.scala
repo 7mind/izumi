@@ -24,7 +24,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       .distinct
       .filterNot(_.maybeAvailable.hostV4 == "0.0.0.0")
 
-    logger.debug(s"${container.id -> "container"}: going to check ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
+    logger.debug(s"going to check ports on $container: ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
 
 
     val checks = allCandidates.map {
