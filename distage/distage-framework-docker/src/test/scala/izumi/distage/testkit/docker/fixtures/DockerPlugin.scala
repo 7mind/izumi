@@ -36,12 +36,12 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
 
   make[AvailablePort].named("cs").tagged(Env.Test).from {
     cs: CassandraDocker.Container =>
-      cs.availablePorts(CassandraDocker.primaryPort).head
+      cs.availablePorts.availablePorts(CassandraDocker.primaryPort).head
   }
 
   make[AvailablePort].named("kafka").tagged(Env.Test).from {
     kafka: KafkaDocker.Container =>
-      kafka.availablePorts(KafkaDocker.primaryPort).head
+      kafka.availablePorts.availablePorts(KafkaDocker.primaryPort).head
   }
 
   // this container will start once `DynamoContainer` is up and running
@@ -52,11 +52,11 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   // these lines are for test scope
   make[AvailablePort].named("pg").tagged(Env.Test).from {
     pg: PostgresDocker.Container =>
-      pg.availablePorts(PostgresDocker.primaryPort).head
+      pg.availablePorts.availablePorts(PostgresDocker.primaryPort).head
   }
   make[AvailablePort].named("ddb").tagged(Env.Test).from {
     dn: DynamoDocker.Container =>
-      dn.availablePorts(DynamoDocker.primaryPort).head
+      dn.availablePorts.availablePorts(DynamoDocker.primaryPort).head
   }
 
   // and this one is for production

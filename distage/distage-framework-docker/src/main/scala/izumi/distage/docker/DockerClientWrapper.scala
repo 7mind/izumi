@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
-import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder}
+import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -19,7 +19,8 @@ import scala.jdk.CollectionConverters._
 
 class DockerClientWrapper[F[_]]
 (
-  val client: DockerClient,
+  val rawClient: DockerClient,
+  val rawClientConfig: DockerClientConfig,
   val clientConfig: ClientConfig,
   val labelsBase: Map[String, String],
   val labelsUnique: Map[String, String],
@@ -35,12 +36,12 @@ class DockerClientWrapper[F[_]]
         logger.info(s"Going to destroy $container...")
 
         try {
-          client
+          rawClient
             .stopContainerCmd(container.name)
             .exec()
             .discard()
         } finally {
-          client
+          rawClient
             .removeContainerCmd(container.name)
             .withForce(true)
             .exec()
@@ -63,13 +64,13 @@ object DockerClientWrapper {
   ) extends DIResource[F, DockerClientWrapper[F]]
     with IntegrationCheck {
 
-    private[this] lazy val dcc = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
+    private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
       .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))((c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
       .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))((c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email))
       .get.build()
 
     private[this] lazy val client = DockerClientBuilder
-      .getInstance(dcc)
+      .getInstance(rawClientConfig)
       .withDockerCmdExecFactory(factory)
       .build
 
@@ -86,7 +87,8 @@ object DockerClientWrapper {
     override def acquire: F[DockerClientWrapper[F]] = {
       DIEffect[F].maybeSuspend {
         new DockerClientWrapper[F](
-          client = client,
+          rawClient = client,
+          rawClientConfig = rawClientConfig,
           labelsBase = Map("distage.type" -> "testkit"),
           labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
@@ -97,9 +99,9 @@ object DockerClientWrapper {
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
-        containers <- DIEffect[F].maybeSuspend(resource.client.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
+        containers <- DIEffect[F].maybeSuspend(resource.rawClient.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
         _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(c => resource.destroyContainer(ContainerId(c.getId)))
-        _ <- DIEffect[F].maybeSuspend(resource.client.close())
+        _ <- DIEffect[F].maybeSuspend(resource.rawClient.close())
       } yield ()
     }
   }

@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -14,7 +16,7 @@ object Docker {
     def hostPort(host: String, port: Int): AvailablePort = AvailablePort(host, port)
   }
 
-  final case class ServicePort(containerAddressesV4: Seq[String], listenOnV4: String, port: Int)
+  final case class ServicePort(listenOnV4: String, port: Int)
 
   final case class ContainerId(name: String) extends AnyVal
 
@@ -71,22 +73,22 @@ object Docker {
     *
     */
   final case class ContainerConfig[T](
-    image: String,
-    ports: Seq[DockerPort],
-    name: Option[String] = None,
-    env: Map[String, String] = Map.empty,
-    cmd: Seq[String] = Seq.empty,
-    entrypoint: Seq[String] = Seq.empty,
-    cwd: Option[String] = None,
-    user: Option[String] = None,
-    mounts: Seq[Mount] = Seq.empty,
-    networks: Set[ContainerNetwork[_]] = Set.empty,
-    reuse: Boolean = true,
-    healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
-    healthCheckMaxAttempts: Int = 120,
-    pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
-    portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
+                                       image: String,
+                                       ports: Seq[DockerPort],
+                                       name: Option[String] = None,
+                                       env: Map[String, String] = Map.empty,
+                                       cmd: Seq[String] = Seq.empty,
+                                       entrypoint: Seq[String] = Seq.empty,
+                                       cwd: Option[String] = None,
+                                       user: Option[String] = None,
+                                       mounts: Seq[Mount] = Seq.empty,
+                                       networks: Set[ContainerNetwork[_]] = Set.empty,
+                                       reuse: Boolean = true,
+                                       healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+                                       healthCheckMaxAttempts: Int = 120,
+                                       pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
+                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkTCPOnly[T],
+                                       portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
   )
 
   /**
@@ -128,18 +130,19 @@ object Docker {
 
   final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
 
-  sealed trait HealthCheckResult
-  object HealthCheckResult {
-    final case class Failed(t: Throwable) extends HealthCheckResult
 
-    sealed trait Running extends HealthCheckResult
-    /**/ final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
-    /**/ case object JustRunning extends Running
-
-    sealed trait Uncertain extends HealthCheckResult
-    /**/ case object Unknown extends Uncertain
-    /**/ case object SocketTimeout extends Uncertain
-  }
 
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
+
+  case class UnmappedPorts(ports: Seq[DockerPort])
+
+  case class ContainerConnectivity(
+                                    dockerHost: Option[String],
+                                    containerAddressesV4: Seq[String],
+                                    dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
+                                  ) {
+    override def toString: String = s"{host: $dockerHost; addresses=$containerAddressesV4; ports=$dockerPorts}"
+  }
+
+
 }

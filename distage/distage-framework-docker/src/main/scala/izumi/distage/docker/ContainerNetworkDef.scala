@@ -37,7 +37,7 @@ object ContainerNetworkDef {
     prefixName: String,
     logger: IzLogger,
   ) extends DIResource[F, ContainerNetwork[T]] {
-    private[this] val client = clientw.client
+    private[this] val client = clientw.rawClient
     private[this] val prefix = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val stableLabels: Map[String, String] = Map(
       "distage.reuse" -> shouldReuse(config),

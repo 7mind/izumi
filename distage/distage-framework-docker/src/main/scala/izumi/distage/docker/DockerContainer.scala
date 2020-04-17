@@ -6,12 +6,14 @@ import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
 import izumi.distage.docker.Docker._
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.functional.Value
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
@@ -21,15 +23,15 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 final case class DockerContainer[Tag](
-  id: Docker.ContainerId,
-  name: String,
-  hostName: String,
-  ports: Map[Docker.DockerPort, Seq[ServicePort]],
-  containerConfig: Docker.ContainerConfig[Tag],
-  clientConfig: ClientConfig,
-  availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
-) {
-  override def toString: String = s"$name:${id.name} ports=${ports.mkString("{", ", ", "}")} available=${availablePorts.mkString("{", ", ", "}")}"
+                                       id: Docker.ContainerId,
+                                       name: String,
+                                       hostName: String,
+                                       connectivity: ContainerConnectivity,
+                                       containerConfig: Docker.ContainerConfig[Tag],
+                                       clientConfig: ClientConfig,
+                                       availablePorts: VerifiedContainerConnectivity,
+                                     ) {
+  override def toString: String = s"$name:${id.name} ports=$connectivity available=$availablePorts"
 }
 
 object DockerContainer {
@@ -57,8 +59,8 @@ object DockerContainer {
       *
       */
     def modifyConfig(
-      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
-    )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
+                      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
+                    )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
       tag2.discard()
       self.zip(modify).map {
         case (that, f) =>
@@ -76,28 +78,30 @@ object DockerContainer {
     }
 
     def connectToNetwork[T2](
-      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
-      tag2: distage.Tag[ContainerResource[F, T]],
-      tag3: distage.Tag[Docker.ContainerConfig[T]]
-    ): ProviderMagnet[ContainerResource[F, T]] = {
+                              implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+                              tag2: distage.Tag[ContainerResource[F, T]],
+                              tag3: distage.Tag[Docker.ContainerConfig[T]]
+                            ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
-          old.copy(networks = old.networks + net)
+        net: ContainerNetworkDef.ContainerNetwork[T2] =>
+          old: Docker.ContainerConfig[T] =>
+            old.copy(networks = old.networks + net)
       }
     }
 
     def connectToNetwork(
-      networkDecl: ContainerNetworkDef
-    )(
-      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
-      tag2: distage.Tag[ContainerResource[F, T]],
-      tag3: distage.Tag[Docker.ContainerConfig[T]]
-    ): ProviderMagnet[ContainerResource[F, T]] = {
+                          networkDecl: ContainerNetworkDef
+                        )(
+                          implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+                          tag2: distage.Tag[ContainerResource[F, T]],
+                          tag3: distage.Tag[Docker.ContainerConfig[T]]
+                        ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
-          old.copy(networks = old.networks + net)
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] =>
+          old: Docker.ContainerConfig[T] =>
+            old.copy(networks = old.networks + net)
       }
     }
   }
@@ -105,16 +109,16 @@ object DockerContainer {
   private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
   case class ContainerResource[F[_], T](
-    config: Docker.ContainerConfig[T],
-    clientw: DockerClientWrapper[F],
-    logger: IzLogger,
-  )(
-    implicit
-    val F: DIEffect[F],
-    val P: DIEffectAsync[F]
-  ) extends DIResource[F, DockerContainer[T]] {
+                                         config: Docker.ContainerConfig[T],
+                                         clientw: DockerClientWrapper[F],
+                                         logger: IzLogger,
+                                       )(
+                                         implicit
+                                         val F: DIEffect[F],
+                                         val P: DIEffectAsync[F]
+                                       ) extends DIResource[F, DockerContainer[T]] {
 
-    private[this] val client = clientw.client
+    private[this] val client = clientw.rawClient
 
     private[this] def toExposedPort(port: DockerPort): ExposedPort = {
       port match {
@@ -151,6 +155,7 @@ object DockerContainer {
         doRun(ports)
       }
     }
+
     override def release(resource: DockerContainer[T]): F[Unit] = {
       if (!shouldReuse(resource.containerConfig)) {
         clientw.destroyContainer(resource.id)
@@ -159,6 +164,8 @@ object DockerContainer {
       }
     }
 
+
+
     def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
       F.maybeSuspend {
         logger.debug(s"Awaiting until $container can be considered alive...")
@@ -166,46 +173,47 @@ object DockerContainer {
           val status = client.inspectContainerCmd(container.id.name).exec()
           if (status.getState.getRunning) {
             logger.debug(s"Container $container is running, trying healthcheck...")
-            config.healthCheck.check(logger, container)
+            Right(config.healthCheck.check(logger, container))
           } else {
-            HealthCheckResult.Failed(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
+            Left(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
           }
         } catch {
           case t: Throwable =>
-            HealthCheckResult.Failed(t)
+            Left(t)
         }
       }.flatMap {
-        case HealthCheckResult.JustRunning =>
+        case Right(HealthCheckResult.Ignored) =>
           F.maybeSuspend {
-            logger.info(s"$container looks alive...")
+            logger.info(s"port checks not performed for $container")
             container
           }
 
-        case HealthCheckResult.WithPorts(ports) =>
-          val out = container.copy(availablePorts = ports)
-          F.maybeSuspend {
-            logger.info(s"${out -> "container"} looks good...")
-            out
-          }
-
-        case HealthCheckResult.Failed(t) =>
-          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
-
-        case HealthCheckResult.Unknown | HealthCheckResult.SocketTimeout =>
-          val max = config.healthCheckMaxAttempts
-          val next = attempt + 1
-          if (max >= next) {
-            logger.debug(s"Container $container healthcheck uncertain, retrying $next/$max...")
-            P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+        case Right(status: HealthCheckResult.PortStatus) =>
+          if (status.requiredPortsAccessible) {
+            val out = container.copy(availablePorts = status.availablePorts)
+            F.maybeSuspend {
+              logger.info(s"${out -> "container"} looks good...")
+              out
+            }
           } else {
-            F.fail(new TimeoutException(s"Container $container didn't start after $max attempts, failing"))
+            val max = config.healthCheckMaxAttempts
+            val next = attempt + 1
+            if (max >= next) {
+              logger.debug(s"Container $container healthcheck uncertain, retrying $next/$max...")
+              P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+            } else {
+              F.fail(new TimeoutException(s"Container $container didn't start after $max attempts, failing"))
+            }
           }
 
+
+        case Left(t) =>
+          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
       }
     }
 
     private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
-      logger.info(s"Running container with reused option with ${config.pullTimeout}.")
+      logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
       FileLockMutex.withLocalMutex(logger)(
         s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
         waitFor = 1.second,
@@ -240,7 +248,7 @@ object DockerContainer {
                 }
             }.find {
               case (_, _, eports) =>
-                portSet.diff(eports.keySet).isEmpty
+                portSet.diff(eports.dockerPorts.keySet).isEmpty
             }
           }
           existing <- candidates match {
@@ -248,11 +256,11 @@ object DockerContainer {
               val unverified = DockerContainer[T](
                 id = ContainerId(c.getId),
                 name = inspection.getName,
-                ports = existingPorts,
+                connectivity = existingPorts,
                 containerConfig = config,
                 clientConfig = clientw.clientConfig,
-                availablePorts = Map.empty,
-                hostName = inspection.getConfig.getHostName
+                availablePorts = VerifiedContainerConnectivity.empty,
+                hostName = inspection.getConfig.getHostName,
               )
               await(unverified, 0)
             case None =>
@@ -312,7 +320,15 @@ object DockerContainer {
               throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
 
             case Right(mappedPorts) =>
-              val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, hostName, mappedPorts, config, clientw.clientConfig, Map.empty)
+              val container = DockerContainer[T](
+                ContainerId(res.getId),
+                inspection.getName,
+                hostName,
+                mappedPorts,
+                config,
+                clientw.clientConfig,
+                VerifiedContainerConnectivity.empty,
+              )
               logger.debug(s"Created $container from ${config.image}...")
               logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
               config.networks.foreach {
@@ -331,30 +347,39 @@ object DockerContainer {
       } yield result
     }
 
-    private def mapContainerPorts(inspection: InspectContainerResponse): Either[Seq[DockerPort], Map[DockerPort, Seq[ServicePort]]] = {
+    private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ContainerConnectivity] = {
       val network = inspection.getNetworkSettings
-      val networkAddresses = network.getNetworks.asScala.values.toList
 
       val ports = config.ports.map {
         containerPort =>
           val mappings = for {
             exposed <- Option(network.getPorts.getBindings.get(toExposedPort(containerPort))).toSeq
             port <- exposed
-          } yield port
-          (containerPort, mappings)
-      }
+          } yield {
+            ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+          }
 
-      val (good, bad) = ports.partition(_._2.nonEmpty)
-      if (bad.isEmpty) {
-        Right(good.map {
-          case (containerPort, ports) =>
-            containerPort -> ports.map(port => ServicePort(networkAddresses.map(_.getIpAddress), port.getHostIp, Integer.parseInt(port.getHostPortSpec)))
-        }.toMap)
+          (containerPort, NonEmptyList.from(mappings))
+      }
+      val unmapped = ports.collect { case (cp, None) => cp }
+
+      if (unmapped.nonEmpty) {
+        Left(UnmappedPorts(unmapped))
       } else {
-        Left(bad.map(_._1))
+        val dockerHost = clientw.rawClientConfig.getDockerHost.getHost
+        val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
+        val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
+
+        Right(ContainerConnectivity(
+          Option(dockerHost),
+          networkAddresses,
+          mapped.toMap,
+        ))
       }
 
     }
+
   }
 
 }
+
