@@ -69,7 +69,7 @@ class DistageScalatestReporter extends TestReporter {
       case TestStatus.Failed(t, duration) =>
         doReport(suiteId1)(TestFailed(
           _,
-          "Test failed",
+          t.getMessage,
           suiteName1, suiteId1, Some(suiteClassName1),
           testName,
           testName,
