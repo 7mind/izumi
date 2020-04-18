@@ -67,15 +67,24 @@ class DistageScalatestReporter extends TestReporter {
           formatter = formatter,
         ))
       case TestStatus.Failed(t, duration) =>
+        val adaptedError =
+          t match {
+            case fiberFailure: zio.FiberFailure =>
+              fiberFailure.cause.failureOption match {
+                case Some(v: Throwable) => v
+                case _ => fiberFailure.cause.dieOption.getOrElse(fiberFailure)
+              }
+            case th => th
+          }
         doReport(suiteId1)(TestFailed(
           _,
-          t.getMessage,
+          adaptedError.getMessage,
           suiteName1, suiteId1, Some(suiteClassName1),
           testName,
           testName,
           recordedEvents = Vector.empty,
           analysis = Vector.empty,
-          throwable = Some(t),
+          throwable = Some(adaptedError),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
           formatter = formatter,
