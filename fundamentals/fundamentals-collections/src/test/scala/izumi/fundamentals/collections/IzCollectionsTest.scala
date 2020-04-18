@@ -22,6 +22,8 @@ class IzCollectionsTest extends AnyWordSpec {
       assert(List.empty[String].ifNonEmptyOr(_ => 2)(1) == 1)
       assert(List("x").ifEmptyOr(1)(_ => 2) == 2)
       assert(List("x").ifNonEmptyOr(_ => 2)(1) == 2)
+      assert(List("x").ifEmptyOr(None)(_ => Some(2)).contains(2))
+      assert(List("x").ifNonEmptyOr(_ => None)(Some(2)).isEmpty)
     }
   }
 }
