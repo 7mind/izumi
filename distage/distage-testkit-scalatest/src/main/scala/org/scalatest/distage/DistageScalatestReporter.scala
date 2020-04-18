@@ -6,6 +6,7 @@ import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingl
 import izumi.fundamentals.platform.strings.IzString._
 import org.scalatest.Suite.getIndentedTextForTest
 import org.scalatest.events._
+import zio.{Cause, FiberFailure}
 
 class DistageScalatestReporter extends TestReporter {
 
@@ -66,7 +67,11 @@ class DistageScalatestReporter extends TestReporter {
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
           formatter = formatter,
         ))
-      case TestStatus.Failed(t, duration) =>
+      case TestStatus.Failed(t, trace0, duration) =>
+        val trace = trace0 match {
+          case f: FiberFailure => f.cause.asInstanceOf[Cause[Throwable]].squashTrace
+          case x => x
+        }
         doReport(suiteId1)(TestFailed(
           _,
           t.getMessage,
@@ -75,7 +80,7 @@ class DistageScalatestReporter extends TestReporter {
           testName,
           recordedEvents = Vector.empty,
           analysis = Vector.empty,
-          throwable = Some(t),
+          throwable = Some(trace),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
           formatter = formatter,
