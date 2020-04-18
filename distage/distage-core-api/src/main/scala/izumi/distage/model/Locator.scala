@@ -57,7 +57,7 @@ trait Locator {
   }
 
   /**
-    * Run function `f` filling all the arguments from locator contents.
+    * Run `function` filling all the arguments from locator contents.
     *
     * Works similarly to provider bindings.
     *

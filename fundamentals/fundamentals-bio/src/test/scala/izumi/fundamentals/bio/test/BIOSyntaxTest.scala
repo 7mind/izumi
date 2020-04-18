@@ -53,7 +53,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       }
     }
     def zz[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
-      F.pure(1).widenError[Throwable].guaranteeCase {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeCase {
         case BIOExit.Success(x) => F.pure(x).as(())
         case _ => F.unit
       }.widenError[Throwable]
