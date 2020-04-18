@@ -5,6 +5,9 @@ enablePlugins(SbtgenVerificationPlugin)
 disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals-collections"))
+  .dependsOn(
+    `fundamentals-functional` % "test->compile;compile->compile"
+  )
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),

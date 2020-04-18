@@ -4,6 +4,7 @@ import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.DIKey
+import izumi.functional.Lub
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.unused
 
@@ -153,11 +154,6 @@ object ModuleBase {
 
       (mergedKeys, merged)
     }
-  }
-
-  final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
-  object Lub {
-    implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {

@@ -16,6 +16,13 @@ class IzCollectionsTest extends AnyWordSpec {
     "support .distinctBy operation" in {
       assert(1.to(20).distinctBy(_ % 5) == 1.to(5))
     }
+
+    "suport .if* operations" in {
+      assert(List.empty[String].ifEmptyOr(1)(_ => 2) == 1)
+      assert(List.empty[String].ifNonEmptyOr(_ => 2)(1) == 1)
+      assert(List("x").ifEmptyOr(1)(_ => 2) == 2)
+      assert(List("x").ifNonEmptyOr(_ => 2)(1) == 2)
+    }
   }
 }
 

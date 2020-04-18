@@ -331,7 +331,9 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.collections,
         libs = Seq.empty,
-        depends = Seq.empty,
+        depends = Seq(
+          Projects.fundamentals.functional,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.platform,
