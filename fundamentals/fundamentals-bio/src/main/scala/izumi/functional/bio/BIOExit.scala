@@ -16,8 +16,8 @@ object BIOExit {
   object Trace {
     def zioTrace(cause: Cause[_]): Trace = ZIOTrace(cause)
     def empty: Trace = new Trace {
-      val asString = "<empty trace>"
-      def toThrowable = new RuntimeException(asString)
+      val asString: String = "<empty trace>"
+      def toThrowable: Throwable = new RuntimeException(asString)
     }
 
     final case class ZIOTrace(cause: Cause[_]) extends Trace {
@@ -29,12 +29,13 @@ object BIOExit {
   final case class Success[+A](value: A) extends BIOExit[Nothing, A]
 
   sealed trait Failure[+E] extends BIOExit[E, Nothing] {
+    def trace: Trace
+
     def toEither: Either[List[Throwable], E]
     def toEitherCompound: Either[Throwable, E]
 
-    def trace: Trace
-
     final def toThrowable(implicit ev: E <:< Throwable): Throwable = toEitherCompound.fold(identity, ev)
+    final def toThrowable(conv: E => Throwable): Throwable = toEitherCompound.fold(identity, conv)
   }
 
   final case class Error[+E](error: E, trace: Trace) extends BIOExit.Failure[E] {
