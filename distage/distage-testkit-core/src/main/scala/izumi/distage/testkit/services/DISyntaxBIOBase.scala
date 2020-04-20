@@ -2,8 +2,8 @@ package izumi.distage.testkit.services
 
 import distage.{Tag, TagKK}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.testkit.services.DISyntaxBIOBase.BIOBadBranch
 import izumi.functional.bio.BIOError
+import izumi.functional.bio.BIORunner.BIOBadBranch
 import izumi.fundamentals.platform.language.CodePosition
 
 trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
@@ -15,7 +15,7 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
         (effect, F) =>
           F.leftMap(effect) {
             case t: Throwable => t
-            case otherError: Any => BIOBadBranch(otherError)
+            case otherError: Any => BIOBadBranch("Test failed, unexpectedly got bad branch. ", otherError)
           }
       }
 
@@ -26,9 +26,4 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
     takeBIO(function, pos)
   }
 
-}
-
-object DISyntaxBIOBase {
-  final case class BIOBadBranch[A](error: A)
-    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error", null, true, false)
 }
