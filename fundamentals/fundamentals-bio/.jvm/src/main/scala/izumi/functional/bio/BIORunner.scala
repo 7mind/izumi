@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
-import zio.{Cause, FiberFailure, IO, Runtime}
+import zio.{Cause, IO, Runtime}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
