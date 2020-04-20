@@ -16,11 +16,12 @@ import izumi.fundamentals.reflection.Tags.Tag
 import scala.collection.mutable
 import scala.language.experimental.macros
 
-trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
   protected[this] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T](ref: SingletonRef): BindDSL[T]
+  private[definition] def _bindDSLAfterFrom[T](ref: SingletonRef): BindDSLAfterFrom[T]
   private[definition] def _setDSL[T](ref: SetRef): SetDSL[T]
 
   private[definition] def frozenState: collection.Seq[Binding] = {
@@ -91,11 +92,14 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   }
 
   /** Same as `make[T].from(implicitly[T])` **/
-  final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    _registered(new SingletonRef(Bindings.binding(instance))).discard()
+  final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.binding(instance)))
+    _bindDSLAfterFrom(ref)
   }
 
-  /** Same as `make[T].named(name).from(implicitly[T])` **/
+  /** Same as `addImplicit[T].named(name)`
+    * @deprecated Use `addImplicit[T].named(name)` instead, since 0.10.6 */
+  @deprecated("Use `addImplicit[T].named(name)` instead", "0.10.6")
   final protected[this] def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
     _registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name, IdContract.stringIdContract)))).discard()
   }

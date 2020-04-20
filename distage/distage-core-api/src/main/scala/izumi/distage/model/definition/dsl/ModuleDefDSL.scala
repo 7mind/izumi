@@ -8,7 +8,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstru
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.AddTagsAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
-import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, SetDSL}
+import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.BIOLocal
@@ -40,10 +40,12 @@ import zio._
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
   *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.ProviderMagnet Provider]] function
-  *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
-  *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
   *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a [[DIResource]] specifying its creation and destruction lifecycle
+  *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
+  *   - `make[X].using[X]` = bind X to refer to another already bound instance of `X`
+  *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
+  *   - `make[ImplXYZ].aliased[X].aliased[Y].aliased[Z]` = bind ImplXYZ and bind X, Y, Z to refer to the bound instance of ImplXYZ
   *
   * Set bindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
@@ -67,7 +69,7 @@ import zio._
   * @see [[ModuleDefDSL]]
   */
 trait ModuleDefDSL
-  extends AbstractBindingDefDSL[MakeDSL, SetDSL]
+  extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL]
     with IncludesDSL
     with TagsDSL { this: ModuleBase =>
 
@@ -79,11 +81,9 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] =
-    new MakeDSL[T](ref, ref.key)
-
-  override private[definition] final def _setDSL[T](ref: SetRef): SetDSL[T] =
-    new SetDSL[T](ref)
+  override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
+  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): MakeDSLUnnamedAfterFrom[T] = new MakeDSLUnnamedAfterFrom[T](ref, ref.key)
+  override private[definition] final def _setDSL[T](ref: SetRef): SetDSL[T] = new SetDSL[T](ref)
 
   /**
     * Create a dummy binding that throws an exception with an error message when it's created.
