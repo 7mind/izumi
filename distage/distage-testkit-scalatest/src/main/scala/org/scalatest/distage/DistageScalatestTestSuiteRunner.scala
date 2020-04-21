@@ -44,7 +44,6 @@ object ScalatestInitWorkaround {
       if (classpathScanned.compareAndSet(false, true)) {
         val classLoader = instance.getClass.getClassLoader
         val scan = new ClassGraph()
-          .whitelistJars("distage-testkit-scalatest*")
           .enableClassInfo()
           .addClassLoader(classLoader)
           .scan()
