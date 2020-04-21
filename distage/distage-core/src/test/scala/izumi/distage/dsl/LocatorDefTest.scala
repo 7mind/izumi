@@ -84,6 +84,17 @@ class LocatorDefTest extends AnyWordSpec {
       assert(ctx.get[Set[TestInstanceBinding]] == Set(TestInstanceBinding()))
     }
 
+    "support addImplicit" in {
+      val ctx = new LocatorDef {
+        addImplicit[DummyImplicit]
+        addImplicit[DummyImplicit].named("dummy")
+      }
+
+      assert(ctx.instances.size == 2)
+      assert(ctx.get[DummyImplicit] ne null)
+      assert(ctx.get[DummyImplicit]("dummy") ne null)
+    }
+
     ".run and .runOption works" in {
       val ctx = new LocatorDef {
         make[Int].fromValue(5)

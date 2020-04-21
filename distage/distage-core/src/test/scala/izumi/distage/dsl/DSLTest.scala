@@ -208,10 +208,6 @@ class DSLTest extends AnyWordSpec with MkInjector {
     "Multiset bindings support tag merge" in {
       import SetCase1._
 
-//      val set1 = Set(new SetImpl4, new SetImpl4)
-//          .addSet(set1).tagged("A") // don't merge (function bind)
-//          .addSet(set1).tagged("B") // don't merge (function bind)
-
       val set = Set(new SetImpl5, new SetImpl5)
 
       val definition = new ModuleDef {
@@ -299,9 +295,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert((def1 overridenBy Module.empty) == def1)
       assert(def1 == def2)
       assert(def1 != def3)
-
     }
-
 
     "support includes" in {
       import BasicCase1._
@@ -513,6 +507,19 @@ class DSLTest extends AnyWordSpec with MkInjector {
             tags = Set("x")
           ),
         Bindings.reference[TraitY, ImplXYZ].addTags(Set("xa")),
+      ))
+    }
+
+    "support addImplicit with modifiers" in {
+      implicit val dummy: DummyImplicit = DummyImplicit.dummyImplicit
+      val definition = new ModuleDef {
+        addImplicit[DummyImplicit]
+        addImplicit[DummyImplicit].named("dummy")
+      }
+
+      assert(definition.bindings == Set(
+        Bindings.binding[DummyImplicit, DummyImplicit](dummy),
+        Bindings.binding[DummyImplicit, DummyImplicit](dummy).copy(key = DIKey.get[DummyImplicit].named("dummy")),
       ))
     }
 

@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
-import zio.{Cause, FiberFailure, IO, Runtime}
+import zio.{Cause, IO, Runtime}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
@@ -44,23 +44,16 @@ object BIORunner {
     val platform: Platform
   ) extends BIORunner[IO] {
 
-    val runtime = Runtime((), platform)
+    val runtime: Runtime[Unit] = Runtime((), platform)
 
     override def unsafeRun[E, A](io: => IO[E, A]): A = {
+
       unsafeRunSyncAsEither(io) match {
         case BIOExit.Success(value) =>
           value
 
-        case BIOExit.Error(error, _) =>
-          error match {
-            case t: Throwable =>
-              throw t
-            case o =>
-              throw FiberFailure(Cause.fail(o))
-          }
-
-        case BIOExit.Termination(compoundException, _, _) =>
-          throw compoundException
+        case failure: BIOExit.Failure[_] =>
+          throw failure.trace.unsafeAttachTrace(BIOBadBranch(_))
       }
     }
 
@@ -126,6 +119,12 @@ object BIORunner {
       thread
     }
 
+  }
+
+  final case class BIOBadBranch[A](prefixMessage: String, error: A)
+    extends RuntimeException(s"${prefixMessage}Typed error of class=${error.getClass.getName}: $error", null, true, false)
+  object BIOBadBranch {
+    def apply[A](error: A): BIOBadBranch[A] = new BIOBadBranch("", error)
   }
 
 }

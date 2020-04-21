@@ -152,9 +152,9 @@ class DistageTestRunner[F[_]: TagK]
                 case (ProvisioningIntegrationException(integrations), _) =>
                   // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
                   F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
-                case (_, cause) =>
+                case (_, getTrace) =>
                   // fail all tests (if an exception reached here, it must have happened before the individual test runs)
-                  F.maybeSuspend(failAllTests(tests, cause))
+                  F.maybeSuspend(failAllTests(tests, getTrace()))
               }
             }
         }
@@ -184,10 +184,10 @@ class DistageTestRunner[F[_]: TagK]
     }
   }
 
-  protected def failAllTests(tests: Seq[DistageTest[F]], cause: Throwable): Unit = {
+  protected def failAllTests(tests: Seq[DistageTest[F]], t: Throwable): Unit = {
     tests.foreach {
       test =>
-        reporter.testStatus(test.meta, TestStatus.Failed(cause, Duration.Zero))
+        reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
     }
   }
 
@@ -263,9 +263,9 @@ class DistageTestRunner[F[_]: TagK]
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
           }
-        case (_, cause) =>
+        case (_, getTrace) =>
           F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Failed(cause, testDuration(before)))
+            reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
           }
       }
     }
