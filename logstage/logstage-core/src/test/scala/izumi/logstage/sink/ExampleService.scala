@@ -1,6 +1,6 @@
 package izumi.logstage.sink
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
@@ -14,8 +14,8 @@ import org.scalatest.exceptions.TestFailedException
 import scala.util.Random
 
 @ExposedTestScope
-@silent("[Ee]xpression.*logger")
-@silent("missing interpolator")
+@nowarn("msg=[Ee]xpression.*logger")
+@nowarn("msg=missing interpolator")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 

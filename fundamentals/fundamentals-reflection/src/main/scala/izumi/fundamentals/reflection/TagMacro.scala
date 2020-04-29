@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.TagMacro._
@@ -14,7 +14,7 @@ import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class TagMacro(val c: blackbox.Context) {
 
   import c.universe._
@@ -456,7 +456,7 @@ private object TagMacro {
   }
 }
 
-@silent("deprecated")
+@nowarn("msg=deprecated")
 class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
 
   import c.universe._
