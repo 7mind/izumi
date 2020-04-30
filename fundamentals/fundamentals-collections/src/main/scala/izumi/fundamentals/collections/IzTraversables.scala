@@ -25,7 +25,7 @@ final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal 
   }
 
   def ifEmptyOr[E, N, L](a: => E)(l: IterableOnce[A] => N)(implicit ev: Lub[E, N, L]): L = {
-    if (list.isEmpty) {
+    if (list.iterator.isEmpty) {
       ev.fst(a)
     } else {
       ev.snd(l(list))
@@ -33,7 +33,7 @@ final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal 
   }
 
   def ifNonEmptyOr[E, N, L](l: IterableOnce[A] => N)(a: => E)(implicit ev: Lub[E, N, L]): L = {
-    if (list.isEmpty) {
+    if (list.iterator.isEmpty) {
       ev.fst(a)
     } else {
       ev.snd(l(list))

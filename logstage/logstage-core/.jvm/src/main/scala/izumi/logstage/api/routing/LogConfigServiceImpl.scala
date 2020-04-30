@@ -27,7 +27,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
       val parts = id.split('.')
 
       // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)
-      Stream
+      Iterator
         .iterate(parts, parts.length)(_.init)
         .map(_.mkString("."))
         .map(id => loggerConfig.entries.get(id))

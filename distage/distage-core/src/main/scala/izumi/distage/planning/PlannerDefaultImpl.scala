@@ -108,6 +108,7 @@ final class PlannerDefaultImpl
     val imports = topology
       .dependees
       .graph
+      .view
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>

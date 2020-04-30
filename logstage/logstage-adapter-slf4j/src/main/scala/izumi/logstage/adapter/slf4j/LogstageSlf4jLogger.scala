@@ -5,6 +5,8 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}
 
+import scala.collection.immutable.ArraySeq
+
 class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   private val id = LoggerId(name)
 
@@ -55,7 +57,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
 
     Entry(
-      Message(StringContext(template :_*), messageArgs)
+      Message(StringContext(ArraySeq.unsafeWrapArray(template): _*), messageArgs)
       , Context(
         ctx
         , DynamicContext(level, threadData, System.currentTimeMillis())

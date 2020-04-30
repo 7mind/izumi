@@ -4,6 +4,7 @@ import izumi.fundamentals.platform.console.TrivialLogger.{Config, Level}
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.strings.IzString._
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -93,6 +94,7 @@ object TrivialLogger {
 
   private[this] val enabled = new mutable.HashMap[String, Boolean]()
 
+  @nowarn("msg=return statement uses an exception")
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
     config.forceLog || enabled.getOrElseUpdate(sysProperty, {
       val parts = sysProperty.split('.')

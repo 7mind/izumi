@@ -7,6 +7,7 @@ import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConf
 import izumi.logstage.api.logger.{LogRouter, LogSink}
 import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
+import scala.annotation.nowarn
 import scala.util.control.NonFatal
 
 class ConfigurableLogRouter(
@@ -41,6 +42,7 @@ class ConfigurableLogRouter(
 }
 
 object ConfigurableLogRouter {
+
   final def apply(threshold: Log.Level, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
     ConfigurableLogRouter(threshold, Seq(sink), levels)
   }
@@ -49,8 +51,10 @@ object ConfigurableLogRouter {
     ConfigurableLogRouter(threshold, sinks, Map.empty[String, Log.Level])
   }
 
+  @nowarn("msg=Unused import")
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
-    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap
+    import scala.collection.compat._
+    val levelConfigs = levels.view.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap
     val rootConfig = LoggerPathConfig(threshold, sinks)
     val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
     val router = ConfigurableLogRouter(configService)

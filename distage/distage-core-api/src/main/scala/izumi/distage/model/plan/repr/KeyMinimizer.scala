@@ -5,14 +5,20 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
+import scala.annotation.nowarn
+
 class KeyMinimizer(allKeys: Set[DIKey]) {
 
+  @nowarn("msg=Unused import")
   private[this] val index: Map[String, Int] = {
+    import scala.collection.compat._
+
     allKeys
       .toSeq
       .flatMap(extract)
       .map(name => name.split('.').last -> name)
       .toMultimap
+      .view
       .mapValues(_.size)
       .toMap
   }

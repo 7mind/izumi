@@ -122,8 +122,8 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def handle(part: String) = {
-      StringContext.treatEscapes(part)
+    @inline private[this] def handle(part: String): String = {
+      StringContext.processEscapes(part)
     }
 
     @inline private[this] def argToString(argValue: Any, withColors: Boolean): String = {

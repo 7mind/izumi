@@ -3,7 +3,7 @@ package izumi.fundamentals.json.flat
 import io.circe.Json
 import izumi.functional.IzEither.EitherBiAggregate
 
-import scala.annotation.switch
+import scala.annotation.{nowarn, switch}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
@@ -97,6 +97,7 @@ class JsonFlattener {
     } yield out
   }
 
+  @nowarn("msg=return statement uses an exception")
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {
