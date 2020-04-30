@@ -298,11 +298,12 @@ object DIResource {
     *   }
     * }}}
     */
-  class Of[+F[_], +A](private[Of] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
-    override final type InnerResource = inner.InnerResource
-    override final def acquire: F[inner.InnerResource] = inner.acquire
-    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
-    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
+  class Of[+F[_], +A](inner: => DIResourceBase[F, A]) extends DIResourceBase[F, A] {
+    private[Of] val _inner: DIResourceBase[F, A] = inner
+    override final type InnerResource = _inner.InnerResource
+    override final def acquire: F[_inner.InnerResource] = _inner.acquire
+    override final def release(resource: _inner.InnerResource): F[Unit] = _inner.release(resource)
+    override final def extract(resource: _inner.InnerResource): A = _inner.extract(resource)
   }
 
   /**
@@ -320,7 +321,7 @@ object DIResource {
     *   }
     * }}}
     */
-  class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
+  class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: => Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
 
   /**
     * Class-based proxy over a [[zio.ZManaged]] value
@@ -337,7 +338,7 @@ object DIResource {
     *   }
     * }}}
     */
-  class OfZIO[-R, +E, +A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
+  class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
 
   /**
     * Class-based variant of [[make]]:
