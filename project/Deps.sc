@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.55`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.57`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -55,7 +55,7 @@ object Izumi {
     scalaJsVersion = PV.scala_js_version,
     scalaNativeVersion = PV.scala_native_version,
     crossProjectVersion = PV.crossproject_version,
-    bundlerVersion = PV.scalajs_bundler_version,
+    bundlerVersion = Some(PV.scalajs_bundler_version),
   )
 
   object Deps {
