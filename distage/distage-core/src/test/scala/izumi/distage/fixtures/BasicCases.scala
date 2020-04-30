@@ -37,6 +37,9 @@ object BasicCases {
       val y = fieldArgDependency
     }
 
+    case class TestClass0()
+    case class TestClass2(c: TestClass0)
+
     case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
     case class TestInstanceBinding(z: String = "TestValue")

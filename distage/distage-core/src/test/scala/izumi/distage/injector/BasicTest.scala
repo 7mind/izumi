@@ -61,6 +61,29 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(ss.isEmpty)
   }
 
+  "provide LocatorRef during initialization" in {
+    import BasicCase1._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[TestClass0]
+      make[TestClass2].from {
+        (ref: LocatorRef, test: TestClass0) =>
+          assert(ref.unsafeUnstableMutableLocator.instances.nonEmpty)
+          assert(test != null)
+          assert(ref.unsafeUnstableMutableLocator.get[TestClass0] eq test)
+          TestClass2(test)
+      }
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val t = context.get[TestClass2]
+    val r = context.get[LocatorRef]
+    assert(t eq r.get.get[TestClass2])
+  }
+
   "fails on wrong @Id annotation at compile-time" in {
     val res = intercept[TestFailedException] {
       assertCompiles("""

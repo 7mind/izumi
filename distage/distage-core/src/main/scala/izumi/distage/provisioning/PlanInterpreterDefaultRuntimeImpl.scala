@@ -1,5 +1,7 @@
 package izumi.distage.provisioning
 
+import java.util.concurrent.atomic.AtomicReference
+
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
@@ -53,7 +55,9 @@ class PlanInterpreterDefaultRuntimeImpl
 
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
-    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], new LocatorRef())
+    val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
+    val locatorRef = new LocatorRef(new AtomicReference(Left(locator)))
+    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
@@ -114,21 +118,20 @@ class PlanInterpreterDefaultRuntimeImpl
       _ <- verifyEffectType[F](otherSteps, addFailure = f => F.maybeSuspend(mutFailures += f))
 
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
+      immutable = mutProvisioningContext.toImmutable
       res <- if (failedImportsOrEffects) {
-        F.maybeSuspend(Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
+        F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
       } else {
         F.traverse_(otherSteps)(processStep)
           .flatMap { _ =>
             F.maybeSuspend {
-              val context = mutProvisioningContext.toImmutable
-
               if (mutFailures.nonEmpty) {
-                Left(FailedProvision[F](context, plan, parentContext, mutFailures.toVector))
+                Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
               } else {
-                val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
-                locator.get[LocatorRef].ref.set(locator)
-
-                Right(locator)
+                val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
+                val res = Right(finalLocator)
+                locatorRef.ref.set(res)
+                res
               }
             }
         }
