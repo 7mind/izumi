@@ -344,6 +344,18 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       assert(t.message.get contains "could not find implicit value for TagK[F]")
     }
 
+    "can pass a block with inner method calls into DIResource.Of constructor (https://github.com/scala/bug/issues/11969)" in {
+      final class XImpl
+        extends DIResource.Of({
+          def res = DIResource.make(Try(helper()))(_ => Try(()))
+
+          def helper() = ()
+
+          res
+        })
+      new XImpl().acquire.get
+    }
+
   }
 
 }
