@@ -131,7 +131,8 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.11")
-  final val scala213 = ScalaVersion("2.13.2")
+  final val scala213 = ScalaVersion("2.13.1")
+  // postpone updating to 2.13.2 due to bug https://github.com/scala/bug/issues/11968 that makes it impossible to compile the project on that version
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
