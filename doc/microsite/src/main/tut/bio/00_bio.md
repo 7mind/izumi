@@ -54,12 +54,12 @@ libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$
 Overview
 --------
 
-The following graphic shows the current BIO inheritance hierarchy. Note that all the trifunctor `BIO*3` typeclasses
+The following graphic shows the current BIO relationship hierarchy. Note that all the trifunctor `BIO*3` typeclasses
 have bifunctor `BIO*` counterparts.
 
-![BIO-hierarchy](media/bio-hierarchy.svg)
+![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
 
-[(image)](media/bio-hierarchy.svg)
+[(image)](media/bio-relationship-hierarchy.svg)
 
 Auxiliary algebras:
 
@@ -67,8 +67,8 @@ Auxiliary algebras:
 
 [(image)](media/algebras.svg)
 
-Relationship hierarchy:
+Raw subtyping hierarchy:
 
-![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
+![BIO-inheritance-hierarchy](media/bio-hierarchy.svg)
 
-[(image)](media/bio-relationship-hierarchy.svg)
+[(image)](media/bio-hierarchy.svg)
