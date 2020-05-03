@@ -49,6 +49,16 @@ To use it, add `fundamentals-bio` library:
 libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$"
 ```
 
+Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector) and enable partial unification on Scala versions older than `2.13`:
+
+```scala
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+
+// _Required_ option for Scala 2.12, not required on 2.13+
+scalacOptions += "-Ypartial-unification"
+```
+
+
 @@@
 
 Overview

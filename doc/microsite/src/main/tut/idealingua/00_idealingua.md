@@ -192,11 +192,10 @@ Commandline examples:
 Most likely you'll need to use [Kind Projector](https://github.com/non/kind-projector) and enable partial unification:
 
 ```scala
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+
+// Only for Scala 2.12, not required on 2.13+
 scalacOptions += "-Ypartial-unification"
-
-resolvers += Resolver.sonatypeRepo("releases")
-
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.8" cross CrossVersion.binary)
 ``` 
 
 You may find the test suite for the http4s backend [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
