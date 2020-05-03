@@ -22,20 +22,20 @@ trait BIOParallel[F[-_, +_, +_]] extends BIORoot {
     * in parallel, combining their results into a tuple. If either side fails,
     * then the other side will be interrupted.
     */
-  final def zipPar[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, (A, B)] = zipWithPar(fa, fb)((a, b) => (a, b))
+  def zipPar[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, (A, B)] = zipWithPar(fa, fb)((a, b) => (a, b))
 
   /**
     * Returns an effect that executes both effects,
     * in parallel, the left effect result is returned. If either side fails,
     * then the other side will be interrupted.
     */
-  final def zipParLeft[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, A] = zipWithPar(fa, fb)((a, _) => a)
+  def zipParLeft[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, A] = zipWithPar(fa, fb)((a, _) => a)
 
   /**
     * Returns an effect that executes both effects,
     * in parallel, the right effect result is returned. If either side fails,
     * then the other side will be interrupted.
     */
-  final def zipParRight[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, B] = zipWithPar(fa, fb)((_, b) => b)
+  def zipParRight[R, E, A, R1 <: R, E1 >: E, B](fa: F[R, E, A], fb: F[R1, E1, B]): F[R1, E1, B] = zipWithPar(fa, fb)((_, b) => b)
 
 }
