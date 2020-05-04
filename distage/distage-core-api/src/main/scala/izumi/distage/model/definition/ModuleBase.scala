@@ -4,16 +4,13 @@ import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.Lub
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.unused
 
 import scala.collection.immutable.ListSet
 
-trait ModuleBase {
-  type Self <: ModuleBase
+trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
-
   final def keys: Set[DIKey] = bindings.map(_.key)
 
   override final def hashCode(): Int = bindings.hashCode()
@@ -27,15 +24,6 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase { type Self <: S }
-
-  implicit val moduleBaseApi: ModuleMake[ModuleBase] = {
-    binds =>
-      new ModuleBase {
-        override val bindings: Set[Binding] = binds
-      }
-  }
-
   def empty: ModuleBase = make(Set.empty)
 
   def make(bindings: Set[Binding]): ModuleBase = {
@@ -45,18 +33,20 @@ object ModuleBase {
     }
   }
 
-  implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Iterable[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
-    def merge: T = {
+  implicit val moduleBaseApi: ModuleMake[ModuleBase] = ModuleBase.make
+
+  implicit final class ModuleDefSeqExt[S <: ModuleBase](private val defs: Iterable[S]) extends AnyVal {
+    def merge[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       defs.foldLeft[T](T.empty)(_ ++ _)
     }
 
-    def overrideLeft: T = {
+    def overrideLeft[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       defs.foldLeft[T](T.empty)(_ overridenBy _)
     }
   }
 
-  implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val module: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
-    def map(f: Binding => Binding): T = {
+  implicit final class ModuleDefOps[S <: ModuleBase](private val module: S) extends AnyVal {
+    def map[T <: ModuleBase](f: Binding => Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.map(f))
     }
 
@@ -66,7 +56,7 @@ object ModuleBase {
       }
     }
 
-    def foldLeftWith[B](b: B)(f: (B, Binding) => (B, Binding)): (B, T) = {
+    def foldLeftWith[B, T <: ModuleBase](b: B)(f: (B, Binding) => (B, Binding))(implicit T: ModuleMake.Aux[S, T]): (B, T) = {
       val (bindings, fold) = foldLeft(List.empty[Binding] -> b) {
         case ((list, acc), bind) =>
           val (acc1, el) = f(acc, bind)
@@ -75,7 +65,7 @@ object ModuleBase {
       fold -> T.make(bindings.toSet)
     }
 
-    def flatMap(f: Binding => Iterable[Binding]): T = {
+    def flatMap[T <: ModuleBase](f: Binding => Iterable[Binding])(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.flatMap(f))
     }
   }
@@ -86,45 +76,41 @@ object ModuleBase {
     }
   }
 
-  implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val module: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
-    def ++(that: ModuleBase): T = {
+  implicit final class ModuleDefCombine[S <: ModuleBase](private val module: S) extends AnyVal {
+    def ++[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       val theseBindings = module.bindings.toSeq
       val thoseBindings = that.bindings.toSeq
 
       T.make(tagwiseMerge(theseBindings ++ thoseBindings))
     }
 
-    def +(binding: Binding): T = {
+    def :+[T <: ModuleBase](binding: Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
       module ++ T.make(Set(binding))
     }
 
-    def :+(binding: Binding): T = {
-      module ++ T.make(Set(binding))
-    }
-
-    def +:(binding: Binding): T = {
+    def +:[T <: ModuleBase](binding: Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(Set(binding)) ++ module
     }
 
-    def --(that: ModuleBase): T = {
+    def --[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       drop(that.keys)
     }
 
-    def preserveOnly(preserve: Set[DIKey]): T = {
+    def preserveOnly[T <: ModuleBase](preserve: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
       val filtered = module.bindings.filterNot(b => preserve.contains(b.key))
       T.make(filtered)
     }
 
-    def drop(ignored: Set[DIKey]): T = {
+    def drop[T <: ModuleBase](ignored: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
       val filtered = module.bindings.filterNot(b => ignored.contains(b.key))
       T.make(filtered)
     }
 
-    def overridenBy(that: ModuleBase): T = {
-      T.make(mergePreserve(module.bindings, that.bindings)._2)
+    def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(mergePreserve[T](module.bindings, that.bindings)._2)
     }
 
-    private[this] def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[DIKey], Set[Binding]) = {
+    private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding])(implicit T: ModuleMake.Aux[S, T]): (Set[DIKey], Set[Binding]) = {
       // FIXME: a hack to support tag merging
       def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] = {
         (T.make(a) ++ T.make(b)).bindings
@@ -192,14 +178,22 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T]: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
 
-private object ModuleBaseInstances {
+private[definition] sealed trait ModuleBaseInstances
 
-  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T]: ModuleMake] extends BoundedSemilattice[T] {
+object ModuleBaseInstances {
+
+  // emulate bivariance for ModuleMake. The only purpose of the first parameter is to initiate
+  // the search in its companion object, otherwise the parameter should be ignored when deciding
+  // whether instances are subtypes of each other (aka bivariance)
+  @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T]): ModuleMake[T] =
+    T.asInstanceOf[ModuleMake[T]]
+
+  final class ModuleBaseSemilattice[T <: ModuleBase: ModuleMake] extends BoundedSemilattice[T] {
     def empty: T = ModuleMake[T].empty
     def combine(x: T, y: T): T = x ++ y
   }
@@ -216,4 +210,3 @@ private object ModuleBaseInstances {
   }
 
 }
-
