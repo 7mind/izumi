@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.language.unused
 
 import scala.collection.immutable.ListSet
 
-trait ModuleBase {
+trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
   final def keys: Set[DIKey] = bindings.map(_.key)
 
@@ -23,7 +23,7 @@ trait ModuleBase {
   override final def toString: String = bindings.mkString(s"Module(",", ",")")
 }
 
-object ModuleBase extends ModuleBaseLowPriorityInstances {
+object ModuleBase {
   def empty: ModuleBase = make(Set.empty)
 
   def make(bindings: Set[Binding]): ModuleBase = {
@@ -183,17 +183,15 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
 
 }
 
-private[definition] sealed trait ModuleBaseLowPriorityInstances {
+private[definition] sealed trait ModuleBaseInstances
+
+object ModuleBaseInstances {
 
   // emulate bivariance for ModuleMake. The only purpose of the first parameter is to initiate
   // the search in its companion object, otherwise the parameter should be ignored when deciding
   // whether instances are subtypes of each other (aka bivariance)
-  @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T]): ModuleMake[T] =
+  @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T] { type DivergenceRedirect }): ModuleMake[T] =
     T.asInstanceOf[ModuleMake[T]]
-
-}
-
-private object ModuleBaseInstances {
 
   final class ModuleBaseSemilattice[T <: ModuleBase: ModuleMake] extends BoundedSemilattice[T] {
     def empty: T = ModuleMake[T].empty

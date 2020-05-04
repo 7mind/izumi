@@ -9,5 +9,7 @@ object ModuleMake {
     def make(bindings: Set[Binding]): T
 
     final def empty: T = make(Set.empty)
+
+    type DivergenceRedirect
   }
 }
