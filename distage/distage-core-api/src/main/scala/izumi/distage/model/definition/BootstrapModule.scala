@@ -1,8 +1,6 @@
 package izumi.distage.model.definition
 
-trait BootstrapModule extends ModuleBase {
-  override type Self <: BootstrapModule
-}
+trait BootstrapModule extends ModuleBase
 
 object BootstrapModule {
   def empty: BootstrapModule = make(Set.empty)

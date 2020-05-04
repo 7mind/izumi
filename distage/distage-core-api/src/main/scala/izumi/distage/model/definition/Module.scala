@@ -1,8 +1,6 @@
 package izumi.distage.model.definition
 
-trait Module extends ModuleBase {
-  override type Self <: Module
-}
+trait Module extends ModuleBase
 
 object Module {
   def empty: Module = make(Set.empty)

@@ -2,9 +2,7 @@ package izumi.distage.plugins
 
 import izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
 
-trait PluginBase extends ModuleBase {
-  override type Self <: PluginBase
-}
+trait PluginBase extends ModuleBase
 
 object PluginBase {
   def empty: PluginBase = make(Set.empty)
