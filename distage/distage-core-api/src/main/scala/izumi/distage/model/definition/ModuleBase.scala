@@ -190,7 +190,7 @@ object ModuleBaseInstances {
   // emulate bivariance for ModuleMake. The only purpose of the first parameter is to initiate
   // the search in its companion object, otherwise the parameter should be ignored when deciding
   // whether instances are subtypes of each other (aka bivariance)
-  @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T] { type DivergenceRedirect }): ModuleMake[T] =
+  @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T]): ModuleMake[T] =
     T.asInstanceOf[ModuleMake[T]]
 
   final class ModuleBaseSemilattice[T <: ModuleBase: ModuleMake] extends BoundedSemilattice[T] {
