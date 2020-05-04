@@ -147,6 +147,7 @@ object BIOCatsConversions {
   }
 
   class BIOCatsSync[F[+_, +_]](override val F: BIO[F]) extends BIOCatsBracket[F](F) with cats.effect.Sync[F[Throwable, ?]] {
+    self =>
     @inline override final def suspend[A](thunk: => F[Throwable, A]): F[Throwable, A] = F.flatten(F.syncThrowable(thunk))
     @inline override final def delay[A](thunk: => A): F[Throwable, A] = F.syncThrowable(thunk)
   }
