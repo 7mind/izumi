@@ -9,7 +9,7 @@ distage: Staged Dependency Injection
 with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
 
 `distage` is suitable for wiring @ref[Tagless Final Style](basics.md#tagless-final-style),
-@ref[ZIO Environment](basics.md#auto-traits) style, and imperative Scala style applications.
+@ref[ZIO Environment style and ZLayer-based applications](basics.md#zio-has-bindings), and imperative Scala style applications.
 
 Why distage?
 ------------
