@@ -164,12 +164,12 @@ Injector(Activation(Style -> Style.Normal))
   .use(_.run())
 ```
 
-@scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) contains some bundled Axis for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
+@scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) contains bundled Axes for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
 
 In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppLauncher), you can choose axes using the `-u` command-line parameter:
 
 ```
-./launcher -u repo:dummy app1
+./launcher -u repo:dummy -u env:prod app1
 ```
 
 In `distage-testkit`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
@@ -185,6 +185,46 @@ class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
     activation = Activation(Repo -> Repo.Dummy)
   )
 }
+```
+
+#### Multi-dimensionality
+
+There may be many configuration axes in an application and components can specify multiple axis choices at once:
+
+```scala mdoc:to-string
+import distage.StandardAxis.Env
+
+class TestPrintGreeter extends Greeter {
+  def hello(name: String) = println(s"Test 1 2, hello $name")
+}
+
+// declare 3 possible implementations
+
+val TestModule = new ModuleDef {
+  make[Greeter].tagged(Style.Normal, Env.Prod).from[PrintGreeter]
+  make[Greeter].tagged(Style.Normal, Env.Test).from[TestPrintGreeter]
+  make[Greeter].tagged(Style.AllCaps).from[AllCapsGreeter]
+}
+
+def runWith(activation: Activation) =
+  Injector(activation).produceRun(TestModule) {
+    greeter: Greeter => greeter.hello("$USERNAME")
+  }
+
+// Production Normal Greeter
+
+runWith(Activation(Style -> Style.Normal, Env -> Env.Prod))
+
+// Test Normal Greeter
+
+runWith(Activation(Style -> Style.Normal, Env -> Env.Test))
+
+// Both Production and Test Caps Greeters are the same:
+
+runWith(Activation(Style -> Style.AllCaps, Env -> Env.Prod))
+
+runWith(Activation(Style -> Style.AllCaps, Env -> Env.Test))
+
 ```
 
 ### Resource Bindings, Lifecycle
