@@ -39,7 +39,6 @@ object ModuleProvider {
         make[ActivationInfo].fromValue(activationInfo)
         make[Activation]
           .named("initial").fromValue(activation) // make initial activation available to bootstrap plugins FIXME: remove after adding mutators, will become redundant
-        //make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
       val loggerModule = new LogstageModule(logRouter, true)

@@ -90,7 +90,7 @@ object BootstrapLocator {
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val gc = NoopDIGC
     val mp = mirrorProvider
-//    val planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl
+
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
@@ -131,7 +131,7 @@ object BootstrapLocator {
     make[DIGarbageCollector].from[TracingDIGC.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
-//    make[PlanMergingPolicy].from[PruningPlanMergingPolicyDefaultImpl]
+
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]

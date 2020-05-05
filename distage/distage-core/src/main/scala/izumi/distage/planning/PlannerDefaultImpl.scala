@@ -100,7 +100,7 @@ final class PlannerDefaultImpl(
         case GCMode.GCRoots(roots) =>
           roots.map(r => MutSel(r, None))
         case GCMode.NoGC =>
-          resolved.predcessors.links.keySet
+          resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
       }
       collected <- new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak)).left.map(t => List(t))
       out <- {
