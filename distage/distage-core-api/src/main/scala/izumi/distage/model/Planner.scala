@@ -1,8 +1,7 @@
 package izumi.distage.model
 
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan._
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanSplittingOps
 import izumi.distage.model.reflection._
 
@@ -10,8 +9,8 @@ import izumi.distage.model.reflection._
 trait Planner extends PlanSplittingOps {
   def plan(input: PlannerInput): OrderedPlan
 
-  final def plan(bindings: ModuleBase, roots: Roots): OrderedPlan = {
-    plan(PlannerInput(bindings, roots))
+  final def plan(bindings: ModuleBase, activation: Activation, roots: Roots): OrderedPlan = {
+    plan(PlannerInput(bindings, activation, roots))
   }
 
   // plan lifecycle
@@ -19,11 +18,8 @@ trait Planner extends PlanSplittingOps {
 
   def rewrite(bindings: ModuleBase): ModuleBase
 
-  def prepare(input: PlannerInput): PrePlan
-
-  def freeze(plan: PrePlan): SemiPlan
-
+  @deprecated("used in tests only!", "will be removed in 0.11.1")
   def finish(semiPlan: SemiPlan): OrderedPlan
 
-  def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
+  private[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
 }

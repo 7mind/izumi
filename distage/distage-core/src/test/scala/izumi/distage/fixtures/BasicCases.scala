@@ -28,8 +28,7 @@ object BasicCases {
       def doSomeMagic(): Int = methodDependency.boom()
     }
 
-    class TestClass
-    (
+    class TestClass(
       val fieldArgDependency: TestDependency0,
       argDependency: TestDependency1,
     ) {
@@ -74,11 +73,10 @@ object BasicCases {
       override def boom(): Int = 9
     }
 
-    class TestClass
-    (
-      @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
-      , @Id("izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
-      , @Id("named.test") argDependency: => TestInstanceBinding
+    class TestClass(
+      @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0,
+      @Id("izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0,
+      @Id("named.test") argDependency: => TestInstanceBinding,
     ) {
       val x = argDependency
       val y = fieldArgDependency
@@ -88,8 +86,7 @@ object BasicCases {
       }
     }
 
-    case class TestInstanceBinding(z: String =
-                                         """R-r-rollin' down the window, white widow, fuck fame
+    case class TestInstanceBinding(z: String = """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
 
   }
@@ -113,7 +110,9 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     object ConfigModule extends ModuleDef {
       make[scala.Predef.String].named("a").from("applicationId")
-      make[Predef.String].named("b").from { a: String @Id("a") => a }
+      make[Predef.String].named("b").from {
+        a: String @Id("a") => a
+      }
     }
   }
 
@@ -121,8 +120,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     def value = "xxx"
     trait TestDependency0
 
-    class TestClass
-    (
+    class TestClass(
       @Id(value) val fieldArgDependency: TestDependency0
     )
   }
@@ -164,6 +162,11 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
+  object Mutations01 {
+    case class SomethingUseful(v: String)
+    case class Mutable(a: Int, b: Option[SomethingUseful])
+  }
+
   object BasicCase7 {
     type Port = Int @Id("port")
     type Address = String @Id("address")
@@ -173,13 +176,10 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   object BasicCase8 {
     class Beep[A]
-    class Bop[A : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep]
-    (implicit val beep: Beep[A])
+    class Bop[
+      A: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    ](implicit val beep: Beep[A]
+    )
 
     trait BopTrait[A] {
       def beep0: Beep[A]
@@ -214,13 +214,10 @@ Forest fire, climbin' higher, real life, it can wait""")
       def beep29: Beep[A]
     }
 
-    abstract class BopAbstractClass[A : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
-    : Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep]
-    (implicit val beep: Beep[A]) extends BopTrait[A]
+    abstract class BopAbstractClass[
+      A: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep: Beep
+    ](implicit val beep: Beep[A]
+    ) extends BopTrait[A]
 
     case class BeepDependency[A]()(implicit val beep: Beep[A])
     case class BeepDependency1[A](i: Int)(implicit val beep: Beep[A])

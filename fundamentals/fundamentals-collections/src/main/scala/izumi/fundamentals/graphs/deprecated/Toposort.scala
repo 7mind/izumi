@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs
+package izumi.fundamentals.graphs.deprecated
 
 import scala.annotation.nowarn
 

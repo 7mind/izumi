@@ -5,43 +5,39 @@ import izumi.reflect.Tag
 
 sealed trait DIKey {
   def tpe: SafeType
-  override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  protected def formatWithIndex(base: String, index: Option[Int]): String = {
+    index match {
+      case Some(value) =>
+        s"$base::$value"
+      case None =>
+        base
+    }
+  }
 }
 
 object DIKey {
   def apply[T: Tag]: DIKey = TypeKey(SafeType.get[T])
   def apply[T: Tag](id: String): DIKey = DIKey.get[T].named(id)
 
-  def get[T: Tag]: DIKey.TypeKey = TypeKey(SafeType.get[T])
+  def get[T: Tag]: DIKey.TypeKey = DIKey.TypeKey(SafeType.get[T])
 
   sealed trait BasicKey extends DIKey {
     def withTpe(tpe: SafeType): DIKey.BasicKey
   }
 
-  final case class TypeKey(tpe: SafeType) extends BasicKey {
-    final def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
+  final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
+    def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id, mutatorIndex)
 
-    override final def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
-    override final def toString: String = s"{type.${tpe.toString}}"
+    override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
+    override def toString: String = formatWithIndex(s"{type.${tpe.toString}}", mutatorIndex)
   }
 
-  final case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
-    final val idContract: IdContract[I] = implicitly
-
-    override final def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
-    override final def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
-  }
-
-  final case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
-    override final def toString: String = s"{proxy.${proxied.toString}}"
-  }
-
-  final case class ResourceKey(key: DIKey, tpe: SafeType) extends DIKey {
-    override final def toString: String = s"{resource.${key.toString}/$tpe}"
-  }
-
-  final case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
-    override final def toString: String = s"{effect.${key.toString}/$tpe}"
+  final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
+    val idContract: IdContract[I] = implicitly
+    def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
+    override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
+    override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
   }
 
   /**
@@ -49,9 +45,21 @@ object DIKey {
     * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
     */
   final case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
-    override final def tpe: SafeType = reference.tpe
+    override def tpe: SafeType = reference.tpe
 
-    override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
+    override def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
+  }
+
+  final case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
+    override def toString: String = s"{proxy.${proxied.toString}}"
+  }
+
+  final case class ResourceKey(key: DIKey, tpe: SafeType) extends DIKey {
+    override def toString: String = s"{resource.${key.toString}/$tpe}"
+  }
+
+  final case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
+    override def toString: String = s"{effect.${key.toString}/$tpe}"
   }
 
   final case class MultiSetImplId(set: DIKey, impl: ImplDef)

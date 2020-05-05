@@ -16,8 +16,7 @@ import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
-final class GraphDumpObserver
-(
+final class GraphDumpObserver(
   planAnalyzer: PlanAnalyzer
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
@@ -88,7 +87,6 @@ final class GraphDumpObserver
 
     goodKeys.foreach {
       k =>
-
         val rootStyle = if (roots.contains(k)) {
           Map("fillcolor" -> "gold", "peripheries" -> "2")
         } else {
@@ -150,7 +148,7 @@ final class GraphDumpObserver
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case Wiring.SingletonWiring.Function(_, _) =>
+              case Wiring.SingletonWiring.Function(_) =>
                 "lambda"
               case Wiring.SingletonWiring.Instance(_, _) =>
                 "instance"
@@ -160,13 +158,13 @@ final class GraphDumpObserver
                 }
                 "ref"
             }
-        case op: ExecutableOp.MonadicOp =>
-          op match {
-            case _: MonadicOp.ExecuteEffect =>
-              "effect"
-            case _: MonadicOp.AllocateResource =>
-              "resource"
-          }
+          case op: ExecutableOp.MonadicOp =>
+            op match {
+              case _: MonadicOp.ExecuteEffect =>
+                "effect"
+              case _: MonadicOp.AllocateResource =>
+                "resource"
+            }
         }
 
       case ExecutableOp.ImportDependency(_, _, _) =>
@@ -186,7 +184,6 @@ final class GraphDumpObserver
 
         }
 
-
     }
     attrs.put("label", s"$name:=$label").discard()
   }
@@ -196,4 +193,3 @@ final class GraphDumpObserver
 object GraphDumpObserver {
   final class RenderedDot(val raw: String) extends AnyVal
 }
-

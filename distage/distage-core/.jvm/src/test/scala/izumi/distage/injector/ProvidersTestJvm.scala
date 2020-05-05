@@ -4,7 +4,7 @@ import distage.ModuleDef
 import izumi.distage.fixtures.ProviderCases.ProviderCase3
 import org.scalatest.wordspec.AnyWordSpec
 
-class ProvidersTestJVM extends AnyWordSpec with MkInjector {
+class ProvidersTestJvm extends AnyWordSpec with MkInjector {
 
   "provider equality works for def/class/trait ModuleDefs with functions inside on the JVM" in {
     import ProviderCase3._

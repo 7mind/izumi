@@ -12,7 +12,7 @@ import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.{BootstrapModule, DIResource}
+import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.test.fixtures.Fixture._
@@ -25,8 +25,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
 
-class RoleAppTest extends AnyWordSpec
-  with WithProperties {
+class RoleAppTest extends AnyWordSpec with WithProperties {
   private val prefix = "target/configwriter"
 
   private val overrides = Map(
@@ -61,11 +60,14 @@ class RoleAppTest extends AnyWordSpec
         new TestLauncher {
           override protected def pluginConfig: PluginConfig = super.pluginConfig overridenBy probe
         }
-      ).main(Array(
-        "-ll", logLevel,
-        ":" + AdoptedAutocloseablesCase.id,
-        ":" + TestRole00.id,
-      ))
+      ).main(
+        Array(
+          "-ll",
+          logLevel,
+          ":" + AdoptedAutocloseablesCase.id,
+          ":" + TestRole00.id,
+        )
+      )
 
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
       assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[IntegrationResource0], probe.locator.get[IntegrationResource1]))
@@ -77,25 +79,30 @@ class RoleAppTest extends AnyWordSpec
       new RoleAppMain.Silent(
         new TestLauncher {
           override protected def pluginConfig: PluginConfig = {
-            PluginConfig.const(Seq(
-              new ResourcesPluginBase().morph[PluginBase],
-              new ConflictPlugin,
-              new TestPlugin,
-              new AdoptedAutocloseablesCasePlugin,
-              probe,
-              new PluginDef {
-                make[TestResource].from[IntegrationResource0]
-                many[TestResource]
-                  .ref[TestResource]
-              },
-            ))
+            PluginConfig.const(
+              Seq(
+                new ResourcesPluginBase().morph[PluginBase],
+                new ConflictPlugin,
+                new TestPlugin,
+                new AdoptedAutocloseablesCasePlugin,
+                probe,
+                new PluginDef {
+                  make[TestResource].from[IntegrationResource0]
+                  many[TestResource]
+                    .ref[TestResource]
+                },
+              )
+            )
           }
         }
-      ).main(Array(
-        "-ll", logLevel,
-        ":" + AdoptedAutocloseablesCase.id,
-        ":" + TestRole00.id,
-      ))
+      ).main(
+        Array(
+          "-ll",
+          logLevel,
+          ":" + AdoptedAutocloseablesCase.id,
+          ":" + TestRole00.id,
+        )
+      )
 
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
       assert(probe.resources.getCheckedResources().toSet.size == 2)
@@ -104,20 +111,27 @@ class RoleAppTest extends AnyWordSpec
 
     "be able to read activations from config" in {
       new RoleAppMain.Silent(new TestLauncher)
-        .main(Array(
-        "-ll", logLevel,
-        ":" + TestRole03.id,
-      ))
+        .main(
+          Array(
+            "-ll",
+            logLevel,
+            ":" + TestRole03.id,
+          )
+        )
     }
 
     "override config activations from command-line" in {
       val err = Try {
         new RoleAppMain.Silent(new TestLauncher)
-          .main(Array(
-            "-ll", logLevel,
-            "-u", "axiscomponentaxis:incorrect",
-            ":" + TestRole03.id,
-          ))
+          .main(
+            Array(
+              "-ll",
+              logLevel,
+              "-u",
+              "axiscomponentaxis:incorrect",
+              ":" + TestRole03.id,
+            )
+          )
       }.failed.get
       assert(err.getMessage.contains(TestRole03.expectedError))
     }
@@ -129,10 +143,13 @@ class RoleAppTest extends AnyWordSpec
         "listconf.ints.2" -> "1",
       ) {
         new RoleAppMain.Silent(new TestLauncher)
-          .main(Array(
-            "-ll", logLevel,
-            ":" + TestRole04.id,
-          ))
+          .main(
+            Array(
+              "-ll",
+              logLevel,
+              ":" + TestRole04.id,
+            )
+          )
       }
     }
 
@@ -141,16 +158,16 @@ class RoleAppTest extends AnyWordSpec
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[TestResource].from[IntegrationResource0]
-        many[TestResource]
-          .ref[TestResource]
-      } ++ IdentityDIEffectModule ++ probe
+          make[TestResource].from[IntegrationResource0]
+          many[TestResource]
+            .ref[TestResource]
+        } ++ IdentityDIEffectModule ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
-        Injector.bootloader(PlannerInput(definition, roots))
+        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
@@ -174,19 +191,19 @@ class RoleAppTest extends AnyWordSpec
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[TestResource].fromResource {
-          r: IntegrationResource1 =>
-            DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
-        }
-        many[TestResource]
-          .ref[TestResource]
-      } ++ IdentityDIEffectModule ++ probe
+          make[TestResource].fromResource {
+            r: IntegrationResource1 =>
+              DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
+          }
+          many[TestResource]
+            .ref[TestResource]
+        } ++ IdentityDIEffectModule ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
-        Injector.bootloader(PlannerInput(definition, roots))
+        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
@@ -209,20 +226,20 @@ class RoleAppTest extends AnyWordSpec
       val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder
       val definition = new ResourcesPluginBase {
-        make[IntegrationResource0]
-        make[TestResource].using[IntegrationResource0]
-        make[TestResource with AutoCloseable].using[IntegrationResource0]
-        many[TestResource]
-          .ref[TestResource]
-          .ref[TestResource with AutoCloseable]
-        make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
-      } ++ IdentityDIEffectModule
+          make[IntegrationResource0]
+          make[TestResource].using[IntegrationResource0]
+          make[TestResource with AutoCloseable].using[IntegrationResource0]
+          many[TestResource]
+            .ref[TestResource]
+            .ref[TestResource with AutoCloseable]
+          make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
+        } ++ IdentityDIEffectModule
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
         BootstrapModule.empty,
         logger,
-        Injector.bootloader(PlannerInput(definition, roots))
+        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
@@ -244,10 +261,15 @@ class RoleAppTest extends AnyWordSpec
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array(
-          "-ll", logLevel,
-          ":configwriter", "-t", prefix
-        ))
+        TestEntrypoint.main(
+          Array(
+            "-ll",
+            logLevel,
+            ":configwriter",
+            "-t",
+            prefix,
+          )
+        )
       }
 
       val cwCfg = cfg("configwriter", version)

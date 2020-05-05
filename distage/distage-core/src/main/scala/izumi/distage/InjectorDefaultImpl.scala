@@ -3,7 +3,6 @@ package izumi.distage
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -12,8 +11,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.reflect.TagK
 
-class InjectorDefaultImpl
-(
+class InjectorDefaultImpl(
   parentContext: Locator,
   parentFactory: InjectorFactory,
 ) extends Injector {
@@ -21,7 +19,6 @@ class InjectorDefaultImpl
   private[this] val planner: Planner = parentContext.get[Planner]
   private[this] val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
   private[this] val bsModule: BootstrapModule = parentContext.get[BootstrapModule]
-  private[this] val activation: Activation = parentContext.get[Activation]
 
   override def plan(input: PlannerInput): OrderedPlan = {
     planner.plan(addSelfInfo(input))
@@ -31,23 +28,16 @@ class InjectorDefaultImpl
     planner.planNoRewrite(addSelfInfo(input))
   }
 
-  override def prepare(input: PlannerInput): PrePlan = {
-    planner.prepare(addSelfInfo(input))
-  }
-
-  override def freeze(plan: PrePlan): SemiPlan = {
-    planner.freeze(plan)
-  }
-
   override def rewrite(module: ModuleBase): ModuleBase = {
     planner.rewrite(module)
   }
 
+  @deprecated("used in tests only!", "")
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
     planner.finish(semiPlan)
   }
 
-  override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+  private[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
   }
 
@@ -55,16 +45,19 @@ class InjectorDefaultImpl
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](
+    plan: OrderedPlan,
+    filter: FinalizerFilter[F],
+  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 
-  private def addSelfInfo(input: PlannerInput): PlannerInput = {
+  private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)
-      make[Activation].fromValue(activation)
+      make[Activation].fromValue(input.activation)
       make[Bootloader]
     }
 

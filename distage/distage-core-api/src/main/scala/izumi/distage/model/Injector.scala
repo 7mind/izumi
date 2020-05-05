@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.providers.ProviderMagnet
@@ -48,8 +48,8 @@ trait Injector extends Planner with Producer {
     *     .use(_.run(fn))
     * }}}
     * */
-  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase)(function: ProviderMagnet[F[A]]): F[A] = {
-    produceF[F](plan(PlannerInput(bindings, function.get.diKeys.toSet))).use(_.run(function))
+  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[F[A]]): F[A] = {
+    produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
   }
 
   /**
@@ -86,8 +86,12 @@ trait Injector extends Planner with Producer {
     *     .evalMap(_.run(fn))
     * }}}
     * */
-  final def produceEvalF[F[_]: TagK: DIEffect, A](bindings: ModuleBase)(function: ProviderMagnet[F[A]]): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(bindings, function.get.diKeys.toSet))).evalMap(_.run(function))
+  final def produceEvalF[F[_]: TagK: DIEffect, A](
+    bindings: ModuleBase,
+    activation: Activation = Activation.empty,
+  )(function: ProviderMagnet[F[A]]
+  ): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).evalMap(_.run(function))
   }
 
   /**
@@ -115,11 +119,11 @@ trait Injector extends Planner with Producer {
     *     .map(_.get[A])
     * }}}
     * */
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(bindings, DIKey.get[A]))).map(_.get[A])
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(bindings: ModuleBase): DIResourceBase[F, A] = {
-    produceF[F](plan(PlannerInput(bindings, DIKey.get[A].named(name)))).map(_.get[A](name))
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String, activation: Activation)(bindings: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
   /**
@@ -149,16 +153,21 @@ trait Injector extends Planner with Producer {
   final def produceF[F[_]: TagK: DIEffect](input: PlannerInput): DIResourceBase[F, Locator] = {
     produceF[F](plan(input))
   }
-  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, roots: Roots): DIResourceBase[F, Locator] = {
-    produceF[F](plan(PlannerInput(bindings, roots)))
+  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): DIResourceBase[F, Locator] = {
+    produceF[F](plan(PlannerInput(bindings, activation, roots)))
   }
 
-  final def produceRun[A: Tag](bindings: ModuleBase)(function: ProviderMagnet[A]): A = produceRunF[Identity, A](bindings)(function)
-  final def produceEval[A: Tag](bindings: ModuleBase)(function: ProviderMagnet[A]): DIResourceBase[Identity, A] = produceEvalF[Identity, A](bindings)(function)
+  final def produceRun[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): A =
+    produceRunF[Identity, A](bindings, activation)(function)
+  final def produceEval[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): DIResourceBase[Identity, A] =
+    produceEvalF[Identity, A](bindings, activation)(function)
 
-  final def produceGet[A: Tag](bindings: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](bindings)
-  final def produceGet[A: Tag](name: String)(bindings: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(bindings)
+  final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[Identity, A] =
+    produceGetF[Identity, A](bindings, activation)
+  final def produceGet[A: Tag](name: String)(bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] =
+    produceGetF[Identity, A](name, activation)(bindings)
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
-  final def produce(bindings: ModuleBase, roots: Roots): DIResourceBase[Identity, Locator] = produceF[Identity](bindings, roots)
+  final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): DIResourceBase[Identity, Locator] =
+    produceF[Identity](bindings, roots, activation)
 }

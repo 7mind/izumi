@@ -25,14 +25,13 @@ import izumi.reflect.{Tag, TagK}
 import scala.collection.{immutable, mutable}
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we CAN unify all of LocatorDef, ModuleDef, TypeLevelDSL and Bindings DSLs into one...
-trait LocatorDef
-  extends AbstractLocator
-    with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.BindDSLUnnamedAfterFrom, LocatorDef.SetDSL] {
+trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.BindDSLUnnamedAfterFrom, LocatorDef.SetDSL] {
 
   override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref, ref.key)
-  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] = new LocatorDef.BindDSLUnnamedAfterFrom(ref, ref.key)
+  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] =
+    new LocatorDef.BindDSLUnnamedAfterFrom(ref, ref.key)
   override private[definition] final def _setDSL[T](ref: SetRef): LocatorDef.SetDSL[T] = new LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -61,7 +60,7 @@ trait LocatorDef
     val map = new mutable.LinkedHashMap[DIKey, Any]
 
     frozenState.foreach {
-      case SingletonBinding(key, InstanceImpl(_, instance), _, _) =>
+      case SingletonBinding(key, InstanceImpl(_, instance), _, _, false) =>
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
         val setKey = key.set
@@ -71,7 +70,9 @@ trait LocatorDef
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
           s"""Binding $b is not an instance binding, only forms `make[X].fromValue(instance)` and `many[X].addValue(y).addValue(z)`
-             |are supported, binding was defined at ${b.origin}""".stripMargin, b)
+            |are supported, binding was defined at ${b.origin}""".stripMargin,
+          b,
+        )
     }
 
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
@@ -82,7 +83,9 @@ object LocatorDef {
 
   // DSL state machine
 
-  final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey) extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]] with BindDSLMutBase[T] {
+  final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey)
+    extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]]
+    with BindDSLMutBase[T] {
     def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] =
       addOp(SetId(name, idContract))(new BindNamedDSL[T](_, key.named(name)))
 
@@ -90,7 +93,9 @@ object LocatorDef {
       addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_, key))
   }
 
-  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[_]) extends BindDSLBase[T, BindDSLNamedAfterFrom[T]] with BindDSLMutBase[T] {
+  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[_])
+    extends BindDSLBase[T, BindDSLNamedAfterFrom[T]]
+    with BindDSLMutBase[T] {
     override protected def bind(impl: ImplDef): BindDSLNamedAfterFrom[T] =
       addOp(SetImpl(impl))(new BindDSLNamedAfterFrom[T](_, key))
   }

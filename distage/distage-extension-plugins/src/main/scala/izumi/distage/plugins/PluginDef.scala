@@ -1,7 +1,5 @@
 package izumi.distage.plugins
 
-import izumi.distage.model.definition.{Module, ModuleDef}
+import izumi.distage.model.definition.ModuleDef
 
-trait PluginDef extends PluginBase with ModuleDef {
-  type Self <: PluginBase with Module
-}
+trait PluginDef extends PluginBase with ModuleDef

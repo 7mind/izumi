@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-import izumi.fundamentals.graphs.{AbstractGCTracer, Loops}
+import izumi.fundamentals.graphs.deprecated.AbstractGCTracer
 import org.scalatest.wordspec.AnyWordSpec
 
 class AbstractDIGcTest extends AnyWordSpec {
@@ -11,9 +11,8 @@ class AbstractDIGcTest extends AnyWordSpec {
     Node(NodeId("2"), Set(NodeId("3"), NodeId("4"))),
     Node(NodeId("3"), Set(NodeId("2"))),
     Node(NodeId("4"), Set(NodeId("4"))),
-    Node(NodeId("5"), Set(NodeId("5")))
+    Node(NodeId("5"), Set(NodeId("5"))),
   )
-
 
   "abstract GC" should {
     "not loop forever on circular dependencies" in {
@@ -57,9 +56,7 @@ object AbstractDIGcTest {
 
   case class Node(id: NodeId, deps: Set[NodeId])
 
-
-  class TestGCTracer(override val ignoreMissingDeps: Boolean) extends AbstractGCTracer[NodeId, Node]{
-
+  class TestGCTracer(override val ignoreMissingDeps: Boolean) extends AbstractGCTracer[NodeId, Node] {
 
     override protected def prePrune(pruned: Pruned): Pruned = {
       pruned
