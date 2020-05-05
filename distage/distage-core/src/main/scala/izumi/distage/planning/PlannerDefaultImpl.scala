@@ -15,8 +15,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
-import izumi.fundamentals.graphs.ConflictResolutionError
-import izumi.fundamentals.graphs.ConflictResolutionError.{ConflictingDefs, UnsolvedConflicts}
+import izumi.fundamentals.graphs.{ConflictResolutionError, DG}
+import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.deprecated.Toposort
 import izumi.fundamentals.graphs.tools.GC
 import izumi.fundamentals.graphs.tools.MutationResolver._
@@ -36,7 +36,31 @@ final class PlannerDefaultImpl(
     planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
   }
 
-  private def newPlanner(input: PlannerInput) = {
+  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+    resolveConflicts(input) match {
+      case Left(value) =>
+        // TODO: better formatting
+        throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
+      case Right((resolved, collected)) =>
+        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
+
+        //      val sorted: Seq[MutSel[DIKey]] = ???
+        //
+        //      // meta is not garbage-collected so it may have more entries
+        //      val noMutMatrix = collected.predcessorMatrix.map(_.key)
+        //      val steps = sorted.map(step => resolved.meta.meta(step)).toVector
+        //
+        //      val topology = PlanTopology.PlanTopologyImmutable(
+        //        DependencyGraph(noMutMatrix.links, DependencyKind.Depends),
+        //        DependencyGraph(noMutMatrix.transposed.links, DependencyKind.Required),
+        //      )
+        //      OrderedPlan(steps, roots.map(_.key), topology)
+
+        finish(SemiPlan(steps, input.mode))
+    }
+  }
+
+  private def resolveConflicts(input: PlannerInput): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], InstantiationOp], GC.GCOutput[MutSel[DIKey]])] = {
     val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.map {
         b =>
@@ -74,9 +98,6 @@ final class PlannerDefaultImpl(
         case (a, c) =>
           Axis(a.name, c.id)
       }.toSet
-
-    //println(ops.groupBy(_._1).filterNot(_._2.size == 1))
-    //assert(ops.groupBy(_._1).forall(_._2.size == 1))
 
     for {
       resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
@@ -117,23 +138,7 @@ final class PlannerDefaultImpl(
       }
     } yield {
       out
-      //println(s"diff: ${collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet)}")
-      //assert(collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet).isEmpty)
-
-//      val sorted: Seq[MutSel[DIKey]] = ???
-//
-//      // meta is not garbage-collected so it may have more entries
-//      val noMutMatrix = collected.predcessorMatrix.map(_.key)
-//      val steps = sorted.map(step => resolved.meta.meta(step)).toVector
-//
-//      val topology = PlanTopology.PlanTopologyImmutable(
-//        DependencyGraph(noMutMatrix.links, DependencyKind.Depends),
-//        DependencyGraph(noMutMatrix.transposed.links, DependencyKind.Required),
-//      )
-//      OrderedPlan(steps, roots.map(_.key), topology)
-
     }
-
   }
 
   private def toAxis(b: Binding): Set[Axis] = {
@@ -151,18 +156,6 @@ final class PlannerDefaultImpl(
       assert(roots.diff(plan.index.keySet).isEmpty)
       val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
       OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
-    }
-  }
-
-  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    newPlanner(input) match {
-      case Left(value) =>
-        // TODO: better formatting
-        throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
-      case Right((resolved, collected)) =>
-        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
-
-        finish(SemiPlan(steps, input.mode))
     }
   }
 
@@ -191,11 +184,11 @@ final class PlannerDefaultImpl(
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
       .map(reorderOperations)
-      .map(order2)
+      .map(postOrdering)
       .get
   }
 
-  private[this] def order2(almostPlan: OrderedPlan): OrderedPlan = {
+  private[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
     Value(almostPlan)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase90AfterForwarding)
