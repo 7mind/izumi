@@ -1,10 +1,8 @@
 package izumi.distage
 
-import distage.Activation
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -30,14 +28,6 @@ class InjectorDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     planner.planNoRewrite(addSelfInfo(input))
   }
-
-//  override def prepare(input: PlannerInput): PrePlan = {
-//    planner.prepare(addSelfInfo(input))
-//  }
-
-//  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
-//    planner.freeze(activation)(plan)
-//  }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     planner.rewrite(module)
