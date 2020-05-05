@@ -12,23 +12,24 @@ import izumi.logstage.api.IzLogger
 
 trait RoleAppPlanner[F[_]] {
   def reboot(bsModule: BootstrapModule): RoleAppPlanner[F]
-  def makePlan(appMainRoots: Set[DIKey] /*, appModule: ModuleBase*/): AppStartupPlans
+  def makePlan(appMainRoots: Set[DIKey] /*, appModule: ModuleBase*/ ): AppStartupPlans
 }
 
 object RoleAppPlanner {
 
   final case class AppStartupPlans(
-                                    runtime: OrderedPlan,
-                                    app: TriSplittedPlan,
-                                    injector: Injector,
-                                  )
+    runtime: OrderedPlan,
+    app: TriSplittedPlan,
+    injector: Injector,
+  )
 
   class Impl[F[_]: TagK](
-                          options: PlanningOptions,
-                          bsModule: BootstrapModule,
-                          logger: IzLogger,
-                          bootloader: Bootloader,
-                        ) extends RoleAppPlanner[F] { self =>
+    options: PlanningOptions,
+    bsModule: BootstrapModule,
+    logger: IzLogger,
+    bootloader: Bootloader,
+  ) extends RoleAppPlanner[F] {
+    self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
@@ -42,13 +43,15 @@ object RoleAppPlanner {
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
       val additionalModule = selfReflectionModule()
-      val app = bootloader.boot(BootConfig(
-        bootstrap = _ => bsModule,
-        appModule = _.overridenBy(additionalModule),
-        gcMode = _ => GCMode(runtimeGcRoots),
-      ))
+      val app = bootloader.boot(
+        BootConfig(
+          bootstrap = _ => bsModule,
+          appModule = _.overridenBy(additionalModule),
+          gcMode = _ => GCMode(runtimeGcRoots),
+        )
+      )
 
-      val appPlan = app.injector.trisectByKeys(app.module.drop(runtimeGcRoots), appMainRoots) {
+      val appPlan = app.injector.trisectByKeys(bootloader.activation, app.module.drop(runtimeGcRoots), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 

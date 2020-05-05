@@ -1,5 +1,6 @@
 package izumi.distage
 
+import distage.Activation
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
@@ -12,8 +13,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.fundamentals.reflection.Tags.TagK
 
-class InjectorDefaultImpl
-(
+class InjectorDefaultImpl(
   parentContext: Locator,
   parentFactory: InjectorFactory,
 ) extends Injector {
@@ -35,8 +35,8 @@ class InjectorDefaultImpl
     planner.prepare(addSelfInfo(input))
   }
 
-  override def freeze(plan: PrePlan): SemiPlan = {
-    planner.freeze(plan)
+  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
+    planner.freeze(activation)(plan)
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
@@ -55,7 +55,10 @@ class InjectorDefaultImpl
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](
+    plan: OrderedPlan,
+    filter: FinalizerFilter[F],
+  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 

@@ -3,7 +3,7 @@ package izumi.distage.injector
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Activation, ModuleDef}
 import org.scalatest.wordspec.AnyWordSpec
 
 class InnerClassesTest extends AnyWordSpec with MkInjector {
@@ -78,8 +78,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "progression test: can't handle concrete type projections as prefixes in path-dependent injections" in {
-    assertTypeError(
-      """
+    assertTypeError("""
       import InnerClassUnstablePathsCase._
 
       val definition = PlannerInput.noGc(new ModuleDef {
@@ -167,10 +166,13 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     FactoryConstructor[testProviderModule.TestFactory]
 
-    val definition = PlannerInput.target[testProviderModule.TestFactory](new ModuleDef {
-      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-      make[testProviderModule.TestFactory]
-    })
+    val definition = PlannerInput.target[testProviderModule.TestFactory](
+      new ModuleDef {
+        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+        make[testProviderModule.TestFactory]
+      },
+      Activation.empty,
+    )
 
     val context = mkInjector().produce(definition).unsafeGet()
     assert(context.instances.size == 2)

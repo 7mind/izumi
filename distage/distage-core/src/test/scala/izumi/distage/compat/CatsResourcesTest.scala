@@ -3,7 +3,7 @@ package izumi.distage.compat
 import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.model.plan.GCMode
 import izumi.distage.compat.CatsResourcesTest._
@@ -42,10 +42,11 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       make[MyApp]
     }
 
-    Injector().produceF[IO](module, GCMode.NoGC).use {
-      objects =>
-        objects.get[MyApp].run
-    }.unsafeRunSync()
+    Injector()
+      .produceF[IO](module, Activation.empty, GCMode.NoGC).use {
+        objects =>
+          objects.get[MyApp].run
+      }.unsafeRunSync()
   }
 
   "DIResource API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
@@ -63,7 +64,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     }
 
     definition.bindings.foreach {
-      case SingletonBinding(_, implDef@ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
+      case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
         assert(implDef.implType == SafeType.get[Res1])
         assert(providerImplType == SafeType.get[DIResource.FromCats[IO, Res1]])
         assert(fn.diKeys contains DIKey.get[Bracket[IO, Throwable]])
@@ -115,13 +116,15 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
          }
       """
     )
-    val res = intercept[TestFailedException](assertCompiles(
-      """
+    val res = intercept[TestFailedException](
+      assertCompiles(
+        """
          new ModuleDef {
            make[String].fromResource { (_: Unit) => Resource.pure(42) }
          }
       """
-    ))
+      )
+    )
     assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
   }
 

@@ -16,14 +16,14 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    val injector1 = Injector(Activation(Repo -> Repo.Prod))
-    val context1 = injector1.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
+    val injector1 = Injector()
+    val context1 = injector1.produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), GCMode(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
-    val injector2 = Injector(Activation(Repo -> Repo.Dummy))
-    val context2 = injector2.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
+    val injector2 = Injector()
+    val context2 = injector2.produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), GCMode(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])
@@ -39,13 +39,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     val appDefinition = Module.empty
 
     val injector1 = Injector(Activation(Repo -> Repo.Prod), bsDefinition)
-    val context1 = injector1.produce(PlannerInput(appDefinition, GCMode.NoGC)).unsafeGet()
+    val context1 = injector1.produce(PlannerInput(appDefinition, Activation(Repo -> Repo.Prod), GCMode.NoGC)).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = Injector(Activation(Repo -> Repo.Dummy), bsDefinition)
-    val context2 = injector2.produce(PlannerInput(appDefinition, GCMode.NoGC)).unsafeGet()
+    val context2 = injector2.produce(PlannerInput(appDefinition, Activation(Repo -> Repo.Dummy), GCMode.NoGC)).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])

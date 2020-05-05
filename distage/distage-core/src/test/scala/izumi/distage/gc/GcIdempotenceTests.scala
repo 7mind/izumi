@@ -1,11 +1,10 @@
 package izumi.distage.gc
 
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Activation, ModuleDef}
 import distage.DIKey
 import izumi.distage.model.plan.GCMode
 import org.scalatest.wordspec.AnyWordSpec
-
 
 class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" when {
@@ -13,12 +12,18 @@ class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
       "work with autosets" in {
         import GcCases.InjectorCase8._
         val injector = mkInjector()
-        val plan = injector.plan(PlannerInput(new ModuleDef {
-          many[Component]
-            .add[TestComponent]
+        val plan = injector.plan(
+          PlannerInput(
+            new ModuleDef {
+              many[Component]
+                .add[TestComponent]
 
-          make[App]
-        }, GCMode(DIKey.get[App])))
+              make[App]
+            },
+            Activation.empty,
+            GCMode(DIKey.get[App]),
+          )
+        )
 
         val updated = injector.finish(plan.toSemi)
         val result = injector.produce(updated).unsafeGet()

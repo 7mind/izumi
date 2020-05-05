@@ -29,19 +29,32 @@ object StaticPluginCheckerMacro {
     implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](
+    c: blackbox.Context
+  )(activations: c.Expr[String],
+    configFileRegex: c.Expr[String],
+  ): c.Expr[Unit] = {
     import c.universe._
 
     implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, configFileRegex)
   }
 
-  def implWithPlugin[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPlugin[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](
+    c: blackbox.Context
+  )(pluginPath: c.Expr[String],
+    activations: c.Expr[String],
+  ): c.Expr[Unit] = {
     import c.universe._
 
     implWithPluginConfig[T, R](c)(pluginPath, activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithPluginConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPluginConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](
+    c: blackbox.Context
+  )(pluginPath: c.Expr[String],
+    activations: c.Expr[String],
+    configFileRegex: c.Expr[String],
+  ): c.Expr[Unit] = {
     import c.universe._
 
     StaticPluginCheckerMacro.check(c)(
@@ -53,12 +66,14 @@ object StaticPluginCheckerMacro {
     )
   }
 
-  def check(c: blackbox.Context)
-           (pluginsPackage: c.Expr[String],
-            gcRoot: c.Expr[String],
-            requirements: c.Expr[String],
-            activations: c.Expr[String],
-            configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def check(
+    c: blackbox.Context
+  )(pluginsPackage: c.Expr[String],
+    gcRoot: c.Expr[String],
+    requirements: c.Expr[String],
+    activations: c.Expr[String],
+    configFileRegex: c.Expr[String],
+  ): c.Expr[Unit] = {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
 
@@ -76,12 +91,13 @@ object StaticPluginCheckerMacro {
       None
     } else {
       val scanResult = new ClassGraph().scan()
-      val configUrls = try {
-        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+      val configUrls =
         try {
-          resourceList.getURLs.asScala.toList
-        } finally resourceList.close()
-      } finally scanResult.close()
+          val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+          try {
+            resourceList.getURLs.asScala.toList
+          } finally resourceList.close()
+        } finally scanResult.close()
 
       val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
 
@@ -113,21 +129,21 @@ object StaticPluginCheckerMacro {
       root = gcRootModule,
       moduleRequirements = requirementsModule,
       activations = activationsVals,
-      abort = abort
+      abort = abort,
     )
 
     c.universe.reify(())
   }
 
   def check(
-             loadedPlugins: Seq[PluginBase],
-             configModule: Option[AppConfigModule],
-             additional: ModuleBase,
-             root: Option[ModuleBase],
-             moduleRequirements: Option[ModuleRequirements],
-             activations: Seq[String],
-             abort: String => Unit,
-           ): Unit = {
+    loadedPlugins: Seq[PluginBase],
+    configModule: Option[AppConfigModule],
+    additional: ModuleBase,
+    root: Option[ModuleBase],
+    moduleRequirements: Option[ModuleRequirements],
+    activations: Seq[String],
+    abort: String => Unit,
+  ): Unit = {
 
     // If configModule is defined - check config
     val config = configModule.getOrElse(new ModuleDef {
@@ -146,7 +162,7 @@ object StaticPluginCheckerMacro {
     val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap, activation)
     val injector = Injector.inherit(bootstrap)
 
-    val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
+    val finalPlan = injector.plan(PlannerInput(module, activation, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true
@@ -156,18 +172,18 @@ object StaticPluginCheckerMacro {
     if (imports.nonEmpty)
       abort(
         s"""Plugin is incomplete!
-           |
-           |ERROR: Missing imports:
-           |${imports.niceList()}
-           |
-           |Module requirements were:
-           |${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).niceList()}
-           |${if (loadedPlugins.nonEmpty) s"\nPlugin classes were: ${loadedPlugins.map(_.getClass).niceList()}" else ""}
-           |
-           |Plan was:
-           |${finalPlan.render()}
-           |
-           |${configModule.fold("")(_ => s"Config was:\n${bootstrap.find[AppConfig].map(_.config).toString.shift(2)}")}""".stripMargin
+          |
+          |ERROR: Missing imports:
+          |${imports.niceList()}
+          |
+          |Module requirements were:
+          |${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).niceList()}
+          |${if (loadedPlugins.nonEmpty) s"\nPlugin classes were: ${loadedPlugins.map(_.getClass).niceList()}" else ""}
+          |
+          |Plan was:
+          |${finalPlan.render()}
+          |
+          |${configModule.fold("")(_ => s"Config was:\n${bootstrap.find[AppConfig].map(_.config).toString.shift(2)}")}""".stripMargin
       )
   }
 
@@ -182,20 +198,21 @@ object StaticPluginCheckerMacro {
     val tpe = clazz.toType
     val expectTpe = ru.typeOf[T]
     if (!(tpe weak_<:< expectTpe)) {
-      abort(
-        s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!
-           |baseClasses were: ${tpe.baseClasses}; symbol: $clazz
-           |""".stripMargin)
+      abort(s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!
+        |baseClasses were: ${tpe.baseClasses}; symbol: $clazz
+        |""".stripMargin)
     }
 
     if (clazz.isModuleClass) {
       mirror.reflectModule(clazz.thisPrefix.termSymbol.asModule).instance.asInstanceOf[T]
     } else {
-      mirror.reflectClass(clazz).reflectConstructor {
-        tpe.decls.collectFirst {
-          case m: ru.MethodSymbol@unchecked if m.isPrimaryConstructor => m
-        }.get
-      }.apply().asInstanceOf[T]
+      mirror
+        .reflectClass(clazz).reflectConstructor {
+          tpe
+            .decls.collectFirst {
+              case m: ru.MethodSymbol @unchecked if m.isPrimaryConstructor => m
+            }.get
+        }.apply().asInstanceOf[T]
     }
   }
 

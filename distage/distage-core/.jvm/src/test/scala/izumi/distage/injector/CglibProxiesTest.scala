@@ -55,12 +55,15 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       import CircularCase1._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[Circular2].from { c: Circular1 => new Circular2(c) }
-        make[Circular1].from { c: Circular2 =>
-          val a = new Circular1 {
-            override val arg: Circular2 = c
-          }
-          a
+        make[Circular2].from {
+          c: Circular1 => new Circular2(c)
+        }
+        make[Circular1].from {
+          c: Circular2 =>
+            val a = new Circular1 {
+              override val arg: Circular2 = c
+            }
+            a
         }
       })
 
@@ -200,30 +203,34 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       import CircularCase6._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[Dependency {def dep: RefinedCircular}].from[RealDependency]
+        make[Dependency { def dep: RefinedCircular }].from[RealDependency]
         make[RefinedCircular]
       })
 
       val injector = mkInjector()
       val context = injector.produce(definition).unsafeGet()
 
-      assert(context.get[Dependency {def dep: RefinedCircular}] != null)
+      assert(context.get[Dependency { def dep: RefinedCircular }] != null)
       assert(context.get[RefinedCircular] != null)
 
-      assert(context.get[RefinedCircular] eq context.get[Dependency {def dep: RefinedCircular}].dep)
-      assert(context.get[Dependency {def dep: RefinedCircular}] eq context.get[RefinedCircular].dep)
+      assert(context.get[RefinedCircular] eq context.get[Dependency { def dep: RefinedCircular }].dep)
+      assert(context.get[Dependency { def dep: RefinedCircular }] eq context.get[RefinedCircular].dep)
     }
 
     "support simple by-name forward ref when there are non-by-name references" in {
       import CircularCase10._
 
-      val definition = PlannerInput(new ModuleDef {
-        make[Component1]
-        make[Component2]
-        make[ComponentWithByNameFwdRef]
-        make[ComponentHolder]
-        make[Root]
-      }, GCMode(DIKey.get[Root]))
+      val definition = PlannerInput(
+        new ModuleDef {
+          make[Component1]
+          make[Component2]
+          make[ComponentWithByNameFwdRef]
+          make[ComponentHolder]
+          make[Root]
+        },
+        Activation.empty,
+        GCMode(DIKey.get[Root]),
+      )
 
       val injector = mkInjector()
       val context = injector.produce(definition).unsafeGet()
@@ -348,20 +355,25 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
       import CircularResourceCase._
       import ResourceEffectBindingsTest.Fn
 
-      val definition = PlannerInput(new ModuleDef {
-        make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
-        many[IntegrationComponent]
-          .ref[S3Component]
-        make[S3Component].fromResource(s3ComponentResource[Fn] _)
-        make[S3Client].fromResource(s3clientResource[Fn] _)
-      }, GCMode(DIKey.get[S3Client]))
+      val definition = PlannerInput(
+        new ModuleDef {
+          make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
+          many[IntegrationComponent]
+            .ref[S3Component]
+          make[S3Component].fromResource(s3ComponentResource[Fn] _)
+          make[S3Client].fromResource(s3clientResource[Fn] _)
+        },
+        Activation.empty,
+        GCMode(DIKey.get[S3Client]),
+      )
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceF[Suspend2[Nothing, ?]](plan).use {
-        Suspend2(_)
-      }.unsafeRun()
+      val context = injector
+        .produceF[Suspend2[Nothing, ?]](plan).use {
+          Suspend2(_)
+        }.unsafeRun()
 
       val s3Component = context.get[S3Component]
       val s3Client = context.get[S3Client]

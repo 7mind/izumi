@@ -38,8 +38,8 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
     })
 
     BootstrapLocator
-      .bootstrapPlanner(bootstrapActivation)
-      .plan(PlannerInput.noGc(bindings))
+      .bootstrapPlanner
+      .plan(PlannerInput.noGc(bindings, bootstrapActivation))
   }
   override lazy val index: Map[DIKey, Any] = super.index
 
@@ -74,7 +74,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 object BootstrapLocator {
   @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
-  private final val bootstrapPlanner: Activation => Planner = {
+  private final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObserver = new PlanningObserverAggregate(
@@ -91,19 +91,17 @@ object BootstrapLocator {
     val gc = NoopDIGC
     val mp = mirrorProvider
     val planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl
-    activation =>
-      new PlannerDefaultImpl(
-        forwardingRefResolver = forwardingRefResolver,
-        sanityChecker = sanityChecker,
-        gc = gc,
-        planningObserver = bootstrapObserver,
-        planMergingPolicy = planMergingPolicy,
-        hook = hook,
-        bindingTranslator = translator,
-        analyzer = analyzer,
-        mirrorProvider = mp,
-        activation,
-      )
+    new PlannerDefaultImpl(
+      forwardingRefResolver = forwardingRefResolver,
+      sanityChecker = sanityChecker,
+      gc = gc,
+      planningObserver = bootstrapObserver,
+      planMergingPolicy = planMergingPolicy,
+      hook = hook,
+      bindingTranslator = translator,
+      analyzer = analyzer,
+      mirrorProvider = mp,
+    )
   }
 
   private final val bootstrapProducer: PlanInterpreter = {
