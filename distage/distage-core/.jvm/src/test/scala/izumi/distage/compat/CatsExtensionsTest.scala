@@ -8,7 +8,7 @@ import izumi.distage.InjectorFactory
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
@@ -23,9 +23,12 @@ final class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
       import BasicCase1._
       import CircularCase3._
 
-      val definition1 = PlannerInput.noGc(new ModuleDef {
-        make[SelfReference]
-      })
+      val definition1 = PlannerInput.noGc(
+        new ModuleDef {
+          make[SelfReference]
+        },
+        Activation.empty,
+      )
 
       val injector = Injector.Standard()
       val plan = injector.plan(definition1)
@@ -40,9 +43,12 @@ final class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
       Then("traverse should substitute")
       final case class TestDependency1Eq(unresolved: NotInContext) extends TestDependency1
       val testDependencyPlan = injector.plan(
-        PlannerInput.noGc(new ModuleDef {
-          make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
-        })
+        PlannerInput.noGc(
+          new ModuleDef {
+            make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
+          },
+          Activation.empty,
+        )
       )
       val dynamicKeys = Set[DIKey](DIKey.get[PlannerInput], DIKey.get[Bootloader], DIKey.get[InjectorFactory])
       def filterDynamic(steps: Seq[ExecutableOp]) = {

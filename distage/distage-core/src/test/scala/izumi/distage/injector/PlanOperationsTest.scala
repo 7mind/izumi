@@ -5,7 +5,6 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.wordspec.AnyWordSpec
 
-
 class PlanOperationsTest extends AnyWordSpec with MkInjector {
 
   import PlanOperationsTest._
@@ -17,22 +16,25 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
   private val sc1: DIKey = DIKey.get[SharedComponent1]
   private val sc2: DIKey = DIKey.get[SharedComponent2]
 
-
   private val injector = mkInjector()
 
   "support plan trisplit" in {
     val primary = Set(pcKey)
     val sub = Set(icKey)
 
-    val definition = PlannerInput(new ModuleDef {
-      make[PrimaryComponent]
-      make[IntegrationComponent]
-      make[SharedComponent0]
-      make[SharedComponent1]
-      make[SharedComponent2]
-    }, primary ++ sub)
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[PrimaryComponent]
+        make[IntegrationComponent]
+        make[SharedComponent0]
+        make[SharedComponent1]
+        make[SharedComponent2]
+      },
+      Activation.empty,
+      primary ++ sub,
+    )
 
-    val split = injector.trisectByKeys(definition.bindings, primary) {
+    val split = injector.trisectByKeys(Activation.empty, definition.bindings, primary) {
       baseplan =>
         assert(sub.intersect(baseplan.index.keySet).isEmpty)
         sub
@@ -49,20 +51,23 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
     assert(split.side.index.keySet.intersect(split.shared.index.keySet) == Set(sc2))
   }
 
-
   "support ghost components in trisplit" in {
     val primary = Set(pcKey, icKey)
     val sub = Set(icKey)
 
-    val definition = PlannerInput(new ModuleDef {
-      make[PrimaryComponent]
-      make[IntegrationComponent]
-      make[SharedComponent0]
-      make[SharedComponent1]
-      make[SharedComponent2]
-    }, primary ++ sub)
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[PrimaryComponent]
+        make[IntegrationComponent]
+        make[SharedComponent0]
+        make[SharedComponent1]
+        make[SharedComponent2]
+      },
+      Activation.empty,
+      primary ++ sub,
+    )
 
-    val split = injector.trisectByKeys(definition.bindings, primary)(_ => sub)
+    val split = injector.trisectByKeys(Activation.empty, definition.bindings, primary)(_ => sub)
 
     val sideIndex = split.side.index
     val primaryIndex = split.primary.index
@@ -84,13 +89,17 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
     val primary = Set(pcKey)
     val sub = Set(icKey)
 
-    val definition = PlannerInput(new ModuleDef {
-      make[PrimaryComponent]
-      make[IntegrationComponent]
-      make[SharedComponent0]
-      make[SharedComponent1]
-      make[SharedComponent2]
-    }, primary ++ sub)
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[PrimaryComponent]
+        make[IntegrationComponent]
+        make[SharedComponent0]
+        make[SharedComponent1]
+        make[SharedComponent2]
+      },
+      Activation.empty,
+      primary ++ sub,
+    )
 
     val srcPlan = injector.plan(definition)
 

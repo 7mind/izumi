@@ -28,7 +28,6 @@ final class PlannerDefaultImpl(
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
-  activation: Activation,
 ) extends Planner {
 
   override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
@@ -51,7 +50,7 @@ final class PlannerDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     Value(input)
       .map(prepare)
-      .map(freeze)
+      .map(freeze(input.activation))
       .map(finish)
       .get
   }
@@ -60,7 +59,7 @@ final class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  override def freeze(plan: PrePlan): SemiPlan = {
+  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
     Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
