@@ -21,5 +21,5 @@ trait Planner extends PlanSplittingOps {
   @deprecated("used in tests only!", "")
   def finish(semiPlan: SemiPlan): OrderedPlan
 
-  def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
+  protected[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
 }

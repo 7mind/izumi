@@ -151,8 +151,7 @@ final class PlannerDefaultImpl(
     }
   }
 
-  @deprecated("", "")
-  override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+  protected[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     if (roots.isEmpty) {
       OrderedPlan.empty
     } else {
@@ -166,37 +165,29 @@ final class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  @deprecated("", "")
+  @deprecated("used in tests only!", "")
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
       .map(gc.gc)
-      .map(hook.phase10PostGC)
-      .eff(planningObserver.onPhase10PostGC)
-      .map(hook.phase20Customization)
-      .eff(planningObserver.onPhase20Customization)
       .map(order)
       .get
   }
 
-  @deprecated("", "")
-  def finishNoGC(semiPlan: SemiPlan): OrderedPlan = {
+  private def finishNoGC(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(addImports)
-      //      .eff(planningObserver.onPhase05PreGC)
-      //      .map(gc.gc)
-      .map(hook.phase10PostGC)
-      .eff(planningObserver.onPhase10PostGC)
-      .map(hook.phase20Customization)
-      .eff(planningObserver.onPhase20Customization)
       .map(order)
       .get
   }
 
-  @deprecated("", "")
   private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
+      .map(hook.phase10PostGC)
+      .eff(planningObserver.onPhase10PostGC)
+      .map(hook.phase20Customization)
+      .eff(planningObserver.onPhase20Customization)
       .map(hook.phase45PreForwardingCleanup)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
@@ -214,7 +205,6 @@ final class PlannerDefaultImpl(
       .get
   }
 
-  @deprecated("", "")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
     val topology = analyzer.topology(plan.steps)
     val imports = topology

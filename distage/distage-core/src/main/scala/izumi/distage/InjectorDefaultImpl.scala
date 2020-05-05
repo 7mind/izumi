@@ -38,7 +38,7 @@ class InjectorDefaultImpl(
     planner.finish(semiPlan)
   }
 
-  override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+  protected[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
   }
 
