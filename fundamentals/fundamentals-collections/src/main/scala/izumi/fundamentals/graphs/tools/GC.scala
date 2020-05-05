@@ -5,7 +5,7 @@ import izumi.fundamentals.graphs.GCError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 trait GC[N] {
-  def collect(input: GCInput[N]): Either[GCError[N], GCOutput[N]]
+  def collect(input: GCInput[N]): Either[Nothing, GCOutput[N]]
 }
 
 object GC {
@@ -14,27 +14,19 @@ object GC {
 
   final case class GCOutput[N](predcessorMatrix: IncidenceMatrix[N], removed: Set[N])
 
-
-
   class GCTracer[N] extends GC[N] {
-    override def collect(input: GCInput[N]): Either[GCError[N], GCOutput[N]] = {
+    override def collect(input: GCInput[N]): Either[Nothing, GCOutput[N]] = {
       val missingRoots = input.roots.diff(input.predcessorMatrix.links.keySet)
-      if (missingRoots.isEmpty) {
-        val reachable = new Tracer[N].trace(input.predcessorMatrix, input.weakSP.map(w => (w.successor, w.predcessor)), input.roots)
-        val unreachable = input.predcessorMatrix.links.keySet.diff(reachable)
-        Right(GCOutput(input.predcessorMatrix.without(unreachable), unreachable))
-      } else {
-        Left(GCError.MissingRoots(missingRoots))
-      }
+      val withRoots = IncidenceMatrix(input.predcessorMatrix.links ++ missingRoots.map(r => (r, Set.empty[N])))
+      val reachable = new Tracer[N].trace(withRoots, input.weakSP.map(w => (w.successor, w.predcessor)), input.roots)
+      val unreachable = withRoots.links.keySet.diff(reachable)
+      Right(GCOutput(withRoots.without(unreachable), unreachable))
+
+      //      if (missingRoots.isEmpty) {
+//      } else {
+//        Left(GCError.MissingRoots(missingRoots))
+//      }
     }
 
   }
 }
-
-
-
-
-
-
-
-

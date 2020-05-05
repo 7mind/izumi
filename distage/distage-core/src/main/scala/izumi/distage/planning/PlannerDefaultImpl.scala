@@ -141,7 +141,7 @@ final class PlannerDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     newPlanner(input) match {
       case Left(value) =>
-        println(value)
+        println("XXX::" + value)
         ???
       case Right((resolved, collected)) =>
         val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
