@@ -165,7 +165,7 @@ object BIOCatsConversions {
       @inline override final def productR[A, B](fa: F[A])(fb: F[B]): F[B] = F0.zipParRight(fa, fb)
     }
 
-    @inline override final def monad: cats.Monad[M] = new cats.Monad[M] {
+    override lazy val monad: cats.Monad[M] = new cats.Monad[M] {
       @inline override final def pure[A](x: A): M[A] = F0.InnerF.pure(x)
       @inline override final def flatMap[A, B](fa: M[A])(f: A => M[B]): M[B] = F0.InnerF.flatMap(fa)(f)
       @inline override final def tailRecM[A, B](a: A)(f: A => M[Either[A, B]]): M[B] = F0.InnerF.flatMap(f(a)) {
