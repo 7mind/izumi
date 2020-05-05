@@ -5,6 +5,8 @@ import cats.effect.{Async, Concurrent, Sync}
 import izumi.functional.bio.{BIO, F}
 import izumi.functional.bio.catz._
 import org.scalatest.wordspec.AnyWordSpec
+import izumi.functional.bio.BIOAsync
+import cats.Parallel
 
 class CatsConversionTest extends AnyWordSpec {
 
@@ -18,6 +20,7 @@ class CatsConversionTest extends AnyWordSpec {
     conv[zio.IO]
     implicitly[Sync[zio.Task]]
     implicitly[Async[zio.Task]]
+    implicitly[Parallel[zio.Task]]
     implicitly[Concurrent[zio.Task]]
   }
 
@@ -40,5 +43,4 @@ class CatsConversionTest extends AnyWordSpec {
     c1[zio.IO]
     c2[zio.IO]
   }
-
 }

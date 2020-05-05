@@ -6,6 +6,7 @@ import izumi.functional.bio.BIOCatsConversions._
 import izumi.functional.bio.SpecificityHelper.{S1, S10, S2, S3, S4, S5, S6, S7, S8, S9}
 
 import scala.util.Either
+import cats.~>
 
 /**
   * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
@@ -55,7 +56,10 @@ trait BIOCatsConversions7 extends BIOCatsConversions8 {
 trait BIOCatsConversions8 extends BIOCatsConversions9 {
   @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit F: BIOAsync[F]): cats.effect.Async[F[Throwable, ?]] with S9 = new BIOCatsAsync[F](F)
 }
-trait BIOCatsConversions9 {
+trait BIOCatsConversions9 extends BIOCatsConversions10 {
+  @inline implicit final def BIOParallelToParallel[F[+_, +_]](implicit F: BIOParallel[F]): cats.Parallel[F[Throwable, ?]] = new BIOCatsParallel[F](F)
+}
+trait BIOCatsConversions10 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
     implicit @deprecated("unused", "") ev: BIOFunctor[F],
     F: BIOAsync[F],
@@ -143,8 +147,35 @@ object BIOCatsConversions {
   }
 
   class BIOCatsSync[F[+_, +_]](override val F: BIO[F]) extends BIOCatsBracket[F](F) with cats.effect.Sync[F[Throwable, ?]] {
+    self =>
     @inline override final def suspend[A](thunk: => F[Throwable, A]): F[Throwable, A] = F.flatten(F.syncThrowable(thunk))
     @inline override final def delay[A](thunk: => A): F[Throwable, A] = F.syncThrowable(thunk)
+  }
+
+  class BIOCatsParallel[F0[+_, +_]](private val F0: BIOParallel[F0]) extends cats.Parallel[F0[Throwable, ?]] {
+    type M[A] = F0[Throwable, A]
+    override type F[A] = M[A]
+
+    @inline override final def sequential: F ~> M = cats.arrow.FunctionK.id[M]
+    @inline override final def parallel: M ~> F = cats.arrow.FunctionK.id[F]
+
+    override lazy val applicative: cats.Applicative[F] = new cats.Applicative[F] {
+      @inline override final def ap[A, B](ff: F[A => B])(fa: F[A]): F[B] = F0.zipWithPar(ff, fa)(_.apply(_))
+      @inline override final def pure[A](x: A): F[A] = F0.InnerF.pure(x)
+
+      @inline override final def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = F0.zipPar(fa, fb)
+      @inline override final def productL[A, B](fa: F[A])(fb: F[B]): F[A] = F0.zipParLeft(fa, fb)
+      @inline override final def productR[A, B](fa: F[A])(fb: F[B]): F[B] = F0.zipParRight(fa, fb)
+    }
+
+    override lazy val monad: cats.Monad[M] = new cats.Monad[M] {
+      @inline override final def pure[A](x: A): M[A] = F0.InnerF.pure(x)
+      @inline override final def flatMap[A, B](fa: M[A])(f: A => M[B]): M[B] = F0.InnerF.flatMap(fa)(f)
+      @inline override final def tailRecM[A, B](a: A)(f: A => M[Either[A, B]]): M[B] = F0.InnerF.flatMap(f(a)) {
+        case Left(next) => tailRecM(next)(f)
+        case Right(res) => F0.InnerF.pure(res)
+      }
+    }
   }
 
   class BIOCatsAsync[F[+_, +_]](override val F: BIOAsync[F]) extends BIOCatsSync[F](F) with cats.effect.Async[F[Throwable, ?]] {

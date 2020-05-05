@@ -34,23 +34,28 @@ sealed trait BIORootInstancesLowPriority1 extends BIORootInstancesLowPriority2 {
 }
 
 sealed trait BIORootInstancesLowPriority2 extends BIORootInstancesLowPriority3 {
-  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] with S3 = S3(BIOProfunctor.InnerF)
+  @inline implicit final def BIOConvertFromBIOParallel[FR[-_, +_, +_]](implicit BIOParallel: NotPredefined.Of[BIOParallel3[FR]]): BIOMonad3[FR] with S5 = S5(BIOParallel.InnerF)
 
   @inline implicit final def AttachBIOProfunctor[FR[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOProfunctor: BIOProfunctor[FR]): BIOProfunctor.type = BIOProfunctor
   @inline implicit final def AttachBIOAsk[FR[-_, +_, +_], R](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOAsk: BIOAsk[FR]): BIOAsk.type = BIOAsk
   @inline implicit final def AttachBIOBifunctor[FR[-_, +_, +_], R](@deprecated("unused", "") self: BIOFunctor3[FR])(implicit BIOBifunctor: BIOBifunctor3[FR]): BIOBifunctor.type = BIOBifunctor
+  @inline implicit final def AttachBIOParallel[FR[-_, +_, +_], R](@deprecated("unused", "") self: BIOMonad3[FR])(implicit BIOParallel: BIOParallel3[FR]): BIOParallel.type = BIOParallel
 }
 
 sealed trait BIORootInstancesLowPriority3 extends BIORootInstancesLowPriority4 {
-  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] with S4 = S4(BIOBifunctor.InnerF)
+  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] with S3 = S3(BIOProfunctor.InnerF)
 }
 
 sealed trait BIORootInstancesLowPriority4 extends BIORootInstancesLowPriority5 {
+  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] with S4 = S4(BIOBifunctor.InnerF)
+}
+
+sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
   // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
   @inline implicit final def BIOZIO: Predefined.Of[BIOAsync3[ZIO] with BIOLocal[ZIO]] = Predefined(BIOAsyncZio)
 }
 
-sealed trait BIORootInstancesLowPriority5 {
+sealed trait BIORootInstancesLowPriority6 {
   @inline implicit final def BIOConvert3To2[C[_[-_, +_, +_]] <: DivergenceHelper, FR[-_, +_, +_], R0](
     implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
