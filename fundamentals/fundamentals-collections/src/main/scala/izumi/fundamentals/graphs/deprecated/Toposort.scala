@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs
+package izumi.fundamentals.graphs.deprecated
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -63,6 +63,3 @@ object Toposort {
   final case class InconsistentInput[T](issues: Map[T, Set[T]])
 
 }
-
-
-

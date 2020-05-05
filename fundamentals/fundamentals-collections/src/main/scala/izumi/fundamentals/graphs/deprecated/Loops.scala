@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs
+package izumi.fundamentals.graphs.deprecated
 
 trait Loops {
   def findCyclesFor[T](node: T, graph: T => Option[Set[T]]): Seq[Seq[T]] = {
@@ -25,6 +25,4 @@ trait Loops {
 
 }
 
-object Loops extends Loops {
-
-}
+object Loops extends Loops {}

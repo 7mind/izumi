@@ -4,12 +4,11 @@ import izumi.distage.model.plan.ExecutableOp._
 import izumi.distage.model.plan.{ExecutableOp, GCMode, SemiPlan, Wiring}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection._
-import izumi.fundamentals.graphs.AbstractGCTracer
+import izumi.fundamentals.graphs.deprecated.AbstractGCTracer
 
 import scala.collection.mutable
 
-class TracingDIGC[OpType <: ExecutableOp]
-(
+class TracingDIGC[OpType <: ExecutableOp](
   roots: Set[DIKey],
   fullIndex: Map[DIKey, OpType],
   override val ignoreMissingDeps: Boolean,
@@ -47,7 +46,8 @@ class TracingDIGC[OpType <: ExecutableOp]
 
     val prefiltered = pruned.nodes.map {
       case c: CreateSet =>
-        val weakMembers = c.members
+        val weakMembers = c
+          .members
           .map {
             m =>
               val setMemberOp = if (ignoreMissingDeps) {
@@ -70,7 +70,8 @@ class TracingDIGC[OpType <: ExecutableOp]
 
         newTraced ++= referencedWeaks.map(_._1)
 
-        val referencedMembers = c.members
+        val referencedMembers = c
+          .members
           .diff(unreferencedWeaks.map(_._1))
           .intersect(newTraced)
 
