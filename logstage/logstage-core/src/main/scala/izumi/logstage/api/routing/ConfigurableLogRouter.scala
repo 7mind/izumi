@@ -9,8 +9,7 @@ import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
 import scala.util.control.NonFatal
 
-class ConfigurableLogRouter
-(
+class ConfigurableLogRouter(
   logConfigService: LogConfigService
 ) extends LogRouter {
   private final val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, Config(forceLog = true))

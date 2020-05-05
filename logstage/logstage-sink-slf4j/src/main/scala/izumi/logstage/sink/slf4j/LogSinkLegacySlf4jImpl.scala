@@ -60,3 +60,7 @@ class LogSinkLegacySlf4jImpl
     loggers.computeIfAbsent(loggerId, (id: String) => slf4j.LoggerFactory.getLogger(id))
   }
 }
+
+object LogSinkLegacySlf4jImpl {
+  def apply(policy: RenderingPolicy): LogSinkLegacySlf4jImpl = new LogSinkLegacySlf4jImpl(policy)
+}
