@@ -69,7 +69,7 @@ final class PlannerDefaultImpl(
   override def prepare(input: PlannerInput): PrePlan = {
     input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
       case (currentPlan, binding) =>
-        Value(bindingTranslator.computeProvisioning(currentPlan, binding))
+        Value(bindingTranslator.computeProvisioning(binding))
           .eff(sanityChecker.assertProvisionsSane)
           .map(next => currentPlan.append(binding, next))
           .eff(planningObserver.onSuccessfulStep)
