@@ -31,13 +31,13 @@ class InjectorDefaultImpl(
     planner.planNoRewrite(addSelfInfo(input))
   }
 
-  override def prepare(input: PlannerInput): PrePlan = {
-    planner.prepare(addSelfInfo(input))
-  }
+//  override def prepare(input: PlannerInput): PrePlan = {
+//    planner.prepare(addSelfInfo(input))
+//  }
 
-  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
-    planner.freeze(activation)(plan)
-  }
+//  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
+//    planner.freeze(activation)(plan)
+//  }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     planner.rewrite(module)
