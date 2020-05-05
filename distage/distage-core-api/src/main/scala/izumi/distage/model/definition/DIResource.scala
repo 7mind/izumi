@@ -493,11 +493,6 @@ object DIResource {
     final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = wrapReleaseImpl[G, OuterResource](this: this.type)(f)
 
     final def void: DIResourceBase[F, Unit] = map(_ => ())
-
-    @deprecated("Use wrapAcquire", "will be removed in 0.10.3")
-    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = wrapAcquire(f)
-    @deprecated("Use wrapRelease", "will be removed in 0.10.3")
-    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = wrapRelease(f)
   }
 
   object DIResourceBase {

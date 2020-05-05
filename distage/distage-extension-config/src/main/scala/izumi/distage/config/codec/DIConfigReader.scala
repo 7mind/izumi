@@ -91,9 +91,6 @@ object DIConfigReader extends LowPriorityDIConfigReaderInstances {
         case Right(value) => Success(value)
       }
   }
-
-  @deprecated("Use derived", "will be removed in 0.10.3")
-  def derive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = derived[T]
 }
 
 sealed trait LowPriorityDIConfigReaderInstances {
