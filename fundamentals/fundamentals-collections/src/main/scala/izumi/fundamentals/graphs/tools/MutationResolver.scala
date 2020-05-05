@@ -6,26 +6,42 @@ import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import scala.collection.compat._
 
 object MutationResolver {
+
+  case class ActivationChoices(activationChoices: Map[String, AxisPoint]) {
+    def validChoice(a: AxisPoint): Boolean = {
+      val maybeAxis = activationChoices.get(a.axis)
+      maybeAxis.isEmpty || maybeAxis.contains(a)
+    }
+
+    def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)
+  }
+
+  object ActivationChoices {
+    def apply(activations: Set[AxisPoint]): ActivationChoices = {
+      new ActivationChoices(activations.map(a => (a.axis, a)).toMap)
+    }
+  }
+
   final case class Node[Idt, Meta](deps: Set[Idt], meta: Meta)
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
 
-  final case class Annotated[N](key: N, mut: Option[Int], con: Set[AbstractAxis] = Set.empty) {
+  final case class Annotated[N](key: N, mut: Option[Int], con: Set[AxisPoint] = Set.empty) {
     def withoutAxis: MutSel[N] = MutSel(key, mut)
   }
-  final case class AbstractAxis(axis: String, value: String)
-  final case class Selected[N](key: N, axis: Set[AbstractAxis])
+  final case class AxisPoint(axis: String, value: String)
+  final case class Selected[N](key: N, axis: Set[AxisPoint])
   final case class MutSel[N](key: N, mut: Option[Int])
 
   final case class Resolution[N, V](graph: DG[MutSel[N], V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   private final case class ResolvedMutations[A](lastOp: A, mutationsOrder: Seq[(A, Set[A])])
 
   private final case class ClassifiedConflicts[A](mutators: Set[A], defns: Set[A])
+  private final case class MainResolutionStatus[N, V](resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
 
   class MutationResolverImpl[N, I, V] {
-    private final case class MainResolutionStatus(resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
 
-    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[AbstractAxis]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
+    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[AxisPoint]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
         resolved <- toMap(predcessors)
         a <- resolveAxis(resolved.resolved, activations)
@@ -52,22 +68,14 @@ object MutationResolver {
       }
     }
 
-    private def toMap(predcessors: SemiEdgeSeq[Annotated[N], N, V]): Either[Nothing, MainResolutionStatus] = {
+    private def toMap(predcessors: SemiEdgeSeq[Annotated[N], N, V]): Either[Nothing, MainResolutionStatus[N, V]] = {
       val grouped = predcessors
         .links.groupBy(_._1)
         .view
         .mapValues(_.map(v => v._2))
         .toMap
       val (good, bad) = grouped.partition(_._2.size == 1)
-//      if (bad.nonEmpty) {
-//        // TODO: here we may detect "effective transitive" mutators and fill their index fields
-//        Left(List(ConflictResolutionError.ConflictingDefs(bad)))
-//      } else {
-//        Right(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap))
-//      }
-
       Right(MainResolutionStatus(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap), bad))
-
     }
 
     private def isMutator(n: Annotated[N]): Boolean = {
@@ -80,24 +88,19 @@ object MutationResolver {
 
     def resolveAxis(
       predcessors: SemiIncidenceMatrix[Annotated[N], N, V],
-      activations: Set[AbstractAxis],
+      activations: Set[AxisPoint],
     ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
-      val activationChoices = activations.map(a => (a.axis, a)).toMap
-
-      def validChoice(a: AbstractAxis): Boolean = {
-        val maybeAxis = activationChoices.get(a.axis)
-        maybeAxis.isEmpty || maybeAxis.contains(a)
-      }
+      val activationChoices = ActivationChoices(activations)
 
       for {
         _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
-        links = predcessors.links.filter { case (k, _) => k.con.forall(validChoice) }
+        links = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
         implIndexChunks = links.keySet.toSeq.map {
           k =>
             for {
               _ <- nonAmbigiousActivations(k.con, err => ConflictResolutionError.AmbigiousActivationDefs(k, err))
             } yield
-              if (k.con.intersect(activations).nonEmpty && k.con.forall(validChoice) && !isMutator(k))
+              if (k.con.intersect(activations).nonEmpty && activationChoices.allValid(k.con) && !isMutator(k))
                 Option((k.key, k))
               else
                 None
@@ -123,7 +126,7 @@ object MutationResolver {
             val nonAmbAxis = nonAmbigious.get(k.key).map(_.con).getOrElse(Set.empty)
 
             if (isMutator(k))
-              if (k.con.forall(validChoice))
+              if (activationChoices.allValid(k.con))
                 Seq((Annotated(k.key, k.mut, nonAmbAxis), rewritten))
               else
                 Seq.empty
@@ -143,8 +146,8 @@ object MutationResolver {
     }
 
     private def nonAmbigiousActivations(
-      activations: Set[AbstractAxis],
-      onError: Map[String, Set[AbstractAxis]] => ConflictResolutionError[N],
+      activations: Set[AxisPoint],
+      onError: Map[String, Set[AxisPoint]] => ConflictResolutionError[N],
     ): Either[List[ConflictResolutionError[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
       if (bad.isEmpty)

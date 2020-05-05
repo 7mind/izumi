@@ -58,8 +58,17 @@ final class PlannerDefaultImpl(
   }
 
   private def resolveConflicts(input: PlannerInput): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], InstantiationOp], GC.GCOutput[MutSel[DIKey]])] = {
+    val activations: Set[AxisPoint] = input
+      .activation.activeChoices.map {
+        case (a, c) =>
+          AxisPoint(a.name, c.id)
+      }.toSet
+    val activationChoices = ActivationChoices(activations)
+
     val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = input
-      .bindings.bindings.map {
+      .bindings.bindings
+      .filter(b => activationChoices.allValid(toAxis(b)))
+      .map {
         b =>
           val next = bindingTranslator.computeProvisioning(b)
           (b, next.provisions ++ next.sets.values)
@@ -78,23 +87,17 @@ final class PlannerDefaultImpl(
         case (target, op: CreateSet) => (target, op)
       }.groupBy(_._1)
       .mapValues(_.map(_._2))
-      // TODO: filter incorrect activations
       .mapValues {
         v =>
           val mergedSet = v.tail.foldLeft(v.head) {
             case (op, acc) =>
               acc.copy(members = acc.members ++ op.members)
           }
-          Node(mergedSet.members, mergedSet: InstantiationOp)
+          val filtered = mergedSet //.copy(members = mergedSet.members)
+          Node(filtered.members, filtered: InstantiationOp)
       }
 
     val matrix = SemiEdgeSeq(ops ++ sets)
-
-    val activations: Set[AbstractAxis] = input
-      .activation.activeChoices.map {
-        case (a, c) =>
-          AbstractAxis(a.name, c.id)
-      }.toSet
 
     for {
       resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
@@ -138,10 +141,10 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def toAxis(b: Binding): Set[AbstractAxis] = {
+  private def toAxis(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
       case BindingTag.AxisTag(choice) =>
-        AbstractAxis(choice.axis.name, choice.id)
+        AxisPoint(choice.axis.name, choice.id)
     }
   }
 
