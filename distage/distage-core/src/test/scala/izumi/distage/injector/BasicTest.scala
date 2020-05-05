@@ -1,14 +1,14 @@
 package izumi.distage.injector
 
 import distage._
-import izumi.distage.fixtures.BasicCases.BasicCase7.ServerConfig
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
-import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.fundamentals.graphs.ConflictResolutionError
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -16,7 +16,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "maintain correct operation order" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass]
       make[TestDependency3]
       make[TestDependency0].from[TestImpl0]
@@ -46,7 +46,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "correctly handle empty typed sets" in {
     import SetCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
     })
@@ -64,7 +64,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "provide LocatorRef during initialization" in {
     import BasicCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass0]
       make[TestClass2].from {
         (ref: LocatorRef, test: TestClass0) =>
@@ -104,7 +104,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
     import BasicCaseIssue762._
 
-    val definition = PlannerInput.noGc(MyClassModule ++ ConfigModule)
+    val definition = PlannerInput.noGC(MyClassModule ++ ConfigModule)
 
     val injector = mkInjector()
 
@@ -117,17 +117,19 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support multiple bindings" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
         .add[JustTrait]
         .add(new Impl1)
 
-      many[JustTrait].named("named.set")
+      many[JustTrait]
+        .named("named.set")
         .add(new Impl2())
 
-      many[JustTrait].named("named.set")
+      many[JustTrait]
+        .named("named.set")
         .add[Impl3]
     })
 
@@ -140,11 +142,10 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[Set[JustTrait]]("named.set").size == 2)
   }
 
-
   "support nested multiple bindings" in {
     // https://github.com/7mind/izumi/issues/261
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[JustTrait]
         .add(new Impl1)
     })
@@ -163,16 +164,17 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support named bindings" in {
     import BasicCase2._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
       make[TestDependency0].from[TestImpl0Bad]
-      make[TestDependency0].named("named.test.dependency.0")
-        .from[TestImpl0Good]
-      make[TestInstanceBinding].named("named.test")
-        .from(TestInstanceBinding())
       make[TestDependency0]
-        .namedByImpl // tests SetIdFromImplName
+        .named("named.test.dependency.0")
+        .from[TestImpl0Good]
+      make[TestInstanceBinding]
+        .named("named.test")
+        .from(TestInstanceBinding())
+      make[TestDependency0].namedByImpl // tests SetIdFromImplName
         .from[TestImpl0Good]
     })
 
@@ -186,22 +188,30 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "fail on unsolvable conflicts" in {
     import BasicCase3._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dependency].from[Impl1]
       make[Dependency].from[Impl2]
     })
 
     val injector = mkInjector()
-    val exc = intercept[ConflictingDIKeyBindingsException] {
+    val exc = intercept[ConflictResolutionException] {
       injector.plan(definition)
     }
-    assert(exc.conflicts.size == 1 && exc.conflicts.contains(DIKey.get[Dependency]))
+    assert(exc.conflicts.size == 1)
+    assert(
+      exc
+        .conflicts.exists(
+          e =>
+            e.isInstanceOf[ConflictResolutionError.ConflictingDefs[_, _]] &&
+            e.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
+        )
+    )
   }
 
   // BasicProvisionerTest
   "instantiate simple class" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
     })
@@ -217,7 +227,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "handle set bindings" in {
     import SetCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Service2]
       make[Service0]
       make[Service1]
@@ -228,17 +238,20 @@ class BasicTest extends AnyWordSpec with MkInjector {
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n1")
+      many[SetTrait]
+        .named("n1")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n2")
+      many[SetTrait]
+        .named("n2")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n3")
+      many[SetTrait]
+        .named("n3")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
@@ -258,7 +271,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "support Plan.providerImport and Plan.resolveImport" in {
     import BasicCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestCaseClass2]
     })
 
@@ -266,7 +279,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val plan1 = injector.plan(definition)
     val plan2 = injector.finish(plan1.toSemi.providerImport {
-      verse: String@Id("verse") =>
+      verse: String @Id("verse") =>
         TestInstanceBinding(verse)
     })
     val plan3 = plan2.resolveImport[String](id = "verse") {
@@ -282,7 +295,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "preserve type annotations" in {
     import BasicCase4._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dependency].named("special")
       make[TestClass]
     })
@@ -296,7 +309,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "handle set inclusions" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Set[Int]].named("x").from(Set(1, 2, 3))
       make[Set[Int]].named("y").from(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
@@ -315,14 +328,16 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "handle multiple set element binds" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Int].from(7)
 
       many[Int].add(0)
       many[Int].addSet(Set(1, 2, 3))
       many[Int].add(5)
 
-      many[Int].add { i: Int => i - 1 } // 6
+      many[Int].add {
+        i: Int => i - 1
+      } // 6
       many[Int].addSet { // 7, 8, 9
         i: Int =>
           Set(i, i + 1, i + 2)
@@ -335,7 +350,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support empty sets" in {
     import BasicCase5._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[TestDependency]
       make[TestImpl1]
     })
@@ -347,22 +362,26 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "preserve tags in multi set bindings" in {
     import izumi.distage.dsl.TestTagOps._
-    val definition = PlannerInput.noGc(new ModuleDef {
-      many[Int].named("zzz")
+    val definition = PlannerInput.noGC(new ModuleDef {
+      many[Int]
+        .named("zzz")
         .add(5).tagged("t3")
         .addSet(Set(1, 2, 3)).tagged("t1", "t2")
         .addSet(Set(1, 2, 3)).tagged("t3", "t4")
     })
 
-    assert(definition.bindings.bindings.collectFirst {
-      case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
-    }.nonEmpty)
+    assert(
+      definition
+        .bindings.bindings.collectFirst {
+          case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
+        }.nonEmpty
+    )
   }
 
   "Can abstract over Id annotations with type aliases" in {
     import BasicCase7._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Int].named("port").from(80)
       make[String].named("address").from("localhost")
       make[ServerConfig].from(ServerConfig)
@@ -374,4 +393,22 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[ServerConfig].address == context.get[String]("address"))
   }
 
+  "support mutations" in {
+    import Mutations01._
+
+    val definition = PlannerInput.noGC(new ModuleDef {
+      make[SomethingUseful].fromValue(SomethingUseful("x"))
+      make[Mutable].fromValue(Mutable(1, None))
+      modify[Mutable].by {
+        _.flatAp {
+          (u: SomethingUseful) => (m: Mutable) =>
+            m.copy(b = Some(u))
+        }
+      }
+    })
+
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[Mutable].b.contains(SomethingUseful("x")))
+  }
 }

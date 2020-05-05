@@ -56,7 +56,9 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-  override def phase45PreForwardingCleanup(plan: SemiPlan): SemiPlan = {
+  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
+    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
+
     val cleaned = plan.steps.flatMap {
       op =>
         op.target match {
@@ -73,13 +75,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
         }
     }
 
-    plan.copy(steps = cleaned)
-  }
-
-  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
-
-    val newSteps = plan.steps.flatMap {
+    val newSteps = cleaned.flatMap {
       // do not process top-level references to avoid duplicates (the target of reference will be included anyway)
       case op: ExecutableOp.WiringOp.ReferenceKey =>
         Seq(op)
@@ -106,7 +102,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
             } else {
               val provider = ProviderMagnet(wrap).get
               val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
-              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.parameters), op.origin)
+              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider), op.origin)
               newMembers += newKey
               Seq(op, newOp)
             }
@@ -126,7 +122,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     val allKeys = ListSet.newBuilder.++=(plan.steps.map(_.target)).result()
 
     val withReorderedSetElements = plan.steps.map {
-      case op@ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
+      case op @ ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
         // now reorderedKeys has exactly same elements as newSetKeys but in instantiation order
         val reorderedKeys = allKeys.intersect(newSetKeys)
         op.copy(members = reorderedKeys)

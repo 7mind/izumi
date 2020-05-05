@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs
+package izumi.fundamentals.graphs.deprecated
 
 import com.github.ghik.silencer.silent
 
@@ -66,6 +66,3 @@ object Toposort {
   final case class InconsistentInput[T](issues: Map[T, Set[T]])
 
 }
-
-
-

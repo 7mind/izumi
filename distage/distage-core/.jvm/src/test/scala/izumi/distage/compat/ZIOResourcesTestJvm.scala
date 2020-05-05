@@ -2,9 +2,9 @@ package izumi.distage.compat
 
 import cats.effect.Bracket
 import distage.{TagKK, _}
-import izumi.distage.compat.ZIOResourcesTest._
+import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.BIO
 import izumi.fundamentals.platform.language.unused
@@ -14,7 +14,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
 import zio._
 
-object ZIOResourcesTest {
+object ZIOResourcesTestJvm {
   class Res { var initialized = false }
   class Res1 extends Res
 
@@ -25,7 +25,7 @@ object ZIOResourcesTest {
     val run = IO(println("Hello World!"))
   }
 }
-final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
+final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
   "ZManaged" should {
     "ZManaged works" in {
@@ -65,7 +65,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       definition.bindings.foreach {
-        case SingletonBinding(_, implDef@ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
+        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
@@ -74,7 +74,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGc(definition))
+      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -118,13 +118,15 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
          }
       """
       )
-      val res = intercept[TestFailedException](assertCompiles(
-        """
+      val res = intercept[TestFailedException](
+        assertCompiles(
+          """
          new ModuleDef {
            make[String].fromResource { (_: Unit) => ZManaged.succeed(42) }
          }
       """
-      ))
+        )
+      )
       assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
     }
 
@@ -168,7 +170,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       definition.bindings.foreach {
-        case SingletonBinding(_, implDef@ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
+        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
@@ -177,7 +179,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGc(definition))
+      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -221,13 +223,15 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
          }
       """
       )
-      val res = intercept[TestFailedException](assertCompiles(
-        """
+      val res = intercept[TestFailedException](
+        assertCompiles(
+          """
          new ModuleDef {
            make[String].fromResource { (_: Unit) => ZLayer.succeed(42) }
          }
       """
-      ))
+        )
+      )
       assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
     }
   }

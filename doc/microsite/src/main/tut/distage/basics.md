@@ -19,7 +19,7 @@ def readLine() = {
 ```
 
 ```scala mdoc:to-string
-import distage.{ModuleDef, Injector, Roots}
+import distage.{ModuleDef, Injector, Roots, Activation}
 
 trait Greeter {
   def hello(name: String): Unit
@@ -64,7 +64,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without actually creating any objects or executing any effects.
 
 ```scala mdoc:to-string
-val plan = Injector().plan(HelloByeModule, Roots.Everything)
+val plan = Injector().plan(HelloByeModule, Activation.empty, Roots.Everything)
 ```
 
 The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
@@ -148,19 +148,14 @@ val TwoImplsModule = new ModuleDef {
 val CombinedModule = HelloByeModule overridenBy TwoImplsModule
 
 // Choose component configuration when making an Injector:
-
-val capsInjector = Injector(Activation(Style -> Style.AllCaps))
-
-// Check the result:
-
-capsInjector
-  .produceGet[HelloByeApp](CombinedModule)
+Injector()
+  .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.AllCaps))
   .use(_.run())
 
 // Check that result changes with a different configuration:
 
-Injector(Activation(Style -> Style.Normal))
-  .produceGet[HelloByeApp](CombinedModule)
+Injector()
+  .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.Normal))
   .use(_.run())
 ```
 
@@ -207,7 +202,7 @@ val TestModule = new ModuleDef {
 }
 
 def runWith(activation: Activation) =
-  Injector(activation).produceRun(TestModule) {
+  Injector().produceRun(TestModule, activation) {
     greeter: Greeter => greeter.hello("$USERNAME")
   }
 
@@ -945,6 +940,7 @@ We may even choose different interpreters at runtime:
 ```scala mdoc:to-string
 import zio.RIO
 import zio.console.{Console, getStrLn, putStrLn}
+import distage.Activation
 
 object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
   def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
@@ -961,7 +957,7 @@ def chooseInterpreters(isDummy: Boolean) = {
   val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
                      else         RealInterpretersZIO
   val module = ProgramModule[RIO[Console, ?]] ++ interpreters
-  Injector().produceGetF[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module)
+  Injector().produceGetF[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
 }
 
 // execute
@@ -1014,7 +1010,7 @@ def SyncInterpreters[F[_]]: Module = Module.empty
 ```scala mdoc:to-string
 import cats.syntax.semigroup._
 import cats.effect.{ExitCode, IO, IOApp}
-import distage.{DIKey, Roots, Injector}
+import distage.{DIKey, Roots, Injector, Activation}
 
 trait AppEntrypoint {
   def run: IO[Unit]
@@ -1027,7 +1023,7 @@ object Main extends App {
 
     val myModules = ProgramModule[IO] |+| SyncInterpreters[IO]
 
-    val plan = Injector().plan(myModules, Roots(DIKey[AppEntrypoint]))
+    val plan = Injector().plan(myModules, Activation.empty, Roots(DIKey[AppEntrypoint]))
 
     for {
       // resolveImportsF can effectfully add missing instances to an existing plan

@@ -45,7 +45,6 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
-        activation = activation,
       )
     }
   }

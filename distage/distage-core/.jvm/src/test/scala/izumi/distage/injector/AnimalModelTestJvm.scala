@@ -2,24 +2,29 @@ package izumi.distage.injector
 
 import distage._
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.Activation
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import org.scalatest.wordspec.AnyWordSpec
 
-class AnimalModel extends AnyWordSpec with MkInjector {
+class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
   "animal model" must {
     "produce valid plans" in {
-      import AnimalModel._
-      val definition = PlannerInput(new ModuleDef {
-        make[Cluster]
-        make[UserRepo].from[UserRepoImpl]
-        make[AccountsRepo].from[AccountsRepoImpl]
-        make[UsersService].from[UserServiceImpl]
-        make[AccountingService].from[AccountingServiceImpl]
-        make[UsersApiImpl]
-        make[AccountsApiImpl]
-        make[UnrequiredDep]
-        make[App]
-      }, Roots(DIKey.get[App]))
+      import AnimalModelTestJvm._
+      val definition = PlannerInput(
+        new ModuleDef {
+          make[Cluster]
+          make[UserRepo].from[UserRepoImpl]
+          make[AccountsRepo].from[AccountsRepoImpl]
+          make[UsersService].from[UserServiceImpl]
+          make[AccountingService].from[AccountingServiceImpl]
+          make[UsersApiImpl]
+          make[AccountsApiImpl]
+          make[UnrequiredDep]
+          make[App]
+        },
+        Activation.empty,
+        Roots(DIKey.get[App]),
+      )
 
       val debug = false
 
@@ -46,7 +51,7 @@ class AnimalModel extends AnyWordSpec with MkInjector {
 
 }
 
-object AnimalModel {
+object AnimalModelTestJvm {
   class UnrequiredDep(val accountsRepo: AccountsRepo)
   class Cluster
   trait UsersService
@@ -64,4 +69,3 @@ object AnimalModel {
   class AccountsApiImpl(val service: AccountingService, val usersApi: UsersApiImpl)
   class App(val uapi: UsersApiImpl, val aapi: AccountsApiImpl)
 }
-

@@ -20,12 +20,11 @@ private[plan] trait PlanLazyOps[OpType <: ExecutableOp] {
           case _ =>
             Seq.empty
         }
-
     }.toSet
     ModuleBase.make(userBindings)
   }
 
-  private[this] final lazy val lazyIndex : Map[DIKey, OpType] = {
+  private[this] final lazy val lazyIndex: Map[DIKey, OpType] = {
     steps.map(s => s.target -> s).toMap
   }
 }

@@ -1,6 +1,6 @@
 package izumi.distage.model
 
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
 import izumi.reflect.Tag
@@ -22,6 +22,7 @@ import izumi.reflect.Tag
   */
 final case class PlannerInput(
   bindings: ModuleBase,
+  activation: Activation,
   roots: Roots,
 )
 
@@ -32,20 +33,25 @@ object PlannerInput {
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph
     * that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, roots: Set[_ <: DIKey]): PlannerInput = PlannerInput(bindings, Roots(roots))
+  def apply(bindings: ModuleBase, activation: Activation, roots: Set[_ <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
 
   /** Instantiate `root`, `roots` and their dependencies, discarding bindings that are unrelated. */
-  def apply(bindings: ModuleBase, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, Roots(root, roots: _*))
+  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots: _*))
 
   /** Instantiate `T` and the dependencies of `T`, discarding bindings that are unrelated. */
-  def target[T: Tag](bindings: ModuleBase): PlannerInput = PlannerInput(bindings, DIKey.get[T])
+  def target[T: Tag](bindings: ModuleBase, activation: Activation): PlannerInput = PlannerInput(bindings, activation, DIKey.get[T])
 
   /** Instantiate `T @Id(name)` and the dependencies of `T @Id(name)`, discarding bindings that are unrelated.
     *
     * @see [[izumi.distage.model.definition.Id @Id annotation]] */
-  def target[T: Tag](name: String)(bindings: ModuleBase): PlannerInput = PlannerInput(bindings, DIKey.get[T].named(name))
+  def target[T: Tag](name: String)(bindings: ModuleBase, activation: Activation): PlannerInput = PlannerInput(bindings, activation, DIKey.get[T].named(name))
 
   /** Disable all pruning.
     * Every binding in `bindings` will be instantiated eagerly, without selection */
-  def noGc(bindings: ModuleBase): PlannerInput = PlannerInput(bindings, Roots.Everything)
+  def noGC(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
+
+  /** Disable all pruning.
+    * Every binding in `bindings` will be instantiated eagerly, without selection */
+  @deprecated("use noGC", "will be removed in 0.11.1")
+  def noGc(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
 }

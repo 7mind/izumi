@@ -55,7 +55,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(symbol, key) =>
-      q"new $modelReflectionPkg.Association.Parameter($symbol, $key)"
+      q"new $modelReflectionPkg.LinkedParameter($symbol, $key)"
   }
 
 }

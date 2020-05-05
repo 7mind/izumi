@@ -50,9 +50,6 @@ function coverage {
 # }
 
 function site {
-  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
-    return 0
-  fi
   if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
     chown -R root:root ~/.ssh
@@ -63,6 +60,7 @@ function site {
     csbt +clean doc/ghpagesSynchLocal doc/ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $CI_BRANCH is not 'develop'"
+    csbt doc/makeSite || exit 1
   fi
 }
 
@@ -76,13 +74,13 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  if [[ "$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" ]] ; then
+  if [[ "$CI_BRANCH" == "develop" ]] ; then
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   else
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1

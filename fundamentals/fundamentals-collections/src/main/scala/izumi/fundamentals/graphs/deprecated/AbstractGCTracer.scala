@@ -1,8 +1,9 @@
-package izumi.fundamentals.graphs
+package izumi.fundamentals.graphs.deprecated
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+@deprecated("should be replaced with new GC", "07/05/2020")
 trait AbstractGCTracer[NodeId, Node] {
 
   case class Pruned(nodes: Vector[Node], reachable: Set[NodeId])
@@ -22,7 +23,6 @@ trait AbstractGCTracer[NodeId, Node] {
     val filteredNodes = pruned.nodes.filter(s => pruned.reachable.contains(id(s)))
     Pruned(filteredNodes, pruned.reachable)
   }
-
 
   @tailrec
   private def trace(index: Map[NodeId, Node], toTrace: Set[NodeId], reachable: mutable.HashSet[NodeId]): Unit = {

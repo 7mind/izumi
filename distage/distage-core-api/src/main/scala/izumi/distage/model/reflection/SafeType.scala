@@ -4,14 +4,13 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.macrortti.LightTypeTag
 import izumi.reflect.{Tag, TagK, WeakTag}
 
-final case class SafeType private(
-                                   tag: LightTypeTag,
-                                   /*private[distage] val */ cls: Class[_],
-                                 ) {
-  override final lazy val hashCode: Int = tag.hashCode()
-  override final def toString: String = tag.repr
-
-  override final def equals(obj: Any): Boolean = {
+final case class SafeType private (
+  tag: LightTypeTag,
+  /*private[distage] val */ cls: Class[_],
+) {
+  override def hashCode: Int = tag.hashCode()
+  override def toString: String = tag.repr
+  override def equals(obj: Any): Boolean = {
     obj match {
       case that: SafeType =>
         tag =:= that.tag
@@ -19,17 +18,12 @@ final case class SafeType private(
         false
     }
   }
+  def =:=(that: SafeType): Boolean = tag =:= that.tag
+  def <:<(that: SafeType): Boolean = tag <:< that.tag
 
-  final def =:=(that: SafeType): Boolean = {
-    tag =:= that.tag
-  }
-
-  final def <:<(that: SafeType): Boolean = {
-    tag <:< that.tag
-  }
-
-  final def hasPreciseClass: Boolean = {
-    try tag.shortName == cls.getSimpleName catch {
+  def hasPreciseClass: Boolean = {
+    try tag.shortName == cls.getSimpleName
+    catch {
       case i: InternalError if i.getMessage == "Malformed class name" => false
     }
   }

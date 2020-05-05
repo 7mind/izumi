@@ -158,29 +158,33 @@ object ResourceCases {
     implicit def DIEffectSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
-      override def map2[A, B, C](fa: Suspend2[E, A], fb: Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))
+      override def map2[A, B, C](fa: Suspend2[E, A], fb: => Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
       override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
-        Suspend2(() => Try(fa.run()).toEither.flatMap(identity) match {
-          case Left(exception) => recover(exception).run()
-          case Right(value) => Right(value)
-        })
+        Suspend2(
+          () =>
+            Try(fa.run()).toEither.flatMap(identity) match {
+              case Left(exception) => recover(exception).run()
+              case Right(value) => Right(value)
+            }
+        )
       }
       override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, () => Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =
-        bracketCase(acquire){case (a, _) => release(a)}(use)
+        bracketCase(acquire) { case (a, _) => release(a) }(use)
 
       override def bracketCase[A, B](acquire: => Suspend2[E, A])(release: (A, Option[Throwable]) => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
         acquire.flatMap {
-          a => definitelyRecover(use(a)) {
-            err =>
-              release(a, Some(err)).flatMap(_ => fail(err))
-          }.flatMap(res => release(a, None).map(_ => res))
+          a =>
+            definitelyRecover(use(a)) {
+              err =>
+                release(a, Some(err)).flatMap(_ => fail(err))
+            }.flatMap(res => release(a, None).map(_ => res))
         }
       }
     }

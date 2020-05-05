@@ -43,10 +43,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
-      case DIKey.TypeKey(tpe) =>
-        s"{type.${rendertype(tpe)}}"
+      case DIKey.TypeKey(tpe, idx) =>
+        mutatorIndex(s"{type.${rendertype(tpe)}}", idx)
 
-      case DIKey.IdKey(tpe, id) =>
+      case DIKey.IdKey(tpe, id, idx) =>
         val asString = id.toString
         val fullId = if (asString.contains(":") || asString.contains("#")) {
           s"[$asString]"
@@ -54,7 +54,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
           asString
         }
 
-        s"{id.${rendertype(tpe)}@$fullId}"
+        mutatorIndex(s"{id.${rendertype(tpe)}@$fullId}", idx)
 
       case DIKey.ProxyElementKey(proxied, _) =>
         s"{proxy.${renderKey(proxied)}}"
@@ -68,6 +68,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
       case DIKey.SetElementKey(set, reference, disambiguator) =>
         s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode.toString)}"
     }
+  }
+
+  private[this] def mutatorIndex(base: String, idx: Option[Int]): String = {
+    idx.fold(base)(i => s"$base.$i")
   }
 
   private[this] def extract(key: DIKey): Set[String] = {
