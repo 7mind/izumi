@@ -90,10 +90,10 @@ final class PlannerDefaultImpl(
 
     val matrix = SemiEdgeSeq(ops ++ sets)
 
-    val activations: Set[Axis] = input
+    val activations: Set[AbstractAxis] = input
       .activation.activeChoices.map {
         case (a, c) =>
-          Axis(a.name, c.id)
+          AbstractAxis(a.name, c.id)
       }.toSet
 
     for {
@@ -138,10 +138,10 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def toAxis(b: Binding): Set[Axis] = {
+  private def toAxis(b: Binding): Set[AbstractAxis] = {
     b.tags.collect {
       case BindingTag.AxisTag(choice) =>
-        Axis(choice.axis.name, choice.id)
+        AbstractAxis(choice.axis.name, choice.id)
     }
   }
 

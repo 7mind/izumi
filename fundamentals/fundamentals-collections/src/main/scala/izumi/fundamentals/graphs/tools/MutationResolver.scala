@@ -10,11 +10,11 @@ object MutationResolver {
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
 
-  final case class Annotated[N](key: N, mut: Option[Int], con: Set[Axis] = Set.empty) {
+  final case class Annotated[N](key: N, mut: Option[Int], con: Set[AbstractAxis] = Set.empty) {
     def withoutAxis: MutSel[N] = MutSel(key, mut)
   }
-  final case class Axis(axis: String, value: String)
-  final case class Selected[N](key: N, axis: Set[Axis])
+  final case class AbstractAxis(axis: String, value: String)
+  final case class Selected[N](key: N, axis: Set[AbstractAxis])
   final case class MutSel[N](key: N, mut: Option[Int])
 
   final case class Resolution[N, V](graph: DG[MutSel[N], V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
@@ -25,7 +25,7 @@ object MutationResolver {
   class MutationResolverImpl[N, I, V] {
     private final case class MainResolutionStatus(resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
 
-    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[Axis]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
+    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[AbstractAxis]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
         resolved <- toMap(predcessors)
         a <- resolveAxis(resolved.resolved, activations)
@@ -80,11 +80,11 @@ object MutationResolver {
 
     def resolveAxis(
       predcessors: SemiIncidenceMatrix[Annotated[N], N, V],
-      activations: Set[Axis],
+      activations: Set[AbstractAxis],
     ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
       val activationChoices = activations.map(a => (a.axis, a)).toMap
 
-      def validChoice(a: Axis): Boolean = {
+      def validChoice(a: AbstractAxis): Boolean = {
         val maybeAxis = activationChoices.get(a.axis)
         maybeAxis.isEmpty || maybeAxis.contains(a)
       }
@@ -143,8 +143,8 @@ object MutationResolver {
     }
 
     private def nonAmbigiousActivations(
-      activations: Set[Axis],
-      onError: Map[String, Set[Axis]] => ConflictResolutionError[N],
+      activations: Set[AbstractAxis],
+      onError: Map[String, Set[AbstractAxis]] => ConflictResolutionError[N],
     ): Either[List[ConflictResolutionError[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
       if (bad.isEmpty)
