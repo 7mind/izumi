@@ -96,7 +96,6 @@ object BootstrapLocator {
       sanityChecker = sanityChecker,
       gc = gc,
       planningObserver = bootstrapObserver,
-      planMergingPolicy = planMergingPolicy,
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
