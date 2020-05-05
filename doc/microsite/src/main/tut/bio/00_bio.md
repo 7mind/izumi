@@ -10,7 +10,7 @@ BIO is a set of typeclasses and algebras for programming in tagless final style 
 Key syntactic features:
 
 1. Ergonomic `F` summoner that is a single point of entry to all methods in the hierarchy
-2. Import-less syntax. Syntax is available automatically available whenever any typeclass from the hierarchy is imported, e.g. immediately after IDE auto-import.
+2. Import-less syntax. Syntax is automatically available whenever any typeclass from the hierarchy is imported, e.g. immediately after IDE auto-import.
 
 These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
 
