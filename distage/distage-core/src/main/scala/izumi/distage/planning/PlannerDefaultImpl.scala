@@ -1,34 +1,133 @@
 package izumi.distage.planning
 
-import distage.Activation
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Binding, BindingTag, ModuleBase}
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, SemiplanOp, WiringOp}
 import izumi.distage.model.plan._
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.deprecated.Toposort
+import izumi.fundamentals.graphs.tools.GC
+import izumi.fundamentals.graphs.tools.MutationResolver._
 
 final class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
   gc: DIGarbageCollector,
   planningObserver: PlanningObserver,
-  planMergingPolicy: PlanMergingPolicy,
   hook: PlanningHook,
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
 ) extends Planner {
 
+  override def plan(input: PlannerInput): OrderedPlan = {
+    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
+  }
+
+  private def newPlanner(input: PlannerInput) = {
+    val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = input
+      .bindings.bindings.map {
+        b =>
+          val next = bindingTranslator.computeProvisioning(b)
+          (b, next.provisions ++ next.sets.values)
+      }.toSeq.flatMap {
+        case (b, nn) =>
+          nn.map(n => (Annotated(n.target, None, toAxis(b)), n))
+      }
+
+    val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
+      case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
+      case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
+    }
+
+    val sets = allOps
+      .collect {
+        case (target, op: CreateSet) => (target, op)
+      }.groupBy(_._1)
+      .mapValues(_.map(_._2))
+      // TODO: filter incorrect activations
+      .mapValues {
+        v =>
+          val mergedSet = v.tail.foldLeft(v.head) {
+            case (op, acc) =>
+              acc.copy(members = acc.members ++ op.members)
+          }
+          Node(mergedSet.members, mergedSet: InstantiationOp)
+      }
+
+    val matrix = SemiEdgeSeq(ops ++ sets)
+
+    val activations: Set[Axis] = input
+      .activation.activeChoices.map {
+        case (a, c) =>
+          Axis(a.name, c.id)
+      }.toSet
+
+    //println(ops.groupBy(_._1).filterNot(_._2.size == 1))
+    //assert(ops.groupBy(_._1).forall(_._2.size == 1))
+
+    for {
+      resolved <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
+      setTargets = resolved.meta.meta.collect {
+        case (target, _: CreateSet) =>
+          target
+      }
+      weak = setTargets.flatMap {
+        set =>
+          val setMembers = resolved.predcessors.links(set)
+          setMembers
+            .filter {
+              member =>
+                resolved.meta.meta.get(member).exists {
+                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
+                    weak
+                  case _ =>
+                    false
+                }
+            }.map(member => GC.WeakEdge(set, member))
+      }.toSet
+      roots = input.mode match {
+        case GCMode.GCRoots(roots) =>
+          roots.map(r => MutSel(r, None))
+        case GCMode.NoGC =>
+          resolved.predcessors.links.keySet
+      }
+      collected <- new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak)).left.map(t => List(t))
+    } yield {
+      //println(s"diff: ${collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet)}")
+      //assert(collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet).isEmpty)
+      (resolved, collected)
+//      val sorted: Seq[MutSel[DIKey]] = ???
+//
+//      // meta is not garbage-collected so it may have more entries
+//      val noMutMatrix = collected.predcessorMatrix.map(_.key)
+//      val steps = sorted.map(step => resolved.meta.meta(step)).toVector
+//
+//      val topology = PlanTopology.PlanTopologyImmutable(
+//        DependencyGraph(noMutMatrix.links, DependencyKind.Depends),
+//        DependencyGraph(noMutMatrix.transposed.links, DependencyKind.Required),
+//      )
+//      OrderedPlan(steps, roots.map(_.key), topology)
+
+    }
+
+  }
+
+  private def toAxis(b: Binding): Set[Axis] = {
+    b.tags.collect {
+      case BindingTag.AxisTag(choice) =>
+        Axis(choice.axis.name, choice.id)
+    }
+  }
+
+  @deprecated("", "")
   override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     if (roots.isEmpty) {
       OrderedPlan.empty
@@ -39,44 +138,23 @@ final class PlannerDefaultImpl(
     }
   }
 
-  override def plan(input: PlannerInput): OrderedPlan = {
-    Value(input)
-      .map(p => p.copy(bindings = rewrite(p.bindings)))
-      .map(planNoRewrite)
-      .get
-  }
-
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    Value(input)
-      .map(prepare)
-      .map(freeze(input.activation))
-      .map(finish)
-      .get
+    newPlanner(input) match {
+      case Left(value) =>
+        println(value)
+        ???
+      case Right((resolved, collected)) =>
+        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
+
+        finish(SemiPlan(steps, input.mode))
+    }
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     hook.hookDefinition(module)
   }
 
-  override def freeze(activation: Activation)(plan: PrePlan): SemiPlan = {
-    Value(plan)
-      .map(hook.phase00PostCompletion)
-      .eff(planningObserver.onPhase00PlanCompleted)
-      .map(planMergingPolicy.freeze(activation, _))
-      .get
-  }
-
-  override def prepare(input: PlannerInput): PrePlan = {
-    input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
-      case (currentPlan, binding) =>
-        Value(bindingTranslator.computeProvisioning(binding))
-          .eff(sanityChecker.assertProvisionsSane)
-          .map(next => currentPlan.append(binding, next))
-          .eff(planningObserver.onSuccessfulStep)
-          .get
-    }
-  }
-
+  @deprecated("", "")
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(addImports)
@@ -90,12 +168,19 @@ final class PlannerDefaultImpl(
       .get
   }
 
+  @deprecated("", "")
   private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(hook.phase45PreForwardingCleanup)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
       .map(reorderOperations)
+      .map(order2)
+      .get
+  }
+
+  private[this] def order2(almostPlan: OrderedPlan): OrderedPlan = {
+    Value(almostPlan)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase90AfterForwarding)
       .eff(planningObserver.onPhase90AfterForwarding)
@@ -103,6 +188,7 @@ final class PlannerDefaultImpl(
       .get
   }
 
+  @deprecated("", "")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
     val topology = analyzer.topology(plan.steps)
     val imports = topology

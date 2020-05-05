@@ -19,10 +19,10 @@ trait Planner extends PlanSplittingOps {
 
   def rewrite(bindings: ModuleBase): ModuleBase
 
-  def prepare(input: PlannerInput): PrePlan
-
-  def freeze(activation: Activation)(plan: PrePlan): SemiPlan
-
+//  def prepare(input: PlannerInput): PrePlan
+//
+//  def freeze(activation: Activation)(plan: PrePlan): SemiPlan
+//
   def finish(semiPlan: SemiPlan): OrderedPlan
 
   def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
