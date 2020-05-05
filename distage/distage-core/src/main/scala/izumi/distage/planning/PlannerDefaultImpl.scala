@@ -1,5 +1,6 @@
 package izumi.distage.planning
 
+import distage.Activation
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
@@ -16,8 +17,7 @@ import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
 
-final class PlannerDefaultImpl
-(
+final class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
   gc: DIGarbageCollector,
@@ -27,6 +27,7 @@ final class PlannerDefaultImpl
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
+  activation: Activation,
 ) extends Planner {
 
   override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
@@ -62,7 +63,7 @@ final class PlannerDefaultImpl
     Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
-      .map(planMergingPolicy.freeze)
+      .map(planMergingPolicy.freeze(activation, _))
       .get
   }
 
@@ -118,10 +119,11 @@ final class PlannerDefaultImpl
 
     val allOps = (imports.values ++ plan.steps).toVector
     val roots = plan.gcMode.toSet
-    val missingRoots = roots.diff(allOps.map(_.target).toSet).map {
-      root =>
-        ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-    }.toVector
+    val missingRoots = roots
+      .diff(allOps.map(_.target).toSet).map {
+        root =>
+          ImportDependency(root, Set.empty, OperationOrigin.Unknown)
+      }.toVector
 
     SemiPlan(missingRoots ++ allOps, plan.gcMode)
   }
@@ -185,9 +187,9 @@ final class PlannerDefaultImpl
     }
 
     val sortedKeys = new Toposort().cycleBreaking(
-      topology.dependencies.graph
-      , Seq.empty
-      , break
+      topology.dependencies.graph,
+      Seq.empty,
+      break,
     ) match {
       case Left(value) =>
         throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")
@@ -231,7 +233,7 @@ final class PlannerDefaultImpl
   }
 
   private[this] def referenceOp(s: SemiplanOp): Boolean = s match {
-    case _: ReferenceKey /*| _: MonadicOp */=> true
+    case _: ReferenceKey /*| _: MonadicOp */ => true
     case _ => false
   }
 

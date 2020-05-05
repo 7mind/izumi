@@ -1,7 +1,6 @@
 package izumi.distage.framework.activation
 
 import distage.DIKey
-import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
@@ -9,11 +8,9 @@ import izumi.distage.planning.PruningPlanMergingPolicyDefaultImpl
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-class PruningPlanMergingPolicyLoggedImpl
-(
-  logger: IzLogger,
-  activation: Activation,
-) extends PruningPlanMergingPolicyDefaultImpl(activation) {
+class PruningPlanMergingPolicyLoggedImpl(
+  logger: IzLogger
+) extends PruningPlanMergingPolicyDefaultImpl() {
   override protected def logUntaggedConflicts(key: DIKey, noTags: Set[PrePlan.JustOp]): Unit = {
     logger.debug(s"Untagged conflicts were filtered out in $key: ${noTags.niceList() -> "filtered conflicts"}")
   }
