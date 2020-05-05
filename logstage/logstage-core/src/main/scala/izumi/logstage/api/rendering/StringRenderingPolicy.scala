@@ -9,7 +9,10 @@ import izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
 import izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
 import izumi.logstage.api.{Log, rendering}
 
-class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer.Aggregate] = None) extends RenderingPolicy {
+class StringRenderingPolicy(
+  options: RenderingOptions,
+  template: Option[Renderer.Aggregate] = None
+) extends RenderingPolicy {
   protected val context: RenderingOptions = {
     // it may be a good idea to remove these direct queries to the environment may
 
