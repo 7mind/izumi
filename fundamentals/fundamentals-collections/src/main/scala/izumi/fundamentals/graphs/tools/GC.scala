@@ -1,8 +1,7 @@
 package izumi.fundamentals.graphs.tools
 
-import GC.{GCInput, GCOutput}
-import izumi.fundamentals.graphs.GCError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.GC.{GCInput, GCOutput}
 
 trait GC[N] {
   def collect(input: GCInput[N]): Either[Nothing, GCOutput[N]]

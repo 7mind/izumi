@@ -1,14 +1,14 @@
 package izumi.distage.injector
 
 import distage._
-import izumi.distage.fixtures.BasicCases.BasicCase7.ServerConfig
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
-import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.fundamentals.graphs.ConflictResolutionError
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -124,10 +124,12 @@ class BasicTest extends AnyWordSpec with MkInjector {
         .add[JustTrait]
         .add(new Impl1)
 
-      many[JustTrait].named("named.set")
+      many[JustTrait]
+        .named("named.set")
         .add(new Impl2())
 
-      many[JustTrait].named("named.set")
+      many[JustTrait]
+        .named("named.set")
         .add[Impl3]
     })
 
@@ -139,7 +141,6 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
     assert(context.get[Set[JustTrait]]("named.set").size == 2)
   }
-
 
   "support nested multiple bindings" in {
     // https://github.com/7mind/izumi/issues/261
@@ -167,12 +168,13 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[TestClass]
         .named("named.test.class")
       make[TestDependency0].from[TestImpl0Bad]
-      make[TestDependency0].named("named.test.dependency.0")
-        .from[TestImpl0Good]
-      make[TestInstanceBinding].named("named.test")
-        .from(TestInstanceBinding())
       make[TestDependency0]
-        .namedByImpl // tests SetIdFromImplName
+        .named("named.test.dependency.0")
+        .from[TestImpl0Good]
+      make[TestInstanceBinding]
+        .named("named.test")
+        .from(TestInstanceBinding())
+      make[TestDependency0].namedByImpl // tests SetIdFromImplName
         .from[TestImpl0Good]
     })
 
@@ -192,10 +194,18 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val exc = intercept[ConflictingDIKeyBindingsException] {
+    val exc = intercept[ConflictResolutionException] {
       injector.plan(definition)
     }
-    assert(exc.conflicts.size == 1 && exc.conflicts.contains(DIKey.get[Dependency]))
+    assert(exc.conflicts.size == 1)
+    assert(
+      exc
+        .conflicts.exists(
+          e =>
+            e.isInstanceOf[ConflictResolutionError.ConflictingDefs[_, _]] && e
+              .asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
+        )
+    )
   }
 
   // BasicProvisionerTest
@@ -228,17 +238,20 @@ class BasicTest extends AnyWordSpec with MkInjector {
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n1")
+      many[SetTrait]
+        .named("n1")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n2")
+      many[SetTrait]
+        .named("n2")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
 
-      many[SetTrait].named("n3")
+      many[SetTrait]
+        .named("n3")
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
@@ -266,7 +279,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val plan1 = injector.plan(definition)
     val plan2 = injector.finish(plan1.toSemi.providerImport {
-      verse: String@Id("verse") =>
+      verse: String @Id("verse") =>
         TestInstanceBinding(verse)
     })
     val plan3 = plan2.resolveImport[String](id = "verse") {
@@ -322,7 +335,9 @@ class BasicTest extends AnyWordSpec with MkInjector {
       many[Int].addSet(Set(1, 2, 3))
       many[Int].add(5)
 
-      many[Int].add { i: Int => i - 1 } // 6
+      many[Int].add {
+        i: Int => i - 1
+      } // 6
       many[Int].addSet { // 7, 8, 9
         i: Int =>
           Set(i, i + 1, i + 2)
@@ -348,15 +363,19 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "preserve tags in multi set bindings" in {
     import izumi.distage.dsl.TestTagOps._
     val definition = PlannerInput.noGc(new ModuleDef {
-      many[Int].named("zzz")
+      many[Int]
+        .named("zzz")
         .add(5).tagged("t3")
         .addSet(Set(1, 2, 3)).tagged("t1", "t2")
         .addSet(Set(1, 2, 3)).tagged("t3", "t4")
     })
 
-    assert(definition.bindings.bindings.collectFirst {
-      case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
-    }.nonEmpty)
+    assert(
+      definition
+        .bindings.bindings.collectFirst {
+          case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
+        }.nonEmpty
+    )
   }
 
   "Can abstract over Id annotations with type aliases" in {
