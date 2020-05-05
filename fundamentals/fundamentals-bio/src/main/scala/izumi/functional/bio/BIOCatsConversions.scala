@@ -56,7 +56,10 @@ trait BIOCatsConversions7 extends BIOCatsConversions8 {
 trait BIOCatsConversions8 extends BIOCatsConversions9 {
   @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit F: BIOAsync[F]): cats.effect.Async[F[Throwable, ?]] with S9 = new BIOCatsAsync[F](F)
 }
-trait BIOCatsConversions9 {
+trait BIOCatsConversions9 extends BIOCatsConversions10 {
+  @inline implicit final def BIOParallelToParallel[F[+_, +_]](implicit F: BIOParallel[F]): cats.Parallel[F[Throwable, ?]] = new BIOCatsParallel[F](F)
+}
+trait BIOCatsConversions10 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
     implicit @deprecated("unused", "") ev: BIOFunctor[F],
     F: BIOAsync[F],
