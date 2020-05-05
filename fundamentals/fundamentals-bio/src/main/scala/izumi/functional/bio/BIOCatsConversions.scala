@@ -152,7 +152,7 @@ object BIOCatsConversions {
   }
 
   class BIOCatsParallel[F0[+_, +_]](private val F0: BIOParallel[F0]) extends cats.Parallel[F0[Throwable, ?]] {
-    private[this] type M[A] = F0[Throwable, A]
+    private[BIOCatsParallel] type M[A] = F0[Throwable, A]
     override type F[A] = M[A]
 
     @inline override final def sequential: F ~> M = cats.arrow.FunctionK.id[M]
