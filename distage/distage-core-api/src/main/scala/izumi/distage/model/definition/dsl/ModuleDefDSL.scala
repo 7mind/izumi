@@ -465,11 +465,12 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
         * Integration checks on DIResource will be lost
         */
-      final def fromHas[R1 <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T]): AfterBind = {
+      def fromHas[R1 <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T]): AfterBind = {
         import tag._
-        val provider: ProviderMagnet[DIResourceBase[F[Any, E, ?], A]] = AnyConstructor[R1].zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]](tagBIOLocal)) {
-          case ((resource, r), f) => provideDIResource(f)(resource, r)
-        }
+        val provider: ProviderMagnet[DIResourceBase[F[Any, E, ?], A]] =
+          AnyConstructor[R1].zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]](tagBIOLocal)) {
+            case ((resource, r), f) => provideDIResource(f)(resource, r)
+          }
         dsl.fromResource(provider)
       }
     }

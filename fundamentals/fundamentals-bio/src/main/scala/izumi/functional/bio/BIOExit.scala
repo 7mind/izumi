@@ -21,8 +21,6 @@ object BIOExit {
   }
 
   object Trace {
-    @deprecated("Use ZIOTrace", "will be removed after 0.10.5")
-    private[bio] def zioTrace[E](cause: Cause[E]): Trace[E] = ZIOTrace(cause)
     def empty: Trace[Nothing] = new Trace[Nothing] {
       val asString: String = "<empty trace>"
       def toThrowable: Throwable = new RuntimeException(asString)
