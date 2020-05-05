@@ -16,7 +16,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
-import izumi.fundamentals.graphs.Toposort
+import izumi.fundamentals.graphs.deprecated.Toposort
 
 final class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
