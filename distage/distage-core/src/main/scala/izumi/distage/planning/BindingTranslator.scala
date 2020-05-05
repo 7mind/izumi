@@ -6,19 +6,19 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.Wiring._
-import izumi.distage.model.plan.initial.{NextOps, PrePlan}
+import izumi.distage.model.plan.initial.NextOps
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.DIKey
 
 trait BindingTranslator {
-  def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps
+  def computeProvisioning(binding: Binding): NextOps
 }
 
 object BindingTranslator {
 
   class Impl(hook: PlanningHook) extends BindingTranslator {
-    def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps = {
+    def computeProvisioning(binding: Binding): NextOps = {
       binding match {
         case singleton: SingletonBinding[_] =>
           NextOps(
@@ -31,7 +31,7 @@ object BindingTranslator {
           val elementKey = target
           val setKey = set.key.set
 
-          val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
+          val next = computeProvisioning(SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
           val oldSet = next.sets.getOrElse(target, CreateSet(setKey, target.tpe, Set.empty, OperationOrigin.UserBinding(binding)))
           val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
