@@ -47,7 +47,6 @@ object BIORunner {
     val runtime: Runtime[Unit] = Runtime((), platform)
 
     override def unsafeRun[E, A](io: => IO[E, A]): A = {
-
       unsafeRunSyncAsEither(io) match {
         case BIOExit.Success(value) =>
           value
