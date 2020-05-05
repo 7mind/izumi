@@ -4,7 +4,7 @@ import com.github.ghik.silencer.silent
 import distage.Activation
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.{Binding, BindingTag, ModuleBase}
-import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, SemiplanOp, WiringOp}
 import izumi.distage.model.plan._
@@ -15,6 +15,7 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
+import izumi.fundamentals.graphs.ConflictResolutionError
 import izumi.fundamentals.graphs.deprecated.Toposort
 import izumi.fundamentals.graphs.tools.GC
 import izumi.fundamentals.graphs.tools.MutationResolver._
@@ -144,8 +145,8 @@ final class PlannerDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     newPlanner(input) match {
       case Left(value) =>
-        println("XXX::" + value)
-        ???
+        // TODO: better formatting
+        throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
       case Right((resolved, collected)) =>
         val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
 
