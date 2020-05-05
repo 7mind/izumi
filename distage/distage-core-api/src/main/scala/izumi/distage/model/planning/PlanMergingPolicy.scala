@@ -1,5 +1,6 @@
 package izumi.distage.model.planning
 
+import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.SemiPlan
@@ -7,7 +8,7 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.reflection._
 
 trait PlanMergingPolicy {
-  def freeze(plan: PrePlan): SemiPlan
+  def freeze(activation: Activation, plan: PrePlan): SemiPlan
 }
 
 object PlanMergingPolicy {
@@ -20,7 +21,7 @@ object PlanMergingPolicy {
 
   trait WithResolve {
     this: PlanMergingPolicy =>
-    final protected def resolve(plan: PrePlan, key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
+    final protected def resolve(activation: Activation, plan: PrePlan, key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
       operations match {
         case s if s.size == 1 =>
           DIKeyConflictResolution.Successful(Set(s.head.op))
@@ -32,7 +33,7 @@ object PlanMergingPolicy {
           }
           DIKeyConflictResolution.Successful(Set(merged))
         case s if s.nonEmpty && s.forall(_.isInstanceOf[JustOp]) =>
-          resolveConflict(plan, key, s.collect { case c: JustOp => c })
+          resolveConflict(activation, plan, key, s.collect { case c: JustOp => c })
         case s if s.exists(_.isInstanceOf[JustOp]) && s.exists(_.isInstanceOf[SetOp]) =>
           DIKeyConflictResolution.Failed(operations.map(_.op), "Set and non-set bindings to the same key")
         case other =>
@@ -40,6 +41,6 @@ object PlanMergingPolicy {
       }
     }
 
-    protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution
+    protected def resolveConflict(activation: Activation, plan: PrePlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution
   }
 }

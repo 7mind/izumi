@@ -15,24 +15,22 @@ import izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.mutable
 
-class PruningPlanMergingPolicyDefaultImpl
-(
-  activation: Activation,
-) extends PlanMergingPolicyDefaultImpl {
+class PruningPlanMergingPolicyDefaultImpl() extends PlanMergingPolicyDefaultImpl {
 
-  private[this] val activeChoices: Set[Axis.AxisValue] = activation.activeChoices.values.toSet
+  private[this] def activeChoices(activation: Activation): Set[Axis.AxisValue] = activation.activeChoices.values.toSet
 
   protected def logUntaggedConflicts(@unused key: DIKey, @unused noTags: Set[PrePlan.JustOp]): Unit = {}
   protected def logHandleIssues(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed]): Unit = {}
   protected def logPruningSuccesfulResolve(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed], @unused erased: Map[DIKey, Set[SemiplanOp]]): Unit = {}
 
-  override protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
+  override protected def resolveConflict(activation: Activation, plan: PrePlan, key: DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)
 
     val filtered = operations.filter {
-      _.binding.tags
+      _.binding
+        .tags
         .collect { case BindingTag.AxisTag(t) => t }
-        .forall(activeChoices.contains)
+        .forall(activeChoices(activation).contains)
     }
 
     val (explicitlyEnabled, noTags) = filtered.partition(_.binding.tags.nonEmpty)
@@ -45,10 +43,10 @@ class PruningPlanMergingPolicyDefaultImpl
     } else if (noTags.size == 1) {
       DIKeyConflictResolution.Successful(noTags.map(_.op: SemiplanOp))
     } else if (filtered.nonEmpty) {
-      val hints = makeHints(filtered)
+      val hints = makeHints(activation, filtered)
       DIKeyConflictResolution.Failed(operations.map(_.op), s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
     } else {
-      val hints = makeHints(operations)
+      val hints = makeHints(activation, operations)
       DIKeyConflictResolution.Failed(operations.map(_.op), s"All options were filtered out, original candidates: ${hints.niceList()}")
     }
   }
@@ -96,13 +94,13 @@ class PruningPlanMergingPolicyDefaultImpl
     }
   }
 
-  private[this] def makeHints(ops: Set[PrePlan.JustOp]): Seq[String] = {
+  private[this] def makeHints(activation: Activation, ops: Set[PrePlan.JustOp]): Seq[String] = {
     ops.toSeq.map {
       op =>
         val axisValues = op.binding.tags.collect { case BindingTag.AxisTag(t) => t }
 
-        val bindingTags = axisValues.diff(activeChoices)
-        val alreadyActiveTags = axisValues.intersect(activeChoices)
+        val bindingTags = axisValues.diff(activeChoices(activation))
+        val alreadyActiveTags = axisValues.intersect(activeChoices(activation))
 
         s"${op.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
     }
@@ -111,17 +109,15 @@ class PruningPlanMergingPolicyDefaultImpl
 
 object PruningPlanMergingPolicyDefaultImpl {
 
-  abstract class PlanMergingPolicyDefaultImpl
-    extends PlanMergingPolicy
-      with WithResolve {
+  abstract class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
 
-    override def freeze(plan: PrePlan): SemiPlan = {
+    override def freeze(activation: Activation, plan: PrePlan): SemiPlan = {
       val resolved = mutable.HashMap[distage.DIKey, Set[SemiplanOp]]()
       val issues = mutable.HashMap[distage.DIKey, DIKeyConflictResolution.Failed]()
 
       plan.freeze.foreach {
         case (k, v) =>
-          resolve(plan, k, v) match {
+          resolve(activation, plan, k, v) match {
             case DIKeyConflictResolution.Successful(op) =>
               resolved.put(k, op)
             case f: DIKeyConflictResolution.Failed =>
@@ -144,28 +140,27 @@ object PruningPlanMergingPolicyDefaultImpl {
       val issueRepr = formatIssues(issues)
 
       throw new ConflictingDIKeyBindingsException(
-        message =
-          s"""There must be exactly one valid binding for each DIKey.
-             |
-             |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate
-             |between multiple instances of the same type.
-             |
-             |List of problematic bindings: $issueRepr
+        message = s"""There must be exactly one valid binding for each DIKey.
+          |
+          |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate
+          |between multiple instances of the same type.
+          |
+          |List of problematic bindings: $issueRepr
          """.stripMargin,
-        conflicts = issues
+        conflicts = issues,
       )
     }
 
     protected final def formatIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): String = {
-      issues.map {
-        case (k, f) =>
-          s"""Conflict resolution failed key $k with reason
-             |
-             |${f.explanation.shift(4)}
+      issues
+        .map {
+          case (k, f) =>
+            s"""Conflict resolution failed key $k with reason
+              |
+              |${f.explanation.shift(4)}
 
-             |    Candidates left: ${f.candidates.niceList().shift(4)}""".
-            stripMargin
-      }.niceList()
+              |    Candidates left: ${f.candidates.niceList().shift(4)}""".stripMargin
+        }.niceList()
     }
   }
 

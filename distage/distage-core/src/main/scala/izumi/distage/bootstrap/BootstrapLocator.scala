@@ -77,10 +77,12 @@ object BootstrapLocator {
   private final val bootstrapPlanner: Activation => Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
-    val bootstrapObserver = new PlanningObserverAggregate(Set(
-      new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`)),
-      //new GraphObserver(analyzer, Set.empty),
-    ))
+    val bootstrapObserver = new PlanningObserverAggregate(
+      Set(
+        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`))
+        //new GraphObserver(analyzer, Set.empty),
+      )
+    )
 
     val hook = new PlanningHookAggregate(Set.empty)
     val translator = new BindingTranslator.Impl(hook)
@@ -88,18 +90,20 @@ object BootstrapLocator {
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val gc = NoopDIGC
     val mp = mirrorProvider
-
-    activation => new PlannerDefaultImpl(
-      forwardingRefResolver = forwardingRefResolver,
-      sanityChecker = sanityChecker,
-      gc = gc,
-      planningObserver = bootstrapObserver,
-      planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl(activation),
-      hook = hook,
-      bindingTranslator = translator,
-      analyzer = analyzer,
-      mirrorProvider = mp
-    )
+    val planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl
+    activation =>
+      new PlannerDefaultImpl(
+        forwardingRefResolver = forwardingRefResolver,
+        sanityChecker = sanityChecker,
+        gc = gc,
+        planningObserver = bootstrapObserver,
+        planMergingPolicy = planMergingPolicy,
+        hook = hook,
+        bindingTranslator = translator,
+        analyzer = analyzer,
+        mirrorProvider = mp,
+        activation,
+      )
   }
 
   private final val bootstrapProducer: PlanInterpreter = {
@@ -159,7 +163,6 @@ object BootstrapLocator {
 
   /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
   final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
-    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-  }
+      make[ProxyStrategy].from[ProxyStrategyFailingImpl]
+    }
 }
-
