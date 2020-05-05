@@ -33,6 +33,7 @@ class InjectorDefaultImpl(
     planner.rewrite(module)
   }
 
+  @deprecated("used in tests only!", "")
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
     planner.finish(semiPlan)
   }
