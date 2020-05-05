@@ -30,7 +30,10 @@ object BIOExit {
     final case class ZIOTrace[+E](cause: Cause[E]) extends Trace[E] {
       override def asString: String = cause.prettyPrint
       override def toThrowable: Throwable = FiberFailure(cause)
-      override def unsafeAttachTrace(conv: E => Throwable): Throwable = cause.squashTraceWith(conv)
+      override def unsafeAttachTrace(conv: E => Throwable): Throwable = cause.squashTraceWith {
+        case t: Throwable => t
+        case e => conv(e)
+      }
     }
   }
 
