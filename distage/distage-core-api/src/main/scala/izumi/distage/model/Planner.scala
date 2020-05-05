@@ -18,6 +18,7 @@ trait Planner extends PlanSplittingOps {
 
   def rewrite(bindings: ModuleBase): ModuleBase
 
+  @deprecated("used in tests only!", "")
   def finish(semiPlan: SemiPlan): OrderedPlan
 
   def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan

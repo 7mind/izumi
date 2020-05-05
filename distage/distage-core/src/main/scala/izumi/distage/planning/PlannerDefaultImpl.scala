@@ -15,7 +15,7 @@ import izumi.functional.Value
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG}
 import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.deprecated.Toposort
-import izumi.fundamentals.graphs.tools.GC
+import izumi.fundamentals.graphs.tools.{GC, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.tools.MutationResolver._
 
 final class PlannerDefaultImpl(
@@ -41,6 +41,9 @@ final class PlannerDefaultImpl(
       case Right((resolved, collected)) =>
         val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
 
+        /*
+         *
+         * */
         //      val sorted: Seq[MutSel[DIKey]] = ???
         //
         //      // meta is not garbage-collected so it may have more entries
@@ -53,7 +56,7 @@ final class PlannerDefaultImpl(
         //      )
         //      OrderedPlan(steps, roots.map(_.key), topology)
 
-        finish(SemiPlan(steps, input.mode))
+        finishNoGC(SemiPlan(steps, input.mode))
     }
   }
 
@@ -169,6 +172,20 @@ final class PlannerDefaultImpl(
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
       .map(gc.gc)
+      .map(hook.phase10PostGC)
+      .eff(planningObserver.onPhase10PostGC)
+      .map(hook.phase20Customization)
+      .eff(planningObserver.onPhase20Customization)
+      .map(order)
+      .get
+  }
+
+  @deprecated("", "")
+  def finishNoGC(semiPlan: SemiPlan): OrderedPlan = {
+    Value(semiPlan)
+      .map(addImports)
+      //      .eff(planningObserver.onPhase05PreGC)
+      //      .map(gc.gc)
       .map(hook.phase10PostGC)
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
