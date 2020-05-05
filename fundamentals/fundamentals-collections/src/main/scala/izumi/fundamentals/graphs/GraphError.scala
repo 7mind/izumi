@@ -39,14 +39,6 @@ object ConflictResolutionError {
 
 }
 
-//sealed trait GCError[N] extends GraphTraversalError[N]
-//
-//object GCError {
-//
-//  case class MissingRoots[N](roots: Set[N]) extends GCError[N]
-//
-//}
-
 sealed trait ToposortError[T] extends GraphTraversalError[T]
 
 object ToposortError {

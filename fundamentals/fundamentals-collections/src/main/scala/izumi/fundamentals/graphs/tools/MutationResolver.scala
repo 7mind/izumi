@@ -1,7 +1,7 @@
 package izumi.fundamentals.graphs.tools
 
-import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.collection.compat._
 
@@ -17,16 +17,18 @@ object MutationResolver {
   final case class Selected[N](key: N, axis: Set[Axis])
   final case class MutSel[N](key: N, mut: Option[Int])
 
+  final case class Resolution[N, V](graph: DG[MutSel[N], V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   private final case class ResolvedMutations[A](lastOp: A, mutationsOrder: Seq[(A, Set[A])])
 
   private final case class ClassifiedConflicts[A](mutators: Set[A], defns: Set[A])
 
   class MutationResolverImpl[N, I, V] {
+    private final case class MainResolutionStatus(resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
 
-    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[Axis]): Either[List[ConflictResolutionError[N]], DG[MutSel[N], V]] = {
+    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[Axis]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
-        u <- toMap(predcessors)
-        a <- resolveAxis(u, activations)
+        resolved <- toMap(predcessors)
+        a <- resolveAxis(resolved.resolved, activations)
         unsolvedConflicts = a.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
           if (unsolvedConflicts.nonEmpty) {
@@ -46,23 +48,26 @@ object MutationResolver {
             (m.indexRemap.getOrElse(k, k), v.meta)
         }
 
-        DG.fromPred(m.finalMatrix, GraphMeta(meta))
+        Resolution(DG.fromPred(m.finalMatrix, GraphMeta(meta)), resolved.unresolved)
       }
     }
 
-    def toMap(predcessors: SemiEdgeSeq[Annotated[N], N, V]): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], N, V]] = {
+    private def toMap(predcessors: SemiEdgeSeq[Annotated[N], N, V]): Either[Nothing, MainResolutionStatus] = {
       val grouped = predcessors
         .links.groupBy(_._1)
         .view
         .mapValues(_.map(v => v._2))
         .toMap
       val (good, bad) = grouped.partition(_._2.size == 1)
-      if (bad.nonEmpty) {
-        // TODO: here we may detect "effective transitive" mutators and fill their index fields
-        Left(List(ConflictResolutionError.ConflictingDefs(bad)))
-      } else {
-        Right(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap))
-      }
+//      if (bad.nonEmpty) {
+//        // TODO: here we may detect "effective transitive" mutators and fill their index fields
+//        Left(List(ConflictResolutionError.ConflictingDefs(bad)))
+//      } else {
+//        Right(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap))
+//      }
+
+      Right(MainResolutionStatus(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap), bad))
+
     }
 
     private def isMutator(n: Annotated[N]): Boolean = {

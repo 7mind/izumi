@@ -16,6 +16,7 @@ import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError
+import izumi.fundamentals.graphs.ConflictResolutionError.{ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.deprecated.Toposort
 import izumi.fundamentals.graphs.tools.GC
 import izumi.fundamentals.graphs.tools.MutationResolver._
@@ -78,7 +79,8 @@ final class PlannerDefaultImpl(
     //assert(ops.groupBy(_._1).forall(_._2.size == 1))
 
     for {
-      resolved <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
+      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
+      resolved = resolution.graph
       setTargets = resolved.meta.meta.collect {
         case (target, _: CreateSet) =>
           target
@@ -104,10 +106,20 @@ final class PlannerDefaultImpl(
           resolved.predcessors.links.keySet
       }
       collected <- new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak)).left.map(t => List(t))
+      out <- {
+        val unsolved = resolution.unresolved.keySet.map(_.withoutAxis)
+        val requiredButConflicting = unsolved.intersect(collected.predcessorMatrix.links.keySet)
+        if (requiredButConflicting.isEmpty) {
+          Right((resolved, collected))
+        } else {
+          Left(List(ConflictingDefs(resolution.unresolved.filter(k => requiredButConflicting.contains(k._1.withoutAxis)))))
+        }
+      }
     } yield {
+      out
       //println(s"diff: ${collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet)}")
       //assert(collected.predcessorMatrix.links.keySet.diff(resolved.meta.meta.keySet).isEmpty)
-      (resolved, collected)
+
 //      val sorted: Seq[MutSel[DIKey]] = ???
 //
 //      // meta is not garbage-collected so it may have more entries
