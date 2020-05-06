@@ -1,11 +1,9 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOAsync, BIOBifunctor3, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOParallel, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
+import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOParallel, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
-import izumi.functional.bio.BIOParallel3
-import izumi.functional.bio.BIOAsync3
 
 class BIOSyntaxTest extends AnyWordSpec {
 
@@ -21,6 +19,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOParallel3.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
+    import izumi.functional.bio.BIOParallel3
     def x[F[-_, +_, +_]: BIOParallel3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
       a zipPar b
       a zipParLeft b
@@ -31,8 +30,13 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
   }
 
-  "BIOAsync.race is callable" in {
+  "BIOAsync.race is callable along with all BIOParallel syntax" in {
+    import izumi.functional.bio.BIOAsync
     def x[F[+_, +_]: BIOAsync](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a zipPar b
+      a zipParLeft b
+      a zipParRight b
+      a.zipWithPar(b)((a, b) => (a, b))
       a race b
     }
 
@@ -40,7 +44,13 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOAsync3.race is callable" in {
+    import izumi.functional.bio.BIOAsync3
+
     def x[F[-_, +_, +_]: BIOAsync3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
+      a zipPar b
+      a zipParLeft b
+      a zipParRight b
+      a.zipWithPar(b)((a, b) => (a, b))
       a race b
     }
 
