@@ -134,12 +134,9 @@ object BIOSyntax {
 
   class BIOParallelOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOParallel[F]) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
-    @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.<&>(r, that)
-    @inline final def <&>[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.<&>(r, that)
-    @inline final def <&[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.<&(r, that)
-    @inline final def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.<&(r, that)
-    @inline final def &>[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.&>(r, that)
-    @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.&>(r, that)
+    @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
+    @inline final def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
+    @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
 
   class BIOAsyncOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOAsync[F]) extends BIOOps(r) {

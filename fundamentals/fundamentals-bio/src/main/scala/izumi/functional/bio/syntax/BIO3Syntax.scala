@@ -2,11 +2,10 @@ package izumi.functional.bio.syntax
 
 import cats.data.Kleisli
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
-import izumi.functional.bio.{BIO3, BIOApplicative3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOProfunctor, BIOTemporal3}
+import izumi.functional.bio.{BIO3, BIOApplicative3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOProfunctor, BIOTemporal3, BIOParallel3}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
-import izumi.functional.bio.BIOParallel3
 
 trait BIO3Syntax extends BIO3ImplicitPuns {
   /**
@@ -157,12 +156,9 @@ object BIO3Syntax {
 
   class BIOParallel3Ops[FR[-_ ,+_ , +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOParallel3[FR]) {
     @inline final def zipWithPar[R1 <: R, E1 >: E, B, C](that: FR[R1, E1, B])(f: (A, B) => C): FR[R1, E1, C] = F.zipWithPar(r, that)(f)
-    @inline final def <&>[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.<&>(r, that)
-    @inline final def zipPar[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.<&>(r, that)
-    @inline final def <&[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, A] = F.<&(r, that)
-    @inline final def zipParLeft[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, A] = F.<&(r, that)
-    @inline final def &>[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, B] = F.&>(r, that)
-    @inline final def zipParRight[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, B] = F.&>(r, that)
+    @inline final def zipPar[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.zipPar(r, that)
+    @inline final def zipParLeft[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, A] = F.zipParLeft(r, that)
+    @inline final def zipParRight[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, B] = F.zipParRight(r, that)
   }
 
   class BIOAsync3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) {

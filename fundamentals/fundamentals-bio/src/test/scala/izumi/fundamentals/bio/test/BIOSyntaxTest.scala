@@ -11,9 +11,6 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "BIOParallel.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     def x[F[+_, +_]: BIOParallel](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
-      a <&> b
-      a <& b
-      a &> b
       a zipPar b
       a zipParLeft b
       a zipParRight b
@@ -25,9 +22,6 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "BIOParallel3.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     def x[F[-_, +_, +_]: BIOParallel3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
-      a <&> b
-      a <& b
-      a &> b
       a zipPar b
       a zipParLeft b
       a zipParRight b
