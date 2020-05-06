@@ -40,7 +40,7 @@ final class PlannerDefaultImpl(
         // TODO: better formatting
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
       case Right((resolved, collected)) =>
-        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step)).toVector
+        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step).map(_.meta)).toVector
 
         /*
          *
@@ -61,7 +61,9 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def resolveConflicts(input: PlannerInput): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], InstantiationOp], GC.GCOutput[MutSel[DIKey]])] = {
+  private def resolveConflicts(
+    input: PlannerInput
+  ): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]], GC.GCOutput[MutSel[DIKey]])] = {
     val activations: Set[AxisPoint] = input
       .activation.activeChoices.map {
         case (a, c) =>
@@ -107,7 +109,7 @@ final class PlannerDefaultImpl(
       resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
       resolved = resolution.graph
       setTargets = resolved.meta.meta.collect {
-        case (target, _: CreateSet) =>
+        case (target, RemappedValue(_: CreateSet, _)) =>
           target
       }
       weak = setTargets.flatMap {
@@ -116,7 +118,7 @@ final class PlannerDefaultImpl(
           setMembers
             .filter {
               member =>
-                resolved.meta.meta.get(member).exists {
+                resolved.meta.meta.get(member).map(_.meta).exists {
                   case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
                     weak
                   case _ =>

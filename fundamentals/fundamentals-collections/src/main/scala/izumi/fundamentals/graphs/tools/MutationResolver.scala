@@ -4,6 +4,7 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.collection.compat._
+import scala.collection.immutable
 
 object MutationResolver {
 
@@ -23,6 +24,7 @@ object MutationResolver {
   }
 
   final case class Node[Idt, Meta](deps: Set[Idt], meta: Meta)
+  final case class RemappedValue[Meta, Idt](meta: Meta, remapped: Map[Idt, MutSel[Idt]])
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
 
@@ -33,11 +35,16 @@ object MutationResolver {
   final case class Selected[N](key: N, axis: Set[AxisPoint])
   final case class MutSel[N](key: N, mut: Option[Int])
 
-  final case class Resolution[N, V](graph: DG[MutSel[N], V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
-  private final case class ResolvedMutations[A](lastOp: A, mutationsOrder: Seq[(A, Set[A])])
+  final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
+  private final case class ResolvedMutations[N](
+    lastOp: MutSel[N],
+    operationReplacements: Seq[(MutSel[N], Set[MutSel[N]])],
+    outerKeyReplacements: Seq[(MutSel[N], (N, MutSel[N]))],
+  )
 
   private final case class ClassifiedConflicts[A](mutators: Set[A], defns: Set[A])
   private final case class MainResolutionStatus[N, V](resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
+  final case class WithContext[Meta, N](meta: Meta, remaps: Map[N, MutSel[N]])
 
   class MutationResolverImpl[N, I, V] {
 
@@ -56,15 +63,15 @@ object MutationResolver {
           case (k, v) =>
             (k.withoutAxis, Node(v.deps.map(_.key), v.meta))
         }
-        m <- resolveMutations(SemiIncidenceMatrix(deannotated))
+        mutationsResolved <- resolveMutations(SemiIncidenceMatrix(deannotated))
       } yield {
         assert(a.links.keySet.groupBy(_.withoutAxis).forall(_._2.size == 1))
         val meta = deannotated.map {
           case (k, v) =>
-            (m.indexRemap.getOrElse(k, k), v.meta)
+            (mutationsResolved.indexRemap.getOrElse(k, k), RemappedValue(v.meta, mutationsResolved.outerReplMap.getOrElse(k, Map.empty)))
         }
 
-        Resolution(DG.fromPred(m.finalMatrix, GraphMeta(meta)), resolved.unresolved)
+        Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta)), resolved.unresolved)
       }
     }
 
@@ -173,7 +180,7 @@ object MutationResolver {
           doResolve(predcessors, t, c)
       }
 
-      val allRepls = resolved.flatMap(_._2.mutationsOrder)
+      val allRepls = resolved.flatMap(_._2.operationReplacements)
       val finalElements = resolved.view.mapValues(_.lastOp).toMap
 
       val rewritten = predcessors.links.map {
@@ -195,17 +202,35 @@ object MutationResolver {
                 (k, MutSel(k.key, Some(idx)))
             }
         }.toMap
+
+      val allOuterReplacements = resolved.map(_._2.outerKeyReplacements).toSeq.flatten
+      //assert(allOuterReplacements.groupBy(_._1).forall(_._2.size == 1))
+      val outerReplMap = allOuterReplacements
+        .toMap.map {
+          case (k, (v, r)) =>
+            (indexRemap.getOrElse(k, k), v, indexRemap.getOrElse(r, r))
+        }.groupBy(_._1).map {
+          case (context, remaps) =>
+            val cleaned: immutable.Iterable[(N, MutSel[N])] = remaps.map { case (c, k, t) => (k, t) }
+            assert(cleaned.groupBy(_._1).forall(_._2.size < 2))
+            (context, cleaned.toMap)
+        }
+
       val finalMatrix: IncidenceMatrix[MutSel[N]] = result.rewriteAll(indexRemap)
-      Right(Result(finalMatrix, indexRemap))
+      Right(Result(finalMatrix, indexRemap, outerReplMap))
     }
 
-    case class Result(finalMatrix: IncidenceMatrix[MutSel[N]], indexRemap: Map[MutSel[N], MutSel[N]])
+    case class Result(
+      finalMatrix: IncidenceMatrix[MutSel[N]],
+      indexRemap: Map[MutSel[N], MutSel[N]],
+      outerReplMap: Map[MutSel[N], Map[N, MutSel[N]]],
+    )
 
     private def doResolve(
       predcessors: SemiIncidenceMatrix[MutSel[N], N, V],
       target: N,
       classified: ClassifiedConflicts[MutSel[N]],
-    ): Option[(MutSel[N], ResolvedMutations[MutSel[N]])] = {
+    ): Option[(MutSel[N], ResolvedMutations[N])] = {
       val asFinalTarget = MutSel(target, None)
 
       val asSeq = classified.mutators.toSeq
@@ -220,18 +245,23 @@ object MutationResolver {
           val replacements = withFinalAtTheEnd.map {
             m =>
               val replacement = first
+              first = m
+
               val rewritten = predcessors.links(m).deps.map {
                 ld: N =>
-                  if (ld == target)
+                  if (ld == target) {
                     replacement
-                  else
+                  } else {
                     MutSel(ld, None)
+                  }
               }
-              first = m
-              (m, rewritten)
+
+              (m, rewritten, (target, replacement))
           }
 
-          Some((asFinalTarget, ResolvedMutations(lastOp, replacements)))
+          val innerReplacements = replacements.map { case (a, _, c) => (a, c) }
+          val outerReplacements = replacements.map { case (a, b, _) => (a, b) }
+          Some((asFinalTarget, ResolvedMutations(lastOp, outerReplacements, innerReplacements)))
         case None =>
           None
       }
