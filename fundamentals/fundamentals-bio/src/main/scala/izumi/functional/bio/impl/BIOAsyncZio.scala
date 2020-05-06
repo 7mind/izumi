@@ -118,9 +118,9 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 
   @inline override final def zipWithPar[R, E, A, R1 <: R, E1 >: E, B, C](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B])(f: (A, B) => C): ZIO[R1, E1, C] = fa.zipWithPar(fb)(f)
-  @inline override final def zipPar[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, (A, B)] = fa <&> fb
-  @inline override final def zipParLeft[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, A] = fa <& fb
-  @inline override final def zipParRight[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, B] = fa &> fb
+  @inline override final def <&>[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, (A, B)] = fa <&> fb
+  @inline override final def <&[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, A] = fa <& fb
+  @inline override final def &>[R, E, A, R1 <: R, E1 >: E, B](fa: ZIO[R, E, A], fb: ZIO[R1, E1, B]): ZIO[R1, E1, B] = fa &> fb
 
   @inline override final val InnerF: BIOMonad3[ZIO] = this
 
