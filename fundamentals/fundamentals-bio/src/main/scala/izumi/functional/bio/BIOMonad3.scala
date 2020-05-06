@@ -3,6 +3,12 @@ package izumi.functional.bio
 trait BIOMonad3[F[-_, +_, +_]] extends BIOApplicative3[F] {
   def flatMap[R, E, A, R2 <: R, E2 >: E, B](r: F[R, E, A])(f: A => F[R2, E2, B]): F[R2, E2, B]
   def flatten[R, E, A](r: F[R, E, F[R, E, A]]): F[R, E, A] = flatMap(r)(identity)
+  
+  def tailRecM[R, E, A, B](a: A)(f: A => F[R, E, Either[A, B]]): F[R, E, B] =
+    flatMap(f(a)) {
+      case Left(next) => tailRecM(next)(f)
+      case Right(res) => pure(res)
+    }
 
   def tap[R, E, A, R2 <: R, E2 >: E](r: F[R, E, A])(f: A => F[R2, E2, Unit]): F[R2, E2, A] = flatMap[R, E, A, R2, E2, A](r)(a => as(f(a))(a))
   @inline final def when[R, E, E1](cond: F[R, E, Boolean])(ifTrue: F[R, E1, Unit])(implicit ev: E <:< E1): F[R, E1, Unit] = {

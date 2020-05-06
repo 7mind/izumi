@@ -112,12 +112,7 @@ object BIOCatsConversions {
   class BIOCatsMonad[F[+_, +_], E](override val F: BIOMonad[F]) extends cats.Monad[F[E, ?]] with BIOCatsApplicative[F, E] {
     @inline override final def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
     @inline override final def flatten[A](ffa: F[E, F[E, A]]): F[E, A] = F.flatten(ffa)
-    @inline override final def tailRecM[A, B](a: A)(f: A => F[E, Either[A, B]]): F[E, B] = {
-      F.flatMap(f(a)) {
-        case Left(next) => tailRecM(next)(f)
-        case Right(res) => F.pure(res)
-      }
-    }
+    @inline override final def tailRecM[A, B](a: A)(f: A => F[E, Either[A, B]]): F[E, B] = F.tailRecM(a)(f)
   }
 
   class BIOCatsMonadError[F[+_, +_], E](override val F: BIOMonadError[F])
