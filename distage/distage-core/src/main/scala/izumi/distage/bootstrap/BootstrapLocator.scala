@@ -85,7 +85,7 @@ object BootstrapLocator {
     )
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslator.Impl(hook)
+    val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val gc = NoopDIGC
