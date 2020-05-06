@@ -8,7 +8,6 @@ import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.Wiring._
 import izumi.distage.model.plan.initial.NextOps
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.planning._
 import izumi.distage.model.reflection.DIKey
 
 trait BindingTranslator {
@@ -17,7 +16,7 @@ trait BindingTranslator {
 
 object BindingTranslator {
 
-  class Impl(hook: PlanningHook) extends BindingTranslator {
+  class Impl() extends BindingTranslator {
     def computeProvisioning(binding: Binding): NextOps = {
       binding match {
         case singleton: SingletonBinding[_] =>
@@ -52,9 +51,7 @@ object BindingTranslator {
 
     private[this] def provisionSingleton(binding: Binding.ImplBinding): Seq[InstantiationOp] = {
       val target = binding.key
-      val wiring0 = implToWiring(binding.implementation)
-      val wiring = hook.hookWiring(binding, wiring0)
-
+      val wiring = implToWiring(binding.implementation)
       wiringToInstantiationOp(target, binding, wiring)
     }
 

@@ -185,7 +185,6 @@ final class PlannerDefaultImpl(
 
   private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
-      .map(hook.phase10PostGC)
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
