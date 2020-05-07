@@ -50,9 +50,6 @@ function coverage {
 # }
 
 function site {
-  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
-    return 0
-  fi
   if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
     chown -R root:root ~/.ssh
@@ -62,6 +59,7 @@ function site {
 
     csbt +clean doc/ghpagesSynchLocal doc/ghpagesPushSite || exit 1
   else
+    csbt doc/makeSite
     echo "Not publishing site, because $CI_BRANCH is not 'develop'"
   fi
 }
