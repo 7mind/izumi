@@ -12,9 +12,11 @@ import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.deprecated.Toposort
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC
 import izumi.fundamentals.graphs.tools.MutationResolver._
-import izumi.fundamentals.graphs.{ConflictResolutionError, DG}
+import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import scala.collection.compat._
 
 final class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
@@ -37,24 +39,61 @@ final class PlannerDefaultImpl(
         // TODO: better formatting
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
       case Right((resolved, collected)) =>
-        val steps = collected.predcessorMatrix.links.keySet.flatMap(step => resolved.meta.meta.get(step).map(_.meta)).toVector
+        val mappedGraph = collected.predcessorMatrix.links.map {
+          case (target, deps) =>
+            val mappedTarget = updateKey(target)
+            val mappedDeps = deps.map(updateKey)
+            val op = resolved.meta.meta.get(target).map {
+              op =>
+                val remaps = op.remapped.map {
+                  case (original, remapped) =>
+                    (original, updateKey(remapped))
+                }
+                val mapper = (key: DIKey) => remaps.getOrElse(key, key)
+                op.meta.replaceKeys(mapper, mapper)
+            }
+            (mappedTarget, (mappedDeps, op))
+        }
 
-        /*
-         *
-         * */
-        //      val sorted: Seq[MutSel[DIKey]] = ???
-        //
-        //      // meta is not garbage-collected so it may have more entries
-        //      val noMutMatrix = collected.predcessorMatrix.map(_.key)
-        //      val steps = sorted.map(step => resolved.meta.meta(step)).toVector
-        //
-        //      val topology = PlanTopology.PlanTopologyImmutable(
-        //        DependencyGraph(noMutMatrix.links, DependencyKind.Depends),
-        //        DependencyGraph(noMutMatrix.transposed.links, DependencyKind.Required),
-        //      )
-        //      OrderedPlan(steps, roots.map(_.key), topology)
+        val mappedMatrix = mappedGraph.view.mapValues(_._1).toMap
+        val mappedOps = mappedGraph.view.mapValues(_._2).collect { case (k, Some(v)) => (k, v) }.toMap
 
-        finishNoGC(SemiPlan(steps, input.mode))
+        val remappedKeysGraph = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
+
+        // TODO: migrate semiplan to DG
+        val steps = remappedKeysGraph.meta.meta.values.toVector
+
+        Value(SemiPlan(steps, input.mode))
+          .map(addImports)
+          .map(order)
+          .get
+    }
+  }
+
+  private def updateKey(mutSel: MutSel[DIKey]): DIKey = {
+    mutSel.mut match {
+      case Some(value) =>
+        updateKey(mutSel.key, value)
+      case None =>
+        mutSel.key
+    }
+  }
+
+  private def updateKey(key: DIKey, mindex: Int): DIKey = {
+    key match {
+      case DIKey.TypeKey(tpe, _) =>
+        DIKey.TypeKey(tpe, Some(mindex))
+      case k @ DIKey.IdKey(_, _, _) =>
+        k.withMutatorIndex(Some(mindex))
+      case s: DIKey.SetElementKey =>
+        s.copy(set = updateKey(s.set, mindex))
+      case r: DIKey.ResourceKey =>
+        r.copy(key = updateKey(r.key, mindex))
+      case e: DIKey.EffectKey =>
+        e.copy(key = updateKey(e.key, mindex))
+      case k =>
+        throw new RuntimeException(s"wrong key: $k")
+
     }
   }
 
@@ -171,13 +210,6 @@ final class PlannerDefaultImpl(
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
       .map(gc.gc)
-      .map(order)
-      .get
-  }
-
-  private def finishNoGC(semiPlan: SemiPlan): OrderedPlan = {
-    Value(semiPlan)
-      .map(addImports)
       .map(order)
       .get
   }
