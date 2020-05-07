@@ -45,10 +45,16 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
-      case DIKey.TypeKey(tpe) =>
-        s"{type.${rendertype(tpe)}}"
+      case DIKey.TypeKey(tpe, idx) =>
+        val base = s"{type.${rendertype(tpe)}}"
+        idx match {
+          case Some(value) =>
+            s"$base.$value"
+          case None =>
+            base
+        }
 
-      case DIKey.IdKey(tpe, id) =>
+      case DIKey.IdKey(tpe, id, idx) =>
         val asString = id.toString
         val fullId = if (asString.contains(":") || asString.contains("#")) {
           s"[$asString]"
@@ -56,7 +62,13 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
           asString
         }
 
-        s"{id.${rendertype(tpe)}@$fullId}"
+        val base = s"{id.${rendertype(tpe)}@$fullId}"
+        idx match {
+          case Some(value) =>
+            s"$base.$value"
+          case None =>
+            base
+        }
 
       case DIKey.ProxyElementKey(proxied, _) =>
         s"{proxy.${renderKey(proxied)}}"
@@ -95,10 +107,11 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
   private[this] def extract(key: SafeType): Set[String] = {
-    RuntimeAPI.unpack(key.tag.ref match {
-      case reference: LightTypeTagRef.AbstractReference =>
-        reference
-    }).map(_.ref.name)
+    RuntimeAPI
+      .unpack(key.tag.ref match {
+        case reference: LightTypeTagRef.AbstractReference =>
+          reference
+      }).map(_.ref.name)
   }
 
 }
