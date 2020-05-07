@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs.deprecated
+package izumi.fundamentals.collections
 
 trait Loops {
   def findCyclesFor[T](node: T, graph: T => Option[Set[T]]): Seq[Seq[T]] = {

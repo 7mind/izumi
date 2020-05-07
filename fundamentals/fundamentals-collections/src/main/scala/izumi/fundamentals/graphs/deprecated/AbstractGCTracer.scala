@@ -3,6 +3,7 @@ package izumi.fundamentals.graphs.deprecated
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+@deprecated("should be replaced with new GC", "07/05/2020")
 trait AbstractGCTracer[NodeId, Node] {
 
   case class Pruned(nodes: Vector[Node], reachable: Set[NodeId])

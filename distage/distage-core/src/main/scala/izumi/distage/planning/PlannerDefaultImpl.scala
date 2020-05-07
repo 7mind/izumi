@@ -14,9 +14,8 @@ import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
-import izumi.fundamentals.graphs.deprecated.Toposort
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.GC
+import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
@@ -272,13 +271,18 @@ final class PlannerDefaultImpl(
 
     val index = completedPlan.index
 
-    val sortedKeys = new Toposort().cycleBreaking(
+    val maybeBrokenLoops = new Toposort().cycleBreaking(
+      IncidenceMatrix(topology.dependencies.graph),
+      new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
+    )
+
+    val sortedKeys = /*new DeprecatedToposort().cycleBreaking(
       topology.dependencies.graph,
       Seq.empty,
       new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan).break,
-    ) match {
+    )*/ maybeBrokenLoops match {
       case Left(value) =>
-        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")
+        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
 
       case Right(value) =>
         value
