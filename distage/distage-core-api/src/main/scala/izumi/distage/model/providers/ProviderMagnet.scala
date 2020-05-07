@@ -2,7 +2,7 @@ package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
-import izumi.distage.model.reflection.AssociationP.Parameter
+import izumi.distage.model.reflection.AssociationP
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
@@ -197,7 +197,7 @@ object ProviderMagnet {
 
     new ProviderMagnet[B](
       Provider.ProviderImpl(
-        parameters = Seq(Parameter(symbolInfo, key)),
+        parameters = Seq(AssociationP(symbolInfo, key)),
         ret = retTpe,
         originalFun = f,
         fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
@@ -212,7 +212,7 @@ object ProviderMagnet {
 
     new ProviderMagnet(
       Provider.ProviderImpl(
-        parameters = Seq(Parameter(symbolInfo, key)),
+        parameters = Seq(AssociationP(symbolInfo, key)),
         ret = tpe,
         fun = (_: Seq[Any]).head,
         providerType = ProviderType.Function,

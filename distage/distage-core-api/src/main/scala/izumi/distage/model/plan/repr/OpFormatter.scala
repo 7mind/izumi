@@ -120,7 +120,7 @@ object OpFormatter {
 
     private def formatDependency(association: AssociationP): String = {
       association match {
-        case p: AssociationP.Parameter =>
+        case p: AssociationP =>
           val fname = if (p.isByName) {
             s"=> ${p.name}"
           } else {
