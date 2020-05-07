@@ -1,10 +1,10 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.reflection.{AssociationP, DIKey, Provider, SafeType}
+import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider, SafeType}
 
 sealed trait Wiring {
   def instanceType: SafeType
-  def associations: Seq[AssociationP]
+  def associations: Seq[LinkedParameter]
   def replaceKeys(f: DIKey => DIKey): Wiring
   def requiredKeys: Set[DIKey]
 }
@@ -18,7 +18,7 @@ object Wiring {
     final case class Function(provider: Provider) extends SingletonWiring {
       override def instanceType: SafeType = provider.ret
       override def requiredKeys: Set[DIKey] = associations.map(_.key).toSet
-      override def associations: Seq[AssociationP] = provider.parameters
+      override def associations: Seq[LinkedParameter] = provider.parameters
 
       override def replaceKeys(f: DIKey => DIKey): Function = {
         this.copy(provider = this.provider.replaceKeys(f))
@@ -26,7 +26,7 @@ object Wiring {
     }
 
     final case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {
-      override def associations: Seq[AssociationP] = Seq.empty
+      override def associations: Seq[LinkedParameter] = Seq.empty
       override val requiredKeys: Set[DIKey] = Set(key)
       override def replaceKeys(f: DIKey => DIKey): Reference = {
         this.copy(key = f(this.key))
@@ -34,7 +34,7 @@ object Wiring {
     }
 
     final case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
-      override def associations: Seq[AssociationP] = Seq.empty
+      override def associations: Seq[LinkedParameter] = Seq.empty
       override def requiredKeys: Set[DIKey] = Set.empty
       override def replaceKeys(f: DIKey => DIKey): Instance = this
     }
@@ -47,14 +47,14 @@ object Wiring {
 
   object MonadicWiring {
     final case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: SingletonWiring) extends MonadicWiring {
-      override def associations: Seq[AssociationP] = effectWiring.associations
+      override def associations: Seq[LinkedParameter] = effectWiring.associations
       override def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
       override def replaceKeys(f: DIKey => DIKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
     }
 
     final case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: SingletonWiring) extends MonadicWiring {
-      override def associations: Seq[AssociationP] = effectWiring.associations
+      override def associations: Seq[LinkedParameter] = effectWiring.associations
       override def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
       override def replaceKeys(f: DIKey => DIKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))

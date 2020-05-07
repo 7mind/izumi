@@ -8,7 +8,7 @@ import izumi.distage.model.plan.Wiring.MonadicWiring._
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
-import izumi.distage.model.reflection.{AssociationP, DIKey, Provider}
+import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider}
 import izumi.fundamentals.platform.strings.IzString._
 
 trait OpFormatter {
@@ -118,9 +118,9 @@ object OpFormatter {
       }
     }
 
-    private def formatDependency(association: AssociationP): String = {
+    private def formatDependency(association: LinkedParameter): String = {
       association match {
-        case p: AssociationP =>
+        case p: LinkedParameter =>
           val fname = if (p.isByName) {
             s"=> ${p.name}"
           } else {
