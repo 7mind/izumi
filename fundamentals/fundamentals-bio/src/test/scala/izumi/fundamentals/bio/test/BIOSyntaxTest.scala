@@ -11,10 +11,11 @@ class BIOSyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.BIOParallel
 
     def x[F[+_, +_]: BIOParallel](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
-      a zipPar b
-      a zipParLeft b
-      a zipParRight b
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b)
     }
 
     x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(()))
@@ -23,10 +24,11 @@ class BIOSyntaxTest extends AnyWordSpec {
   "BIOParallel3.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     import izumi.functional.bio.BIOParallel3
     def x[F[-_, +_, +_]: BIOParallel3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
-      a zipPar b
-      a zipParLeft b
-      a zipParRight b
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b)
     }
 
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
@@ -39,7 +41,8 @@ class BIOSyntaxTest extends AnyWordSpec {
       a zipParLeft b
       a zipParRight b
       a.zipWithPar(b)((a, b) => (a, b))
-      a race b
+      a.race(b)
+      a.flatMap(_ => b)
     }
 
     x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(()))
@@ -49,11 +52,12 @@ class BIOSyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.BIOAsync3
 
     def x[F[-_, +_, +_]: BIOAsync3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
-      a zipPar b
-      a zipParLeft b
-      a zipParRight b
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
-      a race b
+      a.race(b)
+      a.flatMap(_ => b)
     }
 
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
