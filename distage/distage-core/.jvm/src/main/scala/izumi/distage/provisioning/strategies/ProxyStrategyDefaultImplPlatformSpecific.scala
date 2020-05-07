@@ -7,7 +7,7 @@ import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.model.reflection.{AssociationP, DIKey, MirrorProvider, SafeType}
+import izumi.distage.model.reflection.{DIKey, LinkedParameter, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific(
@@ -46,7 +46,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: AssociationP): (Class[_], Any) = {
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: LinkedParameter): (Class[_], Any) = {
     val clazz: Class[_] = if (param.isByName) {
       classOf[Function0[_]]
     } else if (param.wasGeneric) {

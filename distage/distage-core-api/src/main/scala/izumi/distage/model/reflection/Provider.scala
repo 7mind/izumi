@@ -6,7 +6,7 @@ import izumi.distage.model.reflection.Provider.ProviderType
 trait Provider {
   def replaceKeys(f: DIKey => DIKey): Provider = ???
 
-  def parameters: Seq[AssociationP]
+  def parameters: Seq[LinkedParameter]
   final def diKeys: Seq[DIKey] = parameters.map(_.key)
   final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
   final def arity: Int = parameters.size
@@ -83,13 +83,13 @@ object Provider {
   }
 
   final case class ProviderImpl[+A](
-    parameters: Seq[AssociationP],
+    parameters: Seq[LinkedParameter],
     ret: SafeType,
     originalFun: AnyRef,
     fun: Seq[Any] => Any,
     providerType: ProviderType,
   ) extends Provider {
-    def this(parameters: Seq[AssociationP], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) =
+    def this(parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) =
       this(parameters, ret, fun, fun, providerType)
 
     override def unsafeApply(refs: Seq[TypedRef[_]]): A =
@@ -105,7 +105,7 @@ object Provider {
 
     override def addUnused(keys: Seq[DIKey]): Provider =
       copy(
-        parameters = parameters ++ keys.map(key => AssociationP(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
+        parameters = parameters ++ keys.map(key => LinkedParameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
         providerType = ProviderType.FunctionWithUnusedKeys,
       )
 
@@ -123,7 +123,7 @@ object Provider {
     }
   }
   object ProviderImpl {
-    @inline def apply[A](parameters: Seq[AssociationP], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType): ProviderImpl[A] =
+    @inline def apply[A](parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType): ProviderImpl[A] =
       new ProviderImpl(parameters, ret, fun, providerType)
   }
 
