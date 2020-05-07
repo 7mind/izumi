@@ -211,7 +211,7 @@ object MutationResolver {
             (indexRemap.getOrElse(k, k), v, indexRemap.getOrElse(r, r))
         }.groupBy(_._1).map {
           case (context, remaps) =>
-            val cleaned: immutable.Iterable[(N, MutSel[N])] = remaps.map { case (c, k, t) => (k, t) }
+            val cleaned: immutable.Iterable[(N, MutSel[N])] = remaps.map { case (_, k, t) => (k, t) }
             assert(cleaned.groupBy(_._1).forall(_._2.size < 2))
             (context, cleaned.toMap)
         }

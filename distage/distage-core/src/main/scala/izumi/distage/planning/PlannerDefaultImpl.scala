@@ -96,7 +96,6 @@ final class PlannerDefaultImpl(
         e.copy(key = updateKey(e.key, mindex))
       case k =>
         throw DIBugException(s"Unexpected key mutator: $k, m=$mindex")
-
     }
   }
 
@@ -272,15 +271,11 @@ final class PlannerDefaultImpl(
     val index = completedPlan.index
 
     val maybeBrokenLoops = new Toposort().cycleBreaking(
-      IncidenceMatrix(topology.dependencies.graph),
-      new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
+      predcessors = IncidenceMatrix(topology.dependencies.graph),
+      break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
     )
 
-    val sortedKeys = /*new DeprecatedToposort().cycleBreaking(
-      topology.dependencies.graph,
-      Seq.empty,
-      new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan).break,
-    )*/ maybeBrokenLoops match {
+    val sortedKeys = maybeBrokenLoops match {
       case Left(value) =>
         throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
 
@@ -288,7 +283,7 @@ final class PlannerDefaultImpl(
         value
     }
 
-    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
+    val sortedOps = sortedKeys.flatMap(index.get).toVector
 
     val roots = completedPlan.gcMode match {
       case GCMode.GCRoots(roots) =>
@@ -296,7 +291,7 @@ final class PlannerDefaultImpl(
       case GCMode.NoGC =>
         topology.effectiveRoots
     }
-    OrderedPlan(sortedOps.toVector, roots, topology)
+    OrderedPlan(sortedOps, roots, topology)
   }
 
 }
