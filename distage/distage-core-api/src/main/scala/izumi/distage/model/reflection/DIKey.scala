@@ -24,9 +24,19 @@ object DIKey {
 
   final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
     val idContract: IdContract[I] = implicitly
-
+    def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
     override def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
+  }
+
+  /**
+    * @param set       Key of the parent Set. `set.tpe` must be of type `Set[T]`
+    * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
+    */
+  final case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
+    override def tpe: SafeType = reference.tpe
+
+    override def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
   }
 
   final case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
@@ -39,16 +49,6 @@ object DIKey {
 
   final case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
     override def toString: String = s"{effect.${key.toString}/$tpe}"
-  }
-
-  /**
-    * @param set       Key of the parent Set. `set.tpe` must be of type `Set[T]`
-    * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
-    */
-  final case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
-    override def tpe: SafeType = reference.tpe
-
-    override def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
   }
 
   final case class MultiSetImplId(set: DIKey, impl: ImplDef)
