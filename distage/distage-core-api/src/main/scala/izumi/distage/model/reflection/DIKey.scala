@@ -15,14 +15,14 @@ object DIKey {
     def withTpe(tpe: SafeType): DIKey.BasicKey
   }
 
-  final case class TypeKey(tpe: SafeType) extends BasicKey {
-    def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
+  final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
+    def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id, mutatorIndex)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
     override def toString: String = s"{type.${tpe.toString}}"
   }
 
-  final case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
+  final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
     val idContract: IdContract[I] = implicitly
 
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
