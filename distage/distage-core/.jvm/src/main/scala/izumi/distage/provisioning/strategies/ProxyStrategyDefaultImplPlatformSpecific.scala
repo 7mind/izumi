@@ -25,7 +25,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
         op.op match {
           case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
             // for class constructors, try to fetch known dependencies from the object graph
-            f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a.asInstanceOf)).toArray
+            f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a)).toArray
           case _ =>
             // otherwise fill everything with nulls
             runtimeClass
@@ -46,7 +46,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: AssociationP.Parameter): (Class[_], Any) = {
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: AssociationP): (Class[_], Any) = {
     val clazz: Class[_] = if (param.isByName) {
       classOf[Function0[_]]
     } else if (param.wasGeneric) {

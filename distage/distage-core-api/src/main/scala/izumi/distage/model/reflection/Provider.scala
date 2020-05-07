@@ -105,7 +105,7 @@ object Provider {
 
     override def addUnused(keys: Seq[DIKey]): Provider =
       copy(
-        parameters = parameters ++ keys.map(key => AssociationP.Parameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
+        parameters = parameters ++ keys.map(key => AssociationP(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
         providerType = ProviderType.FunctionWithUnusedKeys,
       )
 
