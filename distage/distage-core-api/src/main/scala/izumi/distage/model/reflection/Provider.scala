@@ -4,8 +4,6 @@ import izumi.distage.model.exceptions.UnsafeCallArgsMismatched
 import izumi.distage.model.reflection.Provider.ProviderType
 
 trait Provider {
-  def replaceKeys(f: DIKey => DIKey): Provider = ???
-
   def parameters: Seq[LinkedParameter]
   final def diKeys: Seq[DIKey] = parameters.map(_.key)
   final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
@@ -23,6 +21,7 @@ trait Provider {
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
   def addUnused(keys: Seq[DIKey]): Provider
+  def replaceKeys(f: DIKey => DIKey): Provider
 
   private val eqField: AnyRef = {
     if (providerType eq ProviderType.Function) originalFun
@@ -35,7 +34,7 @@ trait Provider {
   }
   override final def hashCode(): Int = eqField.hashCode()
   override final def toString: String = s"$funString(${argTypes.mkString(", ")}): $ret"
-  final def funString = if (providerType eq ProviderType.Function) fun.toString else providerType.toString
+  final def funString: String = if (providerType eq ProviderType.Function) fun.toString else providerType.toString
 
   protected[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters
@@ -108,6 +107,8 @@ object Provider {
         parameters = parameters ++ keys.map(key => LinkedParameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
         providerType = ProviderType.FunctionWithUnusedKeys,
       )
+
+    override def replaceKeys(f: DIKey => DIKey): Provider = copy(parameters.map(_.replaceKey(f)))
 
     override def unsafeZip(newRet: SafeType, that: Provider): Provider = {
       new ProviderImpl(
