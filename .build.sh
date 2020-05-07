@@ -74,13 +74,13 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  if [[ "$CI_BRANCH" == "develop" || "$CI_BRANCH" == "zio-RC16" ]] ; then
+  if [[ "$CI_BRANCH" == "develop" ]] ; then
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   else
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
