@@ -42,14 +42,14 @@ private[plan] trait SemiPlanOps extends Any {
   final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
       case i if i.target.tpe == function.get.ret =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.parameters), i.origin))
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get), i.origin))
     }
   }
 
   final def providerImport[T](id: String)(function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
       case i if i.target == DIKey.IdKey(function.get.ret, id) =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.parameters), i.origin))
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get), i.origin))
     }
   }
 }
