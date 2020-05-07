@@ -2,8 +2,7 @@ package izumi.logstage.sink
 
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
-import izumi.logstage.api.rendering.logunits.Renderer
-import izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import izumi.logstage.api.rendering.RenderingPolicy
 
 class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
@@ -18,5 +17,4 @@ object ConsoleSink {
 
   object ColoredConsoleSink extends ConsoleSink(RenderingPolicy.coloringPolicy())
   object SimpleConsoleSink extends ConsoleSink(RenderingPolicy.simplePolicy())
-
 }

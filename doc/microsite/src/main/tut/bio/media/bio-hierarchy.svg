@@ -11,6 +11,7 @@
 [BIOBracket3]&lt;:--[BIOPanic3]
 [BIOPanic3]&lt;:--[BIO3]
 [BIO3]&lt;:--[BIOAsync3]
+[BIOParallel3]&lt;:--[BIOAsync3]
 [BIOAsync3]&lt;:--[BIOTemporal3]
 
 [BIOProfunctor]&lt;:--[BIOArrow]
@@ -18,8 +19,7 @@
 [BIOArrowChoice]&lt;:--[BIOLocal]
 
 [BIOAsk]&lt;:--[BIOMonadAsk]
-[BIOMonadAsk]&lt;:--[BIOLocal]
-</desc>
+[BIOMonadAsk]&lt;:--[BIOLocal]</desc>
   <path d="M83.5 186.5 L83.5 206.5 L134.2 226.5 L134.2 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
   <path d="M88.8 199.8 L83.5 199.8 L78.2 199.8 L83.5 186.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
   <path d="M335.5 44.5 L335.5 64.5 L335.5 84.5 L335.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
@@ -40,10 +40,12 @@
   <path d="M250.8 412.8 L245.5 412.8 L240.2 412.8 L245.5 399.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
   <path d="M245.5 470.5 L245.5 490.5 L245.5 510.5 L245.5 510.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
   <path d="M250.8 483.8 L245.5 483.8 L240.2 483.8 L245.5 470.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M245.5 541.5 L245.5 561.5 L245.5 581.5 L245.5 581.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M245.5 541.5 L245.5 561.5 L282.7 581.5 L282.7 581.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
   <path d="M250.8 554.8 L245.5 554.8 L240.2 554.8 L245.5 541.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M245.5 612.5 L245.5 632.5 L245.5 652.5 L245.5 652.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M250.8 625.8 L245.5 625.8 L240.2 625.8 L245.5 612.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M377.5 541.5 L377.5 561.5 L340.3 581.5 L340.3 581.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M382.8 554.8 L377.5 554.8 L372.2 554.8 L377.5 541.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
+  <path d="M311.5 612.5 L311.5 632.5 L311.5 652.5 L311.5 652.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
+  <path d="M316.8 625.8 L311.5 625.8 L306.2 625.8 L311.5 612.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
   <path d="M545.3 44.5 L545.3 64.5 L545.3 84.5 L545.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
   <path d="M550.6 57.8 L545.3 57.8 L539.9 57.8 L545.3 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
   <path d="M545.3 115.5 L545.3 135.5 L545.3 155.5 L545.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
@@ -74,10 +76,12 @@
   <text x="245.5" y="461" style="fill: #33322E;text-anchor: middle;">BIOPanic3</text>
   <rect x="218.5" y="510.5" height="31" width="54" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
   <text x="245.5" y="532" style="fill: #33322E;text-anchor: middle;">BIO3</text>
-  <rect x="194.5" y="581.5" height="31" width="102" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="245.5" y="603" style="fill: #33322E;text-anchor: middle;">BIOAsync3</text>
-  <rect x="180.5" y="652.5" height="31" width="130" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="245.5" y="674" style="fill: #33322E;text-anchor: middle;">BIOTemporal3</text>
+  <rect x="260.5" y="581.5" height="31" width="102" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="311.5" y="603" style="fill: #33322E;text-anchor: middle;">BIOAsync3</text>
+  <rect x="312.5" y="510.5" height="31" width="130" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="377.5" y="532" style="fill: #33322E;text-anchor: middle;">BIOParallel3</text>
+  <rect x="246.5" y="652.5" height="31" width="130" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
+  <text x="311.5" y="674" style="fill: #33322E;text-anchor: middle;">BIOTemporal3</text>
   <rect x="475.5" y="13.5" height="31" width="140" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
   <text x="545.5" y="35" style="fill: #33322E;text-anchor: middle;">BIOProfunctor</text>
   <rect x="499.5" y="84.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
