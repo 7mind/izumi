@@ -106,7 +106,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
             } else {
               val provider = ProviderMagnet(wrap).get
               val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
-              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.parameters), op.origin)
+              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider), op.origin)
               newMembers += newKey
               Seq(op, newOp)
             }
@@ -126,7 +126,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     val allKeys = ListSet.newBuilder.++=(plan.steps.map(_.target)).result()
 
     val withReorderedSetElements = plan.steps.map {
-      case op@ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
+      case op @ ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
         // now reorderedKeys has exactly same elements as newSetKeys but in instantiation order
         val reorderedKeys = allKeys.intersect(newSetKeys)
         op.copy(members = reorderedKeys)

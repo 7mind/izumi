@@ -2,7 +2,7 @@ package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
-import izumi.distage.model.reflection.Association.Parameter
+import izumi.distage.model.reflection.AssociationP.Parameter
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
@@ -174,7 +174,8 @@ object ProviderMagnet {
         originalFun = () => a,
         fun = (_: Seq[Any]) => a,
         providerType = ProviderType.Function,
-      ))
+      )
+    )
   }
 
   def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
@@ -184,7 +185,8 @@ object ProviderMagnet {
         ret = SafeType.get[A],
         fun = (_: Seq[Any]) => a,
         providerType = ProviderType.Singleton,
-      ))
+      )
+    )
   }
 
   def single[A: Tag, B: Tag](f: A => B): ProviderMagnet[B] = {
@@ -223,7 +225,7 @@ object ProviderMagnet {
       name = "x$1",
       finalResultType = tpe,
       isByName = false,
-      wasGeneric = false
+      wasGeneric = false,
     )
   }
 }
