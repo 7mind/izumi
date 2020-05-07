@@ -190,7 +190,6 @@ final class PlannerDefaultImpl(
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
-      .map(hook.phase45PreForwardingCleanup)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
       .map(reorderOperations)
