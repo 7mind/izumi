@@ -4,7 +4,7 @@ import com.github.ghik.silencer.silent
 import distage.Activation
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.{Binding, BindingTag, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -19,6 +19,7 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC
 import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+
 import scala.collection.compat._
 
 final class PlannerDefaultImpl(
@@ -95,7 +96,7 @@ final class PlannerDefaultImpl(
       case e: DIKey.EffectKey =>
         e.copy(key = updateKey(e.key, mindex))
       case k =>
-        throw new RuntimeException(s"wrong key: $k")
+        throw DIBugException(s"Unexpected key mutator: $k, m=$mindex")
 
     }
   }
