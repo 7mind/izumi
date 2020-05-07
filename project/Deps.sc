@@ -105,7 +105,7 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
     final val silencer_lib = Library("com.github.ghik", "silencer-lib", V.silencer, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
-    final val nemePlugin = Library("com.softwaremill.neme", "neme-plugin", V.neme_plugin, LibraryType.Auto)
+    final val nemePlugin = Library("com.softwaremill.neme", "neme-plugin", V.neme_plugin, LibraryType.AutoJvm)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
