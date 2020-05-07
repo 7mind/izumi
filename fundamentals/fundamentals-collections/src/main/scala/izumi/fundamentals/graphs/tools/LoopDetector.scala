@@ -6,7 +6,6 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import scala.collection.mutable
 import scala.collection.compat._
 
-
 trait LoopDetector {
   def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]]
 
@@ -78,13 +77,13 @@ object LoopDetector {
           Some(value)
         case None =>
           seen ++= start
-          val toTest = start.flatMap { a: T =>
-            untested.getOrElse(a, Seq.empty)
+          val toTest = start.flatMap {
+            a: T =>
+              untested.getOrElse(a, Seq.empty)
           }
           if (toTest.isEmpty) {
             None
           } else {
-            println((untested, seen, toTest))
             detectLoops(untested, seen, toTest)
           }
       }

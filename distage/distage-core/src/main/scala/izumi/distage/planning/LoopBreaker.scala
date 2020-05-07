@@ -7,6 +7,10 @@ import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
+import izumi.fundamentals.graphs.ToposortError
+import izumi.fundamentals.graphs.tools.ToposortLoopBreaker
+import izumi.fundamentals.graphs.tools.ToposortLoopBreaker.ResolvedLoop
+import izumi.fundamentals.platform.language.unused
 
 class LoopBreaker(
   analyzer: PlanAnalyzer,
@@ -14,7 +18,11 @@ class LoopBreaker(
   index: Map[DIKey, SemiplanOp],
   topology: PlanTopology,
   completedPlan: SemiPlan,
-) {
+) extends ToposortLoopBreaker[DIKey] {
+
+  override def onLoop(@unused done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+    Right(ResolvedLoop(Set(break(loopMembers.keySet))))
+  }
 
   def break(keys: Set[DIKey]): DIKey = {
     val loop = keys.toList

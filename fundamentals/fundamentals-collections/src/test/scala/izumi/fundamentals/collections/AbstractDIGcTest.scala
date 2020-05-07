@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-import izumi.fundamentals.graphs.deprecated.{AbstractGCTracer, Loops}
+import izumi.fundamentals.graphs.deprecated.AbstractGCTracer
 import org.scalatest.wordspec.AnyWordSpec
 
 class AbstractDIGcTest extends AnyWordSpec {
