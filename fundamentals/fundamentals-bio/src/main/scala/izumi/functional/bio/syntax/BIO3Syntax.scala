@@ -154,14 +154,16 @@ object BIO3Syntax {
       F.bracket(r: FR[R1, E1, A])(c => F.sync(c.close()))(use)
   }
 
-  class BIOParallel3Ops[FR[-_ ,+_ , +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOParallel3[FR]) {
+  trait BIOParallel3Ops[FR[-_ ,+_ , +_], -R, +E, +A] {
+    protected[this] val r: FR[R, E, A]
+    implicit protected[this] val F: BIOParallel3[FR]
     @inline final def zipWithPar[R1 <: R, E1 >: E, B, C](that: FR[R1, E1, B])(f: (A, B) => C): FR[R1, E1, C] = F.zipWithPar(r, that)(f)
     @inline final def zipPar[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.zipPar(r, that)
     @inline final def zipParLeft[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, A] = F.zipParLeft(r, that)
     @inline final def zipParRight[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, B] = F.zipParRight(r, that)
   }
 
-  class BIOAsync3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) {
+  class BIOAsync3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOAsync3[FR]) extends BIO3Ops(r) with BIOParallel3Ops[FR, R, E, A] {
     @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
   }
 
@@ -215,7 +217,10 @@ object BIO3Syntax {
     @inline final def BIOAsync3[FR[-_, +_, +_]: BIOAsync3]: BIOAsync3[FR] = implicitly
   }
   trait BIO3ImplicitPuns2 extends BIO3ImplicitPuns3 {
-    @inline implicit final def BIOParallel3[FR[-_, +_, +_]: BIOParallel3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOParallel3Ops[FR, R, E, A] = new BIO3Syntax.BIOParallel3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOParallel3[FR[-_, +_, +_]: BIOParallel3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOParallel3Ops[FR, R, E, A] = new BIO3Syntax.BIOParallel3Ops[FR, R, E, A]{
+      val F: BIOParallel3[FR] = BIOParallel3
+      val r: FR[R,E,A] = self
+    }
     @inline final def BIOParallel3[FR[-_, +_, +_]: BIOParallel3]: BIOParallel3[FR] = implicitly
   }
   trait BIO3ImplicitPuns3 extends BIO3ImplicitPuns4 {
