@@ -38,7 +38,7 @@ class InjectorDefaultImpl(
     planner.finish(semiPlan)
   }
 
-  protected[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+  private[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
   }
 
@@ -53,12 +53,12 @@ class InjectorDefaultImpl(
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 
-  private def addSelfInfo(input: PlannerInput): PlannerInput = {
+  private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)
-      make[Activation].fromValue(activation)
+      make[Activation].fromValue(input.activation)
       make[Bootloader]
     }
 

@@ -21,7 +21,6 @@ class Tracer[N] {
       .map(_._2)
       .diff(reachable)
 
-
     if (nextReachable.nonEmpty) {
       reachable ++= nextReachable
       trace(matrix, exclusions, nextReachable, reachable)

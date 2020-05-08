@@ -7,7 +7,6 @@ trait DAGTraverser[F[_], Node, Trace, Progress] {
   def traverse(predcessors: IncidenceMatrix[Node]): F[Either[TraverseFailure[F, Node, Trace, Progress], Marking[Node, Trace]]]
 }
 
-
 object DAGTraverser {
 
   sealed trait TraverseFailure[F[_], +N, +T, +P]
@@ -33,12 +32,3 @@ object DAGTraverser {
   }
 
 }
-
-
-
-
-
-
-
-
-

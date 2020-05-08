@@ -284,7 +284,7 @@ final class PlannerDefaultImpl(
     OrderedPlan(sortedOps, roots, topology)
   }
 
-  protected[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+  private[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
     if (roots.isEmpty) {
       OrderedPlan.empty
     } else {

@@ -7,29 +7,24 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.collection.compat._
 
-
 trait ToposortLoopBreaker[T] {
   def onLoop(done: Seq[T], loopMembers: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]]
 }
 
 object ToposortLoopBreaker {
-  case class ResolvedLoop[T](breakAt: Set[T]) extends AnyVal
+  final case class ResolvedLoop[T](breakAt: Set[T]) extends AnyVal
 
-  def dontBreak[T]: ToposortLoopBreaker[T] = new ToposortLoopBreaker[T] {
-    override def onLoop(done: Seq[T], hasPreds: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]] = {
-      Left(UnexpectedLoop(done, IncidenceMatrix(hasPreds)))
-    }
-  }
+  def dontBreak[T]: ToposortLoopBreaker[T] = (done, hasPreds) => Left(UnexpectedLoop(done, IncidenceMatrix(hasPreds)))
 
   def breakOn[T](select: Set[T] => Option[T]): ToposortLoopBreaker[T] = new SingleElementBreaker[T] {
-    override def find(done: Seq[T], loopMembers: Map[T, Set[T]]): Option[T] = select(loopMembers.keySet)
+    override def find(done: Seq[T], hasPreds: Map[T, Set[T]]): Option[T] = select(hasPreds.keySet)
   }
 
   abstract class SingleElementBreaker[T]() extends ToposortLoopBreaker[T] {
 
     def find(done: Seq[T], hasPreds: Map[T, Set[T]]): Option[T]
 
-    def onLoop(done: Seq[T], hasPreds: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]] = {
+    override final def onLoop(done: Seq[T], hasPreds: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]] = {
       val loopMembers = hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap
       if (loopMembers.nonEmpty) {
         find(done, loopMembers) match {
@@ -64,6 +59,7 @@ object ToposortLoopBreaker {
         }
       }
     }
+
   }
 
 }

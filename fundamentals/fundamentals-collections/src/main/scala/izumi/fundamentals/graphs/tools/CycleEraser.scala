@@ -6,22 +6,19 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import scala.collection.mutable
 import scala.collection.compat._
 
-
 final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
   private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
 
   private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predcessorsMatrix)
 
   def run(): Either[DAGError[N], IncidenceMatrix[N]] = {
-    val (noPreds, hasPreds) = current.partition {
-      _._2.isEmpty
-    }
+    val (noPreds, hasPreds) = current.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {
       if (hasPreds.isEmpty) {
         Right(IncidenceMatrix(output.toSeq: _*))
       } else {
-        val asMatrix = IncidenceMatrix(hasPreds.view.mapValues(_.to(Set)).toMap)
+        val asMatrix = IncidenceMatrix(hasPreds.view.mapValues(_.toSet).toMap)
 
         for {
           noLoops <- breaker.breakLoops(asMatrix).left.map(_ => DAGError.UnexpectedLoops[N]())
@@ -30,13 +27,12 @@ final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopB
             current = asMut(verified)
             run()
           }
-        } yield {
-          result
-        }
+        } yield result
       }
 
     } else {
       val found = noPreds.keySet
+
       noPreds.foreach {
         case (s, p) =>
           output.getOrElseUpdate(s, mutable.LinkedHashSet.empty[N]) ++= p
@@ -51,11 +47,11 @@ final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopB
 
       current.clear()
       current ++= hasPreds.toSeq.map {
-        case (s, p) =>
-          val links = p.intersect(found)
-          output.getOrElseUpdate(s, mutable.LinkedHashSet.empty[N]) ++= links
-          (s, p.diff(found))
-      }
+          case (s, p) =>
+            val links = p.intersect(found)
+            output.getOrElseUpdate(s, mutable.LinkedHashSet.empty[N]) ++= links
+            (s, p.diff(found))
+        }
 
       run()
     }
@@ -74,6 +70,3 @@ final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopB
     mutable.HashMap.from(matrix.links.view.mapValues(_.to(mutable.LinkedHashSet)))
   }
 }
-
-
-

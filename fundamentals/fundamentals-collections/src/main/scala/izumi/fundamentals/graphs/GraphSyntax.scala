@@ -1,12 +1,11 @@
 package izumi.fundamentals.graphs
 
-import GraphImpl.DirectedGraphPred
-import izumi.fundamentals.graphs.tools.GC.{GCInput, WeakEdge}
 import izumi.fundamentals.graphs.GraphImpl.DirectedGraphPred
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC
+import izumi.fundamentals.graphs.tools.GC.{GCInput, WeakEdge}
 
-trait GraphSyntax[G[_, _] <: AbstractGraph[_, _]] {
+trait GraphSyntax[G[n, m] <: AbstractGraph[n, m]] {
 
   protected def unsafeFactory[N, M](predcessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): G[N, M]
 

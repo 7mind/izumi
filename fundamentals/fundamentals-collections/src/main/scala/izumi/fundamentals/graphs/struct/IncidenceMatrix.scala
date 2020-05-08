@@ -1,9 +1,10 @@
 package izumi.fundamentals.graphs.struct
 
-import scala.collection.mutable
 import scala.collection.compat._
+import scala.collection.mutable
 
 final case class IncidenceMatrix[N] private (links: Map[N, Set[N]]) extends AnyVal {
+
   def transposed: IncidenceMatrix[N] = {
     val output = mutable.HashMap.empty[N, mutable.LinkedHashSet[N]]
     links.foreach {
@@ -30,25 +31,15 @@ final case class IncidenceMatrix[N] private (links: Map[N, Set[N]]) extends AnyV
   }
 
   def rewriteLinked(mapping: Map[N, N]): IncidenceMatrix[N] = {
-    val rewritten = links.map {
-      case (n, deps) =>
-        val mapped = deps.map {
-          d =>
-            mapping.getOrElse(d, d)
-        }
-        (n, mapped)
-    }
-    IncidenceMatrix(rewritten)
+    IncidenceMatrix(links.view.mapValues(_.map(d => mapping.getOrElse(d, d))).toMap)
   }
 
   def rewriteAll(mapping: Map[N, N]): IncidenceMatrix[N] = {
     val rewritten = links.map {
       case (n, deps) =>
-        val mapped = deps.map {
-          d =>
-            mapping.getOrElse(d, d)
-        }
-        (mapping.getOrElse(n, n), mapped)
+        val mappedKey = mapping.getOrElse(n, n)
+        val mappedValue = deps.map(d => mapping.getOrElse(d, d))
+        (mappedKey, mappedValue)
     }
     IncidenceMatrix(rewritten)
   }
@@ -56,7 +47,7 @@ final case class IncidenceMatrix[N] private (links: Map[N, Set[N]]) extends AnyV
 
 object IncidenceMatrix {
   def apply[N](links: (N, IterableOnce[N])*): IncidenceMatrix[N] = {
-    apply(links.toMap.view.mapValues(_.iterator.to(Set)).toMap)
+    apply(links.toMap.view.mapValues(_.iterator.toSet).toMap)
   }
 
   def apply[N](links: Map[N, Set[N]]): IncidenceMatrix[N] = {
@@ -69,7 +60,8 @@ object IncidenceMatrix {
   def linear[N](ordered: Seq[N]): IncidenceMatrix[N] = {
     IncidenceMatrix(
       ordered
-        .sliding(2).flatMap {
+        .sliding(2)
+        .flatMap {
           s =>
             if (s.size > 1) {
               Seq(s.head -> Set(s.last))
