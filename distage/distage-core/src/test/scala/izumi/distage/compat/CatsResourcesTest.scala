@@ -2,11 +2,11 @@ package izumi.distage.compat
 
 import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
+import izumi.distage.compat.CatsResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.model.plan.GCMode
-import izumi.distage.compat.CatsResourcesTest._
 import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException

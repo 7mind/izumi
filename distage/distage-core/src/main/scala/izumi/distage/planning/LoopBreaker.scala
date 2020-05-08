@@ -12,7 +12,8 @@ import izumi.fundamentals.graphs.tools.ToposortLoopBreaker
 import izumi.fundamentals.graphs.tools.ToposortLoopBreaker.ResolvedLoop
 import izumi.fundamentals.platform.language.unused
 
-class LoopBreaker(
+// FIXME: should be parameter of Planner?
+final class LoopBreaker(
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
   index: Map[DIKey, SemiplanOp],
@@ -20,7 +21,7 @@ class LoopBreaker(
   completedPlan: SemiPlan,
 ) extends ToposortLoopBreaker[DIKey] {
 
-  override def onLoop(@unused done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+  override def onLoop(@unused done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ResolvedLoop[DIKey]] = {
     Right(ResolvedLoop(Set(break(loopMembers.keySet))))
   }
 

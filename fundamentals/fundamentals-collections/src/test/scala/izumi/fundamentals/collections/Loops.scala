@@ -25,4 +25,4 @@ trait Loops {
 
 }
 
-object Loops extends Loops {}
+object Loops extends Loops

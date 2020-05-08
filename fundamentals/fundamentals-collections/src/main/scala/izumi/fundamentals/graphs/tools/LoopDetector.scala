@@ -8,22 +8,18 @@ import scala.collection.compat._
 
 trait LoopDetector {
   def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]]
-
-  def findCyclesForNodes[T](nodes: Set[T], graph: IncidenceMatrix[T]): Set[Cycles[T]] = {
-    nodes.map(n => findCyclesForNode(n, graph)).collect {
-      case Some(c) =>
-        c
-    }
-  }
-
   def findLoopMember[T](graph: IncidenceMatrix[T]): Option[T]
+
+  final def findCyclesForNodes[T](nodes: Set[T], graph: IncidenceMatrix[T]): Set[Cycles[T]] = {
+    nodes.map(findCyclesForNode(_, graph)).collect { case Some(c) => c }
+  }
 }
 
 object LoopDetector {
 
-  case class Loop[T](loop: Seq[T]) extends AnyVal
+  final case class Loop[T](loop: Seq[T]) extends AnyVal
 
-  case class Cycles[T](node: T, loops: Seq[Loop[T]])
+  final case class Cycles[T](node: T, loops: Seq[Loop[T]])
 
   object Impl extends LoopDetector {
     def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]] = {

@@ -5,15 +5,13 @@ import izumi.fundamentals.graphs.GraphProperty.DirectedGraph
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 
-final case class Linearized[N, +M]
-(
+final case class Linearized[N, +M](
   nodes: Seq[N],
   meta: GraphMeta[N, M],
-)
-  extends AbstractGraph[N, M]
-    with DirectedGraph[N, M]
-    with DirectedGraphSucc[N, M]
-    with DirectedGraphPred[N, M] {
+) extends AbstractGraph[N, M]
+  with DirectedGraph[N, M]
+  with DirectedGraphSucc[N, M]
+  with DirectedGraphPred[N, M] {
   override lazy val successors: IncidenceMatrix[N] = IncidenceMatrix.linear(nodes)
 
   override lazy val predcessors: IncidenceMatrix[N] = IncidenceMatrix.linear(nodes.reverse)
@@ -35,6 +33,5 @@ object Linearized {
     } yield {
       Linearized(sorted, dg.meta)
     }
-
   }
 }
