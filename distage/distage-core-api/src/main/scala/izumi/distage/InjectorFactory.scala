@@ -26,7 +26,7 @@ trait InjectorFactory {
   /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[BootstrapLocator]] for a list available bootstrap modules
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
@@ -36,7 +36,7 @@ trait InjectorFactory {
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
     * @param activation A map of axes of configuration to choices along these axes
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[BootstrapLocator]] for a list available bootstrap modules
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */

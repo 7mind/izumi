@@ -16,14 +16,14 @@ import izumi.distage.model.recursive.Bootloader
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
-final class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
+final class CatsExtensionsTestJvm extends AnyWordSpec with GivenWhenThen {
 
   "cats-effect extensions" should {
     "work" in {
       import BasicCase1._
       import CircularCase3._
 
-      val definition1 = PlannerInput.noGc(new ModuleDef {
+      val definition1 = PlannerInput.noGC(new ModuleDef {
         make[SelfReference]
       })
 
@@ -40,7 +40,7 @@ final class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
       Then("traverse should substitute")
       final case class TestDependency1Eq(unresolved: NotInContext) extends TestDependency1
       val testDependencyPlan = injector.plan(
-        PlannerInput.noGc(new ModuleDef {
+        PlannerInput.noGC(new ModuleDef {
           make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
         })
       )

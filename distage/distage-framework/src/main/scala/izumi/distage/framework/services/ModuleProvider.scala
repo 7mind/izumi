@@ -7,7 +7,6 @@ import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.Activation
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
@@ -29,7 +28,6 @@ object ModuleProvider {
     options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
-    activation: Activation,
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -37,8 +35,6 @@ object ModuleProvider {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
-        make[Activation]
-          .named("initial").fromValue(activation) // make initial activation available to bootstrap plugins FIXME: remove after adding mutators, will become redundant
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
@@ -51,23 +47,23 @@ object ModuleProvider {
 
       val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
 
+      val appConfigModule: BootstrapModule = AppConfigModule(config).morph[BootstrapModule]
+
       Seq(
         roleInfoModule,
         resourceRewriter,
         loggerModule,
         graphvizDumpModule,
-        appConfigModule.morph[BootstrapModule], // make config available for bootstrap plugins
+        appConfigModule, // make config available for bootstrap plugins
       )
     }
 
     def appModules(): Seq[Module] = {
       Seq(
-        appConfigModule,
-        IdentityDIEffectModule,
+        IdentityDIEffectModule
       )
     }
 
-    private[this] def appConfigModule: AppConfigModule = AppConfigModule(config)
   }
 
 }

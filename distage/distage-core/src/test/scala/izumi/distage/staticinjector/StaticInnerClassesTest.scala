@@ -15,7 +15,7 @@ class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
 
@@ -37,7 +37,7 @@ class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
 
@@ -52,7 +52,7 @@ class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
       make[TestDependency]
     }
 
-    val context = mkNoCyclesInjector().produce(PlannerInput.noGc(definition)).unsafeGet()
+    val context = mkNoCyclesInjector().produce(PlannerInput.noGC(definition)).unsafeGet()
 
     assert(context.get[TestDependency] == TestDependency())
   }
@@ -66,7 +66,7 @@ class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     }
 
-    val context = mkNoCyclesInjector().produce(PlannerInput.noGc(definition)).unsafeGet()
+    val context = mkNoCyclesInjector().produce(PlannerInput.noGC(definition)).unsafeGet()
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }
@@ -94,7 +94,7 @@ class StaticInnerClassesTest extends AnyWordSpec with MkInjector {
 
     def testCase = {
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGc(definition))
+      val plan = injector.plan(PlannerInput.noGC(definition))
 
       val context = injector.produce(plan).unsafeGet()
 

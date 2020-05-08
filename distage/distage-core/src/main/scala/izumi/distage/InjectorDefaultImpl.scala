@@ -19,7 +19,6 @@ class InjectorDefaultImpl(
   private[this] val planner: Planner = parentContext.get[Planner]
   private[this] val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
   private[this] val bsModule: BootstrapModule = parentContext.get[BootstrapModule]
-  private[this] val activation: Activation = parentContext.get[Activation]
 
   override def plan(input: PlannerInput): OrderedPlan = {
     planner.plan(addSelfInfo(input))
