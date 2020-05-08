@@ -407,7 +407,6 @@ class BasicTest extends AnyWordSpec with MkInjector {
       }
     })
 
-    println(Injector.Standard().plan(definition).render())
     val context = Injector.Standard().produce(definition).unsafeGet()
 
     assert(context.get[Mutable].b.contains(SomethingUseful("x")))

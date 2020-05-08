@@ -43,10 +43,11 @@ final class PlannerDefaultImpl(
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
 
       case Right((resolved, collected)) =>
-        val mappedGraph = collected.predcessorMatrix.links.map {
+        val mappedGraph = collected.predcessorMatrix.links.toSeq.map {
           case (target, deps) =>
             val mappedTarget = updateKey(target)
             val mappedDeps = deps.map(updateKey)
+
             val op = resolved.meta.meta.get(target).map {
               op =>
                 val remaps = op.remapped.map {
@@ -54,13 +55,14 @@ final class PlannerDefaultImpl(
                     (original, updateKey(remapped))
                 }
                 val mapper = (key: DIKey) => remaps.getOrElse(key, key)
-                op.meta.replaceKeys(mapper, mapper)
+                op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper)
             }
-            (mappedTarget, (mappedDeps, op))
+
+            ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
         }
 
-        val mappedMatrix = mappedGraph.view.mapValues(_._1).toMap
-        val mappedOps = mappedGraph.view.mapValues(_._2).collect { case (k, Some(v)) => (k, v) }.toMap
+        val mappedMatrix = mappedGraph.map(_._1).toMap
+        val mappedOps = mappedGraph.flatMap(_._2).toMap
 
         val remappedKeysGraph = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
 

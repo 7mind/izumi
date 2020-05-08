@@ -6,6 +6,14 @@ import izumi.fundamentals.reflection.Tags.Tag
 sealed trait DIKey {
   def tpe: SafeType
   override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  protected def formatWithIndex(base: String, index: Option[Int]): String = {
+    index match {
+      case Some(value) =>
+        s"$base::$value"
+      case None =>
+        base
+    }
+  }
 }
 
 object DIKey {
@@ -19,14 +27,14 @@ object DIKey {
     def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id, mutatorIndex)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
-    override def toString: String = s"{type.${tpe.toString}}"
+    override def toString: String = formatWithIndex(s"{type.${tpe.toString}}", mutatorIndex)
   }
 
   final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
     val idContract: IdContract[I] = implicitly
     def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
-    override def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
+    override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
   }
 
   /**

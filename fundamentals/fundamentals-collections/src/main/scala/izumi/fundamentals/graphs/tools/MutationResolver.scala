@@ -66,7 +66,9 @@ object MutationResolver {
         assert(a.links.keySet.groupBy(_.withoutAxis).forall(_._2.size == 1))
         val meta = deannotated.map {
           case (k, v) =>
-            (mutationsResolved.indexRemap.getOrElse(k, k), RemappedValue(v.meta, mutationsResolved.outerReplMap.getOrElse(k, Map.empty)))
+            val targetKey = mutationsResolved.indexRemap.getOrElse(k, k)
+            val replMap = mutationsResolved.outerReplMap.getOrElse(targetKey, Map.empty)
+            (targetKey, RemappedValue(v.meta, replMap))
         }
 
         Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta)), resolved.unresolved)
