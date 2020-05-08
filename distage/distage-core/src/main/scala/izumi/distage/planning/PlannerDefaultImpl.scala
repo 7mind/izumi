@@ -112,10 +112,27 @@ final class PlannerDefaultImpl(
       .map {
         b =>
           val next = bindingTranslator.computeProvisioning(b)
+
           (b, next.provisions ++ next.sets.values)
-      }.toSeq.flatMap {
+      }
+      .toSeq
+      .flatMap {
         case (b, nn) =>
-          nn.map(n => (Annotated(n.target, None, toAxis(b)), n))
+          nn.map {
+            n =>
+              (b, n)
+          }
+      }
+      .zipWithIndex
+      .map {
+        case ((b, n), idx) =>
+          val mutIndex = b match {
+            case Binding.SingletonBinding(_, _, _, _, true) =>
+              Some(idx)
+            case _ =>
+              None
+          }
+          (Annotated(n.target, mutIndex, toAxis(b)), n)
       }
 
     val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {

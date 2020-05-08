@@ -393,4 +393,23 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[ServerConfig].address == context.get[String]("address"))
   }
 
+  "support mutations" in {
+    import Mutations01._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[SomethingUseful].fromValue(SomethingUseful("x"))
+      make[Mutable].fromValue(Mutable(1, None))
+      modify[Mutable].by {
+        _.flatAp {
+          (u: SomethingUseful) => (m: Mutable) =>
+            m.copy(b = Some(u))
+        }
+      }
+    })
+
+    println(Injector.Standard().plan(definition).render())
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[Mutable].b.contains(SomethingUseful("x")))
+  }
 }

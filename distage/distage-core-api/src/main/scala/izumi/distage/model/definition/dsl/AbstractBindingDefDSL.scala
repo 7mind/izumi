@@ -199,7 +199,8 @@ object AbstractBindingDefDSL {
           // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
-//        case Modify(providerMagnetModifier) =>
+        case Modify(providerMagnetModifier) =>
+          ???
 //          val newRef = SingletonBinding(key, ImplDef.ProviderImpl(b.implementation.implType, ???), b.tags, ???)
 //          refs = newRef :: refs
       }
