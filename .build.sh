@@ -59,8 +59,8 @@ function site {
 
     csbt +clean doc/ghpagesSynchLocal doc/ghpagesPushSite || exit 1
   else
-    csbt doc/makeSite
     echo "Not publishing site, because $CI_BRANCH is not 'develop'"
+    csbt doc/makeSite || exit 1
   fi
 }
 
