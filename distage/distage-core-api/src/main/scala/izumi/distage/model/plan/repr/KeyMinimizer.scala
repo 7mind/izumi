@@ -46,13 +46,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
       case DIKey.TypeKey(tpe, idx) =>
-        val base = s"{type.${rendertype(tpe)}}"
-        idx match {
-          case Some(value) =>
-            s"$base.$value"
-          case None =>
-            base
-        }
+        mutatorIndex(s"{type.${rendertype(tpe)}}", idx)
 
       case DIKey.IdKey(tpe, id, idx) =>
         val asString = id.toString
@@ -62,13 +56,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
           asString
         }
 
-        val base = s"{id.${rendertype(tpe)}@$fullId}"
-        idx match {
-          case Some(value) =>
-            s"$base.$value"
-          case None =>
-            base
-        }
+        mutatorIndex(s"{id.${rendertype(tpe)}@$fullId}", idx)
 
       case DIKey.ProxyElementKey(proxied, _) =>
         s"{proxy.${renderKey(proxied)}}"
@@ -82,6 +70,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
       case DIKey.SetElementKey(set, reference, disambiguator) =>
         s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode.toString)}"
     }
+  }
+
+  private[this] def mutatorIndex(base: String, idx: Option[Int]): String = {
+    idx.fold(base)(i => s"$base.$i")
   }
 
   private[this] def extract(key: DIKey): Set[String] = {
