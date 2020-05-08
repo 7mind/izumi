@@ -130,8 +130,13 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     *   })
     * }}}
     */
-  final protected[this] def modify[T]: ModifyDSL[T, BindDSL, SetDSL] = new ModifyDSL[T, BindDSL, SetDSL](this)
-  final private def _modify[T](key: DIKey)(f: ProviderMagnet[T] => ProviderMagnet[T])(pos: CodePositionMaterializer): Unit = ???
+  final protected[this] def modify[T: Tag]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
+  final private def _modify[T: Tag](key: DIKey)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit pos: CodePositionMaterializer): Unit = {
+    val p: ProviderMagnet[T] = f(ProviderMagnet.identityKey(key).asInstanceOf[ProviderMagnet[T]])
+    val binding = Bindings.provider[T](p).copy(isMutator = true)
+    _registered(new SingletonRef(binding)).discard()
+
+  }
 
   final protected[this] def _make[T: Tag](provider: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
@@ -141,7 +146,19 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
 
 object AbstractBindingDefDSL {
 
-  final class ModifyDSL[T, B[_], S[_]](private val dsl: AbstractBindingDefDSL[B, S]) extends AnyVal {
+//  modify[X].by {
+//    f: ProviderMagnet[X] =>
+//    assert(f == ProviderMagnet.identity[X])
+//
+//    f.flatAp {
+//      (a: A, b: B) =>
+//        (x: X) => x.something(a)
+//    } : ProviderMagnet[X]
+//  }
+//
+//  val v: ProviderMagnet[Any]
+
+  final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
     def apply[I <: T: Tag](f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(_.map(f))
 
@@ -149,10 +166,11 @@ object AbstractBindingDefDSL {
       by(name)(_.map(f))
 
     def by(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
-      dsl._modify(DIKey.get[T])(f)(pos)
+      dsl._modify(DIKey.get[T])(f)
 
-    def by(name: String)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
-      dsl._modify(DIKey.get[T].named(name))(f)(pos)
+    def by(name: String)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+      dsl._modify(DIKey.get[T].named(name))(f)
+    }
   }
 
   trait BindingRef {
@@ -181,8 +199,9 @@ object AbstractBindingDefDSL {
           // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
-        case Modify(providerMagnetModifier) =>
-          ???
+//        case Modify(providerMagnetModifier) =>
+//          val newRef = SingletonBinding(key, ImplDef.ProviderImpl(b.implementation.implType, ???), b.tags, ???)
+//          refs = newRef :: refs
       }
 
       b :: refs.reverse

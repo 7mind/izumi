@@ -54,7 +54,9 @@ object Binding {
 
   sealed trait SetBinding extends Binding
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with WithTarget {
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition, isMutator: Boolean = false)
+    extends ImplBinding
+    with WithTarget {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: DIKey](key: T): SingletonBinding[T] = copy(key = key)
@@ -62,7 +64,9 @@ object Binding {
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
-  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
+  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition)
+    extends ImplBinding
+    with SetBinding {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     protected[this] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
@@ -76,7 +80,7 @@ object Binding {
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
-  implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
+  implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {
     def withImpl[T: Tag: AnyConstructor]: R =
       withImpl[T](AnyConstructor[T])
 
@@ -88,4 +92,3 @@ object Binding {
   }
 
 }
-

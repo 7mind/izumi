@@ -65,7 +65,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       definition.bindings.foreach {
-        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
+        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
@@ -170,7 +170,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       definition.bindings.foreach {
-        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
+        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))

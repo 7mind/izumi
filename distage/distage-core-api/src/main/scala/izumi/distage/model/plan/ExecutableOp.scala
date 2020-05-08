@@ -39,7 +39,7 @@ object ExecutableOp {
     def origin: OperationOrigin
   }
   object WiringOp {
-    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp {
+    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin /*, isMutator: Boolean*/ ) extends WiringOp {
       override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): CallProvider = {
         this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
       }

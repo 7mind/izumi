@@ -68,15 +68,14 @@ import zio._
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */
-trait ModuleDefDSL
-  extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL]
-    with IncludesDSL
-    with TagsDSL { this: ModuleBase =>
+trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL {
+  this: ModuleBase =>
 
   override final def bindings: Set[Binding] = freeze
 
   private[this] final def freeze: Set[Binding] = {
-    ModuleBase.tagwiseMerge(retaggedIncludes ++ frozenState)
+    ModuleBase
+      .tagwiseMerge(retaggedIncludes ++ frozenState)
       .map(_.addTags(frozenTags))
       .++(asIsIncludes)
   }
@@ -290,7 +289,11 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
-    final def fromResource[R0, R <: DIResourceBase[Any, T]](function: ProviderMagnet[R0])(implicit adapt: DIResource.AdaptProvider.Aux[R0, R], tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R0, R <: DIResourceBase[Any, T]](
+      function: ProviderMagnet[R0]
+    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
+      tag: ResourceTag[R],
+    ): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
     }
@@ -417,7 +420,12 @@ object ModuleDefDSL {
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
-    final def addResource[R0, R <: DIResourceBase[Any, T]](function: ProviderMagnet[R0])(implicit adapt: DIResource.AdaptProvider.Aux[R0, R], tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[R0, R <: DIResourceBase[Any, T]](
+      function: ProviderMagnet[R0]
+    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
+      tag: ResourceTag[R],
+      pos: CodePositionMaterializer,
+    ): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
@@ -486,7 +494,7 @@ object ModuleDefDSL {
 
       /** Adds a dependency on `BIOLocal[F]` */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I] (function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+        dsl.fromEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
@@ -509,7 +517,10 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
         * Integration checks on DIResource will be lost
         */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit d1: DummyImplicit): AfterBind = {
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
+        function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]]
+      )(implicit d1: DummyImplicit
+      ): AfterBind = {
         dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((resource, r), f) => provideDIResource(f)(resource, r)
         })
@@ -529,7 +540,11 @@ object ModuleDefDSL {
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
         dsl.addResource(HasConstructor[R].map(resource.provide))
       }
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZManaged[R, E, I]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): AfterAdd = {
+      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](
+        function: ProviderMagnet[ZManaged[R, E, I]]
+      )(implicit pos: CodePositionMaterializer,
+        d1: DummyImplicit,
+      ): AfterAdd = {
         dsl.addResource(function.map2(HasConstructor[R])(_.provide(_)))
       }
 
@@ -548,15 +563,15 @@ object ModuleDefDSL {
         */
       final def addHas[R1 <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
         import tag._
-        val provider: ProviderMagnet[DIResourceBase[F[Any, E, ?], A]] = AnyConstructor[R1].zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]](tagBIOLocal)) {
-          case ((resource, r), f) => provideDIResource(f)(resource, r)
-        }
+        val provider: ProviderMagnet[DIResourceBase[F[Any, E, ?], A]] =
+          AnyConstructor[R1].zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]](tagBIOLocal)) {
+            case ((resource, r), f) => provideDIResource(f)(resource, r)
+          }
         dsl.addResource(provider)
       }
     }
     sealed trait AddFromHasLowPriorityOverloads[T, AfterAdd] extends Any {
       protected[this] def dsl: SetDSLBase[T, AfterAdd, _]
-
 
       /** Adds a dependency on `BIOLocal[F]` */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
@@ -566,8 +581,11 @@ object ModuleDefDSL {
       }
 
       /** Adds a dependency on `BIOLocal[F]` */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[F[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[F[Any, E, ?], I] (function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
+        function: ProviderMagnet[F[R, E, I]]
+      )(implicit pos: CodePositionMaterializer
+      ): AfterAdd = {
+        dsl.addEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
@@ -578,7 +596,10 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
         * Integration checks on DIResource will be lost
         */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I])(implicit pos: CodePositionMaterializer): AfterAdd = {
+      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
+        resource: DIResourceBase[F[R, E, ?], I]
+      )(implicit pos: CodePositionMaterializer
+      ): AfterAdd = {
         dsl.addResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(ProviderMagnet.identity[BIOLocal[F]]) {
           (r: R, F: BIOLocal[F]) => provideDIResource(F)(resource, r)
         })
@@ -590,7 +611,11 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
         * Integration checks on DIResource will be lost
         */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): AfterAdd = {
+      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
+        function: ProviderMagnet[DIResourceBase[F[R, E, ?], I]]
+      )(implicit pos: CodePositionMaterializer,
+        d1: DummyImplicit,
+      ): AfterAdd = {
         dsl.addResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((resource, r), f) => provideDIResource(f)(resource, r)
         })
@@ -631,7 +656,8 @@ object ModuleDefDSL {
   final class MakeDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]] with MakeDSLMutBase[T] {
+  ) extends MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]]
+    with MakeDSLMutBase[T] {
 
     def named[I](name: I)(implicit idContract: IdContract[I]): MakeNamedDSL[T] = {
       addOp(SetId(name, idContract))(new MakeNamedDSL[T](_, key.named(name)))
@@ -672,20 +698,21 @@ object ModuleDefDSL {
       }
     }
 
-    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
-    }
-
-    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
-    }
+//    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
+//      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
+//    }
+//
+//    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
+//      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
+//    }
 
   }
 
   final class MakeNamedDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] with MakeDSLMutBase[T] {
+  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
+    with MakeDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -710,13 +737,13 @@ object ModuleDefDSL {
       }
     }
 
-    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
-      addOp(Modify[T](_.map(f)))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
-
-    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
-      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
+//    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
+//      addOp(Modify[T](_.map(f)))(new MakeDSLNamedAfterFrom[T](_, key))
+//    }
+//
+//    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
+//      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
+//    }
 
   }
 
@@ -743,7 +770,7 @@ object ModuleDefDSL {
   }
 
   final class SetDSL[T](
-    protected val mutableState: SetRef,
+    protected val mutableState: SetRef
   ) extends SetDSLMutBase[T] {
 
     def named[I](name: I)(implicit idContract: IdContract[I]): SetNamedDSL[T] = {
@@ -757,7 +784,7 @@ object ModuleDefDSL {
   }
 
   final class SetNamedDSL[T](
-    override protected val mutableState: SetRef,
+    override protected val mutableState: SetRef
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): SetNamedDSL[T] = {
