@@ -8,7 +8,7 @@ import scala.collection.immutable
 
 object MutationResolver {
 
-  final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) {
+  final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
     def validChoice(a: AxisPoint): Boolean = activationChoices.get(a.axis).forall(_ == a)
     def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)
   }
