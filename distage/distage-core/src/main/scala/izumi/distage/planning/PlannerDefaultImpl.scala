@@ -15,8 +15,8 @@ import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.MutationResolver.{ActivationChoices, Annotated, AxisPoint, MutSel, MutationResolverImpl, Node, RemappedValue, SemiEdgeSeq}
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
-import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.collection.compat._
@@ -39,8 +39,9 @@ final class PlannerDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     resolveConflicts(input) match {
       case Left(value) =>
-        // TODO: better formatting
+        // TODO: better error message
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
+
       case Right((resolved, collected)) =>
         val mappedGraph = collected.predcessorMatrix.links.map {
           case (target, deps) =>
@@ -102,11 +103,7 @@ final class PlannerDefaultImpl(
   private def resolveConflicts(
     input: PlannerInput
   ): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]], GC.GCOutput[MutSel[DIKey]])] = {
-    val activations: Set[AxisPoint] = input
-      .activation.activeChoices.map {
-        case (a, c) =>
-          AxisPoint(a.name, c.id)
-      }.toSet
+    val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 
     val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = input
@@ -126,10 +123,9 @@ final class PlannerDefaultImpl(
       case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
     }
 
-    val sets = allOps
-      .collect {
-        case (target, op: CreateSet) => (target, op)
-      }.groupBy(_._1)
+    val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = allOps
+      .collect { case (target, op: CreateSet) => (target, op) }
+      .groupBy(_._1)
       .mapValues(_.map(_._2))
       .mapValues {
         v =>
@@ -146,31 +142,35 @@ final class PlannerDefaultImpl(
     for {
       resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
       resolved = resolution.graph
-      setTargets = resolved.meta.meta.collect {
-        case (target, RemappedValue(_: CreateSet, _)) =>
-          target
+      collected <- {
+        val setTargets = resolved.meta.meta.collect {
+          case (target, RemappedValue(_: CreateSet, _)) => target
+        }
+
+        val weak = setTargets.flatMap {
+          set =>
+            val setMembers = resolved.predcessors.links(set)
+            setMembers
+              .filter {
+                member =>
+                  resolved.meta.meta.get(member).map(_.meta).exists {
+                    case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
+                      weak
+                    case _ =>
+                      false
+                  }
+              }.map(member => GC.WeakEdge(set, member))
+        }.toSet
+
+        val roots = input.mode match {
+          case GCMode.GCRoots(roots) =>
+            roots.map(MutSel(_, None))
+          case GCMode.NoGC =>
+            resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
+        }
+
+        new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak))
       }
-      weak = setTargets.flatMap {
-        set =>
-          val setMembers = resolved.predcessors.links(set)
-          setMembers
-            .filter {
-              member =>
-                resolved.meta.meta.get(member).map(_.meta).exists {
-                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
-                    weak
-                  case _ =>
-                    false
-                }
-            }.map(member => GC.WeakEdge(set, member))
-      }.toSet
-      roots = input.mode match {
-        case GCMode.GCRoots(roots) =>
-          roots.map(r => MutSel(r, None))
-        case GCMode.NoGC =>
-          resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
-      }
-      collected <- new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak))
       out <- {
         val unsolved = resolution.unresolved.keySet.map(_.withoutAxis)
         val requiredButConflicting = unsolved.intersect(collected.predcessorMatrix.links.keySet)
