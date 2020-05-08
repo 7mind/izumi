@@ -3,7 +3,7 @@ package izumi.distage.staticinjector.plugins.macros
 import com.typesafe.config.ConfigFactory
 import distage._
 import io.github.classgraph.ClassGraph
-import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ActivationInfoExtractor
@@ -154,13 +154,13 @@ object StaticPluginCheckerMacro {
 
     val logger = IzLogger.NullLogger
 
+    val bootstrap = new BootstrapLocator(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Proxy))
+    val injector = Injector.inherit(bootstrap)
+
     val activation = {
       val activationInfo = ActivationInfoExtractor.findAvailableChoices(logger, module)
       new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
-
-    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap, activation)
-    val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, activation, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {

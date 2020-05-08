@@ -116,7 +116,7 @@ object BootstrapLocator {
     )
   }
 
-  private final lazy val defaultBootstrap0: BootstrapContextModule = new BootstrapContextModuleDef {
+  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("distage.init-proxies-asap").fromValue(true)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
@@ -146,20 +146,13 @@ object BootstrapLocator {
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 
-    make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyDefaultImpl]
+    make[ProxyProvider].tagged(Cycles.Proxy).from[CglibProxyProvider]
+    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
+
+    make[ProxyProvider].tagged(Cycles.Byname).from[ProxyProviderFailingImpl]
+    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
+
+    make[ProxyProvider].tagged(Cycles.Disable).from[ProxyProviderFailingImpl]
+    make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
   }
-
-  final lazy val defaultBootstrap: BootstrapContextModule = defaultBootstrap0 ++ new BootstrapContextModuleDef {
-      make[ProxyProvider].from[CglibProxyProvider]
-    }
-
-  /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
-  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap0 ++ new BootstrapContextModuleDef {
-      make[ProxyProvider].from[ProxyProviderFailingImpl]
-    }
-
-  /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
-  final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
-      make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-    }
 }

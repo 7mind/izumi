@@ -19,5 +19,3 @@ object Axis {
     override final def toString: String = s"$axis:$id"
   }
 }
-
-
