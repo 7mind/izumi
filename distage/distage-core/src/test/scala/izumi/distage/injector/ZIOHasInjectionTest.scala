@@ -20,7 +20,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
   type HasX[B] = Has[B]
   type HasIntBool = HasInt with HasX[Boolean]
 
-  def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1}
+  def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1 }
 
   def getDep1[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency1], Nothing, Dependency1] =
     F.askWith((_: Has[Dependency1]).get)
@@ -31,13 +31,13 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
   ) extends DIResource.LiftF(for {
       d1 <- getDep1
       d2 <- getDep2
-    } yield new Trait2 {val dep1 = d1; val dep2 = d2})
+    } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
   final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
-    d1: Dependency1,
+    d1: Dependency1
   ) extends DIResource.LiftF[F[Throwable, ?], Trait1](
-    F.pure(trait1(d1))
-  )
+      F.pure(trait1(d1))
+    )
 
   "HasConstructor" should {
 
@@ -55,22 +55,26 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
       val definition = new ModuleDef {
         make[Dep].from[DepA]
-        make[TestClass2[Dep]].fromHas { value: Dep => ZIO(TestClass2(value)) }
-        make[TestClass2[Dep]].named("noargs").fromHas { ZIO(TestClass2(new DepA: Dep)) }
+        make[TestClass2[Dep]].fromHas {
+          value: Dep => ZIO(TestClass2(value))
+        }
+        make[TestClass2[Dep]].named("noargs").fromHas(ZIO(TestClass2(new DepA: Dep)))
       }
 
-      val error = intercept[TestFailedException](assertCompiles(
-        """new ModuleDef {
+      val error = intercept[TestFailedException](
+        assertCompiles(
+          """new ModuleDef {
              make[TestClass2[Dep]].fromHas { value: Has[Dep] =>
                ZIO(TestClass2(value.get)) : ZIO[Int, Throwable, TestClass2[Dep]]
              }
            }"""
-      ))
+        )
+      )
       assert(error.getMessage contains "intersection contains type constructors that aren't")
       assert(error.getMessage contains "Int")
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGc(definition))
+      val plan = injector.plan(PlannerInput.noGC(definition))
 
       val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
 
@@ -97,7 +101,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       }
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGc(definition))
+      val plan = injector.plan(PlannerInput.noGC(definition))
 
       val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
@@ -109,10 +113,14 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "support named bindings in zio.Has type parameters" in {
       import TypesCase1._
 
-      val ctorA = ZIO.accessM { value: Has[Dep @Id("A")] => ZIO(TestClass2(value.get)) }
-      val ctorB = ZIO.accessM { value: Has[Dep @Id("B")] => ZIO(TestClass2(value.get)) }
+      val ctorA = ZIO.accessM {
+        value: Has[Dep @Id("A")] => ZIO(TestClass2(value.get))
+      }
+      val ctorB = ZIO.accessM {
+        value: Has[Dep @Id("B")] => ZIO(TestClass2(value.get))
+      }
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Dep].named("A").from[DepA]
         make[Dep].named("B").from[DepB]
         make[TestClass2[Dep]].named("A").fromHas(ctorA)
@@ -139,25 +147,28 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       def getDep1 = ZIO.access[Has[Dependency1]](_.get)
       def getDep2 = ZIO.access[Has[Dependency2]](_.get)
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
-        make[Trait3 { def dep1: Dependency1 }].fromHas((d3: Dependency3) => for {
-          d1 <- getDep1
-          d2 <- getDep2
-        } yield new Trait3 {
-          override val dep1 = d1
-          override val dep2 = d2
-          override val dep3 = d3
-        })
+        make[Trait3 { def dep1: Dependency1 }].fromHas(
+          (d3: Dependency3) =>
+            for {
+              d1 <- getDep1
+              d2 <- getDep2
+            } yield new Trait3 {
+              override val dep1 = d1
+              override val dep2 = d2
+              override val dep3 = d3
+            }
+        )
         make[Trait2].fromHas(for {
           d1 <- ZManaged.access[Has[Dependency1]](_.get)
           d2 <- ZManaged.access[Has[Dependency2]](_.get)
-        } yield new Trait2 {val dep1 = d1; val dep2 = d2})
+        } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
         make[Trait1].fromHas {
           d1: Dependency1 =>
-            ZLayer.succeed(new Trait1 { val dep1 = d1})
+            ZLayer.succeed(new Trait1 { val dep1 = d1 })
         }
 
         make[Trait2].named("classbased").fromHas[ResourceHasImpl[ZIO]]
@@ -205,20 +216,23 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "polymorphic ZIOHas injection" in {
       import TraitCase2._
 
-      def definition[F[-_, +_, +_]: TagK3: BIOLocal] = PlannerInput.noGc(new ModuleDef {
+      def definition[F[-_, +_, +_]: TagK3: BIOLocal] = PlannerInput.noGC(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
         addImplicit[BIOLocal[F]]
-        addImplicit[BIOApplicative[F[Any, +? , +?]]]
-        make[Trait3 { def dep1: Dependency1 }].fromHas((d3: Dependency3) => (for {
-          d1 <- getDep1
-          d2 <- getDep2
-        } yield new Trait3 {
-          override val dep1 = d1
-          override val dep2 = d2
-          override val dep3 = d3
-        }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3])
+        addImplicit[BIOApplicative[F[Any, +?, +?]]]
+        make[Trait3 { def dep1: Dependency1 }].fromHas(
+          (d3: Dependency3) =>
+            (for {
+              d1 <- getDep1
+              d2 <- getDep2
+            } yield new Trait3 {
+              override val dep1 = d1
+              override val dep2 = d2
+              override val dep3 = d3
+            }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3]
+        )
         make[Trait2].fromHas[ResourceHasImpl[F]]
         make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
 
@@ -255,12 +269,17 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "can handle AnyVals" in {
       import TraitCase6._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Dep]
         make[AnyValDep]
-        make[TestTrait].fromHas(ZIO.access[Has[AnyValDep]](h => new TestTrait {
-          override val anyValDep: AnyValDep = h.get
-        }))
+        make[TestTrait].fromHas(
+          ZIO.access[Has[AnyValDep]](
+            h =>
+              new TestTrait {
+                override val anyValDep: AnyValDep = h.get
+              }
+          )
+        )
       })
 
       val injector = mkInjector()

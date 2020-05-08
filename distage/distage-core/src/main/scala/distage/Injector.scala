@@ -1,9 +1,9 @@
 package distage
 
-import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.{InjectorFactory, InjectorDefaultImpl}
+import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
 
 object Injector extends InjectorFactory {
 
@@ -14,7 +14,7 @@ object Injector extends InjectorFactory {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(overrides: BootstrapModule*): Injector = {
-    bootstrap(CglibBootstrap.cogenBootstrap, Activation.empty, overrides.merge)
+    bootstrap(BootstrapLocator.defaultBootstrap, Activation.empty, overrides.merge)
   }
 
   /**
@@ -25,13 +25,13 @@ object Injector extends InjectorFactory {
     *                   They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-    bootstrap(CglibBootstrap.cogenBootstrap, activation, overrides.merge)
+    bootstrap(BootstrapLocator.defaultBootstrap, activation, overrides.merge)
   }
 
   /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[BootstrapLocator]] for a list available bootstrap modules
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
@@ -43,7 +43,7 @@ object Injector extends InjectorFactory {
     * Create a new Injector from a custom [[BootstrapContextModule]] and the chosen [[izumi.distage.model.definition.Activation]] axes
     *
     * @param activation A map of axes of configuration to choices along these axes
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[BootstrapLocator]] for a list available bootstrap modules
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
@@ -69,7 +69,7 @@ object Injector extends InjectorFactory {
     inherit(bootstrapLocator)
   }
 
-  object Standard extends InjectorBootstrap(CglibBootstrap.cogenBootstrap)
+  object Standard extends InjectorBootstrap(BootstrapLocator.defaultBootstrap)
 
   /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
   object NoProxies extends InjectorBootstrap(BootstrapLocator.noProxiesBootstrap)
@@ -98,7 +98,11 @@ object Injector extends InjectorFactory {
       new InjectorDefaultImpl(parent, this)
     }
 
-    override final def bootloader(input: PlannerInput, activation: Activation = Activation.empty, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
+    override final def bootloader(
+      input: PlannerInput,
+      activation: Activation = Activation.empty,
+      bootstrapModule: BootstrapModule = BootstrapModule.empty,
+    ): Bootloader = {
       new Bootloader(bootstrapModule, activation, input, this)
     }
   }

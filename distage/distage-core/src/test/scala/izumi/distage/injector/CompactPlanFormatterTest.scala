@@ -25,10 +25,10 @@ object CompactPlanFormatterTest {
 class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
   "PlanFormatterTest should produce short class names if it's unique in plan" in {
     val injector = mkInjector()
-    val plan = injector.plan(PlannerInput.noGc(new ModuleDef {
+    val plan = injector.plan(PlannerInput.noGC(new ModuleDef {
       make[JustTrait].from[Impl1]
       make[OptionT[scala.Either[Nothing, ?], Unit]].from(OptionT[Either[Nothing, ?], Unit](Right(None)))
-      make[K1[T1]].from(new K1[T1]{})
+      make[K1[T1]].from(new K1[T1] {})
       make[W1.T2]
       make[W2.T2]
     }))
@@ -42,4 +42,3 @@ class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
     assert(formatted.contains("{type.CompactPlanFormatterTest::K1[=λ %1:0,%1:1 → CompactPlanFormatterTest::T1[=1:0,=1:1]]}"))
   }
 }
-

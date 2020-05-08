@@ -156,7 +156,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     options: PlanningOptions,
     parameters: RawAppArgs,
     activationInfo: ActivationInfo,
-    activation: Activation,
+    @unused activation: Activation,
     roles: RolesInfo,
     config: AppConfig,
     logRouter: LogRouter,
@@ -168,7 +168,6 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
       options = options,
       args = parameters,
       activationInfo = activationInfo,
-      activation = activation,
     )
   }
 

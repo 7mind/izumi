@@ -14,6 +14,7 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
 
   /** Try to substitute unresolved dependencies in this plan by objects in `locator` */
   def locateImports(locator: Locator): AbstractPlan[OpType]
+  def toSemi: SemiPlan
 
   /**
     * Get all imports (unresolved dependencies).
@@ -69,7 +70,5 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
   final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
     steps.foldLeft(z)(f)
   }
-
-  def toSemi: SemiPlan
 
 }

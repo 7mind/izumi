@@ -2,7 +2,7 @@ package izumi.distage.compat
 
 import cats.effect.Bracket
 import distage._
-import izumi.distage.compat.ZIOResourcesTest._
+import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.plan.GCMode
@@ -14,7 +14,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
 import zio._
 
-object ZIOResourcesTest {
+object ZIOResourcesTestJvm {
   class Res { var initialized = false }
   class Res1 extends Res
 
@@ -25,7 +25,7 @@ object ZIOResourcesTest {
     val run = IO(println("Hello World!"))
   }
 }
-final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
+final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
   "ZManaged" should {
     "ZManaged works" in {
@@ -74,7 +74,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGc(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -179,7 +179,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGc(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {

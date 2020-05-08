@@ -13,14 +13,14 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable.Queue
 
-class CglibProxiesTest extends AnyWordSpec with MkInjector {
+class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
   "CircularDependenciesTest" should {
 
     "support circular dependencies" in {
       import CircularCase1._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Circular2]
         make[Circular1]
       })
@@ -37,7 +37,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support circular dependencies with final class implementations" in {
       import CircularCase1._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Circular2].from[Circular2Impl]
         make[Circular1].from[Circular1Impl]
       })
@@ -54,7 +54,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support circular dependencies in providers" in {
       import CircularCase1._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Circular2].from {
           c: Circular1 => new Circular2(c)
         }
@@ -79,7 +79,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "Supports self-referencing circulars" in {
       import CircularCase3._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[SelfReference]
       })
 
@@ -95,7 +95,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "Support self-referencing provider" in {
       import CircularCase3._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[SelfReference].from {
           self: SelfReference =>
             new SelfReference(self)
@@ -114,7 +114,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support proxy circular dependencies involving a primitive type" in {
       import CircularCase8._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Circular2]
         make[Circular1]
         make[Int].from(1)
@@ -138,7 +138,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support circular dependencies that use another object in their constructor that isn't involved in a cycle" in {
       import CircularCase9._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Circular2]
         make[Circular1]
         make[IntHolder]
@@ -163,7 +163,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support fully generic circular dependencies" in {
       import CircularCase5._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[GenericCircular[Dependency]]
         make[Dependency]
       })
@@ -181,7 +181,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support named circular dependencies" in {
       import CircularCase4._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[IdTypeCircular]
         make[IdParamCircular]
         make[Dependency[IdTypeCircular]].named("special")
@@ -202,7 +202,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "support type refinements in circular dependencies" in {
       import CircularCase6._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Dependency { def dep: RefinedCircular }].from[RealDependency]
         make[RefinedCircular]
       })
@@ -243,7 +243,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "Regression test 1: isolated cycles causing spooky action at a distance" in {
       import CircularCase7._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         // cycle
         make[DynamoDDLService]
         make[DynamoComponent]
@@ -292,7 +292,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
         import InnerClassStablePathsCase._
         import StableObjectInheritingTrait._
 
-        val definition = PlannerInput.noGc(new ModuleDef {
+        val definition = PlannerInput.noGC(new ModuleDef {
           make[Circular1]
           make[Circular2]
         })
@@ -311,7 +311,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
         import InnerClassUnstablePathsCase._
         val testProviderModule = new TestModule
 
-        val definition = PlannerInput.noGc(new ModuleDef {
+        val definition = PlannerInput.noGC(new ModuleDef {
           //        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
           make[testProviderModule.Circular1]
           make[testProviderModule.Circular2]
@@ -333,7 +333,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
     "Support self-referencing circular effects" in {
       import izumi.distage.fixtures.CircularCases.CircularCase3._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
+      val definition = PlannerInput.noGC(new ModuleDef {
         make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
         make[SelfReference].fromEffect {
           (ref: Ref[Fn, Boolean], self: SelfReference) =>

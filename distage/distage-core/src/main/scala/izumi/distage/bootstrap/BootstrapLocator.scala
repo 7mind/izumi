@@ -3,6 +3,7 @@ package izumi.distage.bootstrap
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.AbstractLocator
+import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
 import izumi.distage.model._
 import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
@@ -26,20 +27,17 @@ import izumi.fundamentals.reflection.Tags.TagK
 final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = {
-    // `bootstrapActivation` will be used when planning bootstrap environment,
-    // if BootstrapModule defines its own Activation, the new Activation will
-    // be used for real plans in the `Injector`. Otherwise `bootstrapActivation`
-    // will be used in both.
-    val bindings1 = new BootstrapModuleDef {
-      make[Activation].fromValue(bootstrapActivation)
-    }.overridenBy(bindings0)
-    val bindings = bindings1.overridenBy(new BootstrapModuleDef {
-      make[BootstrapModule].fromValue(bindings1)
-    })
+    // BootstrapModule & bootstrap plugins cannot modify `Activation` after 0.11.0,
+    // it's solely under control of `PlannerInput` now,
+    // please open an issue if you need the ability to override Activation using BootstrapModule
+    val bindings = bindings0 ++ new BootstrapModuleDef {
+        make[Activation].fromValue(bootstrapActivation)
+        make[BootstrapModule].fromValue(bindings0)
+      }
 
     BootstrapLocator
       .bootstrapPlanner
-      .plan(PlannerInput.noGc(bindings, bootstrapActivation))
+      .plan(PlannerInput.noGC(bindings, bootstrapActivation))
   }
   override lazy val index: Map[DIKey, Any] = super.index
 
@@ -118,11 +116,7 @@ object BootstrapLocator {
     )
   }
 
-  final lazy val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[ProxyProvider].from[ProxyProviderFailingImpl]
-  }
-
-  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
+  private final lazy val defaultBootstrap0: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("distage.init-proxies-asap").fromValue(true)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
@@ -152,11 +146,17 @@ object BootstrapLocator {
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 
-    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
+    make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyDefaultImpl]
   }
 
+  final lazy val defaultBootstrap: BootstrapContextModule = defaultBootstrap0 ++ new BootstrapContextModuleDef {
+      make[ProxyProvider].from[CglibProxyProvider]
+    }
+
   /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
-  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
+  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap0 ++ new BootstrapContextModuleDef {
+      make[ProxyProvider].from[ProxyProviderFailingImpl]
+    }
 
   /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
   final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {

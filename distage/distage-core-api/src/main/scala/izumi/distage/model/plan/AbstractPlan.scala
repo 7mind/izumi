@@ -11,7 +11,7 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
   def steps: Seq[OpType]
   def index: Map[DIKey, OpType]
 
-  /** A long-form rendering of the Plan */
+  /** A longer-form rendering of the Plan, compared to [[izumi.distage.model.plan.impl.OrderedPlanExtensions.OrderedPlanRenderOps#render()]] */
   final def repr: String = steps.map(_.toString).mkString("\n")
   override def toString: String = repr
 }
@@ -22,9 +22,10 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
   * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(
-                           steps: Vector[SemiplanOp],
-                           gcMode: GCMode,
-                         ) extends AbstractPlan[SemiplanOp] with SemiPlanOps
+  steps: Vector[SemiplanOp],
+  gcMode: GCMode,
+) extends AbstractPlan[SemiplanOp]
+  with SemiPlanOps
 
 object SemiPlan extends SemiPlanExtensions
 
@@ -34,9 +35,10 @@ object SemiPlan extends SemiPlanExtensions
   * May contain cyclic dependencies resolved with proxies
   */
 final case class OrderedPlan(
-                              steps: Vector[ExecutableOp],
-                              declaredRoots: Set[DIKey],
-                              topology: PlanTopology,
-                            ) extends AbstractPlan[ExecutableOp] with OrderedPlanOps
+  steps: Vector[ExecutableOp],
+  declaredRoots: Set[DIKey],
+  topology: PlanTopology,
+) extends AbstractPlan[ExecutableOp]
+  with OrderedPlanOps
 
 object OrderedPlan extends OrderedPlanExtensions

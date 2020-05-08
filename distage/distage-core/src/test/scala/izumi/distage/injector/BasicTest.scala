@@ -16,7 +16,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "maintain correct operation order" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass]
       make[TestDependency3]
       make[TestDependency0].from[TestImpl0]
@@ -46,7 +46,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "correctly handle empty typed sets" in {
     import SetCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
     })
@@ -64,7 +64,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "provide LocatorRef during initialization" in {
     import BasicCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass0]
       make[TestClass2].from {
         (ref: LocatorRef, test: TestClass0) =>
@@ -104,7 +104,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
     import BasicCaseIssue762._
 
-    val definition = PlannerInput.noGc(MyClassModule ++ ConfigModule)
+    val definition = PlannerInput.noGC(MyClassModule ++ ConfigModule)
 
     val injector = mkInjector()
 
@@ -117,7 +117,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support multiple bindings" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
@@ -145,7 +145,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "support nested multiple bindings" in {
     // https://github.com/7mind/izumi/issues/261
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[JustTrait]
         .add(new Impl1)
     })
@@ -164,7 +164,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support named bindings" in {
     import BasicCase2._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
       make[TestDependency0].from[TestImpl0Bad]
@@ -188,7 +188,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "fail on unsolvable conflicts" in {
     import BasicCase3._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dependency].from[Impl1]
       make[Dependency].from[Impl2]
     })
@@ -203,7 +203,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
         .conflicts.exists(
           e =>
             e.isInstanceOf[ConflictResolutionError.ConflictingDefs[_, _]] &&
-              e.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
+            e.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
         )
     )
   }
@@ -211,7 +211,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   // BasicProvisionerTest
   "instantiate simple class" in {
     import BasicCase1._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
     })
@@ -227,7 +227,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "handle set bindings" in {
     import SetCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Service2]
       make[Service0]
       make[Service1]
@@ -271,7 +271,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "support Plan.providerImport and Plan.resolveImport" in {
     import BasicCase1._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestCaseClass2]
     })
 
@@ -295,7 +295,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "preserve type annotations" in {
     import BasicCase4._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dependency].named("special")
       make[TestClass]
     })
@@ -309,7 +309,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "handle set inclusions" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Set[Int]].named("x").from(Set(1, 2, 3))
       make[Set[Int]].named("y").from(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
@@ -328,7 +328,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "handle multiple set element binds" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Int].from(7)
 
       many[Int].add(0)
@@ -350,7 +350,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support empty sets" in {
     import BasicCase5._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[TestDependency]
       make[TestImpl1]
     })
@@ -362,7 +362,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "preserve tags in multi set bindings" in {
     import izumi.distage.dsl.TestTagOps._
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       many[Int]
         .named("zzz")
         .add(5).tagged("t3")
@@ -381,7 +381,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "Can abstract over Id annotations with type aliases" in {
     import BasicCase7._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Int].named("port").from(80)
       make[String].named("address").from("localhost")
       make[ServerConfig].from(ServerConfig)

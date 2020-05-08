@@ -35,7 +35,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]
@@ -52,7 +52,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]("named-trait")
@@ -73,7 +73,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated1 = context.get[Trait1]
@@ -99,7 +99,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.noGc(definition))
+    val plan = injector.plan(PlannerInput.noGC(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated3 = context.get[Trait2]
@@ -110,7 +110,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "support trait fields" in {
     import TraitCase3._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[ATraitWithAField]
     })
 
@@ -124,7 +124,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "support named bindings in cglib traits" in {
     import TraitCase4._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dep].named("A").from[DepA]
       make[Dep].named("B").from[DepB]
       make[Trait]
@@ -148,7 +148,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "override protected defs in cglib traits" in {
     import TraitCase5._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[TestTrait]
       make[Dep]
     })
@@ -165,36 +165,36 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can instantiate traits with refinements" in {
     import TraitCase5._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[TestTraitAny {def dep: Dep}]
+    val definition = PlannerInput.noGC(new ModuleDef {
+      make[TestTraitAny { def dep: Dep }]
       make[Dep]
     })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
-    val instantiated = context.get[TestTraitAny {def dep: Dep}]
+    val instantiated = context.get[TestTraitAny { def dep: Dep }]
 
     assert(instantiated.dep eq context.get[Dep])
   }
 
   "can instantiate structural types" in {
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[ {def a: Int}]
+    val definition = PlannerInput.noGC(new ModuleDef {
+      make[{ def a: Int }]
       make[Int].from(5)
     })
 
     val injector = mkInjector()
     val context = injector.produce(definition).unsafeGet()
 
-    val instantiated = context.get[ {def a: Int}]
+    val instantiated = context.get[{ def a: Int }]
     assert(instantiated.a == context.get[Int])
   }
 
   "can instantiate `with` types" in {
     import TypesCase3._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait2 with (Trait2 with (Trait2 with Trait1))]
@@ -213,7 +213,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can handle AnyVals" in {
     import TraitCase6._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dep]
       make[AnyValDep]
       make[TestTrait]
@@ -232,7 +232,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can handle abstract classes" in {
     import TraitCase7._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[Dependency1]
       make[Dependency2]
       make[X].from[XImpl]

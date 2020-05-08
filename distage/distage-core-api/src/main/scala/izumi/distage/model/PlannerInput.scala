@@ -49,5 +49,10 @@ object PlannerInput {
 
   /** Disable all pruning.
     * Every binding in `bindings` will be instantiated eagerly, without selection */
+  def noGC(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, GCMode.NoGC)
+
+  /** Disable all pruning.
+    * Every binding in `bindings` will be instantiated eagerly, without selection */
+  @deprecated("use noGC", "will be removed in 0.11.1")
   def noGc(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, GCMode.NoGC)
 }

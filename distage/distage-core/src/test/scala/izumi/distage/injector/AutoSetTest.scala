@@ -24,7 +24,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
         .add(new AutoSetHook[Ordered, Ordered](identity))
     })
 
-    val autoset = injector.produce(PlannerInput.noGc(definition)).unsafeGet().get[Set[Ordered]]
+    val autoset = injector.produce(PlannerInput.noGC(definition)).unsafeGet().get[Set[Ordered]]
 
     assert(autoset.toSeq == autoset.toSeq.sortBy(_.order))
   }
@@ -33,7 +33,8 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].fromValue(1)
       make[Int].named("x").fromValue(2)
-      many[Int].named("nonauto")
+      many[Int]
+        .named("nonauto")
         .addValue(3)
         .addValue(4)
         .addValue(5)
@@ -44,7 +45,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
         .add(new AutoSetHook[Int, Int](identity))
     })
 
-    val autoset = injector.produce(PlannerInput.noGc(definition)).unsafeGet().get[Set[Int]]
+    val autoset = injector.produce(PlannerInput.noGC(definition)).unsafeGet().get[Set[Int]]
 
     assert(autoset == Set(1, 2, 3, 4, 5))
   }
