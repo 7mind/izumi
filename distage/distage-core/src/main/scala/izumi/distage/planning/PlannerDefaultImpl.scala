@@ -192,16 +192,6 @@ final class PlannerDefaultImpl(
     }
   }
 
-  protected[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
-    if (roots.isEmpty) {
-      OrderedPlan.empty
-    } else {
-      assert(roots.diff(plan.index.keySet).isEmpty)
-      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
-    }
-  }
-
   override def rewrite(module: ModuleBase): ModuleBase = {
     hook.hookDefinition(module)
   }
@@ -292,6 +282,25 @@ final class PlannerDefaultImpl(
         topology.effectiveRoots
     }
     OrderedPlan(sortedOps, roots, topology)
+  }
+
+  protected[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+    if (roots.isEmpty) {
+      OrderedPlan.empty
+    } else {
+      assert(roots.diff(plan.index.keySet).isEmpty)
+      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
+      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
+    }
+  }
+
+  private[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
+    Value(almostPlan)
+      .map(forwardingRefResolver.resolve)
+      .map(hook.phase90AfterForwarding)
+      .eff(planningObserver.onPhase90AfterForwarding)
+      .eff(sanityChecker.assertFinalPlanSane)
+      .get
   }
 
 }
