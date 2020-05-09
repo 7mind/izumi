@@ -74,7 +74,9 @@ class IzResources(clazz: Class[_]) {
           case Failure(exception) =>
             throw exception
           case Success(fs) =>
-            Some(new PathReference(fs.provider().getPath(u.toURI), fs))
+            fs.synchronized {
+              Some(new PathReference(fs.provider().getPath(u.toURI), fs))
+            }
         }
 
     }
@@ -103,13 +105,13 @@ class IzResources(clazz: Class[_]) {
           val target = targetDir.resolve(jarPath.relativize(file).toString)
           targets += target
           Files.copy(
-            file
-            , target
-            , StandardCopyOption.REPLACE_EXISTING
+            file,
+            target,
+            StandardCopyOption.REPLACE_EXISTING,
           )
           FileVisitResult.CONTINUE
         }
-      }
+      },
     )
 
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
@@ -139,12 +141,11 @@ class IzResources(clazz: Class[_]) {
           targets += FileContent(relativePath, Files.readAllBytes(file))
           FileVisitResult.CONTINUE
         }
-      }
+      },
     )
 
     ContentIterator(targets.toSeq)
   }
-
 
   def read(fileName: String): Option[InputStream] = {
     Option(clazz.getClassLoader.getResourceAsStream(fileName))
