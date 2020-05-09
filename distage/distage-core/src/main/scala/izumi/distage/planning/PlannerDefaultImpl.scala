@@ -158,8 +158,16 @@ final class PlannerDefaultImpl(
 
     val matrix = SemiEdgeSeq(ops ++ sets)
 
+    val roots = input.mode match {
+      case GCMode.GCRoots(roots) =>
+        roots.toSet //.map(MutSel(_, None)).toSet
+      case GCMode.NoGC =>
+        //resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
+        allOps.map(_._1.key).toSet //.map(a => MutSel(a._1.key, None)).toSet
+    }
+
     for {
-      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, activations)
+      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations)
       resolved = resolution.graph
       collected <- {
         val setTargets = resolved.meta.meta.collect {
@@ -181,16 +189,9 @@ final class PlannerDefaultImpl(
               }.map(member => GC.WeakEdge(set, member))
         }.toSet
 
-        val roots = input.mode match {
-          case GCMode.GCRoots(roots) =>
-            roots.map(MutSel(_, None))
-          case GCMode.NoGC =>
-            resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
-        }
-
-        new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots, weak))
+        new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots.map(MutSel(_, None)), weak))
       }
-      out <- {
+      out <- Right((resolved, collected)) /*{
         val unsolved = resolution.unresolved.keySet.map(_.withoutAxis)
         val requiredButConflicting = unsolved.intersect(collected.predcessorMatrix.links.keySet)
         if (requiredButConflicting.isEmpty) {
@@ -198,7 +199,7 @@ final class PlannerDefaultImpl(
         } else {
           Left(List(ConflictingDefs(resolution.unresolved.filter(k => requiredButConflicting.contains(k._1.withoutAxis)))))
         }
-      }
+      }*/
     } yield {
       out
     }

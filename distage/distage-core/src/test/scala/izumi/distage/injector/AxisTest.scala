@@ -74,6 +74,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
+    //println(Injector().plan(PlannerInput(definition, Activation(Repo -> Repo.Prod), GCMode(DIKey.get[JustTrait]))).render())
     intercept[DIException] {
       Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), GCMode(DIKey.get[JustTrait]))).unsafeGet()
     }
@@ -87,9 +88,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Dummy).from[Impl1]
     }
 
-    intercept[DIException] {
-      Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), GCMode(DIKey.get[JustTrait]))).unsafeGet()
-    }
+    assert(Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), GCMode(DIKey.get[JustTrait]))).unsafeGet().get[JustTrait].isInstanceOf[Impl0])
+    //intercept[DIException] {}
   }
 
 }

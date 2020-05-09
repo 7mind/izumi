@@ -1,7 +1,12 @@
 package izumi.fundamentals.graphs.tools
 
+import izumi.fundamentals.collections.ImmutableMultiMap
+import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import izumi.fundamentals.collections.IzCollections._
+import izumi.functional.IzEither._
+import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 
 import scala.collection.compat._
 import scala.collection.immutable
@@ -33,7 +38,7 @@ object MutationResolver {
     def isMutator: Boolean = mut.isDefined
   }
 
-  final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
+  final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]]) //, unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   private final case class ResolvedMutations[N](
     lastOp: MutSel[N],
     operationReplacements: Seq[(MutSel[N], Set[MutSel[N]])],
@@ -46,10 +51,14 @@ object MutationResolver {
 
   class MutationResolverImpl[N, I, V] {
 
-    def resolve(predcessors: SemiEdgeSeq[Annotated[N], N, V], activations: Set[AxisPoint]): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
+    def resolve(
+      predcessors: SemiEdgeSeq[Annotated[N], N, V],
+      roots: Set[N],
+      activations: Set[AxisPoint],
+    ): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
-        resolved <- toMap(predcessors)
-        a <- resolveAxis(resolved.resolved, activations)
+        //resolved <- toMap(activations, predcessors)
+        a <- resolveAxis(predcessors, roots, activations)
         unsolvedConflicts = a.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
           if (unsolvedConflicts.nonEmpty) {
@@ -71,76 +80,84 @@ object MutationResolver {
             (targetKey, RemappedValue(v.meta, replMap))
         }
 
-        Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta)), resolved.unresolved)
+        Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta))) //, resolved.unresolved)
       }
     }
 
-    private def toMap(predecessors: SemiEdgeSeq[Annotated[N], N, V]): Either[Nothing, MainResolutionStatus[N, V]] = {
-      val grouped = predecessors
-        .links
-        .groupBy(_._1)
-        .view
-        .mapValues(_.map(_._2))
-        .toMap
-      val (good, bad) = grouped.partition(_._2.size == 1)
-      Right(MainResolutionStatus(SemiIncidenceMatrix(good.view.mapValues(_.head).toMap), bad))
+    def resolveConflict(
+      activations: Set[AxisPoint],
+      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
+    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
+
+      if (conflict.size == 1) {
+        Right(Map(conflict.head))
+      } else {
+        println(s"FAILURE/MULTI: $activations, $conflict")
+        Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+      }
+    }
+
+    def traceGrouped(
+      activations: Set[AxisPoint],
+      roots: Set[N],
+      reachable: Set[N],
+      grouped: ImmutableMultiMap[N, (Annotated[N], Node[N, V])],
+    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
+      val out = roots.toSeq.flatMap {
+        root =>
+          val node = grouped.getOrElse(root, Set.empty)
+          val (mutators, definitions) = node.partition(n => n._1.isMutator)
+
+          val resolved = NonEmptyList.from(definitions.toSeq) match {
+            case Some(value) =>
+              resolveConflict(activations, value)
+            case None =>
+              Right(Seq.empty)
+          }
+
+          Seq(Right(mutators.toSeq), resolved)
+      }
+
+      for {
+        currentResult <- out.biAggregate.map(_.flatten.toMap)
+        nextDeps = currentResult.flatMap(_._2.deps)
+        nextResult <-
+          if (nextDeps.isEmpty) {
+            Right(Map.empty)
+          } else {
+            traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped)
+          }
+      } yield {
+        currentResult ++ nextResult
+      }
+
     }
 
     def resolveAxis(
-      predcessors: SemiIncidenceMatrix[Annotated[N], N, V],
+      predcessors: SemiEdgeSeq[Annotated[N], N, V],
+      roots: Set[N],
       activations: Set[AxisPoint],
     ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
-      val activationChoices = ActivationChoices(activations)
 
       for {
+        activationChoices <- Right(ActivationChoices(activations))
         _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
-        links = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
-        implIndexChunks = links.keySet.toSeq.map {
-          k =>
-            for {
-              _ <- nonAmbigiousActivations(k.con, err => ConflictResolutionError.AmbigiousActivationDefs(k, err))
-            } yield
-              if (k.con.intersect(activations).nonEmpty && activationChoices.allValid(k.con) && !k.isMutator)
-                Option((k.key, k))
-              else
-                None
-        }
+        onlyValid = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
+        grouped = onlyValid.map {
+          case (key, node) =>
+            (key.key, (key, node))
+        }.toMultimap
 
-        bad = implIndexChunks.collect { case Left(l) => l }.flatten.toList
-        _ <- if (bad.nonEmpty) Left(bad) else Right(())
-        good = implIndexChunks.collect { case Right(r) => r }.flatten.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
-        (nonAmbigiousSet, ambigious) = good.partition(_._2.size == 1)
-        nonAmbigious = nonAmbigiousSet.view.mapValues(_.head).toMap
-        _ <- if (ambigious.nonEmpty) Left(List(ConflictResolutionError.AmbigiousDefinitions(ambigious))) else Right(())
+        onlyCorrect <- traceGrouped(activations, roots, roots, grouped)
       } yield {
-        val result: Map[Annotated[N], Node[Selected[N], V]] = links.flatMap {
-          case (k, dd) =>
-            val rewritten = Node(
-              dd.deps.map {
-                d =>
-                  Selected(d, nonAmbigious.get(d).map(_.con).getOrElse(Set.empty))
-              },
-              dd.meta,
-            )
-
-            val nonAmbAxis = nonAmbigious.get(k.key).map(_.con).getOrElse(Set.empty)
-
-            if (k.isMutator)
-              if (activationChoices.allValid(k.con))
-                Seq((Annotated(k.key, k.mut, nonAmbAxis), rewritten))
-              else
-                Seq.empty
-            else {
-              val con =
-                if (k.con.isEmpty)
-                  nonAmbAxis
-                else
-                  k.con
-              Seq((Annotated(k.key, k.mut, con), rewritten))
-            }
-
+        val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
+          case (k, _) =>
+            (k.key, k.con)
         }
-
+        val result = onlyCorrect.map {
+          case (key, node) =>
+            (key, Node(node.deps.map(d => Selected(d, nonAmbigious.getOrElse(d, Set.empty))), node.meta))
+        }
         SemiIncidenceMatrix(result)
       }
     }
