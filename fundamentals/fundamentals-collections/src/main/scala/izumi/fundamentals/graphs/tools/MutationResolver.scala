@@ -8,6 +8,7 @@ import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
+import scala.annotation.tailrec
 import scala.collection.compat._
 import scala.collection.immutable
 
@@ -102,11 +103,13 @@ object MutationResolver {
       }
     }
 
+    @tailrec
     private def traceGrouped(
       activations: Set[AxisPoint],
       roots: Set[N],
       reachable: Set[N],
       grouped: ImmutableMultiMap[N, (Annotated[N], Node[N, V])],
+      currentResult: Map[Annotated[N], Node[N, V]],
     ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
       val out = roots.toSeq.flatMap {
         root =>
@@ -123,18 +126,34 @@ object MutationResolver {
           Seq(Right(mutators.toSeq), resolved)
       }
 
-      for {
+      val nxt = for {
+        nextResult <- out.biAggregate.map(_.flatten.toMap)
+        nextDeps = nextResult.flatMap(_._2.deps)
+      } yield {
+        (nextResult, nextDeps)
+      }
+
+      nxt match {
+        case Left(value) =>
+          Left(value)
+        case Right((nextResult, nextDeps)) if nextDeps.isEmpty =>
+          Right(currentResult ++ nextResult)
+        case Right((nextResult, nextDeps)) =>
+          traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
+      }
+
+      /*for {
         currentResult <- out.biAggregate.map(_.flatten.toMap)
         nextDeps = currentResult.flatMap(_._2.deps)
         nextResult <-
           if (nextDeps.isEmpty) {
             Right(Map.empty)
           } else {
-            traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped)
+            traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult)
           }
       } yield {
         currentResult ++ nextResult
-      }
+      }*/
 
     }
 
@@ -153,7 +172,7 @@ object MutationResolver {
             (key.key, (key, node))
         }.toMultimap
 
-        onlyCorrect <- traceGrouped(activations, roots, roots, grouped)
+        onlyCorrect <- traceGrouped(activations, roots, roots, grouped, Map.empty)
       } yield {
         val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
           case (k, _) =>
