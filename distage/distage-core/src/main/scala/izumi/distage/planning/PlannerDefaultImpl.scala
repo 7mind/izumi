@@ -144,6 +144,7 @@ final class PlannerDefaultImpl(
     val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = allOps
       .collect { case (target, op: CreateSet) => (target, op) }
       .groupBy(_._1)
+      .view
       .mapValues(_.map(_._2))
       .mapValues {
         v =>
@@ -154,6 +155,7 @@ final class PlannerDefaultImpl(
           val filtered = mergedSet //.copy(members = mergedSet.members)
           Node(filtered.members, filtered: InstantiationOp)
       }
+      .toMap
 
     val matrix = SemiEdgeSeq(ops ++ sets)
 
