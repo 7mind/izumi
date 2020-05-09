@@ -1,13 +1,12 @@
 package izumi.distage.injector
 
 import distage.{DIKey, Injector, Module}
+import izumi.distage.fixtures.BasicCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.plan.GCMode
 import org.scalatest.wordspec.AnyWordSpec
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.model.exceptions.DIException
 
 class AxisTest extends AnyWordSpec with MkInjector {
 

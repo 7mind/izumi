@@ -52,8 +52,6 @@ object Binding {
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
-  sealed trait SetBinding extends Binding
-
   final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition, isMutator: Boolean = false)
     extends ImplBinding
     with WithTarget {
@@ -63,6 +61,8 @@ object Binding {
     protected[this] def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
+
+  sealed trait SetBinding extends Binding
 
   final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition)
     extends ImplBinding

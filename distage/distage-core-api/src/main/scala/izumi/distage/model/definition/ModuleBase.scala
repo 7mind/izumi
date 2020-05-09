@@ -20,7 +20,7 @@ trait ModuleBase extends ModuleBaseInstances {
     case _ =>
       false
   }
-  override final def toString: String = bindings.mkString(s"Module(",", ",")")
+  override final def toString: String = bindings.mkString(s"Module(", ", ", ")")
 }
 
 object ModuleBase {
@@ -78,82 +78,58 @@ object ModuleBase {
 
   implicit final class ModuleDefCombine[S <: ModuleBase](private val module: S) extends AnyVal {
     def ++[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
-      val theseBindings = module.bindings.toSeq
-      val thoseBindings = that.bindings.toSeq
-
-      T.make(tagwiseMerge(theseBindings ++ thoseBindings))
+      T.make(module.bindings ++ that.bindings)
     }
 
     def :+[T <: ModuleBase](binding: Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
-      module ++ T.make(Set(binding))
+      T.make(module.bindings + binding)
     }
 
     def +:[T <: ModuleBase](binding: Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
-      T.make(Set(binding)) ++ module
+      T.make(Set(binding) ++ module.bindings)
     }
 
     def --[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       drop(that.keys)
     }
 
+    def --[T <: ModuleBase](ignored: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
+      drop(ignored)
+    }
+
+    def filter[T <: ModuleBase](f: DIKey => Boolean)(implicit T: ModuleMake.Aux[S, T]): T = {
+      filterBindings(f apply _.key)
+    }
+
+    def filterBindings[T <: ModuleBase](f: Binding => Boolean)(implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(module.bindings.filter(f))
+    }
+
     def preserveOnly[T <: ModuleBase](preserve: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
-      val filtered = module.bindings.filterNot(b => preserve.contains(b.key))
-      T.make(filtered)
+      filter(preserve)
     }
 
     def drop[T <: ModuleBase](ignored: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
-      val filtered = module.bindings.filterNot(b => ignored.contains(b.key))
-      T.make(filtered)
+      T.make(module.bindings.filterNot(ignored contains _.key))
     }
 
     def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
-      T.make(mergePreserve[T](module.bindings, that.bindings)._2)
+      T.make(mergePreserve[T](module.bindings, that.bindings))
     }
 
-    private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding])(implicit T: ModuleMake.Aux[S, T]): (Set[DIKey], Set[Binding]) = {
-      // FIXME: a hack to support tag merging
-      def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] = {
-        (T.make(a) ++ T.make(b)).bindings
-      }
-
+    private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding]): Set[Binding] = {
       val existingIndex = existing.map(b => b.key -> b).toMultimap
       val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
-      val merged = mergedKeys
-        .flatMap {
-          k =>
-            val existingMappings = existingIndex.getOrElse(k, Set.empty)
-            val newMappings = newIndex.getOrElse(k, Set.empty)
+      mergedKeys.flatMap {
+        k =>
+          val existingMappings = existingIndex.getOrElse(k, Set.empty)
+          val newMappings = newIndex.getOrElse(k, Set.empty)
 
-            if (existingMappings.isEmpty) {
-              newMappings
-            } else if (newMappings.isEmpty) {
-              existingMappings
-            } else {
-              // merge tags wrt strange Binding equals
-              val newMappingsGroups = newMappings.map(_.group)
-              val existingInNewMappings = existingMappings.filter(newMappingsGroups contains _.group)
-              modulewiseMerge(newMappings, existingInNewMappings)
-            }
-        }
-
-      (mergedKeys, merged)
+          if (existingMappings.isEmpty) newMappings else existingMappings
+      }
     }
-  }
-
-  private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
-    val grouped = bs.groupBy(_.group)
-
-    // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    ListSet.newBuilder.++= {
-      grouped
-        .map {
-          case (_, v) =>
-            //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
-            v.reduce(_ addTags _.tags)
-        }
-    }.result()
   }
 
   /**
