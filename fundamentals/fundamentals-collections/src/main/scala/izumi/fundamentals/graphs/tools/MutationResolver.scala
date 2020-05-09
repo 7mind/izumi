@@ -84,23 +84,44 @@ object MutationResolver {
       }
     }
 
-    private def resolveConflict(
+    private def resolveAxis(
+      predcessors: SemiEdgeSeq[Annotated[N], N, V],
+      roots: Set[N],
       activations: Set[AxisPoint],
-      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
-    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
+    ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
 
-      if (conflict.size == 1) {
-        Right(Map(conflict.head))
-      } else {
-        val withoutNoAxis = conflict.toSeq.filterNot(_._1.con.isEmpty)
-        if (withoutNoAxis.size == 1) {
-          Right(Map(withoutNoAxis.head))
-        } else {
-          println(s"FAILURE/MULTI: $activations, $conflict")
-          Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+      for {
+        activationChoices <- Right(ActivationChoices(activations))
+        _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
+        onlyValid = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
+        grouped = onlyValid.map {
+          case (key, node) =>
+            (key.key, (key, node))
+        }.toMultimap
+
+        onlyCorrect <- traceGrouped(activations, roots, roots, grouped, Map.empty)
+      } yield {
+        val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
+          case (k, _) =>
+            (k.key, k.con)
         }
-
+        val result = onlyCorrect.map {
+          case (key, node) =>
+            (key, Node(node.deps.map(d => Selected(d, nonAmbigious.getOrElse(d, Set.empty))), node.meta))
+        }
+        SemiIncidenceMatrix(result)
       }
+    }
+
+    private def nonAmbigiousActivations(
+      activations: Set[AxisPoint],
+      onError: Map[String, Set[AxisPoint]] => ConflictResolutionError[N],
+    ): Either[List[ConflictResolutionError[N]], Unit] = {
+      val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
+      if (bad.isEmpty)
+        Right(())
+      else
+        Left(List(onError(bad)))
     }
 
     @tailrec
@@ -157,51 +178,30 @@ object MutationResolver {
 
     }
 
-    private def resolveAxis(
-      predcessors: SemiEdgeSeq[Annotated[N], N, V],
-      roots: Set[N],
+    private def resolveConflict(
       activations: Set[AxisPoint],
-    ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
+      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
+    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
 
-      for {
-        activationChoices <- Right(ActivationChoices(activations))
-        _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
-        onlyValid = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
-        grouped = onlyValid.map {
-          case (key, node) =>
-            (key.key, (key, node))
-        }.toMultimap
+      if (conflict.size == 1) {
+        Right(Map(conflict.head))
+      } else {
+        val withoutNoAxis = conflict.toSeq.filterNot(_._1.con.isEmpty)
+        if (withoutNoAxis.size == 1) {
+          Right(Map(withoutNoAxis.head))
+        } else {
+          println(s"FAILURE/MULTI: $activations, $conflict")
+          Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+        }
 
-        onlyCorrect <- traceGrouped(activations, roots, roots, grouped, Map.empty)
-      } yield {
-        val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
-          case (k, _) =>
-            (k.key, k.con)
-        }
-        val result = onlyCorrect.map {
-          case (key, node) =>
-            (key, Node(node.deps.map(d => Selected(d, nonAmbigious.getOrElse(d, Set.empty))), node.meta))
-        }
-        SemiIncidenceMatrix(result)
       }
-    }
-
-    private def nonAmbigiousActivations(
-      activations: Set[AxisPoint],
-      onError: Map[String, Set[AxisPoint]] => ConflictResolutionError[N],
-    ): Either[List[ConflictResolutionError[N]], Unit] = {
-      val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
-      if (bad.isEmpty)
-        Right(())
-      else
-        Left(List(onError(bad)))
     }
 
     private def resolveMutations(predcessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {
       val conflicts = predcessors
         .links
         .keySet
-        .groupBy(k => k.key)
+        .groupBy(_.key)
         .filter(_._2.size > 1)
 
       val targets = conflicts.map {
