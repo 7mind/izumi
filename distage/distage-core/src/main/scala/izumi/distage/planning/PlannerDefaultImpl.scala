@@ -13,9 +13,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
-import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.MutationResolver.{ActivationChoices, Annotated, AxisPoint, MutSel, MutationResolverImpl, Node, RemappedValue, SemiEdgeSeq}
+import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 

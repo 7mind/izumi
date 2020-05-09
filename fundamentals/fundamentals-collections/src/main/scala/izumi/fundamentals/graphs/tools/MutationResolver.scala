@@ -1,12 +1,12 @@
 package izumi.fundamentals.graphs.tools
 
+import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
+import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
-import izumi.fundamentals.collections.IzCollections._
-import izumi.functional.IzEither._
-import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 
 import scala.collection.compat._
 import scala.collection.immutable
@@ -57,7 +57,6 @@ object MutationResolver {
       activations: Set[AxisPoint],
     ): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
-        //resolved <- toMap(activations, predcessors)
         a <- resolveAxis(predcessors, roots, activations)
         unsolvedConflicts = a.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
@@ -84,7 +83,7 @@ object MutationResolver {
       }
     }
 
-    def resolveConflict(
+    private def resolveConflict(
       activations: Set[AxisPoint],
       conflict: NonEmptyList[(Annotated[N], Node[N, V])],
     ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
@@ -92,12 +91,18 @@ object MutationResolver {
       if (conflict.size == 1) {
         Right(Map(conflict.head))
       } else {
-        println(s"FAILURE/MULTI: $activations, $conflict")
-        Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+        val withoutNoAxis = conflict.toSeq.filterNot(_._1.con.isEmpty)
+        if (withoutNoAxis.size == 1) {
+          Right(Map(withoutNoAxis.head))
+        } else {
+          println(s"FAILURE/MULTI: $activations, $conflict")
+          Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+        }
+
       }
     }
 
-    def traceGrouped(
+    private def traceGrouped(
       activations: Set[AxisPoint],
       roots: Set[N],
       reachable: Set[N],
@@ -133,7 +138,7 @@ object MutationResolver {
 
     }
 
-    def resolveAxis(
+    private def resolveAxis(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
       activations: Set[AxisPoint],
@@ -173,7 +178,7 @@ object MutationResolver {
         Left(List(onError(bad)))
     }
 
-    def resolveMutations(predcessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {
+    private def resolveMutations(predcessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {
       val conflicts = predcessors
         .links
         .keySet
@@ -236,7 +241,7 @@ object MutationResolver {
       Right(Result(finalMatrix, indexRemap, outerReplMap))
     }
 
-    case class Result(
+    private case class Result(
       finalMatrix: IncidenceMatrix[MutSel[N]],
       indexRemap: Map[MutSel[N], MutSel[N]],
       outerReplMap: Map[MutSel[N], Map[N, MutSel[N]]],
