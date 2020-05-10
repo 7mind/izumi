@@ -396,7 +396,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   "support mutations" in {
     import Mutations01._
 
-    val definition = PlannerInput.noGc(new ModuleDef {
+    val definition = PlannerInput.noGC(new ModuleDef {
       make[SomethingUseful].fromValue(SomethingUseful("x"))
       make[Mutable].fromValue(Mutable(1, None))
       modify[Mutable].by {

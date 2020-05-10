@@ -182,7 +182,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.binding[TestDependency0].addTags(Set("tag1", "tag2", "sniv"))))
     }
 
-    "ModuleBuilder supports tags; same bindings with different tags are merged" in {
+    "ModuleBuilder supports tags; same bindings with different tags are NOT merged (tag merging removed in 0.11.0)" in {
       import SetCase1._
 
       val definition = new ModuleDef {
@@ -201,15 +201,17 @@ class DSLTest extends AnyWordSpec with MkInjector {
         many[SetTrait].tagged("A", "B")
       }
 
-      assert(definition.bindings.size == 7)
-      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 3)
-      assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 1)
+      assert(definition.bindings.size == 9)
+      assert(definition.bindings.count(_.tags.strings == Set("A")) == 2)
+      assert(definition.bindings.count(_.tags.strings == Set("B")) == 2)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+      assert(definition.bindings.count(_.tags.strings == Set("CA")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("CB")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 0)
       assert(definition.bindings.count(_.tags.strings == Set("CC")) == 1)
-      assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
-      assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
     }
 
-    "Multiset bindings support tag merge" in {
+    "Multiset bindings do NOT support tag merge (tag merging removed in 0.11.0)" in {
       import SetCase1._
 
       val set = Set(new SetImpl5, new SetImpl5)
@@ -221,8 +223,11 @@ class DSLTest extends AnyWordSpec with MkInjector {
           .addSetValue(set).tagged("B") // merge
       }
 
-      assert(definition.bindings.size == 3)
-      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+      println(definition)
+      assert(definition.bindings.size == 4)
+      assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 1)
     }
 
     "Set bindings with the same source position but different implementations do not conflict" in {
@@ -240,7 +245,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       } == Set(1, 2, 3))
     }
 
-    "Tags in different modules are merged" in {
+    "Tags in different modules are NOT merged (tag merging removed in 0.11.0)" in {
       import BasicCase1._
 
       val def1 = new ModuleDef {
@@ -258,10 +263,12 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val definition = def1 ++ def2
 
-      assert(definition.bindings.head.tags.strings == Set("1", "2", "a", "b", "x", "y"))
+      assert(definition.bindings.count(_.tags.strings == Set("a", "1")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("b", "1")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("x", "y", "2")) == 1)
     }
 
-    "Tags in different overriden modules are merged" in {
+    "Tags in different overriden modules are NOT merged, later definition beets out former and removes its tags (tag merging removed in 0.11.0)" in {
       import BasicCase1._
 
       val tags12: Seq[BindingTag] = Seq("1", "2")
@@ -280,8 +287,8 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val definition = def1 overridenBy def2
 
-      assert(definition.bindings.head.tags.strings == Set("1", "2", "3", "a", "b", "x", "y"))
-
+      assert(definition.bindings.count(_.tags.strings == Set("a", "b", "1", "2")) == 0)
+      assert(definition.bindings.count(_.tags.strings == Set("x", "y", "2", "3")) == 1)
     }
 
     "support zero element" in {

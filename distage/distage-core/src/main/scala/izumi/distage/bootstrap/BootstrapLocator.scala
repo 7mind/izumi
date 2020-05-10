@@ -116,7 +116,7 @@ object BootstrapLocator {
     )
   }
 
-  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
+  final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("distage.init-proxies-asap").fromValue(true)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
@@ -155,4 +155,6 @@ object BootstrapLocator {
     make[ProxyProvider].tagged(Cycles.Disable).from[ProxyProviderFailingImpl]
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
   }
+
+  final val defaultBootstrapActivation: Activation = Activation(Cycles -> Cycles.Proxy)
 }

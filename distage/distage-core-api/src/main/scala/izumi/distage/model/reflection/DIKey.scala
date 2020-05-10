@@ -5,7 +5,7 @@ import izumi.fundamentals.reflection.Tags.Tag
 
 sealed trait DIKey {
   def tpe: SafeType
-  override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
   protected def formatWithIndex(base: String, index: Option[Int]): String = {
     index match {
       case Some(value) =>
@@ -17,7 +17,10 @@ sealed trait DIKey {
 }
 
 object DIKey {
-  def get[T: Tag]: DIKey.TypeKey = TypeKey(SafeType.get[T])
+  def apply[T: Tag]: DIKey = DIKey.get[T]
+  def apply[T: Tag](name: String): DIKey = DIKey.get[T].named(name)
+
+  def get[T: Tag]: DIKey.TypeKey = DIKey.TypeKey(SafeType.get[T])
 
   sealed trait BasicKey extends DIKey {
     def withTpe(tpe: SafeType): DIKey.BasicKey

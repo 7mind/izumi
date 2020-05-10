@@ -332,11 +332,11 @@ object ModuleDefDSL {
     final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(ProviderMagnet.lift(function))
 
-    final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
-
     final def add[I <: T](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
+
+    final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
 
     /**
       * Bind by reference to another bound key
@@ -364,37 +364,6 @@ object ModuleDefDSL {
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
 
     final def weak[I <: T: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
-
-    /**
-      * Add multiple values into this set at once
-      *
-      * Example:
-      * {{{
-      *   class T
-      *
-      *   many[T].addSet(Set(new T, new T, new T))
-      * }}}
-      **/
-    final def addSet[I <: Set[_ <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      addSet(ProviderMagnet.lift(function))
-
-    final def addSetValue[I <: Set[_ <: T]: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
-
-    final def addSet[I <: Set[_ <: T]](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
-
-    final def refSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false), pos)
-
-    final def refSet[I <: Set[_ <: T]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
-
-    final def weakSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
-
-    final def weakSet[I <: Set[_ <: T]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
     final def addEffect[F[_]: TagK, I <: T: Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
@@ -441,6 +410,82 @@ object ModuleDefDSL {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
+
+    /**
+      * Add multiple values into this set at once
+      *
+      * Example:
+      * {{{
+      *   class T
+      *
+      *   many[T].addSet(Set(new T, new T, new T))
+      * }}}
+      **/
+    final def addSet[I <: Set[_ <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      addSet(ProviderMagnet.lift(function))
+
+    final def addSet[I <: Set[_ <: T]](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
+
+    final def addSetValue[I <: Set[_ <: T]: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
+
+    final def refSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false), pos)
+
+    final def refSet[I <: Set[_ <: T]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
+
+    final def weakSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
+
+    final def weakSet[I <: Set[_ <: T]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
+
+//    final def addEffect[F[_]: TagK, I <: T: Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)), pos)
+//
+//    final def addEffect[F[_]: TagK, I <: T: Tag](function: ProviderMagnet[F[I]])(implicit pos: CodePositionMaterializer): AfterAdd =
+//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(function.get.ret, function.get)), pos)
+//
+//    final def refEffect[F[_]: TagK, I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)), pos)
+//
+//    final def refEffect[F[_]: TagK, I <: T: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
+//
+//    final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
+//      addResource[R](AnyConstructor[R])
+//
+//    final def addResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+//      import tag._
+//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
+//    }
+//
+//    final def addResource[R](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+//      import tag._
+//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
+//    }
+//
+//    final def addResource[R0, R <: DIResourceBase[Any, T]](
+//      function: ProviderMagnet[R0]
+//    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
+//      tag: ResourceTag[R],
+//      pos: CodePositionMaterializer,
+//    ): AfterAdd = {
+//      import tag._
+//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
+//    }
+//
+//    final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+//      import tag._
+//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
+//    }
+//
+//    final def refResource[R <: DIResourceBase[Any, T]](name: String)(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+//      import tag._
+//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
+//    }
 
     protected[this] def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
     protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd

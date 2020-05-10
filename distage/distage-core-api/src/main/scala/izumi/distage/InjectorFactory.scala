@@ -49,5 +49,11 @@ trait InjectorFactory {
     */
   def inherit(parent: Locator): Injector
 
-  def bootloader(input: PlannerInput, activation: Activation, bootstrapContextModule: BootstrapModule): Bootloader
+  def bootloader(
+    input: PlannerInput,
+    activation: Activation = Activation.empty,
+    bootstrapModule: BootstrapModule = BootstrapModule.empty,
+  ): Bootloader = {
+    new Bootloader(bootstrapModule, activation, input, this)
+  }
 }

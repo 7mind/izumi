@@ -14,7 +14,7 @@ object Injector extends InjectorFactory {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(overrides: BootstrapModule*): Injector = {
-    bootstrap(BootstrapLocator.defaultBootstrap, Activation.empty, overrides.merge)
+    bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
   /**
@@ -25,7 +25,7 @@ object Injector extends InjectorFactory {
     *                   They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-    bootstrap(BootstrapLocator.defaultBootstrap, activation, overrides.merge)
+    bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
   /**
@@ -36,7 +36,7 @@ object Injector extends InjectorFactory {
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
-    bootstrap(bootstrapBase, Activation.empty, overrides.merge)
+    bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
   /**
@@ -48,7 +48,7 @@ object Injector extends InjectorFactory {
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
   override def apply(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
-    bootstrap(bootstrapBase, activation, overrides.merge)
+    bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
   /**
@@ -61,7 +61,7 @@ object Injector extends InjectorFactory {
   }
 
   override def bootloader(input: PlannerInput, activation: Activation = Activation.empty, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
-    new Bootloader(bootstrapModule, activation, input, this)
+    super.bootloader(input, activation, bootstrapModule)
   }
 
   /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */
@@ -98,9 +98,7 @@ object Injector extends InjectorFactory {
       input: PlannerInput,
       activation: Activation = Activation.empty,
       bootstrapModule: BootstrapModule = BootstrapModule.empty,
-    ): Bootloader = {
-      new Bootloader(bootstrapModule, activation, input, this)
-    }
+    ): Bootloader = super.bootloader(input, activation, bootstrapModule)
 
     private[this] def cycleActivation: Activation = Activation(Cycles -> cycleChoice)
   }

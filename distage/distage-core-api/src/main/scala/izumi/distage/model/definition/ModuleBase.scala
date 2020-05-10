@@ -124,10 +124,7 @@ object ModuleBase {
 
       mergedKeys.flatMap {
         k =>
-          val existingMappings = existingIndex.getOrElse(k, Set.empty)
-          val newMappings = newIndex.getOrElse(k, Set.empty)
-
-          if (existingMappings.isEmpty) newMappings else existingMappings
+          newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
       }
     }
   }

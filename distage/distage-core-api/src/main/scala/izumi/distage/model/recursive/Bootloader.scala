@@ -25,6 +25,7 @@ class Bootloader(
   val injectorFactory: InjectorFactory,
 ) {
   def boot(config: BootConfig): BootstrappedApp = {
+    // FIXME: incorrect
     val injector = injectorFactory(config.activation(activation), config.bootstrap(bootstrapModule))
     val module = config.appModule(input.bindings)
     val roots = config.gcMode(input.mode)

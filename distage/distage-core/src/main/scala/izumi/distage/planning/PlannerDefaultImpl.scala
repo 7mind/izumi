@@ -107,22 +107,13 @@ final class PlannerDefaultImpl(
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 
-    val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = input
-      .bindings.bindings
+    val allOps: Array[(Annotated[DIKey], InstantiationOp)] = input
+      .bindings.bindings.iterator
       .filter(b => activationChoices.allValid(toAxis(b)))
-      .map {
+      .flatMap {
         b =>
           val next = bindingTranslator.computeProvisioning(b)
-
-          (b, next.provisions ++ next.sets.values)
-      }
-      .toSeq
-      .flatMap {
-        case (b, nn) =>
-          nn.map {
-            n =>
-              (b, n)
-          }
+          (next.provisions ++ next.sets.values).map((b, _))
       }
       .zipWithIndex
       .map {
@@ -134,9 +125,9 @@ final class PlannerDefaultImpl(
               None
           }
           (Annotated(n.target, mutIndex, toAxis(b)), n)
-      }
+      }.toArray
 
-    val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
+    val ops: Array[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
       case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
       case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
     }
