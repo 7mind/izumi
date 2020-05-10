@@ -12,7 +12,7 @@ class BIOTemporalZio(private val clock: Clock) extends BIOAsyncZio with BIOTempo
     ZIO.sleep(fromScala(duration)).provide(clock)
   }
 
-  @inline override final def retryOrElse[R, A, E, A2 >: A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A2]): ZIO[R, E2, A2] =
+  @inline override final def retryOrElse[R, E, A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A]): ZIO[R, E2, A] =
     ZIO.accessM {
       env =>
         val zioDuration = Schedule.duration(fromScala(duration))

@@ -11,8 +11,8 @@ trait BIOMonadError3[F[-_, +_, +_]] extends BIOError3[F] with BIOMonad3[F] {
   def leftFlatMap[R, E, A, E2](r: F[R, E, A])(f: E => F[R, Nothing, E2]): F[R, E2, A] = {
     redeem(r)(e => flatMap(f(e))(fail(_)), pure)
   }
-  def tapBoth[R, E, A, E2 >: E](r: F[R, E, A])(err: E => F[R, E2, Unit], succ: A => F[R, E2, Unit]): F[R, E2, A] = {
-    tap(tapError[R, E, A, E2](r)(err))(succ)
+  def tapBoth[R, E, A, E1 >: E](r: F[R, E, A])(err: E => F[R, E1, Unit], succ: A => F[R, E1, Unit]): F[R, E1, A] = {
+    tap(tapError[R, E, A, E1](r)(err))(succ)
   }
   /** for-comprehensions sugar:
     *

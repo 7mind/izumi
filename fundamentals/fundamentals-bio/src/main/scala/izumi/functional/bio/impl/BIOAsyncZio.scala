@@ -36,17 +36,17 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def flip[R, E, A](r: ZIO[R, E, A]): ZIO[R, A, E] = r.flip
   @inline override final def bimap[R, E, A, E2, B](r: ZIO[R, E, A])(f: E => E2, g: A => B): ZIO[R, E2, B] = r.bimap(f, g)
 
-  @inline override final def flatMap[R, E, A, R1 <: R, E1 >: E, B](r: ZIO[R, E, A])(f0: A => ZIO[R1, E1, B]): ZIO[R1, E1, B] = r.flatMap(f0)
-  @inline override final def tap[R, E, A, R1 <: R, E2 >: E](r: ZIO[R, E, A])(f: A => ZIO[R1, E2, Unit]): ZIO[R1, E2, A] = r.tap(f)
-  @inline override final def tapBoth[R, E, A, E2 >: E](r: ZIO[R, E, A])(err: E => ZIO[R, E2, Unit], succ: A => ZIO[R, E2, Unit]): ZIO[R, E2, A] = r.tapBoth(err, succ)
+  @inline override final def flatMap[R, E, A, B](r: ZIO[R, E, A])(f0: A => ZIO[R, E, B]): ZIO[R, E, B] = r.flatMap(f0)
+  @inline override final def tap[R, E, A](r: ZIO[R, E, A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, A] = r.tap(f)
+  @inline override final def tapBoth[R, E, A, E1 >: E](r: ZIO[R, E, A])(err: E => ZIO[R, E1, Unit], succ: A => ZIO[R, E1, Unit]): ZIO[R, E1, A] = r.tapBoth(err, succ)
   @inline override final def flatten[R, E, A](r: ZIO[R, E, ZIO[R, E, A]]): ZIO[R, E, A] = ZIO.flatten(r)
   @inline override final def *>[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, B] = f *> next
-  @inline override final def <*[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, A] =  f <* next
+  @inline override final def <*[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, A] = f <* next
   @inline override final def map2[R, E, A, B, C](r1: ZIO[R, E, A], r2: => ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = r1.zipWith(r2)(f)
 
   @inline override final def redeem[R, E, A, E2, B](r: ZIO[R, E, A])(err: E => ZIO[R, E2, B], succ: A => ZIO[R, E2, B]): ZIO[R, E2, B] = r.foldM(err, succ)
-  @inline override final def catchAll[R, E, A, E2, A2 >: A](r: ZIO[R, E, A])(f: E => ZIO[R, E2, A2]): ZIO[R, E2, A2] = r.catchAll(f)
-  @inline override final def catchSome[R, E, A, E2 >: E, A2 >: A](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E2, A2]]): ZIO[R, E2, A2] = r.catchSome(f)
+  @inline override final def catchAll[R, E, A, E2](r: ZIO[R, E, A])(f: E => ZIO[R, E2, A]): ZIO[R, E2, A] = r.catchAll(f)
+  @inline override final def catchSome[R, E, A, E1 >: E](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E1, A]]): ZIO[R, E1, A] = r.catchSome(f)
   @inline override final def withFilter[R, E, A](r: ZIO[R, E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): ZIO[R, E, A] =
     new ZIOWithFilterOps(r).withFilter(predicate)(ev)
 
@@ -57,7 +57,11 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def bracket[R, E, A, B](acquire: ZIO[R, E, A])(release: A => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
     ZIO.bracket(acquire)(release)(use)
   }
-  @inline override final def bracketCase[R, E, A, B](acquire: ZIO[R, E, A])(release: (A, BIOExit[E, B]) => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
+  @inline override final def bracketCase[R, E, A, B](
+    acquire: ZIO[R, E, A]
+  )(release: (A, BIOExit[E, B]) => ZIO[R, Nothing, Unit]
+  )(use: A => ZIO[R, E, B]
+  ): ZIO[R, E, B] = {
     ZIO.bracketExit[R, E, A, B](acquire, (a, exit) => release(a, ZIOExit.toBIOExit(exit)), use)
   }
   @inline override final def guaranteeCase[R, E, A](f: ZIO[R, E, A], cleanup: BIOExit[E, A] => ZIO[R, Nothing, Unit]): ZIO[R, E, A] = {
@@ -81,11 +85,11 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   }
   @inline override final def racePair[R, E, A, B](
     r1: ZIO[R, E, A],
-    r2: ZIO[R, E, B]
+    r2: ZIO[R, E, B],
   ): ZIO[R, E, Either[(A, BIOFiber3[ZIO, E, B]), (BIOFiber3[ZIO, E, A], B)]] = {
     (r1.interruptible raceWith r2.interruptible)(
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
-      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
+      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) },
     )
   }
 
@@ -112,8 +116,10 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
 
   @inline override final def uninterruptible[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
-  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] =
+    ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
+  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] =
+    ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
   @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f(_).interruptible)
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 
@@ -137,6 +143,6 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def andThen[R, R1, E, A](f: ZIO[R, E, R1], g: ZIO[R1, E, A]): ZIO[R, E, A] = f >>> g
   @inline override final def asking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, (A, R)] = f.onFirst
 
-  @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] =  (f +++ g).map(_.merge)
+  @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] = (f +++ g).map(_.merge)
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
 }

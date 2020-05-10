@@ -6,8 +6,8 @@ trait BIOError3[F[-_, +_, +_]] extends BIOGuarantee3[F] with BIOBifunctor3[F] {
   override val InnerF: BIOFunctor3[F] = this
 
   def fail[E](v: => E): F[Any, E, Nothing]
-  def catchAll[R, E, A, E2, A2 >: A](r: F[R, E, A])(f: E => F[R, E2, A2]): F[R, E2, A2]
-  def catchSome[R, E, A, E2 >: E, A2 >: A](r: F[R, E, A])(f: PartialFunction[E, F[R, E2, A2]]): F[R, E2, A2]
+  def catchAll[R, E, A, E2](r: F[R, E, A])(f: E => F[R, E2, A]): F[R, E2, A]
+  def catchSome[R, E, A, E1 >: E](r: F[R, E, A])(f: PartialFunction[E, F[R, E1, A]]): F[R, E1, A]
 
   def fromEither[E, V](effect: => Either[E, V]): F[Any, E, V]
   def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[Any, E, A]

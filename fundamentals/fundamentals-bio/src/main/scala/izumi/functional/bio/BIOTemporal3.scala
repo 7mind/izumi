@@ -8,7 +8,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 trait BIOTemporal3[F[-_, +_, +_]] extends BIOAsync3[F] with BIOTemporalInstances {
   def sleep(duration: Duration): F[Any, Nothing, Unit]
   def timeout[R, E, A](r: F[R, E, A])(duration: Duration): F[R, E, Option[A]]
-  def retryOrElse[R, A, E, A2 >: A, E2](r: F[R, E, A])(duration: FiniteDuration, orElse: => F[R, E2, A2]): F[R, E2, A2]
+  def retryOrElse[R, E, A, E2](r: F[R, E, A])(duration: FiniteDuration, orElse: => F[R, E2, A]): F[R, E2, A]
 
   @inline final def repeatUntil[R, E, A](action: F[R, E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[R, E, A] = {
     def go(n: Int): F[R, E, A] = {
