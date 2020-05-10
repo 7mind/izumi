@@ -107,7 +107,7 @@ final class PlannerDefaultImpl(
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 
-    val allOps: Array[(Annotated[DIKey], InstantiationOp)] = input
+    val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.iterator
       .filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
@@ -125,9 +125,9 @@ final class PlannerDefaultImpl(
               None
           }
           (Annotated(n.target, mutIndex, toAxis(b)), n)
-      }.toArray
+      }.toVector
 
-    val ops: Array[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
+    val ops: Vector[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
       case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
       case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
     }
