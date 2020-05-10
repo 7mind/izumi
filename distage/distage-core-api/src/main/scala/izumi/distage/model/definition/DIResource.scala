@@ -157,7 +157,6 @@ object DIResource {
       resource.use(_.run(function))
   }
 
-
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     @inline def a = acquire; @inline def r = release
     new DIResource[F, A] {
@@ -197,13 +196,14 @@ object DIResource {
   }
 
   def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
-    makeSimple(acquire) { es =>
-      if (!(es.isShutdown || es.isTerminated)) {
-        es.shutdown()
-        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-          es.shutdownNow().discard()
+    makeSimple(acquire) {
+      es =>
+        if (!(es.isShutdown || es.isTerminated)) {
+          es.shutdown()
+          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+            es.shutdownNow().discard()
+          }
         }
-      }
     }
   }
 
@@ -248,13 +248,20 @@ object DIResource {
   implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
-      ZManaged(resource.acquire.map(r => Reservation(
-        zio.ZIO.effectTotal(resource.extract(r)),
-        _ => resource.release(r).orDieWith {
-          case e: Throwable => e
-          case any: Any => new RuntimeException(s"DIResource finalizer: $any")
-        },
-      )))
+      ZManaged(
+        resource
+          .acquire.map(
+            r =>
+              Reservation(
+                zio.ZIO.effectTotal(resource.extract(r)),
+                _ =>
+                  resource.release(r).orDieWith {
+                    case e: Throwable => e
+                    case any: Any => new RuntimeException(s"DIResource finalizer: $any")
+                  },
+              )
+          )
+      )
     }
   }
 
@@ -297,13 +304,15 @@ object DIResource {
     *     make[Int].fromResource[IntRes]
     *   }
     * }}}
+    *
+    * Note: when the expression passed to [[DIResource.Of]] defines many local methods
+    *       it can hit a Scalac bug https://github.com/scala/bug/issues/11969
+    *       and fail to compile, in that case you may switch to [[DIResource.OfInner]]
     */
-  class Of[+F[_], +A](inner: => DIResourceBase[F, A]) extends DIResourceBase[F, A] {
-    private[Of] val _inner: DIResourceBase[F, A] = inner
-    override final type InnerResource = _inner.InnerResource
-    override final def acquire: F[_inner.InnerResource] = _inner.acquire
-    override final def release(resource: _inner.InnerResource): F[Unit] = _inner.release(resource)
-    override final def extract(resource: _inner.InnerResource): A = _inner.extract(resource)
+  class Of[+F[_], +A] private[this] (inner0: () => DIResourceBase[F, A], @unused dummy: Boolean = false) extends DIResource.OfInner[F, A] {
+    def this(inner: => DIResourceBase[F, A]) = this(() => inner)
+
+    override val inner: DIResourceBase[F, A] = inner0()
   }
 
   /**
@@ -357,11 +366,11 @@ object DIResource {
     *   }
     * }}}
     **/
-  class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @unused dummy: Boolean = false) extends DIResource[F, A] {
+  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release0: A => F[Unit], @unused dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
-    override final def release(resource: A): F[Unit] = release.apply(resource)
+    override final def release(resource: A): F[Unit] = release0(resource)
   }
 
   /**
@@ -396,7 +405,7 @@ object DIResource {
     *   }
     * }}}
     */
-  class MakePair[F[_], A] private[this](acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromCats[F, A] {
+  class MakePair[F[_], A] private[this] (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromCats[F, A] {
     def this(acquire: => F[(A, F[Unit])]) = this(() => acquire)
 
     override final def acquire: F[(A, F[Unit])] = acquire0()
@@ -417,7 +426,7 @@ object DIResource {
     *   }
     * }}}
     */
-  class LiftF[+F[_]: DIApplicative, A] private[this](acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()
@@ -442,20 +451,71 @@ object DIResource {
     */
   class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends DIResource.Of(DIResource.fromAutoCloseableF(acquire))
 
+  /**
+    * Trait-based proxy over a [[DIResource]] value
+    *
+    * {{{
+    *   class IntRes extends DIResource.OfInner {
+    *
+    *   }
+    * }}}
+    *
+    * For binding resource values using class syntax in [[ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    *
+    * NOTE: This class may be used instead of [[DIResource.Of]] to
+    * workaround scalac bug https://github.com/scala/bug/issues/11969
+    * when defining local methods
+    */
+  trait OfInner[+F[_], +A] extends DIResourceBase[F, A] {
+    val inner: DIResourceBase[F, A]
+
+    override final type InnerResource = inner.InnerResource
+    override final def acquire: F[inner.InnerResource] = inner.acquire
+    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
+    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
+  }
+
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
+  trait Mutable[+A] extends DIResource.Self[Identity, A] {
+    this: A =>
+  }
 
-  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
-
-  trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
+  trait Self[+F[_], +A] extends DIResourceBase[F, A] {
+    this: A =>
     def release: F[Unit]
+
     override final type InnerResource = Unit
     override final def release(resource: Unit): F[Unit] = release
     override final def extract(resource: Unit): A = this
   }
 
-  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
+  trait MutableOf[+A] extends DIResource.SelfOf[Identity, A] {
+    this: A =>
+  }
+
+  trait SelfOf[+F[_], +A] extends DIResourceBase[F, A] {
+    this: A =>
+    val inner: DIResourceBase[F, Unit]
+
+    override final type InnerResource = inner.InnerResource
+    override final def acquire: F[inner.InnerResource] = inner.acquire
+    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
+    override final def extract(resource: inner.InnerResource): A = this
+  }
+
+  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] {
+    this: A =>
+  }
+
+  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] {
+    this: A =>
     override type InnerResource = Unit
     override final def extract(resource: Unit): A = this
   }
@@ -475,7 +535,7 @@ object DIResource {
   }
 
   /** Generalized [[DIResource]] */
-  trait DIResourceBase[+F[_], +OuterResource] { self =>
+  trait DIResourceBase[+F[_], +OuterResource] {
     type InnerResource
     def acquire: F[InnerResource]
     def release(resource: InnerResource): F[Unit]
@@ -484,13 +544,21 @@ object DIResource {
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
     final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
     final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
-    final def evalTap[G[x] >: F[x]: DIEffect](f: OuterResource => G[Unit]): DIResourceBase[G, OuterResource] = evalMap[G, OuterResource](a => DIEffect[G].map(f(a))(_ => a))
+    final def evalTap[G[x] >: F[x]: DIEffect](f: OuterResource => G[Unit]): DIResourceBase[G, OuterResource] =
+      evalMap[G, OuterResource](a => DIEffect[G].map(f(a))(_ => a))
 
     /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-    final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = wrapAcquireImpl[G, OuterResource](this: this.type)(f)
+    final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] =
+      wrapAcquireImpl[G, OuterResource](this: this.type)(f)
 
     /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-    final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = wrapReleaseImpl[G, OuterResource](this: this.type)(f)
+    final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] =
+      wrapReleaseImpl[G, OuterResource](this: this.type)(f)
+
+    final def beforeAcquire[G[x] >: F[x]: DIApplicative](f: => G[Unit]): DIResourceBase[G, OuterResource] =
+      wrapAcquire[G](acquire => DIApplicative[G].map2(f, acquire)((_, res) => res))
+    final def beforeRelease[G[x] >: F[x]: DIApplicative](f: InnerResource => G[Unit]): DIResourceBase[G, OuterResource] =
+      wrapRelease[G]((release, res) => DIApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
     final def void: DIResourceBase[F, Unit] = map(_ => ())
   }
@@ -522,7 +590,10 @@ object DIResource {
     *       dependency on `Bracket[F, Throwable]` for
     *       your corresponding `F` type
     */
-  implicit final def providerFromCats[F[_]: TagK, A](resource: => Resource[F, A])(implicit tag: Tag[DIResource.FromCats[F, A]]): ProviderMagnet[DIResource.FromCats[F, A]] = {
+  implicit final def providerFromCats[F[_]: TagK, A](
+    resource: => Resource[F, A]
+  )(implicit tag: Tag[DIResource.FromCats[F, A]]
+  ): ProviderMagnet[DIResource.FromCats[F, A]] = {
     ProviderMagnet.identity[Bracket[F, Throwable]].map {
       implicit bracket: Bracket[F, Throwable] =>
         fromCats(resource)
@@ -532,7 +603,10 @@ object DIResource {
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R, E, A](managed: => ZManaged[R, E, A])(implicit tag: Tag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
+  implicit final def providerFromZIO[R, E, A](
+    managed: => ZManaged[R, E, A]
+  )(implicit tag: Tag[DIResource.FromZIO[R, E, A]]
+  ): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
     ProviderMagnet.lift(fromZIO(managed))
   }
 
@@ -540,14 +614,20 @@ object DIResource {
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZIONothing[R, A](managed: => ZManaged[R, Nothing, A])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
+  implicit final def providerFromZIONothing[R, A](
+    managed: => ZManaged[R, Nothing, A]
+  )(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]
+  ): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
     ProviderMagnet.lift(fromZIO(managed))
   }
 
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZLayerHas1[R, E, A: zio.Tagged](layer: => ZLayer[R, E, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
+  implicit final def providerFromZLayerHas1[R, E, A: zio.Tagged](
+    layer: => ZLayer[R, E, Has[A]]
+  )(implicit tag: Tag[DIResource.FromZIO[R, E, A]]
+  ): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
     ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
   }
 
@@ -555,7 +635,10 @@ object DIResource {
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothingHas1[R, A: zio.Tagged](layer: => ZLayer[R, Nothing, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
+  implicit final def providerFromZLayerNothingHas1[R, A: zio.Tagged](
+    layer: => ZLayer[R, Nothing, Has[A]]
+  )(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]
+  ): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
     ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
   }
 
@@ -709,7 +792,10 @@ object DIResource {
   }
 
   @inline
-  private[this] final def wrapReleaseImpl[F[_], A](self: DIResourceBase[F, A])(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]): DIResourceBase[F, A] = {
+  private[this] final def wrapReleaseImpl[F[_], A](
+    self: DIResourceBase[F, A]
+  )(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]
+  ): DIResourceBase[F, A] = {
     new DIResourceBase[F, A] {
       override final type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = self.acquire
@@ -728,7 +814,7 @@ object DIResource {
   object ResourceTag extends ResourceTagLowPriority {
     @inline def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
-    implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
+    implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
       new ResourceTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -747,7 +833,8 @@ object DIResource {
       *
       * TODO: report to IJ bug tracker
       */
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] =
+      macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
   }
 
   trait TrifunctorHasResourceTag[R0, T] {
@@ -764,13 +851,20 @@ object DIResource {
   import scala.annotation.unchecked.{uncheckedVariance => v}
   object TrifunctorHasResourceTag extends TrifunctorHasResourceTagLowPriority {
 
-    implicit def trifunctorResourceTag[R1 <: DIResourceBase[F0[R0, E0, ?], A0], F0[_, _, _]: TagK3, R0: HasConstructor, E0: Tag, A0 <: A1: Tag, A1]
-    : TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, E0, ?], A0], A1] {
+    implicit def trifunctorResourceTag[
+      R1 <: DIResourceBase[F0[R0, E0, ?], A0],
+      F0[_, _, _]: TagK3,
+      R0: HasConstructor,
+      E0: Tag,
+      A0 <: A1: Tag,
+      A1,
+    ]: TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, E0, ?], A0], A1] {
       type R = R0
       type E = E0
       type A = A0
       type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-    } = new TrifunctorHasResourceTag[R1, A1] { self =>
+    } = new TrifunctorHasResourceTag[R1, A1] {
+      self =>
       type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
       type R = R0
       type E = E0
@@ -783,14 +877,19 @@ object DIResource {
         type F[AA] = F0[Any, E0, AA]
         type A = A0
         val tagFull: Tag[DIResourceBase[F0[Any, E0, ?], A0]] = self.tagFull
-        val tagK: TagK[F0[Any, E0, ?]] =  TagK[F0[Any, E0, ?]]
+        val tagK: TagK[F0[Any, E0, ?]] = TagK[F0[Any, E0, ?]]
         val tagA: Tag[A0] = implicitly
       }
     }
   }
   sealed trait TrifunctorHasResourceTagLowPriority extends TrifunctorHasResourceTagLowPriority1 {
-    implicit def trifunctorResourceTagNothing[R1 <: DIResourceBase[F0[R0, Nothing, ?], A0], F0[_, _, _]: TagK3, R0: HasConstructor, A0 <: A1: Tag, A1]
-    : TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, Nothing, ?], A0], A1] {
+    implicit def trifunctorResourceTagNothing[
+      R1 <: DIResourceBase[F0[R0, Nothing, ?], A0],
+      F0[_, _, _]: TagK3,
+      R0: HasConstructor,
+      A0 <: A1: Tag,
+      A1,
+    ]: TrifunctorHasResourceTag[R1 with DIResourceBase[F0[R0, Nothing, ?], A0], A1] {
       type R = R0
       type E = Nothing
       type A = A0
@@ -798,7 +897,8 @@ object DIResource {
     } = TrifunctorHasResourceTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
   }
   sealed trait TrifunctorHasResourceTagLowPriority1 {
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any], T]: TrifunctorHasResourceTag[R, T] = macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any], T]: TrifunctorHasResourceTag[R, T] =
+      macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
   }
 
   object ResourceTagMacro {
