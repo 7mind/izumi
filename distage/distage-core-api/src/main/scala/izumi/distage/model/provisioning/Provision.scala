@@ -4,7 +4,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.DIKey
 
-import scala.annotation.nowarn
+import com.github.ghik.silencer.silent
 import scala.collection.{Map, Seq, mutable}
 
 trait Provision[+F[_]] {
@@ -50,7 +50,7 @@ object Provision {
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
 
-    @nowarn("msg=Unused import")
+    @silent("msg=Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
       import scala.collection.compat._
       ProvisionImmutable(

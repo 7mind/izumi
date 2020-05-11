@@ -97,7 +97,7 @@ class JsonFlattener {
     } yield out
   }
 
-  @nowarn("msg=return statement uses an exception")
+  @silent("msg=return statement uses an exception")
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {

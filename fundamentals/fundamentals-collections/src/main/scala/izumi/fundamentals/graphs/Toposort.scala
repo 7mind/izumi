@@ -2,7 +2,7 @@ package izumi.fundamentals.graphs
 
 import scala.annotation.{nowarn, tailrec}
 
-@nowarn("msg=Unused import")
+@silent("msg=Unused import")
 class Toposort {
 
   import Toposort._

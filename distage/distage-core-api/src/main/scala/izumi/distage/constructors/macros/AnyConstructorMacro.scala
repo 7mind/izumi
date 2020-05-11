@@ -1,6 +1,6 @@
 package izumi.distage.constructors.macros
 
-import scala.annotation.nowarn
+import com.github.ghik.silencer.silent
 import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, DebugProperties}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.reflection.universe.StaticDIUniverse
@@ -10,7 +10,7 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
-@nowarn("msg=deprecated.*since 2.11")
+@silent("msg=deprecated.*since 2.11")
 object AnyConstructorMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {

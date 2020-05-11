@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection.universe
 
-import scala.annotation.nowarn
+import com.github.ghik.silencer.silent
 
 trait WithDIWiring {
   this: DIUniverseBase
@@ -28,7 +28,7 @@ trait WithDIWiring {
     }
 
     case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
-      @nowarn("msg=Unused import")
+      @silent("msg=Unused import")
       final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
         val fieldKeys = methods.map(_.key).toSet

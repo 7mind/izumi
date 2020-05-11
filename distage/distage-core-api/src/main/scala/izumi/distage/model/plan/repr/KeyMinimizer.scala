@@ -5,11 +5,11 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
-import scala.annotation.nowarn
+import com.github.ghik.silencer.silent
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
 
-  @nowarn("msg=Unused import")
+  @silent("msg=Unused import")
   private[this] val index: Map[String, Int] = {
     import scala.collection.compat._
 

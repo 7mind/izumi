@@ -9,10 +9,10 @@ import izumi.distage.model.plan.topology.{DependencyGraph, PlanTopology}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection._
 
-import scala.annotation.nowarn
+import com.github.ghik.silencer.silent
 import scala.collection.mutable
 
-@nowarn("msg=Unused import")
+@silent("msg=Unused import")
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   import scala.collection.compat._
 
@@ -79,7 +79,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     PlanTopologyImmutable(DependencyGraph(dependants, DependencyKind.Required), DependencyGraph(dependencies, DependencyKind.Depends))
   }
 
-  @nowarn("msg=deprecated")
+  @silent("msg=deprecated")
   private def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
     val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
       case (acc, (reference, referencee)) =>
