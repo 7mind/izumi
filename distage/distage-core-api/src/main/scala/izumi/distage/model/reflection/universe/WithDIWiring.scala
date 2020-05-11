@@ -28,7 +28,7 @@ trait WithDIWiring {
     }
 
     case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
-      @silent("msg=Unused import")
+      @silent("Unused import")
       final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
         val fieldKeys = methods.map(_.key).toSet

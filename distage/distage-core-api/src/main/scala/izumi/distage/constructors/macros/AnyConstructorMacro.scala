@@ -10,7 +10,7 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
-@silent("msg=deprecated.*since 2.11")
+@silent("deprecated.*since 2.11")
 object AnyConstructorMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {

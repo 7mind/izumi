@@ -9,7 +9,7 @@ import com.github.ghik.silencer.silent
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
 
-  @silent("msg=Unused import")
+  @silent("Unused import")
   private[this] val index: Map[String, Int] = {
     import scala.collection.compat._
 

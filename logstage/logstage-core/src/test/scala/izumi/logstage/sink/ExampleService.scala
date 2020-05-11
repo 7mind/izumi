@@ -14,8 +14,8 @@ import org.scalatest.exceptions.TestFailedException
 import scala.util.Random
 
 @ExposedTestScope
-@silent("msg=[Ee]xpression.*logger")
-@silent("msg=missing interpolator")
+@silent("[Ee]xpression.*logger")
+@silent("missing interpolator")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 

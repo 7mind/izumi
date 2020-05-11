@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
-@silent("msg=[Ee]xpression.*logger")
+@silent("[Ee]xpression.*logger")
 class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {

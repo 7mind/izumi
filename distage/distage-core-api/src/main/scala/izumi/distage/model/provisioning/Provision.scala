@@ -50,7 +50,7 @@ object Provision {
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
 
-    @silent("msg=Unused import")
+    @silent("Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
       import scala.collection.compat._
       ProvisionImmutable(

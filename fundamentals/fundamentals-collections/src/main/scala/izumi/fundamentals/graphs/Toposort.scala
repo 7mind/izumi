@@ -1,12 +1,13 @@
 package izumi.fundamentals.graphs
 
-import scala.annotation.{nowarn, tailrec}
+import com.github.ghik.silencer.silent
 
-@silent("msg=Unused import")
+import scala.annotation.tailrec
+
+@silent("Unused import")
 class Toposort {
 
   import Toposort._
-  import scala.collection.compat._
 
   @tailrec
   final def cycleBreaking[T](toPreds: Map[T, Set[T]], done: Seq[T], break: Set[T] => T): Either[InconsistentInput[T], Seq[T]] = {

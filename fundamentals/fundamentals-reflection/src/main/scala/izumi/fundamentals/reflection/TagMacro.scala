@@ -14,7 +14,7 @@ import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
-@silent("msg=deprecated")
+@silent("deprecated")
 class TagMacro(val c: blackbox.Context) {
 
   import c.universe._
@@ -456,7 +456,7 @@ private object TagMacro {
   }
 }
 
-@silent("msg=deprecated")
+@silent("deprecated")
 class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
 
   import c.universe._

@@ -51,7 +51,7 @@ object ConfigurableLogRouter {
     ConfigurableLogRouter(threshold, sinks, Map.empty[String, Log.Level])
   }
 
-  @silent("msg=Unused import")
+  @silent("Unused import")
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
     import scala.collection.compat._
     val levelConfigs = levels.view.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap

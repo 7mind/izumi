@@ -198,7 +198,7 @@ case class ContainerResource[F[_], T](
 
     for {
       out <- F.maybeSuspend {
-        @silent("msg=method.*Bind.*deprecated")
+        @silent("method.*Bind.*deprecated")
         val cmd = Value(baseCmd)
           .mut(config.name) { case (n, c) => c.withName(n) }
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))

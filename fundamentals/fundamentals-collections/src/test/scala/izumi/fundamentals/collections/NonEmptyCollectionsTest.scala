@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import com.github.ghik.silencer.silent
 
-@silent("msg=Unused import")
+@silent("Unused import")
 class NonEmptyCollectionsTest extends AnyWordSpec {
 
   import scala.collection.compat._

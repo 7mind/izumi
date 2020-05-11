@@ -94,7 +94,7 @@ object TrivialLogger {
 
   private[this] val enabled = new mutable.HashMap[String, Boolean]()
 
-  @silent("msg=return statement uses an exception")
+  @silent("return statement uses an exception")
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
     config.forceLog || enabled.getOrElseUpdate(sysProperty, {
       val parts = sysProperty.split('.')
