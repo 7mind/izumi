@@ -20,7 +20,7 @@ object FileLockMutex {
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[E] = {
-    def acquireAndRun(channel: FileChannel, attempts: Int = 0): F[E] = {
+    def acquireAndRun(channel: FileChannel, attempts: Int): F[E] = {
       F.maybeSuspend {
         logger.debug(s"Attempt ${attempts -> "num"} to acquire lock for $filename.")
         try {
@@ -33,7 +33,7 @@ object FileLockMutex {
           effect.guarantee(F.maybeSuspend(v.close()))
         case None if attempts < maxAttempts =>
           P.sleep(waitFor).flatMap(_ => acquireAndRun(channel, attempts + 1))
-        case _ =>
+        case None =>
           logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
           effect
       }
@@ -48,7 +48,7 @@ object FileLockMutex {
           FileChannel.open(file.toPath, StandardOpenOption.WRITE)
         }
       )(release = ch => F.definitelyRecover(F.maybeSuspend(ch.close()))(_ => F.unit)) {
-        acquireAndRun(_)
+        acquireAndRun(_, 0)
       }
   }
 

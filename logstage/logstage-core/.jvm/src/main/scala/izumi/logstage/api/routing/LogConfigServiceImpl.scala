@@ -1,10 +1,11 @@
 package izumi.logstage.api.routing
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function
 
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
+
+import scala.collection.compat._
 
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {
   override def threshold(e: Log.LoggerId): Log.Level = {
@@ -22,13 +23,14 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
   private[this] val configCache = new ConcurrentHashMap[String, LoggerPathConfig](1024)
 
-  private[this] val findConfig: function.Function[String, LoggerPathConfig] = {
+  private[this] val findConfig: java.util.function.Function[String, LoggerPathConfig] = {
     id: String =>
       val parts = id.split('.')
 
       // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)
       Iterator
-        .iterate(parts, parts.length)(_.init)
+        .iterate(parts)(_.init)
+        .take(parts.length)
         .map(_.mkString("."))
         .map(id => loggerConfig.entries.get(id))
         .find(_.nonEmpty)
