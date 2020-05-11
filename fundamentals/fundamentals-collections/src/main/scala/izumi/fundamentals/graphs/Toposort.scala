@@ -20,9 +20,9 @@ class Toposort {
       if (hasPreds.isEmpty) {
         Right(done)
       } else { // circular dependency
-        val loopMembers = hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds))
+        val loopMembers = hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap
         if (loopMembers.nonEmpty) {
-          val breakLoopAt = break(loopMembers.keySet.toSet)
+          val breakLoopAt = break(loopMembers.keySet)
           val found = Set(breakLoopAt)
           val next = hasPreds.view.filterKeys(k => k != breakLoopAt).mapValues(_ -- found).toMap
 
