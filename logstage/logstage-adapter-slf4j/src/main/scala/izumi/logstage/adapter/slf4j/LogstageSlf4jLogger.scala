@@ -5,7 +5,7 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}
 
-import scala.collection.immutable.ArraySeq
+import scala.collection.compat.immutable.ArraySeq
 
 class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   private val id = LoggerId(name)
