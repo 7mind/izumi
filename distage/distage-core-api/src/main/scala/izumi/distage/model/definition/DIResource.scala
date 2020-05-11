@@ -794,7 +794,7 @@ object DIResource {
       type R = R0
       type E = Nothing
       type A = A0
-      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
+      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v] @v
     } = TrifunctorHasResourceTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
   }
   sealed trait TrifunctorHasResourceTagLowPriority1 {

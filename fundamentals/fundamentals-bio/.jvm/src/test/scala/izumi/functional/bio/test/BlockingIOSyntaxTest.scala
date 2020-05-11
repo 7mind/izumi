@@ -13,11 +13,13 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: BIOFunctor: BlockingIO]: F[Throwable, Int] = {
     F.syncBlocking(2)
   }
-  val _: ZIO[Blocking, Throwable, Int] = {
-    implicit val blocking: Blocking = Has(Blocking.Service.live)
-    `attach BlockingIO methods to a trifunctor BIO`[ZIO]
-    `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
-    `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +?, +?]]
+  locally {
+    val _: ZIO[Blocking, Throwable, Int] = {
+      implicit val blocking: Blocking = Has(Blocking.Service.live)
+      `attach BlockingIO methods to a trifunctor BIO`[ZIO]
+      `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
+      `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +?, +?]]
+    }
   }
 
   "BlockingIO.apply is callable" in {

@@ -1,5 +1,6 @@
 package izumi.distage.config.extractor
 
+import com.github.ghik.silencer.silent
 import com.typesafe.config.{Config, ConfigFactory}
 import izumi.distage.config.extractor.ConfigPathExtractor.{ConfigPath, ExtractConfigPath, ResolvedConfig}
 import izumi.distage.model.definition.BindingTag.ConfTag
@@ -51,11 +52,14 @@ object ConfigPathExtractor {
   }
 
   final case class ResolvedConfig(requiredPaths: Set[ConfigPath]) {
+    @silent("Unused import")
     def minimized(source: Config): Config = {
+      import scala.collection.compat._
       val paths = requiredPaths.map(_.toPath)
 
       ConfigFactory.parseMap {
         source.root().unwrapped().asScala
+          .view
           .filterKeys(key => paths.exists(_.startsWith(key)))
           .toMap
           .asJava
@@ -68,7 +72,7 @@ object ConfigPathExtractor {
     override def toString: String = s"cfg:$toPath"
   }
   object ConfigPath {
-    def apply(path: String): ConfigPath = new ConfigPath(path.split('.'))
+    def apply(path: String): ConfigPath = new ConfigPath(path.split('.').toIndexedSeq)
   }
 
 }

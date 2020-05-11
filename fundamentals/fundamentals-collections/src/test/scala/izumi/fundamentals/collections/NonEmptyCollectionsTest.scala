@@ -3,9 +3,13 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyString}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.collection.compat._
+import com.github.ghik.silencer.silent
 
+@silent("Unused import")
 class NonEmptyCollectionsTest extends AnyWordSpec {
+
+  import scala.collection.compat._
+
   "NonEmptyList" should {
     "maintain base contracts" in {
       val nl = NonEmptyList(1)

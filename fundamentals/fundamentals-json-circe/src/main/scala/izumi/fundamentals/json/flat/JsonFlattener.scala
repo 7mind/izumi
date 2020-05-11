@@ -1,5 +1,6 @@
 package izumi.fundamentals.json.flat
 
+import com.github.ghik.silencer.silent
 import io.circe.Json
 import izumi.functional.IzEither.EitherBiAggregate
 
@@ -97,6 +98,7 @@ class JsonFlattener {
     } yield out
   }
 
+  @silent("return statement uses an exception")
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {

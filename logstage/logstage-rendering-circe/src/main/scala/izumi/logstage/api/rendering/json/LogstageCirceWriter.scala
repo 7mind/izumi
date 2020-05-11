@@ -29,7 +29,7 @@ class LogstageCirceWriter extends LogstageWriter {
               e =>
                 (e.head.fold("null", _.toString, _.toString, identity, _.toString(), _.toString()), e.last)
             }
-            boundaries.push(Token.Value(Json.fromFields(pairs.toIterable)))
+            boundaries.push(Token.Value(Json.fromFields(pairs.toSeq)))
           } else {
             boundaries.push(Token.Value(Json.fromValues(elements)))
           }

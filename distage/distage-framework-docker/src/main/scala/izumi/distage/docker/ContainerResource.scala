@@ -129,7 +129,7 @@ case class ContainerResource[F[_], T](
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
     FileLockMutex.withLocalMutex(logger)(
       s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
-      waitFor = 1.second,
+      waitFor = 200.millis,
       maxAttempts = config.pullTimeout.toSeconds.toInt
     ) {
       for {
@@ -141,11 +141,12 @@ case class ContainerResource[F[_], T](
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(List("running").asJava)
               .exec()
+              .asScala.toList.sortBy(_.getId)
           } catch {
             case c: Throwable =>
               throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
           }
-        }.map(_.asScala.toList.sortBy(_.getId))
+        }
 
         candidates = {
           val portSet = ports.map(_.port).toSet

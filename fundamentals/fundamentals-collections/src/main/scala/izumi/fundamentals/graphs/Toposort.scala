@@ -1,14 +1,17 @@
 package izumi.fundamentals.graphs
 
-import scala.annotation.tailrec
-import scala.collection.immutable
+import com.github.ghik.silencer.silent
 
+import scala.annotation.tailrec
+
+@silent("Unused import")
 class Toposort {
 
   import Toposort._
+  import scala.collection.compat._
 
   @tailrec
-  final def cycleBreaking[T](toPreds: Map[T, Set[T]], done: Seq[T], break: immutable.Set[T] => T): Either[InconsistentInput[T], Seq[T]] = {
+  final def cycleBreaking[T](toPreds: Map[T, Set[T]], done: Seq[T], break: Set[T] => T): Either[InconsistentInput[T], Seq[T]] = {
     val (noPreds, hasPreds) = toPreds.partition {
       _._2.isEmpty
     }
@@ -17,11 +20,11 @@ class Toposort {
       if (hasPreds.isEmpty) {
         Right(done)
       } else { // circular dependency
-        val loopMembers = hasPreds.filterKeys(isInvolvedIntoCycle(hasPreds))
+        val loopMembers = hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap
         if (loopMembers.nonEmpty) {
-          val breakLoopAt = break(loopMembers.keySet.toSet)
+          val breakLoopAt = break(loopMembers.keySet)
           val found = Set(breakLoopAt)
-          val next = hasPreds.filterKeys(k => k != breakLoopAt).mapValues(_ -- found).toMap
+          val next = hasPreds.view.filterKeys(k => k != breakLoopAt).mapValues(_ -- found).toMap
 
           cycleBreaking(next, done ++ found, break)
         } else {
@@ -30,7 +33,7 @@ class Toposort {
       }
     } else {
       val found = noPreds.keySet
-      val next = hasPreds.mapValues(_ -- found).toMap
+      val next = hasPreds.view.mapValues(_ -- found).toMap
       cycleBreaking(next, done ++ found, break)
     }
   }

@@ -63,7 +63,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
 
       val renderedMessages = sink.fetchRendered()
       assert(renderedMessages.nonEmpty)
-      val eventJson = parse(renderedMessages.head).right.get.hcursor
+      val eventJson = parse(renderedMessages.head).toOption.get.hcursor
       val data = eventJson.downField("event").focus.get.asObject.map(_.toMap).get
       val context = eventJson.downField("context").focus.get.asObject.map(_.toMap).get
 

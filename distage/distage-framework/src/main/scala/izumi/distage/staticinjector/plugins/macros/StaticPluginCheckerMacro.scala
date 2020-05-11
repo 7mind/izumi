@@ -104,7 +104,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq
+    val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq.filter(_.nonEmpty)
 
     check(
       loadedPlugins = loadedPlugins,

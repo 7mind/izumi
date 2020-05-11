@@ -4,6 +4,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.DIKey
 
+import com.github.ghik.silencer.silent
 import scala.collection.{Map, Seq, mutable}
 
 trait Provision[+F[_]] {
@@ -43,26 +44,29 @@ object Provision {
   }
 
   final case class ProvisionImmutable[+F[_]]
-   (
-     instances: Map[DIKey, Any],
-     imports: Map[DIKey, Any],
-     finalizers: Seq[Finalizer[F]],
-   ) extends Provision[F] {
-     override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
-       ProvisionImmutable(
-         instances.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
-         imports.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
-         finalizers.filter(allRequiredKeys contains _.key),
-       )
-     }
+  (
+    instances: Map[DIKey, Any],
+    imports: Map[DIKey, Any],
+    finalizers: Seq[Finalizer[F]],
+  ) extends Provision[F] {
 
-     override def extend(values: Map[DIKey, Any]): Provision[F] = {
-       ProvisionImmutable(
-         instances ++ values,
-         imports,
-         finalizers,
-       )
-     }
-   }
+    @silent("Unused import")
+    override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
+      import scala.collection.compat._
+      ProvisionImmutable(
+        instances.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
+        imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
+        finalizers.filter(allRequiredKeys contains _.key),
+      )
+    }
+
+    override def extend(values: Map[DIKey, Any]): Provision[F] = {
+      ProvisionImmutable(
+        instances ++ values,
+        imports,
+        finalizers,
+      )
+    }
+  }
 
 }

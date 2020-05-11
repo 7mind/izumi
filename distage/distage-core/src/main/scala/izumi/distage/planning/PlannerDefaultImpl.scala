@@ -1,5 +1,6 @@
 package izumi.distage.planning
 
+import com.github.ghik.silencer.silent
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
@@ -103,11 +104,15 @@ final class PlannerDefaultImpl
       .get
   }
 
+  @silent("Unused import")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
+    import scala.collection.compat._
+
     val topology = analyzer.topology(plan.steps)
     val imports = topology
       .dependees
       .graph
+      .view
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
