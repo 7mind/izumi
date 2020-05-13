@@ -42,7 +42,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, Activation.empty, GCMode.NoGC).use {
+      unsafeRun(Injector().produceF[Task](module, GCMode.NoGC).use {
         objects =>
           objects.get[MyApp].run
       })
@@ -147,7 +147,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, Activation.empty, GCMode.NoGC).use {
+      unsafeRun(Injector().produceF[Task](module, GCMode.NoGC).use {
         objects =>
           objects.get[MyApp].run
       })

@@ -48,7 +48,7 @@ trait Injector extends Planner with Producer {
     *     .use(_.run(fn))
     * }}}
     * */
-  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation)(function: ProviderMagnet[F[A]]): F[A] = {
+  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[F[A]]): F[A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
   }
 
@@ -86,7 +86,11 @@ trait Injector extends Planner with Producer {
     *     .evalMap(_.run(fn))
     * }}}
     * */
-  final def produceEvalF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation)(function: ProviderMagnet[F[A]]): DIResourceBase[F, A] = {
+  final def produceEvalF[F[_]: TagK: DIEffect, A](
+    bindings: ModuleBase,
+    activation: Activation = Activation.empty,
+  )(function: ProviderMagnet[F[A]]
+  ): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).evalMap(_.run(function))
   }
 
@@ -149,18 +153,21 @@ trait Injector extends Planner with Producer {
   final def produceF[F[_]: TagK: DIEffect](input: PlannerInput): DIResourceBase[F, Locator] = {
     produceF[F](plan(input))
   }
-  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, activation: Activation, mode: GCMode): DIResourceBase[F, Locator] = {
+  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, mode: GCMode, activation: Activation = Activation.empty): DIResourceBase[F, Locator] = {
     produceF[F](plan(PlannerInput(bindings, activation, mode)))
   }
 
-  final def produceRun[A: Tag](bindings: ModuleBase, activation: Activation)(function: ProviderMagnet[A]): A = produceRunF[Identity, A](bindings, activation)(function)
-  final def produceEval[A: Tag](bindings: ModuleBase, activation: Activation)(function: ProviderMagnet[A]): DIResourceBase[Identity, A] =
+  final def produceRun[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): A =
+    produceRunF[Identity, A](bindings, activation)(function)
+  final def produceEval[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): DIResourceBase[Identity, A] =
     produceEvalF[Identity, A](bindings, activation)(function)
 
-  final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] = produceGetF[Identity, A](bindings, activation)
+  final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[Identity, A] =
+    produceGetF[Identity, A](bindings, activation)
   final def produceGet[A: Tag](name: String)(bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] =
     produceGetF[Identity, A](name, activation)(bindings)
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
-  final def produce(bindings: ModuleBase, activation: Activation, mode: GCMode): DIResourceBase[Identity, Locator] = produceF[Identity](bindings, activation, mode)
+  final def produce(bindings: ModuleBase, mode: GCMode, activation: Activation = Activation.empty): DIResourceBase[Identity, Locator] =
+    produceF[Identity](bindings, mode, activation)
 }
