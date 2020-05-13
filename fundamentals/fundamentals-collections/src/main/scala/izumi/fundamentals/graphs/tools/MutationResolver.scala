@@ -6,6 +6,7 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.GC.WeakEdge
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.annotation.tailrec
@@ -56,9 +57,10 @@ object MutationResolver {
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
       activations: Set[AxisPoint],
+      weak: Set[WeakEdge[N]],
     ): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
       for {
-        a <- resolveAxis(predcessors, roots, activations)
+        a <- resolveAxis(predcessors, roots, weak, activations)
         unsolvedConflicts = a.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
           if (unsolvedConflicts.nonEmpty) {
@@ -87,6 +89,7 @@ object MutationResolver {
     private def resolveAxis(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
+      weak: Set[WeakEdge[N]],
       activations: Set[AxisPoint],
     ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
 
@@ -98,7 +101,7 @@ object MutationResolver {
           case (key, node) =>
             (key.key, (key, node))
         }.toMultimap
-        onlyCorrect <- traceGrouped(invalid.toMultimap, activations, roots, roots, grouped, Map.empty)
+        onlyCorrect <- traceGrouped(invalid.toMultimap, activations, weak)(roots, roots, grouped, Map.empty)
       } yield {
         val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
           case (k, _) =>
@@ -127,29 +130,43 @@ object MutationResolver {
     private def traceGrouped(
       invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
       activations: Set[AxisPoint],
-      roots: Set[N],
+      weak: Set[WeakEdge[N]],
+    )(roots: Set[N],
       reachable: Set[N],
       grouped: ImmutableMultiMap[N, (Annotated[N], Node[N, V])],
       currentResult: Map[Annotated[N], Node[N, V]],
     ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
-      val out = roots.toSeq.flatMap {
-        root =>
-          val node = grouped.getOrElse(root, Set.empty)
-          val (mutators, definitions) = node.partition(n => n._1.isMutator)
+      val out: Either[List[ConflictResolutionError[N]], Seq[Iterable[(Annotated[N], Node[N, V])]]] = roots
+        .toSeq.flatMap {
+          root =>
+            val node = grouped.getOrElse(root, Set.empty)
+            val (mutators, definitions) = node.partition(n => n._1.isMutator)
 
-          val resolved = NonEmptyList.from(definitions.toSeq) match {
-            case Some(value) =>
-              resolveConflict(invalid, activations, value)
-            case None =>
-              Right(Seq.empty)
-          }
+            val resolved = NonEmptyList.from(definitions.toSeq) match {
+              case Some(value) =>
+                resolveConflict(invalid, activations, value)
+              case None =>
+                Right(Seq.empty)
+            }
 
-          Seq(Right(mutators.toSeq), resolved)
-      }
+            Seq(Right(mutators.toSeq), resolved)
+        }
+        .biAggregate
 
       val nxt = for {
-        nextResult <- out.biAggregate.map(_.flatten.toMap)
-        nextDeps = nextResult.flatMap(_._2.deps)
+        nextResult <- out.map(_.flatten.toMap)
+        nextDeps =
+          nextResult
+            .toSeq
+            .flatMap {
+              case (successor, node) =>
+                node.deps.map(d => (successor, d))
+            }
+            .filterNot {
+              case (successor, predcessor) =>
+                weak.contains(WeakEdge(predcessor, successor.key))
+            }
+            .map(_._2)
       } yield {
         (nextResult, nextDeps)
       }
@@ -160,7 +177,7 @@ object MutationResolver {
         case Right((nextResult, nextDeps)) if nextDeps.isEmpty =>
           Right(currentResult ++ nextResult)
         case Right((nextResult, nextDeps)) =>
-          traceGrouped(invalid, activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
+          traceGrouped(invalid, activations, weak)(nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
       }
     }
 
@@ -265,7 +282,9 @@ object MutationResolver {
 
       asSeq.headOption match {
         case Some(lastOp) =>
-          val withFinalAtTheEnd = asSeq.filterNot(_ == lastOp) ++ Seq(lastOp)
+          // TODO: here we may sort mutators according to some rule
+          val mutationsInApplicationOrder = asSeq.filterNot(_ == lastOp)
+          val withFinalAtTheEnd = mutationsInApplicationOrder ++ Seq(lastOp)
 
           var first: MutSel[N] = firstOp
           val replacements = withFinalAtTheEnd.map {

@@ -15,8 +15,10 @@ class Tracer[N] {
 
   @tailrec
   private def trace(matrix: IncidenceMatrix[N], exclusions: Set[(N, N)], toTrace: Set[N], reachable: mutable.HashSet[N]): Unit = {
-    val nextReachable = toTrace
+    val allReachable = toTrace
       .flatMap(s => matrix.links(s).map(p => (s, p)))
+
+    val nextReachable = allReachable
       .diff(exclusions)
       .map(_._2)
       .diff(reachable)

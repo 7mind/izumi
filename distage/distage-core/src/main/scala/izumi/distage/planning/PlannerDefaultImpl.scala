@@ -13,6 +13,7 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
+import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
@@ -143,7 +144,7 @@ final class PlannerDefaultImpl(
             case (op, acc) =>
               acc.copy(members = acc.members ++ op.members)
           }
-          val filtered = mergedSet //.copy(members = mergedSet.members)
+          val filtered = mergedSet
           Node(filtered.members, filtered: InstantiationOp)
       }
       .toMap
@@ -152,21 +153,45 @@ final class PlannerDefaultImpl(
 
     val roots = input.mode match {
       case GCMode.GCRoots(roots) =>
-        roots.toSet //.map(MutSel(_, None)).toSet
+        roots.toSet
       case GCMode.NoGC =>
-        //resolved.predcessors.links.keySet ++ resolution.unresolved.keySet.map(_.withoutAxis)
-        allOps.map(_._1.key).toSet //.map(a => MutSel(a._1.key, None)).toSet
+        allOps.map(_._1.key).toSet
     }
 
+    import izumi.fundamentals.collections.IzCollections._
+    val indexed = matrix
+      .links.map {
+        case (successor, node) =>
+          (successor.key, node.meta)
+      }
+      .toMultimap
+    val weak0 = sets
+      .collect {
+        case (target, Node(_, s: CreateSet)) => (target, s.members)
+      }.flatMap {
+        case (set, members) =>
+          members
+            .filter {
+              k =>
+                indexed.get(k).toSeq.flatten.forall {
+                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
+                    weak
+                  case _ =>
+                    false
+                }
+            }.map(member => GC.WeakEdge(member, set.key))
+      }
+      .toSet
+
     for {
-      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations)
+      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations, weak0)
       resolved = resolution.graph
       collected <- {
         val setTargets = resolved.meta.meta.collect {
           case (target, RemappedValue(_: CreateSet, _)) => target
         }
 
-        val weak = setTargets.flatMap {
+        val weak: Set[GC.WeakEdge[MutSel[DIKey]]] = setTargets.flatMap {
           set =>
             val setMembers = resolved.predcessors.links(set)
             setMembers
@@ -178,20 +203,13 @@ final class PlannerDefaultImpl(
                     case _ =>
                       false
                   }
-              }.map(member => GC.WeakEdge(set, member))
+              }
+              .map(member => GC.WeakEdge(member, set))
         }.toSet
 
         new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots.map(MutSel(_, None)), weak))
       }
-      out <- Right((resolved, collected)) /*{
-        val unsolved = resolution.unresolved.keySet.map(_.withoutAxis)
-        val requiredButConflicting = unsolved.intersect(collected.predcessorMatrix.links.keySet)
-        if (requiredButConflicting.isEmpty) {
-          Right((resolved, collected))
-        } else {
-          Left(List(ConflictingDefs(resolution.unresolved.filter(k => requiredButConflicting.contains(k._1.withoutAxis)))))
-        }
-      }*/
+      out <- Right((resolved, collected))
     } yield {
       out
     }

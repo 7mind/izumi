@@ -128,7 +128,7 @@ class GraphsTest extends AnyWordSpec {
       val resolver = new MutationResolver.MutationResolverImpl[String, Int, Int]
 
       for (((f, a, good, roots), idx) <- cases.zipWithIndex) {
-        val result = resolver.resolve(f, roots, a)
+        val result = resolver.resolve(f, roots, a, Set.empty)
         if (good) {
           assert(result.isRight, s"positive check #$idx failed")
         } else {
