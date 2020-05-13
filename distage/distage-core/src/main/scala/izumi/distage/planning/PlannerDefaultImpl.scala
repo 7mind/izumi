@@ -248,14 +248,6 @@ final class PlannerDefaultImpl(
       .get
   }
 
-  private[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
-    Value(almostPlan)
-      .map(forwardingRefResolver.resolve)
-      .map(hook.phase90AfterForwarding)
-      .eff(planningObserver.onPhase90AfterForwarding)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .get
-  }
 
   @silent("Unused import")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
