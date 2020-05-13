@@ -93,13 +93,12 @@ object MutationResolver {
       for {
         activationChoices <- Right(ActivationChoices(activations))
         _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
-        onlyValid = predcessors.links.filter { case (k, _) => activationChoices.allValid(k.con) }
+        (onlyValid, invalid) = predcessors.links.partition { case (k, _) => activationChoices.allValid(k.con) }
         grouped = onlyValid.map {
           case (key, node) =>
             (key.key, (key, node))
         }.toMultimap
-
-        onlyCorrect <- traceGrouped(activations, roots, roots, grouped, Map.empty)
+        onlyCorrect <- traceGrouped(invalid.toMultimap, activations, roots, roots, grouped, Map.empty)
       } yield {
         val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
           case (k, _) =>
@@ -126,6 +125,7 @@ object MutationResolver {
 
     @tailrec
     private def traceGrouped(
+      invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
       activations: Set[AxisPoint],
       roots: Set[N],
       reachable: Set[N],
@@ -139,7 +139,7 @@ object MutationResolver {
 
           val resolved = NonEmptyList.from(definitions.toSeq) match {
             case Some(value) =>
-              resolveConflict(activations, value)
+              resolveConflict(invalid, activations, value)
             case None =>
               Right(Seq.empty)
           }
@@ -160,11 +160,12 @@ object MutationResolver {
         case Right((nextResult, nextDeps)) if nextDeps.isEmpty =>
           Right(currentResult ++ nextResult)
         case Right((nextResult, nextDeps)) =>
-          traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
+          traceGrouped(invalid, activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
       }
     }
 
     private def resolveConflict(
+      invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
       activations: Set[AxisPoint],
       conflict: NonEmptyList[(Annotated[N], Node[N, V])],
     ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
