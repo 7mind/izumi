@@ -9,7 +9,7 @@ Use `OrderedPlan#assertImportsResolvedOrThrow` method to test whether all depend
 plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, Injector}
+import distage.{DIKey, GCMode, ModuleDef, Injector, Activation}
 
 class A(b: B)
 class B
@@ -18,7 +18,7 @@ val badModule = new ModuleDef {
   make[A]
 }
 
-val badPlan = Injector().plan(badModule, GCMode.NoGC)
+val badPlan = Injector().plan(badModule, Activation.empty, GCMode.NoGC)
 ```
 
 ```scala mdoc:crash:to-string
@@ -31,7 +31,7 @@ val goodModule = new ModuleDef {
   make[B]
 }
 
-val plan = Injector().plan(goodModule, GCMode.NoGC)
+val plan = Injector().plan(goodModule, Activation.empty, GCMode.NoGC)
 
 plan.assertImportsResolvedOrThrow
 ```

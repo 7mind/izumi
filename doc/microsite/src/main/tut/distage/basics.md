@@ -53,9 +53,12 @@ We will not do it directly. First we'll only declare the component interfaces we
 
 ```scala mdoc:to-string
 val HelloByeModule = new ModuleDef {
-  make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
   make[HelloByeApp] // `.from` is not required for concrete classes 
+}
+
+val GreeterModule = new ModuleDef {
+  make[Greeter].from[PrintGreeter]
 }
 ```
 
@@ -64,7 +67,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without actually creating any objects or executing any effects.
 
 ```scala mdoc:to-string
-val plan = Injector().plan(HelloByeModule, Activation.empty, GCMode.NoGC)
+val plan = Injector().plan(HelloByeModule ++ GreeterModule, Activation.empty, GCMode.NoGC)
 ```
 
 The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
@@ -148,19 +151,14 @@ val TwoImplsModule = new ModuleDef {
 val CombinedModule = HelloByeModule overridenBy TwoImplsModule
 
 // Choose component configuration when making an Injector:
-
-val capsInjector = Injector(Activation(Style -> Style.AllCaps))
-
-// Check the result:
-
-capsInjector
-  .produceGet[HelloByeApp](CombinedModule)
+Injector()
+  .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.AllCaps))
   .use(_.run())
 
 // Check that result changes with a different configuration:
 
-Injector(Activation(Style -> Style.Normal))
-  .produceGet[HelloByeApp](CombinedModule)
+Injector()
+  .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.Normal))
   .use(_.run())
 ```
 
@@ -207,7 +205,7 @@ val TestModule = new ModuleDef {
 }
 
 def runWith(activation: Activation) =
-  Injector(activation).produceRun(TestModule) {
+  Injector().produceRun(TestModule, activation) {
     greeter: Greeter => greeter.hello("$USERNAME")
   }
 

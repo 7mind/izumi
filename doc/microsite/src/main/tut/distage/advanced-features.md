@@ -245,7 +245,7 @@ val module = new ModuleDef {
 
 val roots = Set[DIKey](DIKey.get[Set[Elem]])
 
-val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
+val objects = Injector().produce(PlannerInput(module, Activation.empty, roots)).unsafeGet()
 
 // Strong is around
 
@@ -291,7 +291,7 @@ final class Strong(weak: Weak) extends Elem {
   println("Strong constructed")
 }
 
-val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
+val objects = Injector().produce(PlannerInput(module, Activation.empty, roots)).unsafeGet()
 
 // Weak is around
 
@@ -435,7 +435,7 @@ The plan and bindings in Locator are saved in the state they were AFTER @ref[Gar
 Objects can request the original input via a `PlannerInput` parameter:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, PlannerInput, Injector}
+import distage.{DIKey, GCMode, ModuleDef, PlannerInput, Injector, Activation}
 
 class InjectionInfo(val plannerInput: PlannerInput)
 
@@ -443,7 +443,7 @@ val module = new ModuleDef {
   make[InjectionInfo]
 }
 
-val input = PlannerInput(module, GCMode(root = DIKey.get[InjectionInfo]))
+val input = PlannerInput(module, Activation.empty, GCMode(root = DIKey.get[InjectionInfo]))
 
 val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 
