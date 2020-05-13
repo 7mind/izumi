@@ -162,20 +162,6 @@ object MutationResolver {
         case Right((nextResult, nextDeps)) =>
           traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult ++ nextResult)
       }
-
-      /*for {
-        currentResult <- out.biAggregate.map(_.flatten.toMap)
-        nextDeps = currentResult.flatMap(_._2.deps)
-        nextResult <-
-          if (nextDeps.isEmpty) {
-            Right(Map.empty)
-          } else {
-            traceGrouped(activations, nextDeps.toSet.diff(reachable), reachable ++ roots, grouped, currentResult)
-          }
-      } yield {
-        currentResult ++ nextResult
-      }*/
-
     }
 
     private def resolveConflict(
@@ -190,7 +176,6 @@ object MutationResolver {
         if (withoutNoAxis.size == 1) {
           Right(Map(withoutNoAxis.head))
         } else {
-          println(s"FAILURE/MULTI: $activations, $conflict")
           Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
         }
 
