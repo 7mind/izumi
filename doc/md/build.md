@@ -16,7 +16,7 @@ Docs
 ----
 
 ```bash
-sbt 'mdoc --no-link-hygiene --watch'
+sbt microsite/makeSite
 ```
 
 Build options
