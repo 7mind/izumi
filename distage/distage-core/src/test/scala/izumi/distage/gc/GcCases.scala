@@ -1,5 +1,6 @@
 package izumi.distage.gc
 
+import distage.ModuleDef
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
 
@@ -209,6 +210,23 @@ object GcCases {
         c1.discard()
         c2.discard()
       }
+    }
+  }
+
+  object InjectorCase14_GC {
+    sealed trait Elem
+
+    final case class Strong() extends Elem
+
+    final case class Weak() extends Elem
+
+    final val module = new ModuleDef {
+      make[Strong]
+      make[Weak]
+
+      many[Elem]
+        .ref[Strong]
+        .weak[Weak]
     }
   }
 

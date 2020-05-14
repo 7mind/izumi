@@ -52,5 +52,20 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
       assert(result.get[Circular1].q == result.get[Circular2].q)
     }
 
+    "properly handle weak references" in {
+
+
+      import GcCases.InjectorCase14_GC._
+
+      val roots = Set[DIKey](DIKey.get[Set[Elem]])
+
+      val objects =  mkInjector().produce(PlannerInput(module, Activation.empty, roots)).unsafeGet()
+
+      assert(objects.find[Strong].nonEmpty)
+      assert(objects.find[Weak].isEmpty)
+      assert(objects.get[Set[Elem]].size == 1)
+
+
+    }
   }
 }

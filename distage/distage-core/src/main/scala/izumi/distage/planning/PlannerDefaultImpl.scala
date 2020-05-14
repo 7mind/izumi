@@ -1,8 +1,6 @@
 package izumi.distage.planning
 
 import com.github.ghik.silencer.silent
-import distage.Activation
-import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.{Binding, BindingTag, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
@@ -13,7 +11,7 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
-import izumi.fundamentals.collections.ImmutableMultiMap
+import izumi.fundamentals.graphs
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
@@ -42,13 +40,13 @@ final class PlannerDefaultImpl(
         // TODO: better error message
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
 
-      case Right((resolved, collected)) =>
-        val mappedGraph = collected.predcessorMatrix.links.toSeq.map {
+      case Right((resolved, _)) =>
+        val mappedGraph = resolved.predcessors.links.toSeq.map {
           case (target, deps) =>
             val mappedTarget = updateKey(target)
             val mappedDeps = deps.map(updateKey)
 
-            val op = resolved.meta.meta.get(target).map {
+            val op = resolved.meta.nodes.get(target).map {
               op =>
                 val remaps = op.remapped.map {
                   case (original, remapped) =>
@@ -67,7 +65,7 @@ final class PlannerDefaultImpl(
         val remappedKeysGraph = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
 
         // TODO: migrate semiplan to DG
-        val steps = remappedKeysGraph.meta.meta.values.toVector
+        val steps = remappedKeysGraph.meta.nodes.values.toVector
 
         Value(SemiPlan(steps, input.mode))
           .map(addImports)
@@ -158,6 +156,78 @@ final class PlannerDefaultImpl(
         allOps.map(_._1.key).toSet
     }
 
+    val weakSetMembers = findWeakSetMembers(sets, matrix, roots)
+
+//    println("BEGIN")
+//    println(s"ROOTS: $roots")
+//    println(s"WEAK: $weakSetMembers")
+    for {
+      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations, weakSetMembers)
+      retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
+      originalKeys = allOps.map(_._1.key).toSet
+      membersToDrop =
+        resolution
+          .graph.meta.nodes.collect {
+            case (k, RemappedValue(ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _), _))
+                if !retainedKeys.contains(referenced) && !roots.contains(k.key) =>
+//              println(s"TOREMOVE: $k")
+              k
+          }.toSet
+      keysToDrop = membersToDrop.map(_.key)
+      filteredWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
+        case (k, RemappedValue(set: CreateSet, remaps)) =>
+          val withoutUnreachableWeakMebers = set.members.diff(keysToDrop)
+//          if (withoutUnreachableWeakMebers != set.members) {
+//            println(s"RETAINED SET MEMBERS in $k: $withoutUnreachableWeakMebers")
+//          }
+          (k, RemappedValue(set.copy(members = withoutUnreachableWeakMebers): InstantiationOp, remaps))
+        case (k, o) =>
+          (k, o)
+      }
+      resolved =
+        resolution
+          .graph.copy(
+            meta = GraphMeta(filteredWeakMembers),
+            successors = resolution.graph.successors.without(membersToDrop),
+            predcessors = resolution.graph.predcessors.without(membersToDrop),
+          )
+//      collected <- {
+//        val resolvedWeakSetMembers = findResolvedWeakSetMembers(resolved)
+//        new graphs.tools.GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots.map(MutSel(_, None)), resolvedWeakSetMembers))
+//      }
+      out <- Right((resolved, null))
+    } yield {
+      out
+    }
+  }
+
+//  private def findResolvedWeakSetMembers(resolved: DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]): Set[GC.WeakEdge[MutSel[DIKey]]] = {
+//    val setTargets = resolved.meta.nodes.collect {
+//      case (target, RemappedValue(_: CreateSet, _)) => target
+//    }
+//
+//    setTargets.flatMap {
+//      set =>
+//        val setMembers = resolved.predcessors.links(set)
+//        setMembers
+//          .filter {
+//            member =>
+//              resolved.meta.nodes.get(member).map(_.meta).exists {
+//                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
+//                  weak
+//                case _ =>
+//                  false
+//              }
+//          }
+//          .map(member => GC.WeakEdge(member, set))
+//    }.toSet
+//  }
+
+  private def findWeakSetMembers(
+    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    roots: Set[DIKey],
+  ): Set[GC.WeakEdge[DIKey]] = {
     import izumi.fundamentals.collections.IzCollections._
     val indexed = matrix
       .links.map {
@@ -165,54 +235,23 @@ final class PlannerDefaultImpl(
           (successor.key, node.meta)
       }
       .toMultimap
-    val weak0 = sets
+    sets
       .collect {
         case (target, Node(_, s: CreateSet)) => (target, s.members)
       }.flatMap {
-        case (set, members) =>
+        case (_, members) =>
+//          println(s"∂ ${members.intersect(roots)}")
           members
-            .filter {
-              k =>
-                indexed.get(k).toSeq.flatten.forall {
-                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
-                    weak
-                  case _ =>
-                    false
+            .diff(roots)
+            .flatMap {
+              member =>
+                indexed.get(member).toSeq.flatten.collect {
+                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+                    GC.WeakEdge(referenced, member)
                 }
-            }.map(member => GC.WeakEdge(member, set.key))
+            }
       }
       .toSet
-
-    for {
-      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations, weak0)
-      resolved = resolution.graph
-      collected <- {
-        val setTargets = resolved.meta.meta.collect {
-          case (target, RemappedValue(_: CreateSet, _)) => target
-        }
-
-        val weak: Set[GC.WeakEdge[MutSel[DIKey]]] = setTargets.flatMap {
-          set =>
-            val setMembers = resolved.predcessors.links(set)
-            setMembers
-              .filter {
-                member =>
-                  resolved.meta.meta.get(member).map(_.meta).exists {
-                    case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
-                      weak
-                    case _ =>
-                      false
-                  }
-              }
-              .map(member => GC.WeakEdge(member, set))
-        }.toSet
-
-        new GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots.map(MutSel(_, None)), weak))
-      }
-      out <- Right((resolved, collected))
-    } yield {
-      out
-    }
   }
 
   private def toAxis(b: Binding): Set[AxisPoint] = {
@@ -247,7 +286,6 @@ final class PlannerDefaultImpl(
       .map(postOrdering)
       .get
   }
-
 
   @silent("Unused import")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {

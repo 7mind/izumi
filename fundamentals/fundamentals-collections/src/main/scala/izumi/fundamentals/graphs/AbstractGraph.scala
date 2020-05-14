@@ -2,12 +2,12 @@ package izumi.fundamentals.graphs
 
 import scala.collection.compat._
 
-case class GraphMeta[N, +M](meta: Map[N, M]) extends AnyVal {
-  def without(nodes: Set[N]): GraphMeta[N, M] = GraphMeta(meta -- nodes)
-  def only(nodes: Set[N]): GraphMeta[N, M] = GraphMeta(meta.view.filterKeys(k => nodes.contains(k)).toMap)
+case class GraphMeta[N, +M](nodes: Map[N, M]) extends AnyVal {
+  def without(nodes: Set[N]): GraphMeta[N, M] = GraphMeta(this.nodes -- nodes)
+  def only(nodes: Set[N]): GraphMeta[N, M] = GraphMeta(this.nodes.view.filterKeys(k => nodes.contains(k)).toMap)
 
   def mapNodes[N1](f: N => N1): GraphMeta[N1, M] = {
-    GraphMeta(meta.map {
+    GraphMeta(nodes.map {
       case (n, m) =>
         (f(n), m)
     })
