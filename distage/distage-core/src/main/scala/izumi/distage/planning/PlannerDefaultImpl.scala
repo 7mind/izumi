@@ -40,7 +40,7 @@ final class PlannerDefaultImpl(
         // TODO: better error message
         throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
 
-      case Right((resolved, _)) =>
+      case Right(resolved) =>
         val mappedGraph = resolved.predcessors.links.toSeq.map {
           case (target, deps) =>
             val mappedTarget = updateKey(target)
@@ -102,7 +102,7 @@ final class PlannerDefaultImpl(
 
   private def resolveConflicts(
     input: PlannerInput
-  ): Either[List[ConflictResolutionError[DIKey]], (DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]], GC.GCOutput[MutSel[DIKey]])] = {
+  ): Either[List[ConflictResolutionError[DIKey]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 
@@ -191,37 +191,11 @@ final class PlannerDefaultImpl(
             successors = resolution.graph.successors.without(membersToDrop),
             predcessors = resolution.graph.predcessors.without(membersToDrop),
           )
-//      collected <- {
-//        val resolvedWeakSetMembers = findResolvedWeakSetMembers(resolved)
-//        new graphs.tools.GC.GCTracer[MutSel[DIKey]].collect(GC.GCInput(resolved.predcessors, roots.map(MutSel(_, None)), resolvedWeakSetMembers))
-//      }
-      out <- Right((resolved, null))
+      out <- Right(resolved)
     } yield {
       out
     }
   }
-
-//  private def findResolvedWeakSetMembers(resolved: DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]): Set[GC.WeakEdge[MutSel[DIKey]]] = {
-//    val setTargets = resolved.meta.nodes.collect {
-//      case (target, RemappedValue(_: CreateSet, _)) => target
-//    }
-//
-//    setTargets.flatMap {
-//      set =>
-//        val setMembers = resolved.predcessors.links(set)
-//        setMembers
-//          .filter {
-//            member =>
-//              resolved.meta.nodes.get(member).map(_.meta).exists {
-//                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
-//                  weak
-//                case _ =>
-//                  false
-//              }
-//          }
-//          .map(member => GC.WeakEdge(member, set))
-//    }.toSet
-//  }
 
   private def findWeakSetMembers(
     sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
@@ -240,7 +214,6 @@ final class PlannerDefaultImpl(
         case (target, Node(_, s: CreateSet)) => (target, s.members)
       }.flatMap {
         case (_, members) =>
-//          println(s"∂ ${members.intersect(roots)}")
           members
             .diff(roots)
             .flatMap {

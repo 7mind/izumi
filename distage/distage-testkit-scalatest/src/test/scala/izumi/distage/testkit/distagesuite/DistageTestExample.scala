@@ -111,7 +111,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
             .weak[SetElement4]
 
           many[SetElement]
-            .named("set-id")
+            .named("unmemoized-set")
             .weak[SetElement1]
             .weak[SetElement2]
             .weak[SetElement3]
@@ -143,13 +143,25 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "support unmemoized named weak sets with memoized elements" in {
       (
-        set: Set[SetElement] @Id("set-id"),
+        set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
       ) =>
         Quirks.discard(s1, s2, s3)
         F.maybeSuspend(assert(set.size == 3))
+    }
+
+    "support unmemoized named weak sets with memoized elements" in {
+      (
+        set: Set[SetElement] @Id("unmemoized-set"),
+        s1: SetElement1,
+        s2: SetElement2,
+        s3: SetElement3,
+        s4: SetElementRetainer,
+      ) =>
+        Quirks.discard(s1, s2, s3, s4)
+        F.maybeSuspend(assert(set.size == 4))
     }
 
     "return memoized weak set with have whole list of members even if test does not depends on them" in {
