@@ -8,8 +8,8 @@ import izumi.fundamentals.platform.language.Quirks._
 trait ContainerDef {
   self =>
   type Tag
-  type Container = DockerContainer[Tag]
-  type Config = Docker.ContainerConfig[Tag]
+  final type Container = DockerContainer[Tag]
+  final type Config = Docker.ContainerConfig[Tag]
 
   def config: Config
 
