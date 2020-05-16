@@ -144,7 +144,7 @@ class DistageTestRunner[F[_]: TagK](
                       Injector.inherit(sharedLocator).produceF[F](shared.side).use {
                         sharedIntegrationLocator =>
                           ifIntegChecksOk(checker, sharedIntegrationLocator)(tests, shared) {
-                            proceed(env, checker, appModule, planCheck, testPlans, shared, sharedLocator)
+                            proceed(env, checker, appModule, planCheck, testPlans, shared, sharedLocator, strengthenedKeys.toSet)
                           }
                       }
                   }
@@ -206,6 +206,7 @@ class DistageTestRunner[F[_]: TagK](
     testplans: Seq[(DistageTest[F], OrderedPlan)],
     shared: TriSplittedPlan,
     parent: Locator,
+    strengthened: Set[DIKey],
   )(implicit F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
@@ -234,7 +235,11 @@ class DistageTestRunner[F[_]: TagK](
                     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
                     val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-                    val newtestplan = testInjector.trisectByRoots(env.activation, appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
+                    val newAppModule = appmodule.drop(allSharedKeys)
+                    val moduleKeys = newAppModule.bindings.map(_.key).toSet
+                    // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
+                    val newRoots = testplan.keys -- allSharedKeys ++ strengthened.intersect(moduleKeys)
+                    val newtestplan = testInjector.trisectByRoots(env.activation, newAppModule, newRoots, integrations)
 
                     debugLogger.log(s"Running `test Id`=${test.meta.id}")
 

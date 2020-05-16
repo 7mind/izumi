@@ -158,28 +158,20 @@ final class PlannerDefaultImpl(
 
     val weakSetMembers = findWeakSetMembers(sets, matrix, roots)
 
-//    println("BEGIN")
-//    println(s"ROOTS: $roots")
-//    println(s"WEAK: $weakSetMembers")
     for {
       resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations, weakSetMembers)
       retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
-      originalKeys = allOps.map(_._1.key).toSet
       membersToDrop =
         resolution
           .graph.meta.nodes.collect {
             case (k, RemappedValue(ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _), _))
                 if !retainedKeys.contains(referenced) && !roots.contains(k.key) =>
-//              println(s"TOREMOVE: $k")
               k
           }.toSet
       keysToDrop = membersToDrop.map(_.key)
       filteredWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
         case (k, RemappedValue(set: CreateSet, remaps)) =>
           val withoutUnreachableWeakMebers = set.members.diff(keysToDrop)
-//          if (withoutUnreachableWeakMebers != set.members) {
-//            println(s"RETAINED SET MEMBERS in $k: $withoutUnreachableWeakMebers")
-//          }
           (k, RemappedValue(set.copy(members = withoutUnreachableWeakMebers): InstantiationOp, remaps))
         case (k, o) =>
           (k, o)

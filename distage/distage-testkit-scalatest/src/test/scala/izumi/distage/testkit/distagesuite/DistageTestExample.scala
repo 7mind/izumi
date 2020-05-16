@@ -149,7 +149,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         s3: SetElement3,
       ) =>
         Quirks.discard(s1, s2, s3)
-        F.maybeSuspend(assert(set.size == 3))
+        F.maybeSuspend(assert(set.size == 4))
     }
 
     "support unmemoized named weak sets with memoized elements" in {
