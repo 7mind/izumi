@@ -3,7 +3,7 @@ package izumi.logstage.distage
 import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.reflection.Tags.{TagK, TagK3, TagKK}
+import izumi.reflect.{TagK, TagK3, TagKK}
 import logstage.{LogIO, LogRouter}
 
 class LogBIO3Module[F[_, _, _]: SyncSafe3: TagK3](router: LogRouter, setupStaticLogRouter: Boolean) extends LogIOModule[F[Any, Nothing, ?]](router, setupStaticLogRouter)

@@ -3,7 +3,7 @@ package izumi.distage
 import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.reflection._
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]

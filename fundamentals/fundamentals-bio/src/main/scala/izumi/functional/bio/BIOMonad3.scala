@@ -1,5 +1,7 @@
 package izumi.functional.bio
 
+import izumi.fundamentals.platform.language.unused
+
 trait BIOMonad3[F[-_, +_, +_]] extends BIOApplicative3[F] {
   def flatMap[R, E, A, B](r: F[R, E, A])(f: A => F[R, E, B]): F[R, E, B]
   def flatten[R, E, A](r: F[R, E, F[R, E, A]]): F[R, E, A] = flatMap(r)(identity)
@@ -21,7 +23,7 @@ trait BIOMonad3[F[-_, +_, +_]] extends BIOApplicative3[F] {
     cond: F[R, E, Boolean]
   )(ifTrue: F[R, E1, A],
     ifFalse: F[R, E1, A],
-  )(implicit @deprecated("unused", "") ev: E <:< E1
+  )(implicit @unused ev: E <:< E1
   ): F[R, E1, A] = {
     flatMap(cond.asInstanceOf[F[R, E1, Boolean]])(if (_) ifTrue else ifFalse)
   }

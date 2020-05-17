@@ -1,7 +1,7 @@
 package izumi.distage.model.reflection
 
 import izumi.distage.model.definition.ImplDef
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 sealed trait DIKey {
   def tpe: SafeType

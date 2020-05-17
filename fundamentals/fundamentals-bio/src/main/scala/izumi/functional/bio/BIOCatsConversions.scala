@@ -7,6 +7,7 @@ import izumi.functional.bio.SpecificityHelper.{S1, S10, S2, S3, S4, S5, S6, S7, 
 
 import scala.util.Either
 import cats.~>
+import izumi.fundamentals.platform.language.unused
 
 /**
   * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
@@ -61,7 +62,7 @@ trait BIOCatsConversions9 extends BIOCatsConversions10 {
 }
 trait BIOCatsConversions10 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
-    implicit @deprecated("unused", "") ev: BIOFunctor[F],
+    implicit @unused ev: BIOFunctor[F],
     F: BIOAsync[F],
     Fork: BIOFork[F]
   ): cats.effect.Concurrent[F[Throwable, ?]] with S10 = new BIOCatsConcurrent[F](F, Fork)

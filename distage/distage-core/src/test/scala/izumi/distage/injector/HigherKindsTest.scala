@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage._
 import izumi.distage.fixtures.HigherKindCases._
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.reflection.macrortti.LTag
+import izumi.reflect.macrortti.LTag
 import org.scalatest.wordspec.AnyWordSpec
 
 class HigherKindsTest extends AnyWordSpec with MkInjector {

@@ -2,6 +2,7 @@ package izumi.fundamentals.platform.crypto
 
 import izumi.fundamentals.platform
 import izumi.fundamentals.platform.crypto
+import izumi.fundamentals.platform.language.unused
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
@@ -10,8 +11,8 @@ import scala.scalajs.js.typedarray.Uint8Array
 
 @js.native
 trait ScalaJSSHA256 extends js.Any {
-  def update(@deprecated("scalajs", "warnings") msg: Uint8Array): Unit = js.native
-  def digest(@deprecated("scalajs", "warnings") enc: String): String = js.native
+  def update(@unused msg: Uint8Array): Unit = js.native
+  def digest(@unused enc: String): String = js.native
 }
 
 object ScalaJSSHA256 {

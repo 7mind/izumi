@@ -7,7 +7,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, Semipla
 import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 private[plan] trait OrderedPlanOps extends Any {
   this: OrderedPlan =>

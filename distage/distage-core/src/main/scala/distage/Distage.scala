@@ -3,7 +3,6 @@ package distage
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, planning}
-import izumi.fundamentals.reflection.Tags
 
 trait Distage {
 
@@ -23,11 +22,11 @@ trait Distage {
   type With[T] = model.definition.With[T]
   type impl = model.definition.impl
 
-  type Tag[T] = Tags.Tag[T]
-  val Tag: Tags.Tag.type = Tags.Tag
+  type Tag[T] = izumi.reflect.Tag[T]
+  val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
 
-  type TagK[T[_]] = Tags.TagK[T]
-  val TagK: Tags.TagK.type = Tags.TagK
+  type TagK[T[_]] = izumi.reflect.TagK[T]
+  val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
   type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   val DIResource: model.definition.DIResource.type = model.definition.DIResource
@@ -95,22 +94,22 @@ trait Distage {
   type AutoSetModule = planning.AutoSetModule
   val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
-  type TagKK[T[_, _]] = Tags.TagKK[T]
-  val TagKK: Tags.TagKK.type = Tags.TagKK
+  type TagKK[T[_, _]] = izumi.reflect.TagKK[T]
+  val TagKK: izumi.reflect.TagKK.type = izumi.reflect.TagKK
 
-  type TagK3[T[_, _, _]] = Tags.TagK3[T]
-  val TagK3: Tags.TagK3.type = Tags.TagK3
+  type TagK3[T[_, _, _]] = izumi.reflect.TagK3[T]
+  val TagK3: izumi.reflect.TagK3.type = izumi.reflect.TagK3
 
-  type TagT[T[_[_]]] = Tags.TagT[T]
-  val TagT: Tags.TagT.type = Tags.TagT
+  type TagT[T[_[_]]] = izumi.reflect.TagT[T]
+  val TagT: izumi.reflect.TagT.type = izumi.reflect.TagT
 
-  type TagTK[T[_[_], _]] = Tags.TagTK[T]
-  val TagTK: Tags.TagTK.type = Tags.TagTK
+  type TagTK[T[_[_], _]] = izumi.reflect.TagTK[T]
+  val TagTK: izumi.reflect.TagTK.type = izumi.reflect.TagTK
 
-  type TagTKK[T[_[_], _, _]] = Tags.TagTKK[T]
-  val TagTKK: Tags.TagTKK.type = Tags.TagTKK
+  type TagTKK[T[_[_], _, _]] = izumi.reflect.TagTKK[T]
+  val TagTKK: izumi.reflect.TagTKK.type = izumi.reflect.TagTKK
 
-  type TagTK3[T[_[_], _, _, _]] = Tags.TagTK3[T]
-  val TagTK3: Tags.TagTK3.type = Tags.TagTK3
+  type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
+  val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
 
 }

@@ -5,7 +5,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.SafeType
-import izumi.fundamentals.reflection.Tags.WeakTag
+import izumi.reflect.WeakTag
 
 import scala.language.experimental.{macros => enableMacros}
 

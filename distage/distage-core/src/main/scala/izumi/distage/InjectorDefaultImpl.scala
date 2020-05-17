@@ -10,7 +10,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 class InjectorDefaultImpl
 (

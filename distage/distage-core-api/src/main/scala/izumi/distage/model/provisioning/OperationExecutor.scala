@@ -2,7 +2,7 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 trait WiringExecutor {
   def execute(context: ProvisioningKeyProvider, step: ExecutableOp.WiringOp): Seq[NewObjectOp]

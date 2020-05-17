@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection.universe
 
-import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagImpl}
+import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 private[distage] trait WithDISafeType {
   this: DIUniverseBase =>

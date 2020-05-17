@@ -6,7 +6,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{CatsMonoid, ResolveImportFSemiPlanPartiallyApplied, resolveImportsImpl1}
 import izumi.distage.model.plan.impl.SemiPlanExtensions.SemiPlanExts
 import izumi.distage.model.plan.{GCMode, SemiPlan}
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 

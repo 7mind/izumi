@@ -852,10 +852,10 @@ def ProgramModule[F[_]: TagK: Monad] = new ModuleDef {
 }
 ```
 
-@scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
+@scaladoc[TagK](izumi.reflect.TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
 it allows preserving type-information at runtime for type parameters.
-You'll need to add a @scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) context bound to create a module parameterized by an abstract `F[_]`.
-To parameterize by non-higher-kinded types, use just @scaladoc[Tag](izumi.fundamentals.reflection.Tags.Tag).
+You'll need to add a @scaladoc[TagK](izumi.reflect.TagK) context bound to create a module parameterized by an abstract `F[_]`.
+To parameterize by non-higher-kinded types, use just @scaladoc[Tag](izumi.reflect.Tag).
 
 Now the interpreters for `Validation` and `Interaction`:
 

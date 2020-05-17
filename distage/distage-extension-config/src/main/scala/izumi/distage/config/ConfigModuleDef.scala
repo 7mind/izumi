@@ -7,7 +7,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 

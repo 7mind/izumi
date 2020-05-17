@@ -7,7 +7,7 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.language.experimental.macros

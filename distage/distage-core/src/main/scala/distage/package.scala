@@ -1,7 +1,6 @@
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, planning}
-import izumi.fundamentals.reflection.Tags
 
 package object distage extends Distage {
 
@@ -21,11 +20,11 @@ package object distage extends Distage {
   override type With[T] = model.definition.With[T]
   override type impl = model.definition.impl
 
-  override type Tag[T] = Tags.Tag[T]
-  override val Tag: Tags.Tag.type = Tags.Tag
+  override type Tag[T] = izumi.reflect.Tag[T]
+  override val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
 
-  override type TagK[T[_]] = Tags.TagK[T]
-  override val TagK: Tags.TagK.type = Tags.TagK
+  override type TagK[T[_]] = izumi.reflect.TagK[T]
+  override val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
   override type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   override val DIResource: model.definition.DIResource.type = model.definition.DIResource
@@ -93,22 +92,22 @@ package object distage extends Distage {
   override type AutoSetModule = planning.AutoSetModule
   override val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
-  override type TagKK[T[_, _]] = Tags.TagKK[T]
-  override val TagKK: Tags.TagKK.type = Tags.TagKK
+  override type TagKK[T[_, _]] = izumi.reflect.TagKK[T]
+  override val TagKK: izumi.reflect.TagKK.type = izumi.reflect.TagKK
 
-  override type TagK3[T[_, _, _]] = Tags.TagK3[T]
-  override val TagK3: Tags.TagK3.type = Tags.TagK3
+  override type TagK3[T[_, _, _]] = izumi.reflect.TagK3[T]
+  override val TagK3: izumi.reflect.TagK3.type = izumi.reflect.TagK3
 
-  override type TagT[T[_[_]]] = Tags.TagT[T]
-  override val TagT: Tags.TagT.type = Tags.TagT
+  override type TagT[T[_[_]]] = izumi.reflect.TagT[T]
+  override val TagT: izumi.reflect.TagT.type = izumi.reflect.TagT
 
-  override type TagTK[T[_[_], _]] = Tags.TagTK[T]
-  override val TagTK: Tags.TagTK.type = Tags.TagTK
+  override type TagTK[T[_[_], _]] = izumi.reflect.TagTK[T]
+  override val TagTK: izumi.reflect.TagTK.type = izumi.reflect.TagTK
 
-  override type TagTKK[T[_[_], _, _]] = Tags.TagTKK[T]
-  override val TagTKK: Tags.TagTKK.type = Tags.TagTKK
+  override type TagTKK[T[_[_], _, _]] = izumi.reflect.TagTKK[T]
+  override val TagTKK: izumi.reflect.TagTKK.type = izumi.reflect.TagTKK
 
-  override type TagTK3[T[_[_], _, _, _]] = Tags.TagTK3[T]
-  override val TagTK3: Tags.TagTK3.type = Tags.TagTK3
+  override type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
+  override val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
 
 }

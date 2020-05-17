@@ -20,7 +20,7 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
-import izumi.fundamentals.reflection.Tags.{Tag, TagK}
+import izumi.reflect.{Tag, TagK}
 
 import scala.collection.{immutable, mutable}
 

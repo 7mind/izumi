@@ -3,6 +3,7 @@ package izumi.functional.bio.syntax
 import cats.data.Kleisli
 import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
 import izumi.functional.bio.{BIO3, BIOApplicative3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync3, BIOBifunctor3, BIOBracket3, BIOError3, BIOExit, BIOFiber3, BIOFork3, BIOFunctor3, BIOGuarantee3, BIOLocal, BIOMonad3, BIOMonadError3, BIOPanic3, BIOParallel3, BIOProfunctor, BIOTemporal3}
+import izumi.fundamentals.platform.language.unused
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -29,7 +30,7 @@ object BIO3Syntax {
 
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
     @inline final def void: FR[R, E, Unit] = F.void(r)
-    @inline final def widen[A1](implicit @deprecated("unused", "") ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
+    @inline final def widen[A1](implicit @unused ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
   }
 
   final class BIOBifunctor3Ops[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOBifunctor3[FR]) {
@@ -37,7 +38,7 @@ object BIO3Syntax {
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
 
     @inline final def widenError[E1 >: E]: FR[R, E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused", "") ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
   }
 
   class BIOApplicative3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOApplicative3[FR])
@@ -77,7 +78,7 @@ object BIO3Syntax {
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
 
     @inline final def widenError[E1 >: E]: FR[R, E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused", "") ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): FR[R, E1, A1] = r.asInstanceOf[FR[R, E1, A1]]
 
     @inline final def catchAll[R1 <: R, E2, A2 >: A](h: E => FR[R1, E2, A2]): FR[R1, E2, A2] = F.catchAll[R1, E, A2, E2](r)(h)
     @inline final def catchSome[R1 <: R, E1 >: E, A2 >: A](h: PartialFunction[E, FR[R1, E1, A2]]): FR[R1, E1, A2] = F.catchSome[R1, E, A2, E1](r)(h)

@@ -5,6 +5,7 @@ import izumi.sbtgen.model._
 object Izumi {
 
   object V {
+    val izumi_reflect = Version.VExpr("V.izumi_reflect")
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val silencer = Version.VExpr("V.silencer")
@@ -59,6 +60,8 @@ object Izumi {
   )
 
   object Deps {
+    final val izumi_reflect = Library("dev.zio", "izumi-reflect", V.izumi_reflect, LibraryType.Auto)
+
     final val collection_compat = Library("org.scala-lang.modules", "scala-collection-compat", V.collection_compat, LibraryType.Auto)
     final val scalatest = Library("org.scalatest", "scalatest", V.scalatest, LibraryType.Auto) in Scope.Test.all
 
@@ -247,14 +250,13 @@ object Izumi {
 
       final val collections = ArtifactId("fundamentals-collections")
       final val platform = ArtifactId("fundamentals-platform")
+      final val language = ArtifactId("fundamentals-language")
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
       final val fundamentalsJsonCirce = ArtifactId("fundamentals-json-circe")
-
-      final val thirdpartyBoopickleShaded = ArtifactId("fundamentals-thirdparty-boopickle-shaded")
 
       final lazy val basics = Seq(
         platform,
@@ -314,17 +316,7 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
-  final val crossScalaSources = Seq(
-    "unmanagedSourceDirectories" in SettingScope.Compile :=
-      """(unmanagedSourceDirectories in Compile).value.flatMap {
-        |  dir =>
-        |   Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
-        |     case Some((2, 12)) => "_2.12"
-        |     case Some((2, 13)) => "_2.13"
-        |     case _             => "_3.0"
-        |   })))
-        |}""".stripMargin.raw
-  )
+  final val crossScalaSources = Defaults.CrossScalaSources
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
@@ -342,44 +334,43 @@ object Izumi {
           scala_reflect in Scope.Provided.all
         ),
         depends = Seq(
-          Projects.fundamentals.collections in Scope.Compile.all
+          Projects.fundamentals.language in Scope.Compile.all,
+          Projects.fundamentals.collections in Scope.Compile.all,
         ),
         settings = Seq(
             "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-          ) ++ crossScalaSources,
+          ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+      ),
+      Artifact(
+        name = Projects.fundamentals.language,
+        libs = Seq(
+          scala_reflect in Scope.Provided.all
+        ),
+        depends = Seq.empty,
+        settings = crossScalaSources,
+        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+      ),
+      Artifact(
+        name = Projects.fundamentals.reflection,
+        libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect in Scope.Provided.all),
+        depends = Seq(
+          Projects.fundamentals.platform,
+          Projects.fundamentals.functional,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.functional,
         libs = Seq.empty,
         depends = Seq.empty,
-      ),
-      Artifact(
-        name = Projects.fundamentals.thirdpartyBoopickleShaded,
-        libs = Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq.empty,
-        settings = crossScalaSources ++ Seq(
-            SettingDef.RawSettingDef(
-              """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
-              FullSettingScope(SettingScope.Compile, Platform.All),
-            )
-          ),
-      ),
-      Artifact(
-        name = Projects.fundamentals.reflection,
-        libs = Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(
-          Projects.fundamentals.platform,
-          Projects.fundamentals.functional,
-          Projects.fundamentals.thirdpartyBoopickleShaded,
-        ),
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++ Seq(
             scala_java_time in Scope.Test.js
           ),
-        depends = Seq.empty,
+        depends = Seq(Projects.fundamentals.language),
         platforms = Targets.cross,
       ),
       Artifact(
@@ -388,7 +379,7 @@ object Izumi {
             jawn in Scope.Compile.js,
             scala_reflect in Scope.Provided.all,
           ),
-        depends = Projects.fundamentals.basics,
+        depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
       ),
     ),
@@ -410,7 +401,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.model,
         libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.proxyCglib,
@@ -500,7 +491,7 @@ object Izumi {
         libs = Seq(scala_reflect in Scope.Provided.all) ++
           allMonadsOptional ++
           Seq(scala_java_time in Scope.Compile.js),
-        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.platform).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,

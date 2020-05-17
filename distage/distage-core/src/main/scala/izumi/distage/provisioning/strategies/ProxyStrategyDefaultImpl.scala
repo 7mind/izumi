@@ -13,7 +13,7 @@ import izumi.distage.model.reflection.MirrorProvider
 import izumi.distage.model.reflection._
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 /**
   * Limitations:

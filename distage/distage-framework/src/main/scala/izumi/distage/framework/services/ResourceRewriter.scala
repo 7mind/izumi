@@ -11,7 +11,7 @@ import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 import izumi.logstage.api.IzLogger
 
 class ResourceRewriter(

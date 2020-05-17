@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.GCMode
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 /**
   * Input for [[Planner]]

@@ -14,7 +14,7 @@ import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.discard
-import izumi.fundamentals.reflection.Tags.{Tag, TagK, TagK3}
+import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
 /**
@@ -64,7 +64,7 @@ import zio._
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
-  * @see [[izumi.fundamentals.reflection.Tags.TagK TagK]]
+  * @see [[izumi.reflect.TagK TagK]]
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */
@@ -452,10 +452,10 @@ object ModuleDefDSL {
         dsl.fromResource(function.map2(HasConstructor[R])(_.provide(_)))
       }
 
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](layer: ZLayer[R, E, Has[I]]): AfterBind = {
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]]): AfterBind = {
         dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get).provide))
       }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](function: ProviderMagnet[ZLayer[R, E, Has[I]]]): AfterBind = {
+      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZLayer[R, E, Has[I]]])(implicit d1: DummyImplicit, d2: DummyImplicit): AfterBind = {
         dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
       }
 
@@ -533,10 +533,10 @@ object ModuleDefDSL {
         dsl.addResource(function.map2(HasConstructor[R])(_.provide(_)))
       }
 
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](layer: ZLayer[R, E, Has[I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
+      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
         dsl.addResource(HasConstructor[R].map(layer.build.map(_.get).provide))
       }
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag: zio.Tagged](function: ProviderMagnet[ZLayer[R, E, Has[I]]])(implicit pos: CodePositionMaterializer): AfterAdd = {
+      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](function: ProviderMagnet[ZLayer[R, E, Has[I]]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): AfterAdd = {
         dsl.addResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
       }
 

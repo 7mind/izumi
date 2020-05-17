@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.reflection._
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 sealed trait GCMode {
   def toSet: Set[DIKey]

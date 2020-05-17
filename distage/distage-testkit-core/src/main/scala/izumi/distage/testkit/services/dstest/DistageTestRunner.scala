@@ -25,7 +25,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.CodePosition
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.ExecutionContext

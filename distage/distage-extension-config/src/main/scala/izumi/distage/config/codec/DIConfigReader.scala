@@ -3,7 +3,7 @@ package izumi.distage.config.codec
 import com.typesafe.config.{Config, ConfigValue}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 import pureconfig.ConfigReader
 import pureconfig.error.ConfigReaderException
 

@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.BootstrapModuleDef
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 import izumi.distage.model.planning.PlanningHook
 
 /**
