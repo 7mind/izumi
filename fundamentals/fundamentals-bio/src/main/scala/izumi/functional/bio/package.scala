@@ -4,7 +4,7 @@ import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
 /*
-  Current inheritance hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/latest/release/doc/bio/media/bio-hierarchy.svg)
+  Current inheritance hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-hierarchy.svg)
 
   [BIOFunctor3]<:--[BIOApplicative3]
   [BIOApplicative3]<:--[BIOGuarantee3]
