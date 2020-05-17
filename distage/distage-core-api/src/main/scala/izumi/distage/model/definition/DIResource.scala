@@ -248,8 +248,8 @@ object DIResource {
   implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
-      ZManaged(resource.acquire.map(r => Reservation(
-        zio.ZIO.effectTotal(resource.extract(r)),
+      ZManaged.makeReserve(resource.acquire.map(r => Reservation(
+        ZIO.effectTotal(resource.extract(r)),
         _ => resource.release(r).orDieWith {
           case e: Throwable => e
           case any: Any => new RuntimeException(s"DIResource finalizer: $any")
