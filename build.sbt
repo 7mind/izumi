@@ -2260,9 +2260,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     coverageEnabled := false,
     skip in publish := true,
     DocKeys.prefix := {if (isSnapshot.value) {
-                "latest/snapshot"
+                (s => s"latest/snapshot/$s")
               } else {
-                "latest/release"
+                identity
               }},
     previewFixedPort := Some(9999),
     git.remoteRepo := "git@github.com:7mind/izumi-microsite.git",
@@ -2286,23 +2286,36 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                   .withRepository(uri("https://github.com/7mind/izumi"))
                 //        .withColor("222", "434343")
               },
-    siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
-    siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc",
+    siteSubdirName in ScalaUnidoc := DocKeys.prefix.value("api"),
+    siteSubdirName in Paradox := DocKeys.prefix.value(""),
     paradoxProperties ++= Map(
-                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
-                "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
+                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
+                "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "izumi.version" -> version.value,
               ),
     excludeFilter in ghpagesCleanSite :=
                 new FileFilter {
                   def accept(f: File): Boolean = {
-                    (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
+                    (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) &&
+                    !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value("")))
+                    ) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
+                      f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
+                      (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
-                      f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
-                      f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
+                      (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
                   }
                 },
     scalacOptions ++= Seq(

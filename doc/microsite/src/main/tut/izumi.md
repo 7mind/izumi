@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
 
 Izumi on [GitHub](https://github.com/7mind/izumi)
 
-Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
+Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
 
 @@@ index
 

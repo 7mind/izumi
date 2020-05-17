@@ -34,6 +34,6 @@ package izumi.distage.model.definition
   *   }
   * }}}
   *
-  * @see [[https://izumi.7mind.io/latest/release/doc/distage/basics.html#auto-factories Auto-Factories]]
+  * @see [[https://izumi.7mind.io/distage/basics#auto-factories Auto-Factories]]
   */
 final class With[T] extends DIStageAnnotation

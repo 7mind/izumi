@@ -535,9 +535,9 @@ object Izumi {
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
             """{if (isSnapshot.value) {
-            "latest/snapshot"
+            (s => s"latest/snapshot/$s")
           } else {
-            "latest/release"
+            identity
           }}""".raw,
           "previewFixedPort" := "Some(9999)".raw,
           "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
@@ -562,24 +562,37 @@ object Izumi {
               .withRepository(uri("https://github.com/7mind/izumi"))
             //        .withColor("222", "434343")
           }"""),
-          "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """s"${DocKeys.prefix.value}/api"""".raw,
-          "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
+          "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
+          "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
           SettingDef.RawSettingDef("""paradoxProperties ++= Map(
-            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
-            "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
+            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
+            "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "izumi.version" -> version.value,
           )"""),
           SettingDef.RawSettingDef(
             """excludeFilter in ghpagesCleanSite :=
             new FileFilter {
               def accept(f: File): Boolean = {
-                (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
+                (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) &&
+                !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value("")))
+                ) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
+                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
+                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
+                  (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
-                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
-                  f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
+                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
               }
             }"""
           ),

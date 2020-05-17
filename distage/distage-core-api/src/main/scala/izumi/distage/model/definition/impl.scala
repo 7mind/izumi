@@ -18,7 +18,7 @@ package izumi.distage.model.definition
   *   ) extends PlusedInt
   * }}}
   *
-  * @see [[https://izumi.7mind.io/latest/release/doc/distage/basics.html#auto-traits Auto-Traits]]
-  * @see [[https://izumi.7mind.io/latest/release/doc/distage/basics.html#auto-factories Auto-Factories]]
+  * @see [[https://izumi.7mind.io/distage/basics#auto-traits Auto-Traits]]
+  * @see [[https://izumi.7mind.io/distage/basics#auto-factories Auto-Factories]]
   */
 final class impl extends DIStageAnnotation
