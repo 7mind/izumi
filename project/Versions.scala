@@ -25,7 +25,7 @@ object V {
   val http4s = "0.21.1"
 
   // good to drop - scala
-  val scala_java_time = "2.0.0-RC3"
+  val scala_java_time = "2.0.0-RC5"
   val scalamock = "4.4.0"
 
   // java-only dependencies below
