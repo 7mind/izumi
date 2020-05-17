@@ -2319,7 +2319,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/release/api")) ||
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/release/doc")) ||
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/snapshot/api")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/snapshot/doc")) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/snapshot/doc"))
                   }
                 },
     scalacOptions ++= Seq(
