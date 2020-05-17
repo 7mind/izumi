@@ -4,8 +4,7 @@ import izumi.logstage.sink.ConsoleSink
 
 final class ConsoleSinkJsonCtor(private val consoleSink: ConsoleSink.type) extends AnyVal {
 
-  @deprecated(
-    """Deprecated because this method requires a wildcard import to use. Instead use:
+  @deprecated("""Deprecated because this method requires a wildcard import to use. Instead use:
 ```
 import logstage.ConsoleSink
 import logstage.circe.LogstageCirceRenderingPolicy

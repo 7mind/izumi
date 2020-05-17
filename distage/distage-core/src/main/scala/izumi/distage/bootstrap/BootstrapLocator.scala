@@ -21,7 +21,7 @@ import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None

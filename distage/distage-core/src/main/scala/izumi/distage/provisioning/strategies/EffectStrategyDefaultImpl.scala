@@ -8,7 +8,7 @@ import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 class EffectStrategyDefaultImpl
   extends EffectStrategy {

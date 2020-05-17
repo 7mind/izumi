@@ -6,7 +6,7 @@ import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.SourceFilePosition
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 sealed trait Binding {
   def key: DIKey

@@ -9,7 +9,7 @@ import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection._
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 trait PlanInterpreter {
   def instantiate[F[_]: TagK: DIEffect](

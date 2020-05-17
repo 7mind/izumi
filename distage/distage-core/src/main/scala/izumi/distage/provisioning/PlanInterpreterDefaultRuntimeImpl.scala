@@ -17,7 +17,7 @@ import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}

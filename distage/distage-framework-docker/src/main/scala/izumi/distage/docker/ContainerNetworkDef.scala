@@ -7,11 +7,11 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 import izumi.logstage.api.IzLogger
 import izumi.fundamentals.platform.language.Quirks._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
 trait ContainerNetworkDef {

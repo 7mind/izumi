@@ -1,7 +1,5 @@
 package izumi.logstage.api.routing
 
-import java.util.function
-
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 
@@ -23,13 +21,13 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
   private[this] val configCache = new mutable.HashMap[String, LoggerPathConfig]()
 
-  private[this] val findConfig: function.Function[String, LoggerPathConfig] = {
-    id: String =>
+  private[this] def findConfig(id: String): LoggerPathConfig = {
       val parts = id.split('.')
 
       // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)
-      Stream
-        .iterate(parts, parts.length)(_.init)
+      Iterator
+        .iterate(parts)(_.init)
+        .take(parts.length)
         .map(_.mkString("."))
         .map(id => loggerConfig.entries.get(id))
         .find(_.nonEmpty)

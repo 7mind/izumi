@@ -6,7 +6,7 @@ import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider, WiringExecutor}
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 class ProxyStrategyFailingImpl extends ProxyStrategy {
   override def initProxy[F[_]: TagK: DIEffect](@unused context: ProvisioningKeyProvider, @unused executor: OperationExecutor, initProxy: ProxyOp.InitProxy): F[Seq[NewObjectOp]] = {

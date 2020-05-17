@@ -3,6 +3,7 @@ package izumi.distage.roles.bundled
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import com.github.ghik.silencer.silent
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.extractor.ConfigPathExtractorModule
@@ -164,10 +165,12 @@ class ConfigWriter[F[_]: DIEffect]
   }
 
   // TODO: sdk?
+  @silent("Unused import")
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
     import scala.jdk.CollectionConverters._
+    import scala.collection.compat._
 
-    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.filterKeys(reference.hasPath).toMap.asJava)
+    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
   }
 
   private[this] def outputFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {

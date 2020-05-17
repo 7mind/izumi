@@ -12,7 +12,7 @@ import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotClos
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
   tag(Env.Prod)

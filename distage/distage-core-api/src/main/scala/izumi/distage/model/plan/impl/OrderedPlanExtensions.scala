@@ -8,7 +8,7 @@ import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
 import izumi.functional.Renderable
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 

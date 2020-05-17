@@ -1,4 +1,7 @@
 object V {
+  // izumi
+  val izumi_reflect = "1.0.0-M1"
+
   // foundation
   val collection_compat = "2.1.6"
 
@@ -9,8 +12,8 @@ object V {
 
   val cats = "2.1.1"
   val cats_effect = "2.1.3"
-  val zio = "1.0.0-RC18-2"
-  val zio_interop_cats = "2.0.0.0-RC12"
+  val zio = "1.0.0-RC19"
+  val zio_interop_cats = "2.0.0.0-RC14"
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
@@ -22,7 +25,7 @@ object V {
   val http4s = "0.21.1"
 
   // good to drop - scala
-  val scala_java_time = "2.0.0-RC3"
+  val scala_java_time = "2.0.0-RC5"
   val scalamock = "4.4.0"
 
   // java-only dependencies below

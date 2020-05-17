@@ -3,7 +3,7 @@ package izumi.distage.model.plan
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection._
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any {
   this: AbstractPlan[OpType] =>

@@ -6,7 +6,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, TypedRef}
-import izumi.fundamentals.reflection.Tags.{Tag, TagK}
+import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
 import scala.collection.immutable.Queue

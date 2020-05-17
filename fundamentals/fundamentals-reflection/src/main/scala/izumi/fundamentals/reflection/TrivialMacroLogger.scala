@@ -13,7 +13,7 @@ import scala.reflect.macros.blackbox
   * sbt -Dizumi.debug.macro.rtti=true compile
   * }}}
   *
-  * @see [[DebugProperties]]
+  * @see [[izumi.reflect.DebugProperties]]
   */
 object TrivialMacroLogger {
   def make[T: ClassTag](c: blackbox.Context, sysProperty: String): TrivialLogger = {

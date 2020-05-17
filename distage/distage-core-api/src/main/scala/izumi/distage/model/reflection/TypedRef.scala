@@ -1,7 +1,7 @@
 package izumi.distage.model.reflection
 
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 final case class TypedRef[+T](private val v: T, tpe: SafeType, isByName: Boolean) {
   def value: T = v match {

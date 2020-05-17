@@ -1,6 +1,7 @@
 package logstage
 
 import izumi.functional.bio.BIOMonadAsk
+import izumi.reflect.TagK3
 
 object LogBIOEnv {
   def apply[F[_, _, _]: LogBIOEnv]: LogBIOEnv[F] = implicitly
@@ -22,7 +23,7 @@ object LogBIOEnv {
     *   new Service[ZIO](LogBIOEnv.make)
     * }}}
     */
-  @inline def make[F[-_, +_, +_]: BIOMonadAsk: zio.TaggedF3]: LogBIOEnv[F] = new LogBIOEnvInstance[F](_.get)
+  @inline def make[F[-_, +_, +_]: BIOMonadAsk: TagK3]: LogBIOEnv[F] = new LogBIOEnvInstance[F](_.get)
 
   /**
     * Lets you carry LogBIO3 capability in environment

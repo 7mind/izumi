@@ -7,11 +7,11 @@ import izumi.functional.IzEither.EitherBiAggregate
 import scala.annotation.switch
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-
-class JsonFlattener {
   import JsonFlattener._
   import PathElement._
   import izumi.fundamentals.platform.strings.IzEscape
+
+class JsonFlattener {
 
   private final val NullT = 'n'
   private final val BoolT = 'b'

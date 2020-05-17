@@ -1,7 +1,7 @@
 package izumi.distage.compat
 
 import cats.effect.Bracket
-import distage._
+import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}

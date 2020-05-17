@@ -2,6 +2,7 @@ package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
 import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
+import izumi.fundamentals.platform.language.unused
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -15,7 +16,7 @@ object BIOSyntax {
 
     @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
     @inline final def void: F[E, Unit] = F.void(r)
-    @inline final def widen[A1](implicit @deprecated("unused", "") ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
+    @inline final def widen[A1](implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
   }
 
   final class BIOBifunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOBifunctor[F]) {
@@ -23,7 +24,7 @@ object BIOSyntax {
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
     @inline final def widenError[E1 >: E]: F[E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused", "") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
   class BIOApplicativeOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOApplicative[F])
@@ -54,7 +55,7 @@ object BIOSyntax {
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
     @inline final def widenError[E1 >: E]: F[E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @deprecated("unused", "") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
 
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A2, E2](r)(h)
     @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[Any, E, A2, E1](r)(h)

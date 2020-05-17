@@ -11,7 +11,7 @@ import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestS
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, unused}
-import izumi.fundamentals.reflection.Tags.TagK3
+import izumi.reflect.TagK3
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
 import org.scalatest.Assertion

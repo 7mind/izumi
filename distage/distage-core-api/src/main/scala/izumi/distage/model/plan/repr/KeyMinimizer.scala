@@ -2,8 +2,10 @@ package izumi.distage.model.plan.repr
 
 import izumi.distage.model.reflection._
 import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
-import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
+import izumi.reflect.macrortti.LightTypeTagRef.SymName
+import izumi.reflect.macrortti.LightTypeTagRef
+import izumi.reflect.lttrenderables._PrivateIzumiReflect.LTTRenderables
+import izumi.reflect.lttrenderables._PrivateIzumiReflect.RuntimeAPI
 
 import com.github.ghik.silencer.silent
 

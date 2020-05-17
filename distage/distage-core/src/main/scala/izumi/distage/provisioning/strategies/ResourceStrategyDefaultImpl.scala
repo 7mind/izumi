@@ -10,7 +10,7 @@ import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, Provisi
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 class ResourceStrategyDefaultImpl
   extends ResourceStrategy {

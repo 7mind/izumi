@@ -11,7 +11,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.{DIKey, IdContract}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 import scala.collection.mutable
 import scala.language.experimental.macros

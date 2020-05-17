@@ -1,8 +1,8 @@
 package izumi.distage.model.reflection
 
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.reflection.Tags.{Tag, TagK, WeakTag}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag
+import izumi.reflect.macrortti.LightTypeTag
+import izumi.reflect.{Tag, TagK, WeakTag}
 
 final case class SafeType private(
                                    tag: LightTypeTag,

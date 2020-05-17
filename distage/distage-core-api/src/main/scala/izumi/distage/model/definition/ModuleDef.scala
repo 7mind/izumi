@@ -47,7 +47,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
-  * @see [[izumi.fundamentals.reflection.Tags.TagK TagK]]
+  * @see [[izumi.reflect.TagK TagK]]
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */

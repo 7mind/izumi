@@ -13,8 +13,8 @@ import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.reflection.TagMacro
-import izumi.fundamentals.reflection.Tags.{Tag, TagK, TagK3}
+import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
+import zio.ZManaged.ReleaseMap
 import zio._
 
 import scala.language.experimental.macros
@@ -222,8 +222,16 @@ object DIResource {
   def fromZIO[R, E, A](managed: ZManaged[R, E, A]): DIResource.FromZIO[R, E, A] = {
     new FromZIO[R, E, A] {
       override def acquire: ZIO[R, E, (A, ZIO[R, Nothing, Unit])] = {
-        managed.reserve.uninterruptible.flatMap {
-          reservation => reservation.acquire.map(a => a -> reservation.release(Exit.succeed(a)).unit)
+        ZManaged.ReleaseMap.make.bracketExit(
+          release = (releaseMap: ReleaseMap, exit: Exit[E, _]) =>
+            exit match {
+              case Exit.Success(_) => UIO.unit
+              case Exit.Failure(_) => releaseMap.releaseAll(exit, ExecutionStrategy.Sequential)
+            }) {
+          releaseMap =>
+            managed.zio
+              .provideSome[R](_ -> releaseMap)
+              .map { case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit) }
         }
       }
     }
@@ -248,8 +256,8 @@ object DIResource {
   implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
-      ZManaged(resource.acquire.map(r => Reservation(
-        zio.ZIO.effectTotal(resource.extract(r)),
+      ZManaged.makeReserve(resource.acquire.map(r => Reservation(
+        ZIO.effectTotal(resource.extract(r)),
         _ => resource.release(r).orDieWith {
           case e: Throwable => e
           case any: Any => new RuntimeException(s"DIResource finalizer: $any")
@@ -547,7 +555,7 @@ object DIResource {
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZLayerHas1[R, E, A: zio.Tagged](layer: => ZLayer[R, E, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
+  implicit final def providerFromZLayerHas1[R, E, A: Tag](layer: => ZLayer[R, E, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
     ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
   }
 
@@ -555,7 +563,7 @@ object DIResource {
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothingHas1[R, A: zio.Tagged](layer: => ZLayer[R, Nothing, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
+  implicit final def providerFromZLayerNothingHas1[R, A: Tag](layer: => ZLayer[R, Nothing, Has[A]])(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
     ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
   }
 
@@ -631,7 +639,7 @@ object DIResource {
     /**
       * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZLayerProvider[R, E, A: zio.Tagged]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], FromZIO[R, E, A]] = {
+    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], FromZIO[R, E, A]] = {
       new AdaptProvider[ZLayer[R, E, Has[A]]] {
         type Out = DIResource.FromZIO[R, E, A]
 

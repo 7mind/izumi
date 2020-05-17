@@ -2,16 +2,17 @@ package izumi.fundamentals.platform.crypto
 
 import izumi.fundamentals.platform
 import izumi.fundamentals.platform.crypto
+import izumi.fundamentals.platform.language.unused
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.annotation.{JSGlobal, JSImport}
-import scala.scalajs.js.typedarray.Uint8Array
+import scala.scalajs.js.typedarray.Int8Array
 
 @js.native
 trait ScalaJSSHA256 extends js.Any {
-  def update(@deprecated("scalajs", "warnings") msg: Uint8Array): Unit = js.native
-  def digest(@deprecated("scalajs", "warnings") enc: String): String = js.native
+  def update(@unused msg: Int8Array): Unit = js.native
+  def digest(@unused enc: String): String = js.native
 }
 
 object ScalaJSSHA256 {
@@ -27,7 +28,7 @@ object ScalaJSSHA256 {
 class IzSha256Hash(impl: () => ScalaJSSHA256) extends IzHash {
   override def hash(bytes: Array[Byte]): Array[Byte] = {
     val sha256 = impl()
-    sha256.update(new Uint8Array(bytes.toJSArray))
+    sha256.update(new Int8Array(bytes.toJSArray))
     val hexdigest = sha256.digest("hex")
     hexdigest.sliding(2, 2).toArray.map(Integer.parseInt(_, 16).toByte)
   }

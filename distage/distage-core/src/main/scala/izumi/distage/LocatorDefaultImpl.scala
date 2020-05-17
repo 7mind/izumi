@@ -5,7 +5,7 @@ import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.{PlanInterpreter, Provision}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.reflect.TagK
 
 final class LocatorDefaultImpl[F[_]](
   val plan: OrderedPlan,
