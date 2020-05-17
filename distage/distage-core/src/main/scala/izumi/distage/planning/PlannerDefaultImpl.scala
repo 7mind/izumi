@@ -122,13 +122,14 @@ final class PlannerDefaultImpl
       .toMap
 
     val allOps = (imports.values ++ plan.steps).toVector
-    val roots = plan.gcMode.toSet
-    val missingRoots = roots.diff(allOps.map(_.target).toSet).map {
-      root =>
-        ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-    }.toVector
-
-    SemiPlan(missingRoots ++ allOps, plan.gcMode)
+    val missingRoots = plan.roots match {
+      case Roots.Of(roots) => roots.toSet.diff(allOps.map(_.target).toSet).map {
+        root =>
+          ImportDependency(root, Set.empty, OperationOrigin.Unknown)
+      }.toVector
+      case Roots.Everything => Vector.empty
+    }
+    SemiPlan(missingRoots ++ allOps, plan.roots)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -203,10 +204,10 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    val roots = completedPlan.gcMode match {
-      case GCMode.GCRoots(roots) =>
-        roots
-      case GCMode.NoGC =>
+    val roots = completedPlan.roots match {
+      case Roots.Of(roots) =>
+        roots.toSet
+      case Roots.Everything =>
         topology.effectiveRoots
     }
     OrderedPlan(sortedOps.toVector, roots, topology)

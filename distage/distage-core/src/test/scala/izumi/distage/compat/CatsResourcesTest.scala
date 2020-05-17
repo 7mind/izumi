@@ -5,7 +5,7 @@ import distage._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.effect.LowPriorityDIEffectInstances
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.distage.compat.CatsResourcesTest._
 import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
@@ -42,7 +42,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       make[MyApp]
     }
 
-    Injector().produceF[IO](module, GCMode.NoGC).use {
+    Injector().produceF[IO](module, Roots.Everything).use {
       objects =>
         objects.get[MyApp].run
     }.unsafeRunSync()

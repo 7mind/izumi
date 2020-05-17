@@ -19,7 +19,7 @@ def readLine() = {
 ```
 
 ```scala mdoc:to-string
-import distage.{ModuleDef, Injector, GCMode}
+import distage.{ModuleDef, Injector, Roots}
 
 trait Greeter {
   def hello(name: String): Unit
@@ -64,7 +64,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without actually creating any objects or executing any effects.
 
 ```scala mdoc:to-string
-val plan = Injector().plan(HelloByeModule, GCMode.NoGC)
+val plan = Injector().plan(HelloByeModule, Roots.NoGC)
 ```
 
 The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
@@ -102,7 +102,7 @@ new ModuleDef {
 }
 ```
 
-You can abstract over annotations with type aliases or with string constants:
+You can abstract over annotations using type aliases or string constants:
 
 ```scala mdoc:to-string
 object Ids {
@@ -111,14 +111,18 @@ object Ids {
 }
 ```
 
-For true non-singleton semantics, you must create explicit factory classes, or generate them (see @ref[Auto-Factories](#auto-factories))
+To create non-singleton components you must use explicit factory classes. You can use @ref[Auto-Factories](#auto-factories) implementations for these factories.
+
+### Root Components
+
+
 
 ### Activation Axis
 
 You can choose between different implementations of a component using `Axis` tags:
 
 ```scala mdoc:to-string
-import distage.{Axis, Activation, ModuleDef, Injector, GCMode}
+import distage.{Axis, Activation, ModuleDef, Injector, Roots}
 
 class AllCapsGreeter extends Greeter {
   def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
@@ -240,7 +244,7 @@ receive an allocated resource and when the function exits the resource will be d
 Example with `cats.effect.Resource`:
 
 ```scala mdoc:reset:to-string
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 import cats.effect.{Bracket, Resource, IO}
 
 class DBConnection
@@ -275,7 +279,7 @@ Will produce the following output:
 ```scala mdoc:to-string
 import distage.DIKey
 
-val objectGraphResource = Injector().produceF[IO](module, GCMode(root = DIKey.get[MyApp]))
+val objectGraphResource = Injector().produceF[IO](module, Roots(root = DIKey.get[MyApp]))
 
 objectGraphResource
   .use(_.get[MyApp].run)
@@ -285,7 +289,7 @@ objectGraphResource
 Lifecycle management with `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
 
 ```scala mdoc:reset:to-string
-import distage.{DIResource, GCMode, ModuleDef, Injector}
+import distage.{DIResource, Roots, ModuleDef, Injector}
 
 class Init {
   var initialized = false
@@ -334,7 +338,7 @@ For example, we may declare many [http4s](https://http4s.org) routes and serve t
 ```scala mdoc:silent:reset:to-string
 import cats.implicits._
 import cats.effect.{Bracket, IO, Resource}
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 import org.http4s._
 import org.http4s.server.Server
 import org.http4s.client.Client
@@ -405,7 +409,7 @@ val finalModule = Seq(
 ).merge
 
 // wire the graph
-val objects = Injector().produceF[IO](finalModule, GCMode.NoGC).unsafeGet().unsafeRunSync()
+val objects = Injector().produceF[IO](finalModule, Roots.NoGC).unsafeGet().unsafeRunSync()
 
 val server = objects.get[Server[IO]]
 val client = objects.get[Client[IO]]
@@ -439,7 +443,7 @@ In these cases we can use `.fromEffect` to create a value using an effectful con
 Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 import izumi.functional.bio.{BIOMonadError, BIOPrimitives, F}
 import zio.{Task, IO}
 
@@ -569,7 +573,7 @@ Example:
 
 ```scala mdoc:reset:to-string
 import cats.Contravariant
-import distage.{GCMode, Injector, ModuleDef, ProviderMagnet, Tag, TagK, HasConstructor}
+import distage.{Roots, Injector, ModuleDef, ProviderMagnet, Tag, TagK, HasConstructor}
 import zio.{Task, UIO, URIO, ZIO, Has}
 
 trait Dependee[-R] {
@@ -823,7 +827,7 @@ First, the program we want to write:
 import cats.Monad
 import cats.effect.{Sync, IO}
 import cats.syntax.all._
-import distage.{GCMode, Module, ModuleDef, Injector, Tag, TagK, TagKK}
+import distage.{Roots, Module, ModuleDef, Injector, Tag, TagK, TagKK}
 
 trait Validation[F[_]] {
   def minSize(s: String, n: Int): F[Boolean]
@@ -884,7 +888,7 @@ def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 
 // create object graph Resource
 
-val objectsResource = Injector().produceF[IO](SyncProgram[IO], GCMode.NoGC)
+val objectsResource = Injector().produceF[IO](SyncProgram[IO], Roots.NoGC)
 
 // run
 
@@ -974,7 +978,7 @@ def SyncInterpreters[F[_]]: Module = Module.empty
 ```scala mdoc:to-string
 import cats.syntax.semigroup._
 import cats.effect.{ExitCode, IO, IOApp}
-import distage.{DIKey, GCMode, Injector}
+import distage.{DIKey, Roots, Injector}
 
 trait AppEntrypoint {
   def run: IO[Unit]
@@ -987,7 +991,7 @@ object Main extends App {
 
     val myModules = ProgramModule[IO] |+| SyncInterpreters[IO]
 
-    val plan = Injector().plan(myModules, GCMode(DIKey.get[AppEntrypoint]))
+    val plan = Injector().plan(myModules, Roots(DIKey.get[AppEntrypoint]))
 
     for {
       // resolveImportsF can effectfully add missing instances to an existing plan

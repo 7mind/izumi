@@ -4,7 +4,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
-import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{Roots, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.Tag
@@ -115,6 +115,6 @@ private[plan] trait OrderedPlanOps extends Any {
             Seq.empty
         }
     }
-    SemiPlan(safeSteps.toVector, GCMode(declaredRoots))
+    SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
 }

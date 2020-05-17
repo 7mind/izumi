@@ -6,12 +6,15 @@ package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
 
-  override type Activation = model.definition.Activation
-  override val Activation: model.definition.Activation.type = model.definition.Activation
-
   override type Injector = model.Injector
   override type Planner = model.Planner
   override type Producer = model.Producer
+
+  override type Activation = model.definition.Activation
+  override val Activation: model.definition.Activation.type = model.definition.Activation
+
+  override type Roots = model.plan.Roots
+  override val Roots: model.plan.Roots.type = model.plan.Roots
 
   override type Locator = model.Locator
   override type LocatorRef = model.recursive.LocatorRef
@@ -36,6 +39,9 @@ package object distage extends Distage {
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
+  override type DIKey = model.reflection.DIKey
+  override val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
+
   override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
   override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
 
@@ -51,8 +57,10 @@ package object distage extends Distage {
   override type HasConstructor[T] = constructors.HasConstructor[T]
   override val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
 
-  override type GCMode = model.plan.GCMode
-  override val GCMode: model.plan.GCMode.type = model.plan.GCMode
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  override type GCMode = model.plan.Roots
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  override val GCMode: model.plan.Roots.type = model.plan.Roots
 
   override type BindingTag = model.definition.BindingTag
   override val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -71,9 +79,6 @@ package object distage extends Distage {
   override type SemiPlan = model.plan.SemiPlan
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  override type DIKey = model.reflection.DIKey
-  override val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
   override type SafeType = model.reflection.SafeType
   override val SafeType: model.reflection.SafeType.type = model.reflection.SafeType

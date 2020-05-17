@@ -10,7 +10,7 @@ import izumi.distage.model.reflection._
 trait Planner extends PlanSplittingOps {
   def plan(input: PlannerInput): OrderedPlan
 
-  final def plan(bindings: ModuleBase, gcMode: GCMode): OrderedPlan = {
+  final def plan(bindings: ModuleBase, gcMode: Roots): OrderedPlan = {
     plan(PlannerInput(bindings, gcMode))
   }
 

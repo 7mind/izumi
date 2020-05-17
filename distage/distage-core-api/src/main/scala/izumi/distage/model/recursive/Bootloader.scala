@@ -2,7 +2,7 @@ package izumi.distage.model.recursive
 
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase}
-import izumi.distage.model.plan.{GCMode, OrderedPlan}
+import izumi.distage.model.plan.{Roots, OrderedPlan}
 import izumi.distage.model.{Injector, PlannerInput}
 
 final case class BootstrappedApp(
@@ -15,7 +15,7 @@ final case class BootConfig(
                              bootstrap: BootstrapModule => BootstrapModule = identity,
                              appModule: ModuleBase => ModuleBase = identity,
                              activation: Activation => Activation = identity,
-                             gcMode: GCMode => GCMode = identity,
+                             gcMode: Roots => Roots = identity,
                            )
 
 class Bootloader(

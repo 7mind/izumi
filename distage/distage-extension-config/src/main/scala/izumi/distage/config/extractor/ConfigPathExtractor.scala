@@ -21,7 +21,7 @@ class ConfigPathExtractor extends PlanningHook {
 
     val addResolvedConfigOp = resolvedConfigOp(paths)
 
-    SemiPlan(plan.steps :+ addResolvedConfigOp, plan.gcMode)
+    SemiPlan(plan.steps :+ addResolvedConfigOp, plan.roots)
   }
 
   private def resolvedConfigOp(paths: Set[ConfigPath]): ExecutableOp.WiringOp.UseInstance = {

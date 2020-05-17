@@ -4,9 +4,7 @@ package izumi.fundamentals.collections.nonempty
 
 import scala.collection.compat._
 import scala.collection.mutable.{ArrayBuffer, Buffer}
-import scala.collection.{Iterable, Set}
 import scala.reflect.ClassTag
-
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.
 /**
@@ -815,7 +813,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return an immutable <code>IndexedSeq</code> containing all elements of this <code>NonEmptySet</code>.
     */
-  def toIndexedSeq: collection.immutable.IndexedSeq[T] = toSet.toVector
+  def toIndexedSeq: scala.collection.immutable.IndexedSeq[T] = toSet.toVector
 
   /**
     * Converts this <code>NonEmptySet</code> to an iterable collection.
@@ -862,7 +860,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return a set containing all elements of this <code>NonEmptySet</code>.
     */
-  def toList: collection.immutable.List[T] = toSet.toList
+  def toList: scala.collection.immutable.List[T] = toSet.toList
 
   /**
     * Returns a string representation of this <code>NonEmptySet</code>.
@@ -1022,7 +1020,7 @@ object NonEmptySet {
   def from[T](set: Set[T]): Option[NonEmptySet[T]] =
     set.headOption match {
       case None => None
-      case Some(_) => Some(new NonEmptySet(scala.collection.immutable.Set.empty[T] ++ set))
+      case Some(_) => Some(new NonEmptySet(collection.immutable.Set.empty[T] ++ set))
     }
 
 }

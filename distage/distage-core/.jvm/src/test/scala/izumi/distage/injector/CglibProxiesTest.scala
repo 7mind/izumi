@@ -6,7 +6,7 @@ import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerC
 import izumi.distage.fixtures.ResourceCases.{CircularResourceCase, Ref, Suspend2}
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.wordspec.AnyWordSpec
@@ -223,7 +223,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
         make[ComponentWithByNameFwdRef]
         make[ComponentHolder]
         make[Root]
-      }, GCMode(DIKey.get[Root]))
+      }, Roots(DIKey.get[Root]))
 
       val injector = mkInjector()
       val context = injector.produce(definition).unsafeGet()
@@ -354,7 +354,7 @@ class CglibProxiesTest extends AnyWordSpec with MkInjector {
           .ref[S3Component]
         make[S3Component].fromResource(s3ComponentResource[Fn] _)
         make[S3Client].fromResource(s3clientResource[Fn] _)
-      }, GCMode(DIKey.get[S3Client]))
+      }, Roots(DIKey.get[S3Client]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)

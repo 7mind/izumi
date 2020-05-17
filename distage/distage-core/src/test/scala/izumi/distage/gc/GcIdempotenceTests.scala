@@ -3,7 +3,7 @@ package izumi.distage.gc
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import distage.DIKey
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
 
@@ -18,7 +18,7 @@ class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
             .add[TestComponent]
 
           make[App]
-        }, GCMode(DIKey.get[App])))
+        }, Roots(DIKey.get[App])))
 
         val updated = injector.finish(plan.toSemi)
         val result = injector.produce(updated).unsafeGet()

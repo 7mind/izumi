@@ -5,7 +5,7 @@ import cats.kernel.Monoid
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{CatsMonoid, ResolveImportFSemiPlanPartiallyApplied, resolveImportsImpl1}
 import izumi.distage.model.plan.impl.SemiPlanExtensions.SemiPlanExts
-import izumi.distage.model.plan.{GCMode, SemiPlan}
+import izumi.distage.model.plan.{Roots, SemiPlan}
 import izumi.reflect.Tag
 
 import scala.language.implicitConversions
@@ -19,7 +19,7 @@ private[plan] trait SemiPlanExtensions extends Any { this: SemiPlan.type =>
     */
   implicit final def optionalCatsMonoidForSemiplan[K[_]: CatsMonoid]: K[SemiPlan] =
     new Monoid[SemiPlan] {
-      override def empty: SemiPlan = SemiPlan(Vector.empty, GCMode.NoGC)
+      override def empty: SemiPlan = SemiPlan(Vector.empty, Roots.Everything)
 
       override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
     }.asInstanceOf[K[SemiPlan]]

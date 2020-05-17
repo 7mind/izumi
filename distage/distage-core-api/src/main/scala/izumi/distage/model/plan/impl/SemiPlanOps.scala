@@ -36,7 +36,7 @@ private[plan] trait SemiPlanOps extends Any {
   }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[SemiplanOp]]): SemiPlan = {
-    SemiPlan(steps = AbstractPlanOps.resolveImports1(f, steps.toVector), gcMode)
+    SemiPlan(steps = AbstractPlanOps.resolveImports1(f, steps.toVector), roots)
   }
 
   final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {

@@ -1,7 +1,7 @@
 package izumi.distage.planning.gc
 
 import izumi.distage.model.plan.ExecutableOp._
-import izumi.distage.model.plan.{ExecutableOp, GCMode, SemiPlan, Wiring}
+import izumi.distage.model.plan.{ExecutableOp, Roots, SemiPlan, Wiring}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection._
 import izumi.fundamentals.graphs.AbstractGCTracer
@@ -90,14 +90,12 @@ class TracingDIGC[OpType <: ExecutableOp]
 
 object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: SemiPlan): SemiPlan = {
-    plan.gcMode match {
-      case GCMode.GCRoots(roots) =>
-        assert(roots.nonEmpty)
+    plan.roots match {
+      case Roots.Of(roots) =>
+        val collected = new TracingDIGC(roots.toSet, plan.index, ignoreMissingDeps = false).gc(plan.steps)
+        SemiPlan(collected.nodes, plan.roots)
 
-        val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-        SemiPlan(collected.nodes, plan.gcMode)
-
-      case GCMode.NoGC =>
+      case Roots.Everything =>
         plan
     }
   }

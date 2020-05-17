@@ -5,7 +5,7 @@ import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.functional.bio.BIO
 import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
@@ -42,7 +42,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, GCMode.NoGC).use {
+      unsafeRun(Injector().produceF[Task](module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       })
@@ -145,7 +145,7 @@ final class ZIOResourcesTest extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, GCMode.NoGC).use {
+      unsafeRun(Injector().produceF[Task](module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       })
