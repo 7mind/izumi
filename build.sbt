@@ -2296,9 +2296,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     excludeFilter in ghpagesCleanSite :=
                 new FileFilter {
                   def accept(f: File): Boolean = {
-                    (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) &&
-                    !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value("")))
-                    ) ||
+                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
@@ -2315,11 +2313,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/release/api")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/release/doc")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/snapshot/api")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest/snapshot/doc"))
+                      (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
                   }
                 },
     scalacOptions ++= Seq(
