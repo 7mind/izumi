@@ -1106,7 +1106,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
 lazy val `distage-extension-plugins` = project.in(file("distage/distage-extension-plugins"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core` % "test->compile,test",
+    `distage-core` % "test->compile",
     `distage-extension-config` % "test->compile",
     `logstage-core` % "test->compile"
   )
@@ -1402,10 +1402,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .dependsOn(
     `distage-extension-logstage` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
-    `distage-core` % "test->test;compile->compile",
-    `distage-framework-api` % "test->test;compile->compile",
-    `distage-extension-plugins` % "test->test;compile->compile",
-    `distage-extension-config` % "test->test;compile->compile"
+    `distage-core` % "test->compile;compile->compile",
+    `distage-framework-api` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1612,7 +1613,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     `distage-extension-config` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `distage-extension-logstage` % "test->compile;compile->compile",
-    `distage-core` % "test->test;compile->compile"
+    `distage-core` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1712,8 +1713,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
 lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-scalatest"))
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
-    `distage-core` % "test->test;compile->compile",
-    `distage-extension-plugins` % "test->test;compile->compile"
+    `distage-core` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2112,7 +2113,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
 
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
   .dependsOn(
-    `logstage-core` % "test->compile;compile->compile",
     `logstage-core` % "test->test;compile->compile"
   )
   .settings(
@@ -2492,7 +2492,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     skip in publish := true,
-    crossScalaVersions := Nil
+    crossScalaVersions := Seq(
+      "2.13.1",
+      "2.12.11"
+    ),
+    scalaVersion := crossScalaVersions.value.head
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -2508,7 +2512,11 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
     skip in publish := true,
-    crossScalaVersions := Nil
+    crossScalaVersions := Seq(
+      "2.13.1",
+      "2.12.11"
+    ),
+    scalaVersion := crossScalaVersions.value.head
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -2633,7 +2641,8 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
 
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
-    skip in publish := true
+    skip in publish := true,
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -2642,7 +2651,8 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
-    skip in publish := true
+    skip in publish := true,
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
