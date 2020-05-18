@@ -20,7 +20,7 @@ trait ModuleBase extends ModuleBaseInstances {
     case _ =>
       false
   }
-  override final def toString: String = bindings.mkString(s"Module(",", ",")")
+  override final def toString: String = bindings.iterator.map(_.toString).mkString("\n")
 }
 
 object ModuleBase {
