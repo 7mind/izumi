@@ -56,11 +56,10 @@ libraryDependencies ++= Seq(
 ```
 @@@
 
-@scaladoc[Scaladoc](izumi.index)
-
-Izumi on [GitHub](https://github.com/7mind/izumi)
-
-Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
+* @scaladoc[Scaladoc](izumi.index)
+* [GitHub](https://github.com/7mind/izumi)
+* Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
+* Latest release [documentation](https://izumi.7mind.io/)
 
 @@@ index
 
