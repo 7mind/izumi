@@ -49,7 +49,10 @@ To use it, add `fundamentals-bio` library:
 libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$"
 ```
 
+@@@
+
 Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector):
+
 ```scala
 addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
 ```
@@ -62,7 +65,6 @@ scalacOptions += "-Ypartial-unification"
 scalacOptions += "-Xsource:2.13"
 ```
 
-@@@
 
 Overview
 --------

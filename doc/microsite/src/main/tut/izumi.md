@@ -27,8 +27,8 @@ Dependencies
 To use, add the following into `project/build.sbt`,
 
 @@@vars
-```scala
 
+```scala
 libraryDependencies ++= Seq(
   // distage core library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
