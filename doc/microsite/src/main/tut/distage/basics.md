@@ -282,7 +282,7 @@ objectGraphResource
   .unsafeRunSync()
 ```
 
-Lifecycle management `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
+Lifecycle management with `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
 
 ```scala mdoc:reset:to-string
 import distage.{DIResource, GCMode, ModuleDef, Injector}
