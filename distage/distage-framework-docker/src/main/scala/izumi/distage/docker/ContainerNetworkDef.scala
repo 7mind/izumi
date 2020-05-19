@@ -15,14 +15,17 @@ import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
 trait ContainerNetworkDef {
-  self =>
   type Tag
-  type Network = ContainerNetwork[Tag]
-  type Config = ContainerNetworkConfig[Tag]
+
+  final type Network = ContainerNetwork[Tag]
+  final type Config = ContainerNetworkConfig[Tag]
+  final val Config = ContainerNetworkConfig
+
   def config: Config
-  def make[F[_]: TagK](implicit tag: distage.Tag[Network]): ProviderMagnet[DIResource[F, Network]] = {
+
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): ProviderMagnet[DIResource[F, Network]] = {
     tag.discard()
-    ContainerNetworkDef.resource[F](this, self.getClass.getSimpleName)
+    ContainerNetworkDef.resource[F](this, this.getClass.getSimpleName)
   }
 }
 
@@ -92,12 +95,12 @@ object ContainerNetworkDef {
 
   final case class ContainerNetwork[Tag](
     name: String,
-    id: String
+    id: String,
   )
 
   final case class ContainerNetworkConfig[Tag](
     name: Option[String] = None,
     driver: String = "bridge",
-    reuse: Boolean = true
+    reuse: Boolean = true,
   )
 }
