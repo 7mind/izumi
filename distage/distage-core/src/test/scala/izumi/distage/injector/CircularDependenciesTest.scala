@@ -139,20 +139,22 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val planTypes: Seq[SafeType] = plan.steps
+    val planTypes: Seq[SafeType] = plan
+      .steps
       .collect {
         case i: InstantiationOp => i
         case i: MakeProxy => i
       }
       .map(_.target.tpe)
     val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes = context.instances.map(_.key.tpe)
+    val instanceTypes = context
+      .instances.map(_.key.tpe)
       .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
 
     assert(instanceTypes == planTypes)
 
     // whitebox test: ensure that plan ops are in a non-lazy collection
-    assert(plan.steps.getClass == classOf[Vector[_]])
+    assert(plan.steps.isInstanceOf[Vector[_]])
   }
 
   "support by-name circular dependencies" in {
