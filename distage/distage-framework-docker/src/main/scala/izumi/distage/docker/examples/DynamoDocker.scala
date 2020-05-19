@@ -2,13 +2,13 @@ package izumi.distage.docker.examples
 
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.{ContainerConfig, DockerPort}
+import izumi.distage.docker.Docker.DockerPort
 
 object DynamoDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(8000)
 
   override def config: Config = {
-    ContainerConfig(
+    Config(
       image = "amazon/dynamodb-local:1.12.0",
       ports = Seq(primaryPort),
     )

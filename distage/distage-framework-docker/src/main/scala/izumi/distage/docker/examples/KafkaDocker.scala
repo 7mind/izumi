@@ -2,17 +2,17 @@ package izumi.distage.docker.examples
 
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.{ContainerConfig, DockerPort}
+import izumi.distage.docker.Docker.DockerPort
 
 object KafkaDocker extends ContainerDef {
   val primaryPort: DockerPort.TCP = DockerPort.TCP(9092)
   override def config: Config = {
-    ContainerConfig(
+    Config(
       image = "wurstmeister/kafka:2.12-2.4.1",
       ports = Seq(primaryPort),
       env = Map(
         "KAFKA_ADVERTISED_HOST_NAME" -> "127.0.0.1"
-      )
+      ),
     )
   }
 }

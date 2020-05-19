@@ -10,6 +10,7 @@ trait ContainerDef {
   type Tag
   final type Container = DockerContainer[Tag]
   final type Config = Docker.ContainerConfig[Tag]
+  final val Config = Docker.ContainerConfig
 
   def config: Config
 
