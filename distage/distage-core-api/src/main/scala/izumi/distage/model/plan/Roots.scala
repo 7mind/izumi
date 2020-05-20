@@ -2,7 +2,7 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.reflection._
 import izumi.fundamentals.collections.nonempty.NonEmptySet
-import izumi.fundamentals.reflection.Tags.Tag
+import izumi.reflect.Tag
 
 /**
   *
