@@ -10,7 +10,7 @@ import java.net.{InetSocketAddress, Socket, URI, URL}
   *
   * @param timeoutMillis port check timeout in milliseconds
   */
-class PortCheck(@deprecatedName("timeout") timeoutMillis: Int) {
+class PortCheck(timeoutMillis: Int) {
   def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {
     checkUrl(uri, Some(clue), Some(defaultPort))
   }
