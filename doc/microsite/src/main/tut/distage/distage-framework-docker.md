@@ -24,29 +24,53 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework-docker" % "$izumi.
 
 ### Overview
 
-The `izumi.distage.docker` types and values
+Use of `distage-framework-docker` generally follows:
 
-#### `ContainerDef`
+- creating `ContainerDef`s for the containers the application requires
+- declaring a `ModuleDef` that declares the container component
+- including the `DockerContainerModule` in the application's modules
+
+#### Create a `ContainerDef`
 
 The `ContainerDef` is a trait that provides a high level interface for defining a docker container resource.
 
 (example nginx http ContainerDef)
 
-#### Extending a Container Definition
+#### Declare Container Components
 
 - `modifyConfig`
 
 - `dependOnDocker` - adds a dependency on a docker container. distage ensures the requested container
   is available before the dependent is provided.
 
-### Configuration
+#### Include `DockerContainerModule`
+
+### Docker Client Configuration
 
 - `Docker.ClientConfig`
-- ??? document `docker-reference.conf` variables
+- document `docker-reference.conf` variables and usage
 
 ### Usage in Integration Tests
 
 (an example using the above nginx http containerdef)
+
+### Reuse
+
+By default, acquiring a container resource does not always result in a fresh container. Likewise, on
+releasing the resource the container will not be destroyed.  When a container resource is acquired
+the docker system is inspected to determine if an appropriate container is already executing. If a
+matching container is already running this container is referenced by the
+`ContainerResource`. Otherwise a fresh container is started.  In both cases the acquired
+`ContainerResource` will have passed any configured health checks.
+
+#### Configuring Reuse
+
+The `ContainerDef.Config.reuse` should be false to disable reuse for a specific container.  While
+`Docker.ClientConfig.allowReuse` should be false to disable reuse throughout the application.
+
+#### Improving Reuse Performance
+
+When using reuse the cost of inspecting the docker system can be avoided using memoization roots.
 
 ### Examples
 
@@ -65,6 +89,7 @@ import izumi.reflect.TagK
 
 // a hypothetical structure for the postgres configuration used by the application.
 case class PostgresServerConfig(
+  host: String,
   port: Int
 )
 
@@ -73,8 +98,8 @@ case class PostgresServerConfig(
 class PostgresServerConfigDockerModule[F[_]: TagK] extends ModuleDef {
   make[PostgresServerConfig].from {
     container: PostgresDocker.Container => {
-      val servicePort = container.availablePorts.availablePorts(PostgresDocker.primaryPort).head
-      PostgresServerConfig(servicePort.port)
+      val knownAddress = container.availablePorts.availablePorts(PostgresDocker.primaryPort).head
+      PostgresServerConfig(knownAddress.hostV4, knownAddress.port)
     }
   }
 
