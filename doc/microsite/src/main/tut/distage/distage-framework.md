@@ -83,8 +83,8 @@ Injector().produceRun(module) {
 Automatic derivation of config codecs is based on [pureconfig-magnolia](https://github.com/pureconfig/pureconfig).
 Pureconfig codecs for a type will be used if they exist.
 
-Default configuration in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles
-will try to read the configurations from resources with names:
+
+You don't have to explicitly `make[AppConfig]` in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles, unless you want to override default behavior. By default, tests and roles will try to read the configurations from resources with the following names, in order:
 
 ```
 - $roleName.conf
@@ -98,7 +98,11 @@ will try to read the configurations from resources with names:
 - common-reference-dev.conf
 ```
 
-In order. You don't have to supply an `AppConfig` in tests or roles, unless you want to override default behavior.
+```scala mdoc:reset:invisible
+type _ref = izumi.distage.testkit.TestConfig
+```
+
+Where `distage-testkit` uses @scaladoc[`TestConfig#testBaseName`](izumi.distage.testkit.TestConfig#testBaseName) instead of `roleName` 
 
 ### Plugins
 
