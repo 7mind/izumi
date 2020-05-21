@@ -12,6 +12,8 @@ import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import zio.Task
 
+import scala.concurrent.duration._
+
 class PgSvcExample(
   val pg: AvailablePort @Id("pg"),
   val ddb: AvailablePort @Id("ddb"),
@@ -19,7 +21,7 @@ class PgSvcExample(
   val cs: AvailablePort @Id("cs"),
 ) extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = {
-    new PortCheck(10).checkPort(pg.hostV4, pg.port)
+    new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)
   }
 }
 
