@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import distage.{Activation, DIKey, Injector, PlannerInput}
+import distage.{Activation, BootstrapModule, DIKey, Injector, Module, PlannerInput}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
@@ -19,6 +19,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
+import izumi.distage.testkit.services.dstest.TestEnvironment.EnvironmentGroup
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
@@ -31,100 +32,87 @@ import izumi.reflect.TagK
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
+final case class EnvironmentGroupWithContext(
+  group: EnvironmentGroup,
+  testRunnerLogger: IzLogger,
+  bsModule: BootstrapModule,
+  injector: Injector,
+  memoizationPlan: TriSplittedPlan,
+  runtimePlan: OrderedPlan,
+)
+
 class DistageTestRunner[F[_]: TagK](
   reporter: TestReporter,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
 ) {
   def run(): Unit = {
-    val envs = tests.groupBy(_.environment)
-    debugLogEnvs(envs)
+    val envs = groupTests(tests)
+//    debugLogEnvs(envs)
     try {
-      val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.parallelEnvs)
+      val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.group.parallelEnvs)
       runEnvs(parallel = true)(parallelEnvs)
       runEnvs(parallel = false)(sequentialEnvs)
     } finally reporter.endAll()
   }
 
-  def runEnvs(parallel: Boolean)(envs: Iterable[(TestEnvironment, Seq[DistageTest[F]])]): Unit = {
-    configuredForeach(parallel)(envs) {
+  // first we need to plan runtime for our monad. Identity is also supported
+  private[this] val runtimeGcRoots: Set[DIKey] = Set(
+    DIKey.get[DIEffectRunner[F]],
+    DIKey.get[DIEffect[F]],
+    DIKey.get[DIEffectAsync[F]],
+  )
+
+  private[this] def groupTests(distageTests: Seq[DistageTest[F]]): Map[EnvironmentGroupWithContext, Map[Module, Seq[DistageTest[F]]]] = {
+    distageTests.groupBy(_.environment.toMemoizationGroup).flatMap {
       case (env, tests) =>
-        try {
-          val earlyPhaseLogger = IzLogger(env.testRunnerLogLevel)("phase" -> "env")
-          val configLoader = env.bootstrapFactory.makeConfigLoader(env.configBaseName, earlyPhaseLogger).map {
-            c =>
-              env.configOverrides match {
-                case None => c
-                case Some(overrides) =>
-                  AppConfig(overrides.config.withFallback(c.config).resolve())
+        val earlyPhaseLogger = IzLogger(env.testRunnerLogLevel)("phase" -> "env")
+        val configLoader = env.bootstrapFactory.makeConfigLoader(env.configBaseName, earlyPhaseLogger).map {
+          c =>
+            env.configOverrides match {
+              case None => c
+              case Some(overrides) =>
+                AppConfig(overrides.config.withFallback(c.config).resolve())
+            }
+        }
+        val config = configLoader.loadConfig()
+        val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, env.testRunnerLogLevel, defaultLogFormatJson = false)
+        // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
+        val options = env.planningOptions
+        val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, testRunnerLogger.router, env.roles, env.activationInfo, env.activation)
+        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+        val injector = Injector(env.activation, bsModule)
+        tests
+          .map {
+            distageTest =>
+              val appModule = provider.appModules().merge overridenBy distageTest.environment.appModule
+              val shared = injector.trisectByKeys(appModule, env.memoizationRoots -- runtimeGcRoots) {
+                _.collectChildren[IntegrationCheck].map(_.target).toSet
+              }
+              val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots))
+              ((shared, runtimePlan), appModule -> distageTest)
+          }.groupBy(_._1).map {
+            case ((shared, runtimePlan), tests) =>
+              EnvironmentGroupWithContext(env, testRunnerLogger, bsModule, injector, shared, runtimePlan) -> tests.groupBy(_._2._1).map {
+                case (m, t) => m -> t.map(_._2._2)
               }
           }
-          val config = configLoader.loadConfig()
-
-          val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, env.testRunnerLogLevel, defaultLogFormatJson = false)
-
+    }
+  }
+  def runEnvs(parallel: Boolean)(envs: Map[EnvironmentGroupWithContext, Map[Module, Seq[DistageTest[F]]]]): Unit = {
+    configuredForeach(parallel)(envs) {
+      case (EnvironmentGroupWithContext(env, testRunnerLogger, bsModule, injector, memoizationPlan, runtimePlan), moduleGroups) =>
+        testRunnerLogger.info(
+          s"Processing env ${env.hashCode} with ${moduleGroups.values.flatten.size -> "tests"} in ${TagK[F].tag -> "monad"}, ${env.configBaseName}, ${env.activation}"
+        )
+        testWrapper(moduleGroups.values.flatten) {
           val checker = new IntegrationChecker.Impl[F](testRunnerLogger)
-          testRunnerLogger.info(s"Processing env ${env.hashCode} with ${tests.size -> "tests"} in ${TagK[F].tag -> "monad"}, ${env.configBaseName}, ${env.activation}")
-          // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
           val options = env.planningOptions
           val planCheck = new PlanCircularDependencyCheck(options, testRunnerLogger)
-
-          val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, testRunnerLogger.router, env.roles, env.activationInfo, env.activation)
-          val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
-          val appModule = provider.appModules().merge overridenBy env.appModule
-
-          val injector = Injector(env.activation, bsModule)
-
-          // first we need to plan runtime for our monad. Identity is also supported
-          val runtimeGcRoots: Set[DIKey] = Set(
-            DIKey.get[DIEffectRunner[F]],
-            DIKey.get[DIEffect[F]],
-            DIKey.get[DIEffectAsync[F]],
-          )
-
-          val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots))
-
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
-          // here we plan all the job for each individual test
-          val testPlans = tests.map {
-            distageTest =>
-              val keys = distageTest.test.get.diKeys.toSet
-              val testRoots = keys ++ env.forcedRoots
-              val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, testRoots)) else OrderedPlan.empty
-              distageTest -> plan
-          }
-
-          val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
-
-          // here we find all the shared components in each of our individual tests
-          val sharedKeys = wholeEnvKeys.intersect(env.memoizationRoots) -- runtimeGcRoots
-
-          testRunnerLogger.info(s"Memoized components in env: $sharedKeys")
-
-          val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
-            case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && wholeEnvKeys(key) =>
-              (key :: acc) -> b.copy(implementation = r.copy(weak = false))
-            case (acc, b) =>
-              acc -> b
-          }
-
-          if (strengthenedKeys.nonEmpty) {
-            testRunnerLogger.info(s"Strengthened weak components in env: $strengthenedKeys")
-          }
-
-          val shared = injector.trisectByKeys(strengthenedAppModule, sharedKeys) {
-            _.collectChildren[IntegrationCheck].map(_.target).toSet
-          }
 
           planCheck.verify(runtimePlan)
 
-          debugLogger.log(s"""Tests in env: ${tests.size}
-            |Integration plan: ${shared.side}
-            |Memoized plan: ${shared.shared}
-            |App plan: ${shared.primary}
-            |""".stripMargin)
-
-          // first we produce our Monad's runtime
           injector.produceF[Identity](runtimePlan).use {
             runtimeLocator =>
               val runner = runtimeLocator.get[DIEffectRunner[F]]
@@ -132,37 +120,103 @@ class DistageTestRunner[F[_]: TagK](
               implicit val P: DIEffectAsync[F] = runtimeLocator.get[DIEffectAsync[F]]
 
               runner.run {
-                // now we produce integration components for our shared plan
-                planCheck.verify(shared.shared)
 
-                F.definitelyRecoverCause {
-                  Injector.inherit(runtimeLocator).produceF[F](shared.shared).use {
-                    sharedLocator =>
-                      planCheck.verify(shared.side)
+                // shared memoized plan
+                planCheck.verify(memoizationPlan.shared)
+                Injector.inherit(runtimeLocator).produceF[F](memoizationPlan.shared).use {
+                  memoizationPlanShared =>
+                    // integration memoized plan
+                    planCheck.verify(memoizationPlan.side)
+                    Injector.inherit(memoizationPlanShared).produceF[F](memoizationPlan.side).use {
+                      memoizedIntegrationLocator =>
+                        // check memoized integration
+                        ifIntegChecksOk(checker, memoizedIntegrationLocator)(moduleGroups.values.flatten.toSeq, memoizationPlan) {
 
-                      Injector.inherit(sharedLocator).produceF[F](shared.side).use {
-                        sharedIntegrationLocator =>
-                          ifIntegChecksOk(checker, sharedIntegrationLocator)(tests, shared) {
-                            proceed(env, checker, appModule, planCheck, testPlans, shared, sharedLocator)
+                          //main memoized plan
+                          planCheck.verify(memoizationPlan.primary)
+                          Injector.inherit(memoizedIntegrationLocator).produceF[F](memoizationPlan.primary).use {
+                            memoizedLocator =>
+                              val memoizedSharedKeys = memoizedLocator.allInstances.map(_.key).toSet
+                              configuredTraverse_(env.parallelSuites)(moduleGroups) {
+                                case (appModule, tests) =>
+                                  val testPlans = tests.map {
+                                    distageTest =>
+                                      val keys = distageTest.test.get.diKeys.toSet
+                                      val testRoots = keys ++ env.forcedRoots
+                                      val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, testRoots)) else OrderedPlan.empty
+                                      distageTest -> plan
+                                  }
+
+                                  val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
+
+                                  // here we find all the shared components in each of our individual tests
+                                  val sharedKeys = wholeEnvKeys.intersect(env.memoizationRoots) -- runtimeGcRoots -- memoizedSharedKeys
+
+                                  testRunnerLogger.info(s"Memoized components in env: $sharedKeys")
+
+                                  val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
+                                    case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && wholeEnvKeys(key) =>
+                                      (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+                                    case (acc, b) =>
+                                      acc -> b
+                                  }
+
+                                  if (strengthenedKeys.nonEmpty) {
+                                    testRunnerLogger.info(s"Strengthened weak components in env: $strengthenedKeys")
+                                  }
+
+                                  val shared = injector.trisectByKeys(strengthenedAppModule.drop(memoizedSharedKeys), sharedKeys) {
+                                    _.collectChildren[IntegrationCheck].map(_.target).toSet
+                                  }
+
+                                  debugLogger.log(s"""Tests in env: ${tests.size}
+                                    |Integration plan: ${shared.side}
+                                    |Memoized plan: ${shared.shared}
+                                    |App plan: ${shared.primary}
+                                    |""".stripMargin)
+
+                                  // now we produce integration components for our shared plan
+                                  planCheck.verify(shared.shared)
+                                  F.definitelyRecoverCause {
+                                    Injector.inherit(memoizedLocator).produceF[F](shared.shared).use {
+                                      sharedLocator =>
+                                        planCheck.verify(shared.side)
+
+                                        Injector.inherit(sharedLocator).produceF[F](shared.side).use {
+                                          sharedIntegrationLocator =>
+                                            ifIntegChecksOk(checker, sharedIntegrationLocator)(tests, shared) {
+                                              proceed(env, checker, appModule, planCheck, testPlans, shared, sharedLocator)
+                                            }
+                                        }
+                                    }
+                                  } {
+                                    case (ProvisioningIntegrationException(integrations), _) =>
+                                      // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+                                      F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
+                                    case (_, getTrace) =>
+                                      // fail all tests (if an exception reached here, it must have happened before the individual test runs)
+                                      F.maybeSuspend(failAllTests(tests, getTrace()))
+                                  }
+                              }
+
                           }
-                      }
-                  }
-                } {
-                  case (ProvisioningIntegrationException(integrations), _) =>
-                    // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-                    F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
-                  case (_, getTrace) =>
-                    // fail all tests (if an exception reached here, it must have happened before the individual test runs)
-                    F.maybeSuspend(failAllTests(tests, getTrace()))
+                        }
+                    }
                 }
               }
           }
-        } catch {
-          case t: Throwable =>
-            // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
-            failAllTests(tests, t)
-            reporter.onFailure(t)
         }
+    }
+  }
+
+  private[this] def testWrapper[A](allTests: => Iterable[DistageTest[F]])(f: => A) = {
+    try {
+      f
+    } catch {
+      case t: Throwable =>
+        // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
+        failAllTests(tests, t)
+        reporter.onFailure(t)
     }
   }
 
@@ -198,7 +252,7 @@ class DistageTestRunner[F[_]: TagK](
   }
 
   protected def proceed(
-    env: TestEnvironment,
+    env: EnvironmentGroup,
     ichecker: IntegrationChecker[F],
     appmodule: ModuleBase,
     checker: PlanCircularDependencyCheck,
