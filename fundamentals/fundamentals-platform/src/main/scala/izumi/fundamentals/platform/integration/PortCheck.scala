@@ -2,15 +2,21 @@ package izumi.fundamentals.platform.integration
 
 import java.net.{InetSocketAddress, Socket, URI, URL}
 
+import scala.concurrent.duration._
+
 /**
   * This class is intended to be always present in the DI object graph and injected
   * into each resource which needs a port availability check.
   *
   * The timeout is intended to be defined just once per app.
   *
-  * @param timeoutMillis port check timeout in milliseconds
+  * @param timeout port check timeout
   */
-class PortCheck(timeoutMillis: Int) {
+class PortCheck(timeout: FiniteDuration) {
+
+  @deprecated("use constructor that accepts FiniteDuration instead. Rewrite `new PortCheck(100)` to `new PortCheck(100.millis)`", "deprecated constructor will be removed in 0.11.1")
+  def this(timeoutMillis: Int) = this(timeoutMillis.millis)
+
   def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {
     checkUrl(uri, Some(clue), Some(defaultPort))
   }
@@ -41,7 +47,7 @@ class PortCheck(timeoutMillis: Int) {
     try {
       val socket = new Socket()
       try {
-        socket.connect(new InetSocketAddress(host, port), timeoutMillis)
+        socket.connect(new InetSocketAddress(host, port), timeout.toMillis.toInt)
         ResourceCheck.Success()
       } finally {
         socket.close()
@@ -50,9 +56,9 @@ class PortCheck(timeoutMillis: Int) {
       case t: Throwable =>
         val message = clue match {
           case Some(_) =>
-            s"$clue: port check failed on $host:$port, timeout: $timeoutMillis ms"
+            s"$clue: port check failed on $host:$port, timeout: $timeout"
           case None =>
-            s"Port check failed on $host:$port, timeout: $timeoutMillis ms"
+            s"Port check failed on $host:$port, timeout: $timeout"
         }
 
         ResourceCheck.ResourceUnavailable(message, Some(t))
