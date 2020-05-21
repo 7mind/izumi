@@ -21,3 +21,7 @@ class CassandraDockerModule[F[_]: TagK] extends ModuleDef {
     CassandraDocker.make[F]
   }
 }
+
+object CassandraDockerModule {
+  def apply[F[_]: TagK]: CassandraDockerModule[F] = new CassandraDockerModule[F]
+}

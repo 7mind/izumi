@@ -23,3 +23,7 @@ class ZookeeperDockerModule[F[_]: TagK] extends ModuleDef {
       .connectToNetwork(KafkaZookeeperNetwork)
   }
 }
+
+object ZookeeperDockerModule {
+  def apply[F[_]: TagK]: ZookeeperDockerModule[F] = new ZookeeperDockerModule[F]
+}

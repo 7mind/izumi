@@ -29,3 +29,7 @@ class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
       }
   }
 }
+
+object KafkaDockerModule {
+  def apply[F[_]: TagK]: KafkaDockerModule[F] = new KafkaDockerModule[F]
+}

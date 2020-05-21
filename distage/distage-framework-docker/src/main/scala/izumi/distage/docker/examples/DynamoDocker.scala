@@ -20,3 +20,7 @@ class DynamoDockerModule[F[_]: TagK] extends ModuleDef {
     DynamoDocker.make[F]
   }
 }
+
+object DynamoDockerModule {
+  def apply[F[_]: TagK]: DynamoDockerModule[F] = new DynamoDockerModule[F]
+}

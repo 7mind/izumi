@@ -22,3 +22,7 @@ class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
     PostgresDocker.make[F]
   }
 }
+
+object PostgresDockerModule {
+  def apply[F[_]: TagK]: PostgresDockerModule[F] = new PostgresDockerModule[F]
+}
