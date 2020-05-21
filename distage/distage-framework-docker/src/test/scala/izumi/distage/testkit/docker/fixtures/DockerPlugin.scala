@@ -3,7 +3,7 @@ package izumi.distage.testkit.docker.fixtures
 import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
 import izumi.distage.docker.examples._
-import izumi.distage.docker.modules.DockerContainerModule
+import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Id
@@ -25,7 +25,8 @@ class PgSvcExample(
 
 object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
 
-object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
+object DockerPlugin extends PluginDef {
+  include(DockerSupportModule[Task])
   make[DynamoDocker.Container].fromResource {
     DynamoDocker.make[Task]
   }
