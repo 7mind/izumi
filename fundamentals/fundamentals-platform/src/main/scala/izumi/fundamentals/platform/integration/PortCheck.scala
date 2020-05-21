@@ -7,8 +7,10 @@ import java.net.{InetSocketAddress, Socket, URI, URL}
   * into each resource which needs a port availability check.
   *
   * The timeout is intended to be defined just once per app.
+  *
+  * @param timeoutMillis port check timeout in milliseconds
   */
-class PortCheck(timeout: Int) {
+class PortCheck(timeoutMillis: Int) {
   def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {
     checkUrl(uri, Some(clue), Some(defaultPort))
   }
@@ -39,7 +41,7 @@ class PortCheck(timeout: Int) {
     try {
       val socket = new Socket()
       try {
-        socket.connect(new InetSocketAddress(host, port), timeout)
+        socket.connect(new InetSocketAddress(host, port), timeoutMillis)
         ResourceCheck.Success()
       } finally {
         socket.close()
@@ -48,9 +50,9 @@ class PortCheck(timeout: Int) {
       case t: Throwable =>
         val message = clue match {
           case Some(_) =>
-            s"$clue: port check failed on $host:$port, timeout: $timeout ms"
+            s"$clue: port check failed on $host:$port, timeout: $timeoutMillis ms"
           case None =>
-            s"Port check failed on $host:$port, timeout: $timeout ms"
+            s"Port check failed on $host:$port, timeout: $timeoutMillis ms"
         }
 
         ResourceCheck.ResourceUnavailable(message, Some(t))
