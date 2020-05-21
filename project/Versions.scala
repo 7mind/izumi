@@ -17,12 +17,12 @@ object V {
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
-  val circe_derivation = "0.13.0-M2"
+  val circe_derivation = "0.13.0-M4"
   val pureconfig = "0.12.3"
   val magnolia = "0.16.0"
   val jawn = "1.0.0"
 
-  val http4s = "0.21.1"
+  val http4s = "0.21.4"
 
   // good to drop - scala
   val scala_java_time = "2.0.0-RC5"
