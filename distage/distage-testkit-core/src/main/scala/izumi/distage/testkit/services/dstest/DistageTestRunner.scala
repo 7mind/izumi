@@ -117,14 +117,16 @@ class DistageTestRunner[F[_]: TagK](
               val runtimeLogger = wholeInstances.head._3
               val tests = wholeInstances.flatMap(_._4)
 
-              memoizedEnvLogger.info(s"Created environment with ${tests.map(_._1.meta.id.suiteClassName).toList.distinct.sorted.niceList() -> "testSuites"}")
-              memoizedEnvLogger.debug(
+              val environmentLogger = memoizedEnvLogger("env" -> shared.hashCode())
+              environmentLogger.info(s"Created environment with ${tests.map(_._1.meta.id.suiteClassName).toList.distinct.sorted.niceList() -> "testSuites"}")
+              environmentLogger.debug(
                 s"""Integration plan: ${shared.side}
                   |Memoized plan: ${shared.shared}
                   |App plan: ${shared.primary}
                   |""".stripMargin
               )
-              MemoizationEnvWithPlan(memoEnv, runtimeLogger, memoizedEnvLogger, shared, runtimePlan, injector) -> tests
+
+              MemoizationEnvWithPlan(memoEnv, runtimeLogger, environmentLogger, shared, runtimePlan, injector) -> tests
           }
     }
   }
