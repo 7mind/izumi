@@ -38,6 +38,7 @@ class DistageTestRunner[F[_]: TagK](
 ) {
   def run(): Unit = {
     val envs = groupTests(tests)
+    logEnvironmentsInfo(envs)
     try {
       val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.env.parallelEnvs)
       runEnvs(parallel = true)(parallelEnvs)
@@ -63,8 +64,7 @@ class DistageTestRunner[F[_]: TagK](
     // here we are grouping our tests by memoization env
     distageTests.groupBy(_.environment.toMemoizationEnv).flatMap {
       case (memoEnv, grouped) =>
-        val memoizedEnvLogger =
-          IzLogger(getTestRunnerLogLevel(memoEnv.verboseTestRunner)).withCustomContext(testRunnerLogger.customContext)("memoEnv" -> memoEnv.hashCode())
+        val memoizedEnvLogger = IzLogger(getTestRunnerLogLevel(memoEnv.verboseTestRunner)).withCustomContext(testRunnerLogger.customContext)
         grouped
           .groupBy(_.environment).map {
             case (env, tests) =>
@@ -100,7 +100,7 @@ class DistageTestRunner[F[_]: TagK](
                   acc -> b
               }
               if (strengthenedKeys.nonEmpty) {
-                memoizedEnvLogger.debug(s"Strengthened weak components: $strengthenedKeys")
+                memoizedEnvLogger.debug(s"Strengthened weak components in ${memoEnv.hashCode() -> "memoEnv"}: $strengthenedKeys")
               }
 
               // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
@@ -116,16 +116,7 @@ class DistageTestRunner[F[_]: TagK](
               val injector = wholeInstances.head._2
               val runtimeLogger = wholeInstances.head._3
               val tests = wholeInstances.flatMap(_._4)
-
-              val environmentLogger = memoizedEnvLogger("env" -> shared.hashCode())
-              environmentLogger.info(s"Created environment with ${tests.map(_._1.meta.id.suiteClassName).toList.distinct.sorted.niceList() -> "testSuites"}")
-              environmentLogger.debug(
-                s"""Integration plan: ${shared.side}
-                  |Memoized plan: ${shared.shared}
-                  |App plan: ${shared.primary}
-                  |""".stripMargin
-              )
-
+              val environmentLogger = memoizedEnvLogger("env" -> (shared, memoEnv).hashCode())
               MemoizationEnvWithPlan(memoEnv, runtimeLogger, environmentLogger, shared, runtimePlan, injector) -> tests
           }
     }
@@ -403,6 +394,20 @@ class DistageTestRunner[F[_]: TagK](
           }
       },
     )
+  }
+
+  private[this] def logEnvironmentsInfo(envs: Iterable[(MemoizationEnvWithPlan, Iterable[(DistageTest[F], OrderedPlan)])]): Unit = {
+    testRunnerLogger.info(s"Created ${envs.size -> "envs"} with ${envs.flatMap(_._2).size -> "tests"}")
+    envs.foreach {
+      case (MemoizationEnvWithPlan(_, _, testEnvLogger, memoizationPlan, _, _), tests) =>
+        testEnvLogger.info(s"Created environment with ${tests.map(_._1.meta.id.suiteClassName).toList.distinct.sorted.niceList() -> "testSuites"}")
+        testEnvLogger.debug(
+          s"""Integration plan: ${memoizationPlan.side}
+            |Memoized plan: ${memoizationPlan.shared}
+            |App plan: ${memoizationPlan.primary}
+            |""".stripMargin
+        )
+    }
   }
 }
 
