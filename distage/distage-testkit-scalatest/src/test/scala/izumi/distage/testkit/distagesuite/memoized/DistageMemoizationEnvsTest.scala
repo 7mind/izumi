@@ -84,7 +84,7 @@ class SameEnvWithActivationsOverride extends DistageMemoizationEnvsTest {
   }
 }
 
-class DifferentEnvWithMemoizeRootOverride extends DistageMemoizationEnvsTest {
+class DifferentEnvWithMemoizedRootOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super
       .config.copy(
