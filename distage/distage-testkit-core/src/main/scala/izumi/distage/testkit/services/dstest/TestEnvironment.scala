@@ -25,7 +25,8 @@ final case class TestEnvironment(
   configBaseName: String,
   configOverrides: Option[AppConfig],
   planningOptions: PlanningOptions,
-  testRunnerLogLevel: Log.Level,
+  logLevel: Log.Level,
+  verboseTestRunner: Boolean = false,
 ) {
   def toMemoizationEnv: TestEnvironment.MemoizationEnvironment = {
     TestEnvironment.MemoizationEnvironment(
@@ -33,22 +34,33 @@ final case class TestEnvironment(
       parallelSuites,
       parallelTests,
       planningOptions,
-      testRunnerLogLevel,
+      logLevel,
+      verboseTestRunner,
     )
   }
 }
+
 object TestEnvironment {
+  trait TestRunnerLog
+  object TestRunnerLog {
+    case object Normal extends TestRunnerLog
+    case object Debug extends TestRunnerLog
+    case object Verbose extends TestRunnerLog
+  }
+
   final case class MemoizationEnvironment(
     parallelEnvs: Boolean,
     parallelSuites: Boolean,
     parallelTests: Boolean,
     planningOptions: PlanningOptions,
     testRunnerLogLevel: Log.Level,
+    verboseTestRunner: Boolean,
   )
 
   final case class MemoizationEnvWithPlan(
     env: MemoizationEnvironment,
-    testRunnerLogger: IzLogger,
+    runtimeLogger: IzLogger,
+    testEnvLogger: IzLogger,
     memoizationPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
     injector: Injector,

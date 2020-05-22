@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import distage.DIKey
 import distage.plugins.PluginDef
+import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInstance, TestInstance}
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
@@ -30,33 +31,34 @@ abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO
             }
             make[TestInstance].from(TestInstance(UUID.randomUUID()))
           },
+        activation = distage.Activation(Repo -> Repo.Prod),
       )
   }
 }
 
-class SameModulesTest1 extends DistageMemoizationEnvsTest {
-  "should have memoized instance 1" in {
+class SameEnvModulesTest1 extends DistageMemoizationEnvsTest {
+  "should have the same memoized instance 1" in {
     memoized: MemoizedInstance =>
       assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
   }
-  "should have memoized instance 2" in {
-    memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
-  }
-}
-
-class SameModulesTest2 extends DistageMemoizationEnvsTest {
-  "should have memoized instance 1" in {
-    memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
-  }
-  "should have memoized instance 2" in {
+  "should have the same memoized instance 2" in {
     memoized: MemoizedInstance =>
       assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
   }
 }
 
-class SameWithModuleOverride extends DistageMemoizationEnvsTest {
+class SameEnvModulesTest2 extends DistageMemoizationEnvsTest {
+  "should have the same memoized instance 1" in {
+    memoized: MemoizedInstance =>
+      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+  }
+  "should have the same memoized instance 2" in {
+    memoized: MemoizedInstance =>
+      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+  }
+}
+
+class SameEnvWithModuleOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super
       .config.copy(
@@ -65,9 +67,47 @@ class SameWithModuleOverride extends DistageMemoizationEnvsTest {
           }
       )
   }
-  "should have memoized instance even if module was overriden" in {
+  "should have the same memoized instance even if module was overriden" in {
     (memoized: MemoizedInstance, test: TestInstance) =>
       assertIO(MemoizationEnv.anotherTestInstance == test) *>
+      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+  }
+}
+
+class SameEnvWithActivationsOverride extends DistageMemoizationEnvsTest {
+  override protected def config: TestConfig = {
+    super.config.copy(activation = distage.Activation())
+  }
+  "should have the same memoized instance even if activation was overriden" in {
+    memoized: MemoizedInstance =>
+      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+  }
+}
+
+class DifferentEnvWithMemoizeRootOverride extends DistageMemoizationEnvsTest {
+  override protected def config: TestConfig = {
+    super
+      .config.copy(
+        pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
+            make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
+          }
+      )
+  }
+  "should have different memoized instance" in {
+    memoized: MemoizedInstance =>
+      assertIO(!MemoizationEnv.memoizedInstance.get.contains(memoized))
+  }
+}
+
+class SameEnvWithAdditionalButNotUsedMemoizedRoots extends DistageMemoizationEnvsTest {
+  override protected def config: TestConfig = {
+    super
+      .config.copy(
+        memoizationRoots = super.config.memoizationRoots ++ Set(DIKey.get[TestInstance])
+      )
+  }
+  "should have the same memoized instance if memoized roots differs, but plan is similar" in {
+    memoized: MemoizedInstance =>
       assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
   }
 }

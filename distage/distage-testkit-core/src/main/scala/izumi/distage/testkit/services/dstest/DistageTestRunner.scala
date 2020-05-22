@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.dstest
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
 
 import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.config.model.AppConfig
@@ -21,12 +21,11 @@ import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.TestEnvironment.{MemoizationEnvWithPlan, MemoizationEnvironment}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.CodePosition
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.logstage.api.IzLogger
+import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.TagK
 
 import scala.concurrent.ExecutionContext
@@ -39,12 +38,20 @@ class DistageTestRunner[F[_]: TagK](
 ) {
   def run(): Unit = {
     val envs = groupTests(tests)
-    debugLogEnvs(envs)
     try {
       val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.env.parallelEnvs)
       runEnvs(parallel = true)(parallelEnvs)
       runEnvs(parallel = false)(sequentialEnvs)
     } finally reporter.endAll()
+  }
+
+  lazy val testRunnerLogger: IzLogger = {
+    val level = getTestRunnerLogLevel(false)
+    IzLogger(level)("phase" -> "testRunner")
+  }
+
+  private[this] def getTestRunnerLogLevel(default: Boolean): Log.Level = {
+    if (DebugProperties.`izumi.distage.testkit.debug`.asBoolean(default)) Log.Level.Debug else Log.Level.Info
   }
 
   // first we need to plan runtime for our monad. Identity is also supported
@@ -54,38 +61,56 @@ class DistageTestRunner[F[_]: TagK](
     DIKey.get[DIEffectAsync[F]],
   )
 
+  private[this] val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]()
+
+  private[this] def loadConfig(env: TestEnvironment, logger: IzLogger) = {
+    memoizedConfig.compute(
+      (env.configBaseName, env.bootstrapFactory, env.configOverrides),
+      {
+        case (_, conf) =>
+          Option(conf) match {
+            case Some(c) => c
+            case _ =>
+              val configLoader = env
+                .bootstrapFactory.makeConfigLoader(env.configBaseName, logger).map {
+                  c =>
+                    env.configOverrides match {
+                      case None => c
+                      case Some(overrides) =>
+                        AppConfig(overrides.config.withFallback(c.config).resolve())
+                    }
+                }
+              configLoader.loadConfig()
+          }
+      },
+    )
+  }
+
   /**
     *  Performs tests grouping by it's memoization environment.
     *  [[TestEnvironment.MemoizationEnvironment]] - contains only parts of environment that will not affect plan.
-    *  Grouping by such structure will allow us to create memoization groups with shared looger and parallel execution policy..
+    *  Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
     *  By result you'll got [[MemoizationEnvWithPlan]] mapped to tests wit it's plans.
     *  [[MemoizationEnvWithPlan]] represents memoization environment, with shared [[TriSplittedPlan]], [[Injector]], and runtime plan.
     * */
   def groupTests(distageTests: Seq[DistageTest[F]]): Iterable[(MemoizationEnvWithPlan, Iterable[(DistageTest[F], OrderedPlan)])] = {
-    // here we are grouping our test by memoization env
+    // here we are grouping our tests by memoization env
     distageTests.groupBy(_.environment.toMemoizationEnv).flatMap {
       case (memoEnv, grouped) =>
-        val earlyPhaseLogger = IzLogger(memoEnv.testRunnerLogLevel)("phase" -> "env")
+        val memoizedEnvLogger =
+          IzLogger(getTestRunnerLogLevel(memoEnv.verboseTestRunner)).withCustomContext(testRunnerLogger.customContext)("memoEnv" -> memoEnv.hashCode())
         grouped
           .groupBy(_.environment).map {
             case (env, tests) =>
               // make a config loader for current env with logger
-              val configLoader = env.bootstrapFactory.makeConfigLoader(env.configBaseName, earlyPhaseLogger).map {
-                c =>
-                  env.configOverrides match {
-                    case None => c
-                    case Some(overrides) =>
-                      AppConfig(overrides.config.withFallback(c.config).resolve())
-                  }
-              }
-              val config = configLoader.loadConfig()
-              val testRunnerLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, earlyPhaseLogger, config, env.testRunnerLogLevel, defaultLogFormatJson = false)(
+              val config = loadConfig(env, memoizedEnvLogger)
+              val runtimeLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, memoizedEnvLogger, config, env.logLevel, defaultLogFormatJson = false)(
                 "memoEnv" -> memoEnv.hashCode()
               )
 
               // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
               val options = env.planningOptions
-              val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, testRunnerLogger.router, env.roles, env.activationInfo, env.activation)
+              val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, runtimeLogger.router, env.roles, env.activationInfo, env.activation)
               val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
               val appModule = provider.appModules().merge overridenBy env.appModule
               val injector = Injector(env.activation, bsModule)
@@ -99,17 +124,17 @@ class DistageTestRunner[F[_]: TagK](
                   distageTest -> plan
               }
               val envKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
-              val sharedKeys = env.memoizationRoots -- runtimeGcRoots
+              val sharedKeys = envKeys.intersect(env.memoizationRoots) -- runtimeGcRoots
 
               // we need to "strengthen" all weak set instances that occur in our tests to ensure that they will persist in each of test.
               val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
-                case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && envKeys(key) =>
+                case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
                   (key :: acc) -> b.copy(implementation = r.copy(weak = false))
                 case (acc, b) =>
                   acc -> b
               }
               if (strengthenedKeys.nonEmpty) {
-                testRunnerLogger.info(s"Strengthened weak components: $strengthenedKeys")
+                memoizedEnvLogger.debug(s"Strengthened weak components: $strengthenedKeys")
               }
 
               // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
@@ -119,33 +144,34 @@ class DistageTestRunner[F[_]: TagK](
               // runtime plan with `runtimeGcRoots`
               val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots))
 
-              debugLogger.log(s"""Tests in env: ${tests.size}
-                |Integration plan: ${shared.side}
-                |Memoized plan: ${shared.shared}
-                |App plan: ${shared.primary}
-                |""".stripMargin)
-
-              ((shared, runtimePlan), injector, testRunnerLogger, testPlans)
+              ((shared, runtimePlan), injector, runtimeLogger, testPlans)
           }.groupBy(_._1).map {
             case ((shared, runtimePlan), wholeInstances) =>
               val injector = wholeInstances.head._2
-              val logger = wholeInstances.head._3
+              val runtimeLogger = wholeInstances.head._3
               val tests = wholeInstances.flatMap(_._4)
-              MemoizationEnvWithPlan(memoEnv, logger, shared, runtimePlan, injector) -> tests
+
+              memoizedEnvLogger.info(s"Created environment with ${tests.map(_._1.meta.id.suiteClassName).toList.distinct.sorted.niceList() -> "testSuites"}")
+              memoizedEnvLogger.debug(
+                s"""Integration plan: ${shared.side}
+                  |Memoized plan: ${shared.shared}
+                  |App plan: ${shared.primary}
+                  |""".stripMargin
+              )
+              MemoizationEnvWithPlan(memoEnv, runtimeLogger, memoizedEnvLogger, shared, runtimePlan, injector) -> tests
           }
     }
   }
 
   def runEnvs(parallel: Boolean)(envs: Iterable[(MemoizationEnvWithPlan, Iterable[(DistageTest[F], OrderedPlan)])]): Unit = {
     configuredForeach(parallel)(envs) {
-      case (MemoizationEnvWithPlan(env, environmentLogger, memoizationPlan, runtimePlan, injector), testPlans) =>
+      case (MemoizationEnvWithPlan(env, runtimeLogger, testEnvLogger, memoizationPlan, runtimePlan, injector), testPlans) =>
         lazy val allEnvTests = testPlans.map(_._1)
-        environmentLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-        environmentLogger.debug(s"Processing test suites: ${allEnvTests.map(_.meta.id.suiteClassName).toSet.niceList() -> "testNames"}")
+        testEnvLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
         withReportOnFailedExecution(allEnvTests) {
-          val checker = new IntegrationChecker.Impl[F](environmentLogger)
+          val checker = new IntegrationChecker.Impl[F](runtimeLogger)
           val options = env.planningOptions
-          val planCheck = new PlanCircularDependencyCheck(options, environmentLogger)
+          val planCheck = new PlanCircularDependencyCheck(options, runtimeLogger)
 
           // producing and verifying runtime plan
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
@@ -161,7 +187,7 @@ class DistageTestRunner[F[_]: TagK](
                   // producing full runtime plan with all shared keys
                   withIntegrationSharedPlan(runtimeLocator, planCheck, checker, memoizationPlan, allEnvTests) {
                     memoizedIntegrationLocator =>
-                      proceed(env, checker, planCheck, testPlans, memoizedIntegrationLocator)
+                      proceed(env, checker, planCheck, testPlans, memoizedIntegrationLocator, testEnvLogger)
                   }
                 }
               }
@@ -175,7 +201,7 @@ class DistageTestRunner[F[_]: TagK](
     planCheck: PlanCircularDependencyCheck,
     checker: IntegrationChecker[F],
     plan: TriSplittedPlan,
-    tests: Iterable[DistageTest[F]],
+    tests: => Iterable[DistageTest[F]],
   )(use: Locator => F[Unit]
   )(implicit DIEffect: DIEffect[F]
   ): F[Unit] = {
@@ -226,7 +252,7 @@ class DistageTestRunner[F[_]: TagK](
   protected def withIntegrationCheck(
     checker: IntegrationChecker[F],
     integLocator: Locator,
-  )(tests: Iterable[DistageTest[F]],
+  )(tests: => Iterable[DistageTest[F]],
     plans: TriSplittedPlan,
   )(onSuccess: => F[Unit]
   )(implicit F: DIEffect[F]
@@ -261,6 +287,7 @@ class DistageTestRunner[F[_]: TagK](
     checker: PlanCircularDependencyCheck,
     testplans: Iterable[(DistageTest[F], OrderedPlan)],
     mainSharedLocator: Locator,
+    testEnvLogger: IzLogger,
   )(implicit F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
@@ -280,12 +307,13 @@ class DistageTestRunner[F[_]: TagK](
           _ =>
             configuredTraverse_(env.parallelTests)(plans) {
               case (test, testplan) =>
+                val testLogger = testEnvLogger("testId" -> test.meta.id)
                 val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
                 val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                 val newtestplan = testInjector.trisectByRoots(test.environment.appModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
-                debugLogger.log(s"Running `test Id`=${test.meta.id}")
+                testLogger.debug(s"Running...")
 
                 checker.verify(newtestplan.primary)
                 checker.verify(newtestplan.side)
@@ -370,50 +398,25 @@ class DistageTestRunner[F[_]: TagK](
       environments.foreach(f)
     }
   }
-
-  protected def debugLogEnvs(memoizedEnvs: Iterable[(MemoizationEnvWithPlan, Iterable[(DistageTest[F], OrderedPlan)])]): Unit = {
-    debugLogger.log {
-      val printedEnvs = memoizedEnvs
-        .toList.map {
-          case (MemoizationEnvWithPlan(env, _, _, _, _), tests) =>
-            final case class DebugTestEnvironment(tests: String)
-            DebugTestEnvironment(tests.map(_._1.meta.id).niceList().shift(2))
-        }.niceList()
-      s"Env contents: $printedEnvs"
-    }
-  }
-
-  protected val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
 }
 
 object DistageTestRunner {
-
   final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
-
   final case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
-
   final case class TestMeta(id: TestId, pos: CodePosition, uid: Long)
-
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
-
   object TestStatus {
-
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
-
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
-
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
-
     final case class Succeed(duration: FiniteDuration) extends Finished
-
     final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
-
   }
 
   trait TestReporter {
