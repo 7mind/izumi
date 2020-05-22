@@ -28,24 +28,132 @@ Use of `distage-framework-docker` generally follows:
 
 - creating `ContainerDef`s for the containers the application requires
 - declaring a `ModuleDef` that declares the container component
-- including the `DockerContainerModule` in the application's modules
+- including the `DockerSupportModule` in the application's modules
+
+First, the required imports:
+
+```scala mdoc
+import izumi.distage.docker.ContainerDef
+import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.model.definition.ModuleDef
+import izumi.reflect.TagK
+```
 
 #### Create a `ContainerDef`
 
 The `ContainerDef` is a trait that provides a high level interface for defining a docker container resource.
 
-(example nginx http ContainerDef)
+Example nginx container definition:
+
+```scala mdoc
+object NginxDocker extends ContainerDef {
+  val primaryPort: DockerPort = DockerPort.TCP(80)
+
+
+  override def config: Config = {
+    Config(
+      image = "nginx:stable",
+      ports = Seq(primaryPort)
+    )
+  }
+}
+```
 
 #### Declare Container Components
+
+To use this container a module that declares how to make this component is required:
+
+```scala mdoc
+class NginxDockerModule[F[_]: TagK] extends ModuleDef {
+  make[NginxDocker.Container].fromResource {
+    NginxDocker.make[F]
+  }
+}
+```
 
 - `modifyConfig`
 
 - `dependOnDocker` - adds a dependency on a docker container. distage ensures the requested container
   is available before the dependent is provided.
 
-#### Include `DockerContainerModule`
+#### Include `DockerSupportModule`
+
+```scala mdoc:invisible
+
+val _dockerSupportModuleCheck = {
+  import izumi.fundamentals.platform.functional.Identity
+  import izumi.distage.docker.modules.DockerSupportModule
+  (DockerSupportModule, _: DockerSupportModule[Identity])
+}
+
+```
+
+Include the `izumi.distage.docker.modules.DockerSupportModule` module in the application
+modules. This module contains required component declarations and loads the `docker-reference.conf`.
+Container resources depend on these components.
+
+```scala mdoc
+import cats.effect.IO
+import com.typesafe.config.ConfigFactory
+import distage.Injector
+import izumi.distage.config.AppConfigModule
+import izumi.distage.docker.modules.DockerSupportModule
+import izumi.distage.effect.modules.CatsDIEffectModule
+import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.routing.StaticLogRouter
+import izumi.logstage.distage.LogIOModule
+
+object CorrectlyConfiguredApplication {
+
+  val module = new ModuleDef {
+    // our container module
+    include(new NginxDockerModule[IO])
+
+    // include the required docker support module
+    include(new DockerSupportModule[IO])
+
+    // standard support modules
+    include(AppConfigModule(ConfigFactory.defaultApplication))
+    include(new CatsDIEffectModule {})
+    include(new LogIOModule[IO](StaticLogRouter.instance, false))
+  }
+  def run() = Injector().produceGetF[IO, NginxDocker.Container](module).use { _ =>
+     IO("success")
+  }
+}
+```
+```scala mdoc
+CorrectlyConfiguredApplication.run().unsafeRunSync()
+```
+
+If the `DockerSupportModule` is not included in an application then a get of a docker container
+dependent resource will fail:
+
+```scala mdoc
+object ThisApplicationWillFail {
+  val module = new ModuleDef {
+    // our container module
+    include(new NginxDockerModule[Identity])
+
+    // Note: missing an include[DockerSupportModule]
+
+    include(AppConfigModule(ConfigFactory.defaultApplication))
+    include(new CatsDIEffectModule {})
+    include(new LogIOModule[IO](StaticLogRouter.instance, false))
+  }
+  def run() = Injector().produceGet[NginxDocker.Container](module).use { _ =>
+     "impossible: will fail before here"
+  }
+}
+```
+```scala mdoc:crash
+// Attempting to produce the NginxDocker.Container will fail
+ThisApplicationWillFail.run()
+```
 
 ### Docker Client Configuration
+
+To configure
 
 - `Docker.ClientConfig`
 - document `docker-reference.conf` variables and usage
