@@ -45,46 +45,12 @@ class DistageTestRunner[F[_]: TagK](
     } finally reporter.endAll()
   }
 
-  lazy val testRunnerLogger: IzLogger = {
-    val level = getTestRunnerLogLevel(false)
-    IzLogger(level)("phase" -> "testRunner")
-  }
-
-  private[this] def getTestRunnerLogLevel(default: Boolean): Log.Level = {
-    if (DebugProperties.`izumi.distage.testkit.debug`.asBoolean(default)) Log.Level.Debug else Log.Level.Info
-  }
-
   // first we need to plan runtime for our monad. Identity is also supported
   private[this] val runtimeGcRoots: Set[DIKey] = Set(
     DIKey.get[DIEffectRunner[F]],
     DIKey.get[DIEffect[F]],
     DIKey.get[DIEffectAsync[F]],
   )
-
-  private[this] val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]()
-
-  private[this] def loadConfig(env: TestEnvironment, logger: IzLogger) = {
-    memoizedConfig.compute(
-      (env.configBaseName, env.bootstrapFactory, env.configOverrides),
-      {
-        case (_, conf) =>
-          Option(conf) match {
-            case Some(c) => c
-            case _ =>
-              val configLoader = env
-                .bootstrapFactory.makeConfigLoader(env.configBaseName, logger).map {
-                  c =>
-                    env.configOverrides match {
-                      case None => c
-                      case Some(overrides) =>
-                        AppConfig(overrides.config.withFallback(c.config).resolve())
-                    }
-                }
-              configLoader.loadConfig()
-          }
-      },
-    )
-  }
 
   /**
     *  Performs tests grouping by it's memoization environment.
@@ -397,6 +363,44 @@ class DistageTestRunner[F[_]: TagK](
     } else {
       environments.foreach(f)
     }
+  }
+
+  private[this] lazy val testRunnerLogger: IzLogger = {
+    val level = getTestRunnerLogLevel(false)
+    IzLogger(level)("phase" -> "testRunner")
+  }
+
+  private[this] def getTestRunnerLogLevel(default: Boolean): Log.Level = {
+    if (DebugProperties.`izumi.distage.testkit.debug`.asBoolean(default)) {
+      Log.Level.Debug
+    } else {
+      Log.Level.Info
+    }
+  }
+
+  private[this] val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]()
+
+  private[this] def loadConfig(env: TestEnvironment, logger: IzLogger): AppConfig = {
+    memoizedConfig.compute(
+      (env.configBaseName, env.bootstrapFactory, env.configOverrides),
+      {
+        case (_, conf) =>
+          Option(conf) match {
+            case Some(c) => c
+            case _ =>
+              val configLoader = env
+                .bootstrapFactory.makeConfigLoader(env.configBaseName, logger).map {
+                  c =>
+                    env.configOverrides match {
+                      case None => c
+                      case Some(overrides) =>
+                        AppConfig(overrides.config.withFallback(c.config).resolve())
+                    }
+                }
+              configLoader.loadConfig()
+          }
+      },
+    )
   }
 }
 
