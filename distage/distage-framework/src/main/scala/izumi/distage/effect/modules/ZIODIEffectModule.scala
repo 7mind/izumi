@@ -62,6 +62,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOBracket3[ZIO]]
   addImplicit[BIOPanic3[ZIO]]
   addImplicit[BIO3[ZIO]]
+  addImplicit[BIOParallel3[ZIO]]
   addImplicit[BIOAsync3[ZIO]]
   make[BIOTemporal3[ZIO]].from {
     implicit r: zio.clock.Clock =>
@@ -83,6 +84,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOBracket[IO]]
   addImplicit[BIOPanic[IO]]
   addImplicit[BIO[IO]]
+  addImplicit[BIOParallel[IO]]
   addImplicit[BIOAsync[IO]]
   make[BIOTemporal[IO]].from {
     implicit r: zio.clock.Clock =>
