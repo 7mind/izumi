@@ -55,25 +55,23 @@ import izumi.logstage.api.Log
   *
   */
 final case class TestConfig( // general options
-                             pluginConfig: PluginConfig,
-                             bootstrapPluginConfig: PluginConfig = PluginConfig.empty,
-                             activation: Activation = StandardAxis.testProdActivation,
-                             moduleOverrides: Module = Module.empty,
-                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-                             memoizationRoots: Set[_ <: DIKey] = Set.empty,
-                             forcedRoots: Set[_ <: DIKey] = Set.empty,
-
-                             // parallelism options
-                             parallelEnvs: Boolean = true,
-                             parallelSuites: Boolean = true,
-                             parallelTests: Boolean = true,
-
-                             // other options
-                             configBaseName: String,
-                             configOverrides: Option[AppConfig] = None,
-                             planningOptions: PlanningOptions = PlanningOptions(),
-                             testRunnerLogLevel: Log.Level = Log.Level.Info,
-                           )
+  pluginConfig: PluginConfig,
+  bootstrapPluginConfig: PluginConfig = PluginConfig.empty,
+  activation: Activation = StandardAxis.testProdActivation,
+  moduleOverrides: Module = Module.empty,
+  bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+  memoizationRoots: Set[_ <: DIKey] = Set.empty,
+  forcedRoots: Set[_ <: DIKey] = Set.empty,
+  // parallelism options
+  parallelEnvs: Boolean = true,
+  parallelSuites: Boolean = true,
+  parallelTests: Boolean = true,
+  // other options
+  configBaseName: String,
+  configOverrides: Option[AppConfig] = None,
+  planningOptions: PlanningOptions = PlanningOptions(),
+  testRunnerLogLevel: Log.Level = Log.Level.Info,
+)
 object TestConfig {
   def forSuite(clazz: Class[_]): TestConfig = {
     val packageName = clazz.getPackage.getName

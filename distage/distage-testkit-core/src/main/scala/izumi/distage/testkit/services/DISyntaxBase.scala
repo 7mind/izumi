@@ -1,8 +1,8 @@
 package izumi.distage.testkit.services
 
+import distage.{Tag, TagK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import distage.{Tag, TagK}
 import izumi.fundamentals.platform.language.CodePosition
 
 trait DISyntaxBase[F[_]] {
@@ -12,9 +12,8 @@ trait DISyntaxBase[F[_]] {
 
   protected final def takeAny(function: ProviderMagnet[Any], pos: CodePosition): Unit = {
     val f: ProviderMagnet[F[Any]] = function.flatAp {
-      F: DIEffect[F] =>
-        (a: Any) =>
-          F.pure(a)
+      F: DIEffect[F] => (a: Any) =>
+        F.pure(a)
     }
 
     takeIO(f, pos)

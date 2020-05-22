@@ -13,7 +13,14 @@ import izumi.logstage.api.logger.LogRouter
 
 trait BootstrapFactory {
   def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader
-  def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider
+  def makeModuleProvider[F[_]: TagK](
+    options: PlanningOptions,
+    config: AppConfig,
+    logRouter: LogRouter,
+    roles: RolesInfo,
+    activationInfo: ActivationInfo,
+    activation: Activation,
+  ): ModuleProvider
 }
 
 object BootstrapFactory {
@@ -22,7 +29,14 @@ object BootstrapFactory {
       new ConfigLoader.LocalFSImpl(logger, None, Map(configResourceName -> None), ConfigLoader.defaultBaseConfigs)
     }
 
-    def makeModuleProvider[F[_]: TagK](options: PlanningOptions, config: AppConfig, logRouter: LogRouter, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
+    def makeModuleProvider[F[_]: TagK](
+      options: PlanningOptions,
+      config: AppConfig,
+      logRouter: LogRouter,
+      roles: RolesInfo,
+      activationInfo: ActivationInfo,
+      activation: Activation,
+    ): ModuleProvider = {
       // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
       new ModuleProvider.Impl(
         logRouter = logRouter,

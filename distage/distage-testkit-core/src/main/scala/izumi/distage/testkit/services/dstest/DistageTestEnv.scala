@@ -30,7 +30,13 @@ trait DistageTestEnv {
     }
   }
 
-  private[distage] def makeEnv(logger: IzLogger, testConfig: TestConfig, pluginLoader: PluginLoader, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
+  private[distage] def makeEnv(
+    logger: IzLogger,
+    testConfig: TestConfig,
+    pluginLoader: PluginLoader,
+    roles: RolesInfo,
+    mergeStrategy: PluginMergeStrategy,
+  ): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
@@ -39,9 +45,9 @@ trait DistageTestEnv {
     val activation = testConfig.activation
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
-      make[ActivationInfo].fromValue(availableActivations)
-    }
+        make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
+        make[ActivationInfo].fromValue(availableActivations)
+      }
 
     TestEnvironment(
       bsModule = bsModule,
