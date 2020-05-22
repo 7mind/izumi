@@ -30,21 +30,24 @@ trait IntegrationChecker[F[_]] {
 
 object IntegrationChecker {
 
-  class Impl[F[_]]
-  (
-    logger: IzLogger,
-  )(implicit protected val tag: TagK[F]) extends IntegrationChecker[F] {
+  class Impl[F[_]](
+    logger: IzLogger
+  )(implicit protected val tag: TagK[F]
+  ) extends IntegrationChecker[F] {
 
     override def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
-      logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"} ${integrationComponents -> "resourceList"}")
+      if (integrationComponents.nonEmpty) {
+        logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"} ${integrationComponents -> "resourceList"}")
+      }
 
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
       implicit val P: DIEffectAsync[F] = integrationLocator.get[DIEffectAsync[F]]
 
-      val instances = integrationComponents.toList.map {
-        ick =>
-          ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck])
-      }.toSet
+      val instances = integrationComponents
+        .toList.map {
+          ick =>
+            ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck])
+        }.toSet
 
       val good = instances.collect { case (_, Some(ic)) => ic }
       val bad = instances.collect { case (ick, None) => ick }
@@ -70,10 +73,10 @@ object IntegrationChecker {
         logger.debug(s"Checking $resource")
         try {
           resource.resourcesAvailable() match {
-            case failure@ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
+            case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
               logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
               Left(failure)
-            case failure@ResourceCheck.ResourceUnavailable(reason, None) =>
+            case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
               logger.debug(s"Integration check failed, $resource unavailable: $reason")
               Left(failure)
             case ResourceCheck.Success() =>

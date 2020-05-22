@@ -64,7 +64,7 @@ trait DistageTestEnv {
       configBaseName = testConfig.configBaseName,
       configOverrides = testConfig.configOverrides,
       planningOptions = testConfig.planningOptions,
-      testRunnerLogLevel = testConfig.testRunnerLogLevel,
+      logLevel = testConfig.testRunnerLogLevel,
     )
   }
 
