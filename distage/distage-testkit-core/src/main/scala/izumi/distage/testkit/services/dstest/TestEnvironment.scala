@@ -5,8 +5,10 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.logstage.api.Log
+import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
+import izumi.logstage.api.{IzLogger, Log}
 
 final case class TestEnvironment(
   bsModule: ModuleBase,
@@ -25,8 +27,8 @@ final case class TestEnvironment(
   planningOptions: PlanningOptions,
   testRunnerLogLevel: Log.Level,
 ) {
-  def toMemoizationGroup: TestEnvironment.EnvironmentGroup = {
-    TestEnvironment.EnvironmentGroup(
+  def toMemoizationEnv: TestEnvironment.MemoizationEnvironment = {
+    TestEnvironment.MemoizationEnvironment(
       bsModule,
       roles,
       activationInfo,
@@ -45,7 +47,7 @@ final case class TestEnvironment(
   }
 }
 object TestEnvironment {
-  final case class EnvironmentGroup(
+  final case class MemoizationEnvironment(
     bsModule: ModuleBase,
     roles: RolesInfo,
     activationInfo: ActivationInfo,
@@ -60,6 +62,19 @@ object TestEnvironment {
     configOverrides: Option[AppConfig],
     planningOptions: PlanningOptions,
     testRunnerLogLevel: Log.Level,
+  )
+
+  final case class MemoizationEnvWithPlan(
+    env: MemoizationEnvironment,
+    testRunnerLogger: IzLogger,
+    injector: Injector,
+    memoizationPlan: TriSplittedPlan,
+    runtimePlan: OrderedPlan,
+  )
+
+  final case class AppModuleTestGroup[F[_]](
+    appModule: Module,
+    distageTests: Seq[DistageTest[F]],
   )
 
 }
