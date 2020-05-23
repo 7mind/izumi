@@ -279,7 +279,7 @@ object Izumi {
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
-      final lazy val logging = ArtifactId("distage-extension-logstage")
+      final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
     }
 
     object logstage {
@@ -386,10 +386,6 @@ object Izumi {
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
     defaultPlatforms = Targets.cross,
-    enableProjectSharedAggSettings = false,
-    settings = Seq(
-      "crossScalaVersions" := "Nil".raw
-    ),
   )
 
   final val allMonadsOptional = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
@@ -427,12 +423,12 @@ object Izumi {
         name = Projects.distage.plugins,
         libs = Seq(fast_classpath_scanner),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
+          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
       ),
       Artifact(
-        name = Projects.distage.logging,
+        name = Projects.distage.extensionLogstage,
         libs = Seq.empty,
         depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
@@ -447,14 +443,15 @@ object Izumi {
       Artifact(
         name = Projects.distage.framework,
         libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.logging, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.docker,
         libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
-        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.logging).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
         platforms = Targets.jvm,
       ),
@@ -462,8 +459,8 @@ object Izumi {
         name = Projects.distage.testkitCore,
         libs = allMonadsOptional,
         depends =
-          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.logging).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ tin Scope.Compile.all),
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
@@ -474,7 +471,7 @@ object Izumi {
           ),
         depends =
           Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+          Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
     ),
@@ -512,7 +509,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.sinkSlf4j,
         libs = Seq(slf4j_api, slf4j_simple),
-        depends = Seq(Projects.logstage.core).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
     ),
@@ -636,6 +633,9 @@ object Izumi {
     defaultPlatforms = Targets.jvmSbt,
     enableProjectSharedAggSettings = false,
     dontIncludeInSuperAgg = false,
+    settings = Seq(
+      "crossScalaVersions" := "Nil".raw
+    ),
   )
 
   val izumi: Project = Project(

@@ -1,16 +1,20 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.test.sneaky.SneakyPlugin
-import distage.ModuleDef
+import distage.{Axis, ModuleDef}
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.dsl.TestTagOps
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
 
+object Test extends Axis {
+  case object X extends AxisValueDef
+  case object Y extends AxisValueDef
+}
+
 @ExposedTestScope
 class StaticTestPlugin extends SneakyPlugin with ConfigModuleDef {
-  make[TestDep].tagged(TestTagOps("x")).from[TestDep1]
-  make[TestDep].tagged(TestTagOps("y")).from[TestDep2]
+  make[TestDep].tagged(Test.X).from[TestDep1]
+  make[TestDep].tagged(Test.Y).from[TestDep2]
   make[TestService]
   make[TestConf].fromConfig("test.testconf")
 }
