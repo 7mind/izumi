@@ -181,10 +181,8 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     try {
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
-        val runner = {
-          new DistageTestRunner[F](testReporter, toRun, _.isInstanceOf[TestCanceledException])
-        }
-        runner.run()
+        val runner = new DistageTestRunner[F](testReporter, _.isInstanceOf[TestCanceledException])
+        runner.run(toRun)
       }
     } finally {
       DistageTestsRegistrySingleton.completeStatuses[F]()

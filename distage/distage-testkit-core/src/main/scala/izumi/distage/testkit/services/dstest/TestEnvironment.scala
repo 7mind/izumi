@@ -5,9 +5,10 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.plan.TriSplittedPlan
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.services.dstest.TestEnvironment.MemoizationEnvironment
+import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
+import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
 import izumi.logstage.api.{IzLogger, Log}
 
 final case class TestEnvironment(
@@ -28,8 +29,8 @@ final case class TestEnvironment(
   logLevel: Log.Level,
   debugOutput: Boolean,
 ) {
-  def toMemoizationEnv: MemoizationEnvironment = {
-    MemoizationEnvironment(
+  def getExecParams: EnvExecutionParams = {
+    EnvExecutionParams(
       parallelEnvs,
       parallelSuites,
       parallelTests,
@@ -42,7 +43,7 @@ final case class TestEnvironment(
 
 object TestEnvironment {
 
-  final case class MemoizationEnvironment(
+  final case class EnvExecutionParams(
     parallelEnvs: Boolean,
     parallelSuites: Boolean,
     parallelTests: Boolean,
@@ -52,11 +53,19 @@ object TestEnvironment {
   )
 
   final case class MemoizationEnvWithPlan(
-    env: MemoizationEnvironment,
+    envExec: EnvExecutionParams,
     integrationLogger: IzLogger,
     memoizationPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
-    injector: Injector,
+    memoizatonInjector: Injector,
+  )
+
+  final case class PreparedTest[F[_]](
+    test: DistageTest[F],
+    testPlan: OrderedPlan,
+    activationInfo: ActivationInfo,
+    activation: Activation,
+    planner: Planner, // 0.11.0: remove
   )
 
 }
