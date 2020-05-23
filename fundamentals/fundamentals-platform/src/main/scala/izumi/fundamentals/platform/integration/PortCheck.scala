@@ -14,7 +14,10 @@ import scala.concurrent.duration._
   */
 class PortCheck(timeout: FiniteDuration) {
 
-  @deprecated("use constructor that accepts FiniteDuration instead. Rewrite `new PortCheck(100)` to `new PortCheck(100.millis)`", "deprecated constructor will be removed in 0.11.1")
+  @deprecated(
+    "PortCheck constructor now accepts FiniteDuration instead of Int of milliseconds. Rewrite from `new PortCheck(100)` to `new PortCheck(100.millis)`",
+    "Int constructor will be removed in 0.11.1",
+  )
   def this(timeoutMillis: Int) = this(timeoutMillis.millis)
 
   def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {

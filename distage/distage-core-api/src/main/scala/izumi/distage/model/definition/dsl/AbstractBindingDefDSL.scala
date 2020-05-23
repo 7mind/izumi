@@ -97,8 +97,6 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     _bindDSLAfterFrom(ref)
   }
 
-  /** Same as `addImplicit[T].named(name)`
-    * @deprecated Use `addImplicit[T].named(name)` instead, since 0.10.6 */
   @deprecated("Use `addImplicit[T].named(name)` instead", "will be removed in 0.10.8")
   final protected[this] def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
     _registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name, IdContract.stringIdContract)))).discard()
