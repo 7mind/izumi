@@ -1,5 +1,6 @@
 package izumi.distage.config.codec
 
+import com.typesafe.config.ConfigException.Missing
 import com.typesafe.config.{Config, ConfigValue}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
@@ -62,6 +63,19 @@ trait DIConfigReader[A] {
     unpackResult(config, path)(decodeConfigValue(config.getValue(path)))
   }
 
+  final def decodeAppConfigWithDefault(path: String)(default: => A)(implicit tag: Tag[A]): AppConfig => A = {
+    appConfig => decodeConfigWithDefault(path)(default)(appConfig.config)
+  }
+
+  final def decodeConfigWithDefault(path: String)(default: => A)(config: Config)(implicit tag: Tag[A]): A = {
+    try {
+      val cv = config.getValue(path)
+      unpackResult(config, path)(decodeConfigValue(cv))
+    } catch {
+      case _: Missing => default
+    }
+  }
+
   private[this] def unpackResult[T: Tag](config: Config, path: String)(t: => Try[T]): T = {
     Try(t).flatten match {
       case Failure(exception) =>
@@ -71,7 +85,9 @@ trait DIConfigReader[A] {
              |  ${exception.getMessage}
              |
              |Config was: $config
-             |""".stripMargin, exception)
+             |""".stripMargin,
+          exception,
+        )
       case Success(value) =>
         value
     }
@@ -87,7 +103,7 @@ object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
     cv =>
       dec.from(cv) match {
-        case Left(errs) => Failure(ConfigReaderException[T](errs))
+        case Left(errs)   => Failure(ConfigReaderException[T](errs))
         case Right(value) => Success(value)
       }
   }
