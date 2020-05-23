@@ -13,9 +13,9 @@ import izumi.fundamentals.collections.IzCollections._
 import scala.collection.mutable
 
 final class PrePlan(
-                     val definition: ModuleBase,
-                     val roots: Roots,
-                     ) {
+  val definition: ModuleBase,
+  val roots: Roots,
+) {
 
   private val ops = new mutable.ArrayBuffer[TraceableOp]()
 
@@ -51,9 +51,7 @@ object PrePlan {
   final case class JustOp(key: DIKey, op: InstantiationOp, binding: Binding) extends TraceableOp
   final case class SetOp(key: DIKey, op: CreateSet, binding: Binding) extends TraceableOp
 
-  def empty(definition: ModuleBase, gcMode: Roots): PrePlan = {
-    new PrePlan(definition, gcMode)
+  def empty(definition: ModuleBase, roots: Roots): PrePlan = {
+    new PrePlan(definition, roots)
   }
 }
-
-

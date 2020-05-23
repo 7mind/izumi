@@ -8,23 +8,22 @@ import izumi.reflect.Tag
 /**
   * Input for [[Planner]]
   *
-  * @param bindings Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
-  * @param mode     Garbage collection roots.
+  * @param bindings Bindings. Can be created using [[izumi.distage.model.definition.ModuleDef]] DSL
   *
-  *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
-  *                 of the chosen root DIKeys from the plan - they will never be instantiated.
+  * @param roots    Garbage collection [[Roots roots]]. distage will ignore all bindings that aren't transitive dependencies
+  *                 of the chosen Root [[DIKey keys]] from the plan - they will never be instantiated.
   *
-  *                 Effectively, garbage collector selects and creates a *sub-graph* of the largest possible object graph
-  *                 that can be described by `bindings`, the sub-graph that can includes components designated as `roots`
-  *                 and their required dependencies.
+  *                 Effectively, the choice of roots selects a *sub-graph* of the largest possible object graph
+  *                 that can be described by `bindings` - the sub-graph that only includes components designated as `roots`
+  *                 and their transitive dependencies.
   *
   *                 On [[Roots.Everything]] garbage collection will not be performed – that would be equivalent to
-  *                 designating _all_ DIKeys as roots. _Everything_ described in `bindings` will be instantiated eagerly.
+  *                 designating _all_ DIKeys as roots.
   */
 final case class PlannerInput(
-                               bindings: ModuleBase,
-                               mode: Roots,
-                             )
+  bindings: ModuleBase,
+  roots: Roots,
+)
 
 object PlannerInput {
   /**

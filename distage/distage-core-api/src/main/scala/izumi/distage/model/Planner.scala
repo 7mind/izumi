@@ -10,8 +10,8 @@ import izumi.distage.model.reflection._
 trait Planner extends PlanSplittingOps {
   def plan(input: PlannerInput): OrderedPlan
 
-  final def plan(bindings: ModuleBase, gcMode: Roots): OrderedPlan = {
-    plan(PlannerInput(bindings, gcMode))
+  final def plan(bindings: ModuleBase, roots: Roots): OrderedPlan = {
+    plan(PlannerInput(bindings, roots))
   }
 
   // plan lifecycle
@@ -27,6 +27,3 @@ trait Planner extends PlanSplittingOps {
 
   def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
 }
-
-
-
