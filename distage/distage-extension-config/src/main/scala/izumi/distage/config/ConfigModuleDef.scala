@@ -21,6 +21,10 @@ trait ConfigModuleDef extends ModuleDef {
     pos.discard()
     make[T].named(path).tagged(ConfTag(path)).from(wireConfig[T](path))
   }
+  final def makeConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
+    pos.discard()
+    make[T].tagged(ConfTag(path)).from(wireConfigWithDefault[T](path)(default))
+  }
 
   @inline final def wireConfig[T: Tag: DIConfigReader](path: String): ProviderMagnet[T] = {
     ConfigModuleDef.wireConfig[T](path)
@@ -45,7 +49,6 @@ object ConfigModuleDef {
   def wireConfig[T: Tag: DIConfigReader](path: String): ProviderMagnet[T] = {
     DIConfigReader[T].decodeAppConfig(path)
   }
-
   def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): ProviderMagnet[T] = {
     DIConfigReader[T].decodeAppConfigWithDefault(path)(default)
   }
