@@ -494,10 +494,48 @@ You need to use effect-aware `Injector.produceF` method to use effect bindings.
 
 ### ZIO Has Bindings
 
-You can inject into ZIO Environment using `make[_].fromHas` syntax 
+You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: BIOLocal`:
 
-zio.Has implementations are derived at compile-time by @scaladoc[HasConstructor](izumi.distage.constructors.HasConstructor) macro
-and can be summoned at need. 
+```scala mdoc:reset:invisible
+class Dep1
+class Dep2
+class Arg1
+class Arg2
+
+class X
+object X extends X {
+  def apply(a: Arg1, b: Arg2, d: Dep1): X = X
+}
+```
+
+```scala mdoc:to-string
+import zio._
+import distage._
+
+def zioEnvCtor: URIO[Has[Dep1] with Has[Dep2], X] = ZIO.succeed(X)
+def zmanagedEnvCtor: URManaged[Has[Dep1] with Has[Dep2], X] = ZManaged.succeed(X)
+def zlayerEnvCtor: URLayer[Has[Dep1] with Has[Dep2], Has[X]] = ZLayer.succeed(X)
+
+new ModuleDef {
+  make[X].fromHas(zioEnvCtor)
+  // or
+  make[X].fromHas(zmanagedEnvCtor)
+  // or
+  make[X].fromHas(zlayerEnvCtor)
+}
+```
+
+You can also mix environment and parameter dependencies at the same time in one constructor:
+
+```scala mdoc:to-string
+def zioArgEnvCtor(a: Arg1, b: Arg2): URLayer[Has[Dep1], Has[X]] = ZLayer.fromService(dep1 => X(a, b, dep1))
+
+new ModuleDef {
+  make[X].fromHas(zioArgEnvCtor _)
+}
+```
+
+zio.Has implementations are derived at compile-time by @scaladoc[HasConstructor](izumi.distage.constructors.HasConstructor) macro and can be summoned at need. 
 
 Example:
 
@@ -563,8 +601,10 @@ val main = Injector()
 zio.Runtime.default.unsafeRun(main)
 ```
 
+#### Turning ZIO Environment dependencies into arguments and vice-versa
+
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
-the dependency in each method. This pattern can be generalized by implementing an instance of `cats.Contravariant` for your services
+the dependency in each method. This pattern can be generalized by implementing an instance of `cats.Contravariant` (or `cats.tagless.FunctorK`) for your services
 and using it to turn environment dependencies into constructor parameters – that way ZIO Environment can be used uniformly
 for declaration of dependencies, but the dependencies used inside the service do not leak to other services calling it.
 Details: https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
@@ -577,10 +617,10 @@ import distage.{Roots, Injector, ModuleDef, ProviderMagnet, Tag, TagK, HasConstr
 import zio.{Task, UIO, URIO, ZIO, Has}
 
 trait Dependee[-R] {
-def x(y: String): URIO[R, Int]
+  def x(y: String): URIO[R, Int]
 }
 trait Depender[-R] {
-def y: URIO[R, String]
+  def y: URIO[R, String]
 }
 implicit val contra1: Contravariant[Dependee] = new Contravariant[Dependee] {
   def contramap[A, B](fa: Dependee[A])(f: B => A): Dependee[B] = new Dependee[B] { def x(y: String) = fa.x(y).provideSome(f) }
