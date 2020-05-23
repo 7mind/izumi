@@ -23,7 +23,7 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
   */
 final case class SemiPlan(
                            steps: Vector[SemiplanOp],
-                           gcMode: GCMode,
+                           roots: Roots,
                          ) extends AbstractPlan[SemiplanOp] with SemiPlanOps
 
 object SemiPlan extends SemiPlanExtensions

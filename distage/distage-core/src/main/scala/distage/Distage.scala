@@ -8,12 +8,15 @@ trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
 
-  type Activation = model.definition.Activation
-  val Activation: model.definition.Activation.type = model.definition.Activation
-
   type Injector = model.Injector
   type Planner = model.Planner
   type Producer = model.Producer
+
+  type Activation = model.definition.Activation
+  val Activation: model.definition.Activation.type = model.definition.Activation
+
+  type Roots = model.plan.Roots
+  val Roots: model.plan.Roots.type = model.plan.Roots
 
   type Locator = model.Locator
   type LocatorRef = model.recursive.LocatorRef
@@ -38,6 +41,9 @@ trait Distage {
 
   val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
+  type DIKey = model.reflection.DIKey
+  val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
+
   type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
   val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
 
@@ -53,8 +59,10 @@ trait Distage {
   type HasConstructor[T] = constructors.HasConstructor[T]
   val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
 
-  type GCMode = model.plan.GCMode
-  val GCMode: model.plan.GCMode.type = model.plan.GCMode
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  type GCMode = model.plan.Roots
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  val GCMode: model.plan.Roots.type = model.plan.Roots
 
   type BindingTag = model.definition.BindingTag
   val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -73,9 +81,6 @@ trait Distage {
   type SemiPlan = model.plan.SemiPlan
   val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
-
-  type DIKey = model.reflection.DIKey
-  val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
   type SafeType = model.reflection.SafeType
   val SafeType: model.reflection.SafeType.type = model.reflection.SafeType

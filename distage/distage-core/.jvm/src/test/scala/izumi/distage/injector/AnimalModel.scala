@@ -19,7 +19,7 @@ class AnimalModel extends AnyWordSpec with MkInjector {
         make[AccountsApiImpl]
         make[UnrequiredDep]
         make[App]
-      }, GCMode(DIKey.get[App]))
+      }, Roots(DIKey.get[App]))
 
       val debug = false
 

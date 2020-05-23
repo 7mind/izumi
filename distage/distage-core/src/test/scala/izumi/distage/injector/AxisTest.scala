@@ -4,7 +4,7 @@ import distage.{DIKey, Injector, Module}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
 class AxisTest extends AnyWordSpec with MkInjector {
@@ -17,13 +17,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val injector1 = Injector(Activation(Repo -> Repo.Prod))
-    val context1 = injector1.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
+    val context1 = injector1.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = Injector(Activation(Repo -> Repo.Dummy))
-    val context2 = injector2.produce(PlannerInput(definition, GCMode(DIKey.get[JustTrait]))).unsafeGet()
+    val context2 = injector2.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]))).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])
@@ -39,13 +39,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     val appDefinition = Module.empty
 
     val injector1 = Injector(Activation(Repo -> Repo.Prod), bsDefinition)
-    val context1 = injector1.produce(PlannerInput(appDefinition, GCMode.NoGC)).unsafeGet()
+    val context1 = injector1.produce(PlannerInput(appDefinition, Roots.Everything)).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = Injector(Activation(Repo -> Repo.Dummy), bsDefinition)
-    val context2 = injector2.produce(PlannerInput(appDefinition, GCMode.NoGC)).unsafeGet()
+    val context2 = injector2.produce(PlannerInput(appDefinition, Roots.Everything)).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])

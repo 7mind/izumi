@@ -3,7 +3,7 @@ package izumi.distage.gc
 import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable
@@ -20,7 +20,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Circular3]
         make[Circular4]
         make[Trash]
-      }, GCMode(DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular2])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.find[Trash].isEmpty)
@@ -38,7 +38,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[MkS3Client].from[Impl]
         make[S3Component]
         make[App]
-      }, GCMode(DIKey.get[App])))
+      }, Roots(DIKey.get[App])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[App] != null)
@@ -55,7 +55,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[S3Upload]
         make[Ctx]
         make[S3Component]
-      }, GCMode(DIKey.get[Ctx])))
+      }, Roots(DIKey.get[Ctx])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx].upload.client != null)
@@ -75,7 +75,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[S3Component]
         many[IntegrationComponent].add[S3Component]
         make[Initiator]
-      }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
+      }, Roots(DIKey.get[Ctx], DIKey.get[Initiator])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx] != null)
@@ -91,7 +91,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         make[Circular2]
         make[T1].using[Circular1]
         make[T2].using[Circular2]
-      }, GCMode(DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular2])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].c2 != null)
@@ -107,7 +107,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[T1].from[Circular1]
         make[T2].from[Circular2]
-      }, GCMode(DIKey.get[T1])))
+      }, Roots(DIKey.get[T1])))
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[T1] != null)
@@ -140,7 +140,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
               override def nothing: Int = 2
             }
         }
-      }, GCMode(DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular2])))
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].nothing == 1)
       assert(result.get[Circular2].nothing == 2)
@@ -155,7 +155,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, GCMode(DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular2])))
 
       val result = injector.produce(plan).unsafeGet()
 
@@ -171,7 +171,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, GCMode(DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular2])))
 
       val result = injector.produce(plan).unsafeGet()
 
@@ -186,7 +186,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, GCMode(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]])))
+      }, Roots(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]])))
 
       val result = injector.produce(plan).unsafeGet()
 
@@ -206,7 +206,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         many[T1]
           .ref[Circular1]
           .ref[Circular2]
-      }, GCMode(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3])))
+      }, Roots(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3])))
 
       val result = injector.produce(plan).unsafeGet()
 

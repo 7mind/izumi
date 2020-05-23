@@ -3,7 +3,7 @@ package izumi.distage.gc
 import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
 class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
@@ -17,7 +17,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
           make[Circular2]
           make[Circular3]
           make[Circular4]
-        }, GCMode(DIKey.get[Circular2])))
+        }, Roots(DIKey.get[Circular2])))
 
         val result = injector.finishProduce(plan)
         assert(result.get[Circular1].c2 != null)
@@ -33,7 +33,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
           make[MkS3Client].from[Impl]
           make[S3Component]
           make[App]
-        }, GCMode(DIKey.get[App])))
+        }, Roots(DIKey.get[App])))
 
         val result = injector.finishProduce(plan)
         assert(result.get[App] != null)
@@ -49,7 +49,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
           make[S3Upload]
           make[Ctx]
           make[S3Component]
-        }, GCMode(DIKey.get[Ctx])))
+        }, Roots(DIKey.get[Ctx])))
 
         val result = injector.finishProduce(plan)
         assert(result.get[Ctx].upload.client != null)
@@ -68,7 +68,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
           make[S3Component]
           many[IntegrationComponent].add[S3Component]
           make[Initiator]
-        }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
+        }, Roots(DIKey.get[Ctx], DIKey.get[Initiator])))
 
         val result = injector.finishProduce(plan)
         assert(result.get[Ctx] != null)
@@ -83,7 +83,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
           make[Circular2]
           make[T1].using[Circular1]
           make[T2].using[Circular2]
-        }, GCMode(DIKey.get[Circular2])))
+        }, Roots(DIKey.get[Circular2])))
 
         val result = injector.finishProduce(plan)
         assert(result.get[Circular1].c2 != null)
@@ -117,7 +117,7 @@ class GcIdempotenceTestsJvm extends AnyWordSpec with MkGcInjector {
                 override def nothing: Int = 2
               }
           }
-        }, GCMode(DIKey.get[Circular2])))
+        }, Roots(DIKey.get[Circular2])))
         val result = injector.finishProduce(plan)
         assert(result.get[Circular1].nothing == 1)
         assert(result.get[Circular2].nothing == 2)

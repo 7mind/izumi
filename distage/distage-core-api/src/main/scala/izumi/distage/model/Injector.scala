@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.DIKey
 import izumi.reflect.{Tag, TagK}
@@ -149,8 +149,8 @@ trait Injector extends Planner with Producer {
   final def produceF[F[_]: TagK: DIEffect](input: PlannerInput): DIResourceBase[F, Locator] = {
     produceF[F](plan(input))
   }
-  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, mode: GCMode): DIResourceBase[F, Locator] = {
-    produceF[F](plan(PlannerInput(bindings, mode)))
+  final def produceF[F[_]: TagK: DIEffect](bindings: ModuleBase, roots: Roots): DIResourceBase[F, Locator] = {
+    produceF[F](plan(PlannerInput(bindings, roots)))
   }
 
   final def produceRun[A: Tag](bindings: ModuleBase)(function: ProviderMagnet[A]): A = produceRunF[Identity, A](bindings)(function)
@@ -160,5 +160,5 @@ trait Injector extends Planner with Producer {
   final def produceGet[A: Tag](name: String)(bindings: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(bindings)
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
-  final def produce(bindings: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = produceF[Identity](bindings, mode)
+  final def produce(bindings: ModuleBase, roots: Roots): DIResourceBase[Identity, Locator] = produceF[Identity](bindings, roots)
 }

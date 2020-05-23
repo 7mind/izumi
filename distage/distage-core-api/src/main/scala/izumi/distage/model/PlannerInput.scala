@@ -1,30 +1,29 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
 import izumi.reflect.Tag
 
 /**
   * Input for [[Planner]]
   *
-  * @param bindings Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
-  * @param mode     Garbage collection roots.
+  * @param bindings Bindings. Can be created using [[izumi.distage.model.definition.ModuleDef]] DSL
   *
-  *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
-  *                 of the chosen root DIKeys from the plan - they will never be instantiated.
+  * @param roots    Garbage collection [[Roots roots]]. distage will ignore all bindings that aren't transitive dependencies
+  *                 of the chosen Root [[DIKey keys]] from the plan - they will never be instantiated.
   *
-  *                 Effectively, garbage collector selects and creates a *sub-graph* of the largest possible object graph
-  *                 that can be described by `bindings`, the sub-graph that can includes components designated as `roots`
-  *                 and their required dependencies.
+  *                 Effectively, the choice of roots selects a *sub-graph* of the largest possible object graph
+  *                 that can be described by `bindings` - the sub-graph that only includes components designated as `roots`
+  *                 and their transitive dependencies.
   *
-  *                 On [[GCMode.NoGC]] garbage collection will not be performed – that would be equivalent to
-  *                 designating _all_ DIKeys as roots. _Everything_ described in `bindings` will be instantiated eagerly.
+  *                 On [[Roots.Everything]] garbage collection will not be performed – that would be equivalent to
+  *                 designating _all_ DIKeys as roots.
   */
 final case class PlannerInput(
-                               bindings: ModuleBase,
-                               mode: GCMode,
-                             )
+  bindings: ModuleBase,
+  roots: Roots,
+)
 
 object PlannerInput {
   /**
@@ -33,10 +32,10 @@ object PlannerInput {
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph
     * that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, roots: Set[_ <: DIKey]): PlannerInput = PlannerInput(bindings, GCMode(roots))
+  def apply(bindings: ModuleBase, roots: Set[_ <: DIKey]): PlannerInput = PlannerInput(bindings, Roots(roots))
 
   /** Instantiate `root`, `roots` and their dependencies, discarding bindings that are unrelated. */
-  def apply(bindings: ModuleBase, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, GCMode(root, roots: _*))
+  def apply(bindings: ModuleBase, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, Roots(root, roots: _*))
 
   /** Instantiate `T` and the dependencies of `T`, discarding bindings that are unrelated. */
   def target[T: Tag](bindings: ModuleBase): PlannerInput = PlannerInput(bindings, DIKey.get[T])
@@ -48,5 +47,5 @@ object PlannerInput {
 
   /** Disable all pruning.
     * Every binding in `bindings` will be instantiated eagerly, without selection */
-  def noGc(bindings: ModuleBase): PlannerInput = PlannerInput(bindings, GCMode.NoGC)
+  def noGc(bindings: ModuleBase): PlannerInput = PlannerInput(bindings, Roots.Everything)
 }

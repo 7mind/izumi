@@ -58,41 +58,39 @@ class PruningPlanMergingPolicyDefaultImpl
 
     val ops = resolved.values.flatten.toVector
     val index = ops.map(op => op.target -> op).toMap
-    val roots = plan.gcMode.toSet
+    plan.roots match {
+      case Roots.Of(roots) if roots.toSet.intersect(issues.keySet).isEmpty =>
+        val collected = new TracingDIGC(roots.toSet, index, ignoreMissingDeps = true).gc(ops)
 
-    if (roots.nonEmpty && roots.intersect(issues.keySet).isEmpty) {
-      val collected = new TracingDIGC(roots, index, ignoreMissingDeps = true).gc(ops)
+        val lastTry = issues.map {
+          case (k, v) =>
+            val reachableCandidates = v.candidates.filter(op => collected.reachable.contains(op.target))
 
-      val lastTry = issues.map {
-        case (k, v) =>
-          val reachableCandidates = v.candidates.filter(op => collected.reachable.contains(op.target))
-
-          if (reachableCandidates.size == 1) {
-            k -> DIKeyConflictResolution.Successful(reachableCandidates)
-          } else if (reachableCandidates.isEmpty) {
-            k -> DIKeyConflictResolution.Successful(Set.empty)
-          } else {
-            k -> v
-          }
-      }
-
-      val failed = lastTry.collect {
-        case (k, f: DIKeyConflictResolution.Failed) => k -> f
-      }
-
-      if (failed.nonEmpty) {
-        throwOnIssues(failed)
-      } else {
-        val good = lastTry.collect {
-          case (k, DIKeyConflictResolution.Successful(s)) => k -> s
+            if (reachableCandidates.size == 1) {
+              k -> DIKeyConflictResolution.Successful(reachableCandidates)
+            } else if (reachableCandidates.isEmpty) {
+              k -> DIKeyConflictResolution.Successful(Set.empty)
+            } else {
+              k -> v
+            }
         }
-        val erased = good.filter(_._2.isEmpty)
-        logPruningSuccesfulResolve(issues, erased)
-        val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
-        SemiPlan(allResolved, plan.gcMode)
-      }
-    } else {
-      throwOnIssues(issues)
+
+        val failed = lastTry.collect {
+          case (k, f: DIKeyConflictResolution.Failed) => k -> f
+        }
+
+        if (failed.nonEmpty) {
+          throwOnIssues(failed)
+        } else {
+          val good = lastTry.collect {
+            case (k, DIKeyConflictResolution.Successful(s)) => k -> s
+          }
+          val erased = good.filter(_._2.isEmpty)
+          logPruningSuccesfulResolve(issues, erased)
+          val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
+          SemiPlan(allResolved, plan.roots)
+        }
+      case _ => throwOnIssues(issues)
     }
   }
 
@@ -132,7 +130,7 @@ object PruningPlanMergingPolicyDefaultImpl {
       if (issues.nonEmpty) {
         handleIssues(plan, resolved.toMap, issues.toMap)
       } else {
-        SemiPlan(resolved.values.flatten.toVector, plan.gcMode)
+        SemiPlan(resolved.values.flatten.toVector, plan.roots)
       }
     }
 

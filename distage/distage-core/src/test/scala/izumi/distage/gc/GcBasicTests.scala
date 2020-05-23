@@ -4,7 +4,7 @@ import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.UnsupportedOpException
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
 class GcBasicTests extends AnyWordSpec with MkGcInjector {
@@ -18,7 +18,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
         injector.plan(PlannerInput(new ModuleDef {
           make[Circular1]
           make[Circular2]
-        }, GCMode(DIKey.get[Circular2])))
+        }, Roots(DIKey.get[Circular2])))
       }
     }
 
@@ -31,7 +31,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
         make[Circular2]
         make[T1]
         make[Box[T1]].from(new Box(new T1))
-      }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2])))
+      }, Roots(DIKey.get[Circular1], DIKey.get[Circular2])))
 
       val result = injector.produce(plan).unsafeGet()
 

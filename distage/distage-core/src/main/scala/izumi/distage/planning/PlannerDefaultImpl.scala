@@ -17,8 +17,7 @@ import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
 
-final class PlannerDefaultImpl
-(
+final class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
   gc: DIGarbageCollector,
@@ -68,7 +67,7 @@ final class PlannerDefaultImpl
   }
 
   override def prepare(input: PlannerInput): PrePlan = {
-    input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
+    input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.roots)) {
       case (currentPlan, binding) =>
         Value(bindingTranslator.computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -122,13 +121,16 @@ final class PlannerDefaultImpl
       .toMap
 
     val allOps = (imports.values ++ plan.steps).toVector
-    val roots = plan.gcMode.toSet
-    val missingRoots = roots.diff(allOps.map(_.target).toSet).map {
-      root =>
-        ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-    }.toVector
-
-    SemiPlan(missingRoots ++ allOps, plan.gcMode)
+    val missingRoots = plan.roots match {
+      case Roots.Of(roots) =>
+        roots
+          .toSet.diff(allOps.map(_.target).toSet).map {
+            root =>
+              ImportDependency(root, Set.empty, OperationOrigin.Unknown)
+          }.toVector
+      case Roots.Everything => Vector.empty
+    }
+    SemiPlan(missingRoots ++ allOps, plan.roots)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -190,9 +192,9 @@ final class PlannerDefaultImpl
     }
 
     val sortedKeys = new Toposort().cycleBreaking(
-      topology.dependencies.graph
-      , Seq.empty
-      , break
+      topology.dependencies.graph,
+      Seq.empty,
+      break,
     ) match {
       case Left(value) =>
         throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")
@@ -203,10 +205,10 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    val roots = completedPlan.gcMode match {
-      case GCMode.GCRoots(roots) =>
-        roots
-      case GCMode.NoGC =>
+    val roots = completedPlan.roots match {
+      case Roots.Of(roots) =>
+        roots.toSet
+      case Roots.Everything =>
         topology.effectiveRoots
     }
     OrderedPlan(sortedOps.toVector, roots, topology)
@@ -232,12 +234,12 @@ final class PlannerDefaultImpl
 
   private[this] def effectKey(key: DIKey): Boolean = key match {
     case _: DIKey.ResourceKey | _: DIKey.EffectKey => true
-    case _ => false
+    case _                                         => false
   }
 
   private[this] def referenceOp(s: SemiplanOp): Boolean = s match {
-    case _: ReferenceKey /*| _: MonadicOp */=> true
-    case _ => false
+    case _: ReferenceKey /*| _: MonadicOp */ => true
+    case _                                   => false
   }
 
 }

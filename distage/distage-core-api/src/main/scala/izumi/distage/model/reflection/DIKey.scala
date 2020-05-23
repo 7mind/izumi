@@ -9,6 +9,9 @@ sealed trait DIKey {
 }
 
 object DIKey {
+  def apply[T: Tag]: DIKey.TypeKey = TypeKey(SafeType.get[T])
+  def apply[T: Tag](id: String): DIKey.IdKey[String] = DIKey[T].named(id)
+
   def get[T: Tag]: DIKey.TypeKey = TypeKey(SafeType.get[T])
 
   sealed trait BasicKey extends DIKey {

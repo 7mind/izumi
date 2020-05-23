@@ -6,7 +6,7 @@ import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.wordspec.AnyWordSpec
@@ -28,7 +28,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
-      }, GCMode(DIKey.get[Int]))
+      }, Roots(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -41,7 +41,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
-      }, GCMode(DIKey.get[Int]))
+      }, Roots(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -77,7 +77,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
-      }, GCMode(DIKey.get[Int]))
+      }, Roots(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
