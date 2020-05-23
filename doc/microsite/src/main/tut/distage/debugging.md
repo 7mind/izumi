@@ -9,7 +9,7 @@ Use `OrderedPlan#assertImportsResolvedOrThrow` method to test whether all depend
 plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, Injector}
+import distage.{DIKey, Roots, ModuleDef, Injector}
 
 class A(b: B)
 class B
@@ -18,7 +18,7 @@ val badModule = new ModuleDef {
   make[A]
 }
 
-val badPlan = Injector().plan(badModule, GCMode.NoGC)
+val badPlan = Injector().plan(badModule, Roots.Everything)
 ```
 
 ```scala mdoc:crash:to-string
@@ -31,7 +31,7 @@ val goodModule = new ModuleDef {
   make[B]
 }
 
-val plan = Injector().plan(goodModule, GCMode.NoGC)
+val plan = Injector().plan(goodModule, Roots.Everything)
 
 plan.assertImportsResolvedOrThrow
 ```
@@ -51,10 +51,10 @@ You can also query a plan to see the dependencies and reverse dependencies of a 
 
 ```scala mdoc:to-string
 // Print dependencies
-println(plan.topology.dependencies.tree(DIKey.get[A]))
+println(plan.topology.dependencies.tree(DIKey[A]))
 
 // Print reverse dependencies
-println(plan.topology.dependees.tree(DIKey.get[B]))
+println(plan.topology.dependees.tree(DIKey[B]))
 ```
 
 The printer highlights circular dependencies:

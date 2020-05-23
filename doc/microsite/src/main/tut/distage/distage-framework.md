@@ -43,7 +43,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.
 Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance bound to `AppConfig` into case classes:
 
 ```scala mdoc:reset-object:to-string
-import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
+import distage.{DIKey, Roots, ModuleDef, Id, Injector}
 import distage.config.{AppConfig, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory
 
@@ -211,7 +211,7 @@ final class AppPlugin extends PluginDef with ConfigModuleDef {
 // Declare OtherService as an external dependency
 final class AppRequirements extends ModuleRequirements(
   // If we remove this line, compilation will rightfully break
-  Set(DIKey.get[OtherService])
+  Set(DIKey[OtherService])
 )
 ```
 

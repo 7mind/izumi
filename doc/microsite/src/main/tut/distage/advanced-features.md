@@ -36,7 +36,7 @@ val module = new ModuleDef {
 
 // declare `A` as a GC root
 
-val gc = GCMode(root = DIKey.get[A])
+val gc = Roots(root = DIKey[A])
 
 // create an object graph from description in `module`
 // with `A` as a GC root
@@ -79,7 +79,7 @@ class B(c: C) {
   println("B!")
 }
 
-val objects = Injector().produce(module, GCMode(DIKey.get[A])).unsafeGet()
+val objects = Injector().produce(module, Roots(DIKey[A])).unsafeGet()
 
 objects.find[C]
 ```
@@ -89,7 +89,7 @@ objects.find[C]
 `distage` automatically resolves arbitrary circular dependencies, including self-references:
 
 ```scala mdoc:reset-object:to-string
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 
 class A(val b: B)
 class B(val a: A) 
@@ -99,7 +99,7 @@ val objects = Injector().produce(new ModuleDef {
   make[A]
   make[B]
   make[C]
-}, GCMode.NoGC).unsafeGet()
+}, Roots.Everything).unsafeGet()
 
 objects.get[A] eq objects.get[B].a
 objects.get[B] eq objects.get[A].b
@@ -123,7 +123,7 @@ Proxies are not supported on Scala.js.
 Most cycles can be resolved without proxies, using By-Name parameters:
 
 ```scala mdoc:reset:to-string
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 
 class A(b0: => B) {
   def b: B = b0
@@ -146,7 +146,7 @@ val module = new ModuleDef {
 // disable proxies and execute the module
 
 val locator = Injector.NoProxies()
-  .produce(module, GCMode.NoGC)
+  .produce(module, Roots.Everything)
   .unsafeGet()
 
 locator.get[A].b eq locator.get[B]
@@ -168,7 +168,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector, GCMode}
+import distage.{BootstrapModuleDef, ModuleDef, Injector, Roots}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 
@@ -193,7 +193,7 @@ val appModule = new ModuleDef {
 }
 
 val resources = Injector(bootstrapModule)
-  .produce(appModule, GCMode.NoGC)
+  .produce(appModule, Roots.Everything)
   .use(_.get[Set[PrintResource]])
 
 resources.foreach(_.start())
@@ -243,7 +243,7 @@ val module = new ModuleDef {
 // everything that Set[Elem] does not strongly depend on will be garbage collected
 // and will not be constructed. 
 
-val roots = Set[DIKey](DIKey.get[Set[Elem]])
+val roots = Set[DIKey](DIKey[Set[Elem]])
 
 val objects = Injector().produce(PlannerInput(module, roots)).unsafeGet()
 
@@ -283,7 +283,7 @@ val module = new ModuleDef {
     .weak[Weak]
 }
 
-val roots = Set[DIKey](DIKey.get[Set[Elem]])
+val roots = Set[DIKey](DIKey[Set[Elem]])
 ```
 
 ```scala mdoc:to-string
@@ -307,7 +307,7 @@ objects.get[Set[Elem]]
 Path-dependent types with a value prefix will be instantiated normally:
 
 ```scala mdoc:reset:to-string
-import distage.{GCMode, ModuleDef, Injector}
+import distage.{Roots, ModuleDef, Injector}
 
 class Path {
   class A
@@ -319,7 +319,7 @@ val module = new ModuleDef {
 }
 
 Injector()
-  .produce(module, GCMode.NoGC)
+  .produce(module, Roots.Everything)
   .use(_.get[path.A])
 ```
 
@@ -359,7 +359,7 @@ class Path {
 ```
 
 ```scala mdoc:to-string
-import distage.{ClassConstructor, GCMode, ModuleDef, Injector, Tag}
+import distage.{ClassConstructor, Roots, ModuleDef, Injector, Tag}
 
 object Path {
   type Aux[A0] = Path { type A = A0 }
@@ -387,7 +387,7 @@ in `produceRun`
 Objects can depend on the outer object graph that contains them (@scaladoc[Locator](izumi.distage.model.Locator)), by including a @scaladoc[LocatorRef](izumi.distage.model.recursive.LocatorRef) parameter:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, LocatorRef, Injector, GCMode}
+import distage.{ModuleDef, LocatorRef, Injector, Roots}
 
 class A(
   objects: LocatorRef
@@ -403,7 +403,7 @@ val module = new ModuleDef {
   make[C]
 }
 
-val objects = Injector().produce(module, GCMode.NoGC).unsafeGet()
+val objects = Injector().produce(module, Roots.Everything).unsafeGet()
 
 // A took C from the object graph
 
@@ -435,7 +435,7 @@ The plan and bindings in Locator are saved in the state they were AFTER @ref[Gar
 Objects can request the original input via a `PlannerInput` parameter:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, GCMode, ModuleDef, PlannerInput, Injector}
+import distage.{DIKey, Roots, ModuleDef, PlannerInput, Injector}
 
 class InjectionInfo(val plannerInput: PlannerInput)
 
@@ -443,7 +443,7 @@ val module = new ModuleDef {
   make[InjectionInfo]
 }
 
-val input = PlannerInput(module, GCMode(root = DIKey.get[InjectionInfo]))
+val input = PlannerInput(module, Roots(root = DIKey[InjectionInfo]))
 
 val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 

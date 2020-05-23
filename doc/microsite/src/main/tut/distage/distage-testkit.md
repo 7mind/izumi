@@ -81,8 +81,8 @@ abstract class LeaderboardTest extends DistageBIOEnvSpecScalatest[ZIO] with Asse
     // this includes the Postgres Docker container above and
     // table DDLs 
     memoizationRoots = Set(
-      DIKey.get[Ladder[IO]],
-      DIKey.get[Profiles[IO]],
+      DIKey[Ladder[IO]],
+      DIKey[Profiles[IO]],
     ),
   )
 }

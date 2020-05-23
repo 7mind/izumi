@@ -64,7 +64,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without actually creating any objects or executing any effects.
 
 ```scala mdoc:to-string
-val plan = Injector().plan(HelloByeModule, Roots.NoGC)
+val plan = Injector().plan(HelloByeModule, Roots.Everything)
 ```
 
 The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
@@ -279,7 +279,7 @@ Will produce the following output:
 ```scala mdoc:to-string
 import distage.DIKey
 
-val objectGraphResource = Injector().produceF[IO](module, Roots(root = DIKey.get[MyApp]))
+val objectGraphResource = Injector().produceF[IO](module, Roots(root = DIKey[MyApp]))
 
 objectGraphResource
   .use(_.get[MyApp].run)
@@ -409,7 +409,7 @@ val finalModule = Seq(
 ).merge
 
 // wire the graph
-val objects = Injector().produceF[IO](finalModule, Roots.NoGC).unsafeGet().unsafeRunSync()
+val objects = Injector().produceF[IO](finalModule, Roots.Everything).unsafeGet().unsafeRunSync()
 
 val server = objects.get[Server[IO]]
 val client = objects.get[Client[IO]]
@@ -888,7 +888,7 @@ def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 
 // create object graph Resource
 
-val objectsResource = Injector().produceF[IO](SyncProgram[IO], Roots.NoGC)
+val objectsResource = Injector().produceF[IO](SyncProgram[IO], Roots.Everything)
 
 // run
 
@@ -991,14 +991,14 @@ object Main extends App {
 
     val myModules = ProgramModule[IO] |+| SyncInterpreters[IO]
 
-    val plan = Injector().plan(myModules, Roots(DIKey.get[AppEntrypoint]))
+    val plan = Injector().plan(myModules, Roots(DIKey[AppEntrypoint]))
 
     for {
       // resolveImportsF can effectfully add missing instances to an existing plan
       // (You can also create instances effectfully inside `ModuleDef` via `make[_].fromEffect` bindings)
 
       newPlan <- plan.resolveImportsF[IO] {
-        case i if i.target == DIKey.get[DBConnection] =>
+        case i if i.target == DIKey[DBConnection] =>
            DBConnection.create[IO]
       }
 

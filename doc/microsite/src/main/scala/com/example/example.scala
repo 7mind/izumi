@@ -22,7 +22,8 @@ final class AppPlugin extends PluginDef with ConfigModuleDef {
 }
 
 // Declare OtherService as an external dependency
-final class AppRequirements extends ModuleRequirements(
-  // If we remove this line, compilation will rightfully break
-  Set(DIKey.get[OtherService])
-)
+final class AppRequirements
+  extends ModuleRequirements(
+    // If we remove this line, compilation will rightfully break
+    Set(DIKey[OtherService])
+  )
