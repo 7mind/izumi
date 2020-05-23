@@ -23,8 +23,7 @@ trait ModuleProvider {
 
 object ModuleProvider {
 
-  class Impl
-  (
+  class Impl(
     logRouter: LogRouter,
     config: AppConfig,
     roles: RolesInfo,
@@ -39,14 +38,16 @@ object ModuleProvider {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
-        make[Activation].named("initial").fromValue(activation) // make initial activation available to bootstrap plugins FIXME: remove after adding mutators, will become redundant
+        make[Activation]
+          .named("initial").fromValue(activation) // make initial activation available to bootstrap plugins FIXME: remove after adding mutators, will become redundant
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
 
       val resourceRewriter = new BootstrapModuleDef {
-        make[RewriteRules].fromValue(options.rewriteRules)
+        make[RewriteRules]
+          .fromValue(options.rewriteRules)
         many[PlanningHook]
           .add[ResourceRewriter]
       }
@@ -58,18 +59,17 @@ object ModuleProvider {
         resourceRewriter,
         loggerModule,
         graphvizDumpModule,
-        appConfigModule.morph[BootstrapModule], // make config available for bootstrap plugins
+        AppConfigModule(config).morph[BootstrapModule], // make config available for bootstrap plugins
       )
     }
 
     def appModules(): Seq[Module] = {
       Seq(
-        appConfigModule,
+        AppConfigModule(config), // make config available for ordinary plugins
         IdentityDIEffectModule,
       )
     }
 
-    private[this] def appConfigModule: AppConfigModule = AppConfigModule(config)
   }
 
 }

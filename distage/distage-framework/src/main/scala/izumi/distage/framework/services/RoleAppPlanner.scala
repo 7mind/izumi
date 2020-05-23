@@ -31,7 +31,7 @@ object RoleAppPlanner {
   ) extends RoleAppPlanner[F] {
     self =>
 
-    private val runtimeGcRoots: Set[DIKey] = Set(
+    private[this] val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
       DIKey.get[DIEffect[F]],
       DIKey.get[DIEffectAsync[F]],
@@ -42,32 +42,32 @@ object RoleAppPlanner {
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-      val additionalModule = selfReflectionModule()
-      val app = bootloader.boot(
+      val selfReflectionModule = new ModuleDef {
+        make[RoleAppPlanner[F]].fromValue(self)
+        make[PlanningOptions].fromValue(options)
+      }
+      val bootstrappedApp = bootloader.boot(
         BootConfig(
           bootstrap = _ => bsModule,
-          appModule = _.overridenBy(additionalModule),
-          roots = _ => GCMode(runtimeGcRoots),
+          appModule = _ overridenBy selfReflectionModule,
+          roots = _ => Roots(runtimeGcRoots),
         )
       )
+      val runtimeKeys = bootstrappedApp.plan.keys
 
-      val appPlan = app.injector.trisectByKeys(app.module.drop(runtimeGcRoots), appMainRoots) {
+      val appPlan = bootstrappedApp.injector.trisectByKeys(bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)
-      check.verify(app.plan)
+      check.verify(bootstrappedApp.plan)
       check.verify(appPlan.shared)
       check.verify(appPlan.side)
       check.verify(appPlan.primary)
 
-      AppStartupPlans(app.plan, appPlan, app.injector)
+      AppStartupPlans(bootstrappedApp.plan, appPlan, bootstrappedApp.injector)
     }
 
-    private def selfReflectionModule(): ModuleDef = new ModuleDef {
-      make[RoleAppPlanner[F]].fromValue(self)
-      make[PlanningOptions].fromValue(options)
-    }
   }
 
 }
