@@ -32,15 +32,14 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
     }
   }
 
-  override protected def config: TestConfig = {
-    super.config.copy(
+  override protected def config: TestConfig = super
+    .config.copy(
       memoizationRoots = Set(DIKey.get[PgSvcExample]),
       parallelTests = true,
       parallelEnvs = true,
       moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
-      testRunnerLogLevel = Log.Level.Info
+      logLevel = Log.Level.Info,
     )
-  }
 }
 
 final class DistageTestDockerBIO1 extends DistageTestDockerBIO
