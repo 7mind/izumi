@@ -5,7 +5,22 @@ import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.reflect.Tag
 
 /**
+  * `Roots` designate the components to choose as "garbage collection roots" for the object graph,
+  * designated components and their dependencies will be created and
   *
+  * The purpose of the `Roots`/`garbage collection` mechanism is to allow you is to allow
+  * oversupplying the injector with bindings that may not be required to create a specific object graph,
+  * instead of carefully curating bindings to shape the graph, choosing root nodes allows you to "pluck"
+  * the sub-graph that you care about and instantiate just that sub-graph, ignoring all the other bindings.
+  *
+  * `distage-testkit` and `distage-framework`'s Roles make heavy use of the mechanism.
+  * Roles are effectively just a root components that come with command-line arguments.
+  * distage-testkit's test cases designate their parameters as roots and instantiate only the sub-graph
+  * required for the test case.
+  *
+  * @see Garbage Collection https://izumi.7mind.io/distage/advanced-features.html#garbage-collection
+  * @see distage Roles      https://izumi.7mind.io/distage/distage-framework.html#roles
+  * @see distage-testkit    https://izumi.7mind.io/distage/distage-testkit.html
   */
 sealed trait Roots
 
@@ -22,9 +37,7 @@ object Roots {
 
   final case class Of(roots: NonEmptySet[DIKey]) extends Roots
 
-  /**
-    *
-    */
+  /** Disable garbage collection and try to instantiate every single binding. */
   case object Everything extends Roots
 
   @deprecated("GCMode.NoGC has been renamed to `Roots.Everything`", "old name will be deleted in 0.11.1")
