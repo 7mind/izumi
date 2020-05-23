@@ -97,11 +97,6 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     _bindDSLAfterFrom(ref)
   }
 
-  @deprecated("Use `addImplicit[T].named(name)` instead", "will be removed in 0.10.8")
-  final protected[this] def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    _registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name, IdContract.stringIdContract)))).discard()
-  }
-
   final protected[this] def _make[T: Tag](provider: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
     _bindDSL[T](ref)
