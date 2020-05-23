@@ -36,7 +36,7 @@ object Docker {
 
   /**
     * Parameters that define the behavior of this docker container,
-    * Will be interpreted by [[DockerContainer.ContainerResource]]
+    * Will be interpreted by [[ContainerResource]]
     *
     * @param image    Docker Image to use
     *
@@ -69,26 +69,24 @@ object Docker {
     * @param cwd      Working directory to use inside the docker container
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
-    *
-    *
     */
   final case class ContainerConfig[T](
-                                       image: String,
-                                       ports: Seq[DockerPort],
-                                       name: Option[String] = None,
-                                       env: Map[String, String] = Map.empty,
-                                       cmd: Seq[String] = Seq.empty,
-                                       entrypoint: Seq[String] = Seq.empty,
-                                       cwd: Option[String] = None,
-                                       user: Option[String] = None,
-                                       mounts: Seq[Mount] = Seq.empty,
-                                       networks: Set[ContainerNetwork[_]] = Set.empty,
-                                       reuse: Boolean = true,
-                                       healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
-                                       healthCheckMaxAttempts: Int = 120,
-                                       pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkTCPOnly[T],
-                                       portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
+    image: String,
+    ports: Seq[DockerPort],
+    name: Option[String] = None,
+    env: Map[String, String] = Map.empty,
+    cmd: Seq[String] = Seq.empty,
+    entrypoint: Seq[String] = Seq.empty,
+    cwd: Option[String] = None,
+    user: Option[String] = None,
+    mounts: Seq[Mount] = Seq.empty,
+    networks: Set[ContainerNetwork[_]] = Set.empty,
+    reuse: Boolean = true,
+    healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+    healthCheckMaxAttempts: Int = 120,
+    pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
+    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkTCPOnly[T],
+    portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
   )
 
   /**
@@ -130,19 +128,16 @@ object Docker {
 
   final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
 
-
-
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
 
-  case class UnmappedPorts(ports: Seq[DockerPort])
+  final case class UnmappedPorts(ports: Seq[DockerPort])
 
-  case class ContainerConnectivity(
-                                    dockerHost: Option[String],
-                                    containerAddressesV4: Seq[String],
-                                    dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
-                                  ) {
+  final case class ContainerConnectivity(
+    dockerHost: Option[String],
+    containerAddressesV4: Seq[String],
+    dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
+  ) {
     override def toString: String = s"{host: $dockerHost; addresses=$containerAddressesV4; ports=$dockerPorts}"
   }
-
 
 }
