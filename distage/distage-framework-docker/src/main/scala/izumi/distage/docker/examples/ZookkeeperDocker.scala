@@ -8,7 +8,7 @@ object ZookeeperDocker extends ContainerDef {
   override def config: Config = {
     Config(
       image = "zookeeper:3.4.14",
-      ports = Seq(DockerPort.TCP(2181), DockerPort.TCP(2888), DockerPort.TCP(3888)),
+      ports = Seq(DockerPort.TCP(2181)),
     )
   }
 }
