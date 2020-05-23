@@ -51,10 +51,13 @@ object ScalatestInitWorkaround {
           val suiteClassName = classOf[DistageScalatestTestSuiteRunner[Identity]].getName
           val testClasses = scan.getSubclasses(suiteClassName).asScala.filterNot(_.isAbstract)
           lazy val debugLogger = TrivialLogger.make[ScalatestInitWorkaroundImpl.type](DebugProperties.`izumi.distage.testkit.debug`)
-          testClasses.foreach(classInfo => Try {
-            debugLogger.log(s"Added scanned class `${classInfo.getName}` to current test run")
-            classInfo.loadClass().getDeclaredConstructor().newInstance()
-          })
+          testClasses.foreach(
+            classInfo =>
+              Try {
+                debugLogger.log(s"Added scanned class `${classInfo.getName}` to current test run")
+                classInfo.loadClass().getDeclaredConstructor().newInstance()
+              }
+          )
           DistageTestsRegistrySingleton.disableRegistration()
           latch.countDown()
         } finally {
@@ -95,7 +98,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     try {
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
         case Some(value) =>
-          doRun(value, testName, args)
+          _doRun(value, testName, args)
           if (!status.isCompleted) {
             status.setCompleted()
           }
@@ -147,31 +150,31 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     }
   }
 
-  private def doRun(candidatesForThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
+  protected[this] def _doRun(testsInThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
+    val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
     debugLogger.log(s"Scalatest Args: $args")
-    debugLogger.log(
-      s"""tagsToInclude: ${args.filter.tagsToInclude}
-         |tagsToExclude: ${args.filter.tagsToExclude}
-         |dynaTags: ${args.filter.dynaTags}
-         |excludeNestedSuites: ${args.filter.excludeNestedSuites}
-         |""".stripMargin)
-    val testReporter = mkTestReporter()
+    debugLogger.log(s"""tagsToInclude: ${args.filter.tagsToInclude}
+                       |tagsToExclude: ${args.filter.tagsToExclude}
+                       |dynaTags: ${args.filter.dynaTags}
+                       |excludeNestedSuites: ${args.filter.excludeNestedSuites}
+                       |""".stripMargin)
+    val testReporter = _mkTestReporter()
 
     val toRun = testName match {
       case None =>
-        val tags: Map[String, Set[String]] = Map.empty
-        candidatesForThisRuntime.filter {
+        testsInThisRuntime.filter {
           test =>
+            val tags: Map[String, Set[String]] = Map.empty
             val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, test.meta.id.suiteId)
-            val isOk = !filterTest && !ignoreTest
-            isOk
+            val isTestOk = !filterTest && !ignoreTest
+            isTestOk
         }
 
       case Some(testName) =>
         if (!testNames.contains(testName)) {
           throw new IllegalArgumentException(Resources.testNotFound(testName))
         } else {
-          candidatesForThisRuntime.filter(_.meta.id.name == testName)
+          testsInThisRuntime.filter(_.meta.id.name == testName)
         }
     }
 
@@ -188,12 +191,10 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     }
   }
 
-  private def mkTestReporter(): TestReporter = {
+  protected[this] def _mkTestReporter(): TestReporter = {
     val scalatestReporter = new DistageScalatestReporter
     new SafeTestReporter(scalatestReporter)
   }
 
   override final val styleName: String = "DistageSuite"
-
-  lazy val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
 }
