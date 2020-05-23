@@ -9,7 +9,6 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.{DIKey, IdContract}
-import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 

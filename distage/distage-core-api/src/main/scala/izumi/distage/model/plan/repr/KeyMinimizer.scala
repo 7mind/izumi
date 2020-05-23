@@ -64,10 +64,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
         s"{proxy.${renderKey(proxied)}}"
 
       case DIKey.EffectKey(key, _) =>
-        s"{effect.${renderKey(key)}"
+        s"{effect.${renderKey(key)}}"
 
       case DIKey.ResourceKey(key, _) =>
-        s"{resource.${renderKey(key)}"
+        s"{resource.${renderKey(key)}}"
 
       case DIKey.SetElementKey(set, reference, disambiguator) =>
         s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode.toString)}"
@@ -97,10 +97,11 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
   private[this] def extract(key: SafeType): Set[String] = {
-    RuntimeAPI.unpack(key.tag.ref match {
-      case reference: LightTypeTagRef.AbstractReference =>
-        reference
-    }).map(_.ref.name)
+    RuntimeAPI
+      .unpack(key.tag.ref match {
+        case reference: LightTypeTagRef.AbstractReference =>
+          reference
+      }).map(_.ref.name)
   }
 
 }

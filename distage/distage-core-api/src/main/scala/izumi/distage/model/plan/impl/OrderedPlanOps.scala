@@ -4,16 +4,13 @@ import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
-import izumi.distage.model.plan.{Roots, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{OrderedPlan, Roots, SemiPlan}
 import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.Tag
 
 private[plan] trait OrderedPlanOps extends Any {
   this: OrderedPlan =>
-
-  /** Print while omitting package names for unambiguous types */
-  override final def toString: String = (this: OrderedPlan).render()
 
   /**
     * Check for any unresolved dependencies, if this
@@ -104,7 +101,7 @@ private[plan] trait OrderedPlanOps extends Any {
   }
 
   override final def toSemi: SemiPlan = {
-    val safeSteps: Seq[SemiplanOp] = steps.flatMap{
+    val safeSteps: Seq[SemiplanOp] = steps.flatMap {
       case s: SemiplanOp =>
         Seq(s)
       case s: ProxyOp =>

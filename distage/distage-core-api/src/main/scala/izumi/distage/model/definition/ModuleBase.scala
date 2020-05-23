@@ -20,7 +20,7 @@ trait ModuleBase extends ModuleBaseInstances {
     case _ =>
       false
   }
-  override final def toString: String = bindings.iterator.map(_.toString).mkString("\n")
+  override final def toString: String = bindings.iterator.map(_.toString).mkString("\n", "\n", "")
 }
 
 object ModuleBase {
@@ -146,14 +146,15 @@ object ModuleBase {
     val grouped = bs.groupBy(_.group)
 
     // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    ListSet.newBuilder.++= {
-      grouped
-        .map {
-          case (_, v) =>
-            //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
-            v.reduce(_ addTags _.tags)
-        }
-    }.result()
+    ListSet
+      .newBuilder.++= {
+        grouped
+          .map {
+            case (_, v) =>
+              //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
+              v.reduce(_ addTags _.tags)
+          }
+      }.result()
   }
 
   /**
