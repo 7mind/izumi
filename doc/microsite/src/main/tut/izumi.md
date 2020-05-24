@@ -56,10 +56,44 @@ libraryDependencies ++= Seq(
 ```
 @@@
 
-* @scaladoc[Scaladoc](izumi.index)
+Development
+-----------
+
 * [GitHub](https://github.com/7mind/izumi)
-* Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
-* Latest release [documentation](https://izumi.7mind.io/)
+
+Documentation
+-------------
+
+* @scaladoc[Scaladoc](izumi.index)
+* [Documentation](https://izumi.7mind.io/)
+* SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
+
+Further reading
+---------------
+
+Example projects:
+
+* [DIStage Example Project](https://github.com/7mind/distage-example)
+* [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
+
+Support Chats:
+
+* [Izumi on Gitter](https://gitter.im/7mind/izumi)
+* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
+* [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+
+Slides:
+
+* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
+* [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
+* [More slides](https://github.com/7mind/slides)
+
+Videos:
+
+* [Hyper-pragmatic Pure FP Testing with distage-testkit, Functional Scala, London](https://www.youtube.com/watch?v=CzpvjkUukAs)
+* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+
 
 @@@ index
 

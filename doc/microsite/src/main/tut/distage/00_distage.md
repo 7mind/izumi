@@ -65,11 +65,8 @@ a few experimental @ref[macros](distage-framework.md#compile-time-checks) for ab
 
 **A**: Use @ref[Activation Axis](basics.md#activation-axis)
 
-Further reading
----------------
-
-- [Example Project](https://github.com/7mind/distage-example)
-- [ScalaUA Presentation](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+Documentation
+-------------
 
 - @ref[Basics](basics.md)
 - @ref[Advanced features](advanced-features.md)
@@ -78,6 +75,32 @@ Further reading
 - @ref[distage-framework-docker](distage-framework-docker.md)
 - @ref[distage-testkit](distage-testkit.md)
 - @ref[Syntax summary](reference.md)
+
+Further reading
+---------------
+
+Example projects:
+
+* [DIStage Example Project](https://github.com/7mind/distage-example)
+* [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
+
+Support Chats:
+
+* [Izumi on Gitter](https://gitter.im/7mind/izumi)
+* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
+* [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+
+Slides:
+
+* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
+* [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
+* [More slides](https://github.com/7mind/slides)
+
+Videos:
+
+* [Hyper-pragmatic Pure FP Testing with distage-testkit, Functional Scala, London](https://www.youtube.com/watch?v=CzpvjkUukAs)
+* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
 @@@ index
 
