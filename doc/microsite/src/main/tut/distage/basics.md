@@ -113,10 +113,6 @@ object Ids {
 
 To create non-singleton components you must use explicit factory classes. You can use @ref[Auto-Factories](#auto-factories) implementations for these factories.
 
-### Root Components
-
-
-
 ### Activation Axis
 
 You can choose between different implementations of a component using `Axis` tags:
@@ -516,7 +512,7 @@ def zioEnvCtor: URIO[Has[Dep1] with Has[Dep2], X] = ZIO.succeed(X)
 def zmanagedEnvCtor: URManaged[Has[Dep1] with Has[Dep2], X] = ZManaged.succeed(X)
 def zlayerEnvCtor: URLayer[Has[Dep1] with Has[Dep2], Has[X]] = ZLayer.succeed(X)
 
-new ModuleDef {
+def module1 = new ModuleDef {
   make[X].fromHas(zioEnvCtor)
   // or
   make[X].fromHas(zmanagedEnvCtor)
@@ -530,7 +526,7 @@ You can also mix environment and parameter dependencies at the same time in one 
 ```scala mdoc:to-string
 def zioArgEnvCtor(a: Arg1, b: Arg2): URLayer[Has[Dep1], Has[X]] = ZLayer.fromService(dep1 => X(a, b, dep1))
 
-new ModuleDef {
+def module2 = new ModuleDef {
   make[X].fromHas(zioArgEnvCtor _)
 }
 ```
