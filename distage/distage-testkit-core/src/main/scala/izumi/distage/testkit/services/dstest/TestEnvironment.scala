@@ -7,8 +7,9 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
-import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, ParallelLevel}
+import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
 import izumi.logstage.api.{IzLogger, Log}
 
 final case class TestEnvironment(
@@ -41,13 +42,6 @@ final case class TestEnvironment(
 }
 
 object TestEnvironment {
-  sealed trait ParallelLevel
-  object ParallelLevel {
-    final case class Fixed(n: Int) extends ParallelLevel
-    case object Unlimited extends ParallelLevel
-    case object Sequential extends ParallelLevel
-  }
-
   final case class EnvExecutionParams(
     parallelEnvs: ParallelLevel,
     planningOptions: PlanningOptions,

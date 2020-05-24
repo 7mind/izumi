@@ -18,8 +18,9 @@ import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
+import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, ParallelLevel, PreparedTest}
+import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, PreparedTest}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck

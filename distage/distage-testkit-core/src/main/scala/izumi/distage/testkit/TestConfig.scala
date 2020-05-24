@@ -4,7 +4,7 @@ import distage.config.AppConfig
 import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.services.dstest.TestEnvironment.ParallelLevel
+import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.logstage.api.Log
 
 /**
@@ -104,5 +104,12 @@ object TestConfig {
       pluginConfig = PluginConfig.cached(Seq(packageName)),
       configBaseName = s"${packageName.split('.').last}-test",
     )
+  }
+
+  sealed trait ParallelLevel
+  object ParallelLevel {
+    final case class Fixed(n: Int) extends ParallelLevel
+    case object Unlimited extends ParallelLevel
+    case object Sequential extends ParallelLevel
   }
 }
