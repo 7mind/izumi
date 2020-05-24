@@ -24,6 +24,7 @@ object Docker {
     def number: Int
     def protocol: String
     override def toString: String = s"$protocol:$number"
+    final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_$number"
   }
   object DockerPort {
     final case class TCP(number: Int) extends DockerPort {

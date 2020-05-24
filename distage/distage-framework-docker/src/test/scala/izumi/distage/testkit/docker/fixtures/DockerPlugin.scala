@@ -19,6 +19,7 @@ class PgSvcExample(
   val ddb: AvailablePort @Id("ddb"),
   val kafka: AvailablePort @Id("kafka"),
   val cs: AvailablePort @Id("cs"),
+  val mq: AvailablePort @Id("mq"),
 ) extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = {
     new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)
@@ -36,6 +37,12 @@ object DockerPlugin extends PluginDef {
   include(new CassandraDockerModule[Task])
   include(new ZookeeperDockerModule[Task])
   include(new KafkaDockerModule[Task])
+  include(new ElasticMQDockerModule[Task])
+
+  make[AvailablePort].named("mq").tagged(Env.Test).from {
+    cs: ElasticMQDocker.Container =>
+      cs.availablePorts.availablePorts(ElasticMQDocker.primaryPort).head
+  }
 
   make[AvailablePort].named("cs").tagged(Env.Test).from {
     cs: CassandraDocker.Container =>

@@ -21,14 +21,13 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 case class ContainerResource[F[_], T](
-                                       config: Docker.ContainerConfig[T],
-                                       clientw: DockerClientWrapper[F],
-                                       logger: IzLogger,
-                                     )(
-                                       implicit
-                                       val F: DIEffect[F],
-                                       val P: DIEffectAsync[F]
-                                     ) extends DIResource[F, DockerContainer[T]] {
+  config: Docker.ContainerConfig[T],
+  clientw: DockerClientWrapper[F],
+  logger: IzLogger,
+)(implicit
+  val F: DIEffect[F],
+  val P: DIEffectAsync[F],
+) extends DIResource[F, DockerContainer[T]] {
 
   import ContainerResource._
 
@@ -58,7 +57,7 @@ case class ContainerResource[F[_], T](
           s"distage.port.${containerPort.protocol}.${containerPort.number}.defined" -> "true",
         )
         val labels = Map(
-          s"distage.port.${containerPort.protocol}.${containerPort.number}" -> local.toString,
+          s"distage.port.${containerPort.protocol}.${containerPort.number}" -> local.toString
         )
         PortDecl(containerPort, local, binding, stableLabels ++ labels)
     }
@@ -78,51 +77,49 @@ case class ContainerResource[F[_], T](
     }
   }
 
-
   def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
     F.maybeSuspend {
-      logger.debug(s"Awaiting until alive: $container...")
-      try {
-        val status = client.inspectContainerCmd(container.id.name).exec()
-        if (status.getState.getRunning) {
-          logger.debug(s"Trying healthcheck on running $container...")
-          Right(config.healthCheck.check(logger, container))
-        } else {
-          Left(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
-        }
-      } catch {
-        case t: Throwable =>
-          Left(t)
-      }
-    }.flatMap {
-      case Right(HealthCheckResult.Ignored) =>
-        F.maybeSuspend {
-          logger.info(s"Continuing without port checks: $container")
-          container
-        }
-
-      case Right(status: HealthCheckResult.PortStatus) =>
-        if (status.requiredPortsAccessible) {
-          val out = container.copy(availablePorts = status.availablePorts)
-          F.maybeSuspend {
-            logger.info(s"Looks good: ${out -> "container"}")
-            out
-          }
-        } else {
-          val max = config.healthCheckMaxAttempts
-          val next = attempt + 1
-          if (max >= next) {
-            logger.debug(s"Healthcheck uncertain, retrying $next/$max on $container...")
-            P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+        logger.debug(s"Awaiting until alive: $container...")
+        try {
+          val status = client.inspectContainerCmd(container.id.name).exec()
+          if (status.getState.getRunning) {
+            logger.debug(s"Trying healthcheck on running $container...")
+            Right(config.healthCheck.check(logger, container))
           } else {
-            F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
+            Left(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
           }
+        } catch {
+          case t: Throwable =>
+            Left(t)
         }
+      }.flatMap {
+        case Right(HealthCheckResult.Ignored) =>
+          F.maybeSuspend {
+            logger.info(s"Continuing without port checks: $container")
+            container
+          }
 
+        case Right(status: HealthCheckResult.PortStatus) =>
+          if (status.requiredPortsAccessible) {
+            val out = container.copy(availablePorts = status.availablePorts)
+            F.maybeSuspend {
+              logger.info(s"Looks good: ${out -> "container"}")
+              out
+            }
+          } else {
+            val max = config.healthCheckMaxAttempts
+            val next = attempt + 1
+            if (max >= next) {
+              logger.debug(s"Healthcheck uncertain, retrying $next/$max on $container...")
+              P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+            } else {
+              F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
+            }
+          }
 
-      case Left(t) =>
-        F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
-    }
+        case Left(t) =>
+          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
+      }
   }
 
   private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
@@ -130,7 +127,7 @@ case class ContainerResource[F[_], T](
     FileLockMutex.withLocalMutex(logger)(
       s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
       waitFor = 200.millis,
-      maxAttempts = config.pullTimeout.toSeconds.toInt
+      maxAttempts = config.pullTimeout.toSeconds.toInt,
     ) {
       for {
         containers <- F.maybeSuspend {
@@ -150,20 +147,21 @@ case class ContainerResource[F[_], T](
 
         candidates = {
           val portSet = ports.map(_.port).toSet
-          containers.iterator.flatMap {
-            c =>
-              val inspection = client.inspectContainerCmd(c.getId).exec()
-              mapContainerPorts(inspection) match {
-                case Left(value) =>
-                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
-                  Seq.empty
-                case Right(value) =>
-                  Seq((c, inspection, value))
-              }
-          }.find {
-            case (_, _, eports) =>
-              portSet.diff(eports.dockerPorts.keySet).isEmpty
-          }
+          containers
+            .iterator.flatMap {
+              c =>
+                val inspection = client.inspectContainerCmd(c.getId).exec()
+                mapContainerPorts(inspection) match {
+                  case Left(value) =>
+                    logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                    Seq.empty
+                  case Right(value) =>
+                    Seq((c, inspection, value))
+                }
+            }.find {
+              case (_, _, eports) =>
+                portSet.diff(eports.dockerPorts.keySet).isEmpty
+            }
         }
         existing <- candidates match {
           case Some((c, inspection, existingPorts)) =>
@@ -197,6 +195,11 @@ case class ContainerResource[F[_], T](
       case Docker.Mount(h, c, _) => new Bind(h, new Volume(c))
     }
 
+    val portsEnv = ports.map {
+      port => port.port.toEnvVariable -> port.binding.getBinding.getHostPortSpec
+    }
+    val adjustedEnv = portsEnv ++ config.env
+
     for {
       out <- F.maybeSuspend {
         @silent("method.*Bind.*deprecated")
@@ -204,11 +207,9 @@ case class ContainerResource[F[_], T](
           .mut(config.name) { case (n, c) => c.withName(n) }
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
           .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
-          .mut(config.env.nonEmpty)(_.withEnv(config.env.map {
-            case (k, v) => s"$k=$v"
-          }.toList.asJava))
+          .mut(adjustedEnv.nonEmpty)(_.withEnv(adjustedEnv.map { case (k, v) => s"$k=$v" }.toList.asJava))
           .mut(config.cmd.nonEmpty)(_.withCmd(config.cmd.toList.asJava))
-          .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.cmd.toList.asJava))
+          .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
           .mut(config.cwd)((cwd, cmd) => cmd.withWorkingDir(cwd))
           .mut(config.user)((user, cmd) => cmd.withUser(user))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
@@ -286,11 +287,13 @@ case class ContainerResource[F[_], T](
       val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
-      Right(ContainerConnectivity(
-        Option(dockerHost),
-        networkAddresses,
-        mapped.toMap,
-      ))
+      Right(
+        ContainerConnectivity(
+          Option(dockerHost),
+          networkAddresses,
+          mapped.toMap,
+        )
+      )
     }
 
   }
