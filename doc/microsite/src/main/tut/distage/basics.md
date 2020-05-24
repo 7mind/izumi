@@ -597,7 +597,7 @@ val main = Injector()
 zio.Runtime.default.unsafeRun(main)
 ```
 
-#### Turning ZIO Environment dependencies into arguments and vice-versa
+#### Converting between ZIO environment dependencies and parameters
 
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
 the dependency in each method. This pattern can be generalized by implementing an instance of `cats.Contravariant` (or `cats.tagless.FunctorK`) for your services
