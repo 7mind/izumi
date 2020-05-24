@@ -3,9 +3,9 @@ package izumi.distage.model.effect
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
 
-import cats.{Functor, Parallel}
+import cats.Parallel
 import cats.effect.{Concurrent, Timer}
-import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Concurrent, _Functor, _Parallel, _Timer}
+import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Concurrent, _Parallel, _Timer}
 import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -112,7 +112,7 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer, C[_[_]]: _Concurrent, M[_[_]]: _Functor](implicit P: P[F], T: T[F], C: C[F], M: M[F]): DIEffectAsync[F] = {
+  implicit final def fromCats[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer, C[_[_]]: _Concurrent](implicit P: P[F], T: T[F], C: C[F]): DIEffectAsync[F] = {
     new DIEffectAsync[F] {
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
         Parallel.parTraverse_(l.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
@@ -127,7 +127,7 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
         Concurrent.parTraverseN(n.toLong)(l.toList)(f)(cats.instances.list.catsStdInstancesForList, C.asInstanceOf[Concurrent[F]], P.asInstanceOf[Parallel[F]])
       }
       override def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
-        M.asInstanceOf[Functor[F]].void(parTraverseN(n)(l)(f))
+        C.asInstanceOf[Concurrent[F]].void(parTraverseN(n)(l)(f))
       }
     }
   }
@@ -147,10 +147,5 @@ private object LowPriorityDIEffectAsyncInstances {
   sealed trait _Concurrent[K[_[_]]]
   object _Concurrent {
     @inline implicit final def get: _Concurrent[cats.effect.Concurrent] = null
-  }
-
-  sealed trait _Functor[K[_[_]]]
-  object _Functor {
-    @inline implicit final def get: _Functor[cats.Functor] = null
   }
 }
