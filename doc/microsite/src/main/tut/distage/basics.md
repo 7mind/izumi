@@ -398,7 +398,7 @@ object HttpServerModule extends ModuleDef {
 }
 
 // join all the module definitions
-val finalModule = Seq(
+def finalModule = Seq(
   HomeRouteModule,
   BlogRouteModule,
   HttpServerModule,
@@ -468,7 +468,7 @@ def dummyKVStore[F[+_, +_]: BIOMonadError: BIOPrimitives]: F[Nothing, KVStore[F]
   }
 }
 
-val kvStoreModule = new ModuleDef {
+def kvStoreModule = new ModuleDef {
   make[KVStore[IO]].fromEffect(dummyKVStore[IO])
 }
 
@@ -584,7 +584,7 @@ val turboFunctionalHelloWorld: URIO[Has[Hello] with Has[World] with Has[Console.
   } yield ()
 }
 
-val definition = new ModuleDef {
+def module = new ModuleDef {
   make[Hello].fromHas(makeHello)
   make[World].fromHas(makeWorld)
   make[Console.Service].fromHas(Console.live)
@@ -592,7 +592,7 @@ val definition = new ModuleDef {
 }
 
 val main = Injector()
-  .produceRunF[Task, Unit](definition)((_: Unit) => Task.unit)
+  .produceRunF[Task, Unit](module)((_: Unit) => Task.unit)
 
 zio.Runtime.default.unsafeRun(main)
 ```
@@ -647,7 +647,7 @@ def fullfill[R: Tag: HasConstructor, M[_]: TagK: Contravariant](service: M[R]): 
     .map(depsCakeR => Contravariant[M].contramap(service)(_ => depsCakeR))
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[Depender[Any]].from(fullfill(dependerImpl))
   make[Dependee[Any]].from(fullfill(dependeeImpl))
 }

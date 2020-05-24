@@ -274,7 +274,7 @@ final class Weak extends Elem {
   println("Weak constructed")
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[Strong]
   make[Weak]
   
@@ -314,7 +314,7 @@ class Path {
 }
 val path = new Path
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[path.A]
 }
 
@@ -397,7 +397,7 @@ class A(
 class B
 class C
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[A]
   make[B]
   make[C]
