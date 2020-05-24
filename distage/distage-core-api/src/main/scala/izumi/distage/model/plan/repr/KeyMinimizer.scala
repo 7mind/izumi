@@ -1,19 +1,15 @@
 package izumi.distage.model.plan.repr
 
+import com.github.ghik.silencer.silent
 import izumi.distage.model.reflection._
 import izumi.fundamentals.collections.IzCollections._
 import izumi.reflect.macrortti.LightTypeTagRef.SymName
-import izumi.reflect.macrortti.LightTypeTagRef
-import izumi.reflect.lttrenderables._PrivateIzumiReflect.LTTRenderables
-import izumi.reflect.lttrenderables._PrivateIzumiReflect.RuntimeAPI
-
-import com.github.ghik.silencer.silent
+import izumi.reflect.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
 
   @silent("Unused import")
   private[this] val index: Map[String, Int] = {
-    import scala.collection.compat._
 
     allKeys
       .toSeq

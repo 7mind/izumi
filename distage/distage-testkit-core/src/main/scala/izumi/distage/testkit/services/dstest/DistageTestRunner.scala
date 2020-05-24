@@ -7,7 +7,6 @@ import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
-import izumi.distage.framework.services
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SetElementBinding
@@ -195,7 +194,7 @@ class DistageTestRunner[F[_]: TagK](
                   // producing full runtime plan with all shared keys
                   withIntegrationSharedPlan(runtimeLocator, planChecker, envIntegrationChecker, memoizationPlan, allEnvTests) {
                     memoizedIntegrationLocator =>
-                      proceedSuites(envIntegrationChecker, planChecker, memoizedIntegrationLocator, integrationLogger)(tests)
+                      proceedSuites(planChecker, memoizedIntegrationLocator, integrationLogger)(tests)
                   }
                 }
               }
@@ -292,7 +291,6 @@ class DistageTestRunner[F[_]: TagK](
   }
 
   protected def proceedSuites(
-    integrationChecker: IntegrationChecker[F],
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
