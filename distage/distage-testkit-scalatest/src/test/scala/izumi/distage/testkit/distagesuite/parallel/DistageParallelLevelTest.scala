@@ -6,9 +6,9 @@ import cats.effect.{IO => CIO}
 import distage.{DIKey, TagK}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
 import izumi.distage.testkit.scalatest.DistageSpecScalatest
-import izumi.distage.testkit.services.dstest.TestEnvironment.ParallelLevel
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
 import org.scalatest.Assertion

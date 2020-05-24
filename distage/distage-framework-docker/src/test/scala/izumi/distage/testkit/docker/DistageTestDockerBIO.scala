@@ -5,9 +5,9 @@ import java.util.UUID
 import distage.DIKey
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.docker.fixtures.PgSvcExample
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
-import izumi.distage.testkit.services.dstest.TestEnvironment.ParallelLevel
 import izumi.fundamentals.platform.properties.EnvVarsCI
 import izumi.logstage.api.Log
 import zio.IO
