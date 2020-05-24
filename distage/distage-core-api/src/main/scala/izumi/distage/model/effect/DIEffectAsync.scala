@@ -3,9 +3,9 @@ package izumi.distage.model.effect
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
 
-import cats.Parallel
-import cats.effect.Timer
-import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
+import cats.{Functor, Parallel}
+import cats.effect.{Concurrent, Timer}
+import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Concurrent, _Functor, _Parallel, _Timer}
 import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -15,6 +15,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 trait DIEffectAsync[F[_]] {
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
   def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
+  def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => F[B]): F[List[B]]
+  def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => F[Unit]): F[Unit]
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
@@ -23,10 +25,9 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
+      final val DIEffectAsyncIdentityThreadFactory = new NamedThreadFactory("dieffect-cached-pool", daemon = true)
       final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(new NamedThreadFactory(
-          "dieffect-cached-pool", daemon = true
-        ))
+        Executors.newCachedThreadPool(DIEffectAsyncIdentityThreadFactory)
       }
 
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
@@ -39,6 +40,18 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
         parTraverseIdentity(DIEffectAsyncIdentityPool)(l)(f)
+      }
+
+      override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
+        val limitedAsyncPoll = ExecutionContext.fromExecutorService {
+          Executors.newFixedThreadPool(n, DIEffectAsyncIdentityThreadFactory)
+        }
+        parTraverseIdentity(limitedAsyncPoll)(l)(f)
+      }
+
+      override def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = {
+        parTraverseN(n)(l)(f)
+        ()
       }
     }
   }
@@ -53,6 +66,12 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
       }
       override def parTraverse[A, B](l: Iterable[A])(f: A => F[Throwable, B]): F[Throwable, List[B]] = {
         F.parTraverse(l)(f)
+      }
+      override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => F[Throwable, B]): F[Throwable, List[B]] = {
+        F.parTraverseN(n)(l)(f)
+      }
+      override def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
+        F.parTraverseN_(n)(l)(f)
       }
     }
   }
@@ -70,7 +89,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
     private val threadGroup = new ThreadGroup(parentGroup, name)
     private val threadCount = new AtomicInteger(1)
-    private val threadHash  = Integer.toUnsignedString(this.hashCode())
+    private val threadHash = Integer.toUnsignedString(this.hashCode())
 
     override def newThread(r: Runnable): Thread = {
       val newThreadNumber = threadCount.getAndIncrement()
@@ -93,7 +112,7 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromParallelTimer[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer](implicit P: P[F], T: T[F]): DIEffectAsync[F] = {
+  implicit final def fromCats[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer, C[_[_]]: _Concurrent, M[_[_]]: _Functor](implicit P: P[F], T: T[F], C: C[F], M: M[F]): DIEffectAsync[F] = {
     new DIEffectAsync[F] {
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
         Parallel.parTraverse_(l.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
@@ -103,6 +122,12 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
       }
       override def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = {
         Parallel.parTraverse(l.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
+      }
+      override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => F[B]): F[List[B]] = {
+        Concurrent.parTraverseN(n.toLong)(l.toList)(f)(cats.instances.list.catsStdInstancesForList, C.asInstanceOf[Concurrent[F]], P.asInstanceOf[Parallel[F]])
+      }
+      override def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
+        M.asInstanceOf[Functor[F]].void(parTraverseN(n)(l)(f))
       }
     }
   }
@@ -117,5 +142,15 @@ private object LowPriorityDIEffectAsyncInstances {
   sealed trait _Timer[K[_[_]]]
   object _Timer {
     @inline implicit final def get: _Timer[cats.effect.Timer] = null
+  }
+
+  sealed trait _Concurrent[K[_[_]]]
+  object _Concurrent {
+    @inline implicit final def get: _Concurrent[cats.effect.Concurrent] = null
+  }
+
+  sealed trait _Functor[K[_[_]]]
+  object _Functor {
+    @inline implicit final def get: _Functor[cats.Functor] = null
   }
 }

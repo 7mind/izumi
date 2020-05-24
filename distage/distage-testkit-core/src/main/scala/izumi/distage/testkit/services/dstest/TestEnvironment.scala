@@ -8,7 +8,7 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
-import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
+import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, ParallelLevel}
 import izumi.logstage.api.{IzLogger, Log}
 
 final case class TestEnvironment(
@@ -19,7 +19,7 @@ final case class TestEnvironment(
   activation: Activation,
   memoizationRoots: Set[DIKey],
   forcedRoots: Set[DIKey],
-  parallelEnvs: Boolean,
+  parallelEnvs: ParallelLevel,
   bootstrapFactory: BootstrapFactory,
   configBaseName: String,
   configOverrides: Option[AppConfig],
@@ -27,8 +27,8 @@ final case class TestEnvironment(
   logLevel: Log.Level,
 )(// exclude from `equals` test-runner only parameters that do not affect the memoization plan and
   // that are not used in [[DistageTestRunner.groupEnvs]] grouping to allow merging more envs
-  val parallelSuites: Boolean,
-  val parallelTests: Boolean,
+  val parallelSuites: ParallelLevel,
+  val parallelTests: ParallelLevel,
   val debugOutput: Boolean,
 ) {
   def getExecParams: EnvExecutionParams = {
@@ -41,9 +41,15 @@ final case class TestEnvironment(
 }
 
 object TestEnvironment {
+  sealed trait ParallelLevel
+  object ParallelLevel {
+    final case class Fixed(n: Int) extends ParallelLevel
+    case object Unlimited extends ParallelLevel
+    case object Sequential extends ParallelLevel
+  }
 
   final case class EnvExecutionParams(
-    parallelEnvs: Boolean,
+    parallelEnvs: ParallelLevel,
     planningOptions: PlanningOptions,
     logLevel: Log.Level,
   )

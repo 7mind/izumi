@@ -19,7 +19,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, PreparedTest}
+import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, ParallelLevel, PreparedTest}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -454,28 +454,27 @@ class DistageTestRunner[F[_]: TagK](
 
   protected def groupedConfiguredTraverse_[A](
     l: Iterable[A]
-  )(getParallelismGroup: A => Boolean
+  )(getParallelismGroup: A => ParallelLevel
   )(f: A => F[Unit]
   )(implicit
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
-    val (parallelEnvs, sequentialEnvs) = l.partition(getParallelismGroup)
-    if (sequentialEnvs.isEmpty) {
-      configuredTraverse_(parallel = true)(parallelEnvs)(f)
-    } else {
-      configuredTraverse_(parallel = true)(parallelEnvs)(f).flatMap {
-        _ =>
-          configuredTraverse_(parallel = false)(sequentialEnvs)(f)
-      }
+    val parallelEnvs = l.groupBy(getParallelismGroup).toList.sortBy {
+      case (ParallelLevel.Unlimited, _) => 1
+      case (ParallelLevel.Fixed(_), _) => 2
+      case (ParallelLevel.Sequential, _) => 3
+    }
+    F.traverse_(parallelEnvs) {
+      case (level, l) => configuredTraverse_(level)(l)(f)
     }
   }
 
-  protected def configuredTraverse_[A](parallel: Boolean)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
-    if (parallel) {
-      P.parTraverse_(l)(f)
-    } else {
-      F.traverse_(l)(f)
+  protected def configuredTraverse_[A](parallel: ParallelLevel)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+    parallel match {
+      case ParallelLevel.Fixed(n) => P.parTraverseN_(n)(l)(f)
+      case ParallelLevel.Unlimited => P.parTraverse_(l)(f)
+      case ParallelLevel.Sequential => F.traverse_(l)(f)
     }
   }
 
