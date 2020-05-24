@@ -46,13 +46,17 @@ import izumi.logstage.api.Log
   *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
   *
-  * Parallelism options. Tests with different parallelism options will run in distinct memoization environments:
+  * Parallelism options:
   *
   *
   * @param parallelEnvs          Whether to run distinct memoization environments in parallel, default: `true`.
   *                              Sequential envs will run in sequence after the parallel ones.
+  *
   * @param parallelSuites        Whether to run test suites in parallel, default: `true`.
+  *                              Sequential suites will run in sequence after the parallel ones.
+  *
   * @param parallelTests         Whether to run test cases in parallel, default: `true`.
+  *                              Sequential tests will run in sequence after the parallel ones.
   *
   *
   * Other options, Tests with different other options will run in distinct memoization environments:

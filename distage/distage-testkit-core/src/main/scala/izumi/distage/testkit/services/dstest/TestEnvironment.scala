@@ -20,23 +20,22 @@ final case class TestEnvironment(
   memoizationRoots: Set[DIKey],
   forcedRoots: Set[DIKey],
   parallelEnvs: Boolean,
-  parallelSuites: Boolean,
-  parallelTests: Boolean,
   bootstrapFactory: BootstrapFactory,
   configBaseName: String,
   configOverrides: Option[AppConfig],
   planningOptions: PlanningOptions,
   logLevel: Log.Level,
-  debugOutput: Boolean,
+)(// exclude from `equals` test-runner only parameters that do not affect the memoization plan and
+  // that are not used in [[DistageTestRunner.groupEnvs]] grouping to allow merging more envs
+  val parallelSuites: Boolean,
+  val parallelTests: Boolean,
+  val debugOutput: Boolean,
 ) {
   def getExecParams: EnvExecutionParams = {
     EnvExecutionParams(
       parallelEnvs,
-      parallelSuites,
-      parallelTests,
       planningOptions,
       logLevel,
-      debugOutput,
     )
   }
 }
@@ -45,11 +44,8 @@ object TestEnvironment {
 
   final case class EnvExecutionParams(
     parallelEnvs: Boolean,
-    parallelSuites: Boolean,
-    parallelTests: Boolean,
     planningOptions: PlanningOptions,
     logLevel: Log.Level,
-    debugOutput: Boolean,
   )
 
   final case class MemoizationEnvWithPlan(
@@ -58,6 +54,7 @@ object TestEnvironment {
     memoizationPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
     memoizatonInjector: Injector,
+    highestDebugOutputInTests: Boolean,
   )
 
   final case class PreparedTest[F[_]](
