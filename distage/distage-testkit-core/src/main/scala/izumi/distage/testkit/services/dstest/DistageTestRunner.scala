@@ -39,9 +39,9 @@ class DistageTestRunner[F[_]: TagK](
     val envs = groupTests(tests)
     logEnvironmentsInfo(envs)
     try {
-      val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.envExec.parallelEnvs)
-      proceedEnvs(parallel = true)(parallelEnvs)
-      proceedEnvs(parallel = false)(sequentialEnvs)
+      groupByAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
+        case (level, parallelEnvs) => proceedEnvs(level)(parallelEnvs)
+      }
     } finally reporter.endAll()
   }
 
@@ -171,7 +171,7 @@ class DistageTestRunner[F[_]: TagK](
     }
   }
 
-  def proceedEnvs(parallel: Boolean)(envs: Map[MemoizationEnvWithPlan, Iterable[PreparedTest[F]]]): Unit = {
+  def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnvWithPlan, Iterable[PreparedTest[F]])]): Unit = {
     configuredForeach(parallel)(envs) {
       case (MemoizationEnvWithPlan(envExec, integrationLogger, memoizationPlan, runtimePlan, memoizationInjector, _), tests) =>
         val allEnvTests = tests.map(_.test)
@@ -460,29 +460,32 @@ class DistageTestRunner[F[_]: TagK](
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
-    val parallelEnvs = l.groupBy(getParallelismGroup).toList.sortBy {
+    F.traverse_(groupByAndSortByParallelLevel(l)(getParallelismGroup)) {
+      case (level, l) => configuredTraverse_(level)(l)(f)
+    }
+  }
+
+  private[this] def groupByAndSortByParallelLevel[A](l: Iterable[A])(getParallelismGroup: A => ParallelLevel): List[(ParallelLevel, Iterable[A])] = {
+    l.groupBy(getParallelismGroup).toList.sortBy {
       case (ParallelLevel.Unlimited, _) => 1
       case (ParallelLevel.Fixed(_), _) => 2
       case (ParallelLevel.Sequential, _) => 3
-    }
-    F.traverse_(parallelEnvs) {
-      case (level, l) => configuredTraverse_(level)(l)(f)
     }
   }
 
   protected def configuredTraverse_[A](parallel: ParallelLevel)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     parallel match {
-      case ParallelLevel.Fixed(n) => P.parTraverseN_(n)(l)(f)
-      case ParallelLevel.Unlimited => P.parTraverse_(l)(f)
-      case ParallelLevel.Sequential => F.traverse_(l)(f)
+      case ParallelLevel.Fixed(n) if l.size > 1 => P.parTraverseN_(n)(l)(f)
+      case ParallelLevel.Unlimited if l.size > 1 => P.parTraverse_(l)(f)
+      case _ => F.traverse_(l)(f)
     }
   }
 
-  protected def configuredForeach[A](parallelEnvs: Boolean)(environments: Iterable[A])(f: A => Unit): Unit = {
-    if (parallelEnvs && environments.size > 1) {
-      DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
-    } else {
-      environments.foreach(f)
+  protected def configuredForeach[A](parallel: ParallelLevel)(environments: Iterable[A])(f: A => Unit): Unit = {
+    parallel match {
+      case ParallelLevel.Fixed(n) if environments.size > 1 => DIEffectAsync.diEffectParIdentity.parTraverseN_(n)(environments)(f)
+      case ParallelLevel.Unlimited if environments.size > 1 => DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
+      case _ => environments.foreach(f)
     }
   }
 

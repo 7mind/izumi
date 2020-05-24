@@ -4,6 +4,7 @@ import distage.config.AppConfig
 import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.plugins.PluginConfig
+import izumi.distage.testkit.services.dstest.TestEnvironment.ParallelLevel
 import izumi.logstage.api.Log
 
 /**
@@ -49,13 +50,13 @@ import izumi.logstage.api.Log
   * Parallelism options:
   *
   *
-  * @param parallelEnvs          Whether to run distinct memoization environments in parallel, default: `true`.
+  * @param parallelEnvs          [[ParallelLevel]] of distinct memoization environments run, default: [[ParallelLevel.Unlimited]].
   *                              Sequential envs will run in sequence after the parallel ones.
   *
-  * @param parallelSuites        Whether to run test suites in parallel, default: `true`.
+  * @param parallelSuites        [[ParallelLevel]] of test suites run, default: [[ParallelLevel.Unlimited]].
   *                              Sequential suites will run in sequence after the parallel ones.
   *
-  * @param parallelTests         Whether to run test cases in parallel, default: `true`.
+  * @param parallelTests         [[ParallelLevel]] of test cases run, default: [[ParallelLevel.Unlimited]].
   *                              Sequential tests will run in sequence after the parallel ones.
   *
   *
@@ -86,9 +87,9 @@ final case class TestConfig(
   memoizationRoots: Set[_ <: DIKey] = Set.empty,
   forcedRoots: Set[_ <: DIKey] = Set.empty,
   // parallelism options
-  parallelEnvs: Boolean = true,
-  parallelSuites: Boolean = true,
-  parallelTests: Boolean = true,
+  parallelEnvs: ParallelLevel = ParallelLevel.Unlimited,
+  parallelSuites: ParallelLevel = ParallelLevel.Unlimited,
+  parallelTests: ParallelLevel = ParallelLevel.Unlimited,
   // other options
   configBaseName: String,
   configOverrides: Option[AppConfig] = None,
