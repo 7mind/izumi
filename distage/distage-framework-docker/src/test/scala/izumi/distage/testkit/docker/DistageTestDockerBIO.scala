@@ -14,7 +14,7 @@ import zio.IO
 // this tests needed to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
   // ignore docker tests on CI (nested docker trouble)
-  if (!EnvVarsCI.isIzumiCI()) {
+//  if (!EnvVarsCI.isIzumiCI()) {
     "distage test runner should start only one container for reusable" should {
       "support docker resources" in {
         service: PgSvcExample =>
@@ -30,7 +30,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
           } yield ()
       }
     }
-  }
+//  }
 
   override protected def config: TestConfig = super
     .config.copy(
