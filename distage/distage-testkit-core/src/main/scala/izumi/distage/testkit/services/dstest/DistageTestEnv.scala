@@ -58,13 +58,14 @@ trait DistageTestEnv {
       memoizationRoots = testConfig.memoizationRoots.toSet,
       forcedRoots = testConfig.forcedRoots.toSet,
       parallelEnvs = testConfig.parallelEnvs,
-      parallelSuites = testConfig.parallelSuites,
-      parallelTests = testConfig.parallelTests,
       bootstrapFactory = BootstrapFactory.Impl,
       configBaseName = testConfig.configBaseName,
       configOverrides = testConfig.configOverrides,
       planningOptions = testConfig.planningOptions,
       logLevel = testConfig.logLevel,
+    )(
+      parallelSuites = testConfig.parallelSuites,
+      parallelTests = testConfig.parallelTests,
       debugOutput = testConfig.debugOutput,
     )
   }

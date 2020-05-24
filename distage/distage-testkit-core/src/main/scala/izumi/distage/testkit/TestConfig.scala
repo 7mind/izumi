@@ -16,7 +16,8 @@ import izumi.logstage.api.Log
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *                              Components specified in `memoizationRoots` will be memoized only for the tests in the same memoization environment.
   *
-  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[BootstrapModule]]
+  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[BootstrapModule]].
+  *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
   * @param activation            Chosen activation axes. Changes in [[Activation]] that alter implementations of components in [[memoizationRoots]]
   *                              OR their dependencies will cause the test to execute in a new memoization environment,
@@ -42,15 +43,20 @@ import izumi.logstage.api.Log
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *
   * @param bootstrapOverrides    Same as [[moduleOverrides]], but for [[BootstrapModule]]
+  *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
   *
-  * Parallelism options. Tests with different parallelism options will run in distinct memoization environments:
+  * Parallelism options:
   *
   *
   * @param parallelEnvs          Whether to run distinct memoization environments in parallel, default: `true`.
   *                              Sequential envs will run in sequence after the parallel ones.
+  *
   * @param parallelSuites        Whether to run test suites in parallel, default: `true`.
+  *                              Sequential suites will run in sequence after the parallel ones.
+  *
   * @param parallelTests         Whether to run test cases in parallel, default: `true`.
+  *                              Sequential tests will run in sequence after the parallel ones.
   *
   *
   * Other options, Tests with different other options will run in distinct memoization environments:
