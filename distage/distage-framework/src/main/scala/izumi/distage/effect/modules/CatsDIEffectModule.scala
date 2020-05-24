@@ -14,9 +14,10 @@ trait CatsDIEffectModule extends ModuleDef {
   addImplicit[DIEffect[IO]]
 
   make[DIEffectAsync[IO]].from {
-    (P0: Parallel[IO], T0: Timer[IO]) =>
+    (P0: Parallel[IO], T0: Timer[IO], C0: Concurrent[IO]) =>
       implicit val P: Parallel[IO] = P0
       implicit val T: Timer[IO] = T0
+      implicit val C: Concurrent[IO] = C0
       DIEffectAsync[IO]
   }
 

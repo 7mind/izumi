@@ -19,7 +19,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, PreparedTest}
+import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, ParallelLevel, PreparedTest}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -39,9 +39,9 @@ class DistageTestRunner[F[_]: TagK](
     val envs = groupTests(tests)
     logEnvironmentsInfo(envs)
     try {
-      val (parallelEnvs, sequentialEnvs) = envs.partition(_._1.envExec.parallelEnvs)
-      proceedEnvs(parallel = true)(parallelEnvs)
-      proceedEnvs(parallel = false)(sequentialEnvs)
+      groupAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
+        case (level, parallelEnvs) => proceedEnvs(level)(parallelEnvs)
+      }
     } finally reporter.endAll()
   }
 
@@ -171,7 +171,7 @@ class DistageTestRunner[F[_]: TagK](
     }
   }
 
-  def proceedEnvs(parallel: Boolean)(envs: Map[MemoizationEnvWithPlan, Iterable[PreparedTest[F]]]): Unit = {
+  def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnvWithPlan, Iterable[PreparedTest[F]])]): Unit = {
     configuredForeach(parallel)(envs) {
       case (MemoizationEnvWithPlan(envExec, integrationLogger, memoizationPlan, runtimePlan, memoizationInjector, _), tests) =>
         val allEnvTests = tests.map(_.test)
@@ -454,36 +454,38 @@ class DistageTestRunner[F[_]: TagK](
 
   protected def groupedConfiguredTraverse_[A](
     l: Iterable[A]
-  )(getParallelismGroup: A => Boolean
+  )(getParallelismGroup: A => ParallelLevel
   )(f: A => F[Unit]
   )(implicit
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
-    val (parallelEnvs, sequentialEnvs) = l.partition(getParallelismGroup)
-    if (sequentialEnvs.isEmpty) {
-      configuredTraverse_(parallel = true)(parallelEnvs)(f)
-    } else {
-      configuredTraverse_(parallel = true)(parallelEnvs)(f).flatMap {
-        _ =>
-          configuredTraverse_(parallel = false)(sequentialEnvs)(f)
-      }
+    F.traverse_(groupAndSortByParallelLevel(l)(getParallelismGroup)) {
+      case (level, l) => configuredTraverse_(level)(l)(f)
     }
   }
 
-  protected def configuredTraverse_[A](parallel: Boolean)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
-    if (parallel) {
-      P.parTraverse_(l)(f)
-    } else {
-      F.traverse_(l)(f)
+  private[this] def groupAndSortByParallelLevel[A](l: Iterable[A])(getParallelismGroup: A => ParallelLevel): List[(ParallelLevel, Iterable[A])] = {
+    l.groupBy(getParallelismGroup).toList.sortBy {
+      case (ParallelLevel.Unlimited, _) => 1
+      case (ParallelLevel.Fixed(_), _) => 2
+      case (ParallelLevel.Sequential, _) => 3
     }
   }
 
-  protected def configuredForeach[A](parallelEnvs: Boolean)(environments: Iterable[A])(f: A => Unit): Unit = {
-    if (parallelEnvs && environments.size > 1) {
-      DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
-    } else {
-      environments.foreach(f)
+  protected def configuredTraverse_[A](parallel: ParallelLevel)(l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+    parallel match {
+      case ParallelLevel.Fixed(n) if l.size > 1 => P.parTraverseN_(n)(l)(f)
+      case ParallelLevel.Unlimited if l.size > 1 => P.parTraverse_(l)(f)
+      case _ => F.traverse_(l)(f)
+    }
+  }
+
+  protected def configuredForeach[A](parallel: ParallelLevel)(environments: Iterable[A])(f: A => Unit): Unit = {
+    parallel match {
+      case ParallelLevel.Fixed(n) if environments.size > 1 => DIEffectAsync.diEffectParIdentity.parTraverseN_(n)(environments)(f)
+      case ParallelLevel.Unlimited if environments.size > 1 => DIEffectAsync.diEffectParIdentity.parTraverse_(environments)(f)
+      case _ => environments.foreach(f)
     }
   }
 

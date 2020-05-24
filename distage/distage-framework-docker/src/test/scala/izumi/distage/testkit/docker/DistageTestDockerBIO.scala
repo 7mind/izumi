@@ -7,6 +7,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.fixtures.PgSvcExample
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+import izumi.distage.testkit.services.dstest.TestEnvironment.ParallelLevel
 import izumi.fundamentals.platform.properties.EnvVarsCI
 import izumi.logstage.api.Log
 import zio.IO
@@ -35,8 +36,8 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
   override protected def config: TestConfig = super
     .config.copy(
       memoizationRoots = Set(DIKey.get[PgSvcExample]),
-      parallelTests = true,
-      parallelEnvs = true,
+      parallelTests = ParallelLevel.Unlimited,
+      parallelEnvs = ParallelLevel.Unlimited,
       moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
       logLevel = Log.Level.Info,
     )

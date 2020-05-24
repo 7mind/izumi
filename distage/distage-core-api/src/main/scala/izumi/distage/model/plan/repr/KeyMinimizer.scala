@@ -10,7 +10,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
 
   @silent("Unused import")
   private[this] val index: Map[String, Int] = {
-
+    import scala.collection.compat._
     allKeys
       .toSeq
       .flatMap(extract)
