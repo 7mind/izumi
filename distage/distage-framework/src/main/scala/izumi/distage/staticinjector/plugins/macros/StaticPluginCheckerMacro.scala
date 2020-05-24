@@ -139,7 +139,7 @@ object StaticPluginCheckerMacro {
     val logger = IzLogger.NullLogger
 
     val activation = {
-      val activationInfo = ActivationInfoExtractor.findAvailableChoices(logger, module)
+      val activationInfo = ActivationInfoExtractor.findAvailableChoices(module)
       new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
 

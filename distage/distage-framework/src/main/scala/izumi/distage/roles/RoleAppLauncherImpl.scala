@@ -218,8 +218,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     (maybeGlobalConfig, roleConfigs.toMap)
   }
 
-  protected def parseActivationInfo(lateLogger: IzLogger, appModule: ModuleBase): ActivationInfo = {
-    ActivationInfoExtractor.findAvailableChoices(lateLogger, appModule)
+  protected def parseActivationInfo(@unused lateLogger: IzLogger, appModule: ModuleBase): ActivationInfo = {
+    ActivationInfoExtractor.findAvailableChoices(appModule)
   }
 
   /** Note, besides overriding this method, activation parsing strategy can also be changed by using bootstrap modules or plugins

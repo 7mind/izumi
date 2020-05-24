@@ -11,16 +11,14 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.{DebugProperties, TestConfig}
 import izumi.fundamentals.platform.cache.SyncCache
-import izumi.fundamentals.platform.language.unused
-import izumi.logstage.api.IzLogger
 
 trait DistageTestEnv {
-  private[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig): TestEnvironment = {
-    val roles = loadRoles(logger)
-    val mergeStrategy = makeMergeStrategy(logger)
-    val pluginLoader = makePluginloader(logger)
+  private[distage] def loadEnvironment(testConfig: TestConfig): TestEnvironment = {
+    val roles = loadRoles()
+    val mergeStrategy = makeMergeStrategy()
+    val pluginLoader = makePluginloader()
     def doMake(): TestEnvironment = {
-      makeEnv(logger, testConfig, pluginLoader, roles, mergeStrategy)
+      makeEnv(testConfig, pluginLoader, roles, mergeStrategy)
     }
 
     if (DebugProperties.`izumi.distage.testkit.environment.cache`.asBoolean(true)) {
@@ -31,7 +29,6 @@ trait DistageTestEnv {
   }
 
   private[distage] def makeEnv(
-    logger: IzLogger,
     testConfig: TestConfig,
     pluginLoader: PluginLoader,
     roles: RolesInfo,
@@ -41,7 +38,7 @@ trait DistageTestEnv {
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
     val bootstrapModule = mergeStrategy.merge(bsPlugins) overridenBy testConfig.bootstrapOverrides
-    val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
+    val availableActivations = ActivationInfoExtractor.findAvailableChoices(appModule)
     val activation = testConfig.activation
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
@@ -70,23 +67,23 @@ trait DistageTestEnv {
     )
   }
 
-  protected def loadRoles(@unused logger: IzLogger): RolesInfo = {
+  protected def loadRoles(): RolesInfo = {
     // For all normal scenarios we don't need roles to setup a test
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-  protected def makeMergeStrategy(@unused logger: IzLogger): PluginMergeStrategy = {
+  protected def makeMergeStrategy(): PluginMergeStrategy = {
     SimplePluginMergeStrategy
   }
 
-  protected def makePluginloader(@unused logger: IzLogger): PluginLoader = {
+  protected def makePluginloader(): PluginLoader = {
     new PluginLoaderDefaultImpl()
   }
 
 }
 
 object DistageTestEnv {
-  private[distage] lazy val cache = new SyncCache[EnvCacheKey, TestEnvironment]
+  private[distage] val cache = new SyncCache[EnvCacheKey, TestEnvironment]
 
   final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
 }

@@ -12,7 +12,6 @@ import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, unused}
 import izumi.reflect.TagK3
-import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
 import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
@@ -31,40 +30,34 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
 }
 
 @org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
-trait DistageAbstractScalatestSpec[F[_]]
-  extends ShouldVerb with MustVerb with CanVerb
-    with DistageTestEnv
-    with WithSingletonTestRegistration[F] {
+trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with CanVerb with DistageTestEnv with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
-  final protected lazy val testEnv: TestEnvironment = makeTestEnv()
-
-  protected def testEnvLogger: IzLogger = IzLogger(Log.Level.Info)("phase" -> "loader")
-
   protected def config: TestConfig = TestConfig.forSuite(this.getClass)
-  protected def makeTestEnv(): TestEnvironment = loadEnvironment(testEnvLogger, config)
 
-  protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
-  protected def distageSuiteId: String = this.getClass.getName
+  final protected[this] lazy val testEnv: TestEnvironment = makeTestEnv()
+  protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
-  //
-  private[distage] var context: Option[SuiteContext] = None
+  protected[this] def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
+  protected[this] def distageSuiteId: String = this.getClass.getName
 
-  implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
+  protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
       registerBranch(left, verb, f)
     }
   }
 
-  protected def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
-    this.context = Some(SuiteContext(description, verb))
-    fun()
-    this.context = None
-  }
-
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
     new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
+
+  protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
+    context = Some(SuiteContext(description, verb))
+    fun()
+    context = None
+  }
+
+  private[distage] var context: Option[SuiteContext] = None
 }
 
 object DistageAbstractScalatestSpec {
@@ -105,15 +98,15 @@ object DistageAbstractScalatestSpec {
   }
 
   class DSWordSpecStringWrapper[F[_]](
-                                       context: Option[SuiteContext],
-                                       suiteName: String,
-                                       suiteId: String,
-                                       testname: String,
-                                       reg: TestRegistration[F],
-                                       env: TestEnvironment,
-                                     )(
-                                       implicit override val tagMonoIO: TagK[F],
-                                     ) extends DISyntaxBase[F] with LowPriorityIdentityOverloads[F] {
+    context: Option[SuiteContext],
+    suiteName: String,
+    suiteId: String,
+    testname: String,
+    reg: TestRegistration[F],
+    env: TestEnvironment,
+  )(implicit override val tagMonoIO: TagK[F]
+  ) extends DISyntaxBase[F]
+    with LowPriorityIdentityOverloads[F] {
 
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -143,16 +136,16 @@ object DistageAbstractScalatestSpec {
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
-                                             context: Option[SuiteContext],
-                                             suiteName: String,
-                                             suiteId: String,
-                                             testname: String,
-                                             reg: TestRegistration[F[Throwable, ?]],
-                                             env: TestEnvironment,
-                                           )(
-                                             implicit override val tagBIO: TagKK[F],
-                                             implicit override val tagMonoIO: TagK[F[Throwable, ?]],
-                                           ) extends DISyntaxBIOBase[F] with LowPriorityIdentityOverloads[F[Throwable, ?]] {
+    context: Option[SuiteContext],
+    suiteName: String,
+    suiteId: String,
+    testname: String,
+    reg: TestRegistration[F[Throwable, ?]],
+    env: TestEnvironment,
+  )(implicit override val tagBIO: TagKK[F],
+    implicit override val tagMonoIO: TagK[F[Throwable, ?]],
+  ) extends DISyntaxBIOBase[F]
+    with LowPriorityIdentityOverloads[F[Throwable, ?]] {
 
     override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -182,16 +175,16 @@ object DistageAbstractScalatestSpec {
   }
 
   class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
-                                             context: Option[SuiteContext],
-                                             suiteName: String,
-                                             suiteId: String,
-                                             testname: String,
-                                             reg: TestRegistration[F[Any, Throwable, ?]],
-                                             env: TestEnvironment,
-                                           )(
-                                             implicit override val tagBIO: TagKK[F[Any, ?, ?]],
-                                             implicit override val tagMonoIO: TagK[F[Any, Throwable, ?]]
-                                           ) extends DISyntaxBIOBase[F[Any, +?, +?]] with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
+    context: Option[SuiteContext],
+    suiteName: String,
+    suiteId: String,
+    testname: String,
+    reg: TestRegistration[F[Any, Throwable, ?]],
+    env: TestEnvironment,
+  )(implicit override val tagBIO: TagKK[F[Any, ?, ?]],
+    implicit override val tagMonoIO: TagK[F[Any, Throwable, ?]],
+  ) extends DISyntaxBIOBase[F[Any, +?, +?]]
+    with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
 
     override protected def takeIO(fAsThrowable: ProviderMagnet[F[Any, Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -204,15 +197,21 @@ object DistageAbstractScalatestSpec {
     }
 
     def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeBIO(function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
-        case ((eff, r), f) => f.provide(eff)(r)
-      }, pos.get)
+      takeBIO(
+        function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((eff, r), f) => f.provide(eff)(r)
+        },
+        pos.get,
+      )
     }
 
     def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
-        case ((eff, r), f) => f.provide(eff)(r)
-      }, pos.get)
+      takeBIO(
+        function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
+          case ((eff, r), f) => f.provide(eff)(r)
+        },
+        pos.get,
+      )
     }
 
     def in[R: HasConstructor](value: => F[R, _, Unit])(implicit pos: CodePositionMaterializer): Unit = {
@@ -239,10 +238,6 @@ object DistageAbstractScalatestSpec {
       takeBIO(() => value, pos.get)
     }
   }
-
-//  abstract class StringVerbBlockRegistration {
-//    def apply(string: String, verb: String, pos: source.Position, block: () => Unit): Unit
-//  }
 
   def getSimpleNameOfAnObjectsClass(o: AnyRef): String = stripDollars(parseSimpleName(o.getClass.getName))
 
