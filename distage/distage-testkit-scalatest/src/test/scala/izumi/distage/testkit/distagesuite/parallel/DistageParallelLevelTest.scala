@@ -20,7 +20,7 @@ object DistageParallelLevelTest {
   val zioCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK](counter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
+abstract class DistageParallelLevelTest[F[_]: TagK](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
   private[this] val maxSuites = 3
   private[this] val maxTests = 2
   private[this] val maxTestsOverSuites = maxTests * maxSuites
@@ -39,10 +39,10 @@ abstract class DistageParallelLevelTest[F[_]: TagK](counter: AtomicInteger)(impl
   }
 
   private[this] def checkCounters: F[Assertion] = F.maybeSuspend {
-    val suitesCounterVal = counter.addAndGet(1)
+    val suitesCounterVal = suitesCounter.addAndGet(1)
     val testsCounterVal = testsCounter.addAndGet(1)
     Thread.sleep(500)
-    counter.decrementAndGet()
+    suitesCounter.decrementAndGet()
     testsCounter.decrementAndGet()
     assert(suitesCounterVal <= maxTestsOverSuites && testsCounterVal <= maxTests)
   }

@@ -39,7 +39,7 @@ class DistageTestRunner[F[_]: TagK](
     val envs = groupTests(tests)
     logEnvironmentsInfo(envs)
     try {
-      groupByAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
+      groupAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
         case (level, parallelEnvs) => proceedEnvs(level)(parallelEnvs)
       }
     } finally reporter.endAll()
@@ -460,12 +460,12 @@ class DistageTestRunner[F[_]: TagK](
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
-    F.traverse_(groupByAndSortByParallelLevel(l)(getParallelismGroup)) {
+    F.traverse_(groupAndSortByParallelLevel(l)(getParallelismGroup)) {
       case (level, l) => configuredTraverse_(level)(l)(f)
     }
   }
 
-  private[this] def groupByAndSortByParallelLevel[A](l: Iterable[A])(getParallelismGroup: A => ParallelLevel): List[(ParallelLevel, Iterable[A])] = {
+  private[this] def groupAndSortByParallelLevel[A](l: Iterable[A])(getParallelismGroup: A => ParallelLevel): List[(ParallelLevel, Iterable[A])] = {
     l.groupBy(getParallelismGroup).toList.sortBy {
       case (ParallelLevel.Unlimited, _) => 1
       case (ParallelLevel.Fixed(_), _) => 2

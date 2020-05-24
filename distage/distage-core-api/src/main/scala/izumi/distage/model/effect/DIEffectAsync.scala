@@ -43,10 +43,10 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
       }
 
       override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        val limitedAsyncPoll = ExecutionContext.fromExecutorService {
+        val limitedAsyncPool = ExecutionContext.fromExecutorService {
           Executors.newFixedThreadPool(n, DIEffectAsyncIdentityThreadFactory)
         }
-        parTraverseIdentity(limitedAsyncPoll)(l)(f)
+        parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
 
       override def parTraverseN_[A, B](n: Int)(l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = {
