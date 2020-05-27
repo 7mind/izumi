@@ -153,10 +153,60 @@ ThisApplicationWillFail.run()
 
 ### Docker Client Configuration
 
-To configure
+The `Docker.ClientConfig` is the configuration of the docker client used. Including the
+module `DockerSupportModule` will provide a `Docker.ClientConfig`.
 
-- `Docker.ClientConfig`
-- document `docker-reference.conf` variables and usage
+There are two primary mechanisms to change the `Docker.ClientConfig` provided by
+`DockerSupportModule`:
+
+1. Provide a `docker` configuration in the `application.conf`:
+
+```hocon
+# include the default configuration
+include "docker-reference.conf"
+
+# override docker object fields
+docker {
+  readTimeoutMs = 60000
+  allowReuse = false
+}
+```
+
+2. Override the `DockerSupportModule` using `overridenBy`:
+
+```scala mdoc
+import izumi.distage.docker.Docker
+
+class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
+  include(new DockerSupportModule[F] overridenBy new ModuleDef {
+    make[Docker.ClientConfig].from {
+      Docker.ClientConfig(
+        readTimeoutMs = 10000,
+        connectTimeoutMs = 10000,
+        allowReuse = true,
+        useRemote = true,
+        useRegistry = true,
+        remote = Option {
+          Docker.RemoteDockerConfig(
+            host = "tcp://localhost:2376",
+            tlsVerify = true,
+            certPath = "/home/user/.docker/certs",
+            config = "/home/user/.docker"
+          )
+        },
+        registry = Option {
+          Docker.DockerRegistryConfig(
+            url = "https://index.docker.io/v1/",
+            username = "dockeruser",
+            password = "ilovedocker",
+            email = "dockeruser@github.com"
+          )
+        },
+      )
+    }
+  })
+}
+```
 
 ### Usage in Integration Tests
 
