@@ -32,7 +32,7 @@ Use of `distage-framework-docker` generally follows:
 
 First, the required imports:
 
-```scala mdoc
+```scala mdoc:to-string
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.DockerPort
 import izumi.distage.model.definition.ModuleDef
@@ -45,7 +45,7 @@ The `ContainerDef` is a trait that provides a high level interface for defining 
 
 Example nginx container definition:
 
-```scala mdoc
+```scala mdoc:silent
 object NginxDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(80)
 
@@ -63,7 +63,7 @@ object NginxDocker extends ContainerDef {
 
 To use this container a module that declares how to make this component is required:
 
-```scala mdoc
+```scala mdoc:to-string
 class NginxDockerModule[F[_]: TagK] extends ModuleDef {
   make[NginxDocker.Container].fromResource {
     NginxDocker.make[F]
@@ -92,7 +92,7 @@ Include the `izumi.distage.docker.modules.DockerSupportModule` module in the app
 modules. This module contains required component declarations and loads the `docker-reference.conf`.
 Container resources depend on these components.
 
-```scala mdoc
+```scala mdoc:to-string
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.Injector
@@ -121,19 +121,18 @@ object CorrectlyConfiguredApplication {
      IO("success")
   }
 }
-```
-```scala mdoc
+
 CorrectlyConfiguredApplication.run().unsafeRunSync()
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a docker container
 dependent resource will fail:
 
-```scala mdoc
-object ThisApplicationWillFail {
+```scala mdoc:to-string
+object IncorrectlyConfiguredApplication {
   val module = new ModuleDef {
     // our container module
-    include(new NginxDockerModule[Identity])
+    include(new NginxDockerModule[IO])
 
     // Note: missing an include[DockerSupportModule]
 
@@ -146,9 +145,9 @@ object ThisApplicationWillFail {
   }
 }
 ```
-```scala mdoc:crash
+```scala mdoc:crash:to-string
 // Attempting to produce the NginxDocker.Container will fail
-ThisApplicationWillFail.run()
+IncorrectlyConfiguredApplication.run()
 ```
 
 ### Docker Client Configuration
@@ -174,7 +173,7 @@ docker {
 
 2. Override the `DockerSupportModule` using `overridenBy`:
 
-```scala mdoc
+```scala mdoc:to-string
 import izumi.distage.docker.Docker
 
 class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
@@ -214,7 +213,7 @@ class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
 
 ### Reuse
 
-By default, acquiring a container resource does not always result in a fresh container. Likewise, on
+By default, acquiring a container resource does not always start a fresh container. Likewise, on
 releasing the resource the container will not be destroyed.  When a container resource is acquired
 the docker system is inspected to determine if an appropriate container is already executing. If a
 matching container is already running this container is referenced by the
@@ -240,7 +239,7 @@ services under
 [`izumi.distage.docker.examples`](https://github.com/7mind/izumi/tree/develop/distage/distage-framework-docker/src/main/scala/izumi/distage/docker/examples)
 namespace.
 
-```scala mdoc
+```scala mdoc:to-string
 import izumi.distage.docker.examples.PostgresDocker
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
