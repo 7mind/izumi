@@ -184,6 +184,10 @@ available:
 
 - To code using a container as `container.availablePorts.availablePorts`
 
+### Docker Container Networks
+
+(TODO: `ContainerNetworkDef`)
+
 ### Docker Client Configuration
 
 The `Docker.ClientConfig` is the configuration of the docker client used. Including the
