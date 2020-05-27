@@ -4,12 +4,12 @@ import distage.{Tag, TagKK}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.functional.bio.BIOError
 import izumi.functional.bio.BIORunner.BIOBadBranch
-import izumi.fundamentals.platform.language.CodePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
   implicit def tagBIO: TagKK[F]
 
-  protected final def takeBIO(function: ProviderMagnet[F[_, _]], pos: CodePosition): Unit = {
+  protected final def takeBIO(function: ProviderMagnet[F[_, _]], pos: SourceFilePosition): Unit = {
     val fAsThrowable: ProviderMagnet[F[Throwable, _]] = function
       .map2(ProviderMagnet.identity[BIOError[F]]) {
         (effect, F) =>
@@ -22,7 +22,7 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
     takeIO(fAsThrowable, pos)
   }
 
-  protected final def takeFunBIO[T: Tag](function: T => F[_, _], pos: CodePosition): Unit = {
+  protected final def takeFunBIO[T: Tag](function: T => F[_, _], pos: SourceFilePosition): Unit = {
     takeBIO(function, pos)
   }
 

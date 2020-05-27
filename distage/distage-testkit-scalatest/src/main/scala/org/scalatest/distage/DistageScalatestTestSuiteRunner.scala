@@ -105,7 +105,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     try {
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
         case Some(value) =>
-          _doRun(value, testName, args)
+          doRun(value, testName, args)
           if (!status.isCompleted) {
             status.setCompleted()
           }
@@ -157,7 +157,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     }
   }
 
-  protected[this] def _doRun(testsInThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
+  private[distage] def doRun(testsInThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
     val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
     debugLogger.log(s"Scalatest Args: $args")
     debugLogger.log(s"""tagsToInclude: ${args.filter.tagsToInclude}
@@ -165,7 +165,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
                        |dynaTags: ${args.filter.dynaTags}
                        |excludeNestedSuites: ${args.filter.excludeNestedSuites}
                        |""".stripMargin)
-    val testReporter = _mkTestReporter()
+    val testReporter = mkTestReporter()
 
     val toRun = testName match {
       case None =>
@@ -196,7 +196,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
     }
   }
 
-  protected[this] def _mkTestReporter(): TestReporter = {
+  private[distage] def mkTestReporter(): TestReporter = {
     val scalatestReporter = new DistageScalatestReporter
     new SafeTestReporter(scalatestReporter)
   }

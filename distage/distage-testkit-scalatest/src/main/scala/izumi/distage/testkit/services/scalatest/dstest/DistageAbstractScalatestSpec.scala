@@ -10,7 +10,7 @@ import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.functional.bio.BIOLocal
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer, unused}
 import izumi.reflect.TagK3
 import org.scalactic.source
 import org.scalatest.Assertion
@@ -22,7 +22,7 @@ import scala.language.implicitConversions
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
-  override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
+  override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
     if (firstRegistration) {
       DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
     }
@@ -68,23 +68,23 @@ object DistageAbstractScalatestSpec {
   }
 
   trait LowPriorityIdentityOverloads[F[_]] extends DISyntaxBase[F] {
-    def in(function: ProviderMagnet[Unit])(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[Unit])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
-    def in(value: => Unit)(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+    def in(value: => Unit)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
-    def in(value: => Assertion)(implicit pos: CodePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+    def in(value: => Assertion)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
-    def skip(@unused value: => Any)(implicit pos: CodePositionMaterializer): Unit = {
+    def skip(@unused value: => Any)(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeFunIO(cancel, pos.get)
     }
 
@@ -108,9 +108,9 @@ object DistageAbstractScalatestSpec {
   ) extends DISyntaxBase[F]
     with LowPriorityIdentityOverloads[F] {
 
-    override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
+    override protected def takeIO(function: ProviderMagnet[F[_]], pos: SourceFilePosition): Unit = {
       val id = TestId(
-        context.map(_.toName(testname)).getOrElse(testname),
+        context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
         suiteName,
@@ -118,19 +118,19 @@ object DistageAbstractScalatestSpec {
       reg.registerTest(function, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[F[Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(function: ProviderMagnet[F[Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[F[Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[F[Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(function, pos.get)
     }
 
-    def in(value: => F[Unit])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(value: => F[Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeIO(() => value, pos.get)
     }
 
-    def in(value: => F[Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(value: => F[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(() => value, pos.get)
     }
   }
@@ -147,9 +147,9 @@ object DistageAbstractScalatestSpec {
   ) extends DISyntaxBIOBase[F]
     with LowPriorityIdentityOverloads[F[Throwable, ?]] {
 
-    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
+    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: SourceFilePosition): Unit = {
       val id = TestId(
-        context.map(_.toName(testname)).getOrElse(testname),
+        context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
         suiteName,
@@ -157,19 +157,19 @@ object DistageAbstractScalatestSpec {
       reg.registerTest(fAsThrowable, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[F[_, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(function: ProviderMagnet[F[_, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[F[_, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[F[_, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(value: => F[_, Unit])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(value: => F[_, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(() => value, pos.get)
     }
 
-    def in(value: => F[_, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(value: => F[_, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
     }
   }
@@ -186,9 +186,9 @@ object DistageAbstractScalatestSpec {
   ) extends DISyntaxBIOBase[F[Any, +?, +?]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
 
-    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Any, Throwable, _]], pos: CodePosition): Unit = {
+    override protected def takeIO(fAsThrowable: ProviderMagnet[F[Any, Throwable, _]], pos: SourceFilePosition): Unit = {
       val id = TestId(
-        context.map(_.toName(testname)).getOrElse(testname),
+        context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
         suiteName,
@@ -196,7 +196,7 @@ object DistageAbstractScalatestSpec {
       reg.registerTest(fAsThrowable, env, pos, id)
     }
 
-    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
         function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((eff, r), f) => f.provide(eff)(r)
@@ -205,7 +205,7 @@ object DistageAbstractScalatestSpec {
       )
     }
 
-    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in[R: HasConstructor](function: ProviderMagnet[F[R, _, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(
         function.zip(HasConstructor[R]).map2(ProviderMagnet.identity[BIOLocal[F]]) {
           case ((eff, r), f) => f.provide(eff)(r)
@@ -214,27 +214,27 @@ object DistageAbstractScalatestSpec {
       )
     }
 
-    def in[R: HasConstructor](value: => F[R, _, Unit])(implicit pos: CodePositionMaterializer): Unit = {
+    def in[R: HasConstructor](value: => F[R, _, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(ProviderMagnet.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
     }
 
-    def in[R: HasConstructor](value: => F[R, _, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in[R: HasConstructor](value: => F[R, _, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(ProviderMagnet.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
     }
 
-    def in(function: ProviderMagnet[F[Any, _, Unit]])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(function: ProviderMagnet[F[Any, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(function: ProviderMagnet[F[Any, _, Assertion]])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[F[Any, _, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(value: => F[Any, _, Unit])(implicit pos: CodePositionMaterializer): Unit = {
+    def in(value: => F[Any, _, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(() => value, pos.get)
     }
 
-    def in(value: => F[Any, _, Assertion])(implicit pos: CodePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in(value: => F[Any, _, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
     }
   }
