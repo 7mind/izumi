@@ -34,7 +34,7 @@ First, the required imports:
 
 ```scala mdoc:to-string
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.Docker
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 ```
@@ -47,7 +47,7 @@ Example nginx container definition:
 
 ```scala mdoc:silent
 object NginxDocker extends ContainerDef {
-  val primaryPort: DockerPort = DockerPort.TCP(80)
+  val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(80)
 
 
   override def config: Config = {
@@ -71,7 +71,33 @@ class NginxDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-- `modifyConfig`
+Using `modifyConfig` a module can modify the configuration of a container. The modifier is
+instantiated to a `ProviderMagnet` which will summon any additional dependencies.
+
+```scala mdoc:to-string
+class NginxRunAsAdminModule[F[_]: TagK] extends ModuleDef {
+  make[NginxDocker.Container].fromResource {
+    NginxDocker.make[F].modifyConfig { () => (old: NginxDocker.Config) =>
+      old.copy(user = Option("admin"))
+    }
+  }
+}
+```
+
+```scala mdoc:to-string
+case class HostHtmlRoot(path: String)
+
+class NeverReuseNginxDockerModule[F[_]: TagK] extends ModuleDef {
+  make[NginxDocker.Container].fromResource {
+    NginxDocker.make[F].modifyConfig {
+      (hostRoot: HostHtmlRoot) =>
+        (old: NginxDocker.Config) =>
+          val htmlMount = Docker.Mount(hostRoot.path, "/usr/share/nginx/html")
+          old.copy(mounts = old.mounts :+ htmlMount)
+    }
+  }
+}
+```
 
 - `dependOnDocker` - adds a dependency on a docker container. distage ensures the requested container
   is available before the dependent is provided.
@@ -99,7 +125,6 @@ import distage.Injector
 import izumi.distage.config.AppConfigModule
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.effect.modules.CatsDIEffectModule
-import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.routing.StaticLogRouter
 import izumi.logstage.distage.LogIOModule
 
