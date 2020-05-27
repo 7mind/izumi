@@ -175,6 +175,15 @@ object IncorrectlyConfiguredApplication {
 IncorrectlyConfiguredApplication.run()
 ```
 
+### Docker Container Environment
+
+The docker container's ports are remapped to fresh ports on the host. The ports allocated are
+available:
+
+- To the container in the environment variable `DISTAGE_PORT_TCP_<originalPort>`
+
+- To code using a container as `container.availablePorts.availablePorts`
+
 ### Docker Client Configuration
 
 The `Docker.ClientConfig` is the configuration of the docker client used. Including the
