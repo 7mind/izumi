@@ -47,63 +47,83 @@ class DistageScalatestReporter extends TestReporter {
 //      case TestStatus.Scheduled =>
 
       case TestStatus.Running =>
-        doReport(suiteId1)(TestStarting(
-          _,
-          suiteName1, suiteId1, Some(suiteClassName1),
-          testName,
-          testName,
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-          formatter = Some(MotionToSuppress),
-        ))
+        doReport(suiteId1)(
+          TestStarting(
+            _,
+            suiteName1,
+            suiteId1,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            formatter = Some(MotionToSuppress),
+          )
+        )
       case TestStatus.Succeed(duration) =>
-        doReport(suiteId1)(TestSucceeded(
-          _,
-          suiteName1, suiteId1, Some(suiteClassName1),
-          testName,
-          testName,
-          recordedEvents = Vector.empty,
-          duration = Some(duration.toMillis),
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-          formatter = formatter,
-        ))
+        doReport(suiteId1)(
+          TestSucceeded(
+            _,
+            suiteName1,
+            suiteId1,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            recordedEvents = Vector.empty,
+            duration = Some(duration.toMillis),
+            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            formatter = formatter,
+          )
+        )
       case TestStatus.Failed(t, duration) =>
-        doReport(suiteId1)(TestFailed(
-          _,
-          t.getMessage,
-          suiteName1, suiteId1, Some(suiteClassName1),
-          testName,
-          testName,
-          recordedEvents = Vector.empty,
-          analysis = Vector.empty,
-          throwable = Some(t),
-          duration = Some(duration.toMillis),
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-          formatter = formatter,
-        ))
+        doReport(suiteId1)(
+          TestFailed(
+            _,
+            t.getMessage,
+            suiteName1,
+            suiteId1,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            recordedEvents = Vector.empty,
+            analysis = Vector.empty,
+            throwable = Some(t),
+            duration = Some(duration.toMillis),
+            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            formatter = formatter,
+          )
+        )
       case TestStatus.Cancelled(clue, duration) =>
-        doReport(suiteId1)(TestCanceled(
-          _,
-          s"cancelled: $clue",
-          suiteName1, suiteId1, Some(suiteClassName1),
-          testName,
-          testName,
-          recordedEvents = Vector.empty,
-          duration = Some(duration.toMillis),
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-          formatter = formatter,
-        ))
+        doReport(suiteId1)(
+          TestCanceled(
+            _,
+            s"cancelled: $clue",
+            suiteName1,
+            suiteId1,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            recordedEvents = Vector.empty,
+            duration = Some(duration.toMillis),
+            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            formatter = formatter,
+          )
+        )
       case TestStatus.Ignored(checks) =>
-        doReport(suiteId1)(TestCanceled(
-          _,
-          s"ignored: ${checks.niceList()}",
-          suiteName1, suiteId1, Some(suiteClassName1),
-          testName,
-          testName,
-          recordedEvents = Vector.empty,
-          throwable = Some(new IntegrationCheckException(checks)),
-          formatter = formatter,
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-        ))
+        doReport(suiteId1)(
+          TestCanceled(
+            _,
+            s"ignored: ${checks.niceList()}",
+            suiteName1,
+            suiteId1,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            recordedEvents = Vector.empty,
+            throwable = Some(new IntegrationCheckException(checks)),
+            formatter = formatter,
+            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+          )
+        )
     }
   }
 

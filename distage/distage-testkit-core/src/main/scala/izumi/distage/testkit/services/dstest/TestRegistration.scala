@@ -2,8 +2,8 @@ package izumi.distage.testkit.services.dstest
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.TestId
-import izumi.fundamentals.platform.language.CodePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait TestRegistration[F[_]] {
-  def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit
+  def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit
 }

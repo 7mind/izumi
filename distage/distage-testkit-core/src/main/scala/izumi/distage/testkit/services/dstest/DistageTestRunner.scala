@@ -24,7 +24,7 @@ import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.CodePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
@@ -249,7 +249,7 @@ class DistageTestRunner[F[_]: TagK](
     }
   }
 
-  protected def withRecoverFromFailedExecution_[A](allTests: => Iterable[DistageTest[F]])(f: => Unit): Unit =  {
+  protected def withRecoverFromFailedExecution_[A](allTests: => Iterable[DistageTest[F]])(f: => Unit): Unit = {
     withRecoverFromFailedExecution(allTests)(f)(())
   }
 
@@ -539,7 +539,7 @@ class DistageTestRunner[F[_]: TagK](
 object DistageTestRunner {
   final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
   final case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
-  final case class TestMeta(id: TestId, pos: CodePosition, uid: Long)
+  final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
