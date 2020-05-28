@@ -113,13 +113,13 @@ object Docker {
     * @param useRegistry      Connect to speicifed Docker Registry
     */
   final case class ClientConfig(
-    readTimeoutMs: Int,
-    connectTimeoutMs: Int,
-    allowReuse: Boolean,
-    useRemote: Boolean,
-    useRegistry: Boolean,
-    remote: Option[RemoteDockerConfig],
-    registry: Option[DockerRegistryConfig],
+    readTimeoutMs: Int = 5000,
+    connectTimeoutMs: Int = 1000,
+    allowReuse: Boolean = true,
+    useRemote: Boolean = false,
+    useRegistry: Boolean = false,
+    remote: Option[RemoteDockerConfig] = None,
+    registry: Option[DockerRegistryConfig] = None,
   )
   object ClientConfig {
     implicit val distageConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.derived
