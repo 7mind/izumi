@@ -130,9 +130,7 @@ object Docker {
 
   final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
 
-
-
-  final case class Mount(host: String, container: String, noCopy: Boolean = false)
+  final case class Mount(hostPath: String, containerPath: String, noCopy: Boolean = false)
 
   case class UnmappedPorts(ports: Seq[DockerPort])
 
