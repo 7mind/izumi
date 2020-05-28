@@ -117,6 +117,18 @@ object ModuleBase {
       T.make(mergePreserve[T](module.bindings, that.bindings))
     }
 
+    def tagged[T <: ModuleBase](tags: BindingTag*)(implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(module.bindings.map(_.addTags(tags.toSet)))
+    }
+
+    def removeTags[T <: ModuleBase](tags: BindingTag*)(implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(module.bindings.map(b => b.withTags(b.tags -- tags)))
+    }
+
+    def untagged[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(module.bindings.map(_.withTags(Set.empty)))
+    }
+
     private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding]): Set[Binding] = {
       val existingIndex = existing.map(b => b.key -> b).toMultimap
       val newIndex = overriding.map(b => b.key -> b).toMultimap
