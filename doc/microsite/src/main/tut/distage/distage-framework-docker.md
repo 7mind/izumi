@@ -151,38 +151,22 @@ CorrectlyConfiguredApplication.run().unsafeRunSync()
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a docker container
-dependent resource will fail:
-
-```scala mdoc:to-string
-object IncorrectlyConfiguredApplication {
-  val module = new ModuleDef {
-    // our container module
-    include(new NginxDockerModule[IO])
-
-    // Note: missing an include[DockerSupportModule]
-
-    include(AppConfigModule(ConfigFactory.defaultApplication))
-    include(new CatsDIEffectModule {})
-    include(new LogIOModule[IO](StaticLogRouter.instance, false))
-  }
-  def run() = Injector().produceGet[NginxDocker.Container](module).use { _ =>
-     "impossible: will fail before here"
-  }
-}
-```
-```scala mdoc:crash:to-string
-// Attempting to produce the NginxDocker.Container will fail
-IncorrectlyConfiguredApplication.run()
-```
+dependent resource will fail with a `izumi.distage.model.exceptions.ProvisioningException`.
 
 ### Docker Container Environment
 
-The docker container's ports are remapped to fresh ports on the host. The ports allocated are
-available:
+The docker container's ports are remapped to fresh ports on the docker host. The allocated
+ports are:
 
-- To the container in the environment variable `DISTAGE_PORT_TCP_<originalPort>`
+- Added to the container as the environment variables of the pattern `DISTAGE_PORT_<proto>_<originalPort>`. The
+  value is the integer port number.
 
-- To code using a container as `container.availablePorts.availablePorts`
+- Properties of `DockerContainer`:
+    - `connectivity.dockerPorts` - the port information prior to any health checks
+    - `availablePorts.availablePorts` - the port information that the health checks verified
+
+- Added to the docker system as labels of the pattern `distage.port.<proto>.<originalPort>`. The
+  value is the integer port number.
 
 ### Docker Container Networks
 
@@ -312,6 +296,16 @@ To kill all containers spawned by distage, use the following command:
 ```shell
 docker rm -f $(docker ps -q -a -f 'label=distage.type')
 ```
+
+### Troubleshooting
+
+```
+// izumi.distage.model.exceptions.ProvisioningException: Provisioner stopped after 1 instances, 2/14 operations failed:
+//  - {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]} (distage-framework-docker.md:40), MissingInstanceException: Instance is not available in the object graph: {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]}.
+```
+
+The `DockerSupportModule` was not included in the application modules. The component
+`DockerClientWrapper` is provided by `izumi.distage.docker.modules.DockerSupportModule`.
 
 ### References
 
