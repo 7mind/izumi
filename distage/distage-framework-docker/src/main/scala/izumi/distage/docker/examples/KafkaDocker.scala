@@ -21,11 +21,11 @@ class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
   make[KafkaDocker.Container].fromResource {
     KafkaDocker
       .make[F]
+      .connectToNetwork(KafkaZookeeperNetwork)
       .modifyConfig {
-        (zookeeperDocker: ZookeeperDocker.Container, net: KafkaZookeeperNetwork.Network) => old: KafkaDocker.Config =>
+        zookeeperDocker: ZookeeperDocker.Container => old: KafkaDocker.Config =>
           val zkEnv = old.env ++ Map("KAFKA_ZOOKEEPER_CONNECT" -> s"${zookeeperDocker.hostName}:2181")
-          val zkNet = old.networks + net
-          old.copy(env = zkEnv, networks = zkNet)
+          old.copy(env = zkEnv)
       }
   }
 }
