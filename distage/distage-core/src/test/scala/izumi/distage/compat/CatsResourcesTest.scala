@@ -43,7 +43,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     }
 
     Injector()
-      .produceF[IO](module, GCMode.Roots).use {
+      .produceF[IO](module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       }.unsafeRunSync()

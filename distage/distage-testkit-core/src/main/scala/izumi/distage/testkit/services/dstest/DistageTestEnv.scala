@@ -40,7 +40,6 @@ trait DistageTestEnv {
     val activation = testConfig.activation
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
-        make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
         make[ActivationInfo].fromValue(availableActivations)
       }
 
