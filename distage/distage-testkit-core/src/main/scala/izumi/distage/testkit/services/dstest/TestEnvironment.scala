@@ -55,6 +55,7 @@ object TestEnvironment {
     runtimePlan: OrderedPlan,
     memoizatonInjector: Injector,
     highestDebugOutputInTests: Boolean,
+    allStrengthenedKeys: Set[DIKey],
   )
 
   final case class PreparedTest[F[_]](
