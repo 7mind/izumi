@@ -167,7 +167,6 @@ object AbstractBindingDefDSL {
         case _: SetId[_] => 0
         case _: SetIdFromImplName => 0
         case _: AliasTo => 0
-        case _: SetParameterId[_] => 1
         case _: Modify[_] => 1
       }
       sortedOps.foreach {
@@ -187,20 +186,6 @@ object AbstractBindingDefDSL {
           // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
-        case SetParameterId(key, id, idContract) =>
-          b.implementation match {
-            case ImplDef.ProviderImpl(implType, function) =>
-              b = b.withImplDef(
-                ImplDef.ProviderImpl(
-                  implType,
-                  function.replaceKeys {
-                    case DIKey.TypeKey(tpe, _) if tpe == key.tpe => DIKey.IdKey(key.tpe, id)(idContract)
-                    case k => k
-                  },
-                )
-              )
-            case _ => ()
-          }
         case Modify(providerMagnetModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
@@ -211,10 +196,6 @@ object AbstractBindingDefDSL {
               }
             case _ => ()
           }
-
-          ???
-        //          val newRef = SingletonBinding(key, ImplDef.ProviderImpl(b.implementation.implType, ???), b.tags, ???)
-        //          refs = newRef :: refs
       }
 
       b :: refs.reverse
@@ -315,7 +296,6 @@ object AbstractBindingDefDSL {
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
-    final case class SetParameterId[I](key: DIKey.BasicKey, id: I, idContract: IdContract[I]) extends SingletonInstruction
     final case class SetId[I](id: I, idContract: IdContract[I]) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
