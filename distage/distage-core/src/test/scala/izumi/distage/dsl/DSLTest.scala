@@ -5,8 +5,9 @@ import izumi.distage.constructors.ClassConstructor
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -65,6 +66,53 @@ class DSLTest extends AnyWordSpec with MkInjector {
           Bindings.binding[TestDependency0, TestImpl0],
         )
       )
+    }
+
+    "support annotated parameters" in {
+      import BasicCase1._
+
+      object Module extends ModuleDef {
+        make[TestClass].annotateParameter[TestDependency0]("test_param")
+        make[TestDependency0].named("test_param").from[TestImpl0]
+      }
+
+      assert(
+        Module
+          .bindings.find(_.key.tpe == DIKey[TestClass].tpe).exists {
+            case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _, _) =>
+              function.diKeys.exists {
+                case DIKey.IdKey(tpe, id, _) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
+                case _ => false
+              }
+            case _ => false
+          }
+      )
+    }
+
+    "produce modules with annotated parameters" in {
+      import BasicCase1._
+
+      object ModuleAnnotated extends ModuleDef {
+        make[TestClass].annotateParameter[TestDependency0]("test_param")
+        make[TestDependency1].from[TestImpl1]
+        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].named("test_param").from[TestImpl0]
+      }
+
+      val injector = mkInjector()
+      val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), GCMode.NoGC)
+      val planAnnotated = injector.plan(definitionAnnotated)
+
+      assert(planAnnotated.definition.bindings.nonEmpty)
+
+      injector.produce(planAnnotated).use {
+        locator =>
+          val tc = locator.get[TestClass]
+          val ta0 = locator.get[TestDependency0]("test_param")
+          val t0 = locator.get[TestDependency0]
+          assert(tc.fieldArgDependency == ta0)
+          assert(tc.fieldArgDependency != t0)
+      }
     }
 
     "correctly handle sets" in {
