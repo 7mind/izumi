@@ -716,7 +716,7 @@ object ModuleDefDSL {
     }
 
     def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSL[T]] = {
-      new PartiallyAppliedParameterAnnotation[P, MakeDSL[T]](new MakeDSL[T](_, key))
+      new PartiallyAppliedParameterAnnotation(new MakeDSL[T](_, key))
     }
 
     def tagged(tags: BindingTag*): MakeDSL[T] = {
@@ -741,6 +741,10 @@ object ModuleDefDSL {
       addOp(AddTags(tags.toSet)) {
         new MakeNamedDSL[T](_, key)
       }
+    }
+
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeNamedDSL[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeNamedDSL[T](_, key))
     }
 
     protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
@@ -769,7 +773,7 @@ object ModuleDefDSL {
     }
 
     def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSLUnnamedAfterFrom[T]] = {
-      new PartiallyAppliedParameterAnnotation[P, MakeDSLUnnamedAfterFrom[T]](new MakeDSLUnnamedAfterFrom[T](_, key))
+      new PartiallyAppliedParameterAnnotation(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
     //    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
@@ -791,6 +795,10 @@ object ModuleDefDSL {
       addOp(AddTags(tags.toSet)) {
         new MakeDSLNamedAfterFrom[T](_, key)
       }
+    }
+
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSLNamedAfterFrom[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
 //    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {

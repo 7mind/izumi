@@ -191,8 +191,8 @@ object AbstractBindingDefDSL {
             case ImplDef.ProviderImpl(implType, function) =>
               val oldMagnet = ProviderMagnet(function)
               val newProvider = providerMagnetModifier(oldMagnet).get
-              if (implType == newProvider.ret) {
-                b = b.withImplDef(ImplDef.ProviderImpl(newProvider.ret, newProvider))
+              if (newProvider.ret <:< implType) {
+                b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               }
             case _ => ()
           }
