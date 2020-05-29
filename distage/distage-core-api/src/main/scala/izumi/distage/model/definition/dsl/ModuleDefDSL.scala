@@ -10,6 +10,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruc
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.DIKey.TypeKey
 import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -698,6 +699,7 @@ object ModuleDefDSL {
     "namedByImpl",
     "tagged",
     "aliased",
+    "annotateParameter",
   )
 
   final class MakeDSL[T](
@@ -713,6 +715,16 @@ object ModuleDefDSL {
     def namedByImpl: MakeNamedDSL[T] = {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key.named(key.toString)))
     }
+
+    class PartiallyNamedParam[P] {
+      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
+          new MakeDSLUnnamedAfterFrom[T](_, key)
+        }
+      }
+    }
+
+    def annotateParameter[P]: PartiallyNamedParam[P] = new PartiallyNamedParam[P]
 
     def tagged(tags: BindingTag*): MakeDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -731,6 +743,14 @@ object ModuleDefDSL {
     override protected val key: DIKey.TypeKey,
   ) extends MakeDSLMutBase[T] {
 
+    class PartiallyNamedParam[P] {
+      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
+          new MakeDSLUnnamedAfterFrom[T](_, key)
+        }
+      }
+    }
+
     def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
     }
@@ -744,14 +764,13 @@ object ModuleDefDSL {
         new MakeDSLUnnamedAfterFrom[T](_, key)
       }
     }
-
-//    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
-//      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
-//    }
-//
-//    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
-//      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
-//    }
+    //    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
+    //      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    //    }
+    //
+    //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
+    //      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    //    }
 
   }
 
@@ -791,7 +810,6 @@ object ModuleDefDSL {
 //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
 //      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
 //    }
-
   }
 
   final class MakeDSLAfterAlias[T](

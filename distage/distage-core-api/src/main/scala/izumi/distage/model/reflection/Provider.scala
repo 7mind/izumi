@@ -18,6 +18,7 @@ trait Provider {
     fun(args)
   }
 
+  def replaceKey(ket: DIKey): Provider
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
   def addUnused(keys: Seq[DIKey]): Provider
@@ -101,6 +102,14 @@ object Provider {
         fun = xs => f.apply(fun(xs)),
         providerType = ProviderType.Function,
       )
+
+    override def replaceKey(key: DIKey): Provider = {
+      val newParams = parameters.map {
+        case p if p.key.tpe == key.tpe => Association.Parameter(SymbolInfo(p.symbol.name, key.tpe, isByName = p.isByName, wasGeneric = p.wasGeneric), key)
+        case p => p
+      }
+      copy(parameters = newParams)
+    }
 
     override def addUnused(keys: Seq[DIKey]): Provider =
       copy(

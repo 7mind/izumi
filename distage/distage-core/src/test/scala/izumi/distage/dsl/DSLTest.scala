@@ -6,7 +6,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -64,6 +64,27 @@ class DSLTest extends AnyWordSpec with MkInjector {
           Bindings.binding[TestClass],
           Bindings.binding[TestDependency0, TestImpl0],
         )
+      )
+    }
+
+    "support annotated parameters after from" in {
+      import BasicCase1._
+
+      object Module extends ModuleDef {
+        make[TestClass].annotateParameter[TestDependency0]("test_param")
+        make[TestDependency0].named("test_param").from[TestImpl0]
+      }
+
+      assert(
+        Module
+          .bindings.find(_.key.tpe == DIKey[TestClass].tpe).exists {
+            case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _) =>
+              function.diKeys.exists {
+                case DIKey.IdKey(tpe, id) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
+                case _ => false
+              }
+            case _ => false
+          }
       )
     }
 
