@@ -7,6 +7,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+import izumi.distage.model.exceptions.{InvalidProviderMagnetModifier, SanityCheckFailedException}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.{DIKey, IdContract}
 import izumi.fundamentals.platform.language.Quirks._
@@ -189,10 +190,13 @@ object AbstractBindingDefDSL {
         case Modify(providerMagnetModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
-              val oldMagnet = ProviderMagnet(function)
-              val newProvider = providerMagnetModifier(oldMagnet).get
+              val newProvider = providerMagnetModifier(ProviderMagnet(function)).get
               if (newProvider.ret <:< implType) {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
+              } else {
+                throw new InvalidProviderMagnetModifier(
+                  s"Cannot apply invalid ProviderMagnet modifier $providerMagnetModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                )
               }
             case _ => ()
           }
