@@ -67,7 +67,7 @@ final class PlannerDefaultImpl(
         // TODO: migrate semiplan to DG
         val steps = remappedKeysGraph.meta.nodes.values.toVector
 
-        Value(SemiPlan(steps, input.mode))
+        Value(SemiPlan(steps, input.roots))
           .map(addImports)
           .map(order)
           .get
@@ -149,10 +149,10 @@ final class PlannerDefaultImpl(
 
     val matrix = SemiEdgeSeq(ops ++ sets)
 
-    val roots = input.mode match {
-      case GCMode.GCRoots(roots) =>
+    val roots = input.roots match {
+      case Roots.Of(roots) =>
         roots.toSet
-      case GCMode.NoGC =>
+      case Roots.Everything =>
         allOps.map(_._1.key).toSet
     }
 
@@ -265,19 +265,21 @@ final class PlannerDefaultImpl(
       .map {
         case (missing, refs) =>
           val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.toSynthetic)
-          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+          missing -> ImportDependency(missing, refs, maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
       }
       .toMap
 
     val allOps = (imports.values ++ plan.steps).toVector
-    val roots = plan.gcMode.toSet
-    val missingRoots = roots
-      .diff(allOps.map(_.target).toSet).map {
-        root =>
-          ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-      }.toVector
-
-    SemiPlan(missingRoots ++ allOps, plan.gcMode)
+    val missingRoots = plan.roots match {
+      case Roots.Of(roots) =>
+        roots
+          .toSet.diff(allOps.map(_.target).toSet).map {
+            root =>
+              ImportDependency(root, Set.empty, OperationOrigin.Unknown)
+          }.toVector
+      case Roots.Everything => Vector.empty
+    }
+    SemiPlan(missingRoots ++ allOps, plan.roots)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
