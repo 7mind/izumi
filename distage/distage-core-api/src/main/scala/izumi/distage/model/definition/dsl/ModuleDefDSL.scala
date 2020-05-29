@@ -716,15 +716,13 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key.named(key.toString)))
     }
 
-    class PartiallyNamedParam[P] {
-      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+    def annotateParameter[P]: PartiallyAppliedIdAnnotate[T, P, MakeDSL] = new PartiallyAppliedIdAnnotate[T, P, MakeDSL] {
+      override def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSL[T] = {
         addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
-          new MakeDSLUnnamedAfterFrom[T](_, key)
+          new MakeDSL[T](_, key)
         }
       }
     }
-
-    def annotateParameter[P]: PartiallyNamedParam[P] = new PartiallyNamedParam[P]
 
     def tagged(tags: BindingTag*): MakeDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -738,18 +736,44 @@ object ModuleDefDSL {
 
   }
 
+  final class MakeNamedDSL[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.IdKey[_],
+  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] with MakeDSLMutBase[T] {
+
+    def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeNamedDSL[T](_, key)
+      }
+    }
+
+    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
+    }
+
+  }
+
+  final class MakeDSLNamedAfterFrom[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.IdKey[_],
+  ) extends MakeDSLMutBase[T] {
+
+    def tagged(tags: BindingTag*): MakeDSLNamedAfterFrom[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeDSLNamedAfterFrom[T](_, key)
+      }
+    }
+
+  }
+
+  trait PartiallyAppliedIdAnnotate[T, P, ModuleDSL[?]] {
+    def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): ModuleDSL[T]
+  }
+
   final class MakeDSLUnnamedAfterFrom[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
   ) extends MakeDSLMutBase[T] {
-
-    class PartiallyNamedParam[P] {
-      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
-        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
-          new MakeDSLUnnamedAfterFrom[T](_, key)
-        }
-      }
-    }
 
     def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
@@ -764,6 +788,15 @@ object ModuleDefDSL {
         new MakeDSLUnnamedAfterFrom[T](_, key)
       }
     }
+
+    def annotateParameter[P]: PartiallyAppliedIdAnnotate[T, P, MakeDSLUnnamedAfterFrom] = new PartiallyAppliedIdAnnotate[T, P, MakeDSLUnnamedAfterFrom] {
+      override def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
+          new MakeDSLUnnamedAfterFrom[T](_, key)
+        }
+      }
+    }
+
     //    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
     //      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
     //    }
