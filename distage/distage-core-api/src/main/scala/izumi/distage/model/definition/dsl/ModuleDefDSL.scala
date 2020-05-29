@@ -10,6 +10,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruc
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.DIKey.TypeKey
 import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -621,7 +622,7 @@ object ModuleDefDSL {
     *
     * Please update this when adding new methods to [[MakeDSL]]!
     */
-  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliased")
+  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "aliased", "annotateParameter")
 
   final class MakeDSL[T](
     override protected val mutableState: SingletonRef,
@@ -635,6 +636,16 @@ object ModuleDefDSL {
     def namedByImpl: MakeNamedDSL[T] = {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key.named(key.toString)))
     }
+
+    class PartiallyNamedParam[P] {
+      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
+          new MakeDSLUnnamedAfterFrom[T](_, key)
+        }
+      }
+    }
+
+    def annotateParameter[P]: PartiallyNamedParam[P] = new PartiallyNamedParam[P]
 
     def tagged(tags: BindingTag*): MakeDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -683,6 +694,14 @@ object ModuleDefDSL {
     override protected val key: DIKey.TypeKey,
   ) extends MakeDSLMutBase[T] {
 
+    class PartiallyNamedParam[P] {
+      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): MakeDSLUnnamedAfterFrom[T] = {
+        addOp(SetParameterId(TypeKey(SafeType.get[P]), name, idContract)) {
+          new MakeDSLUnnamedAfterFrom[T](_, key)
+        }
+      }
+    }
+
     def named[I](name: I)(implicit idContract: IdContract[I]): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name, idContract))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
     }
@@ -697,6 +716,7 @@ object ModuleDefDSL {
       }
     }
 
+    def annotateParameter[P]: PartiallyNamedParam[P] = new PartiallyNamedParam[P]
   }
 
   final class MakeDSLAfterAlias[T](

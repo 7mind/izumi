@@ -113,24 +113,40 @@ object AbstractBindingDefDSL {
       var b: SingletonBinding[DIKey.BasicKey] = initial
       var refs: List[SingletonBinding[DIKey.BasicKey]] = Nil
 
-      ops.foreach {
-        case SetImpl(implDef) =>
-          b = b.withImplDef(implDef)
-        case AddTags(tags) =>
-          b = b.addTags(tags)
-        case SetId(id, idContract) =>
-          val key = DIKey.IdKey(b.key.tpe, id)(idContract)
-          b = b.withTarget(key)
-        case SetIdFromImplName() =>
-          // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
-          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
-        case AliasTo(key, pos) =>
-          // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
-          // `b` properties must come before first `aliased` call
-          // after first `aliased` no more changes are possible
-          val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
-          refs = newRef :: refs
-      }
+      println(ops)
+
+      ops
+        .sortBy {
+          case _: SetImpl => 0
+          case _: AddTags => 0
+          case _: SetParameterId[_] => 1
+          case _: SetId[_] => 0
+          case _: SetIdFromImplName => 0
+          case _: AliasTo => 0
+        }.foreach {
+          case SetImpl(implDef) =>
+            b = b.withImplDef(implDef)
+          case AddTags(tags) =>
+            b = b.addTags(tags)
+          case SetId(id, idContract) =>
+            val key = DIKey.IdKey(b.key.tpe, id)(idContract)
+            b = b.withTarget(key)
+          case SetIdFromImplName() =>
+            // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
+            b = b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
+          case AliasTo(key, pos) =>
+            // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
+            // `b` properties must come before first `aliased` call
+            // after first `aliased` no more changes are possible
+            val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
+            refs = newRef :: refs
+          case SetParameterId(key, id, idContract) =>
+            b.implementation match {
+              case ImplDef.ProviderImpl(implType, function) =>
+                b = b.withImplDef(ImplDef.ProviderImpl(implType, function.replaceKey(DIKey.IdKey(key.tpe, id)(idContract))))
+              case _ => ()
+            }
+        }
 
       b :: refs.reverse
     }
@@ -230,6 +246,7 @@ object AbstractBindingDefDSL {
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
+    final case class SetParameterId[I](key: DIKey.BasicKey, id: I, idContract: IdContract[I]) extends SingletonInstruction
     final case class SetId[I](id: I, idContract: IdContract[I]) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
