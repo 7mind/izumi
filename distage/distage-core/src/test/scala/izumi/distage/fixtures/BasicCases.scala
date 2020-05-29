@@ -22,6 +22,10 @@ object BasicCases {
       def unresolved: NotInContext
     }
 
+    class TestImpl1 extends TestDependency1 {
+      override def unresolved: NotInContext = new NotInContext {}
+    }
+
     trait TestDependency3 {
       def methodDependency: TestDependency0
 

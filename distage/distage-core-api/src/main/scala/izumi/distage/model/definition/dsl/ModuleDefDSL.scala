@@ -698,6 +698,7 @@ object ModuleDefDSL {
     "namedByImpl",
     "tagged",
     "aliased",
+    "annotateParameter",
   )
 
   final class MakeDSL[T](
@@ -714,6 +715,10 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key.named(key.toString)))
     }
 
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSL[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeDSL[T](_, key))
+    }
+
     def tagged(tags: BindingTag*): MakeDSL[T] = {
       addOp(AddTags(tags.toSet)) {
         new MakeDSL[T](_, key)
@@ -722,6 +727,28 @@ object ModuleDefDSL {
 
     protected[this] override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    }
+
+  }
+
+  final class MakeNamedDSL[T](
+    override protected val mutableState: SingletonRef,
+    override protected val key: DIKey.IdKey[_],
+  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
+    with MakeDSLMutBase[T] {
+
+    def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
+      addOp(AddTags(tags.toSet)) {
+        new MakeNamedDSL[T](_, key)
+      }
+    }
+
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeNamedDSL[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeNamedDSL[T](_, key))
+    }
+
+    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
   }
@@ -745,31 +772,17 @@ object ModuleDefDSL {
       }
     }
 
-//    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
-//      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
-//    }
-//
-//    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
-//      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
-//    }
-
-  }
-
-  final class MakeNamedDSL[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
-    with MakeDSLMutBase[T] {
-
-    def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeNamedDSL[T](_, key)
-      }
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSLUnnamedAfterFrom[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
-    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
-      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
+    //    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
+    //      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    //    }
+    //
+    //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
+    //      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    //    }
 
   }
 
@@ -784,6 +797,10 @@ object ModuleDefDSL {
       }
     }
 
+    def annotateParameter[P]: PartiallyAppliedParameterAnnotation[P, MakeDSLNamedAfterFrom[T]] = {
+      new PartiallyAppliedParameterAnnotation(new MakeDSLNamedAfterFrom[T](_, key))
+    }
+
 //    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
 //      addOp(Modify[T](_.map(f)))(new MakeDSLNamedAfterFrom[T](_, key))
 //    }
@@ -791,7 +808,6 @@ object ModuleDefDSL {
 //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
 //      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
 //    }
-
   }
 
   final class MakeDSLAfterAlias[T](
@@ -802,6 +818,22 @@ object ModuleDefDSL {
   sealed trait MakeDSLMutBase[T] {
     protected[this] def mutableState: SingletonRef
     protected[this] def key: DIKey.BasicKey
+
+    final class PartiallyAppliedParameterAnnotation[P, R](newState: SingletonRef => R) {
+      def apply[I](name: I)(implicit idContract: IdContract[I], t: Tag[P]): R = {
+        addOp {
+          Modify[T] {
+            old =>
+              val idKey = SafeType.get[P]
+              val newProvider = old.get.replaceKeys {
+                case DIKey.TypeKey(tpe, _) if tpe == idKey => DIKey.IdKey(idKey, name)(idContract)
+                case k => k
+              }
+              ProviderMagnet(newProvider)
+          }
+        }(newState)
+      }
+    }
 
     def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterAlias[T](_, key))

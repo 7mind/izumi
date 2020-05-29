@@ -161,8 +161,15 @@ object AbstractBindingDefDSL {
     override def interpret: collection.Seq[ImplBinding] = {
       var b: SingletonBinding[DIKey.BasicKey] = initial
       var refs: List[SingletonBinding[DIKey.BasicKey]] = Nil
-
-      ops.foreach {
+      val sortedOps = ops.sortBy {
+        case _: SetImpl => 0
+        case _: AddTags => 0
+        case _: SetId[_] => 0
+        case _: SetIdFromImplName => 0
+        case _: AliasTo => 0
+        case _: Modify[_] => 1
+      }
+      sortedOps.foreach {
         case SetImpl(implDef) =>
           b = b.withImplDef(implDef)
         case AddTags(tags) =>
@@ -180,9 +187,15 @@ object AbstractBindingDefDSL {
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
         case Modify(providerMagnetModifier) =>
-          ???
-//          val newRef = SingletonBinding(key, ImplDef.ProviderImpl(b.implementation.implType, ???), b.tags, ???)
-//          refs = newRef :: refs
+          b.implementation match {
+            case ImplDef.ProviderImpl(implType, function) =>
+              val oldMagnet = ProviderMagnet(function)
+              val newProvider = providerMagnetModifier(oldMagnet).get
+              if (newProvider.ret <:< implType) {
+                b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
+              }
+            case _ => ()
+          }
       }
 
       b :: refs.reverse
