@@ -78,9 +78,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(
         Module
           .bindings.find(_.key.tpe == DIKey[TestClass].tpe).exists {
-            case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _) =>
+            case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _, _) =>
               function.diKeys.exists {
-                case DIKey.IdKey(tpe, id) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
+                case DIKey.IdKey(tpe, id, _) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
                 case _ => false
               }
             case _ => false

@@ -168,6 +168,7 @@ object AbstractBindingDefDSL {
         case _: SetIdFromImplName => 0
         case _: AliasTo => 0
         case _: SetParameterId[_] => 1
+        case _: Modify[_] => 1
       }
       sortedOps.foreach {
         case SetImpl(implDef) =>
@@ -189,10 +190,28 @@ object AbstractBindingDefDSL {
         case SetParameterId(key, id, idContract) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
-              b = b.withImplDef(ImplDef.ProviderImpl(implType, function.replaceKey(DIKey.IdKey(key.tpe, id)(idContract))))
+              b = b.withImplDef(
+                ImplDef.ProviderImpl(
+                  implType,
+                  function.replaceKeys {
+                    case DIKey.TypeKey(tpe, _) if tpe == key.tpe => DIKey.IdKey(key.tpe, id)(idContract)
+                    case k => k
+                  },
+                )
+              )
             case _ => ()
           }
         case Modify(providerMagnetModifier) =>
+          b.implementation match {
+            case ImplDef.ProviderImpl(implType, function) =>
+              val oldMagnet = ProviderMagnet(function)
+              val newProvider = providerMagnetModifier(oldMagnet).get
+              if (implType == newProvider.ret) {
+                b = b.withImplDef(ImplDef.ProviderImpl(newProvider.ret, newProvider))
+              }
+            case _ => ()
+          }
+
           ???
         //          val newRef = SingletonBinding(key, ImplDef.ProviderImpl(b.implementation.implType, ???), b.tags, ???)
         //          refs = newRef :: refs

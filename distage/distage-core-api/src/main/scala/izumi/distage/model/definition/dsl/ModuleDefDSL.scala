@@ -739,7 +739,8 @@ object ModuleDefDSL {
   final class MakeNamedDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] with MakeDSLMutBase[T] {
+  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
+    with MakeDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
       addOp(AddTags(tags.toSet)) {
@@ -749,19 +750,6 @@ object ModuleDefDSL {
 
     protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
-
-  }
-
-  final class MakeDSLNamedAfterFrom[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLMutBase[T] {
-
-    def tagged(tags: BindingTag*): MakeDSLNamedAfterFrom[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeDSLNamedAfterFrom[T](_, key)
-      }
     }
 
   }
@@ -804,24 +792,6 @@ object ModuleDefDSL {
     //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
     //      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
     //    }
-
-  }
-
-  final class MakeNamedDSL[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.IdKey[_],
-  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
-    with MakeDSLMutBase[T] {
-
-    def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeNamedDSL[T](_, key)
-      }
-    }
-
-    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
-      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
 
   }
 
