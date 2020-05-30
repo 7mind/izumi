@@ -143,13 +143,13 @@ object AbstractBindingDefDSL {
     def apply[I <: T: Tag](f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(_.map(f))
 
-    def apply[I <: T: Tag](name: ContractedId[_])(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+    def apply[I <: T: Tag](name: Identifier)(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(name)(_.map(f))
 
     def by(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       dsl._modify(DIKey.get[T])(f)
 
-    def by(name: ContractedId[_])(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+    def by(name: Identifier)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
       dsl._modify(DIKey.get[T].named(name))(f)
     }
   }
@@ -165,7 +165,7 @@ object AbstractBindingDefDSL {
       val sortedOps = ops.sortBy {
         case _: SetImpl => 0
         case _: AddTags => 0
-        case _: SetId[_] => 0
+        case _: SetId => 0
         case _: SetIdFromImplName => 0
         case _: AliasTo => 0
         case _: Modify[_] => 1
@@ -300,7 +300,7 @@ object AbstractBindingDefDSL {
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
-    final case class SetId[I](contractedId: ContractedId[I]) extends SingletonInstruction
+    final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
     final case class Modify[T](providerMagnetModifier: ProviderMagnet[T] => ProviderMagnet[T]) extends SingletonInstruction
@@ -309,7 +309,7 @@ object AbstractBindingDefDSL {
   sealed trait SetInstruction
   object SetInstruction {
     final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
-    final case class SetIdAll[I](contractedId: ContractedId[I]) extends SetInstruction
+    final case class SetIdAll(id: Identifier) extends SetInstruction
   }
 
   sealed trait SetElementInstruction

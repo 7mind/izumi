@@ -200,7 +200,7 @@ object ModuleDefDSL {
     final def using[I <: T: Tag]: AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
-    final def using[I <: T: Tag](name: ContractedId[_]): AfterBind =
+    final def using[I <: T: Tag](name: Identifier): AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
     /**
@@ -245,13 +245,13 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag]: AfterBind =
       refEffect[F, I, F[I]]
 
-    final def refEffect[F[_]: TagK, I <: T: Tag](name: ContractedId[_]): AfterBind =
+    final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier): AfterBind =
       refEffect[F, I, F[I]](name)
 
     final def refEffect[F[_]: TagK, I <: T: Tag, EFF <: F[I]: Tag]: AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF], weak = false)))
 
-    final def refEffect[F[_]: TagK, I <: T: Tag, EFF <: F[I]: Tag](name: ContractedId[_]): AfterBind =
+    final def refEffect[F[_]: TagK, I <: T: Tag, EFF <: F[I]: Tag](name: Identifier): AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = false)))
 
     /**
@@ -310,7 +310,7 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
-    final def refResource[R <: DIResourceBase[Any, T]](name: ContractedId[_])(implicit tag: ResourceTag[R]): AfterBind = {
+    final def refResource[R <: DIResourceBase[Any, T]](name: Identifier)(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
@@ -357,13 +357,13 @@ object ModuleDefDSL {
     final def ref[I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false), pos)
 
-    final def ref[I <: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def ref[I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
 
     final def weak[I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
 
-    final def weak[I <: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def weak[I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
     final def addEffect[F[_]: TagK, I <: T: Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
@@ -375,7 +375,7 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)), pos)
 
-    final def refEffect[F[_]: TagK, I <: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
     final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
@@ -406,7 +406,7 @@ object ModuleDefDSL {
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
-    final def refResource[R <: DIResourceBase[Any, T]](name: ContractedId[_])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def refResource[R <: DIResourceBase[Any, T]](name: Identifier)(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
@@ -433,13 +433,13 @@ object ModuleDefDSL {
     final def refSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false), pos)
 
-    final def refSet[I <: Set[_ <: T]: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def refSet[I <: Set[_ <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
 
     final def weakSet[I <: Set[_ <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
 
-    final def weakSet[I <: Set[_ <: T]: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def weakSet[I <: Set[_ <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
 //    final def addEffect[F[_]: TagK, I <: T: Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
@@ -704,6 +704,7 @@ object ModuleDefDSL {
     "tagged",
     "aliased",
     "annotateParameter",
+    "modify",
   )
 
   final class MakeDSL[T](
@@ -712,22 +713,20 @@ object ModuleDefDSL {
   ) extends MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]]
     with MakeDSLMutBase[T] {
 
-    def named(name: ContractedId[_]): MakeNamedDSL[T] = {
+    def named(name: Identifier): MakeNamedDSL[T] = {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
     }
 
     def namedByImpl: MakeNamedDSL[T] = {
-      addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key.named(key.toString)))
-    }
-
-    def annotateParameter[P: Tag](name: ContractedId[_]): MakeDSL[T] = {
-      addOp(annotateParameterOp[P](name))(new MakeDSL[T](_, key))
+      addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
     def tagged(tags: BindingTag*): MakeDSL[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeDSL[T](_, key)
-      }
+      addOp(AddTags(tags.toSet))(new MakeDSL[T](_, key))
+    }
+
+    def annotateParameter[P: Tag](name: Identifier): MakeDSL[T] = {
+      addOp(annotateParameterOp[P](name))(new MakeDSL[T](_, key))
     }
 
     protected[this] override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
@@ -738,17 +737,15 @@ object ModuleDefDSL {
 
   final class MakeNamedDSL[T](
     override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.IdKey[_],
+    override protected val key: DIKey.BasicKey,
   ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
     with MakeDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeNamedDSL[T](_, key)
-      }
+      addOp(AddTags(tags.toSet))(new MakeNamedDSL[T](_, key))
     }
 
-    def annotateParameter[P: Tag](name: ContractedId[_]): MakeNamedDSL[T] = {
+    def annotateParameter[P: Tag](name: Identifier): MakeNamedDSL[T] = {
       addOp(annotateParameterOp[P](name))(new MakeNamedDSL[T](_, key))
     }
 
@@ -763,21 +760,19 @@ object ModuleDefDSL {
     override protected val key: DIKey.TypeKey,
   ) extends MakeDSLMutBase[T] {
 
-    def named(name: ContractedId[_]): MakeDSLNamedAfterFrom[T] = {
+    def named(name: Identifier): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
     }
 
     def namedByImpl: MakeDSLNamedAfterFrom[T] = {
-      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key.named(key.toString)))
+      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
     def tagged(tags: BindingTag*): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeDSLUnnamedAfterFrom[T](_, key)
-      }
+      addOp(AddTags(tags.toSet))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
-    def annotateParameter[P: Tag](name: ContractedId[_]): MakeDSLUnnamedAfterFrom[T] = {
+    def annotateParameter[P: Tag](name: Identifier): MakeDSLUnnamedAfterFrom[T] = {
       addOp(annotateParameterOp[P](name))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
@@ -793,7 +788,7 @@ object ModuleDefDSL {
 
   final class MakeDSLNamedAfterFrom[T](
     override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.IdKey[_],
+    override protected val key: DIKey.BasicKey,
   ) extends MakeDSLMutBase[T] {
 
     def tagged(tags: BindingTag*): MakeDSLNamedAfterFrom[T] = {
@@ -802,7 +797,7 @@ object ModuleDefDSL {
       }
     }
 
-    def annotateParameter[P: Tag](name: ContractedId[_]): MakeDSLNamedAfterFrom[T] = {
+    def annotateParameter[P: Tag](name: Identifier): MakeDSLNamedAfterFrom[T] = {
       addOp(annotateParameterOp[P](name))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
@@ -828,7 +823,7 @@ object ModuleDefDSL {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterAlias[T](_, key))
     }
 
-    def aliased[T1 >: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
+    def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new MakeDSLAfterAlias[T](_, key))
     }
 
@@ -836,12 +831,13 @@ object ModuleDefDSL {
       newState(mutableState.append(op))
     }
 
-    protected[this] final def annotateParameterOp[P: Tag](name: ContractedId[_]): Modify[T] = {
+    protected[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
       Modify[T] {
         old =>
-          val idKey = SafeType.get[P]
+          val paramTpe = SafeType.get[P]
           val newProvider = old.get.replaceKeys {
-            case DIKey.TypeKey(tpe, _) if tpe == idKey => DIKey.TypeKey(idKey).named(name)
+            case DIKey.TypeKey(tpe, m) if tpe == paramTpe =>
+              DIKey.IdKey(paramTpe, name.id, m)(name.idContract)
             case k => k
           }
           ProviderMagnet(newProvider)
@@ -853,7 +849,7 @@ object ModuleDefDSL {
     protected val mutableState: SetRef
   ) extends SetDSLMutBase[T] {
 
-    def named(name: ContractedId[_]): SetNamedDSL[T] = {
+    def named(name: Identifier): SetNamedDSL[T] = {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
     }
 

@@ -70,7 +70,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
           s"""Binding $b is not an instance binding, only forms `make[X].fromValue(instance)` and `many[X].addValue(y).addValue(z)`
-            |are supported, binding was defined at ${b.origin}""".stripMargin,
+             |are supported, binding was defined at ${b.origin}""".stripMargin,
           b,
         )
     }
@@ -86,7 +86,7 @@ object LocatorDef {
   final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey)
     extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]]
     with BindDSLMutBase[T] {
-    def named(name: ContractedId[_]): BindNamedDSL[T] =
+    def named(name: Identifier): BindNamedDSL[T] =
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
 
     override protected def bind(impl: ImplDef): BindDSLUnnamedAfterFrom[T] =
@@ -101,7 +101,7 @@ object LocatorDef {
   }
 
   final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.TypeKey) extends BindDSLMutBase[T] {
-    def named(name: ContractedId[_]): BindNamedDSL[T] =
+    def named(name: Identifier): BindNamedDSL[T] =
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
   }
 
@@ -116,7 +116,7 @@ object LocatorDef {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_, key))
     }
 
-    def aliased[T1 >: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
+    def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_, key))
     }
 
@@ -126,7 +126,7 @@ object LocatorDef {
   }
 
   final class SetDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T] {
-    def named(name: ContractedId[_]): SetNamedDSL[T] =
+    def named(name: Identifier): SetNamedDSL[T] =
       addOp(SetIdAll(name))(new SetNamedDSL(_))
   }
 

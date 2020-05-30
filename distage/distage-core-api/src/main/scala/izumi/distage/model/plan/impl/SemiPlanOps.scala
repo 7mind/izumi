@@ -1,7 +1,7 @@
 package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.ContractedId
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.SemiPlan
@@ -21,7 +21,7 @@ private[plan] trait SemiPlanOps extends Any {
         instance
     }
 
-  override final def resolveImport[T: Tag](id: ContractedId[_])(instance: T): SemiPlan = {
+  override final def resolveImport[T: Tag](id: Identifier)(instance: T): SemiPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance
@@ -47,7 +47,7 @@ private[plan] trait SemiPlanOps extends Any {
     }
   }
 
-  final def providerImport[T](id: ContractedId[_])(function: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](id: Identifier)(function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
       case i if i.target == DIKey.TypeKey(function.get.ret).named(id) =>
         Seq(CallProvider(i.target, SingletonWiring.Function(function.get), i.origin))

@@ -20,9 +20,7 @@ import scala.reflect.macros.blackbox
   *
   * @see [[DebugProperties]]
   */
-class ProviderMagnetMacro(c: blackbox.Context) extends ProviderMagnetMacro0(c)
-
-class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
+class ProviderMagnetMacro(val c: blackbox.Context) {
 
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
 
@@ -61,13 +59,14 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
     case _ if tree.tpe ne null =>
       analyzeValRef(tree.tpe)
     case _ =>
-      c.abort(tree.pos,
+      c.abort(
+        tree.pos,
         s"""
            | Can handle only method references of form (method _) or lambda bodies of form (args => body).\n
            | Argument doesn't seem to be a method reference or a lambda:\n
            |   argument: ${showCode(tree)}\n
            |   argumentTree: ${showRaw(tree)}\n
-           | Hint: Try appending _ to your method name""".stripMargin
+           | Hint: Try appending _ to your method name""".stripMargin,
       )
   }
 
@@ -122,7 +121,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
     // if method reference has more annotations, get parameters from reference instead
     // to preserve annotations!
     if (methodReferenceParams.size == lambdaParams.size &&
-        annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
+      annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
       // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
       // But lambda params should be sufficiently 'grounded' at this point
       // (Besides, lambda types are the ones specified by the caller, we should respect them)

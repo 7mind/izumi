@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.{Activation, ContractedId, ModuleBase}
+import izumi.distage.model.definition.{Activation, Identifier, ModuleBase}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.providers.ProviderMagnet
@@ -122,7 +122,7 @@ trait Injector extends Planner with Producer {
   final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: ContractedId[_], activation: Activation)(bindings: ModuleBase): DIResourceBase[F, A] = {
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: Identifier, activation: Activation)(bindings: ModuleBase): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
@@ -164,7 +164,7 @@ trait Injector extends Planner with Producer {
 
   final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[Identity, A] =
     produceGetF[Identity, A](bindings, activation)
-  final def produceGet[A: Tag](name: ContractedId[_])(bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] =
+  final def produceGet[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] =
     produceGetF[Identity, A](name, activation)(bindings)
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
