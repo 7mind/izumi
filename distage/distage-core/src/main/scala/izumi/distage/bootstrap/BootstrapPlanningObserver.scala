@@ -1,16 +1,10 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningObserver
 import izumi.fundamentals.platform.console.TrivialLogger
 
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
-  override def onSuccessfulStep(next: PrePlan): Unit = {
-    doLog("Next Plan", next.toString)
-  }
-
-  override def onPhase00PlanCompleted(plan: PrePlan): Unit = {}
   override def onPhase05PreGC(plan: SemiPlan): Unit = {}
   override def onPhase10PostGC(plan: SemiPlan): Unit = {}
   override def onPhase20Customization(plan: SemiPlan): Unit = {}
@@ -24,10 +18,12 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
   }
 
   private def doLog(title: => String, body: => String): Unit = {
-    logger.log(Seq(
-      "=" * 60 + s" $title " + "=" * 60
-      , s"$body"
-      , "\n"
-    ).mkString("\n"))
+    logger.log(
+      Seq(
+        "=" * 60 + s" $title " + "=" * 60,
+        s"$body",
+        "\n",
+      ).mkString("\n")
+    )
   }
 }

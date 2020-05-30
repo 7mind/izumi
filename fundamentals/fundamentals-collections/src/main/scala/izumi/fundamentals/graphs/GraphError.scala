@@ -18,17 +18,15 @@ object GraphTraversalError {
   final case class UnrecoverableLoops[N]() extends GraphTraversalError[N]
 }
 
-sealed trait ConflictResolutionError[N] extends GraphTraversalError[N]
+sealed trait ConflictResolutionError[N, +V] extends GraphTraversalError[N]
 object ConflictResolutionError {
-  final case class AmbigiousActivationsSet[N](issues: Map[String, Set[AxisPoint]]) extends ConflictResolutionError[N]
-  final case class AmbigiousActivationDefs[N](node: Annotated[N], issues: Map[String, Set[AxisPoint]]) extends ConflictResolutionError[N]
-  final case class AmbigiousDefinitions[N](ambigious: Map[N, Seq[Annotated[N]]]) extends ConflictResolutionError[N]
-  final case class ConflictingDefs[N, V](defs: Map[Annotated[N], Seq[Node[N, V]]]) extends ConflictResolutionError[N]
-  final case class UnsolvedConflicts[N](defs: Map[MutSel[N], Set[Annotated[N]]]) extends ConflictResolutionError[N]
+  final case class AmbigiousActivationsSet[N](issues: Map[String, Set[AxisPoint]]) extends ConflictResolutionError[N, Nothing]
+  final case class ConflictingDefs[N, V](defs: Map[MutSel[N], Set[(Set[AxisPoint], Node[N, V])]]) extends ConflictResolutionError[N, V]
+  final case class UnsolvedConflicts[N](defs: Map[MutSel[N], Set[Annotated[N]]]) extends ConflictResolutionError[N, Nothing]
 }
 
-sealed trait ToposortError[T] extends GraphTraversalError[T]
+sealed trait ToposortError[N] extends GraphTraversalError[N]
 object ToposortError {
-  final case class UnexpectedLoop[T](done: Seq[T], matrix: IncidenceMatrix[T]) extends ToposortError[T]
-  final case class InconsistentInput[T](issues: IncidenceMatrix[T]) extends ToposortError[T]
+  final case class UnexpectedLoop[N](done: Seq[N], matrix: IncidenceMatrix[N]) extends ToposortError[N]
+  final case class InconsistentInput[N](issues: IncidenceMatrix[N]) extends ToposortError[N]
 }

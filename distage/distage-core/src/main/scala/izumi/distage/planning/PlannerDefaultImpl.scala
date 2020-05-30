@@ -1,7 +1,9 @@
 package izumi.distage.planning
 
 import scala.annotation.nowarn
-import izumi.distage.model.definition.{Binding, BindingTag, ModuleBase}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.BindingTag.AxisTag
+import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
@@ -11,15 +13,16 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
-import izumi.fundamentals.graphs
+import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.compat._
 
-final class PlannerDefaultImpl(
+class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
   gc: DIGarbageCollector,
@@ -36,9 +39,8 @@ final class PlannerDefaultImpl(
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     resolveConflicts(input) match {
-      case Left(value) =>
-        // TODO: better error message
-        throw new ConflictResolutionException(s"Failed to resolve conflicts: $value", value)
+      case Left(errors) =>
+        throwOnConflict(errors)
 
       case Right(resolved) =>
         val mappedGraph = resolved.predcessors.links.toSeq.map {
@@ -74,7 +76,31 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def updateKey(mutSel: MutSel[DIKey]): DIKey = {
+  override def rewrite(module: ModuleBase): ModuleBase = {
+    hook.hookDefinition(module)
+  }
+
+  @deprecated("used in tests only!", "")
+  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+    Value(semiPlan)
+      .map(addImports)
+      .eff(planningObserver.onPhase05PreGC)
+      .map(gc.gc)
+      .map(order)
+      .get
+  }
+
+  private[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
+    if (roots.isEmpty) {
+      OrderedPlan.empty
+    } else {
+      assert(roots.diff(plan.index.keySet).isEmpty)
+      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
+      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
+    }
+  }
+
+  protected[this] def updateKey(mutSel: MutSel[DIKey]): DIKey = {
     mutSel.mut match {
       case Some(value) =>
         updateKey(mutSel.key, value)
@@ -83,7 +109,7 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def updateKey(key: DIKey, mindex: Int): DIKey = {
+  protected[this] def updateKey(key: DIKey, mindex: Int): DIKey = {
     key match {
       case DIKey.TypeKey(tpe, _) =>
         DIKey.TypeKey(tpe, Some(mindex))
@@ -100,9 +126,9 @@ final class PlannerDefaultImpl(
     }
   }
 
-  private def resolveConflicts(
+  protected[this] def resolveConflicts(
     input: PlannerInput
-  ): Either[List[ConflictResolutionError[DIKey]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
+  ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 
@@ -163,7 +189,8 @@ final class PlannerDefaultImpl(
       retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
       membersToDrop =
         resolution
-          .graph.meta.nodes.collect {
+          .graph.meta.nodes
+          .collect {
             case (k, RemappedValue(ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _), _))
                 if !retainedKeys.contains(referenced) && !roots.contains(k.key) =>
               k
@@ -183,28 +210,29 @@ final class PlannerDefaultImpl(
             successors = resolution.graph.successors.without(membersToDrop),
             predcessors = resolution.graph.predcessors.without(membersToDrop),
           )
-      out <- Right(resolved)
-    } yield {
-      out
-    }
+    } yield resolved
   }
 
-  private def findWeakSetMembers(
+  protected[this] def findWeakSetMembers(
     sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
     matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
     roots: Set[DIKey],
   ): Set[GC.WeakEdge[DIKey]] = {
     import izumi.fundamentals.collections.IzCollections._
+
     val indexed = matrix
       .links.map {
         case (successor, node) =>
           (successor.key, node.meta)
       }
       .toMultimap
+
     sets
       .collect {
-        case (target, Node(_, s: CreateSet)) => (target, s.members)
-      }.flatMap {
+        case (target, Node(_, s: CreateSet)) =>
+          (target, s.members)
+      }
+      .flatMap {
         case (_, members) =>
           members
             .diff(roots)
@@ -219,28 +247,14 @@ final class PlannerDefaultImpl(
       .toSet
   }
 
-  private def toAxis(b: Binding): Set[AxisPoint] = {
+  protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
-      case BindingTag.AxisTag(choice) =>
-        AxisPoint(choice.axis.name, choice.id)
+      case AxisTag(axisValue) =>
+        axisValue.toAxisPoint
     }
   }
 
-  override def rewrite(module: ModuleBase): ModuleBase = {
-    hook.hookDefinition(module)
-  }
-
-  @deprecated("used in tests only!", "")
-  override def finish(semiPlan: SemiPlan): OrderedPlan = {
-    Value(semiPlan)
-      .map(addImports)
-      .eff(planningObserver.onPhase05PreGC)
-      .map(gc.gc)
-      .map(order)
-      .get
-  }
-
-  private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
+  protected[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
@@ -253,7 +267,7 @@ final class PlannerDefaultImpl(
   }
 
   @nowarn("msg=Unused import")
-  private[this] def addImports(plan: SemiPlan): SemiPlan = {
+  protected[this] def addImports(plan: SemiPlan): SemiPlan = {
     import scala.collection.compat._
 
     val topology = analyzer.topology(plan.steps)
@@ -282,7 +296,7 @@ final class PlannerDefaultImpl(
     SemiPlan(missingRoots ++ allOps, plan.roots)
   }
 
-  private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
+  protected[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
     val topology = analyzer.topology(completedPlan.steps)
 
     val index = completedPlan.index
@@ -311,23 +325,79 @@ final class PlannerDefaultImpl(
     OrderedPlan(sortedOps, roots, topology)
   }
 
-  private[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
-    if (roots.isEmpty) {
-      OrderedPlan.empty
-    } else {
-      assert(roots.diff(plan.index.keySet).isEmpty)
-      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
-    }
-  }
-
-  private[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
+  protected[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
     Value(almostPlan)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase90AfterForwarding)
       .eff(planningObserver.onPhase90AfterForwarding)
       .eff(sanityChecker.assertFinalPlanSane)
       .get
+  }
+
+  protected[this] def throwOnConflict(issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
+    val issueRepr = issues.map(formatConflict).niceList()
+
+    throw new ConflictResolutionException(
+      s"""There must be exactly one valid binding for each DIKey.
+         |
+         |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate between multiple instances with the same type.
+         |
+         |List of problematic bindings: $issueRepr
+       """.stripMargin,
+      issues,
+    )
+  }
+
+  protected[this] def formatConflict(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
+    conflictResolutionError match {
+      case AmbigiousActivationsSet(issues) =>
+        val printedActivationSelections = issues.map {
+          case (axis, choices) => s"axis: `$axis`, selected: {${choices.map(_.value).mkString(", ")}}"
+        }
+        s"""Mulitple axis choices selected for axes, only one choice must be made selected for an axis:
+           |
+           |${printedActivationSelections.niceList().shift(4)}""".stripMargin
+
+      case ConflictingDefs(defs) =>
+        defs
+          .map {
+            case (k, nodes) =>
+              val candidates = conflictingAxisTagsHint(
+                nodes.flatMap(_._1),
+                nodes.map(_._2.meta.origin).collect {
+                  case defined: OperationOrigin.Defined => defined.binding
+                },
+              )
+              s"""Conflict resolution failed key for $k with reason:
+                 |
+                 |${"reason dunno lmao".shift(4)}
+                 |
+                 |    Candidates left: ${candidates.niceList().shift(4)}""".stripMargin
+          }.niceList()
+
+      case UnsolvedConflicts(defs) =>
+        defs
+          .map {
+            case (k, axisBinds) =>
+              s"""multiple axee Conflict resolution failed key for $k with reason:
+                 |
+                 |${"reason axises".shift(4)}
+                 |
+                 |    Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
+          }.niceList()
+    }
+  }
+
+  protected[this] def conflictingAxisTagsHint(activeChoices: Set[AxisPoint], ops: Set[Binding]): Seq[String] = {
+    ops.toSeq.map {
+      op =>
+        val axisValues = op.tags.collect { case AxisTag(t) => t.toAxisPoint }
+
+        val bindingTags = axisValues.diff(activeChoices)
+        val alreadyActiveTags = axisValues.intersect(activeChoices)
+
+        s"${op.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
+    }
   }
 
 }

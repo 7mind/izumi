@@ -375,6 +375,7 @@ class DistageTestRunner[F[_]: TagK](
     val newAppModule = test.environment.appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys
     // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
+//    val newRoots = testPlan.keys -- allSharedKeys // ++ allStrengthenedKeys.intersect(moduleKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ allStrengthenedKeys.intersect(moduleKeys)
     val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeys)
 

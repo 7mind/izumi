@@ -1,18 +1,23 @@
 package izumi.functional
 
-import scala.collection.compat._
 import izumi.functional.IzEither._
 
+import scala.collection.compat._
 import scala.language.implicitConversions
 
 trait IzEither {
   @inline implicit final def EitherBiAggregate[L, R, Col[x] <: Iterable[x]](result: Col[Either[List[L], R]]): EitherBiAggregate[L, R, Col] = new EitherBiAggregate(result)
-  @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: Iterable[x], Col2[x] <: Iterable[x]](result: Col[Either[List[L], Col2[R]]]): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(result)
+  @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: Iterable[x], Col2[x] <: Iterable[x]](
+    result: Col[Either[List[L], Col2[R]]]
+  ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(result)
   @inline implicit final def EitherBiSplit[L, R, Col[x] <: Iterable[x]](e: Col[Either[L, R]]): EitherBiSplit[L, R, Col] = new EitherBiSplit(e)
   @inline implicit final def EitherBiFind[Col[x] <: Iterable[x], T](s: Col[T]): EitherBiFind[Col, T] = new EitherBiFind(s)
+  @inline implicit final def EitherBiFoldLeft[L, R, Col[x] <: Iterable[x]](s: Col[R]): EitherBiFoldLeft[L, R, Col] = new EitherBiFoldLeft(s)
 }
 
-  implicit final class EitherBiFoldLeft[L, R, Col[x] <: Iterable[x]](s: Col[R]) {
+object IzEither extends IzEither {
+
+  final class EitherBiFoldLeft[L, R, Col[x] <: Iterable[x]](s: Col[R]) {
     def biFoldLeft[A](z: A)(op: (A, R) => Either[List[L], A]): Either[List[L], A] = {
       val i = s.iterator
       var acc: Either[List[L], A] = Right(z)
@@ -30,9 +35,6 @@ trait IzEither {
       acc
     }
   }
-
-
-object IzEither extends IzEither {
 
   final class EitherBiAggregate[L, R, Col[x] <: Iterable[x]](private val result: Col[Either[List[L], R]]) extends AnyVal {
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {

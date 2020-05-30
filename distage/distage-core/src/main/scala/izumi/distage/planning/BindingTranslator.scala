@@ -6,9 +6,9 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.Wiring._
-import izumi.distage.model.plan.initial.NextOps
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.planning.BindingTranslator.NextOps
 
 trait BindingTranslator {
   def computeProvisioning(binding: Binding): NextOps
@@ -16,7 +16,12 @@ trait BindingTranslator {
 
 object BindingTranslator {
 
-  class Impl() extends BindingTranslator {
+  final case class NextOps(
+    sets: Map[DIKey, CreateSet],
+    provisions: Seq[InstantiationOp],
+  )
+
+  class Impl extends BindingTranslator {
     def computeProvisioning(binding: Binding): NextOps = {
       binding match {
         case singleton: SingletonBinding[_] =>

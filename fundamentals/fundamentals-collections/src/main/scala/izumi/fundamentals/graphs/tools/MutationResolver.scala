@@ -4,7 +4,7 @@ import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.NonEmptyList
-import izumi.fundamentals.graphs.ConflictResolutionError.ConflictingDefs
+import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC.WeakEdge
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
@@ -25,16 +25,18 @@ object MutationResolver {
     }
   }
 
-  final case class Node[Idt, Meta](deps: Set[Idt], meta: Meta)
-  final case class RemappedValue[Meta, Idt](meta: Meta, remapped: Map[Idt, MutSel[Idt]])
+  final case class Node[N, V](deps: Set[N], meta: V)
+  final case class RemappedValue[V, N](meta: V, remapped: Map[N, MutSel[N]])
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
 
-  final case class Annotated[N](key: N, mut: Option[Int], con: Set[AxisPoint] = Set.empty) {
+  final case class Annotated[N](key: N, mut: Option[Int], axis: Set[AxisPoint]) {
     def withoutAxis: MutSel[N] = MutSel(key, mut)
     def isMutator: Boolean = mut.isDefined
   }
-  final case class AxisPoint(axis: String, value: String)
+  final case class AxisPoint(axis: String, value: String) {
+    override def toString: String = s"$axis:$value"
+  }
   final case class Selected[N](key: N, axis: Set[AxisPoint])
   final case class MutSel[N](key: N, mut: Option[Int]) {
     def isMutator: Boolean = mut.isDefined
@@ -49,7 +51,7 @@ object MutationResolver {
 
   private final case class ClassifiedConflicts[A](mutators: Set[A], defns: Set[A])
   private final case class MainResolutionStatus[N, V](resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
-  final case class WithContext[Meta, N](meta: Meta, remaps: Map[N, MutSel[N]])
+  final case class WithContext[V, N](meta: V, remaps: Map[N, MutSel[N]])
 
   class MutationResolverImpl[N, I, V] {
 
@@ -58,23 +60,23 @@ object MutationResolver {
       roots: Set[N],
       activations: Set[AxisPoint],
       weak: Set[WeakEdge[N]],
-    ): Either[List[ConflictResolutionError[N]], Resolution[N, V]] = {
+    ): Either[List[ConflictResolutionError[N, V]], Resolution[N, V]] = {
       for {
-        a <- resolveAxis(predcessors, roots, weak, activations)
-        unsolvedConflicts = a.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
+        semiMatrix <- resolveAxis(predcessors, roots, weak, activations)
+        unsolvedConflicts = semiMatrix.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
           if (unsolvedConflicts.nonEmpty) {
-            Left(List(ConflictResolutionError.UnsolvedConflicts(unsolvedConflicts)))
+            Left(List(UnsolvedConflicts(unsolvedConflicts)))
           } else {
             Right(())
           }
-        deannotated = a.links.map {
+        deannotated = semiMatrix.links.map {
           case (k, v) =>
             (k.withoutAxis, Node(v.deps.map(_.key), v.meta))
         }
         mutationsResolved <- resolveMutations(SemiIncidenceMatrix(deannotated))
       } yield {
-        assert(a.links.keySet.groupBy(_.withoutAxis).forall(_._2.size == 1))
+        assert(semiMatrix.links.keySet.groupBy(_.withoutAxis).forall(_._2.size == 1))
         val meta = deannotated.map {
           case (k, v) =>
             val targetKey = mutationsResolved.indexRemap.getOrElse(k, k)
@@ -91,21 +93,16 @@ object MutationResolver {
       roots: Set[N],
       weak: Set[WeakEdge[N]],
       activations: Set[AxisPoint],
-    ): Either[List[ConflictResolutionError[N]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
-
+    ): Either[List[ConflictResolutionError[N, V]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
+      val activationChoices = ActivationChoices(activations)
       for {
-        activationChoices <- Right(ActivationChoices(activations))
-        _ <- nonAmbigiousActivations(activations, err => ConflictResolutionError.AmbigiousActivationsSet(err))
-        (onlyValid, invalid) = predcessors.links.partition { case (k, _) => activationChoices.allValid(k.con) }
-        grouped = onlyValid.map {
-          case (key, node) =>
-            (key.key, (key, node))
-        }.toMultimap
+        _ <- nonAmbigiousActivations(activations)
+        (onlyValid, invalid) = predcessors.links.partition { case (k, _) => activationChoices.allValid(k.axis) }
+        grouped = onlyValid.map { case (key, node) => (key.key, (key, node)) }.toMultimap
         onlyCorrect <- traceGrouped(invalid.toMultimap, activations, weak)(roots, roots, grouped, Map.empty)
       } yield {
         val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
-          case (k, _) =>
-            (k.key, k.con)
+          case (k, _) => (k.key, k.axis)
         }
         val result = onlyCorrect.map {
           case (key, node) =>
@@ -116,14 +113,13 @@ object MutationResolver {
     }
 
     private def nonAmbigiousActivations(
-      activations: Set[AxisPoint],
-      onError: Map[String, Set[AxisPoint]] => ConflictResolutionError[N],
-    ): Either[List[ConflictResolutionError[N]], Unit] = {
+      activations: Set[AxisPoint]
+    ): Either[List[AmbigiousActivationsSet[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
       if (bad.isEmpty)
         Right(())
       else
-        Left(List(onError(bad)))
+        Left(List(AmbigiousActivationsSet(bad)))
     }
 
     @tailrec
@@ -135,16 +131,16 @@ object MutationResolver {
       reachable: Set[N],
       grouped: ImmutableMultiMap[N, (Annotated[N], Node[N, V])],
       currentResult: Map[Annotated[N], Node[N, V]],
-    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
-      val out: Either[List[ConflictResolutionError[N]], Seq[Iterable[(Annotated[N], Node[N, V])]]] = roots
+    ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
+      val out: Either[List[ConflictResolutionError[N, V]], Seq[Iterable[(Annotated[N], Node[N, V])]]] = roots
         .toSeq.flatMap {
           root =>
             val node = grouped.getOrElse(root, Set.empty)
             val (mutators, definitions) = node.partition(n => n._1.isMutator)
 
             val resolved = NonEmptyList.from(definitions.toSeq) match {
-              case Some(value) =>
-                resolveConflict(invalid, activations, value)
+              case Some(conflict) =>
+                resolveConflict(invalid, activations)(conflict)
               case None =>
                 Right(Seq.empty)
             }
@@ -184,19 +180,18 @@ object MutationResolver {
     private def resolveConflict(
       invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
       activations: Set[AxisPoint],
-      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
-    ): Either[List[ConflictResolutionError[N]], Map[Annotated[N], Node[N, V]]] = {
+    )(conflict: NonEmptyList[(Annotated[N], Node[N, V])]
+    ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
 
       if (conflict.size == 1) {
         Right(Map(conflict.head))
       } else {
-        val withoutNoAxis = conflict.toSeq.filterNot(_._1.con.isEmpty)
-        if (withoutNoAxis.size == 1) {
-          Right(Map(withoutNoAxis.head))
+        val hasAxis = conflict.toList.filter(_._1.axis.nonEmpty)
+        if (hasAxis.size == 1) {
+          Right(Map(hasAxis.head))
         } else {
-          Left(List(ConflictingDefs(conflict.toSeq.toMultimap.view.mapValues(_.toSeq).toMap)))
+          Left(List(ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)))
         }
-
       }
     }
 

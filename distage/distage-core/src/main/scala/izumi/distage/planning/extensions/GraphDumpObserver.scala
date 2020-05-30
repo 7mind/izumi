@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 import distage._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
@@ -20,12 +19,6 @@ final class GraphDumpObserver(
   planAnalyzer: PlanAnalyzer
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
-
-  override def onSuccessfulStep(next: PrePlan): Unit = {}
-
-  override def onPhase00PlanCompleted(plan: PrePlan): Unit = synchronized {
-    beforeFinalization.set(null)
-  }
 
   override def onPhase05PreGC(plan: SemiPlan): Unit = synchronized {
     beforeFinalization.set(plan)

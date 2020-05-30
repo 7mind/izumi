@@ -3,7 +3,9 @@ package izumi.distage.framework.services
 import distage.ModuleBase
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.{Axis, BindingTag}
+import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.fundamentals.graphs.ConflictResolutionError
 import izumi.fundamentals.platform.strings.IzString._
 
 object ActivationInfoExtractor {
@@ -22,7 +24,7 @@ object ActivationInfoExtractor {
 
   /** @return Either conflicting axis names or a set of axis choices present in the bindings */
   def findAvailableChoicesDetailed(module: ModuleBase): Either[Map[String, Set[Axis]], ActivationInfo] = {
-    val allChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(choice) => choice }
+    val allChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(axisValue) => axisValue }
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
     val badAxis = allAxis.filter(_._2.size > 1)
     if (badAxis.isEmpty) Right(ActivationInfo(allChoices.groupBy(_.axis))) else Left(badAxis)

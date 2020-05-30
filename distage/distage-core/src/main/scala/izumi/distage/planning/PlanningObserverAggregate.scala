@@ -1,37 +1,26 @@
 package izumi.distage.planning
 
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningObserver
 
-final class PlanningObserverAggregate(planningObservers: Set[PlanningObserver]) extends PlanningObserver {
-  override def onSuccessfulStep(next: PrePlan): Unit = {
-    planningObservers.foreach(_.onSuccessfulStep(next))
-  }
-
-  override def onPhase00PlanCompleted(plan: PrePlan): Unit = {
-    planningObservers.foreach(_.onPhase00PlanCompleted(plan))
-  }
+final class PlanningObserverAggregate(
+  planningObservers: Set[PlanningObserver]
+) extends PlanningObserver {
 
   override def onPhase05PreGC(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase05PreGC(plan))
   }
-
   override def onPhase10PostGC(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase10PostGC(plan))
   }
-
   override def onPhase20Customization(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase20Customization(plan))
   }
-
   override def onPhase50PreForwarding(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase50PreForwarding(plan))
   }
-
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = {
     planningObservers.foreach(_.onPhase90AfterForwarding(finalPlan))
   }
+
 }
-
-
