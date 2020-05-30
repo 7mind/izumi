@@ -6,10 +6,10 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstru
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
-import izumi.distage.model.exceptions.{InvalidProviderMagnetModifier, SanityCheckFailedException}
+import izumi.distage.model.definition._
+import izumi.distage.model.exceptions.InvalidProviderMagnetModifier
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{DIKey, IdContract}
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
@@ -143,13 +143,13 @@ object AbstractBindingDefDSL {
     def apply[I <: T: Tag](f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(_.map(f))
 
-    def apply[I <: T: Tag](name: String)(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+    def apply[I <: T: Tag](name: ContractedId[_])(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(name)(_.map(f))
 
     def by(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       dsl._modify(DIKey.get[T])(f)
 
-    def by(name: String)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+    def by(name: ContractedId[_])(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
       dsl._modify(DIKey.get[T].named(name))(f)
     }
   }
@@ -175,8 +175,8 @@ object AbstractBindingDefDSL {
           b = b.withImplDef(implDef)
         case AddTags(tags) =>
           b = b.addTags(tags)
-        case SetId(id, idContract) =>
-          val key = DIKey.IdKey(b.key.tpe, id)(idContract)
+        case SetId(contractedId) =>
+          val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
           b = b.withTarget(key)
         case SetIdFromImplName() =>
           // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
@@ -223,7 +223,7 @@ object AbstractBindingDefDSL {
         (b, instr) =>
           instr match {
             case AddTagsAll(tags) => b.addTags(tags)
-            case SetIdAll(id, idContract) => b.withTarget(DIKey.IdKey(b.key.tpe, id)(idContract))
+            case SetIdAll(id) => b.withTarget(DIKey.TypeKey(b.key.tpe).named(id))
           }
       }
 
@@ -300,7 +300,7 @@ object AbstractBindingDefDSL {
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
-    final case class SetId[I](id: I, idContract: IdContract[I]) extends SingletonInstruction
+    final case class SetId[I](contractedId: ContractedId[I]) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
     final case class Modify[T](providerMagnetModifier: ProviderMagnet[T] => ProviderMagnet[T]) extends SingletonInstruction
@@ -309,7 +309,7 @@ object AbstractBindingDefDSL {
   sealed trait SetInstruction
   object SetInstruction {
     final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
-    final case class SetIdAll[I](id: I, idContract: IdContract[I]) extends SetInstruction
+    final case class SetIdAll[I](contractedId: ContractedId[I]) extends SetInstruction
   }
 
   sealed trait SetElementInstruction

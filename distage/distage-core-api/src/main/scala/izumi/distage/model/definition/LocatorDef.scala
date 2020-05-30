@@ -86,8 +86,8 @@ object LocatorDef {
   final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey)
     extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]]
     with BindDSLMutBase[T] {
-    def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] =
-      addOp(SetId(name, idContract))(new BindNamedDSL[T](_, key.named(name)))
+    def named(name: ContractedId[_]): BindNamedDSL[T] =
+      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
 
     override protected def bind(impl: ImplDef): BindDSLUnnamedAfterFrom[T] =
       addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_, key))
@@ -101,8 +101,8 @@ object LocatorDef {
   }
 
   final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.TypeKey) extends BindDSLMutBase[T] {
-    def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] =
-      addOp(SetId(name, idContract))(new BindNamedDSL[T](_, key.named(name)))
+    def named(name: ContractedId[_]): BindNamedDSL[T] =
+      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
   }
 
   final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.IdKey[_]) extends BindDSLMutBase[T]
@@ -116,7 +116,7 @@ object LocatorDef {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_, key))
     }
 
-    def aliased[T1 >: T: Tag](name: String)(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
+    def aliased[T1 >: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_, key))
     }
 
@@ -126,8 +126,8 @@ object LocatorDef {
   }
 
   final class SetDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T] {
-    def named[I](name: I)(implicit idContract: IdContract[I]): SetNamedDSL[T] =
-      addOp(SetIdAll(name, idContract))(new SetNamedDSL(_))
+    def named(name: ContractedId[_]): SetNamedDSL[T] =
+      addOp(SetIdAll(name))(new SetNamedDSL(_))
   }
 
   final class SetNamedDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T]
