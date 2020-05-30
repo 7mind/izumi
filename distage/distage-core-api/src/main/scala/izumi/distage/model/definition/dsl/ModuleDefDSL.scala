@@ -710,8 +710,8 @@ object ModuleDefDSL {
   final class MakeDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]]
-    with MakeDSLMutBase[T] {
+  ) extends MakeDSLMutBase[T, MakeDSL[T]]
+    with MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]] {
 
     def named(name: Identifier): MakeNamedDSL[T] = {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
@@ -721,16 +721,12 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
-    def tagged(tags: BindingTag*): MakeDSL[T] = {
-      addOp(AddTags(tags.toSet))(new MakeDSL[T](_, key))
-    }
-
-    def annotateParameter[P: Tag](name: Identifier): MakeDSL[T] = {
-      addOp(annotateParameterOp[P](name))(new MakeDSL[T](_, key))
-    }
-
-    protected[this] override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+    override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    }
+
+    override protected[this] def toSame: SingletonRef => MakeDSL[T] = {
+      new MakeDSL[T](_, key)
     }
 
   }
@@ -738,19 +734,15 @@ object ModuleDefDSL {
   final class MakeNamedDSL[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.BasicKey,
-  ) extends MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
-    with MakeDSLMutBase[T] {
+  ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
+    with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
-    def tagged(tags: BindingTag*): MakeNamedDSL[T] = {
-      addOp(AddTags(tags.toSet))(new MakeNamedDSL[T](_, key))
-    }
-
-    def annotateParameter[P: Tag](name: Identifier): MakeNamedDSL[T] = {
-      addOp(annotateParameterOp[P](name))(new MakeNamedDSL[T](_, key))
-    }
-
-    protected[this] override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+    override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
+    }
+
+    override protected[this] def toSame: SingletonRef => MakeNamedDSL[T] = {
+      new MakeNamedDSL[T](_, key)
     }
 
   }
@@ -758,7 +750,7 @@ object ModuleDefDSL {
   final class MakeDSLUnnamedAfterFrom[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLMutBase[T] {
+  ) extends MakeDSLMutBase[T, MakeDSLUnnamedAfterFrom[T]] {
 
     def named(name: Identifier): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
@@ -768,70 +760,56 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
-    def tagged(tags: BindingTag*): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(AddTags(tags.toSet))(new MakeDSLUnnamedAfterFrom[T](_, key))
+    override protected[this] def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
+      new MakeDSLUnnamedAfterFrom[T](_, key)
     }
-
-    def annotateParameter[P: Tag](name: Identifier): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(annotateParameterOp[P](name))(new MakeDSLUnnamedAfterFrom[T](_, key))
-    }
-
-    //    def modify[I <: T: Tag](f: T => I): MakeDSLUnnamedAfterFrom[T] = {
-    //      addOp(Modify[T](_.map(f)))(new MakeDSLUnnamedAfterFrom[T](_, key))
-    //    }
-    //
-    //    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLUnnamedAfterFrom[T] = {
-    //      addOp(Modify(f))(new MakeDSLUnnamedAfterFrom[T](_, key))
-    //    }
 
   }
 
   final class MakeDSLNamedAfterFrom[T](
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.BasicKey,
-  ) extends MakeDSLMutBase[T] {
-
-    def tagged(tags: BindingTag*): MakeDSLNamedAfterFrom[T] = {
-      addOp(AddTags(tags.toSet)) {
-        new MakeDSLNamedAfterFrom[T](_, key)
-      }
+  ) extends MakeDSLMutBase[T, MakeDSLNamedAfterFrom[T]] {
+    override protected[this] def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
+      new MakeDSLNamedAfterFrom[T](_, key)
     }
-
-    def annotateParameter[P: Tag](name: Identifier): MakeDSLNamedAfterFrom[T] = {
-      addOp(annotateParameterOp[P](name))(new MakeDSLNamedAfterFrom[T](_, key))
-    }
-
-//    def modify[I <: T: Tag](f: T => I): MakeDSLNamedAfterFrom[T] = {
-//      addOp(Modify[T](_.map(f)))(new MakeDSLNamedAfterFrom[T](_, key))
-//    }
-//
-//    def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): MakeDSLNamedAfterFrom[T] = {
-//      addOp(Modify(f))(new MakeDSLNamedAfterFrom[T](_, key))
-//    }
   }
 
-  final class MakeDSLAfterAlias[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.BasicKey,
-  ) extends MakeDSLMutBase[T]
-
-  sealed trait MakeDSLMutBase[T] {
+  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] {
     protected[this] def mutableState: SingletonRef
     protected[this] def key: DIKey.BasicKey
 
-    def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new MakeDSLAfterAlias[T](_, key))
+    protected[this] def toSame: SingletonRef => Self
+
+    final def tagged(tags: BindingTag*): Self = {
+      addOp(AddTags(tags.toSet))(toSame)
     }
 
-    def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): MakeDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new MakeDSLAfterAlias[T](_, key))
+    final def modify[I <: T: Tag](f: T => I): Self = {
+      addOp(Modify[T](_.map(f)))(toSame)
+    }
+
+    final def modifyBy(f: ProviderMagnet[T] => ProviderMagnet[T]): Self = {
+      addOp(Modify(f))(toSame)
+    }
+
+    final def annotateParameter[P: Tag](name: Identifier): Self = {
+      addOp(annotateParameterOp[P](name))(toSame)
+    }
+
+    final def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): Self = {
+      addOp(AliasTo(DIKey.get[T1], pos.get.position))(toSame)
+    }
+
+    final def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): Self = {
+      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(toSame)
     }
 
     protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
       newState(mutableState.append(op))
     }
 
-    protected[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
+    private[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
       Modify[T] {
         old =>
           val paramTpe = SafeType.get[P]

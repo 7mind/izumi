@@ -166,9 +166,9 @@ object AbstractBindingDefDSL {
         case _: SetImpl => 0
         case _: AddTags => 0
         case _: SetId => 0
-        case _: AliasTo => 0
         case _: Modify[_] => 1
         case _: SetIdFromImplName => 2
+        case _: AliasTo => 3
       }
       sortedOps.foreach {
         case SetImpl(implDef) =>
