@@ -166,9 +166,9 @@ object AbstractBindingDefDSL {
         case _: SetImpl => 0
         case _: AddTags => 0
         case _: SetId => 0
-        case _: SetIdFromImplName => 0
         case _: AliasTo => 0
         case _: Modify[_] => 1
+        case _: SetIdFromImplName => 2
       }
       sortedOps.foreach {
         case SetImpl(implDef) =>
@@ -179,8 +179,7 @@ object AbstractBindingDefDSL {
           val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
           b = b.withTarget(key)
         case SetIdFromImplName() =>
-          // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
-          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
+          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longName.toLowerCase))
         case AliasTo(key, pos) =>
           // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
           // `b` properties must come before first `aliased` call

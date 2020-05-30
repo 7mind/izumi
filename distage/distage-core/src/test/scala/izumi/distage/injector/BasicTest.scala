@@ -174,8 +174,13 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[TestInstanceBinding]
         .named("named.test")
         .from(TestInstanceBinding())
-      make[TestDependency0].namedByImpl // tests SetIdFromImplName
+      // test SetIdFromImplName
+      make[TestDependency0]
+        .namedByImpl
         .from[TestImpl0Good]
+      make[TestDependency0]
+        .from[TestImpl0Bad]
+        .namedByImpl
     })
 
     val injector = mkInjector()
