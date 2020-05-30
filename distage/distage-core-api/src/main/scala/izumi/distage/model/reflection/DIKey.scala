@@ -18,7 +18,7 @@ sealed trait DIKey {
 
 object DIKey {
   def apply[T: Tag]: DIKey = TypeKey(SafeType.get[T])
-  def apply[T: Tag](id: String): DIKey = DIKey.get[T].named(id)
+  def apply[T: Tag](id: ContractedId[_]): DIKey = DIKey.get[T].named(id)
 
   def get[T: Tag]: DIKey.TypeKey = DIKey.TypeKey(SafeType.get[T])
 
@@ -28,7 +28,7 @@ object DIKey {
 
   final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
     def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id, mutatorIndex)
-    def named[I](contractedId: ContractedId[I]): IdKey[I] = IdKey.fromContractedId(tpe, contractedId, mutatorIndex)
+    def named[I](contractedId: ContractedId[I]): IdKey[I] = IdKey(tpe, contractedId.id, mutatorIndex)(contractedId.contract)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
     override def toString: String = formatWithIndex(s"{type.${tpe.toString}}", mutatorIndex)
@@ -39,12 +39,6 @@ object DIKey {
     def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
     override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
-  }
-
-  object IdKey {
-    def fromContractedId[I](tpe: SafeType, contractedId: ContractedId[I], mutatorIndex: Option[Int] = None): IdKey[I] = {
-      IdKey(tpe, contractedId.id, mutatorIndex)(contractedId.contract)
-    }
   }
 
   /**

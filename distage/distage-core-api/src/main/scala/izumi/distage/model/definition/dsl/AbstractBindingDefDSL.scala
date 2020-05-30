@@ -6,10 +6,10 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstru
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ContractedId, ImplDef}
-import izumi.distage.model.exceptions.{InvalidProviderMagnetModifier, SanityCheckFailedException}
+import izumi.distage.model.definition._
+import izumi.distage.model.exceptions.InvalidProviderMagnetModifier
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{DIKey, IdContract}
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
@@ -176,7 +176,7 @@ object AbstractBindingDefDSL {
         case AddTags(tags) =>
           b = b.addTags(tags)
         case SetId(contractedId) =>
-          val key = DIKey.IdKey.fromContractedId(b.key.tpe, contractedId)
+          val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
           b = b.withTarget(key)
         case SetIdFromImplName() =>
           // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
@@ -223,7 +223,7 @@ object AbstractBindingDefDSL {
         (b, instr) =>
           instr match {
             case AddTagsAll(tags) => b.addTags(tags)
-            case SetIdAll(id) => b.withTarget(DIKey.IdKey.fromContractedId(b.key.tpe, id))
+            case SetIdAll(id) => b.withTarget(DIKey.TypeKey(b.key.tpe).named(id))
           }
       }
 

@@ -10,7 +10,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruc
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.discard
@@ -841,7 +841,7 @@ object ModuleDefDSL {
         old =>
           val idKey = SafeType.get[P]
           val newProvider = old.get.replaceKeys {
-            case DIKey.TypeKey(tpe, _) if tpe == idKey => DIKey.IdKey.fromContractedId(idKey, name)
+            case DIKey.TypeKey(tpe, _) if tpe == idKey => DIKey.TypeKey(idKey).named(name)
             case k => k
           }
           ProviderMagnet(newProvider)

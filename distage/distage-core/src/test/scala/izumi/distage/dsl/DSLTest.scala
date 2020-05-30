@@ -5,7 +5,6 @@ import izumi.distage.constructors.ClassConstructor
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
-import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
@@ -100,7 +99,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       }
 
       val injector = mkInjector()
-      val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), GCMode.NoGC)
+      val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), Roots.Everything)
       val planAnnotated = injector.plan(definitionAnnotated)
 
       assert(planAnnotated.definition.bindings.nonEmpty)
