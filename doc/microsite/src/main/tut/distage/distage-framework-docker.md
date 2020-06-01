@@ -32,7 +32,7 @@ Use of `distage-framework-docker` generally follows:
 
 First, the required imports:
 
-```scala mdoc:to-string
+```scala mdoc:silent
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker
 import izumi.distage.model.definition.ModuleDef
@@ -49,7 +49,6 @@ Example nginx container definition:
 object NginxDocker extends ContainerDef {
   val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(80)
 
-
   override def config: Config = {
     Config(
       image = "nginx:stable",
@@ -63,7 +62,9 @@ object NginxDocker extends ContainerDef {
 
 To use this container a module that declares how to make this component is required:
 
-```scala mdoc:to-string
+##### `make`
+
+```scala mdoc:silent
 class NginxDockerModule[F[_]: TagK] extends ModuleDef {
   make[NginxDocker.Container].fromResource {
     NginxDocker.make[F]
@@ -71,10 +72,15 @@ class NginxDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
+
+##### `modifyConfig`
+
 Using `modifyConfig` a module can modify the configuration of a container. The modifier is
 instantiated to a `ProviderMagnet` which will summon any additional dependencies.
 
-```scala mdoc:to-string
+For example, To change the user of the nginx container:
+
+```scala mdoc:silent
 class NginxRunAsAdminModule[F[_]: TagK] extends ModuleDef {
   make[NginxDocker.Container].fromResource {
     NginxDocker.make[F].modifyConfig { () => (old: NginxDocker.Config) =>
@@ -84,10 +90,14 @@ class NginxRunAsAdminModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-```scala mdoc:to-string
+Suppose the `HostHtmlRoot` is a component provided by the application modules. This path
+can be added to the nginx containers mounts by adding this to the additional dependencies of
+the provider magnet:
+
+```scala mdoc:silent
 case class HostHtmlRoot(path: String)
 
-class NeverReuseNginxDockerModule[F[_]: TagK] extends ModuleDef {
+class NginxWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
   make[NginxDocker.Container].fromResource {
     NginxDocker.make[F].modifyConfig {
       (hostRoot: HostHtmlRoot) =>
@@ -99,8 +109,35 @@ class NeverReuseNginxDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-- `dependOnDocker` - adds a dependency on a docker container. distage ensures the requested container
-  is available before the dependent is provided.
+##### `dependOnDocker`
+
+`dependOnDocker` adds a dependency on a given docker container. distage ensures the requested
+  container is available before the dependent is provided.
+
+Suppose an integration under test requires a nginx plus memcached system. One option is to
+use `dependOnDocker` to declare the nginx container depends on the memcached container:
+
+```scala mdoc:silent
+
+object MemcachedDocker extends ContainerDef {
+  val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(11211)
+
+  override def config: Config = {
+    Config(
+      image = "memcached",
+      ports = Seq(primaryPort)
+    )
+  }
+}
+
+class NginxWithMemcachedModule[F[_]: TagK] extends ModuleDef {
+  make[NginxDocker.Container].fromResource {
+    NginxDocker.make[F].dependOnDocker(MemcachedDocker)
+  }
+}
+```
+
+Another example of dependencies between containers is in "Docker Container Networks" below.
 
 #### Include `DockerSupportModule`
 
@@ -170,7 +207,64 @@ ports are:
 
 ### Docker Container Networks
 
-(TODO: `ContainerNetworkDef`)
+`distage-framework-docker` can also automatically manage
+[docker networks](https://docs.docker.com/engine/reference/commandline/network/).
+
+To connect containers to the same docker network use a `ContainerNetworkDef`:
+
+1. Define the `ContainerNetworkDef`
+2. Add the network to each container's config.
+
+This will ensure the containers are all connected to the network. Assuming no reuse, distage will the
+create the required network and add each container configured to use that network.
+
+#### Define a `ContainerNetworkDef`
+
+A minimal `ContainerNetworkDef` uses the default configuration.
+
+```mdoc:silent
+object ClusterNetwork extends ContainerNetworkDef {
+  override def config: Config = Config()
+}
+```
+
+This object identifies the network.
+
+#### Add to Container Config
+
+A container will be connected to all networks in the `networks` of the `config`. The method
+`connectToNetwork` adds a dependency on the network defined by a `ContainerNetworkDef`.
+
+For example:
+
+```mdoc:silent
+class NginxWithMemcachedOnNetworkModule[F[_]: TagK] extends ModuleDef {
+  make[ClusterNetwork.Network].fromResource {
+    ClusterNetwork.make[F]
+  }
+  make[MemcachedDocker.Container].fromResource {
+    NginxDocker.make[F].connectToNetwork(ClusterNetwork)
+  }
+  make[NginxDocker.Container].fromResource {
+    NginxDocker.make[F].dependOnDocker(MemcachedDocker).connectToNetwork(ClusterNetwork)
+  }
+}
+```
+
+The use of `connectToNetwork` automatically adds a dependency on `ClusterNetwork.Network` to each
+container.
+
+#### Reuse
+
+Container networks, like containers, will be reused by default. If there is an existing network
+that matches a definition then that network will be used. This can be disabled by setting the
+`reuse` configuration to false:
+
+```mdoc:silent
+object FreshClusterNetwork extends ContainerNetworkDef {
+  override def config: Config = Config(reuse = false)
+}
+```
 
 ### Docker Client Configuration
 
@@ -204,7 +298,7 @@ class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
       Docker.ClientConfig(
         readTimeoutMs = 10000,
         connectTimeoutMs = 10000,
-        allowReuse = true,
+        allowReuse = false,
         useRemote = true,
         useRegistry = true,
         remote = Option {
@@ -231,7 +325,6 @@ class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
 
 ### Usage in Integration Tests
 
-(an example using the above nginx http containerdef)
 
 ### Reuse
 
@@ -261,7 +354,7 @@ services under
 [`izumi.distage.docker.examples`](https://github.com/7mind/izumi/tree/develop/distage/distage-framework-docker/src/main/scala/izumi/distage/docker/examples)
 namespace.
 
-```scala mdoc:to-string
+```scala mdoc:silent
 import izumi.distage.docker.examples.PostgresDocker
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
@@ -311,3 +404,4 @@ The `DockerSupportModule` was not included in the application modules. The compo
 
 - Introduced in [release 0.9.13](https://github.com/7mind/izumi/releases/tag/v0.9.13)
 - An [example PR](https://github.com/7mind/distage-livecode/pull/2/files) showing how to use them.
+- The `distage-example` [PostgresDockerModule](https://github.com/7mind/distage-example/blob/develop/src/test/scala/leaderboard/PostgresDockerModule.scala).
