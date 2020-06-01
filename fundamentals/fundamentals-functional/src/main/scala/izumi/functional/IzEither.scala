@@ -3,6 +3,27 @@ package izumi.functional
 import scala.collection.compat._
 
 trait IzEither {
+
+  implicit final class EitherBiFoldLeft[L, R, Col[x] <: Iterable[x]](s: Col[R]) {
+    def biFoldLeft[A](z: A)(op: (A, R) => Either[List[L], A]): Either[List[L], A] = {
+      val i = s.iterator
+      var acc: Either[List[L], A] = Right(z)
+
+      while (i.hasNext && acc.isRight) {
+        val nxt = i.next()
+        (acc, nxt) match {
+          case (Right(a), n) =>
+            acc = op(a, n)
+          case (o, _) =>
+            o
+        }
+      }
+
+      acc
+    }
+  }
+
+
   implicit final class EitherBiAggregate[L, R, Col[x] <: Iterable[x]](result: Col[Either[List[L], R]]) {
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
       val bad = result.collect {
@@ -38,7 +59,7 @@ trait IzEither {
   }
 
   implicit final class EitherBiSplit[L, R, Col[x] <: Iterable[x]](e: Col[Either[L, R]]) {
-    def lrPartition(implicit bl: Factory[L, Col[L]],  br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
+    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
       val left = e.collect {
         case Left(l) => l
       }
@@ -66,6 +87,7 @@ trait IzEither {
       Right(None)
     }
   }
+
 }
 
 object IzEither extends IzEither
