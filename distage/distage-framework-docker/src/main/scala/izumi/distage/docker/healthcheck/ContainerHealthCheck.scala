@@ -46,4 +46,9 @@ object ContainerHealthCheck {
   object VerifiedContainerConnectivity {
     def empty: VerifiedContainerConnectivity = VerifiedContainerConnectivity(Map.empty)
   }
+
+  def ignore[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Ignored
+  def portCheck[T]: ContainerHealthCheck[T] = new TCPContainerHealthCheck[T]
+  def postgreSqlProtocolCheck[T]: ContainerHealthCheck[T] = portCheck ++ new PostgreSqlProtocolCheck[T]
+  def httpProtocolCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck ++ new HttpProtocolCheck[T](port)
 }
