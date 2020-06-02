@@ -86,7 +86,7 @@ object Docker {
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkTCPOnly[T],
+    healthCheck: ContainerHealthCheck[T] = healthcheck.checkTCPOnly[T],
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
   )
 

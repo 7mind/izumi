@@ -3,7 +3,7 @@ package izumi.distage.docker.healthcheck
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
-import izumi.distage.docker.healthcheck.chain.{ChainedContainerHealthCheck, PostgreSqlProtocolCheck}
+import izumi.distage.docker.healthcheck.chain.{ChainedContainerHealthCheck, HttpProtocolCheck, PostgreSqlProtocolCheck}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.logstage.api.IzLogger
 
@@ -46,8 +46,4 @@ object ContainerHealthCheck {
   object VerifiedContainerConnectivity {
     def empty: VerifiedContainerConnectivity = VerifiedContainerConnectivity(Map.empty)
   }
-
-  def dontCheckPorts[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Ignored
-  def checkTCPOnly[T]: ContainerHealthCheck[T] = new TCPContainerHealthCheck[T]
-  def postgreSqlProtocolCheck[T]: ChainedContainerHealthCheck[T] = new PostgreSqlProtocolCheck[T]
 }
