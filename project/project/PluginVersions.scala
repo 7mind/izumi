@@ -9,6 +9,7 @@ object PV {
   val sbt_assembly = "0.14.9"
 
   val scala_js_version = "1.1.0"
+  val scala_js_dependencies = "1.0.0"
   val scala_native_version = "0.4.0-M2"
   val crossproject_version = "1.0.0"
   val scalajs_bundler_version = "0.18.0"
