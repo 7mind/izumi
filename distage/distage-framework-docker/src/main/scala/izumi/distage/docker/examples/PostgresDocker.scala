@@ -2,6 +2,7 @@ package izumi.distage.docker.examples
 
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
@@ -13,6 +14,7 @@ object PostgresDocker extends ContainerDef {
       image = "library/postgres:12.2",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
+      healthCheck = ContainerHealthCheck.checkTCPOnly[Tag].combine(ContainerHealthCheck.postgreSqlProtocolCheck),
     )
   }
 }

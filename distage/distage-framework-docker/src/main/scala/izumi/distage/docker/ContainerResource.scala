@@ -99,7 +99,7 @@ case class ContainerResource[F[_], T](
             container
           }
 
-        case Right(status: HealthCheckResult.PortStatus) =>
+        case Right(status: HealthCheckResult.AvailableOnPorts) =>
           if (status.requiredPortsAccessible) {
             val out = container.copy(availablePorts = status.availablePorts)
             F.maybeSuspend {

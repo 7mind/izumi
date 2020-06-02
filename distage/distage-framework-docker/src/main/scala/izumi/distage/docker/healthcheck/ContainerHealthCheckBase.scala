@@ -29,7 +29,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
 
   }
 
-  protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]]): HealthCheckResult.PortStatus
+  protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]]): HealthCheckResult.AvailableOnPorts
 
   protected def findContainerInternalCandidates[T <: DockerPort](container: DockerContainer[Tag], ports: Map[T, NonEmptyList[ServicePort]]): Seq[PortCandidate[T]] = {
     ports.toSeq.flatMap {
@@ -64,12 +64,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
 }
 
 object ContainerHealthCheckBase {
-
-
   case class GoodPort(port: DockerPort, maybeAvailable: AvailablePort)
-
   case class PortCandidate[+T <: DockerPort](port: T, maybeAvailable: AvailablePort)
-
   case class FailedPort(port: DockerPort, candidate: PortCandidate[DockerPort], issue: Option[Throwable])
-
 }
