@@ -26,9 +26,11 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework-docker" % "$izumi.
 
 Use of `distage-framework-docker` generally follows:
 
-- creating `ContainerDef`s for the containers the application requires
-- declaring a `ModuleDef` that declares the container component
-- including the `DockerSupportModule` in the application's modules
+- Create @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef)s for the containers the
+  application requires
+- Create a module that declares the container component
+- Include the @scaladoc[`DockerSupportModule`](izumi.distage.docker.modules.DockerSupportModule) in
+  the application's modules
 
 First, the required imports:
 
@@ -41,7 +43,16 @@ import izumi.reflect.TagK
 
 #### Create a `ContainerDef`
 
-The `ContainerDef` is a trait that provides a high level interface for defining a docker container resource.
+The @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef) is a trait used to define a docker
+container. Extend this trait and provide and implementation of the `config` method.
+
+The required parameters of `Config` are:
+
+- `image` - the docker image to use
+- `ports` - ports to map on the docker container
+
+See @scaladoc[`Docker.ContainerConfig[T]`](izumi.distage.docker.Docker.ContainerConfig) for
+additional parameters.
 
 Example nginx container definition:
 
@@ -60,7 +71,7 @@ object NginxDocker extends ContainerDef {
 
 #### Declare Container Components
 
-To use this container a module that declares how to make this component is required:
+To use this container a module that declares this component is required:
 
 ##### `make`
 
@@ -72,11 +83,13 @@ class NginxDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-
 ##### `modifyConfig`
 
-Using `modifyConfig` a module can modify the configuration of a container. The modifier is
-instantiated to a `ProviderMagnet` which will summon any additional dependencies.
+The @scaladoc[`DockerProviderExtensions`](izumi.distage.docker.DockerContainer.DockerProviderExtensions)
+provides additional APIs for modiying the container definition.
+
+Use `modifyConfig` to modify the configuration of a container. The modifier is instantiated to a
+`ProviderMagnet` which will summon any additional dependencies.
 
 For example, To change the user of the nginx container:
 
@@ -141,16 +154,6 @@ Another example of dependencies between containers is in "Docker Container Netwo
 
 #### Include `DockerSupportModule`
 
-```scala mdoc:invisible
-
-val _dockerSupportModuleCheck = {
-  import izumi.fundamentals.platform.functional.Identity
-  import izumi.distage.docker.modules.DockerSupportModule
-  (DockerSupportModule, _: DockerSupportModule[Identity])
-}
-
-```
-
 Include the `izumi.distage.docker.modules.DockerSupportModule` module in the application
 modules. This module contains required component declarations and loads the `docker-reference.conf`.
 Container resources depend on these components.
@@ -179,6 +182,7 @@ object CorrectlyConfiguredApplication {
     include(new CatsDIEffectModule {})
     include(new LogIOModule[IO](StaticLogRouter.instance, false))
   }
+
   def run() = Injector().produceGetF[IO, NginxDocker.Container](module).use { _ =>
      IO("success")
   }
@@ -210,17 +214,19 @@ ports are:
 `distage-framework-docker` can also automatically manage
 [docker networks](https://docs.docker.com/engine/reference/commandline/network/).
 
-To connect containers to the same docker network use a `ContainerNetworkDef`:
+To connect containers to the same docker network use a
+@scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetworkDef):
 
-1. Define the `ContainerNetworkDef`
+1. Create a `ContainerNetworkDef`
 2. Add the network to each container's config.
 
-This will ensure the containers are all connected to the network. Assuming no reuse, distage will the
-create the required network and add each container configured to use that network.
+This will ensure the containers are all connected to the network. Assuming no reuse, distage will
+create the required network and add each container configured to that network.
 
-#### Define a `ContainerNetworkDef`
+#### Create a `ContainerNetworkDef`
 
-A minimal `ContainerNetworkDef` uses the default configuration.
+A minimal @scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetworkDef) uses the default
+configuration.
 
 ```mdoc:silent
 object ClusterNetwork extends ContainerNetworkDef {
@@ -228,7 +234,8 @@ object ClusterNetwork extends ContainerNetworkDef {
 }
 ```
 
-This object identifies the network.
+By default, this object identifies the network. The tag type uniquely identifies the network within
+the application. Any created network will be labeled with this name as well.
 
 #### Add to Container Config
 
@@ -254,11 +261,11 @@ class NginxWithMemcachedOnNetworkModule[F[_]: TagK] extends ModuleDef {
 The use of `connectToNetwork` automatically adds a dependency on `ClusterNetwork.Network` to each
 container.
 
-#### Reuse
+#### Container Network Reuse
 
-Container networks, like containers, will be reused by default. If there is an existing network
-that matches a definition then that network will be used. This can be disabled by setting the
-`reuse` configuration to false:
+Container networks, like containers, will be reused by default. If there is an existing network that
+matches a definition then that network will be used. This can be disabled by setting the `reuse`
+configuration to false:
 
 ```mdoc:silent
 object FreshClusterNetwork extends ContainerNetworkDef {
@@ -266,10 +273,14 @@ object FreshClusterNetwork extends ContainerNetworkDef {
 }
 ```
 
+For an existing network to be reused the config and object name at time of creation must be the same
+as the current config and object.
+
 ### Docker Client Configuration
 
-The `Docker.ClientConfig` is the configuration of the docker client used. Including the
-module `DockerSupportModule` will provide a `Docker.ClientConfig`.
+The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.Docker.ClientConfig) is the configuration
+of the docker client used. Including the module `DockerSupportModule` will provide a
+`Docker.ClientConfig`.
 
 There are two primary mechanisms to change the `Docker.ClientConfig` provided by
 `DockerSupportModule`:
@@ -323,17 +334,24 @@ class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
 }
 ```
 
-### Usage in Integration Tests
-
-
-### Reuse
+### Container Reuse
 
 By default, acquiring a container resource does not always start a fresh container. Likewise, on
 releasing the resource the container will not be destroyed.  When a container resource is acquired
-the docker system is inspected to determine if an appropriate container is already executing. If a
+the docker system is inspected to determine if a matching container is already executing. If a
 matching container is already running this container is referenced by the
 `ContainerResource`. Otherwise a fresh container is started.  In both cases the acquired
-`ContainerResource` will have passed any configured health checks.
+`ContainerResource` will have passed configured health checks.
+
+#### Matching Containers for Reuse
+
+For an existing container to be reused, all the following must be true:
+
+- The current client config has `allowReuse == true`
+- The container config has `reuse == true`
+- The running container was created for reuse
+- The running container uses the same image as the container config.
+- All ports requested in the container config must be mapped for the running container
 
 #### Configuring Reuse
 
@@ -343,6 +361,8 @@ The `ContainerDef.Config.reuse` should be false to disable reuse for a specific 
 #### Improving Reuse Performance
 
 When using reuse the cost of inspecting the docker system can be avoided using memoization roots.
+
+### Usage in Integration Tests
 
 ### Examples
 
