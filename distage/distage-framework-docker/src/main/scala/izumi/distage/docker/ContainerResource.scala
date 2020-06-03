@@ -148,9 +148,14 @@ case class ContainerResource[F[_], T](
             .iterator.flatMap {
               c =>
                 val inspection = client.inspectContainerCmd(c.getId).exec()
+                val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
+                val missedNetworks = config.networks.filterNot(n => networks.contains(n.name))
                 mapContainerPorts(inspection) match {
                   case Left(value) =>
                     logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                    Seq.empty
+                  case _ if missedNetworks.nonEmpty =>
+                    logger.info(s"Container ${c.getId} missing networks $missedNetworks so will not be reused")
                     Seq.empty
                   case Right(value) =>
                     Seq((c, inspection, value))
