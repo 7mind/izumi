@@ -200,7 +200,7 @@ final class IzStringIterable[A](private val ss: Iterable[String]) extends AnyVal
 final class IzStringBytes(private val s: Iterable[Byte]) extends AnyVal {
   def toHex: String = {
     s.foldLeft(""){
-      case (str, b) => str ++ String.format("%02x", b)
+      case (str, b) => str ++ String.format("%02x", Byte.box(b))
     }.toUpperCase()
   }
 }

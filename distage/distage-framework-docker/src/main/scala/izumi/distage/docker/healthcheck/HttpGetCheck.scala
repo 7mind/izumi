@@ -2,7 +2,7 @@ package izumi.distage.docker.healthcheck
 
 import java.net.{HttpURLConnection, URL}
 
-import izumi.distage.docker.Docker.{AvailablePort, DockerPort}
+import izumi.distage.docker.Docker.DockerPort
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger
