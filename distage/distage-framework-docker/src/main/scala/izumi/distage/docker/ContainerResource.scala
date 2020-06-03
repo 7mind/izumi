@@ -93,30 +93,28 @@ case class ContainerResource[F[_], T](
             Left(t)
         }
       }.flatMap {
-        case Right(HealthCheckResult.Ignored) =>
+        case Right(HealthCheckResult.Available) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
             container
           }
 
-        case Right(status: HealthCheckResult.PortStatus) =>
-          if (status.requiredPortsAccessible) {
-            val out = container.copy(availablePorts = status.availablePorts)
-            F.maybeSuspend {
-              logger.info(s"Looks good: ${out -> "container"}")
-              out
-            }
-          } else {
-            val max = config.healthCheckMaxAttempts
-            val next = attempt + 1
-            if (max >= next) {
-              logger.debug(s"Healthcheck uncertain, retrying $next/$max on $container...")
-              P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
-            } else {
-              F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
-            }
+        case Right(status: HealthCheckResult.AvailableOnPorts) if status.requiredPortsAccessible =>
+          val out = container.copy(availablePorts = status.availablePorts)
+          F.maybeSuspend {
+            logger.info(s"Looks good: ${out -> "container"}")
+            out
           }
 
+        case Right(_) =>
+          val max = config.healthCheckMaxAttempts
+          val next = attempt + 1
+          if (max >= next) {
+            logger.debug(s"Healthcheck uncertain, retrying $next/$max on $container...")
+            P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
+          } else {
+            F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
+          }
         case Left(t) =>
           F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
       }

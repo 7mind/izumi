@@ -2,6 +2,7 @@ package izumi.distage.docker.examples
 
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
@@ -12,7 +13,8 @@ object ElasticMQDocker extends ContainerDef {
     Config(
       image = "softwaremill/elasticmq:0.15.7",
       ports = Seq(primaryPort),
-      entrypoint = Seq("sh", "-c", s"/opt/docker/bin/elasticmq-server -Dnode-address.port=$$${primaryPort.toEnvVariable}")
+      entrypoint = Seq("sh", "-c", s"/opt/docker/bin/elasticmq-server -Dnode-address.port=$$${primaryPort.toEnvVariable}"),
+      healthCheck = ContainerHealthCheck.httpGetCheck(primaryPort)
     )
   }
 }

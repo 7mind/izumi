@@ -197,9 +197,17 @@ final class IzStringIterable[A](private val ss: Iterable[String]) extends AnyVal
   }
 }
 
+final class IzStringBytes(private val s: Iterable[Byte]) extends AnyVal {
+  def toHex: String = {
+    s.foldLeft(""){
+      case (str, b) => str ++ String.format("%02x", Byte.box(b))
+    }.toUpperCase()
+  }
+}
 
 object IzString {
   implicit def toRichString(s: String): IzString = new IzString(s)
   implicit def toRichIterable[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
   implicit def toRichStringIterable[A](s: Iterable[String]): IzStringIterable[A] = new IzStringIterable(s)
+  implicit def toRichStringBytes[A](s: Iterable[Byte]): IzStringBytes = new IzStringBytes(s)
 }

@@ -14,7 +14,7 @@ import izumi.logstage.api.IzLogger
 
 class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
 
-  override protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]]): HealthCheckResult.PortStatus = {
+  override protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]]): HealthCheckResult.AvailableOnPorts = {
     val check = new PortCheck(container.containerConfig.portProbeTimeout)
 
     val dockerHostCandidates = findDockerHostCandidates(container, tcpPorts)
@@ -62,7 +62,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
         .toMap
     )
 
-    HealthCheckResult.PortStatus(
+    HealthCheckResult.AvailableOnPorts(
       available,
       errors,
       udpPorts.keySet.map(p => p: DockerPort),
