@@ -54,16 +54,17 @@ The required parameters of `Config` are:
 See @scaladoc[`Docker.ContainerConfig[T]`](izumi.distage.docker.Docker.ContainerConfig) for
 additional parameters.
 
-Example nginx container definition:
+Example [postgres](https://hub.docker.com/_/postgres/) container definition:
 
 ```scala mdoc:silent
-object NginxDocker extends ContainerDef {
-  val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(80)
+object PostgresDocker extends ContainerDef {
+  val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(5432)
 
   override def config: Config = {
     Config(
-      image = "nginx:stable",
-      ports = Seq(primaryPort)
+      image = "library/postgres:12.2",
+      ports = Seq(primaryPort),
+      env = Map("POSTGRES_PASSWORD" -> "postgres"),
     )
   }
 }
@@ -76,9 +77,9 @@ To use this container a module that declares this component is required:
 ##### `make`
 
 ```scala mdoc:silent
-class NginxDockerModule[F[_]: TagK] extends ModuleDef {
-  make[NginxDocker.Container].fromResource {
-    NginxDocker.make[F]
+class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F]
   }
 }
 ```
@@ -91,32 +92,32 @@ provides additional APIs for modiying the container definition.
 Use `modifyConfig` to modify the configuration of a container. The modifier is instantiated to a
 `ProviderMagnet` which will summon any additional dependencies.
 
-For example, To change the user of the nginx container:
+For example, To change the user of the postgres container:
 
 ```scala mdoc:silent
-class NginxRunAsAdminModule[F[_]: TagK] extends ModuleDef {
-  make[NginxDocker.Container].fromResource {
-    NginxDocker.make[F].modifyConfig { () => (old: NginxDocker.Config) =>
+class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F].modifyConfig { () => (old: PostgresDocker.Config) =>
       old.copy(user = Option("admin"))
     }
   }
 }
 ```
 
-Suppose the `HostHtmlRoot` is a component provided by the application modules. This path
-can be added to the nginx containers mounts by adding this to the additional dependencies of
-the provider magnet:
+Suppose the `HostPostgresData` is a component provided by the application modules. This path can be
+added to the postgres containers mounts by adding to the additional dependencies of the provider
+magnet:
 
 ```scala mdoc:silent
-case class HostHtmlRoot(path: String)
+case class HostPostgresData(path: String)
 
-class NginxWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
-  make[NginxDocker.Container].fromResource {
-    NginxDocker.make[F].modifyConfig {
-      (hostRoot: HostHtmlRoot) =>
-        (old: NginxDocker.Config) =>
-          val htmlMount = Docker.Mount(hostRoot.path, "/usr/share/nginx/html")
-          old.copy(mounts = old.mounts :+ htmlMount)
+class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F].modifyConfig {
+      (hostPostgresData: HostPostgresData) =>
+        (old: PostgresDocker.Config) =>
+          val dataMount = Docker.Mount(hostPostgresData.path, "/var/lib/postgresql/data")
+          old.copy(mounts = old.mounts :+ dataMount)
     }
   }
 }
@@ -125,27 +126,32 @@ class NginxWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 ##### `dependOnDocker`
 
 `dependOnDocker` adds a dependency on a given docker container. distage ensures the requested
-  container is available before the dependent is provided.
+container is available before the dependent is provided.
 
-Suppose an integration under test requires a nginx plus memcached system. One option is to
-use `dependOnDocker` to declare the nginx container depends on the memcached container:
+Suppose the system under test is a sync from postgres to elasticsearch. One option is to use
+`dependOnDocker` to declare the elasticsearch container depends on the postgres container:
 
 ```scala mdoc:silent
 
-object MemcachedDocker extends ContainerDef {
-  val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(11211)
+object ElasticSearchDocker extends ContainerDef {
+  val ports = Seq(9200, 9300)
 
   override def config: Config = {
     Config(
-      image = "memcached",
-      ports = Seq(primaryPort)
+      image = "docker.elastic.co/elasticsearch/elasticsearch:7.7.0",
+      ports = ports.map(Docker.DockerPort.TCP(_)),
+      env = Map("discovery.type" -> "single-node")
     )
   }
 }
 
-class NginxWithMemcachedModule[F[_]: TagK] extends ModuleDef {
-  make[NginxDocker.Container].fromResource {
-    NginxDocker.make[F].dependOnDocker(MemcachedDocker)
+class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F]
+  }
+
+  make[ElasticSearchDocker.Container].fromResource {
+    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker)
   }
 }
 ```
@@ -155,10 +161,10 @@ Another example of dependencies between containers is in "Docker Container Netwo
 #### Include `DockerSupportModule`
 
 Include the `izumi.distage.docker.modules.DockerSupportModule` module in the application
-modules. This module contains required component declarations and loads the `docker-reference.conf`.
-Container resources depend on these components.
+modules. This module contains required component declarations and initializes the
+`Docker.ClientConfig`.
 
-```scala mdoc:to-string
+```scala mdoc:silent
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.Injector
@@ -168,51 +174,187 @@ import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.logstage.api.routing.StaticLogRouter
 import izumi.logstage.distage.LogIOModule
 
-object CorrectlyConfiguredApplication {
+val distageFrameworkModules = new ModuleDef {
+  // required for docker
+  include(new DockerSupportModule[IO])
 
-  val module = new ModuleDef {
-    // our container module
-    include(new NginxDockerModule[IO])
+  // standard distage framework modules
+  include(AppConfigModule(ConfigFactory.defaultApplication))
+  include(new CatsDIEffectModule {})
+  include(new LogIOModule[IO](StaticLogRouter.instance, false))
+}
+```
 
-    // include the required docker support module
-    include(new DockerSupportModule[IO])
+The required framework modules plus `PostgresDockerModule` is sufficient to depend on docker
+containers:
 
-    // standard support modules
-    include(AppConfigModule(ConfigFactory.defaultApplication))
-    include(new CatsDIEffectModule {})
-    include(new LogIOModule[IO](StaticLogRouter.instance, false))
+```scala mdoc:to-string
+def minimalExample = {
+  val applicationModules = new ModuleDef {
+    include(new PostgresDockerModule[IO])
+    include(distageFrameworkModules)
   }
 
-  def run() = Injector().produceGetF[IO, NginxDocker.Container](module).use { _ =>
-     IO("success")
+  Injector().produceGetF[IO, PostgresDocker.Container](applicationModules).use { container =>
+    val port = container.availablePorts.first(PostgresDocker.primaryPort)
+    IO(println(s"postgres is available on port ${port}"))
   }
 }
 
-CorrectlyConfiguredApplication.run().unsafeRunSync()
+minimalExample.unsafeRunSync()
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a docker container
 dependent resource will fail with a `izumi.distage.model.exceptions.ProvisioningException`.
 
+### Usage in Integration Tests
+
+A common use case is using docker containers to provide service implementations for integration test.
+Such as using a postgres container for verifying an application that uses a postgres database.
+Distage container resources are easy to integrate as providers.
+
+Consider the example application below. This application is written to depend on a
+[doobie](https://tpolecat.github.io/doobie/) `Transactor`. Which is constructed from a
+`PostgresServerConfig`.
+
+```scala mdoc:silent
+import doobie._
+import doobie.implicits._
+import java.util.Date
+
+class PostgresExampleApp(xa: Transactor[IO]) {
+  def plusOne(a: Int): IO[Int] =
+    sql"select ${a} + 1".query[Int].unique.transact(xa)
+
+  val run: IO[Unit] = plusOne(1) flatMap { v => IO(println(s"1 + 1 = ${v}.")) }
+}
+
+// the postgres configuration used to construct the Transactor
+case class PostgresServerConfig(
+  host: String,
+  port: Int,
+  database: String,
+  username: String,
+  password: String
+)
+
+class TransactorFromConfigModule extends ModuleDef {
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  implicit val contextShift = IO.contextShift(global)
+  implicit val timer = IO.timer(global)
+
+  make[Transactor[IO]].from { config: PostgresServerConfig =>
+    Transactor.fromDriverManager[IO](
+      "org.postgresql.Driver",
+      s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
+      config.username,
+      config.password
+    )
+  }
+}
+
+```
+
+That code is agnostic of environment: Provided a `PostgresServerConfig` the `Transactor` needed by
+`PostgresExampleApp` can be constructed.
+
+An integration test would use a module that provides the `PostgresServerConfig` from a
+`PostgresDocker.Container`:
+
+```scala mdoc:silent
+
+class IntegUsingDockerModule extends ModuleDef {
+  make[PostgresServerConfig].from {
+    container: PostgresDocker.Container => {
+      val knownAddress = container.availablePorts.first(PostgresDocker.primaryPort)
+      PostgresServerConfig(knownAddress.hostV4,
+                           knownAddress.port,
+                           "postgres",
+                           "postgres",
+                           "postgres")
+    }
+  }
+
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[IO]
+  }
+}
+```
+
+Using `distage-testkit` the test would be written like:
+
+```scala mdoc:silent
+import izumi.distage.testkit.scalatest.DistageSpecScalatest
+import distage.DIKey
+
+class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] {
+
+  override def config = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      include(new TransactorFromConfigModule)
+      include(new IntegUsingDockerModule)
+      include(distageFrameworkModules)
+      make[PostgresExampleApp]
+    },
+    memoizationRoots = Set(
+      DIKey[PostgresServerConfig]
+    )
+  )
+  "distage docker" should {
+    "support integ tests using containers" in { app: PostgresExampleApp =>
+      app.plusOne(1) map { v: Int => assert(v == 2) }
+    }
+  }
+}
+```
+
+Typically, this would be run by the test runner. For completeness, the example can be run directly
+using:
+
+```scala mdoc:to-string
+def postgresDockerIntegExample = {
+  val applicationModules = new ModuleDef {
+    include(new TransactorFromConfigModule)
+    include(new IntegUsingDockerModule)
+    include(distageFrameworkModules)
+    make[PostgresExampleApp]
+  }
+
+  Injector().produceGetF[IO, PostgresExampleApp](applicationModules).use { app =>
+    app.run
+  }
+}
+
+postgresDockerIntegExample.unsafeRunSync()
+```
+
 ### Docker Container Environment
 
-The docker container's ports are remapped to fresh ports on the docker host. The allocated
-ports are:
+The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker.ContainerConfig)
+defines the container environment. Of note are the environment variables, command and working
+directory:
 
-- Added to the container as the environment variables of the pattern `DISTAGE_PORT_<proto>_<originalPort>`. The
-  value is the integer port number.
+- `env: Map[String, String]` - environment variables to setup in container
+- `cmd: Seq[String]` - command of entrypoint
+- `cwd: Option[String]` - working directory in container
 
-- Properties of `DockerContainer`:
-    - `connectivity.dockerPorts` - the port information prior to any health checks
-    - `availablePorts.availablePorts` - the port information that the health checks verified
+Once defined in a `ContainerDef` the config may be modified. See `modifyConfig` above for one
+mechanism. The container ports will also add to the configured environment variables:
 
-- Added to the docker system as labels of the pattern `distage.port.<proto>.<originalPort>`. The
-  value is the integer port number.
+- `DISTAGE_PORT_<proto>_<originalPort>` are the host ports allocated for the container
+
+
+### Docker Container Metadata
+
+The host ports allocated for the container are also added to the container metadata as labels.
+The are labels of the pattern `distage.port.<proto>.<originalPort>`. The value is the integer port
+number.
 
 ### Docker Container Networks
 
-`distage-framework-docker` can also automatically manage
-[docker networks](https://docs.docker.com/engine/reference/commandline/network/).
+`distage-framework-docker` can automatically manage [docker
+networks](https://docs.docker.com/engine/reference/commandline/network/).
 
 To connect containers to the same docker network use a
 @scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetworkDef):
@@ -229,7 +371,7 @@ A minimal @scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetwork
 configuration.
 
 ```mdoc:silent
-object ClusterNetwork extends ContainerNetworkDef {
+object TestClusterNetwork extends ContainerNetworkDef {
   override def config: Config = Config()
 }
 ```
@@ -245,20 +387,20 @@ A container will be connected to all networks in the `networks` of the `config`.
 For example:
 
 ```mdoc:silent
-class NginxWithMemcachedOnNetworkModule[F[_]: TagK] extends ModuleDef {
-  make[ClusterNetwork.Network].fromResource {
-    ClusterNetwork.make[F]
+class TestClusterNetworkModule[F[_]: TagK] extends ModuleDef {
+  make[TestClusterNetwork.Network].fromResource {
+    TestClusterNetwork.make[F]
   }
-  make[MemcachedDocker.Container].fromResource {
-    NginxDocker.make[F].connectToNetwork(ClusterNetwork)
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F].connectToNetwork(TestClusterNetwork)
   }
-  make[NginxDocker.Container].fromResource {
-    NginxDocker.make[F].dependOnDocker(MemcachedDocker).connectToNetwork(ClusterNetwork)
+  make[ElasticSearchDocker.Container].fromResource {
+    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker).connectToNetwork(TestClusterNetwork)
   }
 }
 ```
 
-The use of `connectToNetwork` automatically adds a dependency on `ClusterNetwork.Network` to each
+The use of `connectToNetwork` automatically adds a dependency on `TestClusterNetwork.Network` to each
 container.
 
 #### Container Network Reuse
@@ -268,7 +410,7 @@ matches a definition then that network will be used. This can be disabled by set
 configuration to false:
 
 ```mdoc:silent
-object FreshClusterNetwork extends ContainerNetworkDef {
+object AlwaysFreshNetwork extends ContainerNetworkDef {
   override def config: Config = Config(reuse = false)
 }
 ```
@@ -360,9 +502,36 @@ The `ContainerDef.Config.reuse` should be false to disable reuse for a specific 
 
 #### Improving Reuse Performance
 
-When using reuse the cost of inspecting the docker system can be avoided using memoization roots.
+When using reuse the cost of inspecting the docker system can be avoided using memoization roots. For
+example, in this integration test the container resource is not reconstructed for each test. As the
+resource is not reconstructed there is no repeated inspection of the docker system.
 
-### Usage in Integration Tests
+```scala mdoc:silent
+class NoReuseByMemoizationExampleTest extends DistageSpecScalatest[IO] {
+  override def config = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      include(distageFrameworkModules)
+      include(new PostgresDockerModule[IO])
+    },
+    memoizationRoots = Set(
+      DIKey[PostgresDocker.Container]
+    )
+  )
+
+  "distage docker" should {
+    "provide a fresh container resource" in { c: PostgresDocker.Container =>
+      val port = c.availablePorts.first(PostgresDocker.primaryPort)
+      IO(println(s"port ${port}"))
+    }
+
+    "provide the same resource" in { c: PostgresDocker.Container =>
+      val port = c.availablePorts.first(PostgresDocker.primaryPort)
+      IO(println(s"port ${port}"))
+    }
+  }
+}
+```
+
 
 ### Examples
 
@@ -373,34 +542,6 @@ The `distage-framework-docker` project contains example `ContainerDef`s and modu
 services under
 [`izumi.distage.docker.examples`](https://github.com/7mind/izumi/tree/develop/distage/distage-framework-docker/src/main/scala/izumi/distage/docker/examples)
 namespace.
-
-```scala mdoc:silent
-import izumi.distage.docker.examples.PostgresDocker
-import izumi.distage.model.definition.ModuleDef
-import izumi.reflect.TagK
-
-// a hypothetical structure for the postgres configuration used by the application.
-case class PostgresServerConfig(
-  host: String,
-  port: Int
-)
-
-// a hypothetical module that binds the implementation of PostgresServerConfig
-// to one provided by docker
-class PostgresServerConfigDockerModule[F[_]: TagK] extends ModuleDef {
-  make[PostgresServerConfig].from {
-    container: PostgresDocker.Container => {
-      val knownAddress = container.availablePorts.availablePorts(PostgresDocker.primaryPort).head
-      PostgresServerConfig(knownAddress.hostV4, knownAddress.port)
-    }
-  }
-
-  make[PostgresDocker.Container].fromResource {
-    PostgresDocker.make[F]
-  }
-}
-
-```
 
 ### Tips
 

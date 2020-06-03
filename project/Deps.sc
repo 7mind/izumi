@@ -21,6 +21,7 @@ object Izumi {
     val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
+    val doobie = Version.VExpr("V.doobie")
     val classgraph = Version.VExpr("V.classgraph")
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
@@ -126,6 +127,11 @@ object Izumi {
     )
 
     val http4s_all = http4s_server ++ http4s_client
+
+    val doobie = Seq(
+      Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
+      Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto)
+    )
 
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
   }
@@ -525,7 +531,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "coverageEnabled" := false,

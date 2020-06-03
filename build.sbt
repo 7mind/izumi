@@ -2248,7 +2248,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.http4s" %% "http4s-dsl" % V.http4s,
       "org.http4s" %% "http4s-circe" % V.http4s,
       "org.http4s" %% "http4s-blaze-server" % V.http4s,
-      "org.http4s" %% "http4s-blaze-client" % V.http4s
+      "org.http4s" %% "http4s-blaze-client" % V.http4s,
+      "org.tpolecat" %% "doobie-core" % V.doobie,
+      "org.tpolecat" %% "doobie-postgres" % V.doobie
     )
   )
   .settings(
