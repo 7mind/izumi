@@ -1,25 +1,21 @@
-package izumi.distage.docker.healthcheck.chain
+package izumi.distage.docker.healthcheck
 
 import java.net.{InetSocketAddress, Socket}
 import java.nio.ByteBuffer
 
 import izumi.distage.docker.Docker.DockerPort
 import izumi.distage.docker.DockerContainer
-import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
-import org.apache.commons.codec.binary.Hex
 
 final class PostgreSqlProtocolCheck[Tag](
+  portStatus: HealthCheckResult.AvailableOnPorts,
+  port: DockerPort = DockerPort.TCP(5432),
   userName: String = "postgres",
   databaseName: String = "postgres",
-  port: DockerPort = DockerPort.TCP(5432),
-) extends ChainedContainerHealthCheck[Tag] {
-  override def check(
-    logger: IzLogger,
-    container: DockerContainer[Tag],
-    portStatus: HealthCheckResult.AvailableOnPorts,
-  ): ContainerHealthCheck.HealthCheckResult = {
+) extends ContainerHealthCheck[Tag] {
+  override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
     portStatus.availablePorts.availablePorts.get(port) match {
       case Some(value) if portStatus.requiredPortsAccessible =>
         val startupMessage = genStartupMessage()
@@ -27,11 +23,13 @@ final class PostgreSqlProtocolCheck[Tag](
         try {
           val availablePort = value.head
           socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
-          logger.info(s"Checking PostgreSQL protocol on $port. Startup message: ${Hex.encodeHexString(startupMessage)}.")
+          logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
           val out = socket.getOutputStream
           val in = socket.getInputStream
           out.write(startupMessage)
           val messageType = new String(in.readNBytes(1))
+          // first byte of response message should be `R` char
+          // every authentication message from PostgreSQL starts with `R`
           if (messageType == "R") {
             logger.info(s"PostgreSQL protocol on $port is available.")
             ContainerHealthCheck.HealthCheckResult.Available
@@ -46,10 +44,21 @@ final class PostgreSqlProtocolCheck[Tag](
         } finally {
           socket.close()
         }
-      case _ => ContainerHealthCheck.HealthCheckResult.Ignored
+      case _ => ContainerHealthCheck.HealthCheckResult.Unavailable
     }
   }
 
+  /** According to PostgreSQL's message flow docs every single session starts with StartUp message from front end.
+    * This means that after TCP connection, front end sends to the back end message with username,
+    * protocol version and database name to connect to. Back end will always respond to StartUp message
+    * with authentication message type (even if user or database does not exists).
+    * We are using such behavior to make sure that DB is ready to accept connections without any JDBC drivers.
+    *
+    * You may find more about PostgreSQL messaging flow by the links below:
+    * https://www.postgresql.org/docs/9.5/protocol-flow.html
+    * https://www.postgresql.org/docs/9.5/protocol-message-types.html
+    * https://www.postgresql.org/docs/9.5/protocol-message-formats.html
+    */
   private def genStartupMessage(): Array[Byte] = {
     def write(buffer: ByteBuffer, message: String): ByteBuffer = {
       val currentPos = buffer.position()

@@ -93,7 +93,7 @@ case class ContainerResource[F[_], T](
             Left(t)
         }
       }.flatMap {
-        case Right(HealthCheckResult.Ignored) =>
+        case Right(HealthCheckResult.Available) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
             container

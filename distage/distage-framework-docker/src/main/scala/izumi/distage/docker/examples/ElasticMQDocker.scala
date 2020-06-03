@@ -14,7 +14,7 @@ object ElasticMQDocker extends ContainerDef {
       image = "softwaremill/elasticmq:0.15.7",
       ports = Seq(primaryPort),
       entrypoint = Seq("sh", "-c", s"/opt/docker/bin/elasticmq-server -Dnode-address.port=$$${primaryPort.toEnvVariable}"),
-      healthCheck = ContainerHealthCheck.httpProtocolCheck(primaryPort)
+      healthCheck = ContainerHealthCheck.httpGetCheck(primaryPort)
     )
   }
 }
