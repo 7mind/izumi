@@ -80,6 +80,8 @@ object Docker {
     *
     * @param env      Setup environment variables visible inside docker container
     *
+    * @param cmd      Entrypoint command to use
+    *
     * @param entrypoint Docker entrypoint to use
     *
     * @param cwd      Working directory to use inside the docker container
