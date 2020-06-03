@@ -5,21 +5,17 @@ import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.DockerPort
 
 object KafkaDocker extends ContainerDef {
-  val primaryPort: DockerPort.TCP = DockerPort.TCP(9092)
+  val primaryPort: DockerPort = DockerPort.DynamicTCP("dynamic_kafka_port")
 
   private[this] def portVars: String = Seq(
-    s"""KAFKA_ADVERTISED_LISTENERS="OUTSIDE://127.0.0.1:${primaryPort.number},INSIDE://127.0.0.1:$$${primaryPort.toEnvVariable}"""",
-    s"""KAFKA_LISTENERS="OUTSIDE://:$$${primaryPort.toEnvVariable},INSIDE://:${primaryPort.number}"""",
+    s"""KAFKA_LISTENERS="PLAINTEXT://:$$${primaryPort.toEnvVariable}"""",
+    s"""KAFKA_ADVERTISED_LISTENERS="PLAINTEXT://127.0.0.1:$$${primaryPort.toEnvVariable}"""",
   ).map(defn => s"export $defn").mkString("; ")
 
   override def config: Config = {
     Config(
       image = "wurstmeister/kafka:2.12-2.4.1",
       ports = Seq(primaryPort),
-      env = Map(
-        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP" -> "INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT",
-        "KAFKA_INTER_BROKER_LISTENER_NAME" -> "INSIDE",
-      ),
       entrypoint = Seq(
         "sh",
         "-c",

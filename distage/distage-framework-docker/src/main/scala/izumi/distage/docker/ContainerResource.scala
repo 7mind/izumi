@@ -15,6 +15,7 @@ import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration._
@@ -33,12 +34,10 @@ case class ContainerResource[F[_], T](
 
   private[this] val client = clientw.rawClient
 
-  private[this] def toExposedPort(port: DockerPort): ExposedPort = {
+  private[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
-      case DockerPort.TCP(number) =>
-        ExposedPort.tcp(number)
-      case DockerPort.UDP(number) =>
-        ExposedPort.udp(number)
+      case _: DockerPort.TCPBase => ExposedPort.tcp(number)
+      case _: DockerPort.UDPBase => ExposedPort.udp(number)
     }
   }
 
@@ -50,16 +49,16 @@ case class ContainerResource[F[_], T](
     val ports = config.ports.map {
       containerPort =>
         val local = IzSockets.temporaryLocalPort()
-        val bp = toExposedPort(containerPort)
-        val binding = new PortBinding(Ports.Binding.bindPort(local), bp)
-        val stableLabels = Map(
-          "distage.reuse" -> shouldReuse(config).toString,
-          s"distage.port.${containerPort.protocol}.${containerPort.number}.defined" -> "true",
-        )
+        val exposedPort = containerPort match {
+          case containerPort: DockerPort.Static => toExposedPort(containerPort, containerPort.number)
+          case containerPort: DockerPort.Dynamic => toExposedPort(containerPort, local)
+        }
+        val binding = new PortBinding(Ports.Binding.bindPort(local), exposedPort)
         val labels = Map(
-          s"distage.port.${containerPort.protocol}.${containerPort.number}" -> local.toString
+          containerPort.portLabel("defined") -> "true",
+          containerPort.portLabel() -> local.toString,
         )
-        PortDecl(containerPort, local, binding, stableLabels ++ labels)
+        PortDecl(containerPort, local, binding, labels)
     }
 
     if (shouldReuse(config)) {
@@ -171,6 +170,7 @@ case class ContainerResource[F[_], T](
               clientConfig = clientw.clientConfig,
               availablePorts = VerifiedContainerConnectivity.empty,
               hostName = inspection.getConfig.getHostName,
+              labels = inspection.getConfig.getLabels.asScala.toMap,
             )
             logger.debug(s"Matching container found: ${config.image}->${unverified.name}, will try to reuse...")
             await(unverified, 0)
@@ -183,7 +183,10 @@ case class ContainerResource[F[_], T](
   }
 
   private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
-    val allPortLabels = ports.flatMap(p => p.labels).toMap
+    val stableLabels = Map(
+      "distage.reuse" -> shouldReuse(config).toString
+    )
+    val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
     val baseCmd = client
       .createContainerCmd(config.image)
       .withLabels((clientw.labels ++ allPortLabels).asJava)
@@ -239,6 +242,7 @@ case class ContainerResource[F[_], T](
               ContainerId(res.getId),
               inspection.getName,
               hostName,
+              inspection.getConfig.getLabels.asScala.toMap,
               mappedPorts,
               config,
               clientw.clientConfig,
@@ -264,16 +268,20 @@ case class ContainerResource[F[_], T](
 
   private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ContainerConnectivity] = {
     val network = inspection.getNetworkSettings
-
+    val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
       containerPort =>
-        val mappings = for {
-          exposed <- Option(network.getPorts.getBindings.get(toExposedPort(containerPort))).toSeq
-          port <- exposed
-        } yield {
-          ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+        // if we have dynamic port then we will try find mapped port number in container labels
+        val exposedPort = containerPort match {
+          case dynamic: DockerPort.Dynamic =>
+            Option(labels.get(containerPort.portLabel())).flatMap(_.asInt()).map(toExposedPort(dynamic, _))
+          case static: DockerPort.Static =>
+            Some(toExposedPort(static, static.number))
         }
-
+        val mappings = exposedPort.toSeq.flatMap(p => Option(network.getPorts.getBindings.get(p))).flatten.map {
+          port =>
+            ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+        }
         (containerPort, NonEmptyList.from(mappings))
     }
     val unmapped = ports.collect { case (cp, None) => cp }

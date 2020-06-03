@@ -21,18 +21,33 @@ object Docker {
   final case class ContainerId(name: String) extends AnyVal
 
   trait DockerPort {
-    def number: Int
     def protocol: String
-    override def toString: String = s"$protocol:$number"
-    final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_$number"
+    def toEnvVariable: String
+    def portLabel(parts: String*): String
   }
   object DockerPort {
-    final case class TCP(number: Int) extends DockerPort {
+    sealed trait TCPBase extends DockerPort {
       override def protocol: String = "tcp"
     }
-    final case class UDP(number: Int) extends DockerPort {
-      override def protocol: String = "udp"
+    sealed trait UDPBase extends DockerPort {
+      override def protocol: String = "tcp"
     }
+    sealed trait Static extends DockerPort {
+      def number: Int
+      override def toString: String = s"$protocol:$number"
+      final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_$number"
+      final def portLabel(parts: String*): String = (s"distage.port.$protocol.$number" ++ parts).mkString(".")
+    }
+    sealed trait Dynamic extends DockerPort {
+      def name: String
+      override def toString: String = s"$protocol:$name"
+      final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_${name.toUpperCase}"
+      final def portLabel(parts: String*): String = (s"distage.port.$protocol.$name" ++ parts).mkString(".")
+    }
+    final case class DynamicTCP(name: String) extends Dynamic with TCPBase
+    final case class DynamicUDP(name: String) extends Dynamic with UDPBase
+    final case class TCP(number: Int) extends Static with TCPBase
+    final case class UDP(number: Int) extends Static with UDPBase
   }
 
   /**

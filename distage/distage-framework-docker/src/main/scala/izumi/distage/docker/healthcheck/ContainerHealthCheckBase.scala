@@ -5,21 +5,23 @@ import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.PortCandidate
 import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
-
 
 abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
   override final def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult = {
 
-    val tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]] =
-      container.connectivity.dockerPorts
+    val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
+      container
+        .connectivity.dockerPorts
         .collect {
-          case (port: DockerPort.TCP, bindings) =>
+          case (port: DockerPort.TCPBase, bindings) =>
             (port, bindings)
         }
 
-    val udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]] =
-      container.connectivity.dockerPorts
+    val udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]] =
+      container
+        .connectivity.dockerPorts
         .collect {
           case (port: DockerPort.UDP, bindings) =>
             (port, bindings)
@@ -29,14 +31,29 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
 
   }
 
-  protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCP, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDP, NonEmptyList[ServicePort]]): HealthCheckResult.AvailableOnPorts
+  protected def perform(
+    logger: IzLogger,
+    container: DockerContainer[Tag],
+    tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
+    udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
+  ): HealthCheckResult.AvailableOnPorts
 
   protected def findContainerInternalCandidates[T <: DockerPort](container: DockerContainer[Tag], ports: Map[T, NonEmptyList[ServicePort]]): Seq[PortCandidate[T]] = {
+    val labels = container.labels
+    val addresses = container.connectivity.containerAddressesV4
     ports.toSeq.flatMap {
       case (mappedPort, _) =>
-        container.connectivity.containerAddressesV4.map {
-          internalContainerAddress =>
-            PortCandidate(mappedPort, AvailablePort(internalContainerAddress, mappedPort.number))
+        // if we have dynamic port then we will try find mapped port number in container labels
+        val portNumber = mappedPort match {
+          case dynamic: DockerPort.Dynamic => labels.get(dynamic.portLabel()).flatMap(_.asInt())
+          case static: DockerPort.Static => Some(static.number)
+        }
+        portNumber.toSeq.flatMap {
+          number =>
+            addresses.map {
+              internalContainerAddress =>
+                PortCandidate[T](mappedPort, AvailablePort(internalContainerAddress, number))
+            }
         }
     }
   }
