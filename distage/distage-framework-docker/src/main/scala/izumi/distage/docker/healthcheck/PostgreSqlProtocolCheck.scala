@@ -33,12 +33,12 @@ final class PostgreSqlProtocolCheck[Tag](
             logger.info(s"PostgreSQL protocol on $port is available.")
             ContainerHealthCheck.HealthCheckResult.Available
           } else {
-            logger.debug(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
+            logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
             ContainerHealthCheck.HealthCheckResult.Unavailable
           }
         } catch {
           case t: Throwable =>
-            logger.debug(s"PostgreSQL protocol on $port unavailable due to unexpected exception. ${t.getMessage -> "Failure"}")
+            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. ${t.getMessage -> "Failure"}")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         } finally {
           socket.close()

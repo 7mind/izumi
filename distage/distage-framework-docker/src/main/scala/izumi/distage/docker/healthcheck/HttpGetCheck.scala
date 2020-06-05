@@ -27,12 +27,12 @@ final class HttpGetCheck[Tag](
             logger.info(s"HTTP connection was successfully established with $port.")
             ContainerHealthCheck.HealthCheckResult.Available
           } else {
-            logger.debug(s"Cannot establish HTTP connection with $port. Wrong protocol.")
+            logger.info(s"Cannot establish HTTP connection with $port. Wrong protocol.")
             ContainerHealthCheck.HealthCheckResult.Unavailable
           }
         } catch {
           case t: Throwable =>
-            logger.debug(s"Cannot establish HTTP connection with $port due to ${t.getMessage -> "failure"}")
+            logger.warn(s"Cannot establish HTTP connection with $port due to ${t.getMessage -> "failure"}")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         }
       case _ => ContainerHealthCheck.HealthCheckResult.Unavailable
