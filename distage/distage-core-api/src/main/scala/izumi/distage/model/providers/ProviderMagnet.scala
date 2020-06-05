@@ -103,11 +103,10 @@ final case class ProviderMagnet[+A](get: Provider) {
     zip(that).map[C](f.tupled)
   }
 
-  /** Applicative's `ap` method - can be used to chain transformations like `flatMap` */
+  /** Applicative's `ap` method - can be used to chain transformations like `flatMap`.
+    * Apply a function produced by `that` Provider to the argument produced by `this` Provider */
   def flatAp[B: Tag](that: ProviderMagnet[A => B]): ProviderMagnet[B] = {
-    implicit val rTag: Tag[A] = getRetTag
-    rTag.discard() // used for assembling Tag[A => B] below
-    map2[A => B, B](that) { case (a, f) => f(a) }
+    map2(that) { case (a, f) => f(a) }
   }
 
   /** Apply a function produced by `this` Provider to the argument produced by `that` Provider */
@@ -115,11 +114,9 @@ final case class ProviderMagnet[+A](get: Provider) {
     that.flatAp[C](this.asInstanceOf[ProviderMagnet[B => C]])
   }
 
-  /** Add `B` as an unused dependency of this constructor */
+  /** Add `B` as an unused dependency of this Provider */
   def addDependency[B: Tag]: ProviderMagnet[A] = addDependency(DIKey.get[B])
-
   def addDependency(key: DIKey): ProviderMagnet[A] = addDependencies(key :: Nil)
-
   def addDependencies(keys: Seq[DIKey]): ProviderMagnet[A] = copy[A](get = get.addUnused(keys))
 
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
@@ -174,7 +171,8 @@ object ProviderMagnet {
         originalFun = () => a,
         fun = (_: Seq[Any]) => a,
         providerType = ProviderType.Function,
-      ))
+      )
+    )
   }
 
   def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
@@ -184,7 +182,8 @@ object ProviderMagnet {
         ret = SafeType.get[A],
         fun = (_: Seq[Any]) => a,
         providerType = ProviderType.Singleton,
-      ))
+      )
+    )
   }
 
   def single[A: Tag, B: Tag](f: A => B): ProviderMagnet[B] = {
@@ -223,7 +222,7 @@ object ProviderMagnet {
       name = "x$1",
       finalResultType = tpe,
       isByName = false,
-      wasGeneric = false
+      wasGeneric = false,
     )
   }
 }
