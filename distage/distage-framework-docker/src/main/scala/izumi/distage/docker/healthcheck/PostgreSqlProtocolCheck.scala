@@ -11,17 +11,16 @@ import izumi.logstage.api.IzLogger
 
 final class PostgreSqlProtocolCheck[Tag](
   portStatus: HealthCheckResult.AvailableOnPorts,
-  port: DockerPort = DockerPort.TCP(5432),
-  userName: String = "postgres",
-  databaseName: String = "postgres",
+  port: DockerPort,
+  userName: String,
+  databaseName: String,
 ) extends ContainerHealthCheck[Tag] {
   override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
-    portStatus.availablePorts.availablePorts.get(port) match {
-      case Some(value) if portStatus.requiredPortsAccessible =>
+    portStatus.availablePorts.firstOption(port) match {
+      case Some(availablePort) if portStatus.requiredPortsAccessible =>
         val startupMessage = genStartupMessage()
         val socket = new Socket()
         try {
-          val availablePort = value.head
           socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
           logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
           val out = socket.getOutputStream
@@ -34,12 +33,12 @@ final class PostgreSqlProtocolCheck[Tag](
             logger.info(s"PostgreSQL protocol on $port is available.")
             ContainerHealthCheck.HealthCheckResult.Available
           } else {
-            logger.debug(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
+            logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
             ContainerHealthCheck.HealthCheckResult.Unavailable
           }
         } catch {
           case t: Throwable =>
-            logger.debug(s"PostgreSQL protocol on $port unavailable due to unexpected exception. ${t.getMessage -> "Failure"}")
+            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. ${t.getMessage -> "Failure"}")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         } finally {
           socket.close()

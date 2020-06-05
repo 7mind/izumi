@@ -55,10 +55,8 @@ object DockerContainer {
       */
     def modifyConfig(
       modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
-    )(implicit tag1: distage.Tag[ContainerResource[F, T]],
-      tag2: distage.Tag[Docker.ContainerConfig[T]],
+    )(implicit tag: distage.Tag[ContainerResource[F, T]]
     ): ProviderMagnet[ContainerResource[F, T]] = {
-      tag2.discard()
       self.zip(modify).map {
         case (that, f) =>
           import that._

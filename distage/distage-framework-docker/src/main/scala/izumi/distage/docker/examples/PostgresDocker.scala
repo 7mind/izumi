@@ -14,7 +14,7 @@ object PostgresDocker extends ContainerDef {
       image = "library/postgres:12.2",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
-      healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck,
+      healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),
     )
   }
 }
