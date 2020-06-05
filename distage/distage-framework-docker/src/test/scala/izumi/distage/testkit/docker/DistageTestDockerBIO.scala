@@ -14,22 +14,20 @@ import zio.IO
 
 // this tests needed to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
-  // ignore docker tests on CI (nested docker trouble)
-  if (!EnvVarsCI.isIzumiCI()) {
-    "distage test runner should start only one container for reusable" should {
-      "support docker resources" in {
-        service: PgSvcExample =>
-          for {
-            _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-          } yield ()
-      }
 
-      "support memoization" in {
-        service: PgSvcExample =>
-          for {
-            _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-          } yield ()
-      }
+  "distage test runner should start only one container for reusable" should {
+    "support docker resources" in {
+      service: PgSvcExample =>
+        for {
+          _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
+        } yield ()
+    }
+
+    "support memoization" in {
+      service: PgSvcExample =>
+        for {
+          _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
+        } yield ()
     }
   }
 
