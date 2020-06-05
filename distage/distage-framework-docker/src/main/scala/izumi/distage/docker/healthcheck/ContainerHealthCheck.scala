@@ -3,23 +3,23 @@ package izumi.distage.docker.healthcheck
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.AvailableOnPorts
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.logstage.api.IzLogger
-
-import scala.reflect.ClassTag
 
 trait ContainerHealthCheck[Tag] {
   def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult
 
   final def ++(next: HealthCheckResult => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = this combine next
-  final def combine(next: HealthCheckResult => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = combineOn(next)
-  final def combineOn[T: ClassTag](next: T => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = {
+  final def combine(next: HealthCheckResult => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = {
+    (logger: IzLogger, container: DockerContainer[Tag]) =>
+      next(check(logger, container)).check(logger, container)
+  }
+  final def combineOnPorts(next: HealthCheckResult.AvailableOnPorts => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = {
     (logger: IzLogger, container: DockerContainer[Tag]) =>
       check(logger, container) match {
-        case thisCheck: T =>
-          next(thisCheck).check(logger, container) match {
-            case HealthCheckResult.Available => thisCheck
+        case thisCheckResult: HealthCheckResult.AvailableOnPorts =>
+          next(thisCheckResult).check(logger, container) match {
+            case HealthCheckResult.Available => thisCheckResult
             case other => other
           }
         case other => other
