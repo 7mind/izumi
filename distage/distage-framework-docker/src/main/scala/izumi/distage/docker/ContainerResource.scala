@@ -13,6 +13,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
@@ -115,7 +116,7 @@ case class ContainerResource[F[_], T](
             F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
           }
         case Left(t) =>
-          F.fail(new RuntimeException(s"Container failed: ${container.id}", t))
+          F.fail(new RuntimeException(s"Container failed: ${container.id} due to exception: ${t.stackTrace}", t))
       }
   }
 
