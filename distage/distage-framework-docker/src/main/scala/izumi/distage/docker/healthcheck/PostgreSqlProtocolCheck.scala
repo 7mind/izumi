@@ -11,17 +11,16 @@ import izumi.logstage.api.IzLogger
 
 final class PostgreSqlProtocolCheck[Tag](
   portStatus: HealthCheckResult.AvailableOnPorts,
-  port: DockerPort = DockerPort.TCP(5432),
-  userName: String = "postgres",
-  databaseName: String = "postgres",
+  port: DockerPort,
+  userName: String,
+  databaseName: String,
 ) extends ContainerHealthCheck[Tag] {
   override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
-    portStatus.availablePorts.availablePorts.get(port) match {
-      case Some(value) if portStatus.requiredPortsAccessible =>
+    portStatus.availablePorts.firstOption(port) match {
+      case Some(availablePort) if portStatus.requiredPortsAccessible =>
         val startupMessage = genStartupMessage()
         val socket = new Socket()
         try {
-          val availablePort = value.head
           socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
           logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
           val out = socket.getOutputStream

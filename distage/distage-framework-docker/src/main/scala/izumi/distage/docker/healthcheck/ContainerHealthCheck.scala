@@ -40,17 +40,27 @@ object ContainerHealthCheck {
     ) extends HealthCheckResult
   }
 
-  final case class UnavailablePorts(unavailablePorts: Map[DockerPort, List[(AvailablePort, Option[Throwable])]])
+  final case class UnavailablePorts(unavailablePorts: Map[DockerPort, List[(AvailablePort, Option[Throwable])]]) extends AnyVal {
+    override def toString: String = s"unavailable=$unavailablePorts"
+  }
 
-  final case class VerifiedContainerConnectivity(availablePorts: Map[DockerPort, NonEmptyList[AvailablePort]]) {
+  final case class VerifiedContainerConnectivity(availablePorts: Map[DockerPort, NonEmptyList[AvailablePort]]) extends AnyVal {
+    def apply(port: DockerPort): NonEmptyList[AvailablePort] = availablePorts(port)
+    def first(port: DockerPort): AvailablePort = availablePorts(port).head
+
+    def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = availablePorts.get(port)
+    def firstOption(port: DockerPort): Option[AvailablePort] = availablePorts.get(port).map(_.head)
+
     override def toString: String = s"accessible=$availablePorts"
   }
   object VerifiedContainerConnectivity {
     def empty: VerifiedContainerConnectivity = VerifiedContainerConnectivity(Map.empty)
   }
 
-  def ignore[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Available
+  def succeed[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Available
   def portCheck[T]: ContainerHealthCheck[T] = new TCPContainerHealthCheck[T]
-  def postgreSqlProtocolCheck[T]: ContainerHealthCheck[T] = portCheck.combineOn[AvailableOnPorts](new PostgreSqlProtocolCheck(_))
-  def httpGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOn[AvailableOnPorts](new HttpGetCheck(_, port))
+  def postgreSqlProtocolCheck[T](port: DockerPort, user: String, password: String): ContainerHealthCheck[T] =
+    portCheck.combineOn(new PostgreSqlProtocolCheck(_, port, user, password))
+  def httpGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOn(new HttpGetCheck(_, port, useHttps = false))
+  def httpsGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOn(new HttpGetCheck(_, port, useHttps = true))
 }

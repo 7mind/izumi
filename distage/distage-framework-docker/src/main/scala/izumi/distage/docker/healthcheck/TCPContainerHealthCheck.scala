@@ -11,10 +11,14 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-
 class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
 
-  override protected def perform(logger: IzLogger, container: DockerContainer[Tag], tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]], udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]]): HealthCheckResult.AvailableOnPorts = {
+  override protected def perform(
+    logger: IzLogger,
+    container: DockerContainer[Tag],
+    tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
+    udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
+  ): HealthCheckResult.AvailableOnPorts = {
     val check = new PortCheck(container.containerConfig.portProbeTimeout)
 
     val dockerHostCandidates = findDockerHostCandidates(container, tcpPorts)
@@ -25,7 +29,6 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       .filterNot(_.maybeAvailable.hostV4 == "0.0.0.0")
 
     logger.debug(s"going to check ports on $container: ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
-
 
     val checks = allCandidates.map {
       case PortCandidate(dp, ap) =>
@@ -48,7 +51,8 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
           case (dp, ap) =>
             (dp: DockerPort, ap.toList)
         }
-        .toMap)
+        .toMap
+    )
 
     val available = VerifiedContainerConnectivity(
       good
@@ -66,8 +70,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       available,
       errors,
       udpPorts.keySet.map(p => p: DockerPort),
-      tcpPortsGood(container, available)
+      tcpPortsGood(container, available),
     )
   }
 }
-

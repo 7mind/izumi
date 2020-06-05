@@ -41,17 +41,17 @@ object DockerPlugin extends PluginDef {
 
   make[AvailablePort].named("mq").tagged(Env.Test).from {
     cs: ElasticMQDocker.Container =>
-      cs.availablePorts.availablePorts(ElasticMQDocker.primaryPort).head
+      cs.availablePorts.first(ElasticMQDocker.primaryPort)
   }
 
   make[AvailablePort].named("cs").tagged(Env.Test).from {
     cs: CassandraDocker.Container =>
-      cs.availablePorts.availablePorts(CassandraDocker.primaryPort).head
+      cs.availablePorts.first(CassandraDocker.primaryPort)
   }
 
   make[AvailablePort].named("kafka").tagged(Env.Test).from {
     kafka: KafkaDocker.Container =>
-      kafka.availablePorts.availablePorts(KafkaDocker.primaryPort).head
+      kafka.availablePorts.first(KafkaDocker.primaryPort)
   }
 
   // this container will start once `DynamoContainer` is up and running
@@ -62,11 +62,11 @@ object DockerPlugin extends PluginDef {
   // these lines are for test scope
   make[AvailablePort].named("pg").tagged(Env.Test).from {
     pg: PostgresDocker.Container =>
-      pg.availablePorts.availablePorts(PostgresDocker.primaryPort).head
+      pg.availablePorts.first(PostgresDocker.primaryPort)
   }
   make[AvailablePort].named("ddb").tagged(Env.Test).from {
     dn: DynamoDocker.Container =>
-      dn.availablePorts.availablePorts(DynamoDocker.primaryPort).head
+      dn.availablePorts.first(DynamoDocker.primaryPort)
   }
 
   // and this one is for production

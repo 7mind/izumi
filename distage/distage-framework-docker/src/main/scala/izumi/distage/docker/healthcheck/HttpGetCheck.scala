@@ -10,12 +10,11 @@ import izumi.logstage.api.IzLogger
 final class HttpGetCheck[Tag](
   portStatus: HealthCheckResult.AvailableOnPorts,
   port: DockerPort,
-  useHttps: Boolean = false
+  useHttps: Boolean,
 ) extends ContainerHealthCheck[Tag] {
   override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
-    portStatus.availablePorts.availablePorts.get(port) match {
-      case Some(value) if portStatus.requiredPortsAccessible =>
-        val availablePort = value.head
+    portStatus.availablePorts.firstOption(port) match {
+      case Some(availablePort) if portStatus.requiredPortsAccessible =>
         val protocol = if (useHttps) "https" else "http"
         val url = new URL(s"$protocol://${availablePort.hostV4}:${availablePort.port}")
         logger.info(s"Checking docker port $port via $url for $container. Will try to establish HTTP connection.")
