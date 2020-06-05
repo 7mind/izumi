@@ -17,8 +17,7 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
-class DockerClientWrapper[F[_]]
-(
+class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
   val rawClientConfig: DockerClientConfig,
   val clientConfig: ClientConfig,
@@ -26,7 +25,7 @@ class DockerClientWrapper[F[_]]
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
-  F: DIEffect[F],
+  F: DIEffect[F]
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsUnique
 
@@ -56,8 +55,7 @@ class DockerClientWrapper[F[_]]
 
 object DockerClientWrapper {
 
-  class Resource[F[_]: DIEffect]
-  (
+  class Resource[F[_]: DIEffect](
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
@@ -65,8 +63,12 @@ object DockerClientWrapper {
     with IntegrationCheck {
 
     private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))((c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
-      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))((c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email))
+      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
+        (c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
+      )
+      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
+        (c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
+      )
       .get.build()
 
     private[this] lazy val client = DockerClientBuilder
@@ -100,7 +102,12 @@ object DockerClientWrapper {
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
         containers <- DIEffect[F].maybeSuspend(resource.rawClient.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
-        _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(c => resource.destroyContainer(ContainerId(c.getId)))
+        // destroy all containers that should not be reused, or was exited (to not to cumulate containers that could be pruned)
+        containersToDestroy = containers.asScala.filterNot {
+          c =>
+            c.getLabels.getOrDefault("distage.reuse", "false") == "true" || c.getStatus == "exited"
+        }
+        _ <- DIEffect[F].traverse_(containersToDestroy)(c => resource.destroyContainer(ContainerId(c.getId)))
         _ <- DIEffect[F].maybeSuspend(resource.rawClient.close())
       } yield ()
     }
