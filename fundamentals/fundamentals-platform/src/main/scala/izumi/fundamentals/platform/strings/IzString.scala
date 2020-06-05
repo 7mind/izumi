@@ -18,6 +18,10 @@ final class IzString(private val s: String) extends AnyVal {
     Try(s.toBoolean).toOption
   }
 
+  @inline final def asInt(): Option[Int] = {
+    Try(s.toInt).toOption
+  }
+
   @inline final def shift(delta: Int, fill: String = " "): String = {
     val shift = fill * delta
     s.split("\\\n", -1).map(s => s"$shift$s").mkString("\n")

@@ -8,14 +8,15 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
-                                       id: Docker.ContainerId,
-                                       name: String,
-                                       hostName: String,
-                                       connectivity: ContainerConnectivity,
-                                       containerConfig: Docker.ContainerConfig[Tag],
-                                       clientConfig: ClientConfig,
-                                       availablePorts: VerifiedContainerConnectivity,
-                                     ) {
+  id: Docker.ContainerId,
+  name: String,
+  hostName: String,
+  labels: Map[String, String],
+  connectivity: ContainerConnectivity,
+  containerConfig: Docker.ContainerConfig[Tag],
+  clientConfig: ClientConfig,
+  availablePorts: VerifiedContainerConnectivity,
+) {
   override def toString: String = {
     val out = new StringBuilder()
     out.append(s"$name@${connectivity.dockerHost.getOrElse("localhost")}")
@@ -53,8 +54,10 @@ object DockerContainer {
       *
       */
     def modifyConfig(
-                      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
-                    )(implicit tag1: distage.Tag[ContainerResource[F, T]], tag2: distage.Tag[Docker.ContainerConfig[T]]): ProviderMagnet[ContainerResource[F, T]] = {
+      modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]
+    )(implicit tag1: distage.Tag[ContainerResource[F, T]],
+      tag2: distage.Tag[Docker.ContainerConfig[T]],
+    ): ProviderMagnet[ContainerResource[F, T]] = {
       tag2.discard()
       self.zip(modify).map {
         case (that, f) =>
@@ -72,36 +75,29 @@ object DockerContainer {
     }
 
     def connectToNetwork[T2](
-                              implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
-                              tag2: distage.Tag[ContainerResource[F, T]],
-                              tag3: distage.Tag[Docker.ContainerConfig[T]]
-                            ): ProviderMagnet[ContainerResource[F, T]] = {
+      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
+    ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[T2] =>
-          old: Docker.ContainerConfig[T] =>
-            old.copy(networks = old.networks + net)
+        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
       }
     }
 
     def connectToNetwork(
-                          networkDecl: ContainerNetworkDef
-                        )(
-                          implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
-                          tag2: distage.Tag[ContainerResource[F, T]],
-                          tag3: distage.Tag[Docker.ContainerConfig[T]]
-                        ): ProviderMagnet[ContainerResource[F, T]] = {
+      networkDecl: ContainerNetworkDef
+    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
+    ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] =>
-          old: Docker.ContainerConfig[T] =>
-            old.copy(networks = old.networks + net)
+        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
+          old.copy(networks = old.networks + net)
       }
     }
   }
 
-
 }
-
-
-
