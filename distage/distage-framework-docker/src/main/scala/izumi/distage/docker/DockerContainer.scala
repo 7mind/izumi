@@ -75,6 +75,7 @@ object DockerContainer {
     def connectToNetwork[T2](
       implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
@@ -87,6 +88,7 @@ object DockerContainer {
       networkDecl: ContainerNetworkDef
     )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
       tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
       modifyConfig {
