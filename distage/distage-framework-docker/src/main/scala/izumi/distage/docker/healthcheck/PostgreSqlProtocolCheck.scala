@@ -1,7 +1,7 @@
 package izumi.distage.docker.healthcheck
 
 import java.net.{InetSocketAddress, Socket}
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 
 import izumi.distage.docker.Docker.DockerPort
 import izumi.distage.docker.DockerContainer
@@ -27,7 +27,11 @@ final class PostgreSqlProtocolCheck[Tag](
           val out = socket.getOutputStream
           val in = socket.getInputStream
           out.write(startupMessage)
-          val messageType = new String(in.readNBytes(1))
+          val messageType = {
+            val outByte = Array[Byte](0)
+            in.read(outByte, 0, 1)
+            new String(outByte)
+          }
           // first byte of response message should be `R` char
           // every authentication message from PostgreSQL starts with `R`
           if (messageType == "R") {
@@ -60,18 +64,20 @@ final class PostgreSqlProtocolCheck[Tag](
     * https://www.postgresql.org/docs/9.5/protocol-message-formats.html
     */
   private def genStartupMessage(): Array[Byte] = {
-    def write(buffer: ByteBuffer, message: String): ByteBuffer = {
-      val currentPos = buffer.position()
+    def write(buffer: ByteBuffer, message: String): Unit = {
+      val currentPos = (buffer: Buffer).position()
       buffer.put(message.getBytes())
-      buffer.position(currentPos + message.length)
+      (buffer: Buffer).position(currentPos + message.length)
       buffer.put(0.toByte)
-      buffer.position(currentPos + message.length + 1)
+      (buffer: Buffer).position(currentPos + message.length + 1)
     }
     // <size int32> <protocol int32> <user const str> <0> <username str> <0> <database const str> <0> <database str> <0> <0>
     val size = 4 + 4 + 4 + 1 + userName.length + 1 + 8 + 1 + databaseName.length + 1 + 1
     val buffer = ByteBuffer.allocate(size)
-    buffer.position(0).putInt(size) // size
-    buffer.position(4).putInt(196608) // protocol
+    (buffer: Buffer).position(0)
+    buffer.putInt(size) // size
+    (buffer: Buffer).position(4)
+    buffer.putInt(196608) // protocol
     write(buffer, "user")
     write(buffer, userName)
     write(buffer, "database")
