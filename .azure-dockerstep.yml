@@ -8,7 +8,6 @@ jobs:
             ${{ pair.key }}: ${{ pair.value }}
         pool:
           vmImage: 'ubuntu-latest'
-        container: septimalmind/izumi-env:jdk11-7
         steps:
           - task: CacheBeta@0
             inputs:
