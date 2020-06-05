@@ -28,6 +28,14 @@ trait ContainerHealthCheck[Tag] {
 }
 
 object ContainerHealthCheck {
+  def portCheck[T]: ContainerHealthCheck[T] = new TCPContainerHealthCheck[T]
+  def httpGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOnPorts(new HttpGetCheck(_, port, useHttps = false))
+  def httpsGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOnPorts(new HttpGetCheck(_, port, useHttps = true))
+  def postgreSqlProtocolCheck[T](port: DockerPort, user: String, password: String): ContainerHealthCheck[T] =
+    portCheck.combineOnPorts(new PostgreSqlProtocolCheck(_, port, user, password))
+
+  def succeed[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Available
+
   sealed trait HealthCheckResult
   object HealthCheckResult {
     case object Available extends HealthCheckResult
@@ -57,10 +65,4 @@ object ContainerHealthCheck {
     def empty: VerifiedContainerConnectivity = VerifiedContainerConnectivity(Map.empty)
   }
 
-  def succeed[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Available
-  def portCheck[T]: ContainerHealthCheck[T] = new TCPContainerHealthCheck[T]
-  def postgreSqlProtocolCheck[T](port: DockerPort, user: String, password: String): ContainerHealthCheck[T] =
-    portCheck.combineOn(new PostgreSqlProtocolCheck(_, port, user, password))
-  def httpGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOn(new HttpGetCheck(_, port, useHttps = false))
-  def httpsGetCheck[T](port: DockerPort): ContainerHealthCheck[T] = portCheck.combineOn(new HttpGetCheck(_, port, useHttps = true))
 }
