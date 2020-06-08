@@ -1,7 +1,5 @@
 package izumi.distage.docker
 
-import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
@@ -84,7 +82,8 @@ case class ContainerResource[F[_], T](
         logger.debug(s"Awaiting until alive: $container...")
         try {
           val status = client.inspectContainerCmd(container.id.name).exec()
-          if (status.getState.getRunning) {
+          // if container is running or does not have any ports
+          if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
             logger.debug(s"Trying healthcheck on running $container...")
             Right(config.healthCheck.check(logger, container))
           } else {
@@ -173,14 +172,14 @@ case class ContainerResource[F[_], T](
                   Seq((c, inspection, value))
               }
           }
-          if (portSet.isEmpty) {
+          if (portSet.nonEmpty) {
             // here we are checking if all ports was successfully mapped
             candidates.find { case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty }
           } else {
             // or if container has no ports we will check that there is exists if this container belongs at least to this test run (or exists container that actually still runs)
-            candidates.toList.find(_._2.getState.getStatus == "running").orElse {
+            candidates.toList.find(_._2.getState.getRunning).orElse {
               candidates.find {
-                case (_, inspection, _) => (stableLabels.toSet -- inspection.getConfig.getLabels.asScala.toSet).isEmpty
+                case (_, inspection, _) => (stableLabels.toSet -- inspection.getConfig.getLabels.asScala.toSet).isEmpty && inspection.getState.getExitCodeLong == 0L
               }
             }
           }
@@ -209,9 +208,7 @@ case class ContainerResource[F[_], T](
 
   private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-    val baseCmd = client
-      .createContainerCmd(config.image)
-      .withLabels((clientw.labels ++ allPortLabels).asJava)
+    val baseCmd = client.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
       case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
@@ -327,12 +324,10 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-    "distage.reuse" -> shouldReuse(config).toString,
-    "distage.testrun" -> ContainerResource.testRunMarker,
-  )
+      "distage.reuse" -> shouldReuse(config).toString
+    ) ++ clientw.labels
 }
 
 object ContainerResource {
-  private val testRunMarker: String = s"${Instant.now().toEpochMilli}_${UUID.randomUUID().toString.take(8)}"
   private final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 }

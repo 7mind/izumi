@@ -5,11 +5,11 @@ import java.util.UUID
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
+import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
-import izumi.distage.framework.model.IntegrationCheck
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
@@ -101,11 +101,18 @@ object DockerClientWrapper {
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
-        containers <- DIEffect[F].maybeSuspend(resource.rawClient.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
+        containers <- DIEffect[F].maybeSuspend {
+          resource
+            .rawClient
+            .listContainersCmd()
+            .withStatusFilter(List("running", "exited").asJava)
+            .withLabelFilter(resource.labels.asJava)
+            .exec()
+        }
         // destroy all containers that should not be reused, or was exited (to not to cumulate containers that could be pruned)
-        containersToDestroy = containers.asScala.filterNot {
+        containersToDestroy = containers.asScala.filter {
           c =>
-            c.getLabels.getOrDefault("distage.reuse", "false") == "true" || c.getStatus == "exited"
+            Option(c.getLabels.get("distage.reuse")).forall(_ == "false") || c.getState == "exited"
         }
         _ <- DIEffect[F].traverse_(containersToDestroy)(c => resource.destroyContainer(ContainerId(c.getId)))
         _ <- DIEffect[F].maybeSuspend(resource.rawClient.close())
