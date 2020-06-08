@@ -30,6 +30,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
     }
   }
 
+
   override protected def config: TestConfig = super
     .config.copy(
       memoizationRoots = Set(DIKey.get[PgSvcExample]),
