@@ -22,12 +22,13 @@ class DockerClientWrapper[F[_]](
   val rawClientConfig: DockerClientConfig,
   val clientConfig: ClientConfig,
   val labelsBase: Map[String, String],
+  val labelsJvm: Map[String, String],
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
   F: DIEffect[F]
 ) {
-  def labels: Map[String, String] = labelsBase ++ labelsUnique
+  def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
   def destroyContainer(container: ContainerId): F[Unit] = {
     F.definitelyRecover {
@@ -54,6 +55,8 @@ class DockerClientWrapper[F[_]](
 }
 
 object DockerClientWrapper {
+
+  private[this] val jvmRun: String = UUID.randomUUID().toString
 
   class Resource[F[_]: DIEffect](
     factory: DockerCmdExecFactory,
@@ -92,6 +95,7 @@ object DockerClientWrapper {
           rawClient = client,
           rawClientConfig = rawClientConfig,
           labelsBase = Map("distage.type" -> "testkit"),
+          labelsJvm = Map("distage.jvmrun" -> jvmRun),
           labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
           clientConfig = clientConfig,

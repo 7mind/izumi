@@ -36,11 +36,11 @@ object ContainerNetworkDef {
 
   final class NetworkResource[F[_]: DIEffect: DIEffectAsync, T](
     config: ContainerNetworkConfig[T],
-    clientw: DockerClientWrapper[F],
+    client: DockerClientWrapper[F],
     prefixName: String,
     logger: IzLogger,
   ) extends DIResource[F, ContainerNetwork[T]] {
-    private[this] val client = clientw.rawClient
+    private[this] val rawClient = client.rawClient
     private[this] val prefix = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val stableLabels: Map[String, String] = Map(
       "distage.reuse" -> shouldReuse(config),
@@ -49,13 +49,13 @@ object ContainerNetworkDef {
     ).map { case (k, v) => k -> v.toString }
 
     private[this] def shouldReuse(config: ContainerNetworkConfig[T]): Boolean = {
-      config.reuse && clientw.clientConfig.allowReuse
+      config.reuse && client.clientConfig.allowReuse
     }
 
     private[this] def createNew(): F[ContainerNetwork[T]] = DIEffect[F].maybeSuspend {
       val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
       logger.info(s"Going to create ${name -> "network"}")
-      val network = client
+      val network = rawClient
         .createNetworkCmd()
         .withName(name)
         .withDriver(config.driver)
@@ -68,7 +68,7 @@ object ContainerNetworkDef {
       if (config.reuse) {
         FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
           val labelsSet = stableLabels.toSet
-          val existedNetworks = client.listNetworksCmd().exec().asScala.toList
+          val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
           existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
             network =>
               DIEffect[F].pure(ContainerNetwork(network.getName, network.getId))
@@ -86,7 +86,7 @@ object ContainerNetworkDef {
       } else {
         DIEffect[F].maybeSuspend {
           logger.info(s"Going to delete ${resource.name -> "network"}")
-          client.removeNetworkCmd(resource.id).exec()
+          rawClient.removeNetworkCmd(resource.id).exec()
           ()
         }
       }

@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters._
 
 case class ContainerResource[F[_], T](
   config: Docker.ContainerConfig[T],
-  clientw: DockerClientWrapper[F],
+  client: DockerClientWrapper[F],
   logger: IzLogger,
 )(implicit
   val F: DIEffect[F],
@@ -33,7 +33,7 @@ case class ContainerResource[F[_], T](
 
   import ContainerResource._
 
-  private[this] val client = clientw.rawClient
+  private[this] val rawClient = client.rawClient
 
   private[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
@@ -43,7 +43,7 @@ case class ContainerResource[F[_], T](
   }
 
   private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    config.reuse && clientw.clientConfig.allowReuse
+    config.reuse && client.clientConfig.allowReuse
   }
 
   override def acquire: F[DockerContainer[T]] = F.suspendF {
@@ -71,7 +71,7 @@ case class ContainerResource[F[_], T](
 
   override def release(resource: DockerContainer[T]): F[Unit] = {
     if (!shouldReuse(resource.containerConfig)) {
-      clientw.destroyContainer(resource.id)
+      client.destroyContainer(resource.id)
     } else {
       F.unit
     }
@@ -81,7 +81,7 @@ case class ContainerResource[F[_], T](
     F.maybeSuspend {
         logger.debug(s"Awaiting until alive: $container...")
         try {
-          val status = client.inspectContainerCmd(container.id.name).exec()
+          val status = rawClient.inspectContainerCmd(container.id.name).exec()
           // if container is running or does not have any ports
           if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
             logger.debug(s"Trying healthcheck on running $container...")
@@ -144,7 +144,7 @@ case class ContainerResource[F[_], T](
           val statusFilter = exitedOpt.toList ++ List("running")
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
-            client
+            rawClient
               .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(statusFilter.asJava)
@@ -159,7 +159,7 @@ case class ContainerResource[F[_], T](
           val portSet = ports.map(_.port).toSet
           val candidates = containers.iterator.flatMap {
             c =>
-              val inspection = client.inspectContainerCmd(c.getId).exec()
+              val inspection = rawClient.inspectContainerCmd(c.getId).exec()
               val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
               val missedNetworks = config.networks.filterNot(n => networks.contains(n.name))
               mapContainerPorts(inspection) match {
@@ -180,7 +180,10 @@ case class ContainerResource[F[_], T](
             // or if container has no ports we will check that there is exists if this container belongs at least to this test run (or exists container that actually still runs)
             candidates.toList.find(_._2.getState.getRunning).orElse {
               candidates.find {
-                case (_, inspection, _) => (stableLabels.toSet -- inspection.getConfig.getLabels.asScala.toSet).isEmpty && inspection.getState.getExitCodeLong == 0L
+                case (_, inspection, _) =>
+                  val hasLabelsFromSameJvm = (stableLabels.toSet -- client.labelsUnique -- inspection.getConfig.getLabels.asScala.toSet).isEmpty
+                  val hasGoodExitCode = inspection.getState.getExitCodeLong == 0L
+                  hasLabelsFromSameJvm && hasGoodExitCode
               }
             }
           }
@@ -192,7 +195,7 @@ case class ContainerResource[F[_], T](
               name = inspection.getName,
               connectivity = existingPorts,
               containerConfig = config,
-              clientConfig = clientw.clientConfig,
+              clientConfig = client.clientConfig,
               availablePorts = VerifiedContainerConnectivity.empty,
               hostName = inspection.getConfig.getHostName,
               labels = inspection.getConfig.getLabels.asScala.toMap,
@@ -209,7 +212,7 @@ case class ContainerResource[F[_], T](
 
   private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-    val baseCmd = client.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
+    val baseCmd = rawClient.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
       case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
@@ -238,7 +241,7 @@ case class ContainerResource[F[_], T](
           .get
 
         logger.info(s"Going to pull `${config.image}`...")
-        client
+        rawClient
           .pullImageCmd(config.image)
           .start()
           .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
@@ -247,9 +250,9 @@ case class ContainerResource[F[_], T](
         val res = cmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
-        client.startContainerCmd(res.getId).exec()
+        rawClient.startContainerCmd(res.getId).exec()
 
-        val inspection = client.inspectContainerCmd(res.getId).exec()
+        val inspection = rawClient.inspectContainerCmd(res.getId).exec()
         val hostName = inspection.getConfig.getHostName
         val maybeMappedPorts = mapContainerPorts(inspection)
 
@@ -265,14 +268,14 @@ case class ContainerResource[F[_], T](
               inspection.getConfig.getLabels.asScala.toMap,
               mappedPorts,
               config,
-              clientw.clientConfig,
+              client.clientConfig,
               VerifiedContainerConnectivity.empty,
             )
             logger.debug(s"Created $container from ${config.image}...")
             logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
             config.networks.foreach {
               network =>
-                client
+                rawClient
                   .connectToNetworkCmd()
                   .withContainerId(container.id.name)
                   .withNetworkId(network.id)
@@ -309,7 +312,7 @@ case class ContainerResource[F[_], T](
     if (unmapped.nonEmpty) {
       Left(UnmappedPorts(unmapped))
     } else {
-      val dockerHost = clientw.rawClientConfig.getDockerHost.getHost
+      val dockerHost = client.rawClientConfig.getDockerHost.getHost
       val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
@@ -326,7 +329,7 @@ case class ContainerResource[F[_], T](
 
   private val stableLabels = Map(
       "distage.reuse" -> shouldReuse(config).toString
-    ) ++ clientw.labels
+    ) ++ client.labels
 }
 
 object ContainerResource {
