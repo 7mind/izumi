@@ -140,7 +140,8 @@ case class ContainerResource[F[_], T](
             * - we can't understood was that container's run belong to the one of the previous test runs, or to the current one.
             * So containers that will exit after doing their job will be reused only in the scope of the current test run.
             */
-          val statusFilter = Option.when(ports.isEmpty)("exited").toList ++ List("running")
+          val exitedOpt = if (ports.isEmpty) Some("exited") else None
+          val statusFilter = exitedOpt.toList ++ List("running")
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
             client
