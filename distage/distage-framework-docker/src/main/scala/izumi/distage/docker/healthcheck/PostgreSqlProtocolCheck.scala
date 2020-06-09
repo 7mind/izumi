@@ -69,6 +69,7 @@ final class PostgreSqlProtocolCheck[Tag](
       (buffer: Buffer).position(currentPos + message.length)
       buffer.put(0.toByte)
       (buffer: Buffer).position(currentPos + message.length + 1)
+      ()
     }
     // <size int32> <protocol int32> <user const str> <0> <username str> <0> <database const str> <0> <database str> <0> <0>
     val size = 4 + 4 + 4 + 1 + userName.length + 1 + 8 + 1 + databaseName.length + 1 + 1
