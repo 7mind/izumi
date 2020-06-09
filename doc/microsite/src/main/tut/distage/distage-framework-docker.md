@@ -26,11 +26,11 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework-docker" % "$izumi.
 
 Use of `distage-framework-docker` generally follows:
 
-- Create @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef)s for the containers the
-  application requires
-- Create a module that declares the container component
-- Include the @scaladoc[`DockerSupportModule`](izumi.distage.docker.modules.DockerSupportModule) in
-  the application's modules
+1. Create @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef)s for the containers the
+   application requires
+2. Create a module that declares the container component
+3. Include the @scaladoc[`DockerSupportModule`](izumi.distage.docker.modules.DockerSupportModule) in
+   the application's modules
 
 First, the required imports:
 
@@ -41,7 +41,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 ```
 
-#### Create a `ContainerDef`
+#### 1. Create a `ContainerDef`
 
 The @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef) is a trait used to define a docker
 container. Extend this trait and provide and implementation of the `config` method.
@@ -51,7 +51,7 @@ The required parameters of `Config` are:
 - `image` - the docker image to use
 - `ports` - ports to map on the docker container
 
-See @scaladoc[`Docker.ContainerConfig[T]`](izumi.distage.docker.Docker.ContainerConfig) for
+See @scaladoc[`Docker.ContainerConfig[Tag]`](izumi.distage.docker.Docker$$ContainerConfig) for
 additional parameters.
 
 Example [postgres](https://hub.docker.com/_/postgres/) container definition:
@@ -70,11 +70,11 @@ object PostgresDocker extends ContainerDef {
 }
 ```
 
-#### Declare Container Components
+#### 2. Declare Container Components
 
 To use this container a module that declares this component is required:
 
-##### `make`
+Use @scaladoc[`make`](izumi.distage.docker.ContainerDef#make) for binding in a `ModuleDef`:
 
 ```scala mdoc:silent
 class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
@@ -84,81 +84,8 @@ class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-##### `modifyConfig`
 
-The @scaladoc[`DockerProviderExtensions`](izumi.distage.docker.DockerContainer.DockerProviderExtensions)
-provides additional APIs for modiying the container definition.
-
-Use `modifyConfig` to modify the configuration of a container. The modifier is instantiated to a
-`ProviderMagnet` which will summon any additional dependencies.
-
-For example, To change the user of the postgres container:
-
-```scala mdoc:silent
-class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
-  make[PostgresDocker.Container].fromResource {
-    PostgresDocker.make[F].modifyConfig { () => (old: PostgresDocker.Config) =>
-      old.copy(user = Option("admin"))
-    }
-  }
-}
-```
-
-Suppose the `HostPostgresData` is a component provided by the application modules. This path can be
-added to the postgres containers mounts by adding to the additional dependencies of the provider
-magnet:
-
-```scala mdoc:silent
-case class HostPostgresData(path: String)
-
-class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
-  make[PostgresDocker.Container].fromResource {
-    PostgresDocker.make[F].modifyConfig {
-      (hostPostgresData: HostPostgresData) =>
-        (old: PostgresDocker.Config) =>
-          val dataMount = Docker.Mount(hostPostgresData.path, "/var/lib/postgresql/data")
-          old.copy(mounts = old.mounts :+ dataMount)
-    }
-  }
-}
-```
-
-##### `dependOnDocker`
-
-`dependOnDocker` adds a dependency on a given docker container. distage ensures the requested
-container is available before the dependent is provided.
-
-Suppose the system under test is a sync from postgres to elasticsearch. One option is to use
-`dependOnDocker` to declare the elasticsearch container depends on the postgres container:
-
-```scala mdoc:silent
-
-object ElasticSearchDocker extends ContainerDef {
-  val ports = Seq(9200, 9300)
-
-  override def config: Config = {
-    Config(
-      image = "docker.elastic.co/elasticsearch/elasticsearch:7.7.0",
-      ports = ports.map(Docker.DockerPort.TCP(_)),
-      env = Map("discovery.type" -> "single-node")
-    )
-  }
-}
-
-class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
-  make[PostgresDocker.Container].fromResource {
-    PostgresDocker.make[F]
-  }
-
-  make[ElasticSearchDocker.Container].fromResource {
-    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker)
-  }
-}
-```
-
-Another example of dependencies between containers is in "Docker Container Networks" below.
-
-#### Include `DockerSupportModule`
+#### 3. Include `DockerSupportModule`
 
 Include the `izumi.distage.docker.modules.DockerSupportModule` module in the application
 modules. This module contains required component declarations and initializes the
@@ -206,6 +133,85 @@ minimalExample.unsafeRunSync()
 
 If the `DockerSupportModule` is not included in an application then a get of a docker container
 dependent resource will fail with a `izumi.distage.model.exceptions.ProvisioningException`.
+
+### Config API
+
+The @scaladoc[`DockerProviderExtensions`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions)
+provides additional APIs for modiying the container definition.
+
+#### `modifyConfig`
+
+Use
+@scaladoc[`modifyConfig`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#modifyConfig)
+to modify the configuration of a container. The modifier is instantiated to a `ProviderMagnet` which
+will summon any additional dependencies.
+
+For example, To change the user of the postgres container:
+
+```scala mdoc:silent
+class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F].modifyConfig { () => (old: PostgresDocker.Config) =>
+      old.copy(user = Option("admin"))
+    }
+  }
+}
+```
+
+Suppose the `HostPostgresData` is a component provided by the application modules. This path can be
+added to the postgres containers mounts by adding to the additional dependencies of the provider
+magnet:
+
+```scala mdoc:silent
+case class HostPostgresData(path: String)
+
+class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F].modifyConfig {
+      (hostPostgresData: HostPostgresData) =>
+        (old: PostgresDocker.Config) =>
+          val dataMount = Docker.Mount(hostPostgresData.path, "/var/lib/postgresql/data")
+          old.copy(mounts = old.mounts :+ dataMount)
+    }
+  }
+}
+```
+
+#### `dependOnDocker`
+
+@scaladoc[`dependOnDocker`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnDocker)
+adds a dependency on a given docker container. distage ensures the requested container is available
+before the dependent is provided.
+
+Suppose the system under test is a sync from postgres to elasticsearch. One option is to use
+`dependOnDocker` to declare the elasticsearch container depends on the postgres container:
+
+```scala mdoc:silent
+
+object ElasticSearchDocker extends ContainerDef {
+  val ports = Seq(9200, 9300)
+
+  override def config: Config = {
+    Config(
+      image = "docker.elastic.co/elasticsearch/elasticsearch:7.7.0",
+      ports = ports.map(Docker.DockerPort.TCP(_)),
+      env = Map("discovery.type" -> "single-node")
+    )
+  }
+}
+
+class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
+  make[PostgresDocker.Container].fromResource {
+    PostgresDocker.make[F]
+  }
+
+  make[ElasticSearchDocker.Container].fromResource {
+    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker)
+  }
+}
+```
+
+Another example of dependencies between containers is in "Docker Container Networks" below.
 
 ### Usage in Integration Tests
 
@@ -256,8 +262,8 @@ class TransactorFromConfigModule extends ModuleDef {
 
 ```
 
-That code is agnostic of environment: Provided a `PostgresServerConfig` the `Transactor` needed by
-`PostgresExampleApp` can be constructed.
+Note that the above code is agnostic of environment: Provided a `PostgresServerConfig` the
+`Transactor` needed by `PostgresExampleApp` can be constructed.
 
 An integration test would use a module that provides the `PostgresServerConfig` from a
 `PostgresDocker.Container`:
@@ -331,21 +337,23 @@ postgresDockerIntegExample.unsafeRunSync()
 
 ### Docker Container Environment
 
-The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker.ContainerConfig)
+The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker$$ContainerConfig))
 defines the container environment. Of note are the environment variables, command and working
-directory:
+directory properties:
 
 - `env: Map[String, String]` - environment variables to setup in container
 - `cmd: Seq[String]` - command of entrypoint
 - `cwd: Option[String]` - working directory in container
 
-Once defined in a `ContainerDef` the config may be modified. See `modifyConfig` above for one
-mechanism. The container ports will also add to the configured environment variables:
+Once defined in a `ContainerDef` the config may be modified by distage modules. See `modifyConfig`
+above for one mechanism.
+
+The container ports will also add to the configured environment variables:
 
 - `DISTAGE_PORT_<proto>_<originalPort>` are the host ports allocated for the container
 
 
-### Docker Container Metadata
+### Docker Metadata
 
 The host ports allocated for the container are also added to the container metadata as labels.
 The are labels of the pattern `distage.port.<proto>.<originalPort>`. The value is the integer port
@@ -363,9 +371,9 @@ To connect containers to the same docker network use a
 2. Add the network to each container's config.
 
 This will ensure the containers are all connected to the network. Assuming no reuse, distage will
-create the required network and add each container configured to that network.
+create the required network and add each container to that network.
 
-#### Create a `ContainerNetworkDef`
+#### 1. Create a `ContainerNetworkDef`
 
 A minimal @scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetworkDef) uses the default
 configuration.
@@ -376,13 +384,15 @@ object TestClusterNetwork extends ContainerNetworkDef {
 }
 ```
 
-By default, this object identifies the network. The tag type uniquely identifies the network within
-the application. Any created network will be labeled with this name as well.
+By default, this object identifies the network. The associated tag type uniquely identifies this
+network within the application. In addition, any created network will have a label with this name in
+docker.
 
-#### Add to Container Config
+#### 2. Add to Container Config
 
 A container will be connected to all networks in the `networks` of the `config`. The method
-`connectToNetwork` adds a dependency on the network defined by a `ContainerNetworkDef`.
+@scaladoc[`connectToNetwork`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#connectToNetwork)
+adds a dependency on a network defined by a `ContainerNetworkDef`.
 
 For example:
 
@@ -405,7 +415,7 @@ container.
 
 #### Container Network Reuse
 
-Container networks, like containers, will be reused by default. If there is an existing network that
+Container networks, like containers, are reused by default. If there is an existing network that
 matches a definition then that network will be used. This can be disabled by setting the `reuse`
 configuration to false:
 
@@ -420,7 +430,7 @@ as the current config and object.
 
 ### Docker Client Configuration
 
-The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.Docker.ClientConfig) is the configuration
+The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.Docker$$ClientConfig) is the configuration
 of the docker client used. Including the module `DockerSupportModule` will provide a
 `Docker.ClientConfig`.
 
