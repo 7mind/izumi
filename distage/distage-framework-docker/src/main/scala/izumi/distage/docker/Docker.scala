@@ -128,7 +128,7 @@ object Docker {
     * @param useRegistry      Connect to speicifed Docker Registry
     */
   final case class ClientConfig(
-    readTimeoutMs: Int = 5000,
+    readTimeoutMs: Int = 60000,
     connectTimeoutMs: Int = 1000,
     allowReuse: Boolean = true,
     useRemote: Boolean = false,
