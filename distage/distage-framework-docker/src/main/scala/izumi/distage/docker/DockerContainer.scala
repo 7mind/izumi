@@ -78,6 +78,7 @@ object DockerContainer {
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
+      tag3.discard()
       modifyConfig {
         net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
           old.copy(networks = old.networks + net)
@@ -91,6 +92,7 @@ object DockerContainer {
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): ProviderMagnet[ContainerResource[F, T]] = {
       tag1.discard()
+      tag3.discard()
       modifyConfig {
         net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
           old.copy(networks = old.networks + net)

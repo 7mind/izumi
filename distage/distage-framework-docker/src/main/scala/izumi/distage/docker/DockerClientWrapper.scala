@@ -5,11 +5,11 @@ import java.util.UUID
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
+import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
-import izumi.distage.framework.model.IntegrationCheck
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
@@ -17,18 +17,18 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
-class DockerClientWrapper[F[_]]
-(
+class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
   val rawClientConfig: DockerClientConfig,
   val clientConfig: ClientConfig,
   val labelsBase: Map[String, String],
+  val labelsJvm: Map[String, String],
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
-  F: DIEffect[F],
+  F: DIEffect[F]
 ) {
-  def labels: Map[String, String] = labelsBase ++ labelsUnique
+  def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
   def destroyContainer(container: ContainerId): F[Unit] = {
     F.definitelyRecover {
@@ -56,8 +56,9 @@ class DockerClientWrapper[F[_]]
 
 object DockerClientWrapper {
 
-  class Resource[F[_]: DIEffect]
-  (
+  private[this] val jvmRun: String = UUID.randomUUID().toString
+
+  class Resource[F[_]: DIEffect](
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
@@ -65,8 +66,12 @@ object DockerClientWrapper {
     with IntegrationCheck {
 
     private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))((c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
-      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))((c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email))
+      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
+        (c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
+      )
+      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
+        (c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
+      )
       .get.build()
 
     private[this] lazy val client = DockerClientBuilder
@@ -90,6 +95,7 @@ object DockerClientWrapper {
           rawClient = client,
           rawClientConfig = rawClientConfig,
           labelsBase = Map("distage.type" -> "testkit"),
+          labelsJvm = Map("distage.jvmrun" -> jvmRun),
           labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
           clientConfig = clientConfig,
@@ -99,8 +105,20 @@ object DockerClientWrapper {
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
-        containers <- DIEffect[F].maybeSuspend(resource.rawClient.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
-        _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(c => resource.destroyContainer(ContainerId(c.getId)))
+        containers <- DIEffect[F].maybeSuspend {
+          resource
+            .rawClient
+            .listContainersCmd()
+            .withStatusFilter(List("running", "exited").asJava)
+            .withLabelFilter(resource.labels.asJava)
+            .exec()
+        }
+        // destroy all containers that should not be reused, or was exited (to not to cumulate containers that could be pruned)
+        containersToDestroy = containers.asScala.filter {
+          c =>
+            Option(c.getLabels.get("distage.reuse")).forall(_ == "false") || c.getState == "exited"
+        }
+        _ <- DIEffect[F].traverse_(containersToDestroy)(c => resource.destroyContainer(ContainerId(c.getId)))
         _ <- DIEffect[F].maybeSuspend(resource.rawClient.close())
       } yield ()
     }

@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters._
 
 case class ContainerResource[F[_], T](
   config: Docker.ContainerConfig[T],
-  clientw: DockerClientWrapper[F],
+  client: DockerClientWrapper[F],
   logger: IzLogger,
 )(implicit
   val F: DIEffect[F],
@@ -33,7 +33,7 @@ case class ContainerResource[F[_], T](
 
   import ContainerResource._
 
-  private[this] val client = clientw.rawClient
+  private[this] val rawClient = client.rawClient
 
   private[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
@@ -43,7 +43,7 @@ case class ContainerResource[F[_], T](
   }
 
   private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    config.reuse && clientw.clientConfig.allowReuse
+    config.reuse && client.clientConfig.allowReuse
   }
 
   override def acquire: F[DockerContainer[T]] = F.suspendF {
@@ -71,7 +71,7 @@ case class ContainerResource[F[_], T](
 
   override def release(resource: DockerContainer[T]): F[Unit] = {
     if (!shouldReuse(resource.containerConfig)) {
-      clientw.destroyContainer(resource.id)
+      client.destroyContainer(resource.id)
     } else {
       F.unit
     }
@@ -81,8 +81,9 @@ case class ContainerResource[F[_], T](
     F.maybeSuspend {
         logger.debug(s"Awaiting until alive: $container...")
         try {
-          val status = client.inspectContainerCmd(container.id.name).exec()
-          if (status.getState.getRunning) {
+          val status = rawClient.inspectContainerCmd(container.id.name).exec()
+          // if container is running or does not have any ports
+          if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
             logger.debug(s"Trying healthcheck on running $container...")
             Right(config.healthCheck.check(logger, container))
           } else {
@@ -129,12 +130,24 @@ case class ContainerResource[F[_], T](
     ) {
       for {
         containers <- F.maybeSuspend {
+          /**
+            * We will filter out containers only by "running" status if container has any ports to be mapped
+            * and by "exited" status also if there are no ports to map to.
+            * We don't need to list "exited" containers if ports were defined, because they will not perform a successful port check.
+            *
+            * Filtering containers like this will allow us to reuse containers that were started and exited eventually.
+            * By reusing containers we are usually assumes that container is runs in a daemon, but if container exited successfully -
+            * - we can't understood was that container's run belong to the one of the previous test runs, or to the current one.
+            * So containers that will exit after doing their job will be reused only in the scope of the current test run.
+            */
+          val exitedOpt = if (ports.isEmpty) List("exited") else Nil
+          val statusFilter = "running" :: exitedOpt
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
-            client
+            rawClient
               .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
-              .withStatusFilter(List("running").asJava)
+              .withStatusFilter(statusFilter.asJava)
               .exec()
               .asScala.toList.sortBy(_.getId)
           } catch {
@@ -142,38 +155,47 @@ case class ContainerResource[F[_], T](
               throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
           }
         }
-
-        candidates = {
+        candidate = {
           val portSet = ports.map(_.port).toSet
-          containers
-            .iterator.flatMap {
-              c =>
-                val inspection = client.inspectContainerCmd(c.getId).exec()
-                val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
-                val missedNetworks = config.networks.filterNot(n => networks.contains(n.name))
-                mapContainerPorts(inspection) match {
-                  case Left(value) =>
-                    logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
-                    Seq.empty
-                  case _ if missedNetworks.nonEmpty =>
-                    logger.info(s"Container ${c.getId} missing networks $missedNetworks so will not be reused")
-                    Seq.empty
-                  case Right(value) =>
-                    Seq((c, inspection, value))
-                }
-            }.find {
-              case (_, _, eports) =>
-                portSet.diff(eports.dockerPorts.keySet).isEmpty
+          val candidates = containers.flatMap {
+            c =>
+              val inspection = rawClient.inspectContainerCmd(c.getId).exec()
+              val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
+              val missedNetworks = config.networks.filterNot(n => networks.contains(n.name))
+              mapContainerPorts(inspection) match {
+                case Left(value) =>
+                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                  Seq.empty
+                case _ if missedNetworks.nonEmpty =>
+                  logger.info(s"Container ${c.getId} missing networks $missedNetworks so will not be reused")
+                  Seq.empty
+                case Right(value) =>
+                  Seq((c, inspection, value))
+              }
+          }
+          if (portSet.nonEmpty) {
+            // here we are checking if all ports was successfully mapped
+            candidates.find { case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty }
+          } else {
+            // or if container has no ports we will check that there is exists container that belongs at least to this test run (or exists container that actually still runs)
+            candidates.find(_._2.getState.getRunning).orElse {
+              candidates.find {
+                case (_, inspection, _) =>
+                  val hasLabelsFromSameJvm = (stableLabels.toSet -- client.labelsUnique -- inspection.getConfig.getLabels.asScala.toSet).isEmpty
+                  val hasGoodExitCode = inspection.getState.getExitCodeLong == 0L
+                  hasLabelsFromSameJvm && hasGoodExitCode
+              }
             }
+          }
         }
-        existing <- candidates match {
+        existing <- candidate match {
           case Some((c, inspection, existingPorts)) =>
             val unverified = DockerContainer[T](
               id = ContainerId(c.getId),
               name = inspection.getName,
               connectivity = existingPorts,
               containerConfig = config,
-              clientConfig = clientw.clientConfig,
+              clientConfig = client.clientConfig,
               availablePorts = VerifiedContainerConnectivity.empty,
               hostName = inspection.getConfig.getHostName,
               labels = inspection.getConfig.getLabels.asScala.toMap,
@@ -189,13 +211,8 @@ case class ContainerResource[F[_], T](
   }
 
   private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
-    val stableLabels = Map(
-      "distage.reuse" -> shouldReuse(config).toString
-    )
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-    val baseCmd = client
-      .createContainerCmd(config.image)
-      .withLabels((clientw.labels ++ allPortLabels).asJava)
+    val baseCmd = rawClient.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
       case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
@@ -224,7 +241,7 @@ case class ContainerResource[F[_], T](
           .get
 
         logger.info(s"Going to pull `${config.image}`...")
-        client
+        rawClient
           .pullImageCmd(config.image)
           .start()
           .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
@@ -233,9 +250,9 @@ case class ContainerResource[F[_], T](
         val res = cmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
-        client.startContainerCmd(res.getId).exec()
+        rawClient.startContainerCmd(res.getId).exec()
 
-        val inspection = client.inspectContainerCmd(res.getId).exec()
+        val inspection = rawClient.inspectContainerCmd(res.getId).exec()
         val hostName = inspection.getConfig.getHostName
         val maybeMappedPorts = mapContainerPorts(inspection)
 
@@ -251,14 +268,14 @@ case class ContainerResource[F[_], T](
               inspection.getConfig.getLabels.asScala.toMap,
               mappedPorts,
               config,
-              clientw.clientConfig,
+              client.clientConfig,
               VerifiedContainerConnectivity.empty,
             )
             logger.debug(s"Created $container from ${config.image}...")
             logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
             config.networks.foreach {
               network =>
-                client
+                rawClient
                   .connectToNetworkCmd()
                   .withContainerId(container.id.name)
                   .withNetworkId(network.id)
@@ -295,7 +312,7 @@ case class ContainerResource[F[_], T](
     if (unmapped.nonEmpty) {
       Left(UnmappedPorts(unmapped))
     } else {
-      val dockerHost = clientw.rawClientConfig.getDockerHost.getHost
+      val dockerHost = client.rawClientConfig.getDockerHost.getHost
       val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
@@ -310,10 +327,11 @@ case class ContainerResource[F[_], T](
 
   }
 
+  private val stableLabels = Map(
+      "distage.reuse" -> shouldReuse(config).toString
+    ) ++ client.labels
 }
 
 object ContainerResource {
-
   private final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
-
 }

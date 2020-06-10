@@ -20,6 +20,7 @@ class PgSvcExample(
   val kafka: AvailablePort @Id("kafka"),
   val cs: AvailablePort @Id("cs"),
   val mq: AvailablePort @Id("mq"),
+  val cmd: CmdContainer.Container,
 ) extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = {
     new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)
@@ -34,10 +35,11 @@ object DockerPlugin extends PluginDef {
     DynamoDocker.make[Task]
   }
 
-  include(new CassandraDockerModule[Task])
-  include(new ZookeeperDockerModule[Task])
-  include(new KafkaDockerModule[Task])
-  include(new ElasticMQDockerModule[Task])
+  include(CassandraDockerModule[Task])
+  include(ZookeeperDockerModule[Task])
+  include(KafkaDockerModule[Task])
+  include(ElasticMQDockerModule[Task])
+  include(CmdContainerModule[Task])
 
   make[AvailablePort].named("mq").tagged(Env.Test).from {
     cs: ElasticMQDocker.Container =>

@@ -17,16 +17,6 @@ object DockerSupportModule {
   def apply[F[_]: TagK]: DockerSupportModule[F] = new DockerSupportModule[F]
 
   final val config = new ConfigModuleDef {
-    makeConfigWithDefault[Docker.ClientConfig]("docker") {
-      Docker.ClientConfig(
-        readTimeoutMs = 60000,
-        connectTimeoutMs = 500,
-        allowReuse = true,
-        useRemote = false,
-        useRegistry = false,
-        remote = None,
-        registry = None,
-      )
-    }
+    makeConfigWithDefault[Docker.ClientConfig]("docker")(Docker.ClientConfig())
   }
 }
