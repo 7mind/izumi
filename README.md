@@ -100,6 +100,8 @@ Adopters
 
 Are you using Izumi? Please consider opening a pull request to list your organization here:
 
+[![Tinkoff](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true)](https://tinkoff.ru/)
+
 [![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
 
 [![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
