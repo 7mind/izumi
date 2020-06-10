@@ -1,12 +1,9 @@
 package izumi.distage.testkit.docker
 
-import java.util.UUID
-
 import distage.DIKey
-import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.docker.fixtures.{CmdContainer, CmdContainerModule, PgSvcExample}
+import izumi.distage.testkit.docker.fixtures.{CmdContainerModule, PgSvcExample}
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import izumi.logstage.api.Log
 import zio.IO
@@ -37,9 +34,9 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       memoizationRoots = Set(DIKey.get[PgSvcExample]),
       parallelTests = ParallelLevel.Unlimited,
       parallelEnvs = ParallelLevel.Unlimited,
-      moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
       logLevel = Log.Level.Info,
     )
+
 }
 
 final class DistageTestDockerBIO1 extends DistageTestDockerBIO
@@ -58,9 +55,8 @@ final class DistageTestDockerBIO13 extends DistageTestDockerBIO
 final class DistageTestDockerBIO14 extends DistageTestDockerBIO
 final class DistageTestDockerBIO15 extends DistageTestDockerBIO
 final class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
-  override protected def config: TestConfig = super
-    .config.copy(
-      moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
-      logLevel = Log.Level.Warn,
-    )
+  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Warn)
+}
+final class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Error)
 }

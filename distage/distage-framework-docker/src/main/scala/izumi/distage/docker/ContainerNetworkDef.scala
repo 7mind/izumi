@@ -3,9 +3,11 @@ package izumi.distage.docker
 import java.util.UUID
 
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.reflect.TagK
 import izumi.logstage.api.IzLogger
@@ -41,7 +43,7 @@ object ContainerNetworkDef {
     logger: IzLogger,
   ) extends DIResource[F, ContainerNetwork[T]] {
     private[this] val rawClient = client.rawClient
-    private[this] val prefix = prefixName.camelToUnderscores.drop(1).replace("$", "")
+    private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val stableLabels: Map[String, String] = Map(
       "distage.reuse" -> shouldReuse(config),
       s"distage.driver.${config.driver}" -> "true",
@@ -50,6 +52,35 @@ object ContainerNetworkDef {
 
     private[this] def shouldReuse(config: ContainerNetworkConfig[T]): Boolean = {
       config.reuse && client.clientConfig.allowReuse
+    }
+
+    override def acquire: F[ContainerNetwork[T]] = {
+      integrationCheckHack {
+        if (config.reuse) {
+          FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
+            val labelsSet = stableLabels.toSet
+            val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
+            existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
+              network =>
+                DIEffect[F].pure(ContainerNetwork(network.getName, network.getId))
+            }
+          }
+        } else {
+          createNew()
+        }
+      }
+    }
+
+    override def release(resource: ContainerNetwork[T]): F[Unit] = {
+      if (shouldReuse(config)) {
+        DIEffect[F].unit
+      } else {
+        DIEffect[F].maybeSuspend {
+          logger.info(s"Going to delete ${resource.name -> "network"}")
+          rawClient.removeNetworkCmd(resource.id).exec()
+          ()
+        }
+      }
     }
 
     private[this] def createNew(): F[ContainerNetwork[T]] = DIEffect[F].maybeSuspend {
@@ -64,33 +95,16 @@ object ContainerNetworkDef {
       ContainerNetwork(name, network.getId)
     }
 
-    override def acquire: F[ContainerNetwork[T]] = {
-      if (config.reuse) {
-        FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
-          val labelsSet = stableLabels.toSet
-          val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
-          existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
-            network =>
-              DIEffect[F].pure(ContainerNetwork(network.getName, network.getId))
-          }
-        }
-      } else {
-        createNew()
-      }
-
-    }
-
-    override def release(resource: ContainerNetwork[T]): F[Unit] = {
-      if (shouldReuse(config)) {
-        DIEffect[F].unit
-      } else {
-        DIEffect[F].maybeSuspend {
-          logger.info(s"Going to delete ${resource.name -> "network"}")
-          rawClient.removeNetworkCmd(resource.id).exec()
-          ()
-        }
+    private[this] def integrationCheckHack[A](f: => A): A = {
+      // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+      try {
+        f
+      } catch {
+        case c: Throwable if c.getMessage contains "Connection refused" =>
+          throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
       }
     }
+
   }
 
   final case class ContainerNetwork[Tag](
