@@ -140,8 +140,8 @@ case class ContainerResource[F[_], T](
             * - we can't understood was that container's run belong to the one of the previous test runs, or to the current one.
             * So containers that will exit after doing their job will be reused only in the scope of the current test run.
             */
-          val exitedOpt = if (ports.isEmpty) Some("exited") else None
-          val statusFilter = exitedOpt.toList ++ List("running")
+          val exitedOpt = if (ports.isEmpty) List("exited") else Nil
+          val statusFilter = "running" :: exitedOpt
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
             rawClient
@@ -157,7 +157,7 @@ case class ContainerResource[F[_], T](
         }
         candidate = {
           val portSet = ports.map(_.port).toSet
-          val candidates = containers.iterator.flatMap {
+          val candidates = containers.flatMap {
             c =>
               val inspection = rawClient.inspectContainerCmd(c.getId).exec()
               val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
@@ -177,8 +177,8 @@ case class ContainerResource[F[_], T](
             // here we are checking if all ports was successfully mapped
             candidates.find { case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty }
           } else {
-            // or if container has no ports we will check that there is exists if this container belongs at least to this test run (or exists container that actually still runs)
-            candidates.toList.find(_._2.getState.getRunning).orElse {
+            // or if container has no ports we will check that there is exists container that belongs at least to this test run (or exists container that actually still runs)
+            candidates.find(_._2.getState.getRunning).orElse {
               candidates.find {
                 case (_, inspection, _) =>
                   val hasLabelsFromSameJvm = (stableLabels.toSet -- client.labelsUnique -- inspection.getConfig.getLabels.asScala.toSet).isEmpty

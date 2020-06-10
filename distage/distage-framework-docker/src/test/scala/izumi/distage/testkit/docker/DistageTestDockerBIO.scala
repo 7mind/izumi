@@ -6,7 +6,7 @@ import distage.DIKey
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.docker.fixtures.PgSvcExample
+import izumi.distage.testkit.docker.fixtures.{CmdContainer, CmdContainerModule, PgSvcExample}
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import izumi.logstage.api.Log
 import zio.IO
@@ -19,6 +19,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       service: PgSvcExample =>
         for {
           _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
+          _ <- IO(CmdContainerModule.checkFileForContent())
         } yield ()
     }
 
@@ -26,6 +27,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       service: PgSvcExample =>
         for {
           _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
+          _ <- IO(CmdContainerModule.checkFileForContent())
         } yield ()
     }
   }
@@ -55,3 +57,10 @@ final class DistageTestDockerBIO12 extends DistageTestDockerBIO
 final class DistageTestDockerBIO13 extends DistageTestDockerBIO
 final class DistageTestDockerBIO14 extends DistageTestDockerBIO
 final class DistageTestDockerBIO15 extends DistageTestDockerBIO
+final class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super
+    .config.copy(
+      moduleOverrides = super.config.moduleOverrides overridenBy new ModuleDef { make[UUID].fromValue(UUID.randomUUID()) },
+      logLevel = Log.Level.Warn,
+    )
+}
