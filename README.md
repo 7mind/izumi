@@ -100,11 +100,20 @@ Adopters
 
 Are you using Izumi? Please consider opening a pull request to list your organization here:
 
-[![Tinkoff](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true)](https://tinkoff.ru/)
+<a href="https://tinkoff.ru/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true" alt="Tinkoff"/>
+</a>
+<br/>
 
-[![Raiffeisen Bank Russia](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true)](https://www.raiffeisen.ru/en/)
+<a href="https://www.raiffeisen.ru/en/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true" alt="Raiffeisen Bank Russia"/>
+</a>
+<br/>
 
-[![vidIQ](https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true)](https://vidiq.com/)
+<a href="https://vidiq.com/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true" alt="vidIQ"/>
+</a>
+<br/>
 
 Projects powered by Izumi
 ==========================
