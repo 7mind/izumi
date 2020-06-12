@@ -35,6 +35,8 @@ final class PureconfigAutoDerive[A](val value: ConfigReader[A]) extends AnyVal
 object PureconfigAutoDerive {
   @inline def apply[A](implicit ev: PureconfigAutoDerive[A]): ConfigReader[A] = ev.value
 
+  @inline def derived[A](implicit ev: PureconfigAutoDerive[A]): ConfigReader[A] = ev.value
+
   implicit def materialize[A]: PureconfigAutoDerive[A] = macro PureconfigAutoDeriveMacro.materializeImpl[A]
 
   object PureconfigAutoDeriveMacro {
