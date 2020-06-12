@@ -55,8 +55,8 @@ final class DistageTestDockerBIO13 extends DistageTestDockerBIO
 final class DistageTestDockerBIO14 extends DistageTestDockerBIO
 final class DistageTestDockerBIO15 extends DistageTestDockerBIO
 final class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Warn)
+  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Debug)
 }
 final class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Error)
+  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Trace)
 }

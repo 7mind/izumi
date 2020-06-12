@@ -1,16 +1,18 @@
 package izumi.distage.testkit.docker.fixtures
+
 import java.nio.file.{Files, Path}
 
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.Mount
+import org.scalatest.Assertions.assert
 
 object CmdContainer extends ContainerDef {
   override def config: Config = {
     Config(
       image = "alpine:3.12.0",
       ports = Seq(),
-      mounts = Seq(Mount(CmdContainerModule.mountFile.toAbsolutePath.toString, "/docker-test.txt")),
+      mounts = Seq(Mount(CmdContainerModule.mountFile.toRealPath().toString, "/docker-test.txt")),
       entrypoint = Seq("sh", "-c", "echo foo >> /docker-test.txt"),
       reuse = true,
     )
@@ -31,5 +33,6 @@ object CmdContainerModule {
   def checkFileForContent(): Unit = {
     val lines = Files.readAllLines(mountFile)
     assert(lines.size() == 1)
+    ()
   }
 }

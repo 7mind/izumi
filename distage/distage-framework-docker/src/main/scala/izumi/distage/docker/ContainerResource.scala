@@ -111,7 +111,7 @@ case class ContainerResource[F[_], T](
           val max = config.healthCheckMaxAttempts
           val next = attempt + 1
           if (max >= next) {
-            logger.debug(s"Healthcheck uncertain, retrying $next/$max on $container...")
+            logger.debug(s"Health check uncertain, retrying $next/$max on $container...")
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
             F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
@@ -126,7 +126,7 @@ case class ContainerResource[F[_], T](
     FileLockMutex.withLocalMutex(logger)(
       s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
       waitFor = 200.millis,
-      maxAttempts = config.pullTimeout.toSeconds.toInt,
+      maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
     ) {
       for {
         containers <- F.maybeSuspend {
