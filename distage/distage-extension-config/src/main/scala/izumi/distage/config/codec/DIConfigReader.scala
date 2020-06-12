@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
   *
   * Always automatically derives a codec if it's not available.
   *
-  * Automatic derivation will use **`camelCase`** fields, not `snake-case` fields,
+  * Automatic derivation will use **`camelCase`** fields, not `kebab-case` fields,
   * as in default pureconfig. It also override pureconfig's default `type` field
   * type discriminator for sealed traits. Instead, using `circe`-like format with a single-key object. Example:
   *
@@ -103,7 +103,7 @@ object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
     cv =>
       dec.from(cv) match {
-        case Left(errs)   => Failure(ConfigReaderException[T](errs))
+        case Left(errs) => Failure(ConfigReaderException[T](errs))
         case Right(value) => Success(value)
       }
   }

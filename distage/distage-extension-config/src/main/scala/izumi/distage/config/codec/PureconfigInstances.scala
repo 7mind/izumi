@@ -10,6 +10,7 @@ import scala.reflect.classTag
 import scala.util.control.NonFatal
 
 object PureconfigInstances extends PureconfigInstances
+
 trait PureconfigInstances {
   /** Override pureconfig's default `snake-case` fields – force CamelCase product-hint */
   @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = camelCaseProductHint.asInstanceOf[ProductHint[T]]
@@ -52,7 +53,8 @@ trait PureconfigInstances {
   // use `Exported` so that if user imports their own instances, user instances will have higher priority
   implicit final lazy val memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
     cur: ConfigCursor =>
-      try Right(cur.value.atKey("m").getMemorySize("m")) catch {
+      try Right(cur.value.atKey("m").getMemorySize("m"))
+      catch {
         case NonFatal(ex) =>
           Result.fail(error.ConvertFailure(CannotConvert(cur.value.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
       }
