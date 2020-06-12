@@ -13,8 +13,8 @@ import scala.reflect.macros.blackbox
   *
   * 1. Field name remapping is disabled, `camelCase` fields will remain camelCase, not `kebab-case`
   * 2. Sealed traits are rendered as in `circe`, using a wrapper object with a single field, instead of using a `type` field. Example:
-  * *
-  * * {{{
+  *
+  * {{{
   *   sealed trait AorB
   *   final case class A(a: Int) extends AorB
   *   final case class B(b: String) extends AorB
