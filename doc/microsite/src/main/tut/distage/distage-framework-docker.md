@@ -215,6 +215,30 @@ class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
 
 Another example of dependencies between containers is in the "Docker Container Networks" section later in this document.
 
+### Availability and Health Checks
+
+The `healthCheck` properties of
+@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker$$ContainerConfig) configure the
+health checks. A container resource will not be provided if the health checks did not succeed at
+acquire time. These are used to determine if an existing container can be used and if starting a
+fresh container succeeded.
+
+By default, the `healthCheck` is a port check of the ports from the container config. There are
+several standard checks provided in
+@scaladoc[ContainerHealthCheck](izumi.distage.docker.healthcheck.ContainerHealthCheck$) that can be
+combined to cover many common cases.
+
+The @scaladoc[availablePorts](izumi.distage.docker.DockerContainer#availablePorts) property of
+the container resource are the mapped ports that passed the health check. This is a map
+from a `Docker.DockerPort` provided in the config to a host and port. For example:
+
+```scala
+val port = container.availablePorts.first(PostgresDocker.primaryPort)
+```
+
+would be a host and port mapped to the Postgres container's primary port that have passed the
+health check.
+
 ### Usage in Integration Tests
 
 A common use case is using Docker containers to provide service implementations for integration test, such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
