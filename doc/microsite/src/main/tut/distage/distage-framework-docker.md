@@ -5,9 +5,9 @@ distage-framework-docker
 
 ### Key Features
 
-- Provides docker containers as resources
+- Provides Docker containers as resources
 - Reasonable defaults with flexible configuration
-- Excellent for providing docker implementations of services for integration tests
+- Excellent for providing Docker implementations of services for integration tests
 
 ### Dependencies
 
@@ -24,7 +24,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework-docker" % "$izumi.
 
 ### Overview
 
-Use of `distage-framework-docker` generally follows:
+Usage of `distage-framework-docker` generally follows these steps:
 
 1. Create @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef)s for the containers the
    application requires
@@ -32,7 +32,9 @@ Use of `distage-framework-docker` generally follows:
 3. Include the @scaladoc[`DockerSupportModule`](izumi.distage.docker.modules.DockerSupportModule) in
    the application's modules
 
-First, the required imports:
+#### Setup
+
+Required imports:
 
 ```scala mdoc:silent
 import izumi.distage.docker.ContainerDef
@@ -43,10 +45,10 @@ import izumi.reflect.TagK
 
 #### 1. Create a `ContainerDef`
 
-The @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef) is a trait used to define a docker
-container. Extend this trait and provide and implementation of the `config` method.
+The @scaladoc[`ContainerDef`](izumi.distage.docker.ContainerDef) is a trait used to define a Docker
+container. Extend this trait and provide an implementation of the `config` method.
 
-The required parameters of `Config` are:
+The required parameters for `Config` are:
 
 - `image` - the docker image to use
 - `ports` - ports to map on the docker container
@@ -72,7 +74,7 @@ object PostgresDocker extends ContainerDef {
 
 #### 2. Declare Container Components
 
-To use this container a module that declares this component is required:
+To use this container, a module that declares this component is required:
 
 Use @scaladoc[`make`](izumi.distage.docker.ContainerDef#make) for binding in a `ModuleDef`:
 
@@ -85,7 +87,7 @@ class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
 ```
 
 
-#### 3. Include `DockerSupportModule`
+#### 3. Include the `DockerSupportModule`
 
 Include the `izumi.distage.docker.modules.DockerSupportModule` module in the application
 modules. This module contains required component declarations and initializes the
@@ -112,7 +114,7 @@ val distageFrameworkModules = new ModuleDef {
 }
 ```
 
-The required framework modules plus `PostgresDockerModule` is sufficient to depend on docker
+The required framework modules plus `PostgresDockerModule` is sufficient to depend on Docker
 containers:
 
 ```scala mdoc:to-string
@@ -131,7 +133,7 @@ def minimalExample = {
 minimalExample.unsafeRunSync()
 ```
 
-If the `DockerSupportModule` is not included in an application then a get of a docker container
+If the `DockerSupportModule` is not included in an application then a get of a Docker container
 dependent resource will fail with a `izumi.distage.model.exceptions.ProvisioningException`.
 
 ### Config API
@@ -143,10 +145,10 @@ provides additional APIs for modiying the container definition.
 
 Use
 @scaladoc[`modifyConfig`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#modifyConfig)
-to modify the configuration of a container. The modifier is instantiated to a `ProviderMagnet` which
+to modify the configuration of a container. The modifier is instantiated to a `ProviderMagnet`, which
 will summon any additional dependencies.
 
-For example, To change the user of the postgres container:
+For example, to change the user of the PostgreSQL container:
 
 ```scala mdoc:silent
 class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
@@ -158,8 +160,8 @@ class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-Suppose the `HostPostgresData` is a component provided by the application modules. This path can be
-added to the postgres containers mounts by adding to the additional dependencies of the provider
+Suppose `HostPostgresData` is a component provided by the application modules. This path can be
+added to the PostgreSQL container's mounts by adding to the additional dependencies of the provider
 magnet:
 
 ```scala mdoc:silent
@@ -180,11 +182,11 @@ class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 #### `dependOnDocker`
 
 @scaladoc[`dependOnDocker`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnDocker)
-adds a dependency on a given docker container. distage ensures the requested container is available
+adds a dependency on a given Docker container. `distage` ensures the requested container is available
 before the dependent is provided.
 
-Suppose the system under test is a sync from postgres to elasticsearch. One option is to use
-`dependOnDocker` to declare the elasticsearch container depends on the postgres container:
+Suppose the system under test is a sync from PostgreSQL to Elasticsearch. One option is to use
+`dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
 
 ```scala mdoc:silent
 
@@ -211,16 +213,15 @@ class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-Another example of dependencies between containers is in "Docker Container Networks" below.
+Another example of dependencies between containers is in the "Docker Container Networks" section later in this document.
 
 ### Usage in Integration Tests
 
-A common use case is using docker containers to provide service implementations for integration test.
-Such as using a postgres container for verifying an application that uses a postgres database.
-Distage container resources are easy to integrate as providers.
+A common use case is using Docker containers to provide service implementations for integration test, such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
+`distage` container resources are easy to integrate as providers.
 
 Consider the example application below. This application is written to depend on a
-[doobie](https://tpolecat.github.io/doobie/) `Transactor`. Which is constructed from a
+[doobie](https://tpolecat.github.io/doobie/) `Transactor`, which is constructed from a
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
@@ -262,7 +263,7 @@ class TransactorFromConfigModule extends ModuleDef {
 
 ```
 
-Note that the above code is agnostic of environment: Provided a `PostgresServerConfig` the
+Note that the above code is agnostic of environment. Provided a `PostgresServerConfig`, the
 `Transactor` needed by `PostgresExampleApp` can be constructed.
 
 An integration test would use a module that provides the `PostgresServerConfig` from a
@@ -288,7 +289,7 @@ class IntegUsingDockerModule extends ModuleDef {
 }
 ```
 
-Using `distage-testkit` the test would be written like:
+Using `distage-testkit` the test would be written like this:
 
 ```scala mdoc:silent
 import izumi.distage.testkit.scalatest.DistageSpecScalatest
@@ -338,7 +339,7 @@ postgresDockerIntegExample.unsafeRunSync()
 ### Docker Container Environment
 
 The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker$$ContainerConfig))
-defines the container environment. Of note are the environment variables, command and working
+defines the container environment. Of note are the environment variables, command of entrypoint, and working
 directory properties:
 
 - `env: Map[String, String]` - environment variables to setup in container
@@ -356,18 +357,18 @@ The container ports will also add to the configured environment variables:
 ### Docker Metadata
 
 The host ports allocated for the container are also added to the container metadata as labels.
-The are labels of the pattern `distage.port.<proto>.<originalPort>`. The value is the integer port
+These labels follow the pattern `distage.port.<proto>.<originalPort>`. The value is the integer port
 number.
 
 ### Docker Container Networks
 
-`distage-framework-docker` can automatically manage [docker
+`distage-framework-docker` can automatically manage [Docker
 networks](https://docs.docker.com/engine/reference/commandline/network/).
 
-To connect containers to the same docker network use a
+To connect containers to the same Docker network, use a
 @scaladoc[`ContainerNetworkDef`](izumi.distage.docker.ContainerNetworkDef):
 
-1. Create a `ContainerNetworkDef`
+1. Create a `ContainerNetworkDef`.
 2. Add the network to each container's config.
 
 This will ensure the containers are all connected to the network. Assuming no reuse, distage will
@@ -384,17 +385,15 @@ object TestClusterNetwork extends ContainerNetworkDef {
 }
 ```
 
-By default, this object identifies the network. The associated tag type uniquely identifies this
+By default this object identifies the network. The associated tag type uniquely identifies this
 network within the application. In addition, any created network will have a label with this name in
-docker.
+Docker.
 
 #### 2. Add to Container Config
 
 A container will be connected to all networks in the `networks` of the `config`. The method
 @scaladoc[`connectToNetwork`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#connectToNetwork)
-adds a dependency on a network defined by a `ContainerNetworkDef`.
-
-For example:
+adds a dependency on a network defined by a `ContainerNetworkDef`, as in this example:
 
 ```mdoc:silent
 class TestClusterNetworkModule[F[_]: TagK] extends ModuleDef {
@@ -425,13 +424,12 @@ object AlwaysFreshNetwork extends ContainerNetworkDef {
 }
 ```
 
-For an existing network to be reused the config and object name at time of creation must be the same
-as the current config and object.
+For an existing network to be reused, the config and object name at time of creation must be the match the current configuration value and object.
 
 ### Docker Client Configuration
 
 The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.Docker$$ClientConfig) is the configuration
-of the docker client used. Including the module `DockerSupportModule` will provide a
+of the Docker client used. Including the module `DockerSupportModule` will provide a
 `Docker.ClientConfig`.
 
 There are two primary mechanisms to change the `Docker.ClientConfig` provided by
@@ -488,10 +486,10 @@ class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
 
 ### Container Reuse
 
-By default, acquiring a container resource does not always start a fresh container. Likewise, on
-releasing the resource the container will not be destroyed.  When a container resource is acquired
-the docker system is inspected to determine if a matching container is already executing. If a
-matching container is already running this container is referenced by the
+By default acquiring a container resource does not always start a fresh container. Likewise on
+releasing the resource the container will not be destroyed.  When a container resource is acquired,
+the Docker system is inspected to determine if a matching container is already executing. If a
+matching container is found this container is referenced by the
 `ContainerResource`. Otherwise a fresh container is started.  In both cases the acquired
 `ContainerResource` will have passed configured health checks.
 
@@ -499,11 +497,11 @@ matching container is already running this container is referenced by the
 
 For an existing container to be reused, all the following must be true:
 
-- The current client config has `allowReuse == true`
-- The container config has `reuse == true`
-- The running container was created for reuse
+- The current client config has `allowReuse == true`.
+- The container config has `reuse == true`.
+- The running container was created for reuse.
 - The running container uses the same image as the container config.
-- All ports requested in the container config must be mapped for the running container
+- All ports requested in the container config must be mapped for the running container.
 
 #### Configuring Reuse
 
@@ -512,9 +510,9 @@ The `ContainerDef.Config.reuse` should be false to disable reuse for a specific 
 
 #### Improving Reuse Performance
 
-When using reuse the cost of inspecting the docker system can be avoided using memoization roots. For
-example, in this integration test the container resource is not reconstructed for each test. As the
-resource is not reconstructed there is no repeated inspection of the docker system.
+When utilizing reuse, the performance cost of inspecting the Docker system can be avoided using memoization roots. For
+example, in this integration test the container resource is not reconstructed for each test. Because the
+resource is not reconstructed there is no repeated inspection of the Docker system.
 
 ```scala mdoc:silent
 class NoReuseByMemoizationExampleTest extends DistageSpecScalatest[IO] {
@@ -555,7 +553,7 @@ namespace.
 
 ### Tips
 
-To kill all containers spawned by distage, use the following command:
+To kill all containers spawned by `distage`, use the following command:
 
 ```shell
 docker rm -f $(docker ps -q -a -f 'label=distage.type')
