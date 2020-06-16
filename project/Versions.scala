@@ -23,7 +23,7 @@ object V {
   val jawn = "1.0.0"
 
   val http4s = "0.21.4"
-  val doobie = "0.8.8"
+  val doobie = "0.9.0"
 
   // good to drop - scala
   val scala_java_time = "2.0.0-RC5"

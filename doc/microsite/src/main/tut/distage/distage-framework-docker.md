@@ -84,6 +84,9 @@ class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
     PostgresDocker.make[F]
   }
 }
+object PostgresDockerModule {
+  def apply[F[_]: TagK] = new PostgresDockerModule[F]
+}
 ```
 
 
@@ -109,7 +112,7 @@ val distageFrameworkModules = new ModuleDef {
 
   // standard distage framework modules
   include(AppConfigModule(ConfigFactory.defaultApplication))
-  include(new CatsDIEffectModule {})
+  include(CatsDIEffectModule)
   include(new LogIOModule[IO](StaticLogRouter.instance, false))
 }
 ```
@@ -120,7 +123,7 @@ containers:
 ```scala mdoc:to-string
 def minimalExample = {
   val applicationModules = new ModuleDef {
-    include(new PostgresDockerModule[IO])
+    include(PostgresDockerModule[IO])
     include(distageFrameworkModules)
   }
 
@@ -154,7 +157,7 @@ For example, to change the user of the PostgreSQL container:
 class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
   make[PostgresDocker.Container].fromResource {
     PostgresDocker.make[F].modifyConfig { () => (old: PostgresDocker.Config) =>
-      old.copy(user = Option("admin"))
+      old.copy(user = Some("admin"))
     }
   }
 }
@@ -185,8 +188,8 @@ class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 adds a dependency on a given Docker container. `distage` ensures the requested container is available
 before the dependent is provided.
 
-Suppose the system under test is a sync from PostgreSQL to Elasticsearch. One option is to use
-`dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
+For example, suppose a system under test requires both PostgreSQL and Elasticsearch. One option is to
+use `dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
 
 ```scala mdoc:silent
 
@@ -250,14 +253,14 @@ Consider the example application below. This application is written to depend on
 
 ```scala mdoc:silent
 import doobie._
-import doobie.implicits._
-import java.util.Date
+import doobie.syntax.connectionio._
+import doobie.syntax.string._
 
 class PostgresExampleApp(xa: Transactor[IO]) {
   def plusOne(a: Int): IO[Int] =
     sql"select ${a} + 1".query[Int].unique.transact(xa)
 
-  val run: IO[Unit] = plusOne(1) flatMap { v => IO(println(s"1 + 1 = ${v}.")) }
+  val run: IO[Unit] = plusOne(1).flatMap(v => IO(println(s"1 + 1 = ${v}.")))
 }
 
 // the postgres configuration used to construct the Transactor
@@ -270,7 +273,7 @@ case class PostgresServerConfig(
 )
 
 class TransactorFromConfigModule extends ModuleDef {
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.ExecutionContext.global
 
   implicit val contextShift = IO.contextShift(global)
   implicit val timer = IO.timer(global)
@@ -299,11 +302,13 @@ class IntegUsingDockerModule extends ModuleDef {
   make[PostgresServerConfig].from {
     container: PostgresDocker.Container => {
       val knownAddress = container.availablePorts.first(PostgresDocker.primaryPort)
-      PostgresServerConfig(knownAddress.hostV4,
-                           knownAddress.port,
-                           "postgres",
-                           "postgres",
-                           "postgres")
+      PostgresServerConfig(
+        host     = knownAddress.hostV4,
+        port     = knownAddress.port,
+        database = "postgres",
+        username = "postgres",
+        password = "postgres",
+      )
     }
   }
 
@@ -316,10 +321,10 @@ class IntegUsingDockerModule extends ModuleDef {
 Using `distage-testkit` the test would be written like this:
 
 ```scala mdoc:silent
-import izumi.distage.testkit.scalatest.DistageSpecScalatest
+import izumi.distage.testkit.scalatest.{AssertCIO, DistageSpecScalatest}
 import distage.DIKey
 
-class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] {
+class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] with AssertCIO {
 
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
@@ -333,8 +338,12 @@ class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] {
     )
   )
   "distage docker" should {
-    "support integ tests using containers" in { app: PostgresExampleApp =>
-      app.plusOne(1) map { v: Int => assert(v == 2) }
+    "support integ tests using containers" in {
+      app: PostgresExampleApp =>
+      for {
+        v <- app.plusOne(1)
+        _ <- assertIO(v == 2)
+      } yield ()
     }
   }
 }
@@ -375,13 +384,13 @@ above for one mechanism.
 
 The container ports will also add to the configured environment variables:
 
-- `DISTAGE_PORT_<proto>_<originalPort>` are the host ports allocated for the container
+- `DISTAGE_PORT_<protocol>_<originalPort>` are the host ports allocated for the container
 
 
 ### Docker Metadata
 
 The host ports allocated for the container are also added to the container metadata as labels.
-These labels follow the pattern `distage.port.<proto>.<originalPort>`. The value is the integer port
+These labels follow the pattern `distage.port.<protocol>.<originalPort>`. The value is the integer port
 number.
 
 ### Docker Container Networks
