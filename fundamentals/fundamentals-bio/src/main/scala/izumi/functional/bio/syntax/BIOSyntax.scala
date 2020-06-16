@@ -153,8 +153,8 @@ object BIOSyntax {
 
   final class BIOTemporalOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOTemporal[F]) extends BIOAsyncOps(r) {
     @inline final def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2] = F.retryOrElse[Any, E, A2, E2](r)(duration, orElse)
-    @inline final def repeatUntil[E2 >: E, A2](onTimeout: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
-      F.repeatUntil[Any, E2, A2](new BIOFunctorOps(r)(F).widen)(onTimeout, sleep, maxAttempts)
+    @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
+      F.repeatUntil[Any, E2, A2](new BIOFunctorOps(r)(F).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(r)(duration)
     @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] =

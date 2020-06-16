@@ -177,8 +177,8 @@ object BIO3Syntax {
     extends BIOAsync3Ops(r) {
     @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: => FR[R1, E2, A2]): FR[R1, E2, A2] =
       F.retryOrElse[R1, E, A2, E2](r)(duration, orElse)
-    @inline final def repeatUntil[E1 >: E, A2](onTimeout: => E1, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E1, A2] =
-      F.repeatUntil[R, E1, A2](new BIOFunctor3Ops(r)(F).widen)(onTimeout, sleep, maxAttempts)
+    @inline final def repeatUntil[E1 >: E, A2](tooManyAttemptsError: => E1, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E1, A2] =
+      F.repeatUntil[R, E1, A2](new BIOFunctor3Ops(r)(F).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): FR[R, E, Option[A]] = F.timeout(r)(duration)
     @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): FR[R, E1, A] =

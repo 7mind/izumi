@@ -88,8 +88,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOBracket.bracketCase & guaranteeCase are callable" in {
-    import izumi.functional.bio.BIOBracket
-    import izumi.functional.bio.BIOExit
+    import izumi.functional.bio.{BIOBracket, BIOExit}
 
     def x[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
       F.pure(None).bracketCase(release = {

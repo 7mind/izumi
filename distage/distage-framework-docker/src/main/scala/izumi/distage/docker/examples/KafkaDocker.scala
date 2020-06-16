@@ -17,11 +17,7 @@ object KafkaDocker extends ContainerDef {
       image = "wurstmeister/kafka:2.12-2.4.1",
       ports = Seq(primaryPort),
       env = Map("KAFKA_ADVERTISED_HOST_NAME" -> "127.0.0.1"),
-      entrypoint = Seq(
-        "sh",
-        "-c",
-        s"""$portVars ; start-kafka.sh""",
-      ),
+      entrypoint = Seq("sh", "-c", s"$portVars ; start-kafka.sh"),
     )
   }
 }

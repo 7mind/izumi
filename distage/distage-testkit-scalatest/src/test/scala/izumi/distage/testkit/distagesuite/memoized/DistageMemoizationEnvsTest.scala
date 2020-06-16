@@ -76,7 +76,7 @@ class SameEnvWithModuleOverride extends DistageMemoizationEnvsTest {
 
 class SameEnvWithActivationsOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super.config.copy(activation = distage.Activation())
+    super.config.copy(activation = distage.Activation.empty)
   }
   "should have the same memoized instance even if activation was overriden" in {
     memoized: MemoizedInstance =>
