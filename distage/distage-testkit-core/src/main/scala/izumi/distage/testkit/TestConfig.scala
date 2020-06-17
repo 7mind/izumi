@@ -5,6 +5,7 @@ import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
 
 /**
@@ -69,6 +70,8 @@ import izumi.logstage.api.Log
   *
   * @param configOverrides       Overriding definitions on top of main loaded config, default `None`
   *
+  * @param bootstrapFactory      [[BootstrapFactory]], controls config loading & initial modules
+
   * @param planningOptions       [[PlanningOptions]], debug options for [[distage.Planner]]
   *
   * @param logLevel              Log level for the [[logstage.IzLogger]] used in testkit and provided to the tests (will be overriden by plugin / module bindings if exist)
@@ -93,6 +96,7 @@ final case class TestConfig(
   // other options
   configBaseName: String,
   configOverrides: Option[AppConfig] = None,
+  bootstrapFactory: BootstrapFactory = BootstrapFactory.Impl,
   planningOptions: PlanningOptions = PlanningOptions(),
   logLevel: Log.Level = Log.Level.Info,
   debugOutput: Boolean = false,
