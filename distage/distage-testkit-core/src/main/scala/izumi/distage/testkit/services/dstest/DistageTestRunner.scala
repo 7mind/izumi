@@ -447,12 +447,12 @@ class DistageTestRunner[F[_]: TagK](
             .bootstrapFactory
             .makeConfigLoader(env.configBaseName, envLogger)
             .map {
-              c =>
+              appConfig =>
                 env.configOverrides match {
                   case Some(overrides) =>
-                    AppConfig(overrides.config.withFallback(c.config).resolve())
+                    AppConfig(overrides.config.withFallback(appConfig.config).resolve())
                   case None =>
-                    c
+                    appConfig
                 }
             }
           configLoader.loadConfig()

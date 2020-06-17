@@ -39,7 +39,6 @@ trait DistageTestEnv {
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
     val bootstrapModule = mergeStrategy.merge(bsPlugins) overridenBy testConfig.bootstrapOverrides
     val availableActivations = ActivationInfoExtractor.findAvailableChoices(appModule)
-    val activation = testConfig.activation
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
@@ -51,11 +50,11 @@ trait DistageTestEnv {
       appModule = appModule,
       roles = roles,
       activationInfo = availableActivations,
-      activation = activation,
+      activation = testConfig.activation,
       memoizationRoots = testConfig.memoizationRoots.toSet,
       forcedRoots = testConfig.forcedRoots.toSet,
       parallelEnvs = testConfig.parallelEnvs,
-      bootstrapFactory = BootstrapFactory.Impl,
+      bootstrapFactory = testConfig.bootstrapFactory,
       configBaseName = testConfig.configBaseName,
       configOverrides = testConfig.configOverrides,
       planningOptions = testConfig.planningOptions,
