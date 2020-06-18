@@ -10,9 +10,10 @@ import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
 trait DIEffectAsync[F[_]] {
+  def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
   def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
   def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => F[B]): F[List[B]]
@@ -25,11 +26,20 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
+      final val maxAwaitTime = FiniteDuration(1L, "minute")
       final val DIEffectAsyncIdentityThreadFactory = new NamedThreadFactory("dieffect-cached-pool", daemon = true)
       final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
         Executors.newCachedThreadPool(DIEffectAsyncIdentityThreadFactory)
       }
 
+      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
+        val promise = Promise[A]()
+        effect {
+          case Right(a) => promise.success(a)
+          case Left(f) => promise.failure(f)
+        }
+        Await.result(promise.future, maxAwaitTime)
+      }
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
         parTraverse(l)(f)
         ()
@@ -58,6 +68,9 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
   implicit def fromBIOTemporal[F[+_, +_]: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
+      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
+        F.async(effect)
+      }
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverse_(l)(f)
       }
@@ -114,6 +127,9 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     */
   implicit final def fromCats[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer, C[_[_]]: _Concurrent](implicit P: P[F], T: T[F], C: C[F]): DIEffectAsync[F] = {
     new DIEffectAsync[F] {
+      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
+        C.asInstanceOf[Concurrent[F]].async(effect)
+      }
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
         Parallel.parTraverse_(l.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
       }

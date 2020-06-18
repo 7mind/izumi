@@ -1,7 +1,7 @@
 package izumi.distage.docker
 
 import java.io.File
-import java.nio.channels.{FileChannel, OverlappingFileLockException}
+import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
 import java.nio.file.StandardOpenOption
 
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -22,23 +22,18 @@ object FileLockMutex {
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[E] = {
-    def acquireAndRun(channel: FileChannel, attempts: Int): F[E] = {
-      F.maybeSuspend {
-          logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
-          try {
-            Option(channel.tryLock())
-          } catch {
-            case _: OverlappingFileLockException => None
-          }
-        }.flatMap {
-          case Some(lock) =>
-            effect.guarantee(F.maybeSuspend(lock.close()))
-          case None if attempts < maxAttempts =>
-            P.sleep(waitFor).flatMap(_ => acquireAndRun(channel, attempts + 1))
-          case None =>
+    def retryOnFileLock[A](eff: F[Option[A]], attempts: Int = 0): F[Option[A]] = {
+      logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
+      F.definitelyRecover(eff) {
+        case _: OverlappingFileLockException =>
+          if (attempts < maxAttempts) {
+            P.sleep(waitFor).flatMap(_ => retryOnFileLock(eff, attempts + 1))
+          } else {
             logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
-            effect
-        }
+            F.pure(None)
+          }
+        case err => F.fail(err)
+      }
     }
 
     F.bracket(
@@ -47,10 +42,23 @@ object FileLockMutex {
         val file = new File(s"$tmpDir/$filename.tmp")
         val newFileCreated = file.createNewFile()
         if (newFileCreated) file.deleteOnExit()
-        FileChannel.open(file.toPath, StandardOpenOption.WRITE)
+        AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)
       }
     )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
-      acquireAndRun(_, 0)
+      channel =>
+        retryOnFileLock {
+          P.async[Option[FileLock]] {
+            cb =>
+              val handler = new CompletionHandler[FileLock, Unit] {
+                override def completed(result: FileLock, attachment: Unit): Unit = cb(Right(Some(result)))
+                override def failed(exc: Throwable, attachment: Unit): Unit = cb(Left(exc))
+              }
+              channel.lock((), handler)
+          }
+        }.flatMap {
+          case Some(lock) => effect.guarantee(F.maybeSuspend(lock.close()))
+          case None => effect
+        }
     }
   }
 
