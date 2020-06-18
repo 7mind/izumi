@@ -22,7 +22,7 @@ object FileLockMutex {
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[E] = {
-    def retryOnFileLock[A](eff: F[Option[A]], attempts: Int = 0): F[Option[A]] = {
+    def retryOnFileLock(eff: F[Option[FileLock]], attempts: Int = 0): F[Option[FileLock]] = {
       logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
       F.definitelyRecover(eff) {
         case _: OverlappingFileLockException =>
