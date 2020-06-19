@@ -20,7 +20,7 @@ jobs:
               path: $(IVY_CACHE_FOLDER)
             displayName: Cache Ivy Packages
           - script: |
-               sudo curl -Lo /usr/local/bin/coursier https://git.io/coursier-cli-linux && sudo chmod +x /usr/local/bin/coursier && \
+               sudo curl -Lo /usr/local/bin/coursier https://git.io/coursier-cli-linux && sudo chmod +x /usr/local/bin/coursier
                echo "CPU:"
                cat /proc/cpuinfo
                echo "RAM:"
