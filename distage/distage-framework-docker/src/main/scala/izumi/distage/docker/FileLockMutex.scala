@@ -22,9 +22,9 @@ object FileLockMutex {
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[E] = {
-    def retryOnFileLock(eff: F[Option[FileLock]], attempts: Int = 0): F[Option[FileLock]] = {
+    def retryOnFileLock(eff: F[FileLock], attempts: Int = 0): F[Option[FileLock]] = {
       logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
-      F.definitelyRecover(eff) {
+      F.definitelyRecover(eff.map(Option(_))) {
         case _: OverlappingFileLockException =>
           if (attempts < maxAttempts) {
             P.sleep(waitFor).flatMap(_ => retryOnFileLock(eff, attempts + 1))
@@ -36,30 +36,31 @@ object FileLockMutex {
       }
     }
 
-    F.bracket(
-      acquire = F.maybeSuspend {
-        val tmpDir = System.getProperty("java.io.tmpdir")
-        val file = new File(s"$tmpDir/$filename.tmp")
-        val newFileCreated = file.createNewFile()
-        if (newFileCreated) file.deleteOnExit()
-        AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)
-      }
-    )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
-      channel =>
-        retryOnFileLock {
-          P.async[Option[FileLock]] {
-            cb =>
-              val handler = new CompletionHandler[FileLock, Unit] {
-                override def completed(result: FileLock, attachment: Unit): Unit = cb(Right(Some(result)))
-                override def failed(exc: Throwable, attachment: Unit): Unit = cb(Left(exc))
-              }
-              channel.lock((), handler)
+    def createChannel: F[AsynchronousFileChannel] =  F.maybeSuspend {
+      val tmpDir = System.getProperty("java.io.tmpdir")
+      val file = new File(s"$tmpDir/$filename.tmp")
+      val newFileCreated = file.createNewFile()
+      if (newFileCreated) file.deleteOnExit()
+      AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)
+    }
+
+    def acquireLock(channel: AsynchronousFileChannel): F[Option[FileLock]] = retryOnFileLock {
+      P.async[FileLock] {
+        cb =>
+          val handler = new CompletionHandler[FileLock, Unit] {
+            override def completed(result: FileLock, attachment: Unit): Unit = cb(Right(result))
+            override def failed(exc: Throwable, attachment: Unit): Unit = cb(Left(exc))
           }
-        }.flatMap {
-          case Some(lock) => effect.guarantee(F.maybeSuspend(lock.close()))
-          case None => effect
-        }
+          channel.lock((), handler)
+      }
+    }
+
+    F.bracket(createChannel)(channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
+      channel =>
+        F.bracket(acquireLock(channel)){
+          case Some(lock) => F.maybeSuspend(lock.close())
+          case None => F.unit
+        }(_ => effect)
     }
   }
-
 }
