@@ -29,8 +29,7 @@ jobs:
           displayName: 'Tests and Coverage: 2.12'
           steps:
             - script: |
-                bash sbtgen.sc --js
-                bash .build.sh 2.12 coverage
+                bash sbtgen.sc --js && bash .build.sh 2.12 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -40,8 +39,7 @@ jobs:
           displayName: 'Tests and Coverage: 2.13'
           steps:
             - script: |
-                bash sbtgen.sc --js
-                bash .build.sh 2.13 coverage
+                bash sbtgen.sc --js && bash .build.sh 2.13 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -54,21 +52,18 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
-                bash sbtgen.sc --js
-                bash .build.sh secrets site
+                bash sbtgen.sc --js && bash .build.sh secrets site
         - job: publish212
           displayName: 'Publish to Maven Central (2.12)'
           dependsOn:
             - build_212
           steps:
             - script: |
-                bash sbtgen.sc --js
-                bash .build.sh 2.12 secrets publishScala
+                bash sbtgen.sc --js && bash .build.sh 2.12 secrets publishScala
         - job: publish213
           displayName: 'Publish to Maven Central (2.13)'
           dependsOn:
             - build_213
           steps:
             - script: |
-                bash sbtgen.sc --js
-                bash .build.sh 2.13 secrets publishScala
+                bash sbtgen.sc --js && bash .build.sh 2.13 secrets publishScala
