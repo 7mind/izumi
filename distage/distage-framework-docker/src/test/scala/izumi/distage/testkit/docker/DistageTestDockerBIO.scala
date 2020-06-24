@@ -17,10 +17,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       (service: PgSvcExample, verifier: DIResourceBase[IO[Throwable, *], StatefulCheckContainer.Container]) =>
         for {
           _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-        _ <- verifier.use {
-          c =>
-          IO.unit
-        }
+        _ <- verifier.use(_ => IO.unit)
         } yield ()
     }
 
@@ -28,10 +25,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       (service: PgSvcExample, verifier: DIResourceBase[IO[Throwable, *], StatefulCheckContainer.Container]) =>
         for {
           _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-          _ <- verifier.use {
-            c =>
-              IO.unit
-          }
+          _ <- verifier.use(_ => IO.unit)
         } yield ()
     }
   }
