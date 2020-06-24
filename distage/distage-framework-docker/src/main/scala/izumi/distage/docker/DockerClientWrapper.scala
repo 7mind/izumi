@@ -6,6 +6,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
+import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
@@ -16,6 +17,7 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
+import com.github.dockerjava.api.model.Container
 
 class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
@@ -30,19 +32,26 @@ class DockerClientWrapper[F[_]](
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
-  def destroyContainer(container: ContainerId): F[Unit] = {
+  def destroyContainer(containerId: ContainerId, meta: ContainerDestroyMeta): F[Unit] = {
     F.definitelyRecover {
       F.maybeSuspend {
-        logger.info(s"Going to destroy $container...")
+        val context = meta match {
+          case ContainerDestroyMeta.ParameterizedContainer(container) =>
+            container.toString
+          case ContainerDestroyMeta.RawContainer(container) =>
+            container.toString
+        }
+
+        logger.info(s"Going to destroy $containerId ($context)...")
 
         try {
           rawClient
-            .stopContainerCmd(container.name)
+            .stopContainerCmd(containerId.name)
             .exec()
             .discard()
         } finally {
           rawClient
-            .removeContainerCmd(container.name)
+            .removeContainerCmd(containerId.name)
             .withForce(true)
             .exec()
             .discard()
@@ -55,6 +64,11 @@ class DockerClientWrapper[F[_]](
 }
 
 object DockerClientWrapper {
+  sealed trait ContainerDestroyMeta
+  object ContainerDestroyMeta {
+    case class ParameterizedContainer[T](container: DockerContainer[T]) extends ContainerDestroyMeta
+    case class RawContainer(container: Container) extends ContainerDestroyMeta
+  }
 
   private[this] val jvmRun: String = UUID.randomUUID().toString
 
@@ -118,7 +132,15 @@ object DockerClientWrapper {
           c =>
             Option(c.getLabels.get("distage.reuse")).forall(_ == "false") || c.getState == "exited"
         }
-        _ <- DIEffect[F].traverse_(containersToDestroy)(c => resource.destroyContainer(ContainerId(c.getId)))
+        _ <- DIEffect[F].traverse_(containersToDestroy) {
+          c: Container =>
+            val id = ContainerId(c.getId)
+            DIEffect[F].definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
+              error =>
+              DIEffect[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+            }
+
+        }
         _ <- DIEffect[F].maybeSuspend(resource.rawClient.close())
       } yield ()
     }

@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.ghik.silencer.silent
 import izumi.distage.docker.Docker._
+import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
@@ -71,7 +72,7 @@ case class ContainerResource[F[_], T](
 
   override def release(resource: DockerContainer[T]): F[Unit] = {
     if (!shouldReuse(resource.containerConfig)) {
-      client.destroyContainer(resource.id)
+      client.destroyContainer(resource.id, ContainerDestroyMeta.ParameterizedContainer(resource))
     } else {
       F.unit
     }
@@ -87,7 +88,7 @@ case class ContainerResource[F[_], T](
             logger.debug(s"Trying healthcheck on running $container...")
             Right(config.healthCheck.check(logger, container))
           } else {
-            Left(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
+            Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
           }
         } catch {
           case t: Throwable =>
@@ -117,7 +118,7 @@ case class ContainerResource[F[_], T](
             F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
           }
         case Left(t) =>
-          F.fail(new RuntimeException(s"Container failed: ${container.id} due to exception: ${t.stackTrace}", t))
+          F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
       }
   }
 
