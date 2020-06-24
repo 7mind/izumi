@@ -15,12 +15,12 @@ import zio.Task
 import scala.concurrent.duration._
 
 class PgSvcExample(
-                    val pg: AvailablePort @Id("pg"),
-                    val ddb: AvailablePort @Id("ddb"),
-                    val kafka: AvailablePort @Id("kafka"),
-                    val cs: AvailablePort @Id("cs"),
-                    val mq: AvailablePort @Id("mq"),
-                    val cmd: StatefulContainer.Container,
+  val pg: AvailablePort @Id("pg"),
+  val ddb: AvailablePort @Id("ddb"),
+  val kafka: AvailablePort @Id("kafka"),
+  val cs: AvailablePort @Id("cs"),
+  val mq: AvailablePort @Id("mq"),
+  val cmd: ReusedOneshotContainer.Container,
 ) extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = {
     new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)

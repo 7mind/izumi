@@ -32,16 +32,9 @@ class DockerClientWrapper[F[_]](
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
-  def destroyContainer(containerId: ContainerId, meta: ContainerDestroyMeta): F[Unit] = {
+  def destroyContainer(containerId: ContainerId, context: ContainerDestroyMeta): F[Unit] = {
     F.definitelyRecover {
       F.maybeSuspend {
-        val context = meta match {
-          case ContainerDestroyMeta.ParameterizedContainer(container) =>
-            container.toString
-          case ContainerDestroyMeta.RawContainer(container) =>
-            container.toString
-        }
-
         logger.info(s"Going to destroy $containerId ($context)...")
 
         try {
@@ -66,8 +59,12 @@ class DockerClientWrapper[F[_]](
 object DockerClientWrapper {
   sealed trait ContainerDestroyMeta
   object ContainerDestroyMeta {
-    case class ParameterizedContainer[T](container: DockerContainer[T]) extends ContainerDestroyMeta
-    case class RawContainer(container: Container) extends ContainerDestroyMeta
+    final case class ParameterizedContainer[T](container: DockerContainer[T]) extends ContainerDestroyMeta {
+      override def toString: String = container.toString
+    }
+    final case class RawContainer(container: Container) extends ContainerDestroyMeta {
+      override def toString: String = container.toString
+    }
   }
 
   private[this] val jvmRun: String = UUID.randomUUID().toString
@@ -127,7 +124,7 @@ object DockerClientWrapper {
             .withLabelFilter(resource.labels.asJava)
             .exec()
         }
-        // destroy all containers that should not be reused, or was exited (to not to cumulate containers that could be pruned)
+        // destroy all containers that should not be reused, or was exited (to not to accumulate containers that could be pruned)
         containersToDestroy = containers.asScala.filter {
           c =>
             Option(c.getLabels.get("distage.reuse")).forall(_ == "false") || c.getState == "exited"
@@ -137,7 +134,7 @@ object DockerClientWrapper {
             val id = ContainerId(c.getId)
             DIEffect[F].definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
               error =>
-              DIEffect[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+                DIEffect[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
             }
 
         }

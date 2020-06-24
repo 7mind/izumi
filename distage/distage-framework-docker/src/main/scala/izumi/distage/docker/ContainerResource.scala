@@ -80,21 +80,21 @@ case class ContainerResource[F[_], T](
 
   def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
     F.maybeSuspend {
-        logger.debug(s"Awaiting until alive: $container...")
-        try {
-          val status = rawClient.inspectContainerCmd(container.id.name).exec()
-          // if container is running or does not have any ports
-          if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
-            logger.debug(s"Trying healthcheck on running $container...")
-            Right(config.healthCheck.check(logger, container))
-          } else {
-            Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
-          }
-        } catch {
-          case t: Throwable =>
-            Left(t)
+      logger.debug(s"Awaiting until alive: $container...")
+      try {
+        val status = rawClient.inspectContainerCmd(container.id.name).exec()
+        // if container is running or does not have any ports
+        if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
+          logger.debug(s"Trying healthcheck on running $container...")
+          Right(config.healthCheck.check(logger, container))
+        } else {
+          Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
         }
-      }.flatMap {
+      } catch {
+        case t: Throwable =>
+          Left(t)
+      }
+    }.flatMap {
         case Right(HealthCheckResult.Available) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
