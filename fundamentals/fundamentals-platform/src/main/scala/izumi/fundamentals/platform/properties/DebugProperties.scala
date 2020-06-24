@@ -17,7 +17,7 @@ import scala.language.implicitConversions
   * }}}
   */
 trait DebugProperties {
-  @inline final def Property(name: String): BooleanProperty = new BooleanProperty(name)
+  @inline protected[this] final def Property(name: String): BooleanProperty = new BooleanProperty(name)
 }
 
 final case class BooleanProperty(name: String) extends AnyVal {
@@ -28,4 +28,3 @@ final case class BooleanProperty(name: String) extends AnyVal {
 object BooleanProperty {
   @inline implicit def asString(property: BooleanProperty): String = property.name
 }
-
