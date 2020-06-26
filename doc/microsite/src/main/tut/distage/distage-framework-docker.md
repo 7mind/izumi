@@ -108,7 +108,7 @@ import izumi.logstage.distage.LogIOModule
 
 val distageFrameworkModules = new ModuleDef {
   // required for docker
-  include(new DockerSupportModule[IO])
+  include(DockerSupportModule[IO])
 
   // standard distage framework modules
   include(AppConfigModule(ConfigFactory.defaultApplication))
@@ -252,15 +252,21 @@ Consider the example application below. This application is written to depend on
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
-import doobie._
+import doobie.Transactor
 import doobie.syntax.connectionio._
 import doobie.syntax.string._
 
 class PostgresExampleApp(xa: Transactor[IO]) {
-  def plusOne(a: Int): IO[Int] =
+  def plusOne(a: Int): IO[Int] = {
     sql"select ${a} + 1".query[Int].unique.transact(xa)
+  }
 
-  val run: IO[Unit] = plusOne(1).flatMap(v => IO(println(s"1 + 1 = ${v}.")))
+  val run: IO[Unit] = {
+    for {
+      v <- plusOne(1)
+      _ <- IO(println(s"1 + 1 = ${v}."))
+    } yield ()
+  }
 }
 
 // the postgres configuration used to construct the Transactor
@@ -269,21 +275,21 @@ case class PostgresServerConfig(
   port: Int,
   database: String,
   username: String,
-  password: String
+  password: String,
 )
 
 class TransactorFromConfigModule extends ModuleDef {
-  import scala.concurrent.ExecutionContext.global
-
-  implicit val contextShift = IO.contextShift(global)
-  implicit val timer = IO.timer(global)
-
   make[Transactor[IO]].from { config: PostgresServerConfig =>
+    import scala.concurrent.ExecutionContext.global
+
+    implicit val contextShift = IO.contextShift(global)
+    implicit val timer = IO.timer(global)
+
     Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
       config.username,
-      config.password
+      config.password,
     )
   }
 }
@@ -325,7 +331,6 @@ import izumi.distage.testkit.scalatest.{AssertCIO, DistageSpecScalatest}
 import distage.DIKey
 
 class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] with AssertCIO {
-
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
       include(new TransactorFromConfigModule)
@@ -337,13 +342,14 @@ class PostgresExampleAppIntegTest extends DistageSpecScalatest[IO] with AssertCI
       DIKey[PostgresServerConfig]
     )
   )
+
   "distage docker" should {
-    "support integ tests using containers" in {
+    "support integration tests using containers" in {
       app: PostgresExampleApp =>
-      for {
-        v <- app.plusOne(1)
-        _ <- assertIO(v == 2)
-      } yield ()
+        for {
+          v <- app.plusOne(1)
+          _ <- assertIO(v == 2)
+        } yield ()
     }
   }
 }
@@ -353,7 +359,7 @@ Typically, this would be run by the test runner. For completeness, the example c
 using:
 
 ```scala mdoc:to-string
-def postgresDockerIntegExample = {
+def postgresDockerIntegrationExample = {
   val applicationModules = new ModuleDef {
     include(new TransactorFromConfigModule)
     include(new IntegUsingDockerModule)
@@ -361,12 +367,12 @@ def postgresDockerIntegExample = {
     make[PostgresExampleApp]
   }
 
-  Injector().produceGetF[IO, PostgresExampleApp](applicationModules).use { app =>
-    app.run
-  }
+  Injector()
+    .produceGetF[IO, PostgresExampleApp](applicationModules)
+    .use(app => app.run)
 }
 
-postgresDockerIntegExample.unsafeRunSync()
+postgresDockerIntegrationExample.unsafeRunSync()
 ```
 
 ### Docker Container Environment
@@ -486,31 +492,31 @@ docker {
 ```scala mdoc:to-string
 import izumi.distage.docker.Docker
 
-class CustomDockerConfigExampleModule[F[_] : TagK] extends ModuleDef {
-  include(new DockerSupportModule[F] overridenBy new ModuleDef {
+class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
+  include(DockerSupportModule[F] overridenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
-        readTimeoutMs = 10000,
+        readTimeoutMs    = 10000,
         connectTimeoutMs = 10000,
-        allowReuse = false,
-        useRemote = true,
-        useRegistry = true,
-        remote = Option {
+        allowReuse       = false,
+        useRemote        = true,
+        useRegistry      = true,
+        remote           = Some(
           Docker.RemoteDockerConfig(
-            host = "tcp://localhost:2376",
+            host      = "tcp://localhost:2376",
             tlsVerify = true,
-            certPath = "/home/user/.docker/certs",
-            config = "/home/user/.docker"
+            certPath  = "/home/user/.docker/certs",
+            config    = "/home/user/.docker",
           )
-        },
-        registry = Option {
+        ),
+        registry = Some(
           Docker.DockerRegistryConfig(
-            url = "https://index.docker.io/v1/",
+            url      = "https://index.docker.io/v1/",
             username = "dockeruser",
             password = "ilovedocker",
-            email = "dockeruser@github.com"
+            email    = "dockeruser@github.com",
           )
-        },
+        ),
       )
     }
   })
@@ -552,7 +558,7 @@ class NoReuseByMemoizationExampleTest extends DistageSpecScalatest[IO] {
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
       include(distageFrameworkModules)
-      include(new PostgresDockerModule[IO])
+      include(PostgresDockerModule[IO])
     },
     memoizationRoots = Set(
       DIKey[PostgresDocker.Container]
