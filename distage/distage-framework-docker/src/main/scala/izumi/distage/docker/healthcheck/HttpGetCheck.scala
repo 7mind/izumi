@@ -35,7 +35,8 @@ final class HttpGetCheck[Tag](
             logger.warn(s"Cannot establish HTTP connection with $port due to ${t.getMessage -> "failure"}")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         }
-      case _ => ContainerHealthCheck.HealthCheckResult.Unavailable
+      case _ =>
+        ContainerHealthCheck.HealthCheckResult.Unavailable
     }
   }
 }

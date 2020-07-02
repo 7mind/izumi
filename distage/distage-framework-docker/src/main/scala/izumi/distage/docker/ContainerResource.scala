@@ -115,8 +115,9 @@ case class ContainerResource[F[_], T](
             logger.debug(s"Health check uncertain, retrying $next/$max on $container...")
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
-            F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
+            F.fail(new TimeoutException(s"Health checks failed after $max attempts: $container"))
           }
+
         case Left(t) =>
           F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
       }
