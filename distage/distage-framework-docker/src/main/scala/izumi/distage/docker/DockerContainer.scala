@@ -1,7 +1,7 @@
 package izumi.distage.docker
 
 import izumi.distage.docker.Docker._
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.AvailablePorts
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.language.Quirks._
@@ -15,15 +15,17 @@ final case class DockerContainer[Tag](
   connectivity: ContainerConnectivity,
   containerConfig: Docker.ContainerConfig[Tag],
   clientConfig: ClientConfig,
-  availablePorts: VerifiedContainerConnectivity,
+  availablePorts: Option[AvailablePorts],
 ) {
   override def toString: String = {
     val out = new StringBuilder()
     out.append(s"$name@${connectivity.dockerHost.getOrElse("localhost")}")
-    if (availablePorts.availablePorts.nonEmpty) {
-      out.append(" {")
-      out.append(availablePorts.toString)
-      out.append('}')
+    availablePorts match {
+      case None =>
+      case Some(availablePorts) =>
+        out.append(" {")
+        out.append(availablePorts.toString)
+        out.append('}')
     }
     out.toString()
   }
@@ -51,7 +53,6 @@ object DockerContainer {
       *           old.copy(env = zkEnv, networks = zkNet)
       *     }
       * }}}
-      *
       */
     def modifyConfig(
       modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]

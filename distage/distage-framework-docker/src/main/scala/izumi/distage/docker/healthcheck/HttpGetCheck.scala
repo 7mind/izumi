@@ -14,7 +14,7 @@ final class HttpGetCheck[Tag](
 ) extends ContainerHealthCheck[Tag] {
   override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
     portStatus.availablePorts.firstOption(port) match {
-      case Some(availablePort) if portStatus.requiredPortsAccessible =>
+      case Some(availablePort) if portStatus.allTCPPortsAccessible =>
         val protocol = if (useHttps) "https" else "http"
         val url = new URL(s"$protocol://${availablePort.hostV4}:${availablePort.port}")
         logger.info(s"Checking docker port $port via $url for $container. Will try to establish HTTP connection.")
