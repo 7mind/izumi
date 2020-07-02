@@ -7,7 +7,7 @@ import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConf
 import izumi.logstage.api.logger.{LogRouter, LogSink}
 import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import scala.util.control.NonFatal
 
 class ConfigurableLogRouter(
@@ -31,7 +31,6 @@ class ConfigurableLogRouter(
     }
   }
 
-
   override def close(): Unit = {
     logConfigService.close()
   }
@@ -51,7 +50,7 @@ object ConfigurableLogRouter {
     ConfigurableLogRouter(threshold, sinks, Map.empty[String, Log.Level])
   }
 
-  @silent("Unused import")
+  @nowarn("msg=Unused import")
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
     import scala.collection.compat._
     val levelConfigs = levels.view.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap

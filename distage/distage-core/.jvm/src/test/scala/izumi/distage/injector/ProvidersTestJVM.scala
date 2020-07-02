@@ -2,7 +2,6 @@ package izumi.distage.injector
 
 import distage.ModuleDef
 import izumi.distage.fixtures.ProviderCases.ProviderCase3
-import izumi.distage.fixtures.ProviderCases.ProviderCase3.TestDependency
 import org.scalatest.wordspec.AnyWordSpec
 
 class ProvidersTestJVM extends AnyWordSpec with MkInjector {

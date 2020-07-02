@@ -6,14 +6,14 @@ object V {
   val collection_compat = "2.1.6"
 
   val kind_projector = "0.11.0"
-  val silencer = "1.6.0"
+  val silencer = "1.7.0"
 
   val scalatest = "3.1.2"
 
   val cats = "2.1.1"
   val cats_effect = "2.1.3"
   val zio = "1.0.0-RC21-2"
-  val zio_interop_cats = "2.0.0.0-RC14"
+  val zio_interop_cats = "v2.1.3.0-RC16"
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"

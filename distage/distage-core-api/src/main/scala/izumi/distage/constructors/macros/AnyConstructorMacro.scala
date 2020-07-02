@@ -1,6 +1,6 @@
 package izumi.distage.constructors.macros
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, DebugProperties}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.reflection.universe.StaticDIUniverse
@@ -10,7 +10,7 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
-@silent("deprecated.*since 2.11")
+@nowarn("msg=deprecated.*since 2.11")
 object AnyConstructorMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
@@ -47,32 +47,33 @@ object AnyConstructorMacro {
 
     val maybeNonwhiteListedMethods = maybeTree.map(_.collect {
       case Select(lhs, TermName(method))
-        if !ModuleDefDSL.MakeDSLNoOpMethodsWhitelist.contains(method) &&
+          if !ModuleDefDSL.MakeDSLNoOpMethodsWhitelist.contains(method) &&
           lhs.exists(_.pos == positionOfMakeCall) =>
         method
     })
 
-    logger.log(
-      s"""Got tree: $maybeTree
-         |Result of search: $maybeNonwhiteListedMethods
-         |Searched for position: $positionOfMakeCall
-         |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
-         |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
-         |""".stripMargin)
+    logger.log(s"""Got tree: $maybeTree
+                  |Result of search: $maybeNonwhiteListedMethods
+                  |Searched for position: $positionOfMakeCall
+                  |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
+                  |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
+                  |""".stripMargin)
 
     val tpe = weakTypeOf[T]
 
     c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] {
       maybeNonwhiteListedMethods match {
         case None =>
-          c.abort(c.enclosingPosition,
+          c.abort(
+            c.enclosingPosition,
             s"""Couldn't find position of the `make` call when summoning AnyConstructorOptionalMakeDSL[$tpe]
                |Got tree: $maybeTree
                |Result of search: $maybeNonwhiteListedMethods
                |Searched for position: $positionOfMakeCall
                |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
                |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
-               |""".stripMargin)
+               |""".stripMargin,
+          )
         case Some(nonwhiteListedMethods) =>
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
@@ -106,7 +107,7 @@ object AnyConstructorMacro {
       c.abort(
         c.enclosingPosition,
         s"""AnyConstructor failure: couldn't generate a constructor for $targetType!
-           |It's neither a concrete class, nor a factory, nor a trait!""".stripMargin
+           |It's neither a concrete class, nor a factory, nor a trait!""".stripMargin,
       )
     }
   }

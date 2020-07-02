@@ -1,10 +1,10 @@
 package izumi.fundamentals.graphs
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 
 import scala.annotation.tailrec
 
-@silent("Unused import")
+@nowarn("msg=Unused import")
 class Toposort {
 
   import Toposort._
@@ -66,6 +66,3 @@ object Toposort {
   final case class InconsistentInput[T](issues: Map[T, Set[T]])
 
 }
-
-
-

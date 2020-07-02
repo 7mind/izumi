@@ -1,6 +1,6 @@
 package izumi.logstage.api
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
-@silent("[Ee]xpression.*logger")
+@nowarn("msg=[Ee]xpression.*logger")
 class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {
@@ -62,7 +62,8 @@ class BasicLoggingTest extends AnyWordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions.default.copy(colored = false))
-      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false, None), LogArg(Seq("[a2]"), 2, hiddenName = false, None))))
+      val rendered =
+        render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false, None), LogArg(Seq("[a2]"), 2, hiddenName = false, None))))
       assert(rendered.endsWith("begin [a_1]=1 end {{ [a_2]=2 }}"))
     }
   }
@@ -73,7 +74,15 @@ class BasicLoggingTest extends AnyWordSpec {
       val s = "hi"
       val msg = Message(s"begin $i $s end")
 
-      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false,  Some(LogstageCodec.LogstageCodecInt)), LogArg(Seq("s"), "hi", hiddenName = false,  Some(LogstageCodec.LogstageCodecString)))))
+      assert(
+        msg == Message(
+          StringContext("begin ", " ", " end"),
+          Seq(
+            LogArg(Seq("i"), 5, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+            LogArg(Seq("s"), "hi", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+          ),
+        )
+      )
     }
     "allow concatenating Log.Message" should {
       "multiple parts" in {
@@ -83,15 +92,17 @@ class BasicLoggingTest extends AnyWordSpec {
 
         val msgConcatenated = msg1 + msg2 + msg3
 
-        assert(msgConcatenated.template.parts == Seq(
-          "begin1",
-          "middle1",
-          "end1begin2 ",
-          " middle2 ",
-          " end2  begin3",
-          "middle3 ",
-          "end3",
-        ))
+        assert(
+          msgConcatenated.template.parts == Seq(
+            "begin1",
+            "middle1",
+            "end1begin2 ",
+            " middle2 ",
+            " end2  begin3",
+            "middle3 ",
+            "end3",
+          )
+        )
 
         assert(msgConcatenated.args.map(_.value) == Seq(1.1, 1.2, 2.1, 2.2, 3.1, 3.2))
       }
@@ -102,29 +113,39 @@ class BasicLoggingTest extends AnyWordSpec {
 
         val msgConcatenated = msg1 + msg2 + msg3
 
-        assert(msgConcatenated.template.parts == Seq(
-          "begin1",
-          "end3",
-        ))
+        assert(
+          msgConcatenated.template.parts == Seq(
+            "begin1",
+            "end3",
+          )
+        )
       }
       "zero parts" in {
         val msgOnePart = Message(s"onePart")
         val msgZeroParts = Message("")
         val msgEmpty = Message.empty
 
-        assert((msgOnePart + msgZeroParts).template.parts == Seq(
-          "onePart"
-        ))
-        assert((msgZeroParts + msgOnePart).template.parts == Seq(
-          "onePart"
-        ))
+        assert(
+          (msgOnePart + msgZeroParts).template.parts == Seq(
+            "onePart"
+          )
+        )
+        assert(
+          (msgZeroParts + msgOnePart).template.parts == Seq(
+            "onePart"
+          )
+        )
 
-        assert((msgOnePart + msgEmpty).template.parts == Seq(
-          "onePart"
-        ))
-        assert((msgEmpty + msgOnePart).template.parts == Seq(
-          "onePart"
-        ))
+        assert(
+          (msgOnePart + msgEmpty).template.parts == Seq(
+            "onePart"
+          )
+        )
+        assert(
+          (msgEmpty + msgOnePart).template.parts == Seq(
+            "onePart"
+          )
+        )
 
         assert((msgEmpty + msgEmpty).template.parts == Seq(""))
         assert((msgZeroParts + msgZeroParts).template.parts == Seq(""))
@@ -135,17 +156,30 @@ class BasicLoggingTest extends AnyWordSpec {
         val msgEmptyStringContext = Message(StringContext(), Nil)
         val msgOnePart = Message(s"onePart")
 
-        assert((msgOnePart + msgEmptyStringContext).template.parts == Seq(
-          "onePart"
-        ))
-        assert((msgEmptyStringContext + msgOnePart).template.parts == Seq(
-          "onePart"
-        ))
+        assert(
+          (msgOnePart + msgEmptyStringContext).template.parts == Seq(
+            "onePart"
+          )
+        )
+        assert(
+          (msgEmptyStringContext + msgOnePart).template.parts == Seq(
+            "onePart"
+          )
+        )
       }
     }
   }
 
   private def render(p: StringRenderingPolicy, m: Message) = {
-    p.render(Entry(m, Context(StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)), DynamicContext(Level.Warn, ThreadData("test", 0), 0), CustomContext(Seq.empty))))
+    p.render(
+      Entry(
+        m,
+        Context(
+          StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)),
+          DynamicContext(Level.Warn, ThreadData("test", 0), 0),
+          CustomContext(Seq.empty),
+        ),
+      )
+    )
   }
 }

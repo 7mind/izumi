@@ -4,7 +4,7 @@ import izumi.fundamentals.platform.console.TrivialLogger.{Config, Level}
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.strings.IzString._
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -82,9 +82,9 @@ object TrivialLogger {
   }
 
   final case class Config(
-                           sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
-                           forceLog: Boolean = false
-                         )
+    sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
+    forceLog: Boolean = false,
+  )
 
   def make[T: ClassTag](sysProperty: String, config: Config = Config()): TrivialLogger = {
     val logMessages: Boolean = checkLog(sysProperty, config, default = false)
@@ -94,24 +94,25 @@ object TrivialLogger {
 
   private[this] val enabled = new mutable.HashMap[String, Boolean]()
 
-  @silent("return statement uses an exception")
+  @nowarn("msg=return statement uses an exception")
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
-    config.forceLog || enabled.getOrElseUpdate(sysProperty, {
-      val parts = sysProperty.split('.')
-      var current = parts.head
-      def cond: Boolean = {
-        System.getProperty(current).asBoolean().getOrElse(default)
-      }
-      parts.tail.foreach {
-        p =>
-          if (cond) {
-            return true
-          } else {
-            current = s"$current.$p"
-          }
-      }
-      return cond
-    })
+    config.forceLog || enabled.getOrElseUpdate(
+      sysProperty, {
+        val parts = sysProperty.split('.')
+        var current = parts.head
+        def cond: Boolean = {
+          System.getProperty(current).asBoolean().getOrElse(default)
+        }
+        parts.tail.foreach {
+          p =>
+            if (cond) {
+              return true
+            } else {
+              current = s"$current.$p"
+            }
+        }
+        return cond
+      },
+    )
   }
 }
-

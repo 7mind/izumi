@@ -1,6 +1,6 @@
 package izumi.distage.config.extractor
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import com.typesafe.config.{Config, ConfigFactory}
 import izumi.distage.config.extractor.ConfigPathExtractor.{ConfigPath, ExtractConfigPath, ResolvedConfig}
 import izumi.distage.model.definition.BindingTag.ConfTag
@@ -15,9 +15,10 @@ import scala.jdk.CollectionConverters._
 class ConfigPathExtractor extends PlanningHook {
 
   override def phase20Customization(plan: SemiPlan): SemiPlan = {
-    val paths = plan.steps.collect {
-      case ExtractConfigPath(configPath) => configPath
-    }.toSet
+    val paths = plan
+      .steps.collect {
+        case ExtractConfigPath(configPath) => configPath
+      }.toSet
 
     val addResolvedConfigOp = resolvedConfigOp(paths)
 
@@ -27,11 +28,12 @@ class ConfigPathExtractor extends PlanningHook {
   private def resolvedConfigOp(paths: Set[ConfigPath]): ExecutableOp.WiringOp.UseInstance = {
     val resolvedConfig = ResolvedConfig(paths)
     val target = DIKey.get[ResolvedConfig]
-    ExecutableOp.WiringOp.UseInstance(
-      target = target,
-      wiring = Instance(target.tpe, resolvedConfig),
-      origin = OperationOrigin.Unknown,
-    )
+    ExecutableOp
+      .WiringOp.UseInstance(
+        target = target,
+        wiring = Instance(target.tpe, resolvedConfig),
+        origin = OperationOrigin.Unknown,
+      )
   }
 
 }
@@ -52,13 +54,14 @@ object ConfigPathExtractor {
   }
 
   final case class ResolvedConfig(requiredPaths: Set[ConfigPath]) {
-    @silent("Unused import")
+    @nowarn("msg=Unused import")
     def minimized(source: Config): Config = {
       import scala.collection.compat._
       val paths = requiredPaths.map(_.toPath)
 
       ConfigFactory.parseMap {
-        source.root().unwrapped().asScala
+        source
+          .root().unwrapped().asScala
           .view
           .filterKeys(key => paths.exists(_.startsWith(key)))
           .toMap

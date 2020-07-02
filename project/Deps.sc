@@ -106,8 +106,6 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
     final val silencer_plugin = Library("com.github.ghik", "silencer-plugin", V.silencer, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
-    final val silencer_lib = Library("com.github.ghik", "silencer-lib", V.silencer, LibraryType.Invariant)
-      .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
@@ -130,7 +128,7 @@ object Izumi {
 
     val doobie = Seq(
       Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
-      Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto)
+      Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto),
     )
 
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
@@ -140,8 +138,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.11")
-  final val scala213 = ScalaVersion("2.13.1")
-  // postpone updating to 2.13.2 due to bug https://github.com/scala/bug/issues/11968 that makes it impossible to compile the project on that version
+  final val scala213 = ScalaVersion("2.13.3")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -232,7 +229,8 @@ object Izumi {
           "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
           "scalacOptions" ++= Seq(
               SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-              SettingKey(Some(scala213), None) := Defaults.Scala213Options,
+              SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
+                ),
               SettingKey.Default := Const.EmptySeq,
             ),
           "scalacOptions" ++= Seq(
@@ -661,7 +659,6 @@ object Izumi {
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       ScopedLibrary(silencer_plugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
-      silencer_lib in Scope.Provided.all,
       collection_compat in Scope.Compile.all,
       scalatest,
     ),

@@ -1,6 +1,6 @@
 package izumi.logstage.sink
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
@@ -14,8 +14,8 @@ import org.scalatest.exceptions.TestFailedException
 import scala.util.Random
 
 @ExposedTestScope
-@silent("[Ee]xpression.*logger")
-@silent("missing interpolator")
+@nowarn("msg=[Ee]xpression.*logger")
+@nowarn("msg=missing interpolator")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 
@@ -31,11 +31,12 @@ class ExampleService(logger: IzLogger) {
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
     loggerWithSubcontext.info(s"Both custom contexts will be added into this message. Dummy: $justAnArg")
 
-
     logger.crit(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
     logger.crit(s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}")
 
-    logger.info(s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}")
+    logger.info(
+      s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}"
+    )
     logger.info(s"..Same with invisible name: ${justAnArg -> ' ' -> null}")
 
     val duplicatedParam = "DuplicatedParamVal"
@@ -94,16 +95,17 @@ class ExampleService(logger: IzLogger) {
     }
     sealed trait Sealed
     object Sealed {
-      implicit val codec: LogstageCodec[Sealed] = (writer, s) => s match {
-        case Branch(x) => writer.write(s"""Branch("$x")""")
-      }
+      implicit val codec: LogstageCodec[Sealed] = (writer, s) =>
+        s match {
+          case Branch(x) => writer.write(s"""Branch("$x")""")
+        }
       final case class Branch(x: String) extends Sealed
     }
 
     val logStrict: LogIOStrict[Function0] = LogIOStrict.fromLogger(logger)
     import Assertions._
 
-    val exc = intercept[TestFailedException]{
+    val exc = intercept[TestFailedException] {
       assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
     }
     assert(exc.getMessage() contains "Implicit search failed")

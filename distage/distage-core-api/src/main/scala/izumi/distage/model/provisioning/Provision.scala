@@ -4,7 +4,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.DIKey
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import scala.collection.{Map, Seq, mutable}
 
 trait Provision[+F[_]] {
@@ -24,8 +24,7 @@ trait Provision[+F[_]] {
 
 object Provision {
 
-  final case class ProvisionMutable[F[_]]
-  (
+  final case class ProvisionMutable[F[_]](
     instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any](),
     imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any](),
     finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]](),
@@ -43,14 +42,13 @@ object Provision {
     }
   }
 
-  final case class ProvisionImmutable[+F[_]]
-  (
+  final case class ProvisionImmutable[+F[_]](
     instances: Map[DIKey, Any],
     imports: Map[DIKey, Any],
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
 
-    @silent("Unused import")
+    @nowarn("msg=Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
       import scala.collection.compat._
       ProvisionImmutable(

@@ -97,7 +97,6 @@ import scala.reflect.ClassTag
   * NonEmptySet(1, 2, 3).filter(_ &gt; 10) // Result: Set()
   * </pre>
   *
-  *
   * <p>
   * You can use <code>NonEmptySet</code>s in <code>for</code> expressions. The result will be an <code>NonEmptySet</code> unless
   * you use a filter (an <code>if</code> clause). Because filters are desugared to invocations of <code>filter</code>, the
@@ -169,21 +168,10 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
   /**
     * Returns a new <code>NonEmptySet</code> with the given element added.
     *
-    *
     * @param element the element to add to this <code>NonEmptySet</code>
     * @return a new <code>NonEmptySet</code> consisting of <code>element</code> and all elements of this <code>NonEmptySet</code>.
     */
   def +(element: T): NonEmptySet[T] = new NonEmptySet(toSet ++ Set(element))
-
-  /**
-    * Returns a new <code>NonEmptySet</code> with the given element added.
-    *
-    * @param elem1 the first element to add.
-    * @param elem2 the second element to add.
-    * @param elems the remaining elements to add.
-    * @return   a new <code>NonEmptySet</code> with the given elements added, omitting duplicates.
-    */
-  def +(elem1: T, elem2: T, elems: T*): NonEmptySet[T] = new NonEmptySet(toSet ++ Set(elem1, elem2) ++ elems)
 
   /**
     * Appends all elements of this <code>NonEmptySet</code> to a string builder. The written text will consist of a concatenation of the result of invoking <code>toString</code>
@@ -428,7 +416,10 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def groupBy[K](f: T => K): Map[K, NonEmptySet[T]] = {
     val mapKToSet = toSet.groupBy(f)
-    mapKToSet.view.mapValues { Set => new NonEmptySet(Set) }.toMap
+    mapKToSet
+      .view.mapValues {
+        Set => new NonEmptySet(Set)
+      }.toMap
   }
 
   /**
@@ -439,7 +430,9 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def grouped(size: Int): Iterator[NonEmptySet[T]] = {
     val itOfSet = toSet.grouped(size)
-    itOfSet.map { Set => new NonEmptySet(Set) }
+    itOfSet.map {
+      Set => new NonEmptySet(Set)
+    }
   }
 
   /**
@@ -483,7 +476,6 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     * @return the last element of this <code>NonEmptySet</code>.
     */
   def last: T = toSet.last
-
 
   /**
     * Builds a new <code>NonEmptySet</code> by applying a function to all elements of this <code>NonEmptySet</code>.
@@ -1008,7 +1000,7 @@ object NonEmptySet {
   /*
     // TODO: Figure out how to get case NonEmptySet() to not compile
     def unapplySeq[T](NonEmptySet: NonEmptySet[T]): Option[(T, Seq[T])] = Some(NonEmptySet.head, NonEmptySet.tail)
-  */
+   */
 
   /**
     * Optionally construct a <code>NonEmptySet</code> containing the elements, if any, of a given <code>Set</code>.
@@ -1024,4 +1016,3 @@ object NonEmptySet {
     }
 
 }
-

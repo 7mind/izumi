@@ -4,7 +4,7 @@ import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, BIOMonad3, __PlatformSpecific}
-import zio.ZIO.ZIOWithFilterOps
+import zio.ZIO.{CanFilter, ZIOWithFilterOps}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO}
 
@@ -47,8 +47,9 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def redeem[R, E, A, E2, B](r: ZIO[R, E, A])(err: E => ZIO[R, E2, B], succ: A => ZIO[R, E2, B]): ZIO[R, E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[R, E, A, E2](r: ZIO[R, E, A])(f: E => ZIO[R, E2, A]): ZIO[R, E2, A] = r.catchAll(f)
   @inline override final def catchSome[R, E, A, E1 >: E](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E1, A]]): ZIO[R, E1, A] = r.catchSome(f)
-  @inline override final def withFilter[R, E, A](r: ZIO[R, E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): ZIO[R, E, A] =
-    new ZIOWithFilterOps(r).withFilter(predicate)(ev)
+  @inline override final def withFilter[R, E, A](r: ZIO[R, E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): ZIO[R, E, A] = {
+    new ZIOWithFilterOps(r).withFilter(predicate)(ZIO.CanFilter.canFilter[Any].asInstanceOf[CanFilter[E]])
+  }
 
   @inline override final def guarantee[R, E, A](f: ZIO[R, E, A], cleanup: ZIO[R, Nothing, Unit]): ZIO[R, E, A] = f.ensuring(cleanup)
   @inline override final def attempt[R, E, A](r: ZIO[R, E, A]): ZIO[R, Nothing, Either[E, A]] = r.either

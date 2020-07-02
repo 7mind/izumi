@@ -2,7 +2,7 @@ package izumi.functional.mono
 
 import java.util.UUID
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 
@@ -22,7 +22,7 @@ trait Entropy[+F[_]] {
   def nextTimeUUID(): F[UUID]
   def nextUUID(): F[UUID]
 
-  @silent("CanBuildFrom")
+  @nowarn("msg=CanBuildFrom")
   def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]]
 }
 
@@ -56,7 +56,7 @@ object Entropy {
       override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
       override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
 
-      @silent("CanBuildFrom")
+      @nowarn("msg=CanBuildFrom")
       override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
         F.syncSafe(impureEntropy.shuffle[T, CC](xs))
     }
@@ -65,7 +65,7 @@ object Entropy {
   trait ScalaEntropy extends Entropy[Identity] {
     protected def random: scala.util.Random
 
-    @silent("CanBuildFrom")
+    @nowarn("msg=CanBuildFrom")
     def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
       random.shuffle(xs)
     }

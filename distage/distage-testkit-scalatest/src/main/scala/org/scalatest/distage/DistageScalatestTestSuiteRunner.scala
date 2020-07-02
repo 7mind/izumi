@@ -74,9 +74,10 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   /** Modify test discovery options for SBT test runner only.
     * Overriding this with [[withWhitelistJarsOnly]] will slightly boost test start-up speed,
     * but will disable the ability to discover tests that inherit [[izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec]]
-    * indirectly through a different library JAR. (this does not affect local sbt modules) */
+    * indirectly through a different library JAR. (this does not affect local sbt modules)
+    */
   protected def modifyClasspathScan: ClassGraph => ClassGraph = identity
-  protected final def withWhitelistJarsOnly: ClassGraph => ClassGraph = _.whitelistJars("distage-testkit-scalatest*")
+  protected final def withWhitelistJarsOnly: ClassGraph => ClassGraph = _.acceptJars("distage-testkit-scalatest*")
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time
@@ -106,14 +107,14 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
         case Some(value) =>
           doRun(value, testName, args)
-          if (!status.isCompleted) {
+          if (!status.isCompleted()) {
             status.setCompleted()
           }
         case None =>
       }
     } catch {
       case t: Throwable =>
-        if (!status.isCompleted) {
+        if (!status.isCompleted()) {
           status.setFailedWith(t)
           status.setCompleted()
         }

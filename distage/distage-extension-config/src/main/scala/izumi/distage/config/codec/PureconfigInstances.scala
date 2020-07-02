@@ -2,9 +2,10 @@ package izumi.distage.config.codec
 
 import com.typesafe.config.{ConfigMemorySize, ConfigValue}
 import pureconfig.ConfigReader.Result
-import pureconfig.error.CannotConvert
-import pureconfig.generic.{CoproductHint, ProductHint}
 import pureconfig._
+import pureconfig.error.{CannotConvert, ConfigReaderFailures, ThrowableFailure}
+import pureconfig.generic.error.{InvalidCoproductOption, NoValidCoproductOptionFound}
+import pureconfig.generic.{CoproductHint, ProductHint}
 
 import scala.reflect.classTag
 import scala.util.control.NonFatal
@@ -12,7 +13,7 @@ import scala.util.control.NonFatal
 object PureconfigInstances extends PureconfigInstances
 
 trait PureconfigInstances {
-  /** Override pureconfig's default `snake-case` fields – force CamelCase product-hint */
+  /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
   @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = camelCaseProductHint.asInstanceOf[ProductHint[T]]
 
   /** Override pureconfig's default `type` field type discriminator for sealed traits.
@@ -36,18 +37,39 @@ trait PureconfigInstances {
     */
   @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
 
-  private[this] final val camelCaseProductHint: ProductHint[Any] = ProductHint(fieldMapping = ConfigFieldMapping(CamelCase, CamelCase))
+  private[this] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
   private[this] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
-    override def from(cur: ConfigCursor, name: String): Result[Option[ConfigCursor]] = {
+    override def from(cur: ConfigCursor, options: Seq[String]): Result[CoproductHint.Action] = {
       for {
         objCur <- cur.asObjectCursor
-      } yield objCur.atKey(name).toOption.filter(_ => objCur.keys.size == 1)
+        _ <-
+          if (objCur.keys.size == 1) {
+            Right(())
+          } else {
+            val msg = s"""Invalid format for sealed trait, found multiple or no keys in object. Expected a single-key object like `{ "$$K": {} }`
+                         |where `$$K` can be one of ${options.mkString}""".stripMargin
+            Left(
+              ConfigReaderFailures(
+                objCur.failureFor(
+                  NoValidCoproductOptionFound(objCur.value, Seq("_invalid_format_" -> ConfigReaderFailures(ThrowableFailure(new RuntimeException(msg), None))))
+                )
+              )
+            )
+          }
+        res <- {
+          val key = objCur.keys.head
+          if (options.contains(key)) {
+            objCur.atKey(key).map(CoproductHint.Use(_, key))
+          } else {
+            Left(ConfigReaderFailures(objCur.failureFor(InvalidCoproductOption(key))))
+          }
+        }
+      } yield res
     }
-    override def to(cv: ConfigValue, name: String): Result[ConfigValue] = {
+    override def to(cv: ConfigValue, name: String): ConfigValue = {
       import pureconfig.syntax._
-      Right(Map(name -> cv).toConfig)
+      Map(name -> cv).toConfig
     }
-    override def tryNextOnFail(name: String): Boolean = false
   }
 
   // use `Exported` so that if user imports their own instances, user instances will have higher priority

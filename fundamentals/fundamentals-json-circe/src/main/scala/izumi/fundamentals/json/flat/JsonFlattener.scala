@@ -1,15 +1,15 @@
 package izumi.fundamentals.json.flat
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import io.circe.Json
 import izumi.functional.IzEither.EitherBiAggregate
 
 import scala.annotation.switch
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-  import JsonFlattener._
-  import PathElement._
-  import izumi.fundamentals.platform.strings.IzEscape
+import JsonFlattener._
+import PathElement._
+import izumi.fundamentals.platform.strings.IzEscape
 
 class JsonFlattener {
 
@@ -25,7 +25,6 @@ class JsonFlattener {
   private final val controlChars = Set('.', '[', ']')
   private final val escapeChar = '\\'
   private final val escape = new IzEscape(controlChars, escapeChar)
-
 
   def flatten(node: Json): Seq[(String, String)] = {
     flatten(node, Seq.empty)
@@ -59,10 +58,11 @@ class JsonFlattener {
         }
       },
       o => {
-        val out = o.toIterable.flatMap {
-          case (name, value) =>
-            flatten(value, prefix :+ PathElement.ObjectName(name))
-        }.toSeq
+        val out = o
+          .toIterable.flatMap {
+            case (name, value) =>
+              flatten(value, prefix :+ PathElement.ObjectName(name))
+          }.toSeq
         if (out.nonEmpty) {
           out
         } else {
@@ -82,7 +82,6 @@ class JsonFlattener {
     s"${prefix.mkString(".")}:$tpe"
   }
 
-
   def inflate(pairs: Seq[(String, String)]): Either[List[UnpackFailure], Json] = {
     val maybePaths = pairs.map {
       case (k, v) =>
@@ -98,7 +97,7 @@ class JsonFlattener {
     } yield out
   }
 
-  @silent("return statement uses an exception")
+  @nowarn("msg=return statement uses an exception")
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {
@@ -166,7 +165,6 @@ class JsonFlattener {
     }
   }
 
-
   private def inflateParsed(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
     val grouped = pairs.groupBy(_._1.headOption)
 
@@ -191,14 +189,16 @@ class JsonFlattener {
           }
         } else if (grouped2.keys.forall(_.isInstanceOf[ObjectName])) {
           for {
-            elements <- grouped2.map {
-              case (k, v) =>
-                for {
-                  field <- inflateParsedNext(v)
-                } yield {
-                  escape.unescape(k.asInstanceOf[ObjectName].name) -> field
-                }
-            }.toSeq.biAggregate
+            elements <-
+              grouped2
+                .map {
+                  case (k, v) =>
+                    for {
+                      field <- inflateParsedNext(v)
+                    } yield {
+                      escape.unescape(k.asInstanceOf[ObjectName].name) -> field
+                    }
+                }.toSeq.biAggregate
           } yield {
             Json.fromFields(elements)
           }
@@ -228,12 +228,13 @@ class JsonFlattener {
           case LongT => Json.fromLong(value.toLong)
           case FloatT => Json.fromBigDecimal(BigDecimal.apply(value))
           case StringT => Json.fromString(value)
-          case AggT => value match {
-            case "obj" =>
-              Json.obj()
-            case "arr" =>
-              Json.arr()
-          }
+          case AggT =>
+            value match {
+              case "obj" =>
+                Json.obj()
+              case "arr" =>
+                Json.arr()
+            }
         }
       }
     } catch {

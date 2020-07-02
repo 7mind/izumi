@@ -4,7 +4,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
@@ -227,7 +227,7 @@ case class ContainerResource[F[_], T](
 
     for {
       out <- F.maybeSuspend {
-        @silent("method.*Bind.*deprecated")
+        @nowarn("msg=method.*Bind.*deprecated")
         val cmd = Value(baseCmd)
           .mut(config.name) { case (n, c) => c.withName(n) }
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))

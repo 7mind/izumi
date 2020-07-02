@@ -3,9 +3,9 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyString}
 import org.scalatest.wordspec.AnyWordSpec
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 
-@silent("Unused import")
+@nowarn("msg=Unused import")
 class NonEmptyCollectionsTest extends AnyWordSpec {
 
   import scala.collection.compat._
@@ -43,4 +43,3 @@ class NonEmptyCollectionsTest extends AnyWordSpec {
   }
 
 }
-
