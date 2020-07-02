@@ -46,7 +46,7 @@ object UUIDGen {
 
   private val MIN_CLOCK_SEQ_AND_NODE: Long = 0x8080808080808080L
 
-  private val MAX_CLOCK_SEQ_AND_NODE: Long = 0x7f7f7f7f7f7f7f7fL
+  private val MAX_CLOCK_SEQ_AND_NODE: Long = 0x7F7F7F7F7F7F7F7FL
 
   private val secureRandom: SecureRandom = new SecureRandom()
 
@@ -101,8 +101,7 @@ object UUIDGen {
   def getRandomTimeUUIDFromMicros(whenInMicros: Long): UUID = {
     val whenInMillis: Long = whenInMicros / 1000
     val nanos: Long = (whenInMicros - (whenInMillis * 1000)) * 10
-    new UUID(createTime(fromUnixTimestamp(whenInMillis, nanos)),
-      secureRandom.nextLong())
+    new UUID(createTime(fromUnixTimestamp(whenInMillis, nanos)), secureRandom.nextLong())
   }
 
   def getTimeUUID(when: Long, nanos: Long): UUID =
@@ -245,8 +244,7 @@ object UUIDGen {
     */
   def getAdjustedTimestamp(uuid: UUID): Long = {
     if (uuid.version() != 1)
-      throw new IllegalArgumentException(
-        "incompatible with uuid version: " + uuid.version())
+      throw new IllegalArgumentException("incompatible with uuid version: " + uuid.version())
     (uuid.timestamp() / 10000) + START_EPOCH
   }
 
@@ -264,9 +262,9 @@ object UUIDGen {
 
   private def createTime(nanosSince: Long): Long = {
     var msb: Long = 0L
-    msb |= (0x00000000ffffffffL & nanosSince) << 32
-    msb |= (0x0000ffff00000000L & nanosSince) >>> 16
-    msb |= (0xffff000000000000L & nanosSince) >>> 48
+    msb |= (0x00000000FFFFFFFFL & nanosSince) << 32
+    msb |= (0x0000FFFF00000000L & nanosSince) >>> 16
+    msb |= (0xFFFF000000000000L & nanosSince) >>> 48
     // sets the version to 1.
     msb |= 0x0000000000001000L
     msb
@@ -277,8 +275,7 @@ object UUIDGen {
     val nets: Enumeration[NetworkInterface] =
       NetworkInterface.getNetworkInterfaces
     if (nets != null) {
-      while (nets.hasMoreElements()) localAddresses.addAll(
-        Collections.list(nets.nextElement().getInetAddresses))
+      while (nets.hasMoreElements()) localAddresses.addAll(Collections.list(nets.nextElement().getInetAddresses))
     }
     localAddresses
   }
@@ -296,16 +293,15 @@ object UUIDGen {
      * where we don't want to require the yaml.
      */
 
-    val localAddresses: Collection[InetAddress] = getAllLocalAddresses
+    val localAddresses: Collection[InetAddress] = getAllLocalAddresses()
     if (localAddresses.isEmpty)
-      throw new RuntimeException(
-        "Cannot generate the node component of the UUID because cannot retrieve any IP addresses.")
+      throw new RuntimeException("Cannot generate the node component of the UUID because cannot retrieve any IP addresses.")
     // ideally, we'd use the MAC address, but java doesn't expose that.
     val hash: Array[Byte] = doHash(localAddresses)
     var node: Long = 0
     for (i <- 0 until Math.min(6, hash.length))
-      node |= (0x00000000000000ff & hash(i).toLong) << (5 - i) * 8
-    assert((0xff00000000000000L & node) == 0)
+      node |= (0x00000000000000FF & hash(i).toLong) << (5 - i) * 8
+    assert((0xFF00000000000000L & node) == 0)
     // bit (least significant bit of the first octet of the node ID) must be 1.
     node | 0x0000010000000000L
   }
@@ -325,7 +321,7 @@ object UUIDGen {
 /**
   * The goods are here: www.ietf.org/rfc/rfc4122.txt.
   */
-class UUIDGen protected() {
+class UUIDGen protected () {
 
   private var lastNanos: Long = _
 

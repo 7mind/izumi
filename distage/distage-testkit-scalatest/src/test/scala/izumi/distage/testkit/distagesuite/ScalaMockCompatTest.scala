@@ -12,16 +12,17 @@ final class ScalaMockCompatTest extends DistageSpecScalatest[Identity] with Mock
     def method: String
   }
 
-  override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = new ModuleDef {
-      make[TestClass].from(mock[TestClass])
-    }
-  )
+  override protected def config: TestConfig = super
+    .config.copy(
+      moduleOverrides = new ModuleDef {
+        make[TestClass].from(mock[TestClass])
+      }
+    )
 
   "mockfactory" should {
     "be compatible" in {
       testMock: TestClass =>
-        (testMock.method _).expects().returning("hello")
+        (() => testMock.method).expects().returning("hello")
         assert(testMock.method == "hello")
     }
   }

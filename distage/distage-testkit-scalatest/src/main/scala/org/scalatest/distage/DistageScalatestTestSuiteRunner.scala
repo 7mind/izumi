@@ -107,14 +107,14 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
         case Some(value) =>
           doRun(value, testName, args)
-          if (!status.isCompleted) {
+          if (!status.isCompleted()) {
             status.setCompleted()
           }
         case None =>
       }
     } catch {
       case t: Throwable =>
-        if (!status.isCompleted) {
+        if (!status.isCompleted()) {
           status.setFailedWith(t)
           status.setCompleted()
         }

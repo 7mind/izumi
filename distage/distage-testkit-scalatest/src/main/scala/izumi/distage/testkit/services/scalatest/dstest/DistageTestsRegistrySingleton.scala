@@ -70,7 +70,7 @@ object DistageTestsRegistrySingleton {
     statuses.get(SafeType.getK[F]).flatten.foreach {
       _.valuesIterator.foreach {
         status =>
-          if (!status.isCompleted) {
+          if (!status.isCompleted()) {
             status.setCompleted()
           }
       }
