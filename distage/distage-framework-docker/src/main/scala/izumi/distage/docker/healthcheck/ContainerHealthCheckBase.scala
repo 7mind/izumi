@@ -74,7 +74,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
   }
 
   protected def tcpPortsGood[T](container: DockerContainer[T], good: AvailablePorts): Boolean = {
-    val tcpPorts = container.containerConfig.ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
+    val tcpPorts = container.containerConfig.tcpPorts
     tcpPorts.diff(good.availablePorts.toMap.keySet).isEmpty
   }
 

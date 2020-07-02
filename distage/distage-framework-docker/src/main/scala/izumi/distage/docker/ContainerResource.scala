@@ -125,7 +125,7 @@ case class ContainerResource[F[_], T](
                 import izumi.fundamentals.platform.exceptions.IzThrowable._
                 import izumi.fundamentals.platform.strings.IzString._
                 val sb = new StringBuilder()
-                sb.append(s"Health checks failed after $maxAttempts attempts: $container")
+                sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
                 if (unverifiedPorts.nonEmpty) {
                   sb.append(s"Unchecked ports:\n")
                   sb.append(unverifiedPorts.niceList())

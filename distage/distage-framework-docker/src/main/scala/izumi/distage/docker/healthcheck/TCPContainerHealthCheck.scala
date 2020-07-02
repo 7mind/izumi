@@ -67,18 +67,23 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
     NonEmptyMap.from(succeded) match {
       case Some(value) =>
         val available = AvailablePorts(value)
+        val allTCPPortsAvailable = tcpPortsGood(container, available)
         HealthCheckResult.AvailableOnPorts(
           available,
           errored,
           udpPorts.keySet.map(p => p: DockerPort),
-          tcpPortsGood(container, available),
+          allTCPPortsAvailable,
         )
 
       case None =>
-        HealthCheckResult.UnavailableWithMeta(
-          errored,
-          udpPorts.keySet.map(p => p: DockerPort),
-        )
+        if (container.containerConfig.tcpPorts.isEmpty) {
+          HealthCheckResult.Available
+        } else {
+          HealthCheckResult.UnavailableWithMeta(
+            errored,
+            udpPorts.keySet.map(p => p: DockerPort),
+          )
+        }
     }
 
   }
