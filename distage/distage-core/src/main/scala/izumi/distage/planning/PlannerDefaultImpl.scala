@@ -1,6 +1,6 @@
 package izumi.distage.planning
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
@@ -103,7 +103,7 @@ final class PlannerDefaultImpl(
       .get
   }
 
-  @silent("Unused import")
+  @nowarn("msg=Unused import")
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
     import scala.collection.compat._
 
@@ -234,12 +234,12 @@ final class PlannerDefaultImpl(
 
   private[this] def effectKey(key: DIKey): Boolean = key match {
     case _: DIKey.ResourceKey | _: DIKey.EffectKey => true
-    case _                                         => false
+    case _ => false
   }
 
   private[this] def referenceOp(s: SemiplanOp): Boolean = s match {
     case _: ReferenceKey /*| _: MonadicOp */ => true
-    case _                                   => false
+    case _ => false
   }
 
 }

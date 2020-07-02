@@ -2,7 +2,7 @@ package izumi.logstage.api.routing
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 
@@ -22,7 +22,6 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
   private[this] val configCache = new ConcurrentHashMap[String, LoggerPathConfig](1024)
 
-  @silent("Unused import")
   private[this] val findConfig: java.util.function.Function[String, LoggerPathConfig] = {
     id: String =>
       val parts = id.split('.')

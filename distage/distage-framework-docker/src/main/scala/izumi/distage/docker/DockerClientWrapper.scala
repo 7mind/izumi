@@ -18,7 +18,7 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 import com.github.dockerjava.api.model.Container
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 
 class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
@@ -86,7 +86,7 @@ object DockerClientWrapper {
       )
       .get.build()
 
-    @silent("deprecated")
+    @nowarn("msg=deprecated")
     private[this] lazy val client = DockerClientBuilder
       .getInstance(rawClientConfig)
       .withDockerCmdExecFactory(factory)

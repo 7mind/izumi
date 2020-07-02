@@ -3,7 +3,7 @@ package izumi.distage.roles.bundled
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.extractor.ConfigPathExtractorModule
@@ -26,9 +26,7 @@ import izumi.logstage.distage.LogstageModule
 
 import scala.util._
 
-
-class ConfigWriter[F[_]: DIEffect]
-(
+class ConfigWriter[F[_]: DIEffect](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
@@ -57,28 +55,29 @@ class ConfigWriter[F[_]: DIEffect]
       writeConfig(options, commonComponent, None, commonConfig)
     }
 
-    roleInfo.availableRoleBindings.foreach { role =>
-      val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
-      val refConfig = buildConfig(options, component.copy(parent = Some(commonConfig)))
-      val version = if (options.useLauncherVersion) {
-        Some(ArtifactVersion(launcherVersion.version))
-      } else {
-        component.version
-      }
-      val versionedComponent = component.copy(version = version)
+    roleInfo.availableRoleBindings.foreach {
+      role =>
+        val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
+        val refConfig = buildConfig(options, component.copy(parent = Some(commonConfig)))
+        val version = if (options.useLauncherVersion) {
+          Some(ArtifactVersion(launcherVersion.version))
+        } else {
+          component.version
+        }
+        val versionedComponent = component.copy(version = version)
 
-      try {
-        writeConfig(options, versionedComponent, None, refConfig)
-        minimizedConfig(refConfig, role)
-          .foreach {
-            cfg =>
-              writeConfig(options, versionedComponent, Some("minimized"), cfg)
-          }
-      } catch {
-        case exception: Throwable =>
-          logger.crit(s"Cannot process role ${role.descriptor.id}")
-          throw exception
-      }
+        try {
+          writeConfig(options, versionedComponent, None, refConfig)
+          minimizedConfig(refConfig, role)
+            .foreach {
+              cfg =>
+                writeConfig(options, versionedComponent, Some("minimized"), cfg)
+            }
+        } catch {
+          case exception: Throwable =>
+            logger.crit(s"Cannot process role ${role.descriptor.id}")
+            throw exception
+        }
     }
   }
 
@@ -86,19 +85,19 @@ class ConfigWriter[F[_]: DIEffect]
     val referenceConfig = s"${cmp.componentId}-reference.conf"
     logger.info(s"[${cmp.componentId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
 
-    val reference = cmp.parent
+    val reference = cmp
+      .parent
       .filter(_ => config.includeCommon)
       .fold(
         ConfigFactory.parseResourcesAnySyntax(referenceConfig)
-      )(parent =>
-        ConfigFactory.parseResourcesAnySyntax(referenceConfig).withFallback(parent)
-      ).resolve()
+      )(parent => ConfigFactory.parseResourcesAnySyntax(referenceConfig).withFallback(parent)).resolve()
 
     if (reference.isEmpty) {
       logger.warn(s"[${cmp.componentId}] Reference config is empty.")
     }
 
-    val resolved = ConfigFactory.systemProperties()
+    val resolved = ConfigFactory
+      .systemProperties()
       .withFallback(reference)
       .resolve()
 
@@ -165,7 +164,7 @@ class ConfigWriter[F[_]: DIEffect]
   }
 
   // TODO: sdk?
-  @silent("Unused import")
+  @nowarn("msg=Unused import")
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
     import scala.jdk.CollectionConverters._
     import scala.collection.compat._
@@ -205,17 +204,17 @@ object ConfigWriter extends RoleDescriptor {
     * @param includeCommon Append shared sections from `common-reference.conf` into every written config
     */
   case class WriteReference(
-                             asJson: Boolean,
-                             targetDir: String,
-                             includeCommon: Boolean,
-                             useLauncherVersion: Boolean,
-                           )
+    asJson: Boolean,
+    targetDir: String,
+    includeCommon: Boolean,
+    useLauncherVersion: Boolean,
+  )
 
   final case class ConfigurableComponent(
-                                          componentId: String,
-                                          version: Option[ArtifactVersion],
-                                          parent: Option[Config] = None,
-                                        )
+    componentId: String,
+    version: Option[ArtifactVersion],
+    parent: Option[Config] = None,
+  )
 
   object Options extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")

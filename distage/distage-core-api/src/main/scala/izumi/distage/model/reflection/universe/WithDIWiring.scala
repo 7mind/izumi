@@ -1,14 +1,9 @@
 package izumi.distage.model.reflection.universe
 
-import com.github.ghik.silencer.silent
+import scala.annotation.nowarn
 
 trait WithDIWiring {
-  this: DIUniverseBase
-    with WithDISafeType
-    with WithDIKey
-    with WithDIAssociation
-    with WithDISymbolInfo
-  =>
+  this: DIUniverseBase with WithDISafeType with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
 
   sealed trait Wiring
   object Wiring {
@@ -22,13 +17,15 @@ trait WithDIWiring {
       case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[DIKey]) extends SingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten
       }
-      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[DIKey]) extends SingletonWiring {
+      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[DIKey])
+        extends SingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten ++ methods
       }
     }
 
-    case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod]) extends Wiring {
-      @silent("Unused import")
+    case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod])
+      extends Wiring {
+      @nowarn("msg=Unused import")
       final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
         val fieldKeys = methods.map(_.key).toSet
