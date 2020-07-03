@@ -12,7 +12,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -109,7 +108,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -203,7 +201,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -321,7 +318,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
@@ -416,7 +412,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -512,7 +507,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -611,7 +605,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
@@ -714,7 +707,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -814,7 +806,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "cglib" % "cglib-nodep" % V.cglib_nodep
@@ -912,7 +903,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Test,
@@ -1012,7 +1002,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
@@ -1114,7 +1103,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.github.classgraph" % "classgraph" % V.classgraph
@@ -1214,7 +1202,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -1310,7 +1297,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -1412,7 +1398,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1516,7 +1501,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Test,
@@ -1619,7 +1603,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1720,7 +1703,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1822,7 +1804,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
@@ -1923,7 +1904,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -2019,7 +1999,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j
@@ -2119,7 +2098,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j,
@@ -2238,7 +2216,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats,
@@ -2401,7 +2378,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % V.silencer % Provided cross CrossVersion.full,
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
