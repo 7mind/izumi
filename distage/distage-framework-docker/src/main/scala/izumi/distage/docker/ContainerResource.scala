@@ -4,10 +4,11 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
+
 import scala.annotation.nowarn
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
@@ -103,7 +104,7 @@ case class ContainerResource[F[_], T](
           }
 
         case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
-          val out = container.copy(availablePorts = Some(status.availablePorts))
+          val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
           F.maybeSuspend {
             logger.info(s"Looks good: ${out -> "container"}")
             out
@@ -238,7 +239,7 @@ case class ContainerResource[F[_], T](
               connectivity = existingPorts,
               containerConfig = config,
               clientConfig = client.clientConfig,
-              availablePorts = None,
+              availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
               hostName = inspection.getConfig.getHostName,
               labels = inspection.getConfig.getLabels.asScala.toMap,
             )
@@ -311,7 +312,7 @@ case class ContainerResource[F[_], T](
               mappedPorts,
               config,
               client.clientConfig,
-              None,
+              VerifiedContainerConnectivity.NoAvailablePorts(),
             )
             logger.debug(s"Created $container from ${config.image}...")
             logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
@@ -331,7 +332,7 @@ case class ContainerResource[F[_], T](
     } yield result
   }
 
-  private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ContainerConnectivity] = {
+  private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
     val network = inspection.getNetworkSettings
     val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
@@ -359,7 +360,7 @@ case class ContainerResource[F[_], T](
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
       Right(
-        ContainerConnectivity(
+        ReportedContainerConnectivity(
           Option(dockerHost),
           networkAddresses,
           mapped.toMap,

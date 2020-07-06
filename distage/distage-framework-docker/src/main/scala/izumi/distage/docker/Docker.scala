@@ -153,7 +153,7 @@ object Docker {
 
   final case class UnmappedPorts(ports: Seq[DockerPort])
 
-  final case class ContainerConnectivity(
+  final case class ReportedContainerConnectivity(
     dockerHost: Option[String],
     containerAddressesV4: Seq[String],
     dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],

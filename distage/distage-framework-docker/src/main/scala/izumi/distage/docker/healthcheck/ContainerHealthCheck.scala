@@ -67,10 +67,6 @@ object ContainerHealthCheck {
   }
 
   final case class AvailablePorts(availablePorts: NonEmptyMap[DockerPort, NonEmptyList[AvailablePort]]) {
-    def apply(port: DockerPort): NonEmptyList[AvailablePort] = availablePorts(port)
-
-    def first(port: DockerPort): AvailablePort = availablePorts(port).head
-
     def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = availablePorts.toMap.get(port)
 
     def firstOption(port: DockerPort): Option[AvailablePort] = availablePorts.toMap.get(port).map(_.head)
@@ -80,5 +76,37 @@ object ContainerHealthCheck {
 
   final case class UnavailablePorts(unavailablePorts: Map[DockerPort, List[(AvailablePort, Option[Throwable])]]) extends AnyVal {
     override def toString: String = s"unavailable=$unavailablePorts"
+  }
+
+  sealed trait VerifiedContainerConnectivity {
+    def get(port: DockerPort): Option[NonEmptyList[AvailablePort]]
+    def firstOption(port: DockerPort): Option[AvailablePort]
+
+    final def first(port: DockerPort): AvailablePort = firstOption(port) match {
+      case Some(value) =>
+        value
+      case None =>
+        throw new java.util.NoSuchElementException(s"Port $port is unavailable")
+    }
+
+    final def apply(port: DockerPort): NonEmptyList[AvailablePort] = get(port) match {
+      case Some(value) =>
+        value
+      case None =>
+        throw new java.util.NoSuchElementException(s"Port $port is unavailable")
+    }
+  }
+  object VerifiedContainerConnectivity {
+    case class HasAvailablePorts(availablePorts: AvailablePorts) extends VerifiedContainerConnectivity {
+      override def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = availablePorts.get(port)
+
+      override def firstOption(port: DockerPort): Option[AvailablePort] = availablePorts.firstOption(port)
+    }
+
+    case class NoAvailablePorts() extends VerifiedContainerConnectivity {
+      override def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = None
+
+      override def firstOption(port: DockerPort): Option[AvailablePort] = None
+    }
   }
 }

@@ -1,32 +1,33 @@
 package izumi.distage.docker
 
 import izumi.distage.docker.Docker._
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.AvailablePorts
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
-  id: Docker.ContainerId,
-  name: String,
-  hostName: String,
-  labels: Map[String, String],
-  connectivity: ContainerConnectivity,
-  containerConfig: Docker.ContainerConfig[Tag],
-  clientConfig: ClientConfig,
-  availablePorts: Option[AvailablePorts],
+                                       id: Docker.ContainerId,
+                                       name: String,
+                                       hostName: String,
+                                       labels: Map[String, String],
+                                       connectivity: ReportedContainerConnectivity,
+                                       containerConfig: Docker.ContainerConfig[Tag],
+                                       clientConfig: ClientConfig,
+                                       availablePorts: VerifiedContainerConnectivity,
 ) {
   override def toString: String = {
     val out = new StringBuilder()
     out.append(s"$name/${containerConfig.image}@${connectivity.dockerHost.getOrElse("localhost")}")
     availablePorts match {
-      case None =>
-      case Some(availablePorts) =>
+      case VerifiedContainerConnectivity.HasAvailablePorts(availablePorts) =>
         out.append(" {")
         out.append(availablePorts.toString)
         out.append('}')
+      case VerifiedContainerConnectivity.NoAvailablePorts() =>
     }
+
     out.toString()
   }
 }
