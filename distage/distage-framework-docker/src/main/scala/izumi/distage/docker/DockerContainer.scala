@@ -8,14 +8,14 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
-                                       id: Docker.ContainerId,
-                                       name: String,
-                                       hostName: String,
-                                       labels: Map[String, String],
-                                       connectivity: ReportedContainerConnectivity,
-                                       containerConfig: Docker.ContainerConfig[Tag],
-                                       clientConfig: ClientConfig,
-                                       availablePorts: VerifiedContainerConnectivity,
+  id: ContainerId,
+  name: String,
+  hostName: String,
+  labels: Map[String, String],
+  containerConfig: ContainerConfig[Tag],
+  clientConfig: ClientConfig,
+  connectivity: ReportedContainerConnectivity,
+  availablePorts: VerifiedContainerConnectivity,
 ) {
   override def toString: String = {
     val out = new StringBuilder()

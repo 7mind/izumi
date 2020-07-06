@@ -309,9 +309,9 @@ case class ContainerResource[F[_], T](
               inspection.getName,
               hostName,
               inspection.getConfig.getLabels.asScala.toMap,
-              mappedPorts,
               config,
               client.clientConfig,
+              mappedPorts,
               VerifiedContainerConnectivity.NoAvailablePorts(),
             )
             logger.debug(s"Created $container from ${config.image}...")
