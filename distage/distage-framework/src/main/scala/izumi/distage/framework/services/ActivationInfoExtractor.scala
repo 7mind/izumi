@@ -3,9 +3,7 @@ package izumi.distage.framework.services
 import distage.ModuleBase
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.{Axis, BindingTag}
-import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
-import izumi.fundamentals.graphs.ConflictResolutionError
 import izumi.fundamentals.platform.strings.IzString._
 
 object ActivationInfoExtractor {

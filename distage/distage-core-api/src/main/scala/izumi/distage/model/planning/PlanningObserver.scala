@@ -1,8 +1,7 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
-
-import scala.annotation.unused
+import izumi.fundamentals.platform.language.unused
 
 /**
   * Execute side-effects to observe planning algorithm execution, e.g. log, write GraphViz files, etc.

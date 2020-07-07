@@ -3,20 +3,20 @@ package izumi.fundamentals.graphs.tools
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
-import scala.annotation.tailrec
-import scala.collection.compat._
+import scala.annotation.{nowarn, tailrec}
 
-class Toposort {
+final class Toposort {
 
-  final def cycleBreaking[T](predcessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  def cycleBreaking[T](predcessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     cycleBreaking(predcessors.links, Seq.empty, break)
   }
 
+  @nowarn("msg=Unused import")
   @tailrec
-  private[this] final def cycleBreaking[T](predcessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
-    val (noPreds, hasPreds) = predcessors.partition {
-      _._2.isEmpty
-    }
+  private[this] def cycleBreaking[T](predcessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+    import scala.collection.compat._
+
+    val (noPreds, hasPreds) = predcessors.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {
       if (hasPreds.isEmpty) {

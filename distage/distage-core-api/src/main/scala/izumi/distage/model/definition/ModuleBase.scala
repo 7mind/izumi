@@ -7,8 +7,6 @@ import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.unused
 
-import scala.collection.immutable.ListSet
-
 trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
   final def keys: Set[DIKey] = bindings.map(_.key)

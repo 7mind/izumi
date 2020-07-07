@@ -1,7 +1,6 @@
 package izumi.distage.planning
 
 import scala.annotation.nowarn
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
@@ -19,8 +18,6 @@ import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
-
-import scala.collection.compat._
 
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
@@ -126,9 +123,12 @@ class PlannerDefaultImpl(
     }
   }
 
+  @nowarn("msg=Unused import")
   protected[this] def resolveConflicts(
     input: PlannerInput
   ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
+    import scala.collection.compat._
+
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
     val activationChoices = ActivationChoices(activations)
 

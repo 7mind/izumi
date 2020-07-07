@@ -3,19 +3,17 @@ package izumi.distage.testkit.services.dstest
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import distage._
-import izumi.distage.bootstrap.{BootstrapLocator, CglibBootstrap}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
-import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SetElementBinding
-import izumi.distage.model.definition.{Activation, BootstrapModule, ImplDef, LocatorDef}
+import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, TriSplittedPlan}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
 import izumi.distage.roles.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
@@ -28,7 +26,6 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
-import izumi.reflect.TagK
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -59,7 +56,7 @@ class DistageTestRunner[F[_]: TagK](
     *  Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
     *  By result you'll got [[MemoizationEnvWithPlan]] mapped to tests wit it's plans.
     *  [[MemoizationEnvWithPlan]] represents memoization environment, with shared [[TriSplittedPlan]], [[Injector]], and runtime plan.
-    * */
+    */
   def groupTests(distageTests: Seq[DistageTest[F]]): Map[MemoizationEnvWithPlan, Seq[PreparedTest[F]]] = {
 
     final case class EnvMergeCriteria(

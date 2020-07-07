@@ -21,6 +21,8 @@ trait Distage {
   type Locator = model.Locator
   type LocatorRef = model.recursive.LocatorRef
 
+  type LocatorDef = model.definition.LocatorDef
+
   type Id = model.definition.Id
   type With[T] = model.definition.With[T]
   type impl = model.definition.impl

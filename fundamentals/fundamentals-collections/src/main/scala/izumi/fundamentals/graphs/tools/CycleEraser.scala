@@ -3,12 +3,14 @@ package izumi.fundamentals.graphs.tools
 import izumi.fundamentals.graphs.DAGError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
+import scala.annotation.nowarn
 import scala.collection.mutable
-import scala.collection.compat._
 
+@nowarn("msg=Unused import")
 final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
-  private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
+  import scala.collection.compat._
 
+  private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
   private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predcessorsMatrix)
 
   def run(): Either[DAGError[N], IncidenceMatrix[N]] = {

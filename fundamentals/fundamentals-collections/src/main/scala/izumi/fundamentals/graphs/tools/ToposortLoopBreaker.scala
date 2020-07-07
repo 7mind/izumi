@@ -5,13 +5,16 @@ import ToposortLoopBreaker.ResolvedLoop
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
-import scala.collection.compat._
+import scala.annotation.nowarn
 
 trait ToposortLoopBreaker[T] {
   def onLoop(done: Seq[T], loopMembers: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]]
 }
 
+@nowarn("msg=Unused import")
 object ToposortLoopBreaker {
+  import scala.collection.compat._
+
   final case class ResolvedLoop[T](breakAt: Set[T]) extends AnyVal
 
   def dontBreak[T]: ToposortLoopBreaker[T] = (done, hasPreds) => Left(UnexpectedLoop(done, IncidenceMatrix(hasPreds)))

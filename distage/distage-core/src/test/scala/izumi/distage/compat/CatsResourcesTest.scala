@@ -4,7 +4,7 @@ import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
 import izumi.distage.compat.CatsResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.language.unused

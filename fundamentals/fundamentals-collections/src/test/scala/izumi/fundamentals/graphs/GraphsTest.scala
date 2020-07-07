@@ -8,8 +8,6 @@ import izumi.fundamentals.graphs.tools.MutationResolver.AxisPoint
 import izumi.fundamentals.graphs.tools.{LoopBreaker, LoopDetector, MutationResolver}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.collection.compat._
-
 class GraphsTest extends AnyWordSpec {
 
   import GraphFixtures._
@@ -30,7 +28,7 @@ class GraphsTest extends AnyWordSpec {
       assert(detector.findCyclesForNode(2, directed).contains(Cycles(2, List(Loop(List(2, 1, 2))))))
       assert(detector.findCyclesForNode(1, directed).contains(Cycles(1, List(Loop(List(1, 2, 1))))))
       assert(detector.findCyclesForNode(6, directed).contains(Cycles(6, List(Loop(List(6, 5, 6)), Loop(List(6, 1, 2, 1))))))
-      assert(detector.findCyclesForNode(6, directed).to(Set) == detector.findCyclesForNodes(Set(6), directed))
+      assert(detector.findCyclesForNode(6, directed).toSet == detector.findCyclesForNodes(Set(6), directed))
 
     }
 

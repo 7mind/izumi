@@ -3,19 +3,21 @@ package izumi.fundamentals.graphs.tools
 import LoopDetector.Cycles
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
+import scala.annotation.nowarn
 import scala.collection.mutable
-import scala.collection.compat._
 
 trait LoopDetector {
   def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]]
   def findLoopMember[T](graph: IncidenceMatrix[T]): Option[T]
 
   final def findCyclesForNodes[T](nodes: Set[T], graph: IncidenceMatrix[T]): Set[Cycles[T]] = {
-    nodes.map(findCyclesForNode(_, graph)).collect { case Some(c) => c }
+    nodes.flatMap(findCyclesForNode(_, graph))
   }
 }
 
+@nowarn("msg=Unused import")
 object LoopDetector {
+  import scala.collection.compat._
 
   final case class Loop[T](loop: Seq[T]) extends AnyVal
 

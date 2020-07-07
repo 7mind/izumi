@@ -9,11 +9,12 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC.WeakEdge
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
-import scala.annotation.tailrec
-import scala.collection.compat._
-import scala.collection.immutable
+import scala.annotation.{nowarn, tailrec}
 
+@nowarn("msg=Unused import")
 object MutationResolver {
+  import scala.collection.compat._
+  import scala.collection.immutable
 
   final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
     def validChoice(a: AxisPoint): Boolean = activationChoices.get(a.axis).forall(_ == a)

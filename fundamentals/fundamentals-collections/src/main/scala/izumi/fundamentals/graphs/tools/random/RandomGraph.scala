@@ -2,12 +2,14 @@ package izumi.fundamentals.graphs.tools.random
 
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
-import scala.collection.compat._
 
+@nowarn("msg=Unused import")
 object RandomGraph {
+  import scala.collection.compat._
 
   def makeDG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): IncidenceMatrix[N] = {
     assert(nodes > 0)
