@@ -16,24 +16,24 @@ case class HostPort(port: Int, host: String)
 
 // application services
 class DataPuller1(
-                   val target: HostPort @Id("DataPuller1.target"),
-                   val source: HostPort @Id("DataPuller1.source"),
-                 ) extends TestAppService {
+  val target: HostPort @Id("DataPuller1.target"),
+  val source: HostPort @Id("DataPuller1.source"),
+) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 class DataPuller2(
-                   val target: HostPort @Id("DataPuller2.target"),
-                   val source: HostPort @Id("DataPuller2.source"),
-                 ) extends TestAppService {
+  val target: HostPort @Id("DataPuller2.target"),
+  val source: HostPort @Id("DataPuller2.source"),
+) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 class DataPuller3(
-                   val target: HostPort @Id("cassandra"),
-                   val source: HostPort @Id("datasource.google"),
-                   val s: String @Id("scalars.s"),
-                 ) extends TestAppService {
+  val target: HostPort @Id("cassandra"),
+  val source: HostPort @Id("datasource.google"),
+  val s: String @Id("scalars.s"),
+) extends TestAppService {
   Quirks.discard(source, target)
 }
 
@@ -47,7 +47,7 @@ class HttpServer2(val listenOn: HostPort @Id("HttpServer2.HostPort.listenOn")) e
 }
 
 object TestConfigApp {
-  final val definition = PlannerInput.noGc(new ConfigModuleDef {
+  final val definition = PlannerInput.noGC(new ConfigModuleDef {
     make[HttpServer1]
     make[HttpServer2]
     makeConfigNamed[HostPort]("HttpServer1.HostPort")
@@ -80,7 +80,7 @@ object TestConfigApp {
     make[TestConfigApp]
   })
 
-  final val setDefinition = PlannerInput.noGc(new ConfigModuleDef {
+  final val setDefinition = PlannerInput.noGC(new ConfigModuleDef {
     many[TestAppService].add[DataPuller1]
     makeConfigNamed[HostPort]("DataPuller1.target")
     makeConfigNamed[HostPort]("DataPuller1.source")

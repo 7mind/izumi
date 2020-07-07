@@ -1,6 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
@@ -10,10 +11,11 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]
   def resolveImport[T: Tag](instance: T): AbstractPlan[OpType]
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan[OpType]
+  def resolveImport[T: Tag](id: Identifier)(instance: T): AbstractPlan[OpType]
 
   /** Try to substitute unresolved dependencies in this plan by objects in `locator` */
   def locateImports(locator: Locator): AbstractPlan[OpType]
+  def toSemi: SemiPlan
 
   /**
     * Get all imports (unresolved dependencies).
@@ -69,7 +71,5 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
   final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
     steps.foldLeft(z)(f)
   }
-
-  def toSemi: SemiPlan
 
 }

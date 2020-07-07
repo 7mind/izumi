@@ -55,7 +55,7 @@ object RoleAppPlanner {
       )
       val runtimeKeys = bootstrappedApp.plan.keys
 
-      val appPlan = bootstrappedApp.injector.trisectByKeys(bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
+      val appPlan = bootstrappedApp.injector.trisectByKeys(bootloader.activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 

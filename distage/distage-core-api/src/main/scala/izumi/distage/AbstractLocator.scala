@@ -1,6 +1,7 @@
 package izumi.distage
 
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
@@ -20,13 +21,13 @@ trait AbstractLocator extends Locator {
   override final def find[T: Tag]: Option[T] =
     lookupInstance(DIKey.get[T])
 
-  override final def find[T: Tag](id: String): Option[T] =
+  override final def find[T: Tag](id: Identifier): Option[T] =
     lookupInstance(DIKey.get[T].named(id))
 
   override final def get[T: Tag]: T =
     lookupInstanceOrThrow(DIKey.get[T])
 
-  override final def get[T: Tag](id: String): T =
+  override final def get[T: Tag](id: Identifier): T =
     lookupInstanceOrThrow(DIKey.get[T].named(id))
 
   override final def lookupInstanceOrThrow[T: Tag](key: DIKey): T = {
@@ -51,7 +52,8 @@ trait AbstractLocator extends Locator {
   }
 
   private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
-    locator.lookupLocal[T](key)
+    locator
+      .lookupLocal[T](key)
       .orElse(locator.parent.flatMap(p => recursiveLookup(key, p)))
   }
 }

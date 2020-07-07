@@ -1,6 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.AbstractLocator
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
@@ -34,10 +35,10 @@ trait Locator {
   def lookupInstance[T: Tag](key: DIKey): Option[T]
 
   def find[T: Tag]: Option[T]
-  def find[T: Tag](id: String): Option[T]
+  def find[T: Tag](id: Identifier): Option[T]
 
   def get[T: Tag]: T
-  def get[T: Tag](id: String): T
+  def get[T: Tag](id: Identifier): T
 
   def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
   private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
@@ -66,9 +67,9 @@ trait Locator {
   final def run[T](function: ProviderMagnet[T]): T = {
     val fn = function.get
     fn.unsafeApply(fn.diKeys.map {
-      key =>
-        lookupRefOrThrow[Any](key)
-    }).asInstanceOf[T]
+        key =>
+          lookupRefOrThrow[Any](key)
+      }).asInstanceOf[T]
   }
 
   final def runOption[T](function: ProviderMagnet[T]): Option[T] = {
@@ -93,4 +94,3 @@ object Locator {
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
   }
 }
-

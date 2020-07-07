@@ -1,8 +1,8 @@
 package izumi.distage
 
-import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
 import izumi.distage.model.recursive.Bootloader
+import izumi.distage.model.{Injector, Locator, PlannerInput}
 
 trait InjectorFactory {
 
@@ -26,7 +26,7 @@ trait InjectorFactory {
   /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
@@ -36,7 +36,7 @@ trait InjectorFactory {
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
     * @param activation A map of axes of configuration to choices along these axes
-    * @param bootstrapBase See [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
@@ -49,5 +49,11 @@ trait InjectorFactory {
     */
   def inherit(parent: Locator): Injector
 
-  def bootloader(input: PlannerInput, activation: Activation, bootstrapContextModule: BootstrapModule): Bootloader
+  def bootloader(
+    input: PlannerInput,
+    activation: Activation = Activation.empty,
+    bootstrapModule: BootstrapModule = BootstrapModule.empty,
+  ): Bootloader = {
+    new Bootloader(bootstrapModule, activation, input, this)
+  }
 }

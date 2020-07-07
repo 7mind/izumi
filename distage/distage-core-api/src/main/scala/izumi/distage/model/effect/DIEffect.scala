@@ -67,12 +67,13 @@ object DIEffect extends LowPriorityDIEffectInstances {
   implicit val diEffectIdentity: DIEffect[Identity] = new DIEffect[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
-    override def map2[A, B, C](fa: Identity[A], fb: Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
+    override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
     override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
-      try fa catch {
+      try fa
+      catch {
         case t: Throwable => recover(t)
       }
     }
@@ -81,7 +82,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
-      try use(a) finally release(a)
+      try use(a)
+      finally release(a)
     }
     override def bracketCase[A, B](acquire: => Identity[A])(release: (A, Option[Throwable]) => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -102,7 +104,7 @@ object DIEffect extends LowPriorityDIEffectInstances {
     new DIEffect[F[Throwable, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
-      override def map2[A, B, C](fa: F[E, A], fb: F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
+      override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
@@ -119,10 +121,11 @@ object DIEffect extends LowPriorityDIEffectInstances {
       }
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
         F.bracketCase[Any, Throwable, A, B](acquire = suspendF(acquire))(release = {
-          case (a, exit) => exit match {
-            case BIOExit.Success(_) => release(a, None).orTerminate
-            case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
-          }
+          case (a, exit) =>
+            exit match {
+              case BIOExit.Success(_) => release(a, None).orTerminate
+              case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+            }
         })(use = use)
       }
     }
@@ -142,7 +145,7 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
     new DIEffect[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
-      override def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+      override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.flatMap(fa)(a => F.map(fb)(f(a, _)))
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
@@ -158,11 +161,12 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
       }
       override def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B] = {
         F.bracketCase(acquire = F.suspend(acquire))(use = use)(release = {
-          case (a, exitCase) => exitCase match {
-            case ExitCase.Completed => release(a, None)
-            case ExitCase.Error(e) => release(a, Some(e))
-            case ExitCase.Canceled => release(a, Some(new InterruptedException))
-          }
+          case (a, exitCase) =>
+            exitCase match {
+              case ExitCase.Completed => release(a, None)
+              case ExitCase.Error(e) => release(a, Some(e))
+              case ExitCase.Canceled => release(a, Some(new InterruptedException))
+            }
         })
       }
     }
@@ -186,7 +190,7 @@ object LowPriorityDIEffectInstances {
 trait DIApplicative[F[_]] {
   def pure[A](a: A): F[A]
   def map[A, B](fa: F[A])(f: A => B): F[B]
-  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
+  def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C]
   final val unit: F[Unit] = pure(())
 }
 
@@ -196,14 +200,14 @@ object DIApplicative extends LowPriorityDIApplicativeInstances {
   implicit val diapplicativeIdentity: DIApplicative[Identity] = new DIApplicative[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
-    override def map2[A, B, C](fa: Identity[A], fb: Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
+    override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
   }
 
   implicit def fromBIO[F[+_, +_], E](implicit F: BIOApplicative[F]): DIApplicative[F[E, ?]] = {
     new DIApplicative[F[E, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
-      override def map2[A, B, C](fa: F[E, A], fb: F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
+      override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
     }
   }
 }
@@ -215,12 +219,12 @@ trait LowPriorityDIApplicativeInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], R[_[_]]](implicit @unused l: _Applicative[R], F0: R[F]): DIApplicative[F] = {
+  implicit def fromCats[F[_], R[_[_]]](implicit @unused R: _Applicative[R], F0: R[F]): DIApplicative[F] = {
     val F = F0.asInstanceOf[cats.Applicative[F]]
     new DIApplicative[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
-      override def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+      override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
     }
   }
 }

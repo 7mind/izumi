@@ -8,10 +8,9 @@ final case class SafeType private (
   tag: LightTypeTag,
   /*private[distage] val */ cls: Class[_],
 ) {
-  override final lazy val hashCode: Int = tag.hashCode()
-  override final def toString: String = tag.repr
-
-  override final def equals(obj: Any): Boolean = {
+  override def hashCode: Int = tag.hashCode()
+  override def toString: String = tag.repr
+  override def equals(obj: Any): Boolean = {
     obj match {
       case that: SafeType =>
         tag =:= that.tag
@@ -19,14 +18,8 @@ final case class SafeType private (
         false
     }
   }
-
-  final def =:=(that: SafeType): Boolean = {
-    tag =:= that.tag
-  }
-
-  final def <:<(that: SafeType): Boolean = {
-    tag <:< that.tag
-  }
+  def =:=(that: SafeType): Boolean = tag =:= that.tag
+  def <:<(that: SafeType): Boolean = tag <:< that.tag
 
   final def hasPreciseClass: Boolean = {
     try tag.shortName == cls.getSimpleName

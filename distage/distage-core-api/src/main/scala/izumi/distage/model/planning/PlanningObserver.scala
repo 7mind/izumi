@@ -1,8 +1,7 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 
 /**
   * Execute side-effects to observe planning algorithm execution, e.g. log, write GraphViz files, etc.
@@ -10,13 +9,9 @@ import izumi.fundamentals.platform.language.Quirks._
   * @see GraphDumpObserver
   */
 trait PlanningObserver {
-  def onSuccessfulStep(next: PrePlan): Unit = next.discard()
-
-  def onPhase00PlanCompleted(plan: PrePlan): Unit = plan.discard()
-  def onPhase05PreGC(plan: SemiPlan): Unit = plan.discard()
-  def onPhase10PostGC(plan: SemiPlan): Unit = plan.discard()
-  def onPhase20Customization(plan: SemiPlan): Unit = plan.discard()
-  def onPhase50PreForwarding(plan: SemiPlan): Unit = plan.discard()
-  def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = finalPlan.discard()
+  def onPhase05PreGC(@unused plan: SemiPlan): Unit = {}
+  def onPhase10PostGC(@unused plan: SemiPlan): Unit = {}
+  def onPhase20Customization(@unused plan: SemiPlan): Unit = {}
+  def onPhase50PreForwarding(@unused plan: SemiPlan): Unit = {}
+  def onPhase90AfterForwarding(@unused finalPlan: OrderedPlan): Unit = {}
 }
-

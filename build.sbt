@@ -11,6 +11,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -67,7 +68,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -107,6 +108,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -164,7 +166,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -200,6 +202,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -277,7 +280,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -317,6 +320,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -375,7 +379,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -411,6 +415,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -467,7 +472,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -506,6 +511,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -565,7 +571,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -604,6 +610,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -666,7 +673,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -706,6 +713,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -766,7 +774,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -805,6 +813,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -862,7 +871,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -902,6 +911,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -961,7 +971,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1001,6 +1011,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1060,7 +1071,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1102,6 +1113,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1159,7 +1171,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1201,6 +1213,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -1257,7 +1270,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1296,6 +1309,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -1352,7 +1366,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1397,6 +1411,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1457,7 +1472,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1500,6 +1515,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1560,7 +1576,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1602,6 +1618,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1661,7 +1678,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1702,6 +1719,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1763,7 +1781,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1803,6 +1821,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -1863,7 +1882,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1903,6 +1922,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -1959,7 +1979,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -1998,6 +2018,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -2058,7 +2079,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -2097,6 +2118,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -2155,7 +2177,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -2215,6 +2237,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
@@ -2340,7 +2363,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
@@ -2377,6 +2400,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -2435,7 +2459,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.3") => Seq(
-        "-Xlint:_,-eta-sam",
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",

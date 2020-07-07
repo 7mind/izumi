@@ -8,7 +8,7 @@ import izumi.distage.model.plan.Wiring.MonadicWiring._
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
-import izumi.distage.model.reflection.{Association, DIKey, Provider}
+import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider}
 import izumi.fundamentals.platform.strings.IzString._
 
 trait OpFormatter {
@@ -29,8 +29,7 @@ object OpFormatter {
 
   def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter)
 
-  class Impl
-  (
+  class Impl(
     keyFormatter: KeyFormatter,
     typeFormatter: TypeFormatter,
   ) extends OpFormatter {
@@ -84,7 +83,6 @@ object OpFormatter {
         case p: ProxyOp =>
           p match {
             case MakeProxy(proxied, forwardRefs, origin, byNameAllowed) =>
-
               val pos = formatBindingPosition(origin)
               val kind = if (byNameAllowed) {
                 "proxy.light"
@@ -93,8 +91,8 @@ object OpFormatter {
               }
 
               s"""${formatKey(p.target)} $pos := $kind(${forwardRefs.map(s => s"${formatKey(s)}: deferred").mkString(", ")}) {
-                 |${format(proxied).shift(2)}
-                 |}""".stripMargin
+                |${format(proxied).shift(2)}
+                |}""".stripMargin
 
             case ProxyOp.InitProxy(target, dependencies, _, origin) =>
               val pos = formatBindingPosition(origin)
@@ -112,17 +110,17 @@ object OpFormatter {
 
     private def formatProviderWiring(deps: Wiring): String = {
       deps match {
-        case Function(provider, associations) =>
-          doFormat(formatFunction(provider), associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
+        case f: Function =>
+          doFormat(formatFunction(f.provider), f.associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
 
-        case other@(_: Effect | _: Resource | _: Instance | _: Reference) =>
+        case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"
       }
     }
 
-    private def formatDependency(association: Association): String = {
+    private def formatDependency(association: LinkedParameter): String = {
       association match {
-        case p: Association.Parameter =>
+        case p: LinkedParameter =>
           val fname = if (p.isByName) {
             s"=> ${p.name}"
           } else {

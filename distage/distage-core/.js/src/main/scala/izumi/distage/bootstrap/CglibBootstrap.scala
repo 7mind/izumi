@@ -1,7 +1,7 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.model.definition.BootstrapContextModule
+import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 
 object CglibBootstrap {
-  final def cogenBootstrap: BootstrapContextModule = BootstrapLocator.noProxiesBootstrap
+  type CglibProxyProvider = ProxyProviderFailingImpl
 }

@@ -6,9 +6,11 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstru
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+import izumi.distage.model.definition._
+import izumi.distage.model.exceptions.InvalidProviderMagnetModifier
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.{DIKey, IdContract}
+import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
@@ -96,6 +98,39 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     _bindDSLAfterFrom(ref)
   }
 
+  /**
+    * Modify a value bound at `T`. Modifiers stack and are all
+    * applied before `T` is added to the object graph;
+    * only the final instance is observable.
+    *
+    * {{{
+    *   import distage.{Injector, ModuleDef}
+    *
+    *   Injector().produceGet[Int](new ModuleDef {
+    *     make[Int].from(1)
+    *     modify[Int](_ + 1)
+    *     modify[Int](_ + 1)
+    *   }).use(i => println(s"Got `Int` $i"))
+    *   // Got `Int` 3
+    * }}}
+    *
+    * You can also modify with additional dependencies:
+    *
+    * {{{
+    *   modify[Int].by(_.flatAp {
+    *     (adder: Adder, multiplier: Multiplier) =>
+    *       int: Int =>
+    *         multiplier.multiply(adder.add(int, 1), 10)
+    *   })
+    * }}}
+    */
+  final protected[this] def modify[T: Tag]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
+  final private def _modify[T: Tag](key: DIKey)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit pos: CodePositionMaterializer): Unit = {
+    val p: ProviderMagnet[T] = f(ProviderMagnet.identityKey(key).asInstanceOf[ProviderMagnet[T]])
+    val binding = Bindings.provider[T](p).copy(isMutator = true)
+    _registered(new SingletonRef(binding)).discard()
+  }
+
   final protected[this] def _make[T: Tag](provider: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
     _bindDSL[T](ref)
@@ -103,6 +138,21 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
 }
 
 object AbstractBindingDefDSL {
+
+  final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
+    def apply[I <: T: Tag](f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+      by(_.map(f))
+
+    def apply[I <: T: Tag](name: Identifier)(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+      by(name)(_.map(f))
+
+    def by(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+      dsl._modify(DIKey.get[T])(f)
+
+    def by(name: Identifier)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+      dsl._modify(DIKey.get[T].named(name))(f)
+    }
+  }
 
   trait BindingRef {
     def interpret: collection.Seq[Binding]
@@ -112,24 +162,43 @@ object AbstractBindingDefDSL {
     override def interpret: collection.Seq[ImplBinding] = {
       var b: SingletonBinding[DIKey.BasicKey] = initial
       var refs: List[SingletonBinding[DIKey.BasicKey]] = Nil
-
-      ops.foreach {
+      val sortedOps = ops.sortBy {
+        case _: SetImpl => 0
+        case _: AddTags => 0
+        case _: SetId => 0
+        case _: Modify[_] => 1
+        case _: SetIdFromImplName => 2
+        case _: AliasTo => 3
+      }
+      sortedOps.foreach {
         case SetImpl(implDef) =>
           b = b.withImplDef(implDef)
         case AddTags(tags) =>
           b = b.addTags(tags)
-        case SetId(id, idContract) =>
-          val key = DIKey.IdKey(b.key.tpe, id)(idContract)
+        case SetId(contractedId) =>
+          val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
           b = b.withTarget(key)
         case SetIdFromImplName() =>
-          // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
-          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
+          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longName.toLowerCase))
         case AliasTo(key, pos) =>
           // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
           // `b` properties must come before first `aliased` call
           // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
+        case Modify(providerMagnetModifier) =>
+          b.implementation match {
+            case ImplDef.ProviderImpl(implType, function) =>
+              val newProvider = providerMagnetModifier(ProviderMagnet(function)).get
+              if (newProvider.ret <:< implType) {
+                b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
+              } else {
+                throw new InvalidProviderMagnetModifier(
+                  s"Cannot apply invalid ProviderMagnet modifier $providerMagnetModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                )
+              }
+            case _ => ()
+          }
       }
 
       b :: refs.reverse
@@ -153,7 +222,7 @@ object AbstractBindingDefDSL {
         (b, instr) =>
           instr match {
             case AddTagsAll(tags) => b.addTags(tags)
-            case SetIdAll(id, idContract) => b.withTarget(DIKey.IdKey(b.key.tpe, id)(idContract))
+            case SetIdAll(id) => b.withTarget(DIKey.TypeKey(b.key.tpe).named(id))
           }
       }
 
@@ -230,15 +299,16 @@ object AbstractBindingDefDSL {
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
-    final case class SetId[I](id: I, idContract: IdContract[I]) extends SingletonInstruction
+    final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
+    final case class Modify[T](providerMagnetModifier: ProviderMagnet[T] => ProviderMagnet[T]) extends SingletonInstruction
   }
 
   sealed trait SetInstruction
   object SetInstruction {
     final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
-    final case class SetIdAll[I](id: I, idContract: IdContract[I]) extends SetInstruction
+    final case class SetIdAll(id: Identifier) extends SetInstruction
   }
 
   sealed trait SetElementInstruction

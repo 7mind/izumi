@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.59`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.60`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -9,6 +9,7 @@ object Izumi {
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val silencer = Version.VExpr("V.silencer")
+    val neme_plugin = Version.VExpr("V.neme_plugin")
     val scalatest = Version.VExpr("V.scalatest")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
@@ -106,6 +107,7 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
     final val silencer_plugin = Library("com.github.ghik", "silencer-plugin", V.silencer, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
+    final val nemePlugin = Library("com.softwaremill.neme", "neme-plugin", V.neme_plugin, LibraryType.AutoJvm)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
@@ -658,6 +660,7 @@ object Izumi {
     imports = Seq.empty,
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
+      ScopedLibrary(nemePlugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       ScopedLibrary(silencer_plugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,

@@ -1,6 +1,7 @@
 package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
@@ -89,7 +90,7 @@ private[plan] trait OrderedPlanOps extends Any {
         instance
     }
 
-  override final def resolveImport[T: Tag](id: String)(instance: T): OrderedPlan = {
+  override final def resolveImport[T: Tag](id: Identifier)(instance: T): OrderedPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance

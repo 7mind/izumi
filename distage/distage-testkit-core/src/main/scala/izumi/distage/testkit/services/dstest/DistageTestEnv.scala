@@ -1,11 +1,9 @@
 package izumi.distage.testkit.services.dstest
 
 import distage.plugins.PluginLoader
-import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.BootstrapModuleDef
-import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
@@ -41,7 +39,6 @@ trait DistageTestEnv {
     val availableActivations = ActivationInfoExtractor.findAvailableChoices(appModule)
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
-        make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
         make[ActivationInfo].fromValue(availableActivations)
       }
 

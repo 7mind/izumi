@@ -20,12 +20,14 @@ import zio.{Has, Task, ZIO}
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
-    super.config.copy(
-      memoizationRoots = Set(
-        DIKey.get[MockCache[F]],
-        DIKey.get[Set[SetElement]],
-        DIKey.get[SetCounter],
-      ))
+    super
+      .config.copy(
+        memoizationRoots = Set(
+          DIKey.get[MockCache[F]],
+          DIKey.get[Set[SetElement]],
+          DIKey.get[SetCounter],
+        )
+      )
   }
 }
 
@@ -85,33 +87,49 @@ object DistageTestExampleBase {
   final case class SetElement1(counter: SetCounter) extends SetElement
   final case class SetElement2(counter: SetCounter) extends SetElement
   final case class SetElement3(counter: SetCounter) extends SetElement
+  final case class SetElement4(counter: SetCounter) extends SetElement
+  final case class SetElementRetainer(element: SetElement4)
 }
 
 abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
-  override protected def config: TestConfig = super.config.copy(
-    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
-      make[SetCounter]
+  override protected def config: TestConfig = super
+    .config.copy(
+      pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
+          make[SetCounter]
 
-      make[SetElement1]
-      make[SetElement2]
-      make[SetElement3]
+          make[SetElement1]
+          make[SetElement2]
+          make[SetElement3]
+          make[SetElement4]
+          make[SetElementRetainer]
 
-      many[SetElement]
-        .weak[SetElement1]
-        .weak[SetElement2]
-        .weak[SetElement3]
+          many[SetElement]
+            .weak[SetElement1]
+            .weak[SetElement2]
+            .weak[SetElement3]
+            .weak[SetElement4]
 
-      many[SetElement].named("set-id")
-        .weak[SetElement1]
-        .weak[SetElement2]
-        .weak[SetElement3]
-    }
-  )
+          many[SetElement]
+            .named("unmemoized-set")
+            .weak[SetElement1]
+            .weak[SetElement2]
+            .weak[SetElement3]
+            .weak[SetElement4]
+        }
+    )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
 
   "distage test custom runner" should {
+    "support memoized weak sets with transitively retained elements" in {
+      (
+        set: Set[SetElement],
+        s1: SetElementRetainer,
+      ) =>
+        Quirks.discard(s1)
+        F.maybeSuspend(assert(set.size == 4))
+    }
     "support memoized weak sets" in {
       (
         set: Set[SetElement],
@@ -120,27 +138,39 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         s3: SetElement3,
       ) =>
         Quirks.discard(s1, s2, s3)
-        F.maybeSuspend(assert(set.size == 3))
+        F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support memoized named weak sets" in {
+    "support unmemoized named weak sets with memoized elements" in {
       (
-        set: Set[SetElement] @Id("set-id"),
+        set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
       ) =>
         Quirks.discard(s1, s2, s3)
-        F.maybeSuspend(assert(set.size == 3))
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support unmemoized named weak sets with memoized elements" in {
+      (
+        set: Set[SetElement] @Id("unmemoized-set"),
+        s1: SetElement1,
+        s2: SetElement2,
+        s3: SetElement3,
+        s4: SetElementRetainer,
+      ) =>
+        Quirks.discard(s1, s2, s3, s4)
+        F.maybeSuspend(assert(set.size == 4))
     }
 
     "return memoized weak set with have whole list of members even if test does not depends on them" in {
       (
         set: Set[SetElement],
-        c: SetCounter
+        c: SetCounter,
       ) =>
         assume(c.get != 0)
-        F.maybeSuspend(assert(set.size == 3))
+        F.maybeSuspend(assert(set.size == 4))
     }
 
     "support tests with no deps" in {
@@ -236,17 +266,20 @@ final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
 
-abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F]  {
-  "test overloading of `in`" in { () =>
-    // `in` with Unit return type is ok
-    assertCompiles(""" "test" in { println(""); () }  """)
-    // `in` with Assertion return type is ok
-    assertCompiles(""" "test" in { assert(1 + 1 == 2) }  """)
-    // `in` with any other return type is not ok
-    val res = intercept[TestFailedException](assertCompiles(
-      """ "test" in { println(""); 1 + 1 }  """
-    ))
-    assert(res.getMessage() contains "overloaded method")
+abstract class OverloadingTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+  "test overloading of `in`" in {
+    () =>
+      // `in` with Unit return type is ok
+      assertCompiles(""" "test" in { println(""); () }  """)
+      // `in` with Assertion return type is ok
+      assertCompiles(""" "test" in { assert(1 + 1 == 2) }  """)
+      // `in` with any other return type is not ok
+      val res = intercept[TestFailedException](
+        assertCompiles(
+          """ "test" in { println(""); 1 + 1 }  """
+        )
+      )
+      assert(res.getMessage() contains "overloaded method")
   }
 }
 
@@ -266,20 +299,20 @@ final class ActivationTestTask extends ActivationTest[Task]
 final class ActivationTestIdentity extends ActivationTest[Identity]
 
 abstract class ForcedRootTest[F[_]: DIEffect: TagK] extends DistageSpecScalatest[F] {
-  override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = new ModuleDef {
-      make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
-      make[ForcedRootProbe]
-    },
-    forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
-  )
+  override protected def config: TestConfig = super
+    .config.copy(
+      moduleOverrides = new ModuleDef {
+        make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
+        make[ForcedRootProbe]
+      },
+      forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
+    )
 
   "forced root was attached and the acquire effect has been executed" in {
     locatorRef: LocatorRef =>
       assert(locatorRef.get.get[ForcedRootProbe].started)
   }
 }
-
 
 final class ForcedRootTestCIO extends ForcedRootTest[CIO]
 final class ForcedRootTestTask extends ForcedRootTest[Task]

@@ -19,6 +19,8 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type LocatorRef = model.recursive.LocatorRef
 
+  override type LocatorDef = model.definition.LocatorDef
+
   override type Id = model.definition.Id
   override type With[T] = model.definition.With[T]
   override type impl = model.definition.impl
