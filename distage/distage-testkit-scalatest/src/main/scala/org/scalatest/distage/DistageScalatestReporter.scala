@@ -44,8 +44,6 @@ class DistageScalatestReporter extends TestReporter {
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
     testStatus match {
-//      case TestStatus.Scheduled =>
-
       case TestStatus.Running =>
         doReport(suiteId1)(
           TestStarting(
@@ -78,7 +76,7 @@ class DistageScalatestReporter extends TestReporter {
         doReport(suiteId1)(
           TestFailed(
             _,
-            t.getMessage,
+            Option(t.getMessage).getOrElse("null"),
             suiteName1,
             suiteId1,
             Some(suiteClassName1),
