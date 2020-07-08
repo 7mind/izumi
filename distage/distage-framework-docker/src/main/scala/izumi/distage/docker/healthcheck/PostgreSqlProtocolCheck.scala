@@ -17,7 +17,7 @@ final class PostgreSqlProtocolCheck[Tag](
 ) extends ContainerHealthCheck[Tag] {
   override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
     portStatus.availablePorts.firstOption(port) match {
-      case Some(availablePort) if portStatus.requiredPortsAccessible =>
+      case Some(availablePort) if portStatus.allTCPPortsAccessible =>
         val startupMessage = genStartupMessage()
         val socket = new Socket()
         try {

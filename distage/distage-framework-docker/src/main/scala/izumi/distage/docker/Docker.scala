@@ -105,7 +105,10 @@ object Docker {
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.portCheck[T],
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
-  )
+  ) {
+    def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
+    def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
+  }
 
   /**
     * Client configuration that will be read from HOCON config.
@@ -150,7 +153,7 @@ object Docker {
 
   final case class UnmappedPorts(ports: Seq[DockerPort])
 
-  final case class ContainerConnectivity(
+  final case class ReportedContainerConnectivity(
     dockerHost: Option[String],
     containerAddressesV4: Seq[String],
     dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
