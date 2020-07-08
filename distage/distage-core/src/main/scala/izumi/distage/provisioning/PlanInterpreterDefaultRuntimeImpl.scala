@@ -3,7 +3,7 @@ package izumi.distage.provisioning
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.Locator
+import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException
@@ -11,7 +11,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizerFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
@@ -20,6 +20,7 @@ import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.TagK
 
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 // TODO: add introspection capabilities
@@ -35,6 +36,8 @@ class PlanInterpreterDefaultRuntimeImpl(
   verifier: ProvisionOperationVerifier,
 ) extends PlanInterpreter
   with OperationExecutor {
+
+  type OperationMetadata = Long
 
   override def instantiate[F[_]: TagK](
     plan: OrderedPlan,
@@ -62,57 +65,65 @@ class PlanInterpreterDefaultRuntimeImpl(
   )(implicit F: DIEffect[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
-    val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
-    val locatorRef = new LocatorRef(new AtomicReference(Left(locator)))
+    val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, mutProvisioningContext)
+    val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
     mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
+    val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
     def processStep(step: ExecutableOp): F[Unit] = {
-      F.maybeSuspend {
-        mutExcluded.contains(step.target)
-      }.flatMap {
-          skipped =>
-            if (skipped) {
-              F.unit
-            } else {
-              val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
+      for {
+        before <- F.maybeSuspend(System.nanoTime())
+        excludeOp <- F.maybeSuspend(mutExcluded.contains(step.target))
+        _ <-
+          if (excludeOp) {
+            F.unit
+          } else {
+            val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
 
-              F.definitelyRecover[Try[Seq[NewObjectOp]]](
-                action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
-              )(recover =
-                exception =>
-                  F.maybeSuspend {
-                    failureHandler
-                      .onExecutionFailed(failureContext)
-                      .applyOrElse(exception, Failure(_: Throwable))
-                  }
-              ).flatMap {
-                  case Success(newObjectOps) =>
-                    F.maybeSuspend {
-                      newObjectOps.foreach {
-                        newObject =>
-                          val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
-                            .recoverWith(failureHandler.onBadResult(failureContext))
-
-                          maybeSuccess match {
-                            case Success(_) =>
-                            case Failure(failure) =>
-                              mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                              mutFailures += ProvisioningFailure(step, failure)
-                          }
-                      }
-                    }
-
-                  case Failure(failure) =>
-                    F.maybeSuspend {
-                      mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                      mutFailures += ProvisioningFailure(step, failure)
-                    }
+            F.definitelyRecover[Try[Seq[NewObjectOp]]](
+              action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
+            )(recover =
+              exception =>
+                F.maybeSuspend {
+                  failureHandler
+                    .onExecutionFailed(failureContext)
+                    .applyOrElse(exception, Failure(_: Throwable))
                 }
-            }
-        }
+            ).flatMap {
+                case Success(newObjectOps) =>
+                  F.maybeSuspend {
+                    newObjectOps.foreach {
+                      newObject =>
+                        val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
+                          .recoverWith(failureHandler.onBadResult(failureContext))
+
+                        maybeSuccess match {
+                          case Success(_) =>
+                          case Failure(failure) =>
+                            mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                            mutFailures += ProvisioningFailure(step, failure)
+                        }
+                    }
+                    ()
+                  }
+
+                case Failure(failure) =>
+                  F.maybeSuspend {
+                    mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                    mutFailures += ProvisioningFailure(step, failure)
+                    ()
+                  }
+              }
+          }
+        after <- F.maybeSuspend(System.nanoTime())
+      } yield {
+        val time = after - before
+        meta.put(step.target, time)
+        ()
+      }
     }
 
     val (imports, otherSteps) = plan.steps.partition {
@@ -120,24 +131,31 @@ class PlanInterpreterDefaultRuntimeImpl(
       case _ => false
     }
 
+    def makeMeta() = {
+      LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
+    }
+
+    def doFail(immutable: Provision.ProvisionImmutable[F]): Either[FailedProvision[F], LocatorDefaultImpl[F]] = {
+      Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings)))
+    }
+
     for {
       _ <- F.traverse_(imports)(processStep)
       _ <- verifyEffectType[F](otherSteps, addFailure = f => F.maybeSuspend(mutFailures += f))
-
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
       immutable = mutProvisioningContext.toImmutable
       res <-
         if (failedImportsOrEffects) {
-          F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
+          F.maybeSuspend(doFail(immutable))
         } else {
           F.traverse_(otherSteps)(processStep)
             .flatMap {
               _ =>
                 F.maybeSuspend {
                   if (mutFailures.nonEmpty) {
-                    Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
+                    doFail(immutable)
                   } else {
-                    val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
+                    val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), makeMeta(), immutable)
                     val res = Right(finalLocator)
                     locatorRef.ref.set(res)
                     res

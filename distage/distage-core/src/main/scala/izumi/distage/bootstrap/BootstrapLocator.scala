@@ -67,6 +67,8 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
         throw new MissingInstanceException(s"Injector bootstrap tried to perform a lookup from root locator, bootstrap plan in incomplete! Missing key: $key", key)
     }
   }
+
+  override def meta: LocatorMeta = LocatorMeta.empty
 }
 
 object BootstrapLocator {

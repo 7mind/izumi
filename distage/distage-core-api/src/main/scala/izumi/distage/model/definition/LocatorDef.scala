@@ -1,7 +1,7 @@
 package izumi.distage.model.definition
 
 import izumi.distage.AbstractLocator
-import izumi.distage.model.Locator
+import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
@@ -26,6 +26,8 @@ import scala.collection.{immutable, mutable}
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we CAN unify all of LocatorDef, ModuleDef, TypeLevelDSL and Bindings DSLs into one...
 trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.BindDSLUnnamedAfterFrom, LocatorDef.SetDSL] {
+
+  override def meta: LocatorMeta = LocatorMeta.empty
 
   override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
