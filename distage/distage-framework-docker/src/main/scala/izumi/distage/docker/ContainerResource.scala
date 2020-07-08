@@ -4,10 +4,12 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
+
 import scala.annotation.nowarn
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -101,22 +103,62 @@ case class ContainerResource[F[_], T](
             container
           }
 
-        case Right(status: HealthCheckResult.AvailableOnPorts) if status.requiredPortsAccessible =>
-          val out = container.copy(availablePorts = status.availablePorts)
+        case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
+          val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
           F.maybeSuspend {
             logger.info(s"Looks good: ${out -> "container"}")
             out
           }
 
-        case Right(_) =>
-          val max = config.healthCheckMaxAttempts
+        case Right(last) =>
+          val maxAttempts = config.healthCheckMaxAttempts
           val next = attempt + 1
-          if (max >= next) {
-            logger.debug(s"Health check uncertain, retrying $next/$max on $container...")
+          if (maxAttempts >= next) {
+            logger.debug(s"Health check uncertain, retrying $next/$maxAttempts on $container...")
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
-            F.fail(new TimeoutException(s"Failed to start after $max attempts: $container"))
+
+            last match {
+              case HealthCheckResult.Unavailable =>
+                F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts, no diagnostics available: $container"))
+
+              case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
+                import izumi.fundamentals.platform.exceptions.IzThrowable._
+                import izumi.fundamentals.platform.strings.IzString._
+                val sb = new StringBuilder()
+                sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
+                if (unverifiedPorts.nonEmpty) {
+                  sb.append(s"Unchecked ports:\n")
+                  sb.append(unverifiedPorts.niceList())
+                }
+
+                if (unavailablePorts.unavailablePorts.nonEmpty) {
+                  val errored = unavailablePorts
+                    .unavailablePorts.flatMap {
+                      case (port, attempts) =>
+                        attempts.map {
+                          case (tested, cause) =>
+                            (port, tested, cause)
+                        }
+                    }.map {
+                      case (port, tested, None) =>
+                        s"- $port with candidate $tested: no diagnostics"
+                      case (port, tested, Some(cause)) =>
+                        s"- $port with candidate $tested:\n${cause.stackTrace.shift(4)}"
+                    }
+
+                  sb.append(s"Unchecked ports:\n")
+                  sb.append(errored.niceList())
+                }
+
+                F.fail(new TimeoutException(sb.toString()))
+
+              case impossible: GoodHealthcheck =>
+                F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+            }
+
           }
+
         case Left(t) =>
           F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
       }
@@ -197,7 +239,7 @@ case class ContainerResource[F[_], T](
               connectivity = existingPorts,
               containerConfig = config,
               clientConfig = client.clientConfig,
-              availablePorts = VerifiedContainerConnectivity.empty,
+              availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
               hostName = inspection.getConfig.getHostName,
               labels = inspection.getConfig.getLabels.asScala.toMap,
             )
@@ -267,10 +309,10 @@ case class ContainerResource[F[_], T](
               inspection.getName,
               hostName,
               inspection.getConfig.getLabels.asScala.toMap,
-              mappedPorts,
               config,
               client.clientConfig,
-              VerifiedContainerConnectivity.empty,
+              mappedPorts,
+              VerifiedContainerConnectivity.NoAvailablePorts(),
             )
             logger.debug(s"Created $container from ${config.image}...")
             logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
@@ -290,7 +332,7 @@ case class ContainerResource[F[_], T](
     } yield result
   }
 
-  private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ContainerConnectivity] = {
+  private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
     val network = inspection.getNetworkSettings
     val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
@@ -318,7 +360,7 @@ case class ContainerResource[F[_], T](
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
       Right(
-        ContainerConnectivity(
+        ReportedContainerConnectivity(
           Option(dockerHost),
           networkAddresses,
           mapped.toMap,

@@ -8,23 +8,26 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
-  id: Docker.ContainerId,
+  id: ContainerId,
   name: String,
   hostName: String,
   labels: Map[String, String],
-  connectivity: ContainerConnectivity,
-  containerConfig: Docker.ContainerConfig[Tag],
+  containerConfig: ContainerConfig[Tag],
   clientConfig: ClientConfig,
+  connectivity: ReportedContainerConnectivity,
   availablePorts: VerifiedContainerConnectivity,
 ) {
   override def toString: String = {
     val out = new StringBuilder()
-    out.append(s"$name@${connectivity.dockerHost.getOrElse("localhost")}")
-    if (availablePorts.availablePorts.nonEmpty) {
-      out.append(" {")
-      out.append(availablePorts.toString)
-      out.append('}')
+    out.append(s"$name/${containerConfig.image}@${connectivity.dockerHost.getOrElse("localhost")}")
+    availablePorts match {
+      case VerifiedContainerConnectivity.HasAvailablePorts(availablePorts) =>
+        out.append(" {")
+        out.append(availablePorts.toString)
+        out.append('}')
+      case VerifiedContainerConnectivity.NoAvailablePorts() =>
     }
+
     out.toString()
   }
 }
@@ -51,7 +54,6 @@ object DockerContainer {
       *           old.copy(env = zkEnv, networks = zkNet)
       *     }
       * }}}
-      *
       */
     def modifyConfig(
       modify: ProviderMagnet[Docker.ContainerConfig[T] => Docker.ContainerConfig[T]]

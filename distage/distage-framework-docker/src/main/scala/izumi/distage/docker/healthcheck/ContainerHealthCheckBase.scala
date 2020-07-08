@@ -2,14 +2,14 @@ package izumi.distage.docker.healthcheck
 
 import izumi.distage.docker.Docker.{AvailablePort, _}
 import izumi.distage.docker.DockerContainer
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.{AvailablePorts, HealthCheckResult}
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.PortCandidate
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
-  override final def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult.AvailableOnPorts = {
+  override final def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult = {
 
     val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
       container
@@ -36,7 +36,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
     container: DockerContainer[Tag],
     tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
     udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
-  ): HealthCheckResult.AvailableOnPorts
+  ): HealthCheckResult
 
   protected def findContainerInternalCandidates[T <: DockerPort](container: DockerContainer[Tag], ports: Map[T, NonEmptyList[ServicePort]]): Seq[PortCandidate[T]] = {
     val labels = container.labels
@@ -73,9 +73,9 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
     }
   }
 
-  protected def tcpPortsGood[T](container: DockerContainer[T], good: VerifiedContainerConnectivity): Boolean = {
-    val tcpPorts = container.containerConfig.ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
-    tcpPorts.diff(good.availablePorts.keySet).isEmpty
+  protected def tcpPortsGood[T](container: DockerContainer[T], good: AvailablePorts): Boolean = {
+    val tcpPorts = container.containerConfig.tcpPorts
+    tcpPorts.diff(good.availablePorts.toMap.keySet).isEmpty
   }
 
 }
