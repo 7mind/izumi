@@ -2,6 +2,7 @@ package izumi.distage.roles.test
 
 import izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
 import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
+import izumi.distage.plugins.StaticPluginScanner
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 

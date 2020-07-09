@@ -1117,7 +1117,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "io.github.classgraph" % "classgraph" % V.classgraph
+      "io.github.classgraph" % "classgraph" % V.classgraph,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
