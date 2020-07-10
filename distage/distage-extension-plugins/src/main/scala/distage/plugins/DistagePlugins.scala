@@ -23,4 +23,5 @@ trait DistagePlugins {
 
   type PluginConfig = izumi.distage.plugins.PluginConfig
   val PluginConfig: izumi.distage.plugins.PluginConfig.type = izumi.distage.plugins.PluginConfig
+
 }

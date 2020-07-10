@@ -1,5 +1,7 @@
 package izumi.distage.plugins
 
+import scala.language.experimental.macros
+
 final case class PluginConfig(
   packagesEnabled: Seq[String],
   packagesDisabled: Seq[String],
@@ -29,9 +31,19 @@ object PluginConfig {
   def cached(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = cacheEnabled, debug = false, Nil, Nil)
   def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = false, debug = false, Nil, Nil)
 
+  /** Create a [[PluginConfig]] that returns a list of plugins scanned at compile-time.
+    *
+    * WARN: may interact badly with incremental compilation
+    * WARN: will _not_ find plugins defined in current module, only those defined in dependency modules (similarly to
+    *       how you cannot call Scala macros defined in the current module)
+    */
+  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginScannerMacro.staticallyAvailablePluginConfig
+
   /** Create a [[PluginConfig]] that simply returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false, plugins, Nil)
   def const(plugin: PluginBase): PluginConfig = const(Seq(plugin))
+
+  /** A [[PluginConfig]] that returns no plugins */
   lazy val empty: PluginConfig = const(Nil)
 
   private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)

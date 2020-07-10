@@ -5,12 +5,17 @@ import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{universe => ru}
+
 object StaticPluginScannerMacro {
 
-  def staticallyAvailablePlugins(
-    c: blackbox.Context
-  )(pluginsPackage: c.Expr[String]
-  ): c.Expr[List[PluginBase]] = {
+  def staticallyAvailablePluginConfig(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[PluginConfig] = {
+    val plugins = staticallyAvailablePlugins(c)(pluginsPackage)
+    c.universe.reify {
+      PluginConfig.const(plugins.splice)
+    }
+  }
+
+  def staticallyAvailablePlugins(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[List[PluginBase]] = {
     import c.universe._
 
     val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
@@ -21,24 +26,24 @@ object StaticPluginScannerMacro {
       new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
-    val quoted: Seq[c.universe.Tree] = loadedPlugins.map {
+    val quoted: List[Tree] = loadedPlugins.map {
       p =>
         val clazz = p.getClass
-        val macroMirror: c.universe.Mirror = c.mirror
-        val classSymbol = macroMirror.staticClass(clazz.getName)
-
         val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
         val runtimeClassSymbol = runtimeMirror.classSymbol(clazz)
 
+        val macroMirror: Mirror = c.mirror
+
         if (runtimeClassSymbol.isModuleClass) {
-          val tgt = macroMirror.staticModule(runtimeClassSymbol.asClass.module.fullName)
+          val tgt = macroMirror.staticModule(runtimeClassSymbol.module.fullName)
           q"$tgt"
         } else {
-          q"new ${classSymbol.toType}"
+          val tgt = macroMirror.staticClass(runtimeClassSymbol.fullName)
+          q"new $tgt"
         }
-    }
+    }.toList
 
-    c.Expr[List[PluginBase]](q"${quoted.toList}")
+    c.Expr[List[PluginBase]](q"$quoted")
   }
 
 }

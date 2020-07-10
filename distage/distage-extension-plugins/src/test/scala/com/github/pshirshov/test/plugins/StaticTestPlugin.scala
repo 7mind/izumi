@@ -33,6 +33,8 @@ object DependingPlugin {
     // FIXME: make[] redundant generator ???
     make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals generates conflicting exception on merge
   }
+  class NestedDoublePlugin extends SneakyPlugin
+  object NestedDoublePlugin extends SneakyPlugin
 }
 
 @ExposedTestScope
