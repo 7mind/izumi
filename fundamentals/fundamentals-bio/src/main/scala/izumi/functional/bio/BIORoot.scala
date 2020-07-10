@@ -40,7 +40,7 @@ sealed trait BIORootInstancesLowPriority2 extends BIORootInstancesLowPriority3 {
   @inline implicit final def AttachBIOProfunctor[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BIOProfunctor: BIOProfunctor[FR]): BIOProfunctor.type = BIOProfunctor
   @inline implicit final def AttachBIOAsk[FR[-_, +_, +_], R](@unused self: BIOFunctor3[FR])(implicit BIOAsk: BIOAsk[FR]): BIOAsk.type = BIOAsk
   @inline implicit final def AttachBIOBifunctor[FR[-_, +_, +_], R](@unused self: BIOFunctor3[FR])(implicit BIOBifunctor: BIOBifunctor3[FR]): BIOBifunctor.type = BIOBifunctor
-  @inline implicit final def AttachBIOParallel[FR[-_, +_, +_], R](@unused self: BIOMonad3[FR])(implicit BIOParallel: BIOParallel3[FR]): BIOParallel.type = BIOParallel
+  @inline implicit final def AttachBIOParallel[FR[-_, +_, +_], R](@unused self: BIOFunctor3[FR])(implicit BIOParallel: BIOParallel3[FR]): BIOParallel.type = BIOParallel
 }
 
 sealed trait BIORootInstancesLowPriority3 extends BIORootInstancesLowPriority4 {
