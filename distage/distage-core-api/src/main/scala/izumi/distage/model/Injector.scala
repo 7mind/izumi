@@ -14,7 +14,7 @@ import izumi.fundamentals.platform.functional.Identity
   *
   * @see [[Planner]]
   * @see [[Producer]]
-  * */
+  */
 trait Injector extends Planner with Producer {
 
   /**
@@ -44,10 +44,10 @@ trait Injector extends Planner with Producer {
     *
     * {{{
     *   Injector()
-    *     .produceF[F](moduleDef, GCMode(fn.get.diKeys.toSet))
+    *     .produceF[F](moduleDef, Roots(fn.get.diKeys.toSet))
     *     .use(_.run(fn))
     * }}}
-    * */
+    */
   final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[F[A]]): F[A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
   }
@@ -82,10 +82,10 @@ trait Injector extends Planner with Producer {
     *
     * {{{
     *   Injector()
-    *     .produceF[F](moduleDef, GCMode(fn.get.diKeys.toSet))
+    *     .produceF[F](moduleDef, Roots(fn.get.diKeys.toSet))
     *     .evalMap(_.run(fn))
     * }}}
-    * */
+    */
   final def produceEvalF[F[_]: TagK: DIEffect, A](
     bindings: ModuleBase,
     activation: Activation = Activation.empty,
@@ -115,21 +115,20 @@ trait Injector extends Planner with Producer {
     *
     * {{{
     *   Injector()
-    *     .produceF[F](moduleDef, GCMode(DIKey.get[A]))
+    *     .produceF[F](moduleDef, Roots(DIKey.get[A]))
     *     .map(_.get[A])
     * }}}
-    * */
+    */
   final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: Identifier, activation: Activation)(bindings: ModuleBase): DIResourceBase[F, A] = {
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
   /**
     * Create an effectful [[izumi.distage.model.definition.DIResource]] value that encapsulates the
     * allocation and cleanup of an object graph described by `input`
-    *
     *
     * {{{
     *   class HelloWorld { def hello() = println("hello world") }
@@ -165,7 +164,7 @@ trait Injector extends Planner with Producer {
   final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[Identity, A] =
     produceGetF[Identity, A](bindings, activation)
   final def produceGet[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation): DIResourceBase[Identity, A] =
-    produceGetF[Identity, A](name, activation)(bindings)
+    produceGetF[Identity, A](name)(bindings, activation)
 
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = produceF[Identity](input)
   final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): DIResourceBase[Identity, Locator] =
