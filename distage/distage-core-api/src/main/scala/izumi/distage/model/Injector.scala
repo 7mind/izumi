@@ -122,6 +122,11 @@ trait Injector extends Planner with Producer {
   final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
   }
+
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase): DIResourceBase[F, A] = {
+    produceGetF[F, A](bindings, Activation.empty)
+  }
+
   final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
