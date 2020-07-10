@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+coursier bootstrap org.scalameta:scalafmt-cli_2.13:$1 -f \
+  -r sonatype:snapshots \
+  -o fmt-all --main org.scalafmt.cli.Cli
