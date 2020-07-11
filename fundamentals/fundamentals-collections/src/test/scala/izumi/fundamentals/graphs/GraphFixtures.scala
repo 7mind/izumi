@@ -102,11 +102,6 @@ object GraphFixtures {
 
   implicit object AShow extends NodeShow[MutSel[String]] {
     override def show(t: MutSel[String]): String = {
-//      val base = if (t.con.isEmpty) {
-//        t.key
-//      } else {
-//        s"${t.key}${t.con.mkString("{", ",", "}")}"
-//      }
       val base = t.key
       t.mut match {
         case Some(value) =>

@@ -41,6 +41,7 @@ object MutationResolver {
   final case class Selected[N](key: N, axis: Set[AxisPoint])
   final case class MutSel[N](key: N, mut: Option[Int]) {
     def isMutator: Boolean = mut.isDefined
+    def asString: String = s"$key${mut.fold("")(i => s":$i")}"
   }
 
   final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]]) //, unresolved: Map[Annotated[N], Seq[Node[N, V]]])

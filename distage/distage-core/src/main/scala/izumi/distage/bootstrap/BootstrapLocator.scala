@@ -28,8 +28,8 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = {
     // BootstrapModule & bootstrap plugins cannot modify `Activation` after 0.11.0,
-    // it's solely under control of `PlannerInput` now,
-    // please open an issue if you need the ability to override Activation using BootstrapModule
+    // it's solely under control of `PlannerInput` now.
+    // Please open an issue if you need the ability to override Activation using BootstrapModule
     val bindings = bindings0 ++ new BootstrapModuleDef {
         make[Activation].fromValue(bootstrapActivation)
         make[BootstrapModule].fromValue(bindings0)
@@ -149,12 +149,11 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).from[CglibProxyProvider]
-    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
-
     make[ProxyProvider].tagged(Cycles.Byname).from[ProxyProviderFailingImpl]
-    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
-
     make[ProxyProvider].tagged(Cycles.Disable).from[ProxyProviderFailingImpl]
+
+    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
+    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
   }
 

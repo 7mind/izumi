@@ -97,14 +97,18 @@ class DistageTestRunner[F[_]: TagK](
               // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
               val options = envExec.planningOptions
               val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
+
               val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+              val finalBsModule = BootstrapLocator.defaultBootstrap overridenBy bsModule
+
               val appModule = provider.appModules().merge overridenBy env.appModule
+
               val (bsPlanMinusActivations, bsModuleMinusActivations, injector, planner) = {
                 // FIXME: Checking both bootstrap Plan & bootstrap module to prevent `Bootloader` becoming becoming inconsistent
                 //  if used in tests (if BootstrapModule isn't checked it could be different from expected)
                 //  we're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
                 //  (planner holds activations & the rest is for Bootloader self-introspection)
-                val bsLocator = new BootstrapLocator(BootstrapLocator.defaultBootstrap overridenBy bsModule, env.activation)
+                val bsLocator = new BootstrapLocator(finalBsModule, env.activation)
                 val injector = Injector.inherit(bsLocator)
                 val bsPlanMinusActivations = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
                 val bsModuleMinusActivations = bsLocator.get[BootstrapModule].drop(unstableKeys)
@@ -578,8 +582,8 @@ object DistageTestRunner {
     }
   }
 
-  private val enableDebugOutput = DebugProperties.`izumi.distage.testkit.debug`.boolValue(false)
+  private val enableDebugOutput: Boolean = DebugProperties.`izumi.distage.testkit.debug`.boolValue(false)
 
-  private val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]()
+  private final val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]
 
 }
