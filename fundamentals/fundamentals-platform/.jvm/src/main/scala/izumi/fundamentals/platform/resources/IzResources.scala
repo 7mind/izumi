@@ -154,7 +154,9 @@ class IzResources(clazz: Class[_]) {
     read(fileName).map {
       is =>
         val reader = new BufferedReader(new InputStreamReader(is))
-        reader.lines.collect(Collectors.joining(System.lineSeparator))
+        try {
+          reader.lines.collect(Collectors.joining(System.lineSeparator))
+        } finally reader.close()
     }
   }
 
