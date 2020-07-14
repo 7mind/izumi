@@ -107,9 +107,9 @@ object DockerClientWrapper {
         new DockerClientWrapper[F](
           rawClient = client,
           rawClientConfig = rawClientConfig,
-          labelsBase = Map("distage.type" -> "testkit"),
-          labelsJvm = Map("distage.jvmrun" -> jvmRun),
-          labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
+          labelsBase = Map(DockerConst.Labels.containerTypeLabel -> "testkit"),
+          labelsJvm = Map(DockerConst.Labels.jvmRunId -> jvmRun),
+          labelsUnique = Map(DockerConst.Labels.distageRunId -> UUID.randomUUID().toString),
           logger = logger,
           clientConfig = clientConfig,
         )
@@ -122,7 +122,7 @@ object DockerClientWrapper {
           resource
             .rawClient
             .listContainersCmd()
-            .withStatusFilter(List("running", "exited").asJava)
+            .withStatusFilter(List(DockerConst.State.exited, DockerConst.State.running).asJava)
             .withLabelFilter(resource.labels.asJava)
             .exec()
         }
@@ -130,7 +130,7 @@ object DockerClientWrapper {
         containersToDestroy = containers.asScala.filter {
           c =>
             import izumi.fundamentals.platform.strings.IzString._
-            Option(c.getLabels.get(ContainerResource.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == "exited"
+            Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == "exited"
         }
         _ <- DIEffect[F].traverse_(containersToDestroy) {
           c: Container =>

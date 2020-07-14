@@ -4,12 +4,10 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
-
-import scala.annotation.nowarn
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -22,6 +20,7 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
@@ -59,7 +58,7 @@ case class ContainerResource[F[_], T](
         }
         val binding = new PortBinding(Ports.Binding.bindPort(local), exposedPort)
         val labels = Map(
-          containerPort.portLabel("defined") -> "true",
+          containerPort.portLabel("defined") -> true.toString,
           containerPort.portLabel() -> local.toString,
         )
         PortDecl(containerPort, local, binding, labels)
@@ -183,8 +182,8 @@ case class ContainerResource[F[_], T](
             * - we can't understood was that container's run belong to the one of the previous test runs, or to the current one.
             * So containers that will exit after doing their job will be reused only in the scope of the current test run.
             */
-          val exitedOpt = if (ports.isEmpty) List("exited") else Nil
-          val statusFilter = "running" :: exitedOpt
+          val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
+          val statusFilter = DockerConst.State.running :: exitedOpt
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
           try {
             rawClient
@@ -372,11 +371,10 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      ContainerResource.reuseLabel -> shouldReuse(config).toString
+      DockerConst.Labels.reuseLabel -> shouldReuse(config).toString
     ) ++ client.labels
 }
 
 object ContainerResource {
-  val reuseLabel = "distage.reuse"
   private final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 }

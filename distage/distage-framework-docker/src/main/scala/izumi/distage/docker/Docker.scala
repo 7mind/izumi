@@ -36,13 +36,13 @@ object Docker {
       def number: Int
       override def toString: String = s"$protocol:$number"
       final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_$number"
-      final def portLabel(parts: String*): String = (s"distage.port.$protocol.$number" :: parts.toList).mkString(".")
+      final def portLabel(parts: String*): String = (s"${DockerConst.Labels.portPrefix}.$protocol.$number" :: parts.toList).mkString(".")
     }
     sealed trait Dynamic extends DockerPort {
       def name: String
       override def toString: String = s"$protocol:$name"
       final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_${name.toUpperCase}"
-      final def portLabel(parts: String*): String = (s"distage.port.$protocol.$name" :: parts.toList).mkString(".")
+      final def portLabel(parts: String*): String = (s"${DockerConst.Labels.portPrefix}.$protocol.$name" :: parts.toList).mkString(".")
     }
     final case class DynamicTCP(name: String) extends Dynamic with TCPBase
     final case class DynamicUDP(name: String) extends Dynamic with UDPBase
