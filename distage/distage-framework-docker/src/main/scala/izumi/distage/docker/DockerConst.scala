@@ -17,4 +17,8 @@ object DockerConst {
     final val running = "running"
     final val exited = "exited"
   }
+
+  object Vars {
+    final val portPrefix = "DISTAGE_PORT"
+  }
 }

@@ -35,13 +35,13 @@ object Docker {
     sealed trait Static extends DockerPort {
       def number: Int
       override def toString: String = s"$protocol:$number"
-      final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_$number"
+      final def toEnvVariable = s"${DockerConst.Vars.portPrefix}_${protocol.toUpperCase}_$number"
       final def portLabel(parts: String*): String = (s"${DockerConst.Labels.portPrefix}.$protocol.$number" :: parts.toList).mkString(".")
     }
     sealed trait Dynamic extends DockerPort {
       def name: String
       override def toString: String = s"$protocol:$name"
-      final def toEnvVariable = s"DISTAGE_PORT_${protocol.toUpperCase}_${name.toUpperCase}"
+      final def toEnvVariable = s"${DockerConst.Vars.portPrefix}_${protocol.toUpperCase}_${name.toUpperCase}"
       final def portLabel(parts: String*): String = (s"${DockerConst.Labels.portPrefix}.$protocol.$name" :: parts.toList).mkString(".")
     }
     final case class DynamicTCP(name: String) extends Dynamic with TCPBase
@@ -142,7 +142,7 @@ object Docker {
   final case class ClientConfig(
     readTimeoutMs: Int = 60000,
     connectTimeoutMs: Int = 1000,
-    allowReuse: Boolean = true,
+    allowReuse: Boolean = !DockerSupportProperties.`izumi.distage.docker.reuse-disable`.asBoolean(false),
     useRemote: Boolean = false,
     useRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
