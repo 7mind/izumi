@@ -52,8 +52,9 @@ object Docker {
 
   sealed trait DockerReusePolicy
   object DockerReusePolicy {
-    case object KillOnExit extends DockerReusePolicy
+    case object KillOnExitNoReuse extends DockerReusePolicy
     case object KeepAliveOnExitAndReuse extends DockerReusePolicy
+    case object KillOnExitButReuse extends DockerReusePolicy
   }
 
   /**
@@ -105,7 +106,7 @@ object Docker {
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
     networks: Set[ContainerNetwork[_]] = Set.empty,
-    reuse: DockerReusePolicy = DockerReusePolicy.KillOnExit,
+    reuse: DockerReusePolicy = DockerReusePolicy.KillOnExitNoReuse,
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,

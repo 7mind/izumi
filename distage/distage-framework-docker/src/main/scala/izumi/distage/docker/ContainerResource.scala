@@ -43,9 +43,23 @@ case class ContainerResource[F[_], T](
       case _: DockerPort.UDPBase => ExposedPort.udp(number)
     }
   }
-
+  import izumi.fundamentals.platform.basics.IzBoolean._
   private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse && client.clientConfig.allowReuse
+    all(
+      client.clientConfig.allowReuse,
+      any(
+        config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse,
+        config.reuse == DockerReusePolicy.KillOnExitButReuse,
+      ),
+    )
+  }
+
+  private[this] def shouldKill(config: Docker.ContainerConfig[T]): Boolean = {
+    any(
+      !client.clientConfig.allowReuse,
+      config.reuse == DockerReusePolicy.KillOnExitNoReuse,
+      config.reuse == DockerReusePolicy.KillOnExitButReuse,
+    )
   }
 
   override def acquire: F[DockerContainer[T]] = F.suspendF {
@@ -71,11 +85,11 @@ case class ContainerResource[F[_], T](
     }
   }
 
-  override def release(resource: DockerContainer[T]): F[Unit] = {
-    if (!shouldReuse(resource.containerConfig)) {
-      client.destroyContainer(resource.id, ContainerDestroyMeta.ParameterizedContainer(resource))
+  override def release(container: DockerContainer[T]): F[Unit] = {
+    if (shouldKill(container.containerConfig)) {
+      client.destroyContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container))
     } else {
-      F.unit
+      F.maybeSuspend(logger.info(s"Will not destroy: $container"))
     }
   }
 
