@@ -19,10 +19,10 @@ class StringRenderingPolicy(
     val colorsEnabled = any(
       all(
         options.colored,
-        DebugProperties.`izumi.logstage.rendering.colored`.asBoolean(true),
+        DebugProperties.`izumi.logstage.rendering.colored`.boolValue(true),
         IzJvm.terminalColorsEnabled,
       ),
-      DebugProperties.`izumi.logstage.rendering.colored.forced`.asBoolean(false),
+      DebugProperties.`izumi.logstage.rendering.colored.forced`.boolValue(false),
     )
 
     options.copy(colored = colorsEnabled)

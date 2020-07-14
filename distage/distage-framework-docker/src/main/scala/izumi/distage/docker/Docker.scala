@@ -57,6 +57,20 @@ object Docker {
     case object KillOnExitButReuse extends DockerReusePolicy
   }
 
+  sealed trait GlobalDockerReusePolicy {
+    def enabled: Boolean
+  }
+  object GlobalDockerReusePolicy {
+    case object ReuseDisabled extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = false
+    }
+    case object ReuseButAlwaysKill extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = true
+    }
+    case object ReuseEnabled extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = true
+    }
+  }
   /**
     * Parameters that define the behavior of this docker container,
     * Will be interpreted by [[ContainerResource]]
@@ -123,7 +137,7 @@ object Docker {
     * See `docker-reference.conf` for an example configuration.
     * You can `include` the reference configuration if you want to use defaults.
     *
-    * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
+    * @param globalReusePolicy   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
     *
     * @param remote       Options to connect to a Remote Docker Daemon,
@@ -143,14 +157,25 @@ object Docker {
   final case class ClientConfig(
     readTimeoutMs: Int = 60000,
     connectTimeoutMs: Int = 1000,
-    allowReuse: Boolean = !DockerSupportProperties.`izumi.distage.docker.reuse-disable`.asBoolean(false),
+    globalReusePolicy: GlobalDockerReusePolicy = ClientConfig.parseReusePolicy(),
     useRemote: Boolean = false,
     useRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
     registry: Option[DockerRegistryConfig] = None,
   )
+
   object ClientConfig {
     implicit val distageConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.derived
+    def parseReusePolicy(): GlobalDockerReusePolicy = {
+      DockerSupportProperties.`izumi.distage.docker.reuse`.strValue() match {
+        case Some("disabled") =>
+          GlobalDockerReusePolicy.ReuseDisabled
+        case Some("always-kill") =>
+          GlobalDockerReusePolicy.ReuseButAlwaysKill
+        case _ =>
+          GlobalDockerReusePolicy.ReuseEnabled
+      }
+    }
   }
 
   final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)

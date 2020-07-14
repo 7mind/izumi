@@ -19,7 +19,7 @@ trait DistageTestEnv {
       makeEnv(testConfig, pluginLoader, roles, mergeStrategy)
     }
 
-    if (DebugProperties.`izumi.distage.testkit.environment.cache`.asBoolean(true)) {
+    if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
       DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
     } else {
       doMake()

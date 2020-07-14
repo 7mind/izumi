@@ -79,7 +79,7 @@ object BootstrapLocator {
 
     val bootstrapObserver = new PlanningObserverAggregate(
       Set(
-        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`))
+        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`.name))
         //new GraphObserver(analyzer, Set.empty),
       )
     )

@@ -578,7 +578,7 @@ object DistageTestRunner {
     }
   }
 
-  private val enableDebugOutput = DebugProperties.`izumi.distage.testkit.debug`.asBoolean(false)
+  private val enableDebugOutput = DebugProperties.`izumi.distage.testkit.debug`.boolValue(false)
 
   private val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]()
 

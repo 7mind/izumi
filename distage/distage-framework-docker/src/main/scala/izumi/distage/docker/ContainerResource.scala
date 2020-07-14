@@ -19,6 +19,7 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
+import izumi.fundamentals.platform.basics.IzBoolean._
 
 import scala.annotation.nowarn
 import scala.concurrent.duration._
@@ -43,23 +44,37 @@ case class ContainerResource[F[_], T](
       case _: DockerPort.UDPBase => ExposedPort.udp(number)
     }
   }
-  import izumi.fundamentals.platform.basics.IzBoolean._
+
   private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    all(
-      client.clientConfig.allowReuse,
-      any(
-        config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse,
-        config.reuse == DockerReusePolicy.KillOnExitButReuse,
-      ),
+    val reuseIsOnForContainer = any(
+      config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse,
+      config.reuse == DockerReusePolicy.KillOnExitButReuse,
     )
+
+    client.clientConfig.globalReusePolicy match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        false
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        reuseIsOnForContainer
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        reuseIsOnForContainer
+    }
   }
 
   private[this] def shouldKill(config: Docker.ContainerConfig[T]): Boolean = {
-    any(
-      !client.clientConfig.allowReuse,
+    val containerIsVictim = any(
       config.reuse == DockerReusePolicy.KillOnExitNoReuse,
       config.reuse == DockerReusePolicy.KillOnExitButReuse,
     )
+
+    client.clientConfig.globalReusePolicy match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        true
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        true
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        containerIsVictim
+    }
   }
 
   override def acquire: F[DockerContainer[T]] = F.suspendF {

@@ -8,5 +8,5 @@ import izumi.fundamentals.platform.properties
   * @see [[properties.DebugProperties]]
   */
 object DockerSupportProperties extends properties.DebugProperties {
-  final val `izumi.distage.docker.reuse-disable` = Property("izumi.distage.docker.reuse-disable")
+  final val `izumi.distage.docker.reuse` = StrProperty("izumi.distage.docker.reuse")
 }

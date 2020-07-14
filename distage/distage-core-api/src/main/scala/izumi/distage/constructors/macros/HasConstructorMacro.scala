@@ -31,7 +31,7 @@ object HasConstructorMacro {
         ziohasConstructorAssertion(targetType, deepIntersection)
 
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-        val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+        val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
         val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
         val provider: c.Expr[ProviderMagnet[T]] = {

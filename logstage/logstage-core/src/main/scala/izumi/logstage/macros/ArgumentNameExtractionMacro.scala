@@ -10,7 +10,7 @@ import scala.reflect.macros.blackbox
 import scala.util.{Failure, Success}
 
 class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict: Boolean) {
-  private[this] final val applyDebug = DebugProperties.`izumi.debug.macro.logstage`.asBoolean(false)
+  private[this] final val applyDebug = DebugProperties.`izumi.debug.macro.logstage`.boolValue(false)
 
   import ExtractedName._
   import c.universe._

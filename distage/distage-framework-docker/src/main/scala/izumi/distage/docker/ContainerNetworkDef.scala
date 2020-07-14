@@ -51,7 +51,7 @@ object ContainerNetworkDef {
     ).map { case (k, v) => k -> v.toString }
 
     private[this] def shouldReuse(config: ContainerNetworkConfig[T]): Boolean = {
-      config.reuse && client.clientConfig.allowReuse
+      config.reuse && client.clientConfig.globalReusePolicy.enabled
     }
 
     override def acquire: F[ContainerNetwork[T]] = {

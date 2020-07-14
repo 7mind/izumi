@@ -21,7 +21,7 @@ object AnyConstructorMacro {
   def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] = {
     import c.universe._
 
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
     val enclosingClass = c.enclosingClass
     // We expect this macro to be called only and __ONLY__ from `AnyConstructorMacro.make`

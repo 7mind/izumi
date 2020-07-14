@@ -16,7 +16,7 @@ object FactoryConstructorMacro {
 
     val macroUniverse = StaticDIUniverse(c)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
