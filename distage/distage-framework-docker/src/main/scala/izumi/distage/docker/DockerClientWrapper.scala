@@ -129,7 +129,8 @@ object DockerClientWrapper {
         // destroy all containers that should not be reused, or was exited (to not to accumulate containers that could be pruned)
         containersToDestroy = containers.asScala.filter {
           c =>
-            Option(c.getLabels.get("distage.reuse")).forall(_ == "false") || c.getState == "exited"
+            import izumi.fundamentals.platform.strings.IzString._
+            Option(c.getLabels.get(ContainerResource.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == "exited"
         }
         _ <- DIEffect[F].traverse_(containersToDestroy) {
           c: Container =>

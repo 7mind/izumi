@@ -281,6 +281,7 @@ case class ContainerResource[F[_], T](
           .mut(config.user)((user, cmd) => cmd.withUser(user))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
           .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
+          .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
         logger.info(s"Going to pull `${config.image}`...")
@@ -371,10 +372,11 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      "distage.reuse" -> shouldReuse(config).toString
+      ContainerResource.reuseLabel -> shouldReuse(config).toString
     ) ++ client.labels
 }
 
 object ContainerResource {
+  val reuseLabel = "distage.reuse"
   private final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 }

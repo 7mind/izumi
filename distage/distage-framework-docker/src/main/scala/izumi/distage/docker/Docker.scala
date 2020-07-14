@@ -63,7 +63,7 @@ object Docker {
     * @param reuse    If true and [[ClientConfig#allowReuse]] is also true, keeps container alive after tests.
     *                 If false, the container will be shut down.
     *                 default: true
-
+    *
     * @param healthCheck The function to use to test if a container has started already,
     *                    by default probes to check if all [[ports]] are open and proceeds if so.
     *
@@ -100,6 +100,7 @@ object Docker {
     mounts: Seq[Mount] = Seq.empty,
     networks: Set[ContainerNetwork[_]] = Set.empty,
     reuse: Boolean = true,
+    autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
@@ -117,7 +118,7 @@ object Docker {
     *
     * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
-
+    *
     * @param remote       Options to connect to a Remote Docker Daemon,
     *                     will try to connect to remote docker if [[useRemote]] is `true`
     *

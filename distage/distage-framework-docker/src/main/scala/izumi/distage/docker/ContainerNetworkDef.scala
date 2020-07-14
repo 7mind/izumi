@@ -45,7 +45,7 @@ object ContainerNetworkDef {
     private[this] val rawClient = client.rawClient
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val stableLabels: Map[String, String] = Map(
-      "distage.reuse" -> shouldReuse(config),
+      ContainerResource.reuseLabel -> shouldReuse(config),
       s"distage.driver.${config.driver}" -> "true",
       s"distage.name.prefix" -> prefix,
     ).map { case (k, v) => k -> v.toString }
