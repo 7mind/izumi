@@ -130,7 +130,7 @@ object DockerClientWrapper {
         containersToDestroy = containers.asScala.filter {
           c =>
             import izumi.fundamentals.platform.strings.IzString._
-            Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == "exited"
+            Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == DockerConst.State.exited
         }
         _ <- DIEffect[F].traverse_(containersToDestroy) {
           c: Container =>
