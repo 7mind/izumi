@@ -50,6 +50,12 @@ object Docker {
     final case class UDP(number: Int) extends Static with UDPBase
   }
 
+  sealed trait DockerReusePolicy
+  object DockerReusePolicy {
+    case object KillOnExit extends DockerReusePolicy
+    case object KeepAliveOnExitAndReuse extends DockerReusePolicy
+  }
+
   /**
     * Parameters that define the behavior of this docker container,
     * Will be interpreted by [[ContainerResource]]
@@ -99,7 +105,7 @@ object Docker {
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
     networks: Set[ContainerNetwork[_]] = Set.empty,
-    reuse: Boolean = true,
+    reuse: DockerReusePolicy = DockerReusePolicy.KillOnExit,
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,

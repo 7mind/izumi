@@ -4,7 +4,7 @@ import java.util.UUID
 
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.Mount
+import izumi.distage.docker.Docker.{DockerReusePolicy, Mount}
 import izumi.distage.model.definition.DIResource.DIResourceBase
 
 object ReusedOneshotContainer extends ContainerDef {
@@ -14,7 +14,7 @@ object ReusedOneshotContainer extends ContainerDef {
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"echo `date` >> ${CmdContainerModule.stateFilePath}"),
-      reuse = true,
+      reuse = DockerReusePolicy.KeepAliveOnExitAndReuse,
     )
   }
 }
@@ -26,7 +26,7 @@ object ReuseCheckContainer extends ContainerDef {
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"if [[ $$(cat ${CmdContainerModule.stateFilePath} | wc -l | awk '{print $$1}') == 1 ]]; then exit 0; else exit 42; fi"),
-      reuse = false,
+      reuse = DockerReusePolicy.KillOnExit,
     )
   }
 }

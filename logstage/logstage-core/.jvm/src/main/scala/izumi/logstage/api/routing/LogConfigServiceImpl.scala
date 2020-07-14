@@ -2,7 +2,6 @@ package izumi.logstage.api.routing
 
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.annotation.nowarn
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 

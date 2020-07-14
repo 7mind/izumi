@@ -45,7 +45,7 @@ case class ContainerResource[F[_], T](
   }
 
   private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    config.reuse && client.clientConfig.allowReuse
+    config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse && client.clientConfig.allowReuse
   }
 
   override def acquire: F[DockerContainer[T]] = F.suspendF {
