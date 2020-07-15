@@ -6,6 +6,7 @@ import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.basics.IzBoolean.any
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -71,6 +72,39 @@ object Docker {
       override def enabled: Boolean = true
     }
   }
+
+  private[docker] def shouldReuse(reusePolicy: DockerReusePolicy, globalReuse: GlobalDockerReusePolicy): Boolean = {
+    val reuseIsOnForContainer = any(
+      reusePolicy == DockerReusePolicy.KeepAliveOnExitAndReuse,
+      reusePolicy == DockerReusePolicy.KillOnExitButReuse,
+    )
+
+    globalReuse match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        false
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        reuseIsOnForContainer
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        reuseIsOnForContainer
+    }
+  }
+
+  private[docker] def shouldKill(reusePolicy: DockerReusePolicy, globalReuse: GlobalDockerReusePolicy): Boolean = {
+    val containerIsVictim = any(
+      reusePolicy == DockerReusePolicy.KillOnExitNoReuse,
+      reusePolicy == DockerReusePolicy.KillOnExitButReuse,
+    )
+
+    globalReuse match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        true
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        true
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        containerIsVictim
+    }
+  }
+
   /**
     * Parameters that define the behavior of this docker container,
     * Will be interpreted by [[ContainerResource]]

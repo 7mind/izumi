@@ -3,18 +3,19 @@ package izumi.distage.docker
 import java.util.UUID
 
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
+import izumi.distage.docker.Docker.DockerReusePolicy
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.strings.IzString._
-import izumi.reflect.TagK
-import izumi.logstage.api.IzLogger
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.IzLogger
+import izumi.reflect.TagK
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 trait ContainerNetworkDef {
   type Tag
@@ -44,21 +45,17 @@ object ContainerNetworkDef {
   ) extends DIResource[F, ContainerNetwork[T]] {
     private[this] val rawClient = client.rawClient
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
-    private[this] val stableLabels: Map[String, String] = Map(
-      DockerConst.Labels.reuseLabel -> shouldReuse(config),
+    private[this] val networkLabels: Map[String, String] = Map(
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy),
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
       DockerConst.Labels.namePrefixLabel -> prefix,
     ).map { case (k, v) => k -> v.toString }
 
-    private[this] def shouldReuse(config: ContainerNetworkConfig[T]): Boolean = {
-      config.reuse && client.clientConfig.globalReusePolicy.enabled
-    }
-
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
-        if (config.reuse) {
+        if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy)) {
           FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
-            val labelsSet = stableLabels.toSet
+            val labelsSet = networkLabels.toSet
             val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
             existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
               network =>
@@ -72,7 +69,7 @@ object ContainerNetworkDef {
     }
 
     override def release(resource: ContainerNetwork[T]): F[Unit] = {
-      if (shouldReuse(config)) {
+      if (Docker.shouldKill(config.reuse, client.clientConfig.globalReusePolicy)) {
         DIEffect[F].unit
       } else {
         DIEffect[F].maybeSuspend {
@@ -90,7 +87,7 @@ object ContainerNetworkDef {
         .createNetworkCmd()
         .withName(name)
         .withDriver(config.driver)
-        .withLabels(stableLabels.asJava)
+        .withLabels(networkLabels.asJava)
         .exec()
       ContainerNetwork(name, network.getId)
     }
@@ -115,6 +112,6 @@ object ContainerNetworkDef {
   final case class ContainerNetworkConfig[Tag](
     name: Option[String] = None,
     driver: String = "bridge",
-    reuse: Boolean = true,
+    reuse: DockerReusePolicy = DockerReusePolicy.KeepAliveOnExitAndReuse,
   )
 }

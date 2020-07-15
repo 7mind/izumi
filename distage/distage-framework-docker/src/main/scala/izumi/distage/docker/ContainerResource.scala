@@ -45,38 +45,6 @@ case class ContainerResource[F[_], T](
     }
   }
 
-  private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    val reuseIsOnForContainer = any(
-      config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse,
-      config.reuse == DockerReusePolicy.KillOnExitButReuse,
-    )
-
-    client.clientConfig.globalReusePolicy match {
-      case GlobalDockerReusePolicy.ReuseDisabled =>
-        false
-      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
-        reuseIsOnForContainer
-      case GlobalDockerReusePolicy.ReuseEnabled =>
-        reuseIsOnForContainer
-    }
-  }
-
-  private[this] def shouldKill(config: Docker.ContainerConfig[T]): Boolean = {
-    val containerIsVictim = any(
-      config.reuse == DockerReusePolicy.KillOnExitNoReuse,
-      config.reuse == DockerReusePolicy.KillOnExitButReuse,
-    )
-
-    client.clientConfig.globalReusePolicy match {
-      case GlobalDockerReusePolicy.ReuseDisabled =>
-        true
-      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
-        true
-      case GlobalDockerReusePolicy.ReuseEnabled =>
-        containerIsVictim
-    }
-  }
-
   override def acquire: F[DockerContainer[T]] = F.suspendF {
     val ports = config.ports.map {
       containerPort =>
@@ -93,7 +61,7 @@ case class ContainerResource[F[_], T](
         PortDecl(containerPort, local, binding, labels)
     }
 
-    if (shouldReuse(config)) {
+    if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy)) {
       runReused(ports)
     } else {
       doRun(ports)
@@ -101,7 +69,7 @@ case class ContainerResource[F[_], T](
   }
 
   override def release(container: DockerContainer[T]): F[Unit] = {
-    if (shouldKill(container.containerConfig)) {
+    if (Docker.shouldKill(container.containerConfig.reuse, container.clientConfig.globalReusePolicy)) {
       client.destroyContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container))
     } else {
       F.maybeSuspend(logger.info(s"Will not destroy: $container"))
@@ -400,7 +368,7 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      DockerConst.Labels.reuseLabel -> shouldReuse(config).toString
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy).toString
     ) ++ client.labels
 }
 
