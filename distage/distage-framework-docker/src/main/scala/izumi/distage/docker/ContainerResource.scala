@@ -61,7 +61,7 @@ case class ContainerResource[F[_], T](
         PortDecl(containerPort, local, binding, labels)
     }
 
-    if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy)) {
+    if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
       runReused(ports)
     } else {
       doRun(ports)
@@ -69,7 +69,7 @@ case class ContainerResource[F[_], T](
   }
 
   override def release(container: DockerContainer[T]): F[Unit] = {
-    if (Docker.shouldKill(container.containerConfig.reuse, container.clientConfig.globalReusePolicy)) {
+    if (Docker.shouldKill(container.containerConfig.reuse, container.clientConfig.globalReuse)) {
       client.destroyContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container))
     } else {
       F.maybeSuspend(logger.info(s"Will not destroy: $container"))
@@ -368,7 +368,7 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy).toString
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
     ) ++ client.labels
 }
 

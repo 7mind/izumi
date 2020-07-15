@@ -46,14 +46,14 @@ object ContainerNetworkDef {
     private[this] val rawClient = client.rawClient
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val networkLabels: Map[String, String] = Map(
-      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy),
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse),
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
       DockerConst.Labels.namePrefixLabel -> prefix,
     ).map { case (k, v) => k -> v.toString }
 
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
-        if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReusePolicy)) {
+        if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
           FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
             val labelsSet = networkLabels.toSet
             val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
@@ -69,7 +69,7 @@ object ContainerNetworkDef {
     }
 
     override def release(resource: ContainerNetwork[T]): F[Unit] = {
-      if (Docker.shouldKill(config.reuse, client.clientConfig.globalReusePolicy)) {
+      if (Docker.shouldKill(config.reuse, client.clientConfig.globalReuse)) {
         DIEffect[F].unit
       } else {
         DIEffect[F].maybeSuspend {

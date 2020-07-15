@@ -455,11 +455,11 @@ container.
 
 Container networks, like containers, are reused by default. If there is an existing network that
 matches a definition then that network will be used. This can be disabled by setting the `reuse`
-configuration to false:
+configuration to `DockerReusePolicy.KillOnExitNoReuse`:
 
 ```mdoc:silent
 object AlwaysFreshNetwork extends ContainerNetworkDef {
-  override def config: Config = Config(reuse = false)
+  override def config: Config = Config(reuse = Docker.DockerReusePolicy.KillOnExitNoReuse)
 }
 ```
 
@@ -483,7 +483,7 @@ include "docker-reference.conf"
 # override docker object fields
 docker {
   readTimeoutMs = 60000
-  allowReuse = false
+  globalReuse = "always-kill"
 }
 ```
 
@@ -491,6 +491,7 @@ docker {
 
 ```scala mdoc:to-string
 import izumi.distage.docker.Docker
+import izumi.distage.docker.Docker.GlobalDockerReusePolicy
 
 class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
   include(DockerSupportModule[F] overridenBy new ModuleDef {
@@ -498,7 +499,7 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
       Docker.ClientConfig(
         readTimeoutMs    = 10000,
         connectTimeoutMs = 10000,
-        allowReuse       = false,
+        globalReuse      = GlobalDockerReusePolicy.ReuseButAlwaysKill,
         useRemote        = true,
         useRegistry      = true,
         remote           = Some(
@@ -536,16 +537,31 @@ matching container is found this container is referenced by the
 
 For an existing container to be reused, all the following must be true:
 
-- The current client config has `allowReuse == true`.
-- The container config has `reuse == true`.
+- The current client config has `globalReuse == GlobalDockerReusePolicy.ReuseEnabled` or `globalReuse == GlobalDockerReusePolicy.ReuseButAlwaysKill`.
+- The container config has `reuse == DockerReusePolicy.KeepAliveOnExitAndReuse` or `reuse == DockerReusePolicy.KillOnExitButReuse`.
 - The running container was created for reuse.
 - The running container uses the same image as the container config.
 - All ports requested in the container config must be mapped for the running container.
 
 #### Configuring Reuse
 
-The `ContainerDef.Config.reuse` should be false to disable reuse for a specific container.  While
-`Docker.ClientConfig.allowReuse` should be false to disable reuse throughout the application.
+`DockerReusePolicy` has 3 possible values:
+
+- `KillOnExitNoReuse`: the resource (container or network) will be always freed after use and existing matching containers will not be reused
+- `KeepAliveOnExitAndReuse`: the resource will not be freed after use and existing matching containers will be reused
+- `KillOnExitButReuse`: the resource will be always be freed after use but existing matching containers will be reused
+
+
+`GlobalDockerReusePolicy` allows you to override defaults:
+
+- `ReuseDisabled`: no resources will be reused, `DockerReusePolicy` will not be respected
+- `ReuseButAlwaysKill`: existing matching resources will be reused but they will always be freed after use (`DockerReusePolicy.KeepAliveOnExitAndReuse` will act as `DockerReusePolicy.KillOnExitButReuse`)
+- `ReuseEnabled`: `DockerReusePolicy` will be respected
+
+
+The `ContainerDef.Config.reuse` should be `DockerReusePolicy.KillOnExitNoReuse` to disable reuse for a specific container.  While
+`Docker.ClientConfig.globalReuse` should be `GlobalDockerReusePolicy.ReuseDisabled` to disable reuse throughout the application.
+
 
 #### Improving Reuse Performance
 

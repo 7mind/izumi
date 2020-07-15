@@ -7,6 +7,7 @@ import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.basics.IzBoolean.any
+import pureconfig.ConfigReader
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -171,7 +172,7 @@ object Docker {
     * See `docker-reference.conf` for an example configuration.
     * You can `include` the reference configuration if you want to use defaults.
     *
-    * @param globalReusePolicy   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
+    * @param globalReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
     *
     * @param remote       Options to connect to a Remote Docker Daemon,
@@ -191,7 +192,7 @@ object Docker {
   final case class ClientConfig(
     readTimeoutMs: Int = 60000,
     connectTimeoutMs: Int = 1000,
-    globalReusePolicy: GlobalDockerReusePolicy = ClientConfig.parseReusePolicy(),
+    globalReuse: GlobalDockerReusePolicy = ClientConfig.parseReusePolicy(),
     useRemote: Boolean = false,
     useRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
@@ -199,9 +200,16 @@ object Docker {
   )
 
   object ClientConfig {
+    implicit val policyReader: ConfigReader[GlobalDockerReusePolicy] = ConfigReader[String].map(name => parseReusePolicy(Some(name)))
+
     implicit val distageConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.derived
+
     def parseReusePolicy(): GlobalDockerReusePolicy = {
-      DockerSupportProperties.`izumi.distage.docker.reuse`.strValue() match {
+      parseReusePolicy(DockerSupportProperties.`izumi.distage.docker.reuse`.strValue())
+    }
+
+    def parseReusePolicy(name: Option[String]): GlobalDockerReusePolicy = {
+      name match {
         case Some("disabled") =>
           GlobalDockerReusePolicy.ReuseDisabled
         case Some("always-kill") =>
