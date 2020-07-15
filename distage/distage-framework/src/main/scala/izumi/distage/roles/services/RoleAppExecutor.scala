@@ -3,18 +3,21 @@ package izumi.distage.roles.services
 import distage.TagK
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.roles._
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.distage.roles.services.StartupPlanExecutor.Filters
+import izumi.distage.roles.services.StartupPlanExecutor.{Filters, PreparedApp}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 
 trait RoleAppExecutor[F[_]] {
-  def runPlan(appPlan: AppStartupPlans): Unit
+  def runPlan(appPlan: AppStartupPlans): DIResourceBase[Identity, PreparedApp[F]]
 }
 
 object RoleAppExecutor {
@@ -28,12 +31,13 @@ object RoleAppExecutor {
     filters: Filters[F],
   ) extends RoleAppExecutor[F] {
 
-    final def runPlan(appPlan: AppStartupPlans): Unit = {
-      try {
-        startupPlanExecutor.execute(appPlan, filters)(doRun)
-      } finally {
-        hook.release()
-      }
+    final def runPlan(appPlan: AppStartupPlans): DIResourceBase[Identity, PreparedApp[F]] = {
+      DIResource
+        .makeSimple(())(_ => hook.release())
+        .flatMap {
+          _ =>
+            startupPlanExecutor.execute(appPlan, filters)(doRun)
+        }
     }
 
     protected def doRun(locator: Locator, effect: DIEffect[F]): F[Unit] = {
