@@ -3,7 +3,7 @@ package izumi.distage.model.definition
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
@@ -85,7 +85,7 @@ object Binding {
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-    def withImpl[T: Tag](function: ProviderMagnet[T]): R =
+    def withImpl[T: Tag](function: Functoid[T]): R =
       binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
 

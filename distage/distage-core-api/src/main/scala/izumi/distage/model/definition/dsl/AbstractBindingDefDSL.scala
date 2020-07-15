@@ -7,8 +7,8 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.definition._
-import izumi.distage.model.exceptions.InvalidProviderMagnetModifier
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.exceptions.InvalidFunctoidModifier
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
@@ -125,13 +125,13 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     * }}}
     */
   final protected[this] def modify[T: Tag]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
-  final private def _modify[T: Tag](key: DIKey)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit pos: CodePositionMaterializer): Unit = {
-    val p: ProviderMagnet[T] = f(ProviderMagnet.identityKey(key).asInstanceOf[ProviderMagnet[T]])
+  final private def _modify[T: Tag](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): Unit = {
+    val p: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
     val binding = Bindings.provider[T](p).copy(isMutator = true)
     _registered(new SingletonRef(binding)).discard()
   }
 
-  final protected[this] def _make[T: Tag](provider: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
+  final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
     _bindDSL[T](ref)
   }
@@ -146,10 +146,10 @@ object AbstractBindingDefDSL {
     def apply[I <: T: Tag](name: Identifier)(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       by(name)(_.map(f))
 
-    def by(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
       dsl._modify(DIKey.get[T])(f)
 
-    def by(name: Identifier)(f: ProviderMagnet[T] => ProviderMagnet[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
       dsl._modify(DIKey.get[T].named(name))(f)
     }
   }
@@ -189,12 +189,12 @@ object AbstractBindingDefDSL {
         case Modify(providerMagnetModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
-              val newProvider = providerMagnetModifier(ProviderMagnet(function)).get
+              val newProvider = providerMagnetModifier(Functoid(function)).get
               if (newProvider.ret <:< implType) {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               } else {
-                throw new InvalidProviderMagnetModifier(
-                  s"Cannot apply invalid ProviderMagnet modifier $providerMagnetModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                throw new InvalidFunctoidModifier(
+                  s"Cannot apply invalid Functoid modifier $providerMagnetModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
                 )
               }
             case _ => ()
@@ -302,7 +302,7 @@ object AbstractBindingDefDSL {
     final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
-    final case class Modify[T](providerMagnetModifier: ProviderMagnet[T] => ProviderMagnet[T]) extends SingletonInstruction
+    final case class Modify[T](providerMagnetModifier: Functoid[T] => Functoid[T]) extends SingletonInstruction
   }
 
   sealed trait SetInstruction

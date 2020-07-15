@@ -4,7 +4,7 @@ import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{Activation, Identifier, ModuleBase}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.Roots
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
 import izumi.reflect.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
@@ -48,7 +48,7 @@ trait Injector extends Planner with Producer {
     *     .use(_.run(fn))
     * }}}
     */
-  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[F[A]]): F[A] = {
+  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
   }
 
@@ -89,7 +89,7 @@ trait Injector extends Planner with Producer {
   final def produceEvalF[F[_]: TagK: DIEffect, A](
     bindings: ModuleBase,
     activation: Activation = Activation.empty,
-  )(function: ProviderMagnet[F[A]]
+  )(function: Functoid[F[A]]
   ): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).evalMap(_.run(function))
   }
@@ -161,9 +161,9 @@ trait Injector extends Planner with Producer {
     produceF[F](plan(PlannerInput(bindings, activation, roots)))
   }
 
-  final def produceRun[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): A =
+  final def produceRun[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[A]): A =
     produceRunF[Identity, A](bindings, activation)(function)
-  final def produceEval[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: ProviderMagnet[A]): DIResourceBase[Identity, A] =
+  final def produceEval[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[A]): DIResourceBase[Identity, A] =
     produceEvalF[Identity, A](bindings, activation)(function)
 
   final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[Identity, A] =

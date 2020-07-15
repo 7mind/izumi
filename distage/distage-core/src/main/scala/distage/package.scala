@@ -44,8 +44,8 @@ package object distage extends Distage {
   override type DIKey = model.reflection.DIKey
   override val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
-  override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
-  override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+  override type Functoid[+A] = model.providers.Functoid[A]
+  override val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
   override type ClassConstructor[T] = constructors.ClassConstructor[T]
   override val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor

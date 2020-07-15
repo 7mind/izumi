@@ -1,6 +1,6 @@
 package izumi.distage.constructors.macros
 
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.StaticDIUniverse
@@ -13,7 +13,7 @@ import scala.reflect.macros.blackbox
 abstract class ClassConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[ProviderMagnet[T]] = {
+  def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[Functoid[T]] = {
     val associations = reflectionProvider.constructorParameterLists(targetType)
     generateProvider[T, ProviderType.Class.type](associations)(args => q"new $targetType(...$args)")
   }
@@ -61,7 +61,7 @@ object HasConstructorMacros {
 abstract class TraitConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[ProviderMagnet[T]] = {
+  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[Functoid[T]] = {
     val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
     val traitParameters = methods.map(_.asParameter)
 
@@ -288,7 +288,7 @@ abstract class ConstructorMacrosBase {
   def generateProvider[T: c.WeakTypeTag, P <: ProviderType with Singleton: c.WeakTypeTag](
     parameters: List[List[u.Association.Parameter]]
   )(fun: List[List[Tree]] => Tree
-  ): c.Expr[ProviderMagnet[T]] = {
+  ): c.Expr[Functoid[T]] = {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 
@@ -309,9 +309,9 @@ abstract class ConstructorMacrosBase {
       })
     }
 
-    c.Expr[ProviderMagnet[T]] {
+    c.Expr[Functoid[T]] {
       q"""{
-          new ${weakTypeOf[ProviderMagnet[T]]}(
+          new ${weakTypeOf[Functoid[T]]}(
             new ${weakTypeOf[Provider.ProviderImpl[T]]}(
               ${Liftable.liftList.apply(parameters.flatten)},
               ${liftTypeToSafeType(weakTypeOf[T])},

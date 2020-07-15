@@ -1,7 +1,7 @@
 package izumi.distage.constructors.macros
 
 import izumi.distage.constructors.{DebugProperties, HasConstructor}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
@@ -34,7 +34,7 @@ object HasConstructorMacro {
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
         val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
-        val provider: c.Expr[ProviderMagnet[T]] = {
+        val provider: c.Expr[Functoid[T]] = {
           generateProvider[T, ProviderType.ZIOHas.type](params :: Nil) {
             case (headParam :: params) :: Nil =>
               params.foldLeft(q"_root_.zio.Has.apply($headParam)") {

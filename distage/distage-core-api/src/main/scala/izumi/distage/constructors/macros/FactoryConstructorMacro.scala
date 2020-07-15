@@ -1,7 +1,7 @@
 package izumi.distage.constructors.macros
 
 import izumi.distage.constructors.{DebugProperties, FactoryConstructor}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
@@ -27,7 +27,7 @@ object FactoryConstructorMacro {
     val macroUniverse.Wiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
     val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)
 
-    val provider: c.Expr[ProviderMagnet[T]] = generateProvider[T, ProviderType.Factory.type](allParameters) {
+    val provider: c.Expr[Functoid[T]] = generateProvider[T, ProviderType.Factory.type](allParameters) {
       argss =>
         val dependencyArgMap = allParameters.iterator.flatten.map(_.key).zip(argss.iterator.flatten).toMap
         logger.log(s"""Got associations: $allParameters

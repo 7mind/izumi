@@ -46,8 +46,8 @@ trait Distage {
   type DIKey = model.reflection.DIKey
   val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
 
-  type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
-  val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+  type Functoid[+A] = model.providers.Functoid[A]
+  val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
   type ClassConstructor[T] = constructors.ClassConstructor[T]
   val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor

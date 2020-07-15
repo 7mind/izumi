@@ -545,7 +545,7 @@ class DistageTestRunner[F[_]: TagK](
 
 object DistageTestRunner {
   final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
-  final case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
+  final case class DistageTest[F[_]](test: Functoid[F[_]], environment: TestEnvironment, meta: TestMeta)
   final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 

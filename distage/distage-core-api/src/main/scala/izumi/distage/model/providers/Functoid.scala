@@ -1,7 +1,7 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro
+import izumi.distage.model.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.LinkedParameter
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection._
@@ -81,17 +81,17 @@ import scala.language.implicitConversions
   *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
   * }}}
   *
-  * ProviderMagnet forms an applicative functor via its [[ProviderMagnet.pure]] & [[map2]] methods
+  * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
   *
-  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
+  * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
   * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
   */
-final case class ProviderMagnet[+A](get: Provider) {
-  def map[B: Tag](f: A => B): ProviderMagnet[B] = {
+final case class Functoid[+A](get: Provider) {
+  def map[B: Tag](f: A => B): Functoid[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[A])))
   }
 
-  def zip[B](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
+  def zip[B](that: Functoid[B]): Functoid[(A, B)] = {
     implicit val tagA: Tag[A] = this.getRetTag
     implicit val tagB: Tag[B] = that.getRetTag
     tagA.discard() // used for assembling Tag[(A, B)] below
@@ -99,57 +99,57 @@ final case class ProviderMagnet[+A](get: Provider) {
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
-  def map2[B, C: Tag](that: ProviderMagnet[B])(f: (A, B) => C): ProviderMagnet[C] = {
+  def map2[B, C: Tag](that: Functoid[B])(f: (A, B) => C): Functoid[C] = {
     zip(that).map[C](f.tupled)
   }
 
   /** Applicative's `ap` method - can be used to chain transformations like `flatMap`.
     * Apply a function produced by `that` Provider to the argument produced by `this` Provider
     */
-  def flatAp[B: Tag](that: ProviderMagnet[A => B]): ProviderMagnet[B] = {
+  def flatAp[B: Tag](that: Functoid[A => B]): Functoid[B] = {
     map2(that) { case (a, f) => f(a) }
   }
 
   /** Apply a function produced by `this` Provider to the argument produced by `that` Provider */
-  def ap[B, C](that: ProviderMagnet[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): ProviderMagnet[C] = {
-    that.flatAp[C](this.asInstanceOf[ProviderMagnet[B => C]])
+  def ap[B, C](that: Functoid[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): Functoid[C] = {
+    that.flatAp[C](this.asInstanceOf[Functoid[B => C]])
   }
 
   /** Add `B` as an unused dependency of this Provider */
-  def addDependency[B: Tag]: ProviderMagnet[A] = addDependency(DIKey.get[B])
-  def addDependency(key: DIKey): ProviderMagnet[A] = addDependencies(key :: Nil)
-  def addDependencies(keys: Seq[DIKey]): ProviderMagnet[A] = copy[A](get = get.addUnused(keys))
+  def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey.get[B])
+  def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
+  def addDependencies(keys: Seq[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
 
-object ProviderMagnet {
-  implicit def apply[R](fun: () => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
+object Functoid {
+  implicit def apply[R](fun: () => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
+  implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
 
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[Nothing] =
-    new ProviderMagnet[Nothing](
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] =
+    new Functoid[Nothing](
       Provider.ProviderImpl(
         parameters = Seq.empty,
         ret = key.tpe,
@@ -158,14 +158,14 @@ object ProviderMagnet {
       )
     )
 
-  def identity[A: Tag]: ProviderMagnet[A] = identityKey(DIKey.get[A]).asInstanceOf[ProviderMagnet[A]]
+  def identity[A: Tag]: Functoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Functoid[A]]
 
-  def pure[A: Tag](a: A): ProviderMagnet[A] = lift(a)
+  def pure[A: Tag](a: A): Functoid[A] = lift(a)
 
-  def unit: ProviderMagnet[Unit] = pure(())
+  def unit: Functoid[Unit] = pure(())
 
-  def lift[A: Tag](a: => A): ProviderMagnet[A] = {
-    new ProviderMagnet[A](
+  def lift[A: Tag](a: => A): Functoid[A] = {
+    new Functoid[A](
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
@@ -176,8 +176,8 @@ object ProviderMagnet {
     )
   }
 
-  def singleton[A <: Singleton: Tag](a: A): ProviderMagnet[A] = {
-    new ProviderMagnet[A](
+  def singleton[A <: Singleton: Tag](a: A): Functoid[A] = {
+    new Functoid[A](
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
@@ -187,13 +187,13 @@ object ProviderMagnet {
     )
   }
 
-  def single[A: Tag, B: Tag](f: A => B): ProviderMagnet[B] = {
+  def single[A: Tag, B: Tag](f: A => B): Functoid[B] = {
     val key = DIKey.get[A]
     val tpe = key.tpe
     val retTpe = SafeType.get[B]
     val symbolInfo = firstParamSymbolInfo(tpe)
 
-    new ProviderMagnet[B](
+    new Functoid[B](
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = retTpe,
@@ -204,11 +204,11 @@ object ProviderMagnet {
     )
   }
 
-  def identityKey(key: DIKey): ProviderMagnet[_] = {
+  def identityKey(key: DIKey): Functoid[_] = {
     val tpe = key.tpe
     val symbolInfo = firstParamSymbolInfo(tpe)
 
-    new ProviderMagnet(
+    new Functoid(
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = tpe,

@@ -531,7 +531,7 @@ zio.Has implementations are derived at compile-time by @scaladoc[HasConstructor]
 Example:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, ModuleDef, Injector, ProviderMagnet, Tag}
+import distage.{DIKey, ModuleDef, Injector, Functoid, Tag}
 import izumi.distage.constructors.TraitConstructor
 import zio.console.{putStrLn, Console}
 import zio.{UIO, URIO, ZIO, Ref, Task, Has}
@@ -604,7 +604,7 @@ Example:
 
 ```scala mdoc:reset:to-string
 import cats.Contravariant
-import distage.{Roots, Injector, ModuleDef, ProviderMagnet, Tag, TagK, HasConstructor}
+import distage.{Roots, Injector, ModuleDef, Functoid, Tag, TagK, HasConstructor}
 import zio.{Task, UIO, URIO, ZIO, Has}
 
 trait Dependee[-R] {
@@ -637,7 +637,7 @@ object dependeeImpl extends Dependee[DependerR] {
 }
 
 /** Fulfill the environment dependencies of a service from the object graph */
-def fullfill[R: Tag: HasConstructor, M[_]: TagK: Contravariant](service: M[R]): ProviderMagnet[M[Any]] = {
+def fullfill[R: Tag: HasConstructor, M[_]: TagK: Contravariant](service: M[R]): Functoid[M[Any]] = {
   HasConstructor[R]
     .map(depsCakeR => Contravariant[M].contramap(service)(_ => depsCakeR))
 }

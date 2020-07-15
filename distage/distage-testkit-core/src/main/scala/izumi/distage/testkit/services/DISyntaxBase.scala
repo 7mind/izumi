@@ -2,16 +2,16 @@ package izumi.distage.testkit.services
 
 import distage.{Tag, TagK}
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBase[F[_]] {
   implicit def tagMonoIO: TagK[F]
 
-  protected def takeIO(function: ProviderMagnet[F[_]], pos: SourceFilePosition): Unit
+  protected def takeIO(function: Functoid[F[_]], pos: SourceFilePosition): Unit
 
-  protected final def takeAny(function: ProviderMagnet[Any], pos: SourceFilePosition): Unit = {
-    val f: ProviderMagnet[F[Any]] = function.flatAp {
+  protected final def takeAny(function: Functoid[Any], pos: SourceFilePosition): Unit = {
+    val f: Functoid[F[Any]] = function.flatAp {
       F: DIEffect[F] => (a: Any) =>
         F.pure(a)
     }

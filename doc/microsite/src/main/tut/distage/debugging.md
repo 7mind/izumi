@@ -66,7 +66,7 @@ To debug macros used by `distage` you may use the following Java Properties:
 ```bash
 sbt -Dizumi.debug.macro.rtti=true compile # fundamentals-reflection & LightTypeTag macros
 sbt -Dizumi.debug.macro.distage.constructors=true compile # izumi.distage.constructors.* macros
-sbt -Dizumi.debug.macro.distage.providermagnet=true compile # ProviderMagnet macro
+sbt -Dizumi.debug.macro.distage.providermagnet=true compile # Functoid macro
 ```
 
 ### Graphviz rendering
