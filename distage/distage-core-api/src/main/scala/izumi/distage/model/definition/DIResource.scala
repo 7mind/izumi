@@ -127,7 +127,7 @@ import scala.reflect.macros.blackbox
   * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
   *      [[zio.ZManaged]]: https://zio.dev/docs/datatypes/datatypes_managed
-  **/
+  */
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
   def acquire: F[Resource]
   def release(resource: Resource): F[Unit]
@@ -222,17 +222,20 @@ object DIResource {
   def fromZIO[R, E, A](managed: ZManaged[R, E, A]): DIResource.FromZIO[R, E, A] = {
     new FromZIO[R, E, A] {
       override def acquire: ZIO[R, E, (A, ZIO[R, Nothing, Unit])] = {
-        ZManaged.ReleaseMap.make.bracketExit(
-          release = (releaseMap: ReleaseMap, exit: Exit[E, _]) =>
-            exit match {
-              case Exit.Success(_) => UIO.unit
-              case Exit.Failure(_) => releaseMap.releaseAll(exit, ExecutionStrategy.Sequential)
-            }) {
-          releaseMap =>
-            managed.zio
-              .provideSome[R](_ -> releaseMap)
-              .map { case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit) }
-        }
+        ZManaged
+          .ReleaseMap.make.bracketExit(
+            release = (releaseMap: ReleaseMap, exit: Exit[E, _]) =>
+              exit match {
+                case Exit.Success(_) => UIO.unit
+                case Exit.Failure(_) => releaseMap.releaseAll(exit, ExecutionStrategy.Sequential)
+              }
+          ) {
+            releaseMap =>
+              managed
+                .zio
+                .provideSome[R](_ -> releaseMap)
+                .map { case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit) }
+          }
       }
     }
   }
@@ -256,13 +259,20 @@ object DIResource {
   implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
-      ZManaged.makeReserve(resource.acquire.map(r => Reservation(
-        ZIO.effectTotal(resource.extract(r)),
-        _ => resource.release(r).orDieWith {
-          case e: Throwable => e
-          case any: Any => new RuntimeException(s"DIResource finalizer: $any")
-        },
-      )))
+      ZManaged.makeReserve(
+        resource
+          .acquire.map(
+            r =>
+              Reservation(
+                ZIO.effectTotal(resource.extract(r)),
+                _ =>
+                  resource.release(r).orDieWith {
+                    case e: Throwable => e
+                    case any: Any => new RuntimeException(s"DIResource finalizer: $any")
+                  },
+              )
+          )
+      )
     }
   }
 
@@ -366,7 +376,7 @@ object DIResource {
     *     make[Int].fromResource[IntRes]
     *   }
     * }}}
-    **/
+    */
   class Make[+F[_], A] private[this] (acquire0: () => F[A])(release0: A => F[Unit], @unused dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 

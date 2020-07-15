@@ -15,9 +15,9 @@ import izumi.reflect.Tag
 import izumi.logstage.api.IzLogger
 
 class ResourceRewriter(
-                        logger: IzLogger,
-                        rules: RewriteRules,
-                      ) extends PlanningHook {
+  logger: IzLogger,
+  rules: RewriteRules,
+) extends PlanningHook {
 
   import ResourceRewriter._
   import RewriteResult._
@@ -70,7 +70,9 @@ class ResourceRewriter(
               DontChange
 
             case _: ImplDef.InstanceImpl =>
-              logger.warn(s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit DIResource (define as function binding to force conversion)")
+              logger.warn(
+                s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit DIResource (define as function binding to force conversion)"
+              )
               DontChange
 
             case ImplDef.ProviderImpl(_, function) =>
@@ -84,7 +86,9 @@ class ResourceRewriter(
         implDef match {
           case _: ImplDef.EffectImpl =>
             if (implDef.implType <:< SafeType.get[TGT]) {
-              logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using DIResource.fromAutoCloseable/fromExecutorService")
+              logger.error(
+                s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using DIResource.fromAutoCloseable/fromExecutorService"
+              )
             }
             DontChange
 

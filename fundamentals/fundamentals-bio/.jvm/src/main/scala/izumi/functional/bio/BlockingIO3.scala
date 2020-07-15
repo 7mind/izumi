@@ -8,10 +8,10 @@ import zio.{Has, IO, ZIO}
 
 trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
 
-  /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes **/
-  def shiftBlocking[R, E, A](f: F[R, E ,A]): F[R, E, A]
+  /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes * */
+  def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A]
 
-  /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes **/
+  /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes * */
   def syncBlocking[A](f: => A): F[Any, Throwable, A]
 
   /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes
@@ -19,7 +19,8 @@ trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
     * If canceled, the task will be killed via [[Thread#interrupt]]
     *
     * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[InterruptedException]]
-    * **/
+    * *
+    */
   def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
 }
 object BlockingIO3 {
@@ -39,7 +40,7 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
   @inline implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
     val b: Blocking.Service = blocking.get
-    override def shiftBlocking[R, E, A](f: ZIO[R, E ,A]): ZIO[R, E, A] = b.blocking(f)
+    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = b.blocking(f)
     override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
     override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
   }

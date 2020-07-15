@@ -11,7 +11,7 @@ trait ProvisioningKeyProvider {
     */
   def fetchKey(key: DIKey, makeByName: Boolean): Option[Any]
 
-  /** Directly access a value from the current context, without unpacking by-names **/
+  /** Directly access a value from the current context, without unpacking by-names * */
   def fetchUnsafe(key: DIKey): Option[Any]
 
   /** Lookup value through the chain of Locators, possibly retrieving it from a parent Locator */
@@ -20,6 +20,3 @@ trait ProvisioningKeyProvider {
   def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider
   def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider
 }
-
-
-

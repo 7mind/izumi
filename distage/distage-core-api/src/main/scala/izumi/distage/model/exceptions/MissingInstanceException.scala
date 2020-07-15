@@ -11,5 +11,3 @@ object MissingInstanceException {
        |Required by refs:${references.niceList(prefix = "* ")}""".stripMargin
   }
 }
-
-

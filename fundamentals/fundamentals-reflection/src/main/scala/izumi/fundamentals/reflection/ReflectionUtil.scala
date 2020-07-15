@@ -17,7 +17,8 @@ object ReflectionUtil {
 
   /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
     * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
-    * So we just strip it when we get it. */
+    * So we just strip it when we get it.
+    */
   @tailrec
   final def norm(u: Universe)(x: u.Type): u.Type = {
     import u._
@@ -30,7 +31,8 @@ object ReflectionUtil {
 
   /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
     * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
-    * So we just strip it when we get it. */
+    * So we just strip it when we get it.
+    */
   @tailrec
   final def normSingleton[U <: SingletonUniverse](x: U#Type): U#Type = {
     x match {
@@ -71,14 +73,14 @@ object ReflectionUtil {
       tpe.dealias.finalResultType.typeArgs.forall {
         arg =>
           tpe.typeParams.contains(arg.typeSymbol) ||
-            allPartsStrong(arg)
+          allPartsStrong(arg)
       }
     }
     def intersectionStructStrong = {
       tpe match {
         case t: Universe#RefinedTypeApi =>
           t.parents.forall(allPartsStrong) &&
-            t.decls.toSeq.forall((s: Universe#Symbol) => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
+          t.decls.toSeq.forall((s: Universe#Symbol) => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
         case _ =>
           true
       }
@@ -90,15 +92,15 @@ object ReflectionUtil {
   def isSelfStrong(tpe: Universe#Type): Boolean = {
     !(tpe.typeSymbol.isParameter || (
       tpe.isInstanceOf[Universe#TypeRefApi] &&
-        tpe.asInstanceOf[Universe#TypeRefApi].pre.isInstanceOf[Universe#ThisTypeApi] &&
-        tpe.typeSymbol.isAbstract && !tpe.typeSymbol.isClass && isNotDealiasedFurther(tpe)
-      )) ||
-      tpe.typeParams.exists {
-        t =>
-          t == tpe.typeSymbol ||
-            t.typeSignature == tpe.typeSymbol.typeSignature ||
-            (t.name eq tpe.typeSymbol.name)
-      }
+      tpe.asInstanceOf[Universe#TypeRefApi].pre.isInstanceOf[Universe#ThisTypeApi] &&
+      tpe.typeSymbol.isAbstract && !tpe.typeSymbol.isClass && isNotDealiasedFurther(tpe)
+    )) ||
+    tpe.typeParams.exists {
+      t =>
+        t == tpe.typeSymbol ||
+        t.typeSignature == tpe.typeSymbol.typeSignature ||
+        (t.name eq tpe.typeSymbol.name)
+    }
   }
 
   def isNotDealiasedFurther(tpe: Universe#Type): Boolean = {
@@ -138,4 +140,3 @@ object ReflectionUtil {
   }
 
 }
-

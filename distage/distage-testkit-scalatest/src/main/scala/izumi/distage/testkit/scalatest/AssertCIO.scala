@@ -19,8 +19,7 @@ object AssertCIO extends AssertCIO {
   object AssertCIOMacro {
     def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[IO[Assertion]] = {
       import c.universe._
-      c.Expr[IO[Assertion]](
-        q"_root_.cats.effect.IO.delay(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
+      c.Expr[IO[Assertion]](q"_root_.cats.effect.IO.delay(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
     }
   }
 

@@ -4,8 +4,7 @@ import izumi.distage.model.exceptions.AnnotationConflictException
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo {
-  this: DIUniverseBase
-    with WithDISafeType =>
+  this: DIUniverseBase with WithDISafeType =>
 
   sealed trait SymbolInfo {
     def name: String
@@ -30,13 +29,13 @@ trait WithDISymbolInfo {
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
     private[universe] case class Runtime private (
-                                                   underlying: SymbNative,
-                                                   typeSignatureInDefiningClass: TypeNative,
-                                                   finalResultType: TypeNative,
-                                                   isByName: Boolean,
-                                                   wasGeneric: Boolean,
-                                                   annotations: List[u.Annotation],
-                                                 ) extends SymbolInfo {
+      underlying: SymbNative,
+      typeSignatureInDefiningClass: TypeNative,
+      finalResultType: TypeNative,
+      isByName: Boolean,
+      wasGeneric: Boolean,
+      annotations: List[u.Annotation],
+    ) extends SymbolInfo {
       override final val name: String = underlying.name.toTermName.toString
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
@@ -53,7 +52,7 @@ trait WithDISymbolInfo {
           finalResultType = tpeIn.finalResultType,
           isByName = underlying.isTerm && underlying.asTerm.isByNameParam,
           wasGeneric = wasGeneric,
-          annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct
+          annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct,
         )
       }
 
@@ -64,18 +63,18 @@ trait WithDISymbolInfo {
           finalResultType = underlying.typeSignature,
           isByName = (underlying.isTerm && underlying.asTerm.isByNameParam) || ReflectionUtil.isByName(u)(underlying.typeSignature),
           wasGeneric = underlying.typeSignature.typeSymbol.isParameter,
-          annotations = AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct
+          annotations = AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct,
         )
       }
     }
 
     case class Static(
-                       name: String,
-                       finalResultType: TypeNative,
-                       annotations: List[u.Annotation],
-                       isByName: Boolean,
-                       wasGeneric: Boolean,
-                     ) extends SymbolInfo {
+      name: String,
+      finalResultType: TypeNative,
+      annotations: List[u.Annotation],
+      isByName: Boolean,
+      wasGeneric: Boolean,
+    ) extends SymbolInfo {
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }

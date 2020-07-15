@@ -22,10 +22,13 @@ object ProviderCases {
 
     val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
-    val testVal2: Boolean => String = { x: Boolean @Id("valbodytypeann") => x.toString }
+    val testVal2: Boolean => String = {
+      x: Boolean @Id("valbodytypeann") => x.toString
+    }
 
-    val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long =
-      { x: Long @Id("valsbtypeann3") => _ => x }
+    val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long = {
+      x: Long @Id("valsbtypeann3") => _ => x
+    }
 
     val testValByName: (=> Any) => Unit = _ => ()
 
@@ -35,7 +38,7 @@ object ProviderCases {
 
     class Poly[F[_]]
 
-    def poly[F[_]](f: F[Int]): F[Unit] => Poly[F] = _ => { f.discard() ; new Poly[F] }
+    def poly[F[_]](f: F[Int]): F[Unit] => Poly[F] = _ => { f.discard(); new Poly[F] }
 
     class TestProviderModule {
       class TestDependency

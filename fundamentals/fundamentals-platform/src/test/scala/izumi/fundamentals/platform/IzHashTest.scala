@@ -1,4 +1,3 @@
-
 package izumi.fundamentals.platform
 
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,4 +21,3 @@ class IzHashTest extends AnyWordSpec {
     }
   }
 }
-

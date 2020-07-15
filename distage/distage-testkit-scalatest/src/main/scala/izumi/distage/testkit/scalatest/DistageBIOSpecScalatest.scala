@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 
 abstract class DistageBIOSpecScalatest[F[+_, +_]](implicit val tagBIO: TagKK[F])
   extends DistageScalatestTestSuiteRunner[F[Throwable, ?]]
-    with DistageAbstractScalatestSpec[F[Throwable, ?]] {
+  with DistageAbstractScalatestSpec[F[Throwable, ?]] {
 
   protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper2[F] = {
     new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, s, this, testEnv)

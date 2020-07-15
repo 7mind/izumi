@@ -10,8 +10,7 @@ import izumi.fundamentals.platform.cli.model.schema._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
-class Help[F[_]: DIEffect]
-(
+class Help[F[_]: DIEffect](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
 ) extends RoleTask[F] {
@@ -25,7 +24,8 @@ class Help[F[_]: DIEffect]
       .availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
 
-    val activations = activationInfo.availableChoices
+    val activations = activationInfo
+      .availableChoices
       .map {
         case (axis, members) =>
           s"$axis:${members.niceList().shift(2)}"

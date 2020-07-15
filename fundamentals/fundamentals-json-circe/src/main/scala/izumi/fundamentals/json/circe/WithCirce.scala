@@ -34,7 +34,6 @@ import scala.reflect.macros.blackbox
   *     object C extends WithCirce[C]
   *   }
   * }}}
-  *
   */
 abstract class WithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) {
   // workaround for https://github.com/milessabin/shapeless/issues/837

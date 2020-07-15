@@ -6,15 +6,15 @@ import izumi.distage.model.plan.ExecutableOp
 import scala.util.Try
 
 final case class ProvisioningFailureContext(
-                                             parentContext: Locator,
-                                             provision: Provision[Any],
-                                             step: ExecutableOp,
-                                           )
+  parentContext: Locator,
+  provision: Provision[Any],
+  step: ExecutableOp,
+)
 
 final case class ProvisioningFailure(
-                                      op: ExecutableOp,
-                                      failure: Throwable,
-                                    )
+  op: ExecutableOp,
+  failure: Throwable,
+)
 
 trait ProvisioningFailureInterceptor {
   def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]

@@ -3,7 +3,6 @@ package izumi.distage.model.plan.topology
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.reflection._
 
-
 /**
   * This class represents direct node dependencies and allows to retrive full transitive dependencies for a node
   */
@@ -38,9 +37,9 @@ object PlanTopology {
   def empty: PlanTopologyImmutable = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required))
 
   final case class PlanTopologyImmutable(
-                                          dependees: DependencyGraph,
-                                          dependencies: DependencyGraph,
-                                        ) extends PlanTopology {
+    dependees: DependencyGraph,
+    dependencies: DependencyGraph,
+  ) extends PlanTopology {
     override def removeKeys(keys: Set[DIKey]): PlanTopology = {
       PlanTopologyImmutable(
         dependees.dropDepsOf(keys),

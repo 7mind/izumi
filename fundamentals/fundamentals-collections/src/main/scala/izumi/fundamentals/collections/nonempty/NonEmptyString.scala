@@ -1,11 +1,9 @@
 package izumi.fundamentals.collections.nonempty
 
-
 import scala.collection.compat.{Factory, _}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq}
 import scala.reflect.ClassTag
-
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.
 /**
@@ -98,7 +96,6 @@ import scala.reflect.ClassTag
   * NonEmptyString(1, 2, 3).filter(_ &gt; 10) // Result: String()
   * </pre>
   *
-  *
   * <p>
   * You can use <code>NonEmptyString</code>s in <code>for</code> expressions. The result will be an <code>NonEmptyString</code> unless
   * you use a filter (an <code>if</code> clause). Because filters are desugared to invocations of <code>filter</code>, the
@@ -129,7 +126,6 @@ import scala.reflect.ClassTag
   * res6: String[(Int, Char)] =
   *         String((1,a), (1,b), (1,c), (2,a), (2,b), (2,c), (3,a), (3,b), (3,c))
   * </pre>
-  *
   */
 final class NonEmptyString private (val theString: String) extends AnyVal {
 
@@ -370,7 +366,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Indicates whether this <code>NonEmptyString</code> ends with the given <code>Seq</code> of Char.
     *
     * @param that the sequence to test
-    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith[B](that: Seq[B]): Boolean = theString.toSeq.endsWith[Any](that)
 
@@ -378,7 +374,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Indicates whether this <code>NonEmptyString</code> ends with the given <code>Vector</code>.
     *
     * @param that the <code>Vector</code> to test
-    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith[B](that: Vector[B]): Boolean = theString.toSeq.endsWith[Any](that)
 
@@ -387,7 +383,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Indicates whether this <code>NonEmptyString</code> ends with the given <code>NonEmptyString</code>.
     *
     * @param that the <code>NonEmptyString</code> to test
-    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith(that: NonEmptyString): Boolean = theString.toSeq.endsWith[Any](that.theString)
 
@@ -397,13 +393,13 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
         case nonEmptyString: NonEmptyString[_] => toString == nonEmptyString.toString
         case _ => false
       }
-  */
+   */
 
   /**
     * Indicates whether a predicate holds for at least one of the characters of this <code>NonEmptyString</code>.
     *
     * @param p the predicate used to test characters.
-    * @return <code>true</code> if the given predicate <code>p</code> holds for some of the elements of this <code>NonEmptyString</code>, otherwise <code>false</code>. 
+    * @return <code>true</code> if the given predicate <code>p</code> holds for some of the elements of this <code>NonEmptyString</code>, otherwise <code>false</code>.
     */
   def exists(p: Char => Boolean): Boolean = theString.exists(p)
 
@@ -458,7 +454,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>.
     * </p>
     */
   def foldLeft[B](z: B)(op: (B, Char) => B): B = theString.foldLeft(z)(op)
@@ -477,7 +473,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>.
     * </p>
     */
   def foldRight[B](z: B)(op: (Char, B) => B): B = theString.foldRight(z)(op)
@@ -514,7 +510,10 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     */
   def groupBy[K](f: Char => K): Map[K, NonEmptyString] = {
     val mapKToString = theString.iterator.toSeq.groupBy(f)
-    mapKToString.view.mapValues { list => new NonEmptyString(list.mkString) }.toMap
+    mapKToString
+      .view.mapValues {
+        list => new NonEmptyString(list.mkString)
+      }.toMap
   }
 
   /**
@@ -526,9 +525,10 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def grouped(size: Int): Iterator[NonEmptyString] = {
     if (size > 0) {
       val itOfString = theString.grouped(size)
-      itOfString.map { list => new NonEmptyString(list) }
-    }
-    else
+      itOfString.map {
+        list => new NonEmptyString(list)
+      }
+    } else
       throw new IllegalArgumentException(s"Invalid size: $size")
   }
 
@@ -545,7 +545,6 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @return the first character of this <code>NonEmptyString</code>.
     */
   def head: Char = theString.head
-
 
   /**
     * Finds index of first occurrence of some value in this <code>NonEmptyString</code>.
@@ -571,7 +570,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>Seq[Char]</code> defining the slice to look for
     * @return the first index at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice(that: Seq[Char]): Int = theString.indexOfSlice(that)
 
@@ -590,7 +589,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @return the first index such that the characters of this <code>NonEmptyString</code> starting at this index match the characters of
-    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice(that: Vector[Char]): Int = theString.indexOfSlice(that)
 
@@ -599,7 +598,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>NonEmptyString</code> defining the slice to look for
     * @return the first index such that the characters of this <code>NonEmptyString</code> starting at this index match the characters of
-    *     <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice(that: NonEmptyString): Int = theString.indexOfSlice(that.theString)
 
@@ -609,7 +608,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param that the <code>Vector</code> defining the slice to look for
     * @param from the start index
     * @return the first index <code>&gt;=</code> <code>from</code> such that the characters of this <code>NonEmptyString</code> starting at this index match the characters of
-    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice(that: Vector[Char], from: Int): Int = theString.indexOfSlice(that, from)
 
@@ -619,7 +618,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param that the <code>NonEmptyString</code> defining the slice to look for
     * @param from the start index
     * @return the first index <code>&gt;=</code> <code>from</code> such that the characters of this <code>NonEmptyString</code> starting at this index match the characters of
-    *     <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice(that: NonEmptyString, from: Int): Int = theString.indexOfSlice(that.theString, from)
 
@@ -643,9 +642,9 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def indexWhere(p: Char => Boolean, from: Int): Int = theString.indexWhere(p, from)
 
   /**
-    * Produces the range of all indices of this <code>NonEmptyString</code>. 
+    * Produces the range of all indices of this <code>NonEmptyString</code>.
     *
-    * @return a <code>Range</code> value from <code>0</code> to one less than the length of this <code>NonEmptyString</code>. 
+    * @return a <code>Range</code> value from <code>0</code> to one less than the length of this <code>NonEmptyString</code>.
     */
   def indices: Range = theString.indices
 
@@ -698,66 +697,66 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Finds the index of the last occurrence of some value in this <code>NonEmptyString</code> before or at a given <code>end</code> index.
     *
     * @param c the character value to search for.
-    * @param end the end index. 
+    * @param end the end index.
     * @return the index <code>&gt;=</code> <code>end</code> of the last character of this <code>NonEmptyString</code> that is equal (as determined by <code>==</code>)
     *     to <code>elem</code>, or <code>-1</code>, if none exists.
     */
   def lastIndexOf(c: Char, end: Int): Int = theString.lastIndexOf(c.toInt, end)
 
   /**
-    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>Seq</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>Seq</code> as a slice.
     *
     * @param that the <code>Seq</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: Seq[Char]): Int = theString.lastIndexOfSlice(that)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>Seq</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>Seq</code> as a slice.
     *
     * @param that the <code>Seq</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: Seq[Char], end: Int): Int = theString.lastIndexOfSlice(that, end)
 
   /**
-    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>Vector</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>Vector</code> as a slice.
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: Vector[Char]): Int = theString.lastIndexOfSlice(that)
 
   /**
-    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>NonEmptyString</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyString</code> contains a given <code>NonEmptyString</code> as a slice.
     *
     * @param that the <code>NonEmptyString</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: NonEmptyString): Int = theString.lastIndexOfSlice(that.theString)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>Vector</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>Vector</code> as a slice.
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the elements of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: Vector[Char], end: Int): Int = theString.lastIndexOfSlice(that, end)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>NonEmptyString</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyString</code> contains a given <code>NonEmptyString</code> as a slice.
     *
     * @param that the <code>NonEmptyString</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the characters of this <code>NonEmptyString</code> starting at that index match the characters of
-    *    <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>NonEmptyString</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice(that: NonEmptyString, end: Int): Int = theString.lastIndexOfSlice(that.theString, end)
 
@@ -775,7 +774,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param p the predicate used to test characters.
     * @param end the end index
     * @return the index <code>&gt;=</code> <code>end</code> of the last character of this <code>NonEmptyString</code> that satisfies the predicate <code>p</code>,
-    *     or <code>-1</code>, if none exists. 
+    *     or <code>-1</code>, if none exists.
     */
   def lastIndexWhere(p: Char => Boolean, end: Int): Int = theString.lastIndexWhere(p, end)
 
@@ -783,7 +782,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * The length of this <code>NonEmptyString</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1. 
+    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of characters in this <code>NonEmptyString</code>.
@@ -791,7 +790,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def length: Int = theString.length
 
   /**
-    * Compares the length of this <code>NonEmptyString</code> to a test value. 
+    * Compares the length of this <code>NonEmptyString</code> to a test value.
     *
     * @param len the test value that gets compared with the length.
     * @return a value <code>x</code> where
@@ -814,8 +813,9 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def map[U](f: Char => U): NonEmptyString = {
     //NonEmptyString("test")
     new NonEmptyString(
-      theString.map { c =>
-        f(c).toString
+      theString.map {
+        c =>
+          f(c).toString
       }.mkString
     )
   }
@@ -823,7 +823,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   /**
     * Finds the largest character.
     *
-    * @return the largest element of this <code>NonEmptyString</code>. 
+    * @return the largest element of this <code>NonEmptyString</code>.
     */
   def max(implicit cmp: Ordering[Char]): Char = theString.max(cmp)
 
@@ -852,16 +852,16 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Displays all characters of this <code>NonEmptyString</code> in a string.
     *
     * @return a string representation of this <code>NonEmptyString</code>. In the resulting string, the result of invoking <code>toString</code> on all characters of this
-    *     <code>NonEmptyString</code> follow each other without any separator string. 
+    *     <code>NonEmptyString</code> follow each other without any separator string.
     */
   def mkString: String = theString.mkString
 
   /**
-    * Displays all elements of this <code>NonEmptyString</code> in a string using a separator string. 
+    * Displays all elements of this <code>NonEmptyString</code> in a string using a separator string.
     *
     * @param sep the separator string
     * @return a string representation of this <code>NonEmptyString</code>. In the resulting string, the result of invoking <code>toString</code> on all elements of this
-    *     <code>NonEmptyString</code> are separated by the string <code>sep</code>. 
+    *     <code>NonEmptyString</code> are separated by the string <code>sep</code>.
     */
   def mkString(sep: String): String = theString.mkString(sep)
 
@@ -873,7 +873,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param end the ending string.
     * @return a string representation of this <code>NonEmptyString</code>. The resulting string begins with the string <code>start</code> and ends with the string
     *     <code>end</code>. Inside, In the resulting string, the result of invoking <code>toString</code> on all characters of this <code>NonEmptyString</code> are
-    *     separated by the string <code>sep</code>. 
+    *     separated by the string <code>sep</code>.
     */
   def mkString(start: String, sep: String, end: String): String = theString.mkString(start, sep, end)
 
@@ -887,10 +887,10 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   /**
     * A copy of this <code>NonEmptyString</code> with an element value appended until a given target length is reached.
     *
-    * @param len the target length 
+    * @param len the target length
     * @param c the padding character
     * @return a new <code>NonEmptyString</code> consisting of all characters of this <code>NonEmptyString</code> followed by the minimal number of occurrences
-    *     of <code>elem</code> so that the resulting <code>NonEmptyString</code> has a length of at least <code>len</code>. 
+    *     of <code>elem</code> so that the resulting <code>NonEmptyString</code> has a length of at least <code>len</code>.
     */
   def padTo(len: Int, c: Char): NonEmptyString =
     new NonEmptyString(theString.padTo(len, c))
@@ -906,7 +906,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     new NonEmptyString(theString.patch(from, that.theString, replaced))
 
   /**
-    * Iterates over distinct permutations. 
+    * Iterates over distinct permutations.
     *
     * <p>
     * Here's an example:
@@ -920,7 +920,9 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     */
   def permutations: Iterator[NonEmptyString] = {
     val it = theString.iterator.toSeq.permutations
-    it map { list => new NonEmptyString(list.mkString) }
+    it map {
+      list => new NonEmptyString(list.mkString)
+    }
   }
 
   /**
@@ -928,7 +930,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param p the predicate used to test characters.
     * @return the length of the longest prefix of this <code>NonEmptyString</code> such that every characters
-    *     of the segment satisfies the predicate <code>p</code>. 
+    *     of the segment satisfies the predicate <code>p</code>.
     */
   def prefixLength(p: Char => Boolean): Int = theString.segmentLength(p, 0)
 
@@ -993,7 +995,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyString</code>.
     * </p>
     */
   def reduceRight(op: (Char, Char) => Char): Char = theString.reduceRight(op)
@@ -1018,7 +1020,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * An iterator yielding characters in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyString.reverseIterator</code> is the same as <code>nonEmptyString.reverse.iterator</code>, but might be more efficient. 
+    * Note: <code>nonEmptyString.reverseIterator</code> is the same as <code>nonEmptyString.reverse.iterator</code>, but might be more efficient.
     * </p>
     *
     * @return an iterator yielding the characters of this <code>NonEmptyString</code> in reversed order
@@ -1029,13 +1031,13 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Builds a new <code>Iterable</code> by applying a function to all characters of this <code>NonEmptyString</code> and collecting the results in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyString.reverseMap(f)</code> is the same as <code>nonEmptyString.reverse.map(f)</code>, but might be more efficient. 
+    * Note: <code>nonEmptyString.reverseMap(f)</code> is the same as <code>nonEmptyString.reverse.map(f)</code>, but might be more efficient.
     * </p>
     *
     * @tparam U the element type of the returned <code>Iterable</code>.
     * @param f the function to apply to each character.
     * @return a new <code>Iterable</code> resulting from applying the given function <code>f</code> to each character of this <code>NonEmptyString</code>
-    *     and collecting the results in reverse order. 
+    *     and collecting the results in reverse order.
     */
   def reverseMap[U](f: Char => U): Iterable[U] = theString.reverseIterator.map(f).toVector
 
@@ -1044,7 +1046,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>Iterable</code> with which to compare
     * @return <code>true</code>, if both this <code>NonEmptyString</code> and the given <code>Iterable</code> contain the same characters
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements(that: Iterable[Char]): Boolean = theString.sameElements(that)
 
@@ -1053,7 +1055,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>Vector</code> with which to compare
     * @return <code>true</code>, if both this and the given <code>Vector</code> contain the same characters
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements(that: Vector[Char]): Boolean = theString.sameElements(that)
 
@@ -1062,7 +1064,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @param that the <code>NonEmptyString</code> with which to compare
     * @return <code>true</code>, if both this and the given <code>NonEmptyString</code> contain the same characters
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements(that: NonEmptyString): Boolean = theString.sameElements(that.theString)
 
@@ -1086,7 +1088,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *     times, and must not change the result (<em>e.g.</em>, <code>Nil</code> for list concatenation,
     *     0 for addition, or 1 for multiplication.)
     * @param op a binary operator that must be associative
-    * @return a new <code>NonEmptyString</code> containing the prefix scan of the elements in this <code>NonEmptyString</code> 
+    * @return a new <code>NonEmptyString</code> containing the prefix scan of the elements in this <code>NonEmptyString</code>
     */
   def scan(z: Char)(op: (Char, Char) => Char): NonEmptyString = new NonEmptyString(theString.scan(z)(op).mkString)
 
@@ -1136,7 +1138,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param p the predicate used to test elements.
     * @param from the index where the search starts.
     * @return the length of the longest segment of this <code>NonEmptyString</code> starting from index <code>from</code> such that every character of the
-    *     segment satisfies the predicate <code>p</code>. 
+    *     segment satisfies the predicate <code>p</code>.
     */
   def segmentLength(p: Char => Boolean, from: Int): Int = theString.segmentLength(p, from)
 
@@ -1164,7 +1166,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * The size of this <code>NonEmptyString</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1. 
+    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of characters in this <code>NonEmptyString</code>.
@@ -1178,7 +1180,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param f the transformation function mapping elements to some other domain <code>U</code>.
     * @param ord the ordering assumed on domain <code>U</code>.
     * @return a <code>NonEmptyString</code> consisting of the elements of this <code>NonEmptyString</code> sorted according to the <code>Ordering</code> where
-    *    <code>x &lt; y if ord.lt(f(x), f(y))</code>. 
+    *    <code>x &lt; y if ord.lt(f(x), f(y))</code>.
     */
   def sortBy[U](f: Char => U)(implicit ord: Ordering[U]): NonEmptyString = new NonEmptyString(theString.iterator.toSeq.sortBy(f).mkString)
 
@@ -1187,7 +1189,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * <p>
     * The sort is stable. That is, characters that are equal (as determined by <code>lt</code>) appear in the same order in the
-    * sorted <code>NonEmptyString</code> as in the original. 
+    * sorted <code>NonEmptyString</code> as in the original.
     * </p>
     *
     * @param lt the comparison function that tests whether its first argument precedes its second argument in the desired ordering.
@@ -1200,7 +1202,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * <p>
     * The sort is stable. That is, elements that are equal (as determined by <code>lt</code>) appear in the same order in the
-    * sorted <code>NonEmptyString</code> as in the original. 
+    * sorted <code>NonEmptyString</code> as in the original.
     * </p>
     *
     * @param ord the <code>Ordering</code> to be used to compare elements.
@@ -1209,7 +1211,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def sorted(implicit ord: Ordering[Char]): NonEmptyString = new NonEmptyString(theString.iterator.toSeq.sorted(ord).mkString)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Seq</code>. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Seq</code>.
     *
     * @param that the <code>Seq</code> slice to look for in this <code>NonEmptyString</code>
     * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1217,7 +1219,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def startsWith(that: Seq[Char]): Boolean = theString.startsWith(that)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Seq</code> at the given index. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Seq</code> at the given index.
     *
     * @param that the <code>Seq</code> slice to look for in this <code>NonEmptyString</code>
     * @param offset the index at which this <code>NonEmptyString</code> is searched.
@@ -1226,7 +1228,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def startsWith(that: Seq[Char], offset: Int): Boolean = theString.startsWith(that, offset)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Vector</code>. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Vector</code>.
     *
     * @param that the <code>Vector</code> to test
     * @return <code>true</code> if this collection has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1234,7 +1236,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def startsWith(that: Vector[Char]): Boolean = theString.startsWith(that)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code>. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code>.
     *
     * @param that the <code>NonEmptyString</code> to test
     * @return <code>true</code> if this collection has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1242,7 +1244,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def startsWith(that: NonEmptyString): Boolean = theString.startsWith(that.theString)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Vector</code> at the given index. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Vector</code> at the given index.
     *
     * @param that the <code>Vector</code> slice to look for in this <code>NonEmptyString</code>
     * @param offset the index at which this <code>NonEmptyString</code> is searched.
@@ -1251,7 +1253,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def startsWith(that: Vector[Char], offset: Int): Boolean = theString.startsWith(that, offset)
 
   /**
-    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code> at the given index. 
+    * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code> at the given index.
     *
     * @param that the <code>NonEmptyString</code> slice to look for in this <code>NonEmptyString</code>
     * @param offset the index at which this <code>NonEmptyString</code> is searched.
@@ -1277,15 +1279,13 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     */
   def sum(implicit num: Numeric[Long]): Long = theString.iterator.map(_.toLong).sum(num)
 
-
   /**
     * Converts this <code>NonEmptyString</code> into a collection of type <code>Col</code> by copying all elements.
     *
     * @tparam C1 the collection type to build.
-    * @return a new collection containing all elements of this <code>NonEmptyString</code>. 
+    * @return a new collection containing all elements of this <code>NonEmptyString</code>.
     */
   def to[C1](factory: Factory[Char, C1]): C1 = factory.fromSpecific(iterator)
-
 
   /**
     * Converts this <code>NonEmptyString</code> to an array.
@@ -1355,7 +1355,6 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     */
   def toSet: Set[Char] = theString.toSet
 
-
   /**
     * Returns a string representation of this <code>NonEmptyString</code>.
     *
@@ -1419,7 +1418,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   def union(that: Seq[Char]): NonEmptyString = new NonEmptyString(theString + that.mkString)
 
   /**
-    * Converts this <code>NonEmptyString</code> of pairs into two <code>NonEmptyString</code>s of the first and second half of each pair. 
+    * Converts this <code>NonEmptyString</code> of pairs into two <code>NonEmptyString</code>s of the first and second half of each pair.
     *
     * @tparam L the type of the first half of the character pairs
     * @tparam R the type of the second half of the character pairs
@@ -1470,7 +1469,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @return a new <code>NonEmptyString</code> containing pairs consisting of corresponding characters of this <code>NonEmptyString</code> and <code>that</code>. The
     *     length of the returned collection is the maximum of the lengths of this <code>NonEmptyString</code> and <code>that</code>. If this <code>NonEmptyString</code>
     *     is shorter than <code>that</code>, <code>thisElem</code> values are used to pad the result. If <code>that</code> is shorter than this
-    *     <code>NonEmptyString</code>, <code>thatElem</code> values are used to pad the result. 
+    *     <code>NonEmptyString</code>, <code>thatElem</code> values are used to pad the result.
     */
   def zipAll[O](other: collection.Iterable[O], thisElem: Char, otherElem: O): Iterable[(Char, O)] =
     theString.zipAll(other, thisElem, otherElem)
@@ -1515,7 +1514,7 @@ object NonEmptyString {
     * Variable argument extractor for <code>NonEmptyString</code>s.
     *
     * @param nonEmptyString: the <code>NonEmptyString</code> containing the elements to extract
-    * @return an <code>Seq</code> containing this <code>NonEmptyString</code>s elements, wrapped in a <code>Some</code> 
+    * @return an <code>Seq</code> containing this <code>NonEmptyString</code>s elements, wrapped in a <code>Some</code>
     */
   //def unapplySeq(nonEmptyString: NonEmptyString): Option[Seq[Char]] = Some(nonEmptyString.theString)
 
@@ -1524,7 +1523,7 @@ object NonEmptyString {
   /*
     // TODO: Figure out how to get case NonEmptyString() to not compile
     def unapplySeq[T](nonEmptyString: NonEmptyString[T]): Option[(T, Seq[T])] = Some(nonEmptyString.head, nonEmptyString.tail)
-  */
+   */
 
   /**
     * Optionally construct a <code>NonEmptyString</code> containing the characters, if any, of a given <code>Seq</code>.

@@ -17,11 +17,13 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
   final def bracketAuto[A <: AutoCloseable, B](acquire: => F[A])(use: A => F[B]): F[B] = bracket(acquire)(a => maybeSuspend(a.close()))(use)
 
   /** A weaker version of `delay`. Does not guarantee _actual_
-    * suspension of side-effects, because DIEffect[Identity] is allowed */
+    * suspension of side-effects, because DIEffect[Identity] is allowed
+    */
   def maybeSuspend[A](eff: => A): F[A]
 
   /** A stronger version of `handleErrorWith`, the difference is that
-    * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
+    * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors
+    */
   def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A]
 
   /** `definitelyRecover`, but the second argument is a callback that when called,

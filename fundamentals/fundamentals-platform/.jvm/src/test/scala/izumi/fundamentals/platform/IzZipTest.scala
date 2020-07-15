@@ -13,16 +13,10 @@ class IzZipTest extends AnyWordSpec {
       val files = IzJvm.safeClasspathSeq().map(p => Paths.get(p).toFile)
 
       for (_ <- 1 to 2) {
-        val maybeObjContent = IzZip.findInZips(files, {
-          p =>
-            p.toString == Paths.get("/scala/Predef.class").toString
-        })
+        val maybeObjContent = IzZip.findInZips(files, p => p.toString == Paths.get("/scala/Predef.class").toString)
         assert(maybeObjContent.headOption.exists(_._2.nonEmpty))
       }
     }
   }
 
-
 }
-
-

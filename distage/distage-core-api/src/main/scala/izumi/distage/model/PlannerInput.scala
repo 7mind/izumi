@@ -43,15 +43,18 @@ object PlannerInput {
 
   /** Instantiate `T @Id(name)` and the dependencies of `T @Id(name)`, discarding bindings that are unrelated.
     *
-    * @see [[izumi.distage.model.definition.Id @Id annotation]] */
+    * @see [[izumi.distage.model.definition.Id @Id annotation]]
+    */
   def target[T: Tag](name: String)(bindings: ModuleBase, activation: Activation): PlannerInput = PlannerInput(bindings, activation, DIKey.get[T].named(name))
 
   /** Disable all pruning.
-    * Every binding in `bindings` will be instantiated eagerly, without selection */
+    * Every binding in `bindings` will be instantiated eagerly, without selection
+    */
   def noGC(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
 
   /** Disable all pruning.
-    * Every binding in `bindings` will be instantiated eagerly, without selection */
+    * Every binding in `bindings` will be instantiated eagerly, without selection
+    */
   @deprecated("use noGC", "will be removed in 0.11.1")
   def noGc(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
 }

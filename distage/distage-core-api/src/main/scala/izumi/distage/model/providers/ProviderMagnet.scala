@@ -104,7 +104,8 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   /** Applicative's `ap` method - can be used to chain transformations like `flatMap`.
-    * Apply a function produced by `that` Provider to the argument produced by `this` Provider */
+    * Apply a function produced by `that` Provider to the argument produced by `this` Provider
+    */
   def flatAp[B: Tag](that: ProviderMagnet[A => B]): ProviderMagnet[B] = {
     map2(that) { case (a, f) => f(a) }
   }

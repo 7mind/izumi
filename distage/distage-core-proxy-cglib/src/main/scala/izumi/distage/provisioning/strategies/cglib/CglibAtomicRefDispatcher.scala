@@ -6,11 +6,10 @@ import izumi.distage.model.provisioning.proxies.ProxyDispatcher.AtomicProxyDispa
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu
-private[distage] class CglibAtomicRefDispatcher
-(
-  nullProxy: AnyRef,
+private[distage] class CglibAtomicRefDispatcher(
+  nullProxy: AnyRef
 ) extends AtomicProxyDispatcher
-    with MethodInterceptor {
+  with MethodInterceptor {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
     val methodName = method.getName

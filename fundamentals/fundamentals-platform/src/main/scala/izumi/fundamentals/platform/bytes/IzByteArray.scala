@@ -10,6 +10,6 @@ final class IzByteArray(private val bytes: Array[Byte]) extends AnyVal {
   }
 
   def toHex: String = {
-    bytes.toSeq.map(v => "%02x".format(v & 0xff)).mkString
+    bytes.toSeq.map(v => "%02x".format(v & 0xFF)).mkString
   }
 }

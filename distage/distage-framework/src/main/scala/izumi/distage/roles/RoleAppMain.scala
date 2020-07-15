@@ -4,8 +4,7 @@ import izumi.distage.roles.services.AppFailureHandler
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
-abstract class RoleAppMain
-(
+abstract class RoleAppMain(
   launcher: RoleAppLauncher,
   failureHandler: AppFailureHandler,
   parserFailureHandler: ParserFailureHandler,
@@ -49,15 +48,14 @@ object RoleAppMain {
     extends RoleAppMain(
       launcher,
       AppFailureHandler.PrintingHandler,
-      ParserFailureHandler.PrintingHandler
+      ParserFailureHandler.PrintingHandler,
     )
 
   class Silent(launcher: RoleAppLauncher)
     extends RoleAppMain(
       launcher,
       AppFailureHandler.NullHandler,
-      ParserFailureHandler.NullHandler
+      ParserFailureHandler.NullHandler,
     )
 
 }
-

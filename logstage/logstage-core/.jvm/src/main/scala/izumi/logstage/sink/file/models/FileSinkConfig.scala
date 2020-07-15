@@ -6,8 +6,8 @@ final case class FileSinkConfig private (fileSizeInBytes: Option[Int] = None, fi
 
   val (maxAllowedSize, calculateMessageSize) = {
     (fileSizeSoft, fileSizeInBytes) match {
-      case (Some(size), _) => (size, LogPayloadSizeSoft.size(_ : String))
-      case (_, Some(size)) => (size, LogPayloadSizeInBytes.size(_ : String))
+      case (Some(size), _) => (size, LogPayloadSizeSoft.size(_: String))
+      case (_, Some(size)) => (size, LogPayloadSizeInBytes.size(_: String))
       case (None, None) =>
         throw new IllegalArgumentException("File limit parameter should be specified")
     }

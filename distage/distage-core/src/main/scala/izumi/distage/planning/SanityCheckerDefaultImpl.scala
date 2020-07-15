@@ -8,8 +8,7 @@ import izumi.distage.model.reflection.DIKey
 
 import scala.collection.mutable
 
-class SanityCheckerDefaultImpl
-(
+class SanityCheckerDefaultImpl(
   protected val planAnalyzer: PlanAnalyzer
 ) extends SanityChecker {
 
@@ -27,7 +26,11 @@ class SanityCheckerDefaultImpl
     val fullDependenciesSet = fullRefTable.dependencies.graph.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!", missingRefs, Some(fullRefTable))
+      throw new MissingRefException(
+        s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!",
+        missingRefs,
+        Some(fullRefTable),
+      )
     }
 
     val missingRoots = plan.declaredRoots.diff(plan.keys)
@@ -35,7 +38,6 @@ class SanityCheckerDefaultImpl
       throw new MissingRootsException(s"Missing GC roots in final plan, check if there were any conflicts: $missingRoots", missingRoots)
     }
   }
-
 
   override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
     val (proxies, single) = ops.partition(_.isInstanceOf[ProxyOp.InitProxy])

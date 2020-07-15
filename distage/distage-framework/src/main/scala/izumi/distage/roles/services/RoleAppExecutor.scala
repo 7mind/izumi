@@ -20,13 +20,13 @@ trait RoleAppExecutor[F[_]] {
 object RoleAppExecutor {
 
   class Impl[F[_]: TagK](
-                          hook: AppShutdownStrategy[F],
-                          roles: RolesInfo,
-                          lateLogger: IzLogger,
-                          parameters: RawAppArgs,
-                          startupPlanExecutor: StartupPlanExecutor[F],
-                          filters: Filters[F],
-                        ) extends RoleAppExecutor[F] {
+    hook: AppShutdownStrategy[F],
+    roles: RolesInfo,
+    lateLogger: IzLogger,
+    parameters: RawAppArgs,
+    startupPlanExecutor: StartupPlanExecutor[F],
+    filters: Filters[F],
+  ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {
       try {
@@ -65,7 +65,6 @@ object RoleAppExecutor {
 
         val roleServices = rolesToRun.map {
           case (task, cfg) =>
-
             task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
@@ -77,9 +76,10 @@ object RoleAppExecutor {
             _ =>
               val loggedTask = for {
                 _ <- F.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
-                _ <- res.use { _ =>
-                  F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
-                    .flatMap(acc)
+                _ <- res.use {
+                  _ =>
+                    F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+                      .flatMap(acc)
                 }
               } yield ()
 
@@ -131,15 +131,16 @@ object RoleAppExecutor {
     }
 
     private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRole[F]] = {
-      roles.availableRoleBindings.flatMap {
-        b =>
-          rolesLocator.index.get(b.binding.key) match {
-            case Some(value: AbstractRole[F]) =>
-              Seq(b.descriptor.id -> value)
-            case _ =>
-              Seq.empty
-          }
-      }.toMap
+      roles
+        .availableRoleBindings.flatMap {
+          b =>
+            rolesLocator.index.get(b.binding.key) match {
+              case Some(value: AbstractRole[F]) =>
+                Seq(b.descriptor.id -> value)
+              case _ =>
+                Seq.empty
+            }
+        }.toMap
     }
   }
 

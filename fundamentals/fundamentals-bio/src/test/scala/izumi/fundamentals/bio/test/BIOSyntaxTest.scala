@@ -158,8 +158,8 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: BIOPrimitives: BIOFork]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
-          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-        }.flatMap(_.join) *>
+        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      }.flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
     def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[
@@ -217,26 +217,26 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def y[FR[-_, +_, +_]: BIOLocal]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
-          F.askWith {
-            _: Int =>
-              ()
-          }.toKleisli
-        }.provide(4)
+        F.askWith {
+          _: Int =>
+            ()
+        }.toKleisli
+      }.provide(4)
     }
     def arrowAsk[FR[-_, +_, +_]: BIOArrow: BIOAsk]: FR[String, Throwable, Int] = {
       F.askWith {
-          _: Int =>
-            ()
-        }.dimap {
+        _: Int =>
+          ()
+      }.dimap {
           _: String =>
             4
         }(_ => 1)
     }
     def profunctorOnly[FR[-_, +_, +_]: BIOProfunctor]: FR[String, Throwable, Int] = {
       F.contramap(??? : FR[Unit, Throwable, Int]) {
-          _: Int =>
-            ()
-        }.dimap {
+        _: Int =>
+          ()
+      }.dimap {
           _: String =>
             4
         }(_ => 1)
@@ -244,9 +244,9 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def bifunctorOnly[FR[-_, +_, +_]: BIOBifunctor3]: FR[Unit, Int, Int] = {
       F.leftMap(??? : FR[Unit, Int, Int]) {
-          _: Int =>
-            ()
-        }.bimap(
+        _: Int =>
+          ()
+      }.bimap(
           {
             _: Unit =>
               4
@@ -257,19 +257,19 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
     def biotemporalPlusLocal[FR[-_, +_, +_]: BIOTemporal3: BIOLocal]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
-          F.askWith {
-            _: Int =>
-              ()
-          }.toKleisli
-        }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
+        F.askWith {
+          _: Int =>
+            ()
+        }.toKleisli
+      }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
     def biomonadPlusLocal[FR[-_, +_, +_]: BIOMonad3: BIOBifunctor3: BIOLocal]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
-          F.askWith {
-            _: Int =>
-              ()
-          }.toKleisli
-        }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
+        F.askWith {
+          _: Int =>
+            ()
+        }.toKleisli
+      }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
     def docExamples() = {
       import izumi.functional.bio.{BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3, F}

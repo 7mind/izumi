@@ -199,8 +199,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
     }
     if (roles.requiredRoleBindings.isEmpty) {
       throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
-        |
-        |Available roles: ${roles.render()}""".stripMargin)
+                                           |
+                                           |Available roles: ${roles.render()}""".stripMargin)
     }
 
     roles
@@ -249,7 +249,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   }
 
   /** Note, besides overriding this method, activation parsing strategy can also be changed by using bootstrap modules or plugins
-    * and adding a binding for `make[Activation]` */
+    * and adding a binding for `make[Activation]`
+    */
   protected def parseActivation(
     lateLogger: IzLogger,
     parameters: RawAppArgs,

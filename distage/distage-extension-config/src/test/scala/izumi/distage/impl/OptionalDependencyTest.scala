@@ -20,8 +20,10 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     And("DIEffect in DIEffect object resolve")
     assert(x[Identity] == 1)
 
-    try DIEffect.fromBIO(null) catch { case _: NullPointerException => }
-    try BIO[Either, Unit](())(null) catch { case _: NullPointerException => }
+    try DIEffect.fromBIO(null)
+    catch { case _: NullPointerException => }
+    try BIO[Either, Unit](())(null)
+    catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
@@ -40,8 +42,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     And("`No More Orphans` type provider object is accessible")
     LowPriorityDIEffectInstances._Sync.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
-    assertTypeError(
-      """
+    assertTypeError("""
          def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
          y()
       """)
@@ -59,7 +60,9 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     val resource = DIResource.makeSimple {
       open = true
       new ByteArrayInputStream(Array())
-    } { i => open = false; i.close() }
+    } {
+      i => open = false; i.close()
+    }
 
     resource.use {
       i =>

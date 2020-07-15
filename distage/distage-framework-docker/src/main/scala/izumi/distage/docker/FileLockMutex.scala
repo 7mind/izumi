@@ -36,7 +36,7 @@ object FileLockMutex {
       }
     }
 
-    def createChannel: F[AsynchronousFileChannel] =  F.maybeSuspend {
+    def createChannel: F[AsynchronousFileChannel] = F.maybeSuspend {
       val tmpDir = System.getProperty("java.io.tmpdir")
       val file = new File(s"$tmpDir/$filename.tmp")
       val newFileCreated = file.createNewFile()
@@ -57,7 +57,7 @@ object FileLockMutex {
 
     F.bracket(createChannel)(channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
       channel =>
-        F.bracket(acquireLock(channel)){
+        F.bracket(acquireLock(channel)) {
           case Some(lock) => F.maybeSuspend(lock.close())
           case None => F.unit
         }(_ => effect)

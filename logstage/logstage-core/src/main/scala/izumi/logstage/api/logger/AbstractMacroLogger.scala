@@ -14,7 +14,7 @@ trait AbstractMacroLogger {
     * creating a `messageThunk` for a [[log]] call.
     *
     * They also look better in Intellij
-    **/
+    */
   final def trace(message: String): Unit = macro scTraceMacro
   final def debug(message: String): Unit = macro scDebugMacro
   final def info(message: String): Unit = macro scInfoMacro

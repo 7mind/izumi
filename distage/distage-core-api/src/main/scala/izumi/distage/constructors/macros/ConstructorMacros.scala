@@ -19,7 +19,7 @@ abstract class ClassConstructorMacros extends ConstructorMacrosBase {
   }
 }
 object ClassConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = ClassConstructorMacros {val c: C; val u: U}
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = ClassConstructorMacros { val c: C; val u: U }
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): ClassConstructorMacros.Aux[c0.type, u0.type] = {
     new ClassConstructorMacros {
       val c: c0.type = c0
@@ -34,16 +34,22 @@ abstract class HasConstructorMacros extends ConstructorMacrosBase {
   def ziohasConstructorAssertion(targetType: Type, deepIntersection: List[Type]): Unit = {
     val (good, bad) = deepIntersection.partition(tpe => tpe.typeConstructor.typeSymbol.fullName == "zio.Has")
     if (bad.nonEmpty) {
-      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has` or `Any`: $bad (${bad.map(_.typeSymbol)})")
+      c.abort(
+        c.enclosingPosition,
+        s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has` or `Any`: $bad (${bad.map(_.typeSymbol)})",
+      )
     }
     if (good.isEmpty) {
-      c.abort(c.enclosingPosition, s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` or `Any` type constructors in it, type was $targetType (${targetType.typeSymbol}")
+      c.abort(
+        c.enclosingPosition,
+        s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` or `Any` type constructors in it, type was $targetType (${targetType.typeSymbol}",
+      )
     }
   }
 
 }
 object HasConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = HasConstructorMacros {val c: C; val u: U}
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = HasConstructorMacros { val c: C; val u: U }
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): HasConstructorMacros.Aux[c0.type, u0.type] = {
     new HasConstructorMacros {
       val c: c0.type = c0
@@ -60,12 +66,13 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
     val traitParameters = methods.map(_.asParameter)
 
     generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
-      argss => q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
-        val methodDefs = methods.zip(argss.last).map {
-          case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
-        }
-        mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
-      })"
+      argss =>
+        q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
+          val methodDefs = methods.zip(argss.last).map {
+            case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
+          }
+          mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
+        })"
     }
   }
 
@@ -73,23 +80,26 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
     ReflectionUtil
       .deepIntersectionTypeMembers[c.universe.type](targetType)
       .find(tpe => tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal)
-      .foreach { err =>
-        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter or a final class $err (${err.typeSymbol}) in type constructor position")
+      .foreach {
+        err =>
+          c.abort(
+            c.enclosingPosition,
+            s"Cannot construct an implementation for $targetType: it contains a type parameter or a final class $err (${err.typeSymbol}) in type constructor position",
+          )
       }
   }
 
   def symbolToTrait(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.SingletonWiring.Trait = {
     reflectionProvider.symbolToWiring(targetType) match {
       case trait0: u.Wiring.SingletonWiring.Trait => trait0
-      case wiring => throw new RuntimeException(
-        s"""Tried to create a `TraitConstructor[$targetType]`, but `$targetType` is not a trait or an abstract class!
-           |
-           |Inferred wiring is: $wiring""".stripMargin)
+      case wiring => throw new RuntimeException(s"""Tried to create a `TraitConstructor[$targetType]`, but `$targetType` is not a trait or an abstract class!
+                                                   |
+                                                   |Inferred wiring is: $wiring""".stripMargin)
     }
   }
 }
 object TraitConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = TraitConstructorMacros {val c: C; val u: U}
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = TraitConstructorMacros { val c: C; val u: U }
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): TraitConstructorMacros.Aux[c0.type, u0.type] = {
     new TraitConstructorMacros {
       val c: c0.type = c0
@@ -101,8 +111,7 @@ object TraitConstructorMacros {
 abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def generateFactoryMethod(dependencyArgMap: Map[u.DIKey.BasicKey, c.Tree])
-                           (factoryMethod0: u.Wiring.Factory.FactoryMethod): c.Tree = {
+  def generateFactoryMethod(dependencyArgMap: Map[u.DIKey.BasicKey, c.Tree])(factoryMethod0: u.Wiring.Factory.FactoryMethod): c.Tree = {
     val u.Wiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
 
     val (methodArgListDecls, methodArgList) = {
@@ -112,13 +121,14 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
           case p: PolyTypeApi => instantiatedMethod(p.resultType)
         }
       }
-      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
-        argSymbol =>
-          val tpe = argSymbol.typeSignature
-          val name = argSymbol.asTerm.name
-          val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
-          expr -> (tpe -> name)
-      })
+      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass)
+        .paramLists.map(_.map {
+          argSymbol =>
+            val tpe = argSymbol.typeSignature
+            val name = argSymbol.asTerm.name
+            val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
+            expr -> (tpe -> name)
+        })
       paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
     }
 
@@ -135,15 +145,24 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
           case one :: Nil =>
             one
           case Nil =>
-            dependencyArgMap.getOrElse(param.key, c.abort(c.enclosingPosition,
-              s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap.keys.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}"
-            ))
+            dependencyArgMap.getOrElse(
+              param.key,
+              c.abort(
+                c.enclosingPosition,
+                s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap
+                  .keys.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}",
+              ),
+            )
           case multiple =>
-            multiple.find(_.toString == param.name)
-              .getOrElse(c.abort(c.enclosingPosition,
-                s"""Couldn't disambiguate between multiple arguments with the same type available for parameter ${param.name}: ${param.tpe} of ${factoryMethod.finalResultType} constructor
-                   |Expected one of the arguments to be named `${param.name}` or for the type to be unique among factory method arguments""".stripMargin
-              ))
+            multiple
+              .find(_.toString == param.name)
+              .getOrElse(
+                c.abort(
+                  c.enclosingPosition,
+                  s"""Couldn't disambiguate between multiple arguments with the same type available for parameter ${param.name}: ${param.tpe} of ${factoryMethod.finalResultType} constructor
+                     |Expected one of the arguments to be named `${param.name}` or for the type to be unique among factory method arguments""".stripMargin,
+                )
+              )
         }
     }
     val freshName = TermName(c.freshName("wiring"))
@@ -177,24 +196,25 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
     val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
     val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(mkCtorArgument(_)).unzip3(CtorArgument.asTraitMethod)
 
-    (ctorAssociations ++ traitAssociations, {
-      val newExpr = mkNewAbstractTypeInstanceApplyExpr(targetType, ctorParams, wireMethods)
-      q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($newExpr)"
-    })
+    (
+      ctorAssociations ++ traitAssociations, {
+        val newExpr = mkNewAbstractTypeInstanceApplyExpr(targetType, ctorParams, wireMethods)
+        q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($newExpr)"
+      },
+    )
   }
 
   def symbolToFactory(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.Factory = {
     reflectionProvider.symbolToWiring(targetType) match {
       case factory: u.Wiring.Factory => factory
-      case wiring => throw new RuntimeException(
-        s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
-           |
-           |Inferred wiring is: $wiring""".stripMargin)
+      case wiring => throw new RuntimeException(s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
+                                                   |
+                                                   |Inferred wiring is: $wiring""".stripMargin)
     }
   }
 }
 object FactoryConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = FactoryConstructorMacros {val c: C; val u: U}
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = FactoryConstructorMacros { val c: C; val u: U }
   def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): FactoryConstructorMacros.Aux[c0.type, u0.type] = {
     new FactoryConstructorMacros {
       val c: c0.type = c0
@@ -225,19 +245,20 @@ abstract class ConstructorMacrosBase {
     def asTraitMethod(c: CtorArgument): (u.Association.Parameter, Tree, Tree) = (c.parameter, c.ctorArgument, c.traitMethodExpr)
 
     def unzipLists(ls: List[List[CtorArgument]]): (List[u.Association.Parameter], List[Tree], List[List[Tree]]) = {
-      val (associations, ctorArgs) = ls.flatten.map {
-        case CtorArgument(p, a, _) => (p, a)
-      }.unzip
+      val (associations, ctorArgs) = ls
+        .flatten.map {
+          case CtorArgument(p, a, _) => (p, a)
+        }.unzip
       val ctorArgNamesLists = ls.map(_.map(_.ctorArgumentName))
       (associations, ctorArgs, ctorArgNamesLists)
     }
   }
 
   def mkNewAbstractTypeInstanceApplyExpr(
-                                          targetType: Type,
-                                          constructorParameters: List[List[Tree]],
-                                          methodImpls: List[Tree],
-                                        ): Tree = {
+    targetType: Type,
+    constructorParameters: List[List[Tree]],
+    methodImpls: List[Tree],
+  ): Tree = {
     val parents = ReflectionUtil.deepIntersectionTypeMembers[u.u.type](targetType)
     parents match {
       case parent :: Nil =>
@@ -248,10 +269,12 @@ abstract class ConstructorMacrosBase {
         }
       case _ =>
         if (constructorParameters.nonEmpty) {
-          c.abort(c.enclosingPosition,
+          c.abort(
+            c.enclosingPosition,
             s"""Unsupported case: intersection type containing an abstract class.
                |Please manually create an abstract class with the added traits.
-               |When trying to create a TraitConstructor for $targetType""".stripMargin)
+               |When trying to create a TraitConstructor for $targetType""".stripMargin,
+          )
         } else {
           if (methodImpls.isEmpty) {
             q"new ..$parents {}"
@@ -264,7 +287,8 @@ abstract class ConstructorMacrosBase {
 
   def generateProvider[T: c.WeakTypeTag, P <: ProviderType with Singleton: c.WeakTypeTag](
     parameters: List[List[u.Association.Parameter]]
-  )(fun: List[List[Tree]] => Tree): c.Expr[ProviderMagnet[T]] = {
+  )(fun: List[List[Tree]] => Tree
+  ): c.Expr[ProviderMagnet[T]] = {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 

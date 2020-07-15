@@ -22,17 +22,17 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   private[this] val configCache = new mutable.HashMap[String, LoggerPathConfig]()
 
   private[this] def findConfig(id: String): LoggerPathConfig = {
-      val parts = id.split('.')
+    val parts = id.split('.')
 
-      // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)
-      Iterator
-        .iterate(parts)(_.init)
-        .take(parts.length)
-        .map(_.mkString("."))
-        .map(id => loggerConfig.entries.get(id))
-        .find(_.nonEmpty)
-        .flatten
-        .getOrElse(loggerConfig.root)
+    // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)
+    Iterator
+      .iterate(parts)(_.init)
+      .take(parts.length)
+      .map(_.mkString("."))
+      .map(id => loggerConfig.entries.get(id))
+      .find(_.nonEmpty)
+      .flatten
+      .getOrElse(loggerConfig.root)
   }
 
   override def close(): Unit = {

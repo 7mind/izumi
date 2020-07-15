@@ -11,7 +11,8 @@ final case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: Dependency
   def dropDepsOf(keys: Set[DIKey]): DependencyGraph = {
     kind match {
       case DependencyKind.Depends =>
-        val filtered = graph.view
+        val filtered = graph
+          .view
           .flatMap {
             case (k, _) if keys.contains(k) =>
               Seq(k -> Set.empty[DIKey])
@@ -20,9 +21,10 @@ final case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: Dependency
           .toMap
         DependencyGraph(filtered, kind)
       case DependencyKind.Required =>
-        val filtered = graph.view
+        val filtered = graph
+          .view
           .flatMap {
-            case (k, v)  =>
+            case (k, v) =>
               Seq(k -> v.diff(keys))
           }
           .toMap

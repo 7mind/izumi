@@ -172,18 +172,18 @@ object StaticPluginCheckerMacro {
     if (imports.nonEmpty)
       abort(
         s"""Plugin is incomplete!
-          |
-          |ERROR: Missing imports:
-          |${imports.niceList()}
-          |
-          |Module requirements were:
-          |${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).niceList()}
-          |${if (loadedPlugins.nonEmpty) s"\nPlugin classes were: ${loadedPlugins.map(_.getClass).niceList()}" else ""}
-          |
-          |Plan was:
-          |${finalPlan.render()}
-          |
-          |${configModule.fold("")(_ => s"Config was:\n${bootstrap.find[AppConfig].map(_.config).toString.shift(2)}")}""".stripMargin
+           |
+           |ERROR: Missing imports:
+           |${imports.niceList()}
+           |
+           |Module requirements were:
+           |${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).niceList()}
+           |${if (loadedPlugins.nonEmpty) s"\nPlugin classes were: ${loadedPlugins.map(_.getClass).niceList()}" else ""}
+           |
+           |Plan was:
+           |${finalPlan.render()}
+           |
+           |${configModule.fold("")(_ => s"Config was:\n${bootstrap.find[AppConfig].map(_.config).toString.shift(2)}")}""".stripMargin
       )
   }
 
@@ -199,8 +199,8 @@ object StaticPluginCheckerMacro {
     val expectTpe = ru.typeOf[T]
     if (!(tpe weak_<:< expectTpe)) {
       abort(s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!
-        |baseClasses were: ${tpe.baseClasses}; symbol: $clazz
-        |""".stripMargin)
+               |baseClasses were: ${tpe.baseClasses}; symbol: $clazz
+               |""".stripMargin)
     }
 
     if (clazz.isModuleClass) {

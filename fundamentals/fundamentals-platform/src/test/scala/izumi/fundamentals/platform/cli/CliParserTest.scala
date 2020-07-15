@@ -7,10 +7,31 @@ class CliParserTest extends AnyWordSpec {
 
   "CLI parser" should {
     "parse args" in {
-      val v1 = RawAppArgs(RawEntrypointParams(Vector(RawFlag("help")), Vector(RawValue("x", "y"), RawValue("logs", "json"))), Vector(RawRoleParams("role1", RawEntrypointParams(Vector.empty, Vector(RawValue("config", "xxx"))), Vector("arg1", "arg2")), RawRoleParams("role2", RawEntrypointParams.empty, Vector.empty)))
-      val v2= RawAppArgs(RawEntrypointParams(Vector(RawFlag("help")),Vector(RawValue("x","y"), RawValue("logs","json"))),Vector(RawRoleParams("role1",RawEntrypointParams(Vector.empty,Vector(RawValue("config","xxx"))),Vector("arg1", "arg2", "--yyy=zzz")), RawRoleParams("role2",RawEntrypointParams.empty,Vector.empty)))
-      val v3 = RawAppArgs(RawEntrypointParams(Vector(RawFlag("help")),Vector(RawValue("x","y"), RawValue("logs","json"))),Vector(RawRoleParams("role1",RawEntrypointParams(Vector.empty,Vector.empty), Vector("--config=xxx", "arg1", "arg2", "--yyy=zzz")), RawRoleParams("role2",RawEntrypointParams.empty,Vector.empty)))
-      val v4 = RawAppArgs(RawEntrypointParams(Vector(RawFlag("x"), RawFlag("x")),Vector(RawValue("x","y"))),Vector(RawRoleParams("role1",RawEntrypointParams(Vector(RawFlag("x"), RawFlag("x")),Vector(RawValue("x","y"), RawValue("xx","yy"))),Vector.empty)))
+      val v1 = RawAppArgs(
+        RawEntrypointParams(Vector(RawFlag("help")), Vector(RawValue("x", "y"), RawValue("logs", "json"))),
+        Vector(
+          RawRoleParams("role1", RawEntrypointParams(Vector.empty, Vector(RawValue("config", "xxx"))), Vector("arg1", "arg2")),
+          RawRoleParams("role2", RawEntrypointParams.empty, Vector.empty),
+        ),
+      )
+      val v2 = RawAppArgs(
+        RawEntrypointParams(Vector(RawFlag("help")), Vector(RawValue("x", "y"), RawValue("logs", "json"))),
+        Vector(
+          RawRoleParams("role1", RawEntrypointParams(Vector.empty, Vector(RawValue("config", "xxx"))), Vector("arg1", "arg2", "--yyy=zzz")),
+          RawRoleParams("role2", RawEntrypointParams.empty, Vector.empty),
+        ),
+      )
+      val v3 = RawAppArgs(
+        RawEntrypointParams(Vector(RawFlag("help")), Vector(RawValue("x", "y"), RawValue("logs", "json"))),
+        Vector(
+          RawRoleParams("role1", RawEntrypointParams(Vector.empty, Vector.empty), Vector("--config=xxx", "arg1", "arg2", "--yyy=zzz")),
+          RawRoleParams("role2", RawEntrypointParams.empty, Vector.empty),
+        ),
+      )
+      val v4 = RawAppArgs(
+        RawEntrypointParams(Vector(RawFlag("x"), RawFlag("x")), Vector(RawValue("x", "y"))),
+        Vector(RawRoleParams("role1", RawEntrypointParams(Vector(RawFlag("x"), RawFlag("x")), Vector(RawValue("x", "y"), RawValue("xx", "yy"))), Vector.empty)),
+      )
       assert(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--config=xxx", "arg1", "arg2", ":role2")) == Right(v1))
       assert(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")) == Right(v2))
       assert(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")) == Right(v3))
@@ -20,12 +41,22 @@ class CliParserTest extends AnyWordSpec {
       assert(new CLIParser().parse(Array("-x", "value")).toOption.exists(_.globalParameters.values.head == RawValue("x", "value")))
       assert(new CLIParser().parse(Array("--x", "value")).isLeft)
       assert(new CLIParser().parse(Array("--x=value")).toOption.exists(_.globalParameters.values.head == RawValue("x", "value")))
-      assert(new CLIParser().parse(Array(":init", "./tmp")) == Right(RawAppArgs(RawEntrypointParams.empty,Vector(RawRoleParams("init",RawEntrypointParams.empty,Vector("./tmp"))))))
-      assert(new CLIParser().parse(Array(":init", "--target=./tmp")) == Right(RawAppArgs(RawEntrypointParams.empty,Vector(RawRoleParams("init",RawEntrypointParams(Vector.empty,Vector(RawValue("target","./tmp"))),Vector.empty)))))
-      assert(new CLIParser().parse(Array(":init", "-t", "./tmp")) == Right(RawAppArgs(RawEntrypointParams.empty,Vector(RawRoleParams("init",RawEntrypointParams(Vector.empty,Vector(RawValue("t","./tmp"))),Vector.empty)))))
+      assert(
+        new CLIParser().parse(Array(":init", "./tmp")) == Right(
+          RawAppArgs(RawEntrypointParams.empty, Vector(RawRoleParams("init", RawEntrypointParams.empty, Vector("./tmp"))))
+        )
+      )
+      assert(
+        new CLIParser().parse(Array(":init", "--target=./tmp")) == Right(
+          RawAppArgs(RawEntrypointParams.empty, Vector(RawRoleParams("init", RawEntrypointParams(Vector.empty, Vector(RawValue("target", "./tmp"))), Vector.empty)))
+        )
+      )
+      assert(
+        new CLIParser().parse(Array(":init", "-t", "./tmp")) == Right(
+          RawAppArgs(RawEntrypointParams.empty, Vector(RawRoleParams("init", RawEntrypointParams(Vector.empty, Vector(RawValue("t", "./tmp"))), Vector.empty)))
+        )
+      )
     }
   }
 
-
 }
-

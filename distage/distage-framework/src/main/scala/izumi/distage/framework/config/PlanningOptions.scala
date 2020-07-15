@@ -10,7 +10,7 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
   *                           if disabled, AutoCloseables will NOT be deallocated
   */
 final case class PlanningOptions(
-                                  addGraphVizDump: Boolean = false,
-                                  warnOnCircularDeps: Boolean = true,
-                                  rewriteRules: RewriteRules = ResourceRewriter.RewriteRules(),
-                                )
+  addGraphVizDump: Boolean = false,
+  warnOnCircularDeps: Boolean = true,
+  rewriteRules: RewriteRules = ResourceRewriter.RewriteRules(),
+)

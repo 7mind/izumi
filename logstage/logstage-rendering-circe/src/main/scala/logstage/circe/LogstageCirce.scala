@@ -15,8 +15,3 @@ trait LogstageCirce {
   implicit val LogstageCirceJsonCodec: LogstageCirceCodec.LogstageCirceJsonCodec.type = LogstageCirceCodec.LogstageCirceJsonCodec
   def fromCirce[T: Encoder]: LogstageCodec[T] = new LogstageCirceCodec[T]
 }
-
-
-
-
-

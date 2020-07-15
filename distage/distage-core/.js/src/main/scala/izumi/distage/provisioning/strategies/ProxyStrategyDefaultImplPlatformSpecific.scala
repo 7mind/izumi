@@ -9,8 +9,7 @@ import izumi.distage.model.reflection.MirrorProvider
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.language.unused
 
-abstract class ProxyStrategyDefaultImplPlatformSpecific
-(
+abstract class ProxyStrategyDefaultImplPlatformSpecific(
   @unused proxyProvider: ProxyProvider,
   @unused mirrorProvider: MirrorProvider,
 ) {

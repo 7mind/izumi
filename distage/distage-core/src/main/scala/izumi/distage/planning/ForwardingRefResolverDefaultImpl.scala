@@ -8,8 +8,7 @@ import distage.Id
 
 import scala.collection.mutable
 
-class ForwardingRefResolverDefaultImpl
-(
+class ForwardingRefResolverDefaultImpl(
   protected val planAnalyzer: PlanAnalyzer,
   @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
 ) extends ForwardingRefResolver {

@@ -1,7 +1,5 @@
 package izumi.fundamentals.collections.nonempty
 
-
-
 import scala.collection.{Iterable, Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.reflect.ClassTag
@@ -63,7 +61,6 @@ import scala.collection.compat._
   * NonEmptyMap(1 -> "one", 2 -> "two", 3 -> "three").filter(_._1 &lt; 10) // Result: Map(1 -> "one", 2 -> "two", 3 -> "three")
   * NonEmptyMap(1 -> "one", 2 -> "two", 3 -> "three").filter(_._ 1&gt; 10) // Result: Map()
   * </pre>
-  *
   *
   * <p>
   * You can use <code>NonEmptyMap</code>s in <code>for</code> expressions. The result will be an <code>NonEmptyMap</code> unless
@@ -280,7 +277,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
   }
 
   /**
-    * Copies all elements of this <code>NonEmptyMap</code> to a buffer. 
+    * Copies all elements of this <code>NonEmptyMap</code> to a buffer.
     *
     * @param buf the buffer to which elements are copied
     */
@@ -290,10 +287,10 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
   }
 
   /**
-    * Counts the number of elements in this <code>NonEmptyMap</code> that satisfy a predicate. 
+    * Counts the number of elements in this <code>NonEmptyMap</code> that satisfy a predicate.
     *
     * @param p the predicate used to test elements.
-    * @return the number of elements satisfying the predicate <code>p</code>. 
+    * @return the number of elements satisfying the predicate <code>p</code>.
     */
   def count(p: ((K, V)) => Boolean): Int = toMap.count(p)
 
@@ -303,7 +300,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
         case nonEmptyMap: NonEmptyMap[_] => toMap == nonEmptyMap.toMap
         case _ => false
       }
-  */
+   */
 
   /**
     * Indicates whether a predicate holds for at least one of the entries of this <code>NonEmptyMap</code>.
@@ -317,7 +314,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * Finds the first entry of this <code>NonEmptyMap</code> that satisfies the given predicate, if any.
     *
     * @param p the predicate used to test elements
-    * @return an <code>Some</code> containing the first element in this <code>NonEmptyMap</code> that satisfies <code>p</code>, or <code>None</code> if none exists. 
+    * @return an <code>Some</code> containing the first element in this <code>NonEmptyMap</code> that satisfies <code>p</code>, or <code>None</code> if none exists.
     */
   def find(p: ((K, V)) => Boolean): Option[(K, V)] = toMap.find(p)
 
@@ -367,7 +364,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>.
     * </p>
     */
   def foldLeft[B](z: B)(op: (B, (K, V)) => B): B = toMap.foldLeft(z)(op)
@@ -386,7 +383,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>.
     * </p>
     */
   def foldRight[B](z: B)(op: ((K, V), B) => B): B = toMap.foldRight(z)(op)
@@ -422,7 +419,10 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def groupBy(f: ((K, V)) => K): Map[K, NonEmptyMap[K, V]] = {
     val mapKToMap = toMap.groupBy(f)
-    mapKToMap.view.mapValues { list => new NonEmptyMap(list) }.toMap
+    mapKToMap
+      .view.mapValues {
+        list => new NonEmptyMap(list)
+      }.toMap
   }
 
   /**
@@ -433,7 +433,9 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def grouped(size: Int): Iterator[NonEmptyMap[K, V]] = {
     val itOfMap = toMap.grouped(size)
-    itOfMap.map { list => new NonEmptyMap(list) }
+    itOfMap.map {
+      list => new NonEmptyMap(list)
+    }
   }
 
   /**
@@ -444,13 +446,11 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
   // override def hashCode: Int = toMap.hashCode
 
   /**
-    * Selects the first element of this <code>NonEmptyMap</code>. 
+    * Selects the first element of this <code>NonEmptyMap</code>.
     *
     * @return the first element of this <code>NonEmptyMap</code>.
     */
   def head: (K, V) = toMap.head
-
-
 
   /**
     * Tests whether this <code>NonEmptyMap</code> contains given key.
@@ -493,8 +493,8 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @tparam K1 the key type of the returned <code>NonEmptyMap</code>.
     * @tparam V1 the value type of the returned <code>NonEmptyMap</code>.
-    * @param f the function to apply to each element. 
-    * @return a new <code>NonEmptyMap</code> resulting from applying the given function <code>f</code> to each element of this <code>NonEmptyMap</code> and collecting the results. 
+    * @param f the function to apply to each element.
+    * @return a new <code>NonEmptyMap</code> resulting from applying the given function <code>f</code> to each element of this <code>NonEmptyMap</code> and collecting the results.
     */
   def map[K1, V1](f: ((K, V)) => (K1, V1)): NonEmptyMap[K1, V1] =
     new NonEmptyMap(toMap.map(f))
@@ -531,7 +531,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * Displays all entries of this <code>NonEmptyMap</code> in a string.
     *
     * @return a string representation of this <code>NonEmptyMap</code>. In the resulting string, the result of invoking <code>toString</code> on all entries of this
-    *     <code>NonEmptyMap</code> follow each other without any separator string. 
+    *     <code>NonEmptyMap</code> follow each other without any separator string.
     */
   def mkString: String = toMap.mkString
 
@@ -540,7 +540,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @param sep the separator string
     * @return a string representation of this <code>NonEmptyMap</code>. In the resulting string, the result of invoking <code>toString</code> on all entries of this
-    *     <code>NonEmptyMap</code> are separated by the string <code>sep</code>. 
+    *     <code>NonEmptyMap</code> are separated by the string <code>sep</code>.
     */
   def mkString(sep: String): String = toMap.mkString(sep)
 
@@ -552,7 +552,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @param end the ending string.
     * @return a string representation of this <code>NonEmptyMap</code>. The resulting string begins with the string <code>start</code> and ends with the string
     *     <code>end</code>. Inside, In the resulting string, the result of invoking <code>toString</code> on all entries of this <code>NonEmptyMap</code> are
-    *     separated by the string <code>sep</code>. 
+    *     separated by the string <code>sep</code>.
     */
   def mkString(start: String, sep: String, end: String): String = toMap.mkString(start, sep, end)
 
@@ -599,7 +599,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyMap</code>.
     * </p>
     */
   def reduceLeft[U >: (K, V)](op: (U, (K, V)) => U): U = toMap.reduceLeft(op)
@@ -647,7 +647,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @param that the <code>NonEmptyMap</code> with which to compare
     * @return <code>true</code>, if both this and the given <code>NonEmptyMap</code> contain the same entries
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements[V1 >: V](that: NonEmptyMap[K, V1]): Boolean = toMap == that.toMap
 
@@ -655,14 +655,14 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * Computes a prefix scan of the entries of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once. 
+    * Note: The neutral element z may be applied more than once.
     * </p>
     *
     * @param z a neutral element for the scan operation; may be added to the result an arbitrary number of
     *     times, and must not change the result (<em>e.g.</em>, <code>Nil</code> for list concatenation,
     *     0 for addition, or 1 for multiplication.)
     * @param op a binary operator that must be associative
-    * @return a new <code>NonEmptyMap</code> containing the prefix scan of the elements in this <code>NonEmptyMap</code> 
+    * @return a new <code>NonEmptyMap</code> containing the prefix scan of the elements in this <code>NonEmptyMap</code>
     */
   def scan[V1 >: V](z: (K, V1))(op: ((K, V1), (K, V1)) => (K, V1)): NonEmptyMap[K, V1] = new NonEmptyMap(toMap.scan(z)(op).toMap)
 
@@ -690,10 +690,10 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * The size of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1. 
+    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
-    * @return the number of elements in this <code>NonEmptyMap</code>. 
+    * @return the number of elements in this <code>NonEmptyMap</code>.
     */
   def size: Int = toMap.size
 
@@ -778,7 +778,6 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def toSet[U >: (K, V)]: Set[U] = toMap.toSet
 
-
   /**
     * Returns a string representation of this <code>NonEmptyMap</code>.
     *
@@ -793,7 +792,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @tparam L the type of the first half of the element pairs
     * @tparam R the type of the second half of the element pairs
     * @param asPair an implicit conversion that asserts that the element type of this <code>NonEmptyMap</code> is a pair.
-    * @return a pair of <code>NonEmptyMap</code>s, containing the first and second half, respectively, of each element pair of this <code>NonEmptyMap</code>. 
+    * @return a pair of <code>NonEmptyMap</code>s, containing the first and second half, respectively, of each element pair of this <code>NonEmptyMap</code>.
     */
   def unzip[L, R](implicit asPair: ((K, V)) => (L, R)): (scala.collection.immutable.Iterable[L], scala.collection.immutable.Iterable[R]) = toMap.unzip
 
@@ -806,7 +805,9 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @param asTriple an implicit conversion that asserts that the entry type of this <code>NonEmptyMap</code> is a triple.
     * @return a triple of <code>NonEmptyMap</code>s, containing the first, second, and third member, respectively, of each entry triple of this <code>NonEmptyMap</code>.
     */
-  def unzip3[L, M, R](implicit asTriple: ((K, V)) => (L, M, R)): (scala.collection.immutable.Iterable[L], scala.collection.immutable.Iterable[M], scala.collection.immutable.Iterable[R]) = toMap.unzip3
+  def unzip3[L, M, R](
+    implicit asTriple: ((K, V)) => (L, M, R)
+  ): (scala.collection.immutable.Iterable[L], scala.collection.immutable.Iterable[M], scala.collection.immutable.Iterable[R]) = toMap.unzip3
 
   /**
     * A copy of this <code>NonEmptyMap</code> with one single replaced entry.
@@ -831,7 +832,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @return a new <code>NonEmptyMap</code> containing pairs consisting of corresponding entries of this <code>NonEmptyMap</code> and <code>that</code>. The
     *     length of the returned collection is the maximum of the lengths of this <code>NonEmptyMap</code> and <code>that</code>. If this <code>NonEmptyMap</code>
     *     is shorter than <code>that</code>, <code>thisElem</code> values are used to pad the result. If <code>that</code> is shorter than this
-    *     <code>NonEmptyMap</code>, <code>thatElem</code> values are used to pad the result. 
+    *     <code>NonEmptyMap</code>, <code>thatElem</code> values are used to pad the result.
     */
   def zipAll[O, V1 >: V](other: collection.Iterable[O], thisElem: (K, V1), otherElem: O): NonEmptyMap[(K, V1), O] =
     new NonEmptyMap(toMap.zipAll(other, thisElem, otherElem).toMap)
@@ -865,7 +866,7 @@ object NonEmptyMap {
     * @tparam K the type of the key contained in the <code>NonEmptyMap</code>
     * @tparam V the type of the value contained in the <code>NonEmptyMap</code>
     * @param nonEmptyMap: the <code>NonEmptyMap</code> containing the elements to extract
-    * @return an <code>Seq</code> containing this <code>NonEmptyMap</code>s elements, wrapped in a <code>Some</code> 
+    * @return an <code>Seq</code> containing this <code>NonEmptyMap</code>s elements, wrapped in a <code>Some</code>
     */
   def unapplySeq[K, V](nonEmptyMap: NonEmptyMap[K, V]): Option[Seq[(K, V)]] = Some(nonEmptyMap.toSeq)
 

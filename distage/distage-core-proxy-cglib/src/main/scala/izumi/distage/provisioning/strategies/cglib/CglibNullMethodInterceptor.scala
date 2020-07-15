@@ -7,8 +7,7 @@ import izumi.distage.model.reflection.DIKey
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // we use this to be able to display something for uninitialized proxies
-private[distage] class CglibNullMethodInterceptor
-(
+private[distage] class CglibNullMethodInterceptor(
   key: DIKey
 ) extends MethodInterceptor {
   override def intercept(o: Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {

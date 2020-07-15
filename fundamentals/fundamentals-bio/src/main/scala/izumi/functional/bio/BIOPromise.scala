@@ -15,13 +15,13 @@ trait BIOPromise[+F[+_, +_], E, A] {
 object BIOPromise {
   def fromZIO[E, A](promise: Promise[E, A]): BIOPromise[IO, E, A] = {
     new BIOPromise[IO, E, A] {
-      override def await: IO[E, A]                     = promise.await
+      override def await: IO[E, A] = promise.await
       override def poll: IO[Nothing, Option[IO[E, A]]] = promise.poll
 
-      override def succeed(a: A): IO[Nothing, Boolean]           = promise.succeed(a)
-      override def fail(e: E): IO[Nothing, Boolean]              = promise.fail(e)
+      override def succeed(a: A): IO[Nothing, Boolean] = promise.succeed(a)
+      override def fail(e: E): IO[Nothing, Boolean] = promise.fail(e)
       override def terminate(t: Throwable): IO[Nothing, Boolean] = promise.die(t)
-      override def interrupt: IO[Nothing, Boolean]               = promise.interrupt
+      override def interrupt: IO[Nothing, Boolean] = promise.interrupt
     }
   }
 }

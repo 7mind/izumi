@@ -78,7 +78,6 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
     }
   }
 
-
   def setupJsonLogger(debug: Boolean): (IzLogger, TestSink) = {
     val jsonPolicy = new LogstageCirceRenderingPolicy(prettyPrint = true)
     val testSink = new TestSink(Some(jsonPolicy))
@@ -106,18 +105,18 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
   }
 }
 
-
 object LogstageCirceRenderingTest {
   case class WithCustomCodec()
   object WithCustomCodec {
-    implicit val Codec: LogstageCodec[WithCustomCodec] = { (writer, _) =>
-      writer.openMap()
-      writer.write("a")
-      writer.openList()
-      writer.write(1)
-      writer.write("b")
-      writer.closeList()
-      writer.closeMap()
+    implicit val Codec: LogstageCodec[WithCustomCodec] = {
+      (writer, _) =>
+        writer.openMap()
+        writer.write("a")
+        writer.openList()
+        writer.write(1)
+        writer.write("b")
+        writer.closeList()
+        writer.closeMap()
     }
   }
 

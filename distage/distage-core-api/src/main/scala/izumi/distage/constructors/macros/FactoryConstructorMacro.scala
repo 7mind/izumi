@@ -29,18 +29,17 @@ object FactoryConstructorMacro {
 
     val provider: c.Expr[ProviderMagnet[T]] = generateProvider[T, ProviderType.Factory.type](allParameters) {
       argss =>
-      val dependencyArgMap = allParameters.iterator.flatten.map(_.key).zip(argss.iterator.flatten).toMap
-      logger.log(
-        s"""Got associations: $allParameters
-           |Got argmap: $dependencyArgMap
-           |""".stripMargin)
+        val dependencyArgMap = allParameters.iterator.flatten.map(_.key).zip(argss.iterator.flatten).toMap
+        logger.log(s"""Got associations: $allParameters
+                      |Got argmap: $dependencyArgMap
+                      |""".stripMargin)
 
-      val traitMethodDefs = methods.zip(argss.last).map {
-        case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
-      }
-      val producerMethodDefs = factoryMethods.map(generateFactoryMethod(dependencyArgMap)(_))
+        val traitMethodDefs = methods.zip(argss.last).map {
+          case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
+        }
+        val producerMethodDefs = factoryMethods.map(generateFactoryMethod(dependencyArgMap)(_))
 
-      mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, traitMethodDefs ++ producerMethodDefs)
+        mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, traitMethodDefs ++ producerMethodDefs)
     }
 
     val res = c.Expr[FactoryConstructor[T]](q"{ new ${weakTypeOf[FactoryConstructor[T]]}($provider) }")

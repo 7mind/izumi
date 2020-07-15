@@ -66,7 +66,6 @@ object Styler {
     }
   }
 
-
   class Pad(sub: Seq[Renderer], length: Int, pad: PadType, symbol: Char) extends Transformer(sub) {
     override protected def transform(out: String): String = {
       pad match {
@@ -131,4 +130,3 @@ object Styler {
   }
 
 }
-

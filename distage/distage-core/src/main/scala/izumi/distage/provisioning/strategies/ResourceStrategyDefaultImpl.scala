@@ -12,13 +12,14 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
-class ResourceStrategyDefaultImpl
-  extends ResourceStrategy {
+class ResourceStrategyDefaultImpl extends ResourceStrategy {
 
-  override def allocateResource[F[_]: TagK](context: ProvisioningKeyProvider,
-                                            @unused executor: OperationExecutor,
-                                            op: MonadicOp.AllocateResource,
-                                           )(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+  override def allocateResource[F[_]: TagK](
+    context: ProvisioningKeyProvider,
+    @unused executor: OperationExecutor,
+    op: MonadicOp.AllocateResource,
+  )(implicit F: DIEffect[F]
+  ): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor
 

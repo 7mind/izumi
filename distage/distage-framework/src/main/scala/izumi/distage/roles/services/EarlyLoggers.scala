@@ -23,13 +23,15 @@ object EarlyLoggers {
   }
 
   private def getRootLogLevel(parameters: RawEntrypointParams, defaultLogLevel: Log.Level): Level = {
-    parameters.findValue(Options.logLevelRootParam)
+    parameters
+      .findValue(Options.logLevelRootParam)
       .map(v => Log.Level.parseSafe(v.value, defaultLogLevel))
       .getOrElse(defaultLogLevel)
   }
 
   private def getLogFormatJson(parameters: RawEntrypointParams, defaultLogFormatJson: Boolean): Boolean = {
-    parameters.findValue(Options.logFormatParam)
+    parameters
+      .findValue(Options.logFormatParam)
       .map(_.value == "json")
       .getOrElse(defaultLogFormatJson)
   }

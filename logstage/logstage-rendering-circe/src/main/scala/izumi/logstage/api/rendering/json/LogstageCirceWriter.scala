@@ -40,7 +40,6 @@ class LogstageCirceWriter extends LogstageWriter {
       }
     }
 
-
     boundaries.flatMap {
       case _: Token.Struct =>
         Seq.empty

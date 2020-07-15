@@ -33,7 +33,8 @@ object TraitConstructor {
   implicit def materialize[T]: TraitConstructor[T] = macro TraitConstructorMacro.mkTraitConstructor[T]
 
   def wrapInitialization[A](init: => A)(implicit weakTag: WeakTag[A]): A = {
-    try init catch {
+    try init
+    catch {
       case e: Throwable =>
         val tpe = SafeType.unsafeGetWeak[A]
         throw new TraitInitializationFailedException(s"Failed to initialize trait $tpe. It may be an issue with the trait or a framework bug", tpe, e)

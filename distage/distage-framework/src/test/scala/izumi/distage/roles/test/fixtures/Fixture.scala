@@ -12,16 +12,16 @@ object Fixture {
   trait Dummy
 
   case class TestServiceConf2(
-                               strval: String,
-                             )
+    strval: String
+  )
 
   case class TestServiceConf(
-                              intval: Int,
-                              strval: String,
-                              overridenInt: Int,
-                              systemPropInt: Int,
-                              systemPropList: List[Int],
-                            )
+    intval: Int,
+    strval: String,
+    overridenInt: Int,
+    systemPropInt: Int,
+    systemPropList: List[Int],
+  )
 
   class XXX_ResourceEffectsRecorder {
     private val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
@@ -46,7 +46,6 @@ object Fixture {
     counter.onStart(this)
 
     override def close(): Unit = counter.onClose(this)
-
 
   }
 

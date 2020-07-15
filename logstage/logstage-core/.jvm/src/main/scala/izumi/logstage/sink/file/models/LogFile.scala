@@ -8,4 +8,3 @@ trait LogFile {
   def beforeDelete(): Unit
   def exists: Boolean
 }
-

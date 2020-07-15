@@ -65,7 +65,7 @@ trait IzJvm {
 
     Seq(
       classLoaderCp,
-      System.getProperty("java.class.path").split(':').toSeq
+      System.getProperty("java.class.path").split(':').toSeq,
     ).flatten
   }
 

@@ -91,8 +91,8 @@ object OpFormatter {
               }
 
               s"""${formatKey(p.target)} $pos := $kind(${forwardRefs.map(s => s"${formatKey(s)}: deferred").mkString(", ")}) {
-                |${format(proxied).shift(2)}
-                |}""".stripMargin
+                 |${format(proxied).shift(2)}
+                 |}""".stripMargin
 
             case ProxyOp.InitProxy(target, dependencies, _, origin) =>
               val pos = formatBindingPosition(origin)

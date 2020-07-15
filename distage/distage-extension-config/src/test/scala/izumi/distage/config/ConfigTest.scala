@@ -14,8 +14,10 @@ import scala.collection.immutable.ListSet
 
 final class ConfigTest extends AnyWordSpec {
   def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
-    p.copy(bindings = p.bindings ++
-      mkModule(ConfigFactory.load(path, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.noSystem())))
+    p.copy(bindings =
+      p.bindings ++
+      mkModule(ConfigFactory.load(path, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.noSystem()))
+    )
   }
 
   def mkModule(config: Config): AppConfigModule = {
@@ -97,11 +99,12 @@ final class ConfigTest extends AnyWordSpec {
 
       assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
       assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
-      assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
+      assert(
+        context.get[Service[ListCaseClass]].conf.mylist.head ==
         Set(
-          Wrapper(HostPort(80, "localhost"))
-        , Wrapper(HostPort(8080, "localhost"))
-        , Wrapper(HostPort(8888, "localhost"))
+          Wrapper(HostPort(80, "localhost")),
+          Wrapper(HostPort(8080, "localhost")),
+          Wrapper(HostPort(8888, "localhost")),
         )
       )
     }
@@ -126,11 +129,13 @@ final class ConfigTest extends AnyWordSpec {
       val context = Injector()
         .produce(mkConfigModule("custom-codec-test.conf")(TestConfigReaders.customCodecDefinition)).unsafeGet()
 
-      assert(context.get[Service[CustomCaseClass]].conf == CustomCaseClass(
-        CustomObject(453),
-        Map("a" -> CustomObject(453), "b" -> CustomObject(45)),
-        Map("x" -> List(CustomObject(45), CustomObject(453), CustomObject(1)))
-      ))
+      assert(
+        context.get[Service[CustomCaseClass]].conf == CustomCaseClass(
+          CustomObject(453),
+          Map("a" -> CustomObject(453), "b" -> CustomObject(45)),
+          Map("x" -> List(CustomObject(45), CustomObject(453), CustomObject(1))),
+        )
+      )
     }
 
     "resolve config options (missing field)" in {
@@ -180,4 +185,3 @@ final class ConfigTest extends AnyWordSpec {
   }
 
 }
-

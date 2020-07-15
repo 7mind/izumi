@@ -6,4 +6,3 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, W
 trait SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp]
 }
-

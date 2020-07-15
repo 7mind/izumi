@@ -16,7 +16,7 @@ import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import scala.util.Try
 
 class SimpleLoggerConfigurator(
-  exceptionLogger: IzLogger,
+  exceptionLogger: IzLogger
 ) {
 
   // TODO: this is a temporary solution until we finish full-scale logger configuration support
@@ -51,31 +51,33 @@ class SimpleLoggerConfigurator(
   }
 
   private[this] def readConfig(config: Config): SinksConfig = {
-    Try(config.getConfig("logger")).toEither
+    Try(config.getConfig("logger"))
+      .toEither
       .left.map(_ => Message("No `logger` section in config. Using defaults."))
-      .flatMap { config =>
-        SinksConfig.configReader.decodeConfigValue(config.root).toEither.left.map {
-          exception =>
-            Message(s"Failed to parse `logger` config section into ${classOf[SinksConfig] -> "type"}. Using defaults. $exception")
-        }
+      .flatMap {
+        config =>
+          SinksConfig.configReader.decodeConfigValue(config.root).toEither.left.map {
+            exception =>
+              Message(s"Failed to parse `logger` config section into ${classOf[SinksConfig] -> "type"}. Using defaults. $exception")
+          }
       } match {
-        case Left(errMessage) =>
-          exceptionLogger.log(Warn)(errMessage)
-          SinksConfig(Map.empty, None, None, None)
+      case Left(errMessage) =>
+        exceptionLogger.log(Warn)(errMessage)
+        SinksConfig(Map.empty, None, None, None)
 
-        case Right(value) =>
-          value
-      }
+      case Right(value) =>
+        value
+    }
   }
 }
 
 object SimpleLoggerConfigurator {
   final case class SinksConfig(
-                                levels: Map[String, List[String]],
-                                options: Option[RenderingOptions],
-                                json: Option[Boolean],
-                                layout: Option[String],
-                              )
+    levels: Map[String, List[String]],
+    options: Option[RenderingOptions],
+    json: Option[Boolean],
+    layout: Option[String],
+  )
   object SinksConfig {
     implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived
   }

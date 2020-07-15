@@ -73,10 +73,10 @@ object ConfigLoader {
       logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
 
       val loaded = allConfigs.map {
-        case s@ConfigSource.File(file) =>
+        case s @ ConfigSource.File(file) =>
           s -> Try(ConfigFactory.parseFile(file))
 
-        case s@ConfigSource.Resource(name, _) =>
+        case s @ ConfigSource.Resource(name, _) =>
           s -> Try(ConfigFactory.parseResources(name))
       }
 
@@ -96,7 +96,8 @@ object ConfigLoader {
           case (src, Success(c)) => src -> c
         })
 
-        val config = ConfigFactory.systemProperties()
+        val config = ConfigFactory
+          .systemProperties()
           .withFallback(folded)
           .resolve()
 

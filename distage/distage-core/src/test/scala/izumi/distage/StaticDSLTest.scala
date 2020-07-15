@@ -15,11 +15,14 @@ class StaticDSLTest extends AnyWordSpec {
         make[TestDependency0].from[TestImpl0]
         make[TestInstanceBinding].from(TestInstanceBinding())
 
-        make[TestClass].named("named.test.class")
+        make[TestClass]
+          .named("named.test.class")
           .from[TestClass]
-        make[TestDependency0].named("named.test.dependency.0")
+        make[TestDependency0]
+          .named("named.test.dependency.0")
           .from[TestDependency0]
-        make[TestInstanceBinding].named("named.test")
+        make[TestInstanceBinding]
+          .named("named.test")
           .from(TestInstanceBinding())
         many[JustTrait]
           .named("named.empty.set")
@@ -27,9 +30,11 @@ class StaticDSLTest extends AnyWordSpec {
           .add[Impl0]
           .add(new Impl1)
           .add[JustTrait]
-        many[JustTrait].named("named.set")
+        many[JustTrait]
+          .named("named.set")
           .add(new Impl2())
-        many[JustTrait].named("named.set")
+        many[JustTrait]
+          .named("named.set")
           .add[Impl3]
       }
 

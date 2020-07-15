@@ -25,4 +25,3 @@ class SafeTypeTest extends AnyWordSpec {
   }
 
 }
-

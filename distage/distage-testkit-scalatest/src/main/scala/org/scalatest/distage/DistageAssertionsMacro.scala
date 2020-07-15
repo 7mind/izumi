@@ -16,7 +16,7 @@ object DistageAssertionsMacro {
         context = c.asInstanceOf[c0.type]
       )(condition = arg.asInstanceOf[c0.Expr[Boolean]])(
         prettifier = prettifier.asInstanceOf[c0.Expr[Prettifier]],
-        pos        = pos.asInstanceOf[c0.Expr[Position]],
+        pos = pos.asInstanceOf[c0.Expr[Position]],
       ).asInstanceOf[c.Expr[Assertion]]
   }
 }

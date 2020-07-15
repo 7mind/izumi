@@ -58,7 +58,6 @@ package object bio extends BIO3Syntax with BIOSyntax {
     *     F.timeout(5.seconds)(F.forever(F.unit))
     *   }
     * }}}
-    *
     */
   @inline override final def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 

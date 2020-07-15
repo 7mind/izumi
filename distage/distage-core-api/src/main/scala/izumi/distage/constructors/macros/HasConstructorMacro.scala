@@ -40,7 +40,7 @@ object HasConstructorMacro {
               params.foldLeft(q"_root_.zio.Has.apply($headParam)") {
                 (expr, arg) => q"$expr.add($arg)"
               }
-            case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type ${targetType} in HasConstructorMacro")
+            case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type $targetType in HasConstructorMacro")
           }
         }
 

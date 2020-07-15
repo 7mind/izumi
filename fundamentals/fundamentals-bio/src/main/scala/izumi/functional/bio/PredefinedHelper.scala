@@ -10,7 +10,7 @@ object PredefinedHelper {
   type NotPredefined
 
   object Predefined {
-    type Of[A] = A { type IsPredefined = Predefined}
+    type Of[A] = A { type IsPredefined = Predefined }
     @inline def apply[A <: PredefinedHelper, A1 >: A](a: A): Predefined.Of[A1] = a.asInstanceOf[Predefined.Of[A1]]
   }
   object NotPredefined {

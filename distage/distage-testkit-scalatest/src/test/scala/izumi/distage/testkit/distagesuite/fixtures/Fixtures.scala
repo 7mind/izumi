@@ -16,9 +16,7 @@ import zio.Task
 
 import scala.collection.mutable
 
-object MonadPlugin extends PluginDef
-  with CatsDIEffectModule
-  with ZIODIEffectModule
+object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
 
 object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]
@@ -73,7 +71,6 @@ class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: M
 class ForcedRootProbe {
   var started = false
 }
-class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe)
-  extends DIResource.SelfNoClose[F, ForcedRootResource[F]] {
+class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe) extends DIResource.SelfNoClose[F, ForcedRootResource[F]] {
   override def acquire: F[Unit] = DIEffect[F].maybeSuspend(forcedRootProbe.started = true)
 }

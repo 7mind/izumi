@@ -10,5 +10,4 @@ trait IzJvm {
 
 }
 
-object IzJvm extends IzJvm {
-}
+object IzJvm extends IzJvm {}

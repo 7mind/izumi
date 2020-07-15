@@ -25,9 +25,15 @@ object Backend {
     * @param cleanup Whether delete the source file after rendering.
     * @return The (possibly relative) path of the rendered file.
     */
-  def render(graphVizDotML: GraphVizDotML,
-              engine: String = "dot", format: String = "pdf", fileName: String,
-             directory: String, view: Boolean = false, cleanUp: Boolean = false): String = {
+  def render(
+    graphVizDotML: GraphVizDotML,
+    engine: String = "dot",
+    format: String = "pdf",
+    fileName: String,
+    directory: String,
+    view: Boolean = false,
+    cleanUp: Boolean = false,
+  ): String = {
     val filePath = graphVizDotML.save(fileName, directory)
     val rendered = doRender(engine, format, filePath)
     if (cleanUp) new File(filePath).delete
@@ -44,55 +50,75 @@ object Backend {
     * @param cleanup Whether delete the source file after rendering.
     * @return The (possibly relative) path of the rendered file.
     */
-  def view(graphVizDotML: GraphVizDotML, engine: String = "dot", format: String = "pdf", fileName: String,
-           directory: String, cleanUp: Boolean = false): String = {
+  def view(graphVizDotML: GraphVizDotML, engine: String = "dot", format: String = "pdf", fileName: String, directory: String, cleanUp: Boolean = false): String = {
     render(graphVizDotML, engine, format, fileName, directory, view = true, cleanUp)
   }
 
-
   // http://www.graphviz.org/cgi-bin/man?dot
   private val ENGINES = Set(
-    "dot", "neato", "twopi", "circo", "fdp", "sfdp", "patchwork", "osage"
+    "dot",
+    "neato",
+    "twopi",
+    "circo",
+    "fdp",
+    "sfdp",
+    "patchwork",
+    "osage",
   )
 
   // http://www.graphviz.org/doc/info/output.html
   private val FORMATS = Set(
     "bmp",
-    "canon", "dot", "gv", "xdot", "xdot1.2", "xdot1.4",
+    "canon",
+    "dot",
+    "gv",
+    "xdot",
+    "xdot1.2",
+    "xdot1.4",
     "cgimage",
     "cmap",
     "eps",
     "exr",
     "fig",
-    "gd", "gd2",
+    "gd",
+    "gd2",
     "gif",
     "gtk",
     "ico",
-    "imap", "cmapx",
-    "imap_np", "cmapx_np",
+    "imap",
+    "cmapx",
+    "imap_np",
+    "cmapx_np",
     "ismap",
     "jp2",
-    "jpg", "jpeg", "jpe",
-    "pct", "pict",
+    "jpg",
+    "jpeg",
+    "jpe",
+    "pct",
+    "pict",
     "pdf",
     "pic",
-    "plain", "plain-ext",
+    "plain",
+    "plain-ext",
     "png",
     "pov",
     "ps",
     "ps2",
     "psd",
     "sgi",
-    "svg", "svgz",
+    "svg",
+    "svgz",
     "tga",
-    "tif", "tiff",
+    "tif",
+    "tiff",
     "tk",
-    "vml", "vmlz",
+    "vml",
+    "vmlz",
     "vrml",
     "wbmp",
     "webp",
     "xlib",
-    "x11"
+    "x11",
   )
 
   /**
@@ -121,16 +147,16 @@ object Backend {
     * @param filepath Path to the DOT source file to render.
     */
   @throws(classOf[RuntimeException])
-  def doRender(engine: String = "dot", format: String = "pdf",
-             filePath: String): String = {
+  def doRender(engine: String = "dot", format: String = "pdf", filePath: String): String = {
     val (args, rendered) = command(engine, format, filePath)
     import sys.process._
     try {
       args !
-    } catch { case _ : Throwable =>
-      val errorMsg = s"""failed to execute "$args", """ +
-        """"make sure the Graphviz executables are on your systems' path"""
-      throw new RuntimeException(errorMsg)
+    } catch {
+      case _: Throwable =>
+        val errorMsg = s"""failed to execute "$args", """ +
+          """"make sure the Graphviz executables are on your systems' path"""
+        throw new RuntimeException(errorMsg)
     }
     rendered
   }
@@ -152,14 +178,16 @@ object Backend {
         s"start $filePath"
 
       case OsType.Unknown =>
-        throw new IllegalArgumentException(s"Unsupported OS")    }
+        throw new IllegalArgumentException(s"Unsupported OS")
+    }
 
     import sys.process._
     try {
       Quirks.discard(command !)
-    } catch { case _ : Throwable =>
-      val errorMsg = s"failed to execute $command"
-      throw new RuntimeException(errorMsg)
+    } catch {
+      case _: Throwable =>
+        val errorMsg = s"failed to execute $command"
+        throw new RuntimeException(errorMsg)
     }
   }
 }

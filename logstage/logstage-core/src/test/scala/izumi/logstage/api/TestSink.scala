@@ -14,7 +14,6 @@ class TestSink(policy: Option[RenderingPolicy] = None) extends LogSink {
 
   import scala.jdk.CollectionConverters._
 
-
   def fetch(): Seq[Log.Entry] = {
     messages.asScala.toSeq
   }

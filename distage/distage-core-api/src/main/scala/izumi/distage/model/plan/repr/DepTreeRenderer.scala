@@ -62,7 +62,6 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
     }
   }
 
-
   private def renderKey(key: DIKey): String = {
     s"${minimizer.renderKey(key)} ${plan.index.get(key).map(op => renderOrigin(op.origin)).getOrElse("")}"
   }

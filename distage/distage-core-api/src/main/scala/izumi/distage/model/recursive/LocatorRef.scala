@@ -18,7 +18,3 @@ class LocatorRef(private[distage] val ref: AtomicReference[Either[Locator, Locat
   def get: Locator = ref.get().getOrElse(throw new MissingInstanceException("Stable locator is not ready yet", DIKey.get[Locator]))
   def unsafeUnstableMutableLocator(): Locator = ref.get().merge
 }
-
-
-
-

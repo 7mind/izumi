@@ -123,7 +123,8 @@ object TraitCases {
 
     abstract class XImpl(
       dependency2: Dependency2
-    ) extends X with XMixin {
+    ) extends X
+      with XMixin {
       override def get(): Result = defaultImpl(dependency2)
     }
   }

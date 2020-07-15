@@ -19,8 +19,7 @@ trait RoleProvider[F[_]] {
 
 object RoleProvider {
 
-  class Impl[F[_]: TagK]
-  (
+  class Impl[F[_]: TagK](
     logger: IzLogger,
     requiredRoles: Set[String],
   ) extends RoleProvider[F] {
@@ -52,17 +51,17 @@ object RoleProvider {
               Seq.empty
           }
       }.flatMap {
-        case (roleBinding, impltype) =>
-          getDescriptor(roleBinding.key.tpe) match {
-            case Some(d) =>
-              val runtimeClass = roleBinding.key.tpe.cls
-              val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-              Seq(RoleBinding(roleBinding, runtimeClass, impltype, d, src))
-            case None =>
-              logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
-              throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
-          }
-      }
+          case (roleBinding, impltype) =>
+            getDescriptor(roleBinding.key.tpe) match {
+              case Some(d) =>
+                val runtimeClass = roleBinding.key.tpe.cls
+                val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
+                Seq(RoleBinding(roleBinding, runtimeClass, impltype, d, src))
+              case None =>
+                logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
+                throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
+            }
+        }
     }
 
     private[this] def isRoleEnabled(b: RoleBinding): Boolean = {
@@ -80,10 +79,9 @@ object RoleProvider {
         Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
       } catch {
         case t: Throwable =>
-          logger.crit(
-            s"""Failed to reflect RoleDescriptor companion object for $role: $t
-               |Please create a companion object extending `izumi.distage.roles.model.RoleDescriptor` for `$roleClassName`
-               |""".stripMargin)
+          logger.crit(s"""Failed to reflect RoleDescriptor companion object for $role: $t
+                         |Please create a companion object extending `izumi.distage.roles.model.RoleDescriptor` for `$roleClassName`
+                         |""".stripMargin)
           None
       }
     }

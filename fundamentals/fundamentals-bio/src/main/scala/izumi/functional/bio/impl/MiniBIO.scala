@@ -28,7 +28,7 @@ import scala.language.implicitConversions
   *   val time: Long = new MyBIOClock().nanoTime
   *   println(time)
   * }}}
-  * */
+  */
 sealed trait MiniBIO[+E, +A] {
   final def run(): BIOExit[E, A] = {
 

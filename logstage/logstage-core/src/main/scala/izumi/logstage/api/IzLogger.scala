@@ -7,7 +7,8 @@ import izumi.logstage.api.rendering.AnyEncoded
 class IzLogger(
   override val router: LogRouter,
   override val customContext: Log.CustomContext,
-) extends RoutingLogger with AbstractMacroLogger {
+) extends RoutingLogger
+  with AbstractMacroLogger {
 
   override def withCustomContext(context: CustomContext): IzLogger = new IzLogger(router, customContext + context)
   final def withCustomContext(context: (String, AnyEncoded)*): IzLogger = withCustomContextMap(context.toMap)
@@ -20,7 +21,3 @@ class IzLogger(
 object IzLogger extends IzLoggerConvenienceApi[IzLogger] {
   override protected def make(r: LogRouter, context: CustomContext): IzLogger = new IzLogger(r, context)
 }
-
-
-
-

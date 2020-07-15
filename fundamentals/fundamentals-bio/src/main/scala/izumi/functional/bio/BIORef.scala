@@ -14,11 +14,11 @@ trait BIORef[+F[_, _], A] {
 object BIORef {
   def fromZIO[A](ref: Ref[A]): BIORef[IO, A] =
     new BIORef[IO, A] {
-      override def get: IO[Nothing, A]          = ref.get
+      override def get: IO[Nothing, A] = ref.get
       override def set(a: A): IO[Nothing, Unit] = ref.set(a)
 
       override def modify[B](f: A => (B, A)): IO[Nothing, B] = ref.modify(f)
-      override def update(f: A => A): IO[Nothing, A]         = ref.updateAndGet(f)
-      override def update_(f: A => A): IO[Nothing, Unit]     = ref.update(f)
+      override def update(f: A => A): IO[Nothing, A] = ref.updateAndGet(f)
+      override def update_(f: A => A): IO[Nothing, Unit] = ref.update(f)
     }
 }

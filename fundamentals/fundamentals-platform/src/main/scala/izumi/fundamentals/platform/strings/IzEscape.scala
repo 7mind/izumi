@@ -16,7 +16,6 @@ class IzEscape(_toEscape: Set[Char], escapeChar: Char) {
       }
     }
 
-
     out.toString()
   }
 

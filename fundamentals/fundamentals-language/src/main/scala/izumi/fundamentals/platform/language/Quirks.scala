@@ -7,7 +7,7 @@ import scala.language.implicitConversions
   * and for clarity of course!
   *
   * @see also [[izumi.fundamentals.platform.language.unused]]
-  **/
+  */
 object Quirks {
 
   @inline final def discard(@izumi.fundamentals.platform.language.unused() trash: Any*): Unit = ()

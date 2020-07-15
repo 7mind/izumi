@@ -40,12 +40,11 @@ trait ParserDef {
   }
 }
 
-
 object ParserDef {
 
   object Empty extends ParserDef
 
-  final case class ArgDef private[cli](name: ArgNameDef, doc: String, valueDoc: Option[String])
+  final case class ArgDef private[cli] (name: ArgNameDef, doc: String, valueDoc: Option[String])
 
   object ArgDef {
     implicit final class ParameterDefExt(val parameter: ArgDef) extends AnyVal {
@@ -56,7 +55,7 @@ object ParserDef {
     }
   }
 
-  final case class ArgNameDef private[cli](long: String, short: Option[String]) {
+  final case class ArgNameDef private[cli] (long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
 
     def matches(name: String): Boolean = all.contains(name)

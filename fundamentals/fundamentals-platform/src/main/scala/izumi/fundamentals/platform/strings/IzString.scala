@@ -50,7 +50,6 @@ final class IzString(private val s: String) extends AnyVal {
     }
   }
 
-
   @inline final def leftEllipsed(limit: Int, ellipsis: String): String = {
     val elen = ellipsis.length
     if (s.length > limit && s.length > elen) {
@@ -114,15 +113,11 @@ final class IzString(private val s: String) extends AnyVal {
   }
 
   def camelToUnderscores: String = {
-    "[A-Z\\d]".r.replaceAllIn(s, { m =>
-      "_" + m.group(0).toLowerCase()
-    })
+    "[A-Z\\d]".r.replaceAllIn(s, m => "_" + m.group(0).toLowerCase())
   }
 
   def underscoreToCamel: String = {
-    "_([a-z\\d])".r.replaceAllIn(s, { m =>
-      m.group(1).toUpperCase()
-    })
+    "_([a-z\\d])".r.replaceAllIn(s, m => m.group(1).toUpperCase())
   }
 
   def splitFirst(separator: Char): (String, String) = {
@@ -163,10 +158,11 @@ final class IzString(private val s: String) extends AnyVal {
     }
 
     import IzString._
-    lines.zipWithIndex
+    lines
+      .zipWithIndex
       .map {
         case (l, i) =>
-          s"${(i+1).toString.leftPad(pad)}: $l"
+          s"${(i + 1).toString.leftPad(pad)}: $l"
       }
       .mkString("\n")
   }
@@ -203,7 +199,7 @@ final class IzStringIterable[A](private val ss: Iterable[String]) extends AnyVal
 
 final class IzStringBytes(private val s: Iterable[Byte]) extends AnyVal {
   def toHex: String = {
-    s.foldLeft(""){
+    s.foldLeft("") {
       case (str, b) => str ++ String.format("%02x", Byte.box(b))
     }.toUpperCase()
   }

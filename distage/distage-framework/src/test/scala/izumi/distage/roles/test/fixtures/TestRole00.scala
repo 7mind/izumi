@@ -29,8 +29,7 @@ object TestTask00 extends RoleDescriptor {
 
 object roles {
 
-  class TestRole00[F[_]: DIEffect]
-  (
+  class TestRole00[F[_]: DIEffect](
     logger: IzLogger,
     notCloseable: NotCloseable,
     val conf: TestServiceConf,
@@ -64,8 +63,7 @@ object roles {
     final case class IntegrationOnlyCfg2(value: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck)
-    final class TestRole00ResourceIntegrationCheck
-    (
+    final class TestRole00ResourceIntegrationCheck(
       private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
     ) extends IntegrationCheck {
@@ -109,9 +107,9 @@ object TestRole02 extends RoleDescriptor {
 }
 
 class TestRole03[F[_]: DIEffect](
-                                  logger: IzLogger
-                                , axisComponent: AxisComponent
-                                ) extends RoleService[F] {
+  logger: IzLogger,
+  axisComponent: AxisComponent,
+) extends RoleService[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole03] started: $roleParameters, $freeArgs")
     assert(axisComponent == AxisComponentCorrect, TestRole03.expectedError)
@@ -128,9 +126,9 @@ object TestRole03 extends RoleDescriptor {
 }
 
 class TestRole04[F[_]: DIEffect](
-                                  logger: IzLogger
-                                , listconf: ListConf
-                                ) extends RoleService[F] {
+  logger: IzLogger,
+  listconf: ListConf,
+) extends RoleService[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole04] started: $roleParameters, $freeArgs")
     assert(listconf.ints == List(3, 2, 1), listconf.ints)
@@ -144,4 +142,3 @@ class TestRole04[F[_]: DIEffect](
 object TestRole04 extends RoleDescriptor {
   override final val id = "testrole04"
 }
-

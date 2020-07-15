@@ -55,7 +55,7 @@ import scala.language.implicitConversions
   */
 abstract class DistageBIOEnvSpecScalatest[FR[-_, +_, +_]](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, ?]]
-    with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
+  with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
 
   protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper3[FR] = {
     new DSWordSpecStringWrapper3(context, distageSuiteName, distageSuiteId, s, this, testEnv)

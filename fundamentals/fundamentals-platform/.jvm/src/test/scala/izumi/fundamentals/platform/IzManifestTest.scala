@@ -27,5 +27,4 @@ class IzManifestTest extends AnyWordSpec {
     }
   }
 
-
 }

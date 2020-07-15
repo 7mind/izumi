@@ -121,7 +121,6 @@ object BIOSyntax {
       *     .sandboxThrowable
       *     .catchAll(_ => BIO(println("Caught error!")))
       * }}}
-      *
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.leftMap(F.sandbox(r))(_.toThrowable)

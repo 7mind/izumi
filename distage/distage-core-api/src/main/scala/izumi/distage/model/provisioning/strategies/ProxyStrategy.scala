@@ -9,4 +9,3 @@ trait ProxyStrategy {
   def makeProxy(context: ProvisioningKeyProvider, executor: WiringExecutor, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp]
   def initProxy[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): F[Seq[NewObjectOp]]
 }
-

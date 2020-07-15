@@ -92,7 +92,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     _setDSL(setRef)
   }
 
-  /** Same as `make[T].from(implicitly[T])` **/
+  /** Same as `make[T].from(implicitly[T])` * */
   final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
     val ref = _registered(new SingletonRef(Bindings.binding(instance)))
     _bindDSLAfterFrom(ref)

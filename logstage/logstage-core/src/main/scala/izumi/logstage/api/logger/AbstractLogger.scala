@@ -17,7 +17,7 @@ trait AbstractLogger {
     * Construct Entry and log if `logLevel` is above the threshold configured for this logger.
     *
     * Does not allocate Entry if `logLevel` is below the requirement
-    * */
+    */
   @inline final def log(logLevel: Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): Unit = {
     if (acceptable(LoggerId(pos.get.applicationPointId), logLevel)) {
       unsafeLog(Log.Entry.create(logLevel, messageThunk)(pos))

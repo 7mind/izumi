@@ -20,8 +20,8 @@ object ProvisionOperationVerifier {
   }
 
   class Default(
-                 mirror: MirrorProvider,
-               ) extends ProvisionOperationVerifier {
+    mirror: MirrorProvider
+  ) extends ProvisionOperationVerifier {
 
     def verify(target: DIKey, keys: scala.collection.Set[DIKey], value: Any, clue: String): Unit = {
       if (keys.contains(target)) throw DuplicateInstancesException(target)

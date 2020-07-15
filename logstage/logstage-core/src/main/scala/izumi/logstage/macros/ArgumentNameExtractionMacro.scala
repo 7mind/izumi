@@ -34,12 +34,11 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
        |   logger.info($${camelCaseName-> ' '})
        |""".stripMargin
 
-
   private[macros] def recoverArgNames(args: Seq[Tree]): c.Expr[List[LogArg]] = {
     object Arrow {
       def unapply(arg: Tree): Option[TypeApply] = {
         arg match {
-          case t@TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())) => Some(t)
+          case t @ TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())) => Some(t)
           case _ => None
         }
       }
@@ -48,20 +47,21 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     object ArrowPair {
       def unapply(arg: Tree): Option[(Tree, Tree)] = {
         arg match {
-          case Apply(TypeApply(
-          Select(
-          Apply(Arrow(_), leftExpr :: Nil),
-          _ /*TermName("$minus$greater")*/
-          )
-          , List(TypeTree())
-          )
-          , List(rightExpr)
-          ) => Some((leftExpr, rightExpr))
+          case Apply(
+                TypeApply(
+                  Select(
+                    Apply(Arrow(_), leftExpr :: Nil),
+                    _, /*TermName("$minus$greater")*/
+                  ),
+                  List(TypeTree()),
+                ),
+                List(rightExpr),
+              ) =>
+            Some((leftExpr, rightExpr))
           case _ => None
         }
       }
     }
-
 
     object ArrowArg {
       def unapply(arg: Tree): Option[(Tree, ExtractedName)] = {
@@ -70,7 +70,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
             Some((expr, NChar(char)))
           case ArrowPair(expr, Literal(Constant(name: String))) => // ${value -> "name"}
             Some((expr, NString(name)))
-          case ArrowPair(expr@NameSeq(names), Literal(Constant(null))) => // ${value -> null}
+          case ArrowPair(expr @ NameSeq(names), Literal(Constant(null))) => // ${value -> null}
             Some((expr, NString(names.last)))
           case _ =>
             None
@@ -93,7 +93,6 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
       def unapply(arg: Tree): Option[Seq[String]] = {
         extract(arg, Seq.empty)
       }
-
 
       @tailrec
       private[this] def extract(arg: Tree, acc: Seq[String]): Option[Seq[String]] = {
@@ -147,12 +146,14 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
                 reifiedExtracted(tree, Seq(ch.toString))
             }
           case NChar(ch) =>
-            c.abort(param.pos,
+            c.abort(
+              param.pos,
               s"""Unsupported mapping: $ch
                  |
                  |You have the following ways to assign a name:
                  |$example
-                 |""".stripMargin)
+                 |""".stripMargin,
+            )
 
           case NString(s) =>
             reifiedExtracted(tree, Seq(s))
@@ -161,25 +162,29 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
       case HiddenArrowArg(tree, name) => // ${x -> "name" -> null }
         reifiedExtractedHidden(tree, name.str)
 
-      case param @ (t@Literal(Constant(v))) => // ${2+2}
-        c.warning(t.pos,
+      case param @ (t @ Literal(Constant(v))) => // ${2+2}
+        c.warning(
+          t.pos,
           s"""Constant expression as a logger argument: $v, this makes no sense.
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |$example
-             |""".stripMargin)
+             |""".stripMargin,
+        )
 
         reifiedPrefixedValue(param, param, "UNNAMED")
 
       case v =>
-        c.warning(v.pos,
+        c.warning(
+          v.pos,
           s"""Expression as a logger argument: $v
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |$example
              |
              |Tree: ${showRaw(v)}
-             |""".stripMargin)
+             |""".stripMargin,
+        )
         reifiedPrefixedValue(Literal(Constant(showCode(v))), v, "EXPRESSION")
     }
 

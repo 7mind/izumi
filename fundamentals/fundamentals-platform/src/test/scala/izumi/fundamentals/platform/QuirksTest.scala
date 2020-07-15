@@ -31,5 +31,3 @@ class QuirksTest extends AnyWordSpec {
     }
   }
 }
-
-

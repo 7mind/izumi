@@ -25,7 +25,7 @@ abstract class BundledRolesModule[F[_]: TagK] extends ModuleDef {
       IzArtifactId(UNDEFINED, UNDEFINED),
       ArtifactVersion(UNDEFINED),
       BuildStatus(UNDEFINED, UNDEFINED, UNDEFINED, ZonedDateTime.ofInstant(Instant.EPOCH, IzTime.TZ_UTC)),
-      GitStatus(UNDEFINED, repoClean = false, UNDEFINED)
+      GitStatus(UNDEFINED, repoClean = false, UNDEFINED),
     )
   }
 }
@@ -36,4 +36,3 @@ object BundledRolesModule {
     new BundledRolesModule { override def versionString: String = v }
   }
 }
-

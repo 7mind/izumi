@@ -14,7 +14,8 @@ class CatsConversionTest extends AnyWordSpec {
 
   "pickup conversion to Sync" in {
     def conv[F[+_, +_]: BIO]: F[Throwable, Int] = {
-      Ref.of(0)
+      Ref
+        .of(0)
         .flatMap(_.get)
     }
     conv[zio.IO]

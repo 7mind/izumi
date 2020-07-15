@@ -61,26 +61,25 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.Wiring.Factory.FactoryMethod = {
-      val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
-      val resultType = ReflectionUtil.norm(u.u: u.u.type) {
-        resultOfFactoryMethod(factoryMethodSymb)
-          .asSeenFrom(tpe, tpe.typeSymbol)
-      }
+    val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
+    val resultType = ReflectionUtil.norm(u.u: u.u.type) {
+      resultOfFactoryMethod(factoryMethodSymb)
+        .asSeenFrom(tpe, tpe.typeSymbol)
+    }
 
-      val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
-      val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
+    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
+    val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
 
-      val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
-      if (excessiveTypes.nonEmpty) {
-        throw new UnsupportedDefinitionException(
-          s"""Augmentation failure.
-             |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
-             |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
-             |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
-             |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
-      }
+    val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
+    if (excessiveTypes.nonEmpty) {
+      throw new UnsupportedDefinitionException(s"""Augmentation failure.
+                                                  |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
+                                                  |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
+                                                  |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
+                                                  |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
+    }
 
-      Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
+    Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
   }
   override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(parameterToAssociation))
@@ -125,7 +124,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       val typeRef = ReflectionUtil.toTypeRef[u.u.type](tpe)
       typeRef
         .map(_.pre)
-        .filterNot(m =>  m.termSymbol.isModule && m.termSymbol.isStatic)
+        .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
         .map(v => DIKey.TypeKey(SafeType.create(v)))
     }
   }
@@ -141,7 +140,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def traitMethods(tpe: TypeNative): List[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
-    val declaredAbstractMethods = tpe.members
+    val declaredAbstractMethods = tpe
+      .members
       .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(isWireableMethod)
       .map(_.asMethod)
@@ -183,10 +183,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     def unapply(arg: TypeNative): Option[(List[SymbNative], List[MethodSymbNative])] = {
       Some(arg)
         .filter(isFactory)
-        .map(f =>
-          (f.members.filter(isFactoryMethod).toList,
-            f.members.filter(isWireableMethod).map(_.asMethod).toList,
-          ))
+        .map(f => (f.members.filter(isFactoryMethod).toList, f.members.filter(isWireableMethod).map(_.asMethod).toList))
     }
   }
 
@@ -222,8 +219,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def isConcrete(tpe: TypeNative): Boolean = {
     tpe match {
-      case _: u.u.RefinedTypeApi | u.u.definitions.AnyTpe | u.u.definitions.AnyRefTpe
-           | u.u.definitions.NothingTpe | u.u.definitions.NullTpe =>
+      case _: u.u.RefinedTypeApi | u.u.definitions.AnyTpe | u.u.definitions.AnyRefTpe | u.u.definitions.NothingTpe | u.u.definitions.NullTpe =>
         // 1. refinements never have a valid constructor unless they are tautological and can be substituted by a class
         // 2. ignoring non-runtime refinements (type members, covariant overrides) leads to unsoundness
         // rt.parents.size == 1 && !rt.decls.exists(_.isAbstract)
@@ -287,4 +283,3 @@ object ReflectionProviderDefaultImpl {
     }
   }
 }
-

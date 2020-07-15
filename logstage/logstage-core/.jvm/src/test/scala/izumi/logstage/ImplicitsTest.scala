@@ -38,11 +38,11 @@ class ImplicitsTest extends AnyWordSpec {
     val log: LogBIO[zio.IO] = LogBIO.fromLogger(IzLogger())
     log.discard()
 
-    def logIO[F[+ _, + _]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
+    def logIO[F[+_, +_]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
 
     logIO[zio.IO]
 
-    def logBIO[F[+ _, + _]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
+    def logBIO[F[+_, +_]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
 
     logBIO[zio.IO]
   }
@@ -63,8 +63,7 @@ class ImplicitsTest extends AnyWordSpec {
     implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger(IzLogger())
     log0.discard()
 
-    assertTypeError(
-      """
+    assertTypeError("""
     for {
       _ <- logIO()
       _ <- logThrowable()
@@ -77,9 +76,9 @@ class ImplicitsTest extends AnyWordSpec {
 
   def logIO[F[_]: LogIO](): F[Unit] = LogIO[F].info("abc")
 
-  def logThrowable[F[+ _, _]]()(implicit f: LogIO[F[Throwable, ?]]): F[Throwable, Unit] = f.info("cba")
+  def logThrowable[F[+_, _]]()(implicit f: LogIO[F[Throwable, ?]]): F[Throwable, Unit] = f.info("cba")
 
-  def expectThrowable[F[+ _, _]](f: F[Throwable, Unit]): F[Throwable, Unit] = f
+  def expectThrowable[F[+_, _]](f: F[Throwable, Unit]): F[Throwable, Unit] = f
 
 }
 

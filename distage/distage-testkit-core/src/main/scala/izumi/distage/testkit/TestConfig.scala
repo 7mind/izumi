@@ -11,7 +11,6 @@ import izumi.logstage.api.Log
 /**
   * General options:
   *
-  *
   * @param pluginConfig          Source of module definitions from which to build object graphs for each test.
   *                              Changes to [[PluginConfig]] that alter implementations of components in [[memoizationRoots]]
   *                              OR their dependencies will cause the test to execute in a new memoization environment,
@@ -47,9 +46,7 @@ import izumi.logstage.api.Log
   * @param bootstrapOverrides    Same as [[moduleOverrides]], but for [[BootstrapModule]]
   *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
-  *
   * Parallelism options:
-  *
   *
   * @param parallelEnvs          [[ParallelLevel]] of distinct memoization environments run, default: [[ParallelLevel.Unlimited]].
   *                              Sequential envs will run in sequence after the parallel ones.
@@ -60,9 +57,7 @@ import izumi.logstage.api.Log
   * @param parallelTests         [[ParallelLevel]] of test cases run, default: [[ParallelLevel.Unlimited]].
   *                              Sequential tests will run in sequence after the parallel ones.
   *
-  *
   * Other options, Tests with different other options will run in distinct memoization environments:
-  *
   *
   * @param configBaseName        Search for config in HOCON resource files with names `$configBaseName.conf`,
   *                              `$configBaseName-reference.conf`, `$configBaseName-reference-dev.conf`
@@ -71,14 +66,13 @@ import izumi.logstage.api.Log
   * @param configOverrides       Overriding definitions on top of main loaded config, default `None`
   *
   * @param bootstrapFactory      [[BootstrapFactory]], controls config loading & initial modules
-
+  *
   * @param planningOptions       [[PlanningOptions]], debug options for [[distage.Planner]]
   *
   * @param logLevel              Log level for the [[logstage.IzLogger]] used in testkit and provided to the tests (will be overriden by plugin / module bindings if exist)
   *
   * @param debugOutput           Print testkit debug messages, including those helping diagnose memoization environment issues,
   *                              default: `false`, also controlled by [[DebugProperties.`izumi.distage.testkit.debug`]] system property
-  *
   */
 final case class TestConfig(
   // general options

@@ -7,9 +7,9 @@ private[distage] trait WithDISafeType {
 
   // TODO: hotspot, hashcode on keys is inefficient
   case class SafeType private (
-                                private[reflection] val typeNative: TypeNative,
-                                private[WithDISafeType] val tag: LightTypeTag,
-                              ) {
+    private[reflection] val typeNative: TypeNative,
+    private[WithDISafeType] val tag: LightTypeTag,
+  ) {
 
     override final lazy val hashCode: Int = tag.hashCode()
     override final lazy val toString: String = tag.repr

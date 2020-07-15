@@ -33,7 +33,6 @@ trait ContainerDef {
     * {{{
     *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
     * }}}
-    *
     */
   final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
     tag.discard()

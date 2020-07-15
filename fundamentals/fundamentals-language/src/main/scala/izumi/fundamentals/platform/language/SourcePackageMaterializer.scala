@@ -24,7 +24,7 @@ object SourcePackageMaterializer {
         current = current.owner
       }
       val renderedPath = path.mkString(".")
-      val pathExpr = c.Expr[String](q"${renderedPath}")
+      val pathExpr = c.Expr[String](q"$renderedPath")
 
       reify {
         SourcePackageMaterializer(SourcePackage(pathExpr.splice))

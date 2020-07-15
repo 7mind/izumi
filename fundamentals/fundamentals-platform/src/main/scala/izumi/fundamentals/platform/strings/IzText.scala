@@ -18,25 +18,32 @@ object IzText {
 
     val maxesM = maxes.toMap
 
-    val splitter = Row(maxes.map {
-      case (_, len) =>
-        "-" * len
-    }, "-+-")
+    val splitter = Row(
+      maxes.map {
+        case (_, len) =>
+          "-" * len
+      },
+      "-+-",
+    )
 
-    val boundary = Row(maxes.map {
-      case (_, len) =>
-        "-" * len
-    }, "---")
-
+    val boundary = Row(
+      maxes.map {
+        case (_, len) =>
+          "-" * len
+      },
+      "---",
+    )
 
     val mainRows = bparts.map(p => Row(p, splitChar))
 
-    (List(boundary) ++ List(Row(bheader, splitChar)) ++ List(splitter) ++ mainRows ++ List(boundary)).map {
-      row =>
-        row.parts.zipWithIndex.map {
-          case (v, cnum) =>
-            v.padTo(maxesM(cnum), ' ')
-        }.mkString(row.splitter)
-    }.mkString("\n")
+    (List(boundary) ++ List(Row(bheader, splitChar)) ++ List(splitter) ++ mainRows ++ List(boundary))
+      .map {
+        row =>
+          row
+            .parts.zipWithIndex.map {
+              case (v, cnum) =>
+                v.padTo(maxesM(cnum), ' ')
+            }.mkString(row.splitter)
+      }.mkString("\n")
   }
 }

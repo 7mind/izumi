@@ -28,8 +28,8 @@ class StaticPluginCheckerTest extends AnyWordSpec {
     assertTypeError("""StaticPluginChecker.checkWithConfig[StaticTestPlugin, LogstageModuleRequirements]("missing:tag", ".*check-test-good.conf")""")
   }
 
-    // FIXME: can't parse config ahead of time anymore ???
-    // FIXME: should've failed on trying to decode "abc" to Int
+  // FIXME: can't parse config ahead of time anymore ???
+  // FIXME: should've failed on trying to decode "abc" to Int
   "progression test: can't check when config is false after 0.10" in {
     intercept[TestFailedException] {
       assertTypeError("""StaticPluginChecker.checkWithConfig[StaticTestPlugin, LogstageModuleRequirements]("test:x", ".*check-test-bad.conf")""")

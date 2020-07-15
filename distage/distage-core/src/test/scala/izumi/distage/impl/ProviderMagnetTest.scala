@@ -22,10 +22,10 @@ class ProviderMagnetTest extends AnyWordSpec {
   "Annotation extracting WrappedFunction" should {
     "can't handle opaque function vals, that hide underlying method reference" in {
       val fn = ProviderMagnet(locargannfnvalerased).get
-      assert(fn.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(fn.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
 
       val fn2 = ProviderMagnet(testVal2).get
-      assert(fn2.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(fn2.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
     }
 
     "produce correct DI keys for anonymous inline lambda" in {
@@ -52,7 +52,7 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "handle opaque local references with type annotations" in {
-      def loctypeannfn(x: Int @Id("loctypeann")): Unit = {val _ = x}
+      def loctypeannfn(x: Int @Id("loctypeann")): Unit = { val _ = x }
 
       val fn = ProviderMagnet(loctypeannfn _).get
 
@@ -60,7 +60,7 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "handle opaque local references with argument annotations" in {
-      def locargannfn(@Id("locargann") x: Int): Unit = {val _ = x}
+      def locargannfn(@Id("locargann") x: Int): Unit = { val _ = x }
 
       val fn = ProviderMagnet(locargannfn _).get
       assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
@@ -101,7 +101,7 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "ProviderMagnet can work with vals" in {
-      def triggerConversion[R](x: ProviderMagnet[R]): Int = {val _ = x; return 5}
+      def triggerConversion[R](x: ProviderMagnet[R]): Int = { val _ = x; return 5 }
 
       assert(triggerConversion(testVal3) == 5)
     }
@@ -195,7 +195,9 @@ class ProviderMagnetTest extends AnyWordSpec {
     "handle opaque lambdas with generic parameters" in {
       def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
 
-      val fn = ProviderMagnet.apply { x: Int => locgenfn(x) }.get
+      val fn = ProviderMagnet.apply {
+        x: Int => locgenfn(x)
+      }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("x"))
     }
@@ -236,7 +238,7 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "handle generic parameters with Tag" in {
-      def fn[T: Tag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
+      def fn[T: Tag] = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
 
       assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
       assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))
@@ -267,9 +269,10 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "map2 is correct" in {
-      val fn = ProviderMagnet.pure(5).map2(ProviderMagnet.identity[String])(
-        (i: Int, s: String) => StringContext(s + i)
-      )
+      val fn = ProviderMagnet
+        .pure(5).map2(ProviderMagnet.identity[String])(
+          (i: Int, s: String) => StringContext(s + i)
+        )
 
       assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
       assert(fn.get.parameters.size == 1)
@@ -278,9 +281,10 @@ class ProviderMagnetTest extends AnyWordSpec {
     }
 
     "flatAp is correct" in {
-      val fn = ProviderMagnet.pure(5).flatAp(
-        (s: String) => (i: Int) => StringContext(s + i)
-      )
+      val fn = ProviderMagnet
+        .pure(5).flatAp(
+          (s: String) => (i: Int) => StringContext(s + i)
+        )
 
       assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
       assert(fn.get.parameters.size == 1)
@@ -390,4 +394,3 @@ class ProviderMagnetTest extends AnyWordSpec {
   }
 
 }
-

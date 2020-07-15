@@ -5,7 +5,8 @@ import izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox
 
-trait StaticDIUniverse extends DIUniverse { self =>
+trait StaticDIUniverse extends DIUniverse {
+  self =>
   override val u: SingletonUniverse
 
   override type IdContract[T] = IdContractImpl[T]
@@ -20,7 +21,8 @@ object StaticDIUniverse {
   type Aux[U] = StaticDIUniverse { val u: U }
 
   def apply(c: blackbox.Context): StaticDIUniverse.Aux[c.universe.type] = {
-    new StaticDIUniverse { self =>
+    new StaticDIUniverse {
+      self =>
       override val u: c.universe.type = c.universe
       override protected val typeOfDistageAnnotation: TypeNative = u.typeOf[DIStageAnnotation]
       override implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]

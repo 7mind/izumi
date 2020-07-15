@@ -17,17 +17,15 @@ object Log {
 
   object Level {
 
-    def all : Set[Level] = Set(Info, Warn, Trace, Crit, Debug, Error)
+    def all: Set[Level] = Set(Info, Warn, Trace, Crit, Debug, Error)
 
     private final val labelMap =
       all.map(l => l.toString.toLowerCase -> l).toMap
 
-    def parse(lvl:String): Level =
-      labelMap.getOrElse(lvl.toLowerCase, {
-        throw new IllegalArgumentException(s"Unknown log level $lvl")
-      })
+    def parse(lvl: String): Level =
+      labelMap.getOrElse(lvl.toLowerCase, throw new IllegalArgumentException(s"Unknown log level $lvl"))
 
-    def parseSafe(lvl:String, default: Level): Level = {
+    def parseSafe(lvl: String, default: Level): Level = {
       labelMap
         .find { case (k, _) => k.toLowerCase.startsWith(lvl.toLowerCase) || lvl.toLowerCase.startsWith(k.toLowerCase) }
         .map(_._2)
@@ -112,10 +110,10 @@ object Log {
   final case class DynamicContext(level: Level, threadData: ThreadData, tsMillis: Long)
 
   final case class Context(
-                            static: StaticExtendedContext
-                          , dynamic: DynamicContext
-                          , customContext: CustomContext
-                          ) {
+    static: StaticExtendedContext,
+    dynamic: DynamicContext,
+    customContext: CustomContext,
+  ) {
     def ++(that: CustomContext): Context = {
       copy(customContext = customContext + that)
     }
@@ -169,7 +167,7 @@ object Log {
         val thatHead = thatHeads.head
 
         val parts = (thisInit :+ (thisTail + thatHead)) ++ thatTail
-        Message(StringContext(parts: _ *), args ++ that.args)
+        Message(StringContext(parts: _*), args ++ that.args)
       }
     }
     def +(that: Message): Message = ++(that)

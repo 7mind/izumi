@@ -1,13 +1,13 @@
 package izumi.distage.plugins
 
 final case class PluginConfig(
-                             packagesEnabled: Seq[String],
-                             packagesDisabled: Seq[String],
-                             cachePackages: Boolean,
-                             debug: Boolean,
-                             merges: Seq[PluginBase],
-                             overrides: Seq[PluginBase],
-                           ) {
+  packagesEnabled: Seq[String],
+  packagesDisabled: Seq[String],
+  cachePackages: Boolean,
+  debug: Boolean,
+  merges: Seq[PluginBase],
+  overrides: Seq[PluginBase],
+) {
   def enablePackages(packagesEnabled: Seq[String]): PluginConfig = copy(packagesEnabled = this.packagesEnabled ++ packagesEnabled)
   def enablePackage(packageEnabled: String): PluginConfig = enablePackages(Seq(packageEnabled))
 
@@ -36,5 +36,3 @@ object PluginConfig {
 
   private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.asBoolean(true)
 }
-
-

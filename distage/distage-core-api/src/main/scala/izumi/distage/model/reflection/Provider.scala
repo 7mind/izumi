@@ -57,9 +57,9 @@ trait Provider {
     } else {
       throw new UnsafeCallArgsMismatched(
         message = s"""Mismatched arguments for unsafe call:
-          | ${if (!typesOk) "Wrong types!" else ""}
-          | ${if (!countOk) s"Expected number of arguments $arity, but got ${refs.size}" else ""}
-          |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${newArgs.mkString(",")})""".stripMargin,
+                     | ${if (!typesOk) "Wrong types!" else ""}
+                     | ${if (!countOk) s"Expected number of arguments $arity, but got ${refs.size}" else ""}
+                     |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${newArgs.mkString(",")})""".stripMargin,
         expected = argTypes,
         actual = types,
         actualValues = newArgs,

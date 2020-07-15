@@ -23,21 +23,25 @@ import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 // TODO: add introspection capabilities
-class PlanInterpreterDefaultRuntimeImpl
-(
-  setStrategy: SetStrategy
-, proxyStrategy: ProxyStrategy
-, providerStrategy: ProviderStrategy
-, importStrategy: ImportStrategy
-, instanceStrategy: InstanceStrategy
-, effectStrategy: EffectStrategy
-, resourceStrategy: ResourceStrategy
+class PlanInterpreterDefaultRuntimeImpl(
+  setStrategy: SetStrategy,
+  proxyStrategy: ProxyStrategy,
+  providerStrategy: ProviderStrategy,
+  importStrategy: ImportStrategy,
+  instanceStrategy: InstanceStrategy,
+  effectStrategy: EffectStrategy,
+  resourceStrategy: ResourceStrategy,
+  failureHandler: ProvisioningFailureInterceptor,
+  verifier: ProvisionOperationVerifier,
+) extends PlanInterpreter
+  with OperationExecutor {
 
-, failureHandler: ProvisioningFailureInterceptor
-, verifier: ProvisionOperationVerifier,
-) extends PlanInterpreter with OperationExecutor {
-
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizerFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](
+    plan: OrderedPlan,
+    parentContext: Locator,
+    filterFinalizers: FinalizerFilter[F],
+  )(implicit F: DIEffect[F]
+  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     DIResource.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
@@ -52,8 +56,11 @@ class PlanInterpreterDefaultRuntimeImpl
     })
   }
 
-
-  private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+  private[this] def instantiateImpl[F[_]: TagK](
+    plan: OrderedPlan,
+    parentContext: Locator,
+  )(implicit F: DIEffect[F]
+  ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
     val locator = new LocatorDefaultImpl(plan, Option(parentContext), mutProvisioningContext)
     val locatorRef = new LocatorRef(new AtomicReference(Left(locator)))
@@ -66,46 +73,46 @@ class PlanInterpreterDefaultRuntimeImpl
       F.maybeSuspend {
         mutExcluded.contains(step.target)
       }.flatMap {
-        skipped =>
-          if (skipped) {
-            F.unit
-          } else {
-            val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
+          skipped =>
+            if (skipped) {
+              F.unit
+            } else {
+              val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
 
-            F.definitelyRecover[Try[Seq[NewObjectOp]]](
-              action =
-                execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
-            )(recover =
+              F.definitelyRecover[Try[Seq[NewObjectOp]]](
+                action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
+              )(recover =
                 exception =>
                   F.maybeSuspend {
-                    failureHandler.onExecutionFailed(failureContext)
+                    failureHandler
+                      .onExecutionFailed(failureContext)
                       .applyOrElse(exception, Failure(_: Throwable))
                   }
-            ).flatMap {
-              case Success(newObjectOps) =>
-                F.maybeSuspend {
-                  newObjectOps.foreach {
-                    newObject =>
-                      val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
-                        .recoverWith(failureHandler.onBadResult(failureContext))
+              ).flatMap {
+                  case Success(newObjectOps) =>
+                    F.maybeSuspend {
+                      newObjectOps.foreach {
+                        newObject =>
+                          val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
+                            .recoverWith(failureHandler.onBadResult(failureContext))
 
-                      maybeSuccess match {
-                        case Success(_) =>
-                        case Failure(failure) =>
-                          mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                          mutFailures += ProvisioningFailure(step, failure)
+                          maybeSuccess match {
+                            case Success(_) =>
+                            case Failure(failure) =>
+                              mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                              mutFailures += ProvisioningFailure(step, failure)
+                          }
                       }
-                  }
-                }
+                    }
 
-              case Failure(failure) =>
-                F.maybeSuspend {
-                  mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                  mutFailures += ProvisioningFailure(step, failure)
+                  case Failure(failure) =>
+                    F.maybeSuspend {
+                      mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                      mutFailures += ProvisioningFailure(step, failure)
+                    }
                 }
             }
-          }
-      }
+        }
     }
 
     val (imports, otherSteps) = plan.steps.partition {
@@ -119,23 +126,25 @@ class PlanInterpreterDefaultRuntimeImpl
 
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
       immutable = mutProvisioningContext.toImmutable
-      res <- if (failedImportsOrEffects) {
-        F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
-      } else {
-        F.traverse_(otherSteps)(processStep)
-          .flatMap { _ =>
-            F.maybeSuspend {
-              if (mutFailures.nonEmpty) {
-                Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
-              } else {
-                val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
-                val res = Right(finalLocator)
-                locatorRef.ref.set(res)
-                res
-              }
+      res <-
+        if (failedImportsOrEffects) {
+          F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
+        } else {
+          F.traverse_(otherSteps)(processStep)
+            .flatMap {
+              _ =>
+                F.maybeSuspend {
+                  if (mutFailures.nonEmpty) {
+                    Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
+                  } else {
+                    val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
+                    val res = Right(finalLocator)
+                    locatorRef.ref.set(res)
+                    res
+                  }
+                }
             }
         }
-      }
     } yield res
   }
 
@@ -187,13 +196,13 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "instance")
         active.instances += (target -> instance)
 
-      case r@NewObjectOp.NewResource(target, instance, _) =>
+      case r @ NewObjectOp.NewResource(target, instance, _) =>
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
         active.finalizers prepend Finalizer[F](target, finalizer)
 
-      case r@NewObjectOp.NewFinalizer(target, _) =>
+      case r @ NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
         active.finalizers prepend Finalizer[F](target, finalizer)
 
@@ -220,4 +229,3 @@ class PlanInterpreterDefaultRuntimeImpl
   }
 
 }
-

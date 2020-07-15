@@ -1,4 +1,3 @@
-
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.strings.IzString._
@@ -33,7 +32,6 @@ class IzStringTest extends AnyWordSpec {
       assert("xx".rightEllipsed(1, "...") == "x")
     }
 
-
     "support minimization" in {
       assert("x".minimize(0) == "x")
       assert("x.y.z".minimize(0) == "x.y.z")
@@ -61,6 +59,4 @@ class IzStringTest extends AnyWordSpec {
 
   }
 
-
 }
-

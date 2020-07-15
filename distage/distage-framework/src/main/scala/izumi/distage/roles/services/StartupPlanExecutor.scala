@@ -19,30 +19,33 @@ object StartupPlanExecutor {
   }
 
   final case class Filters[F[_]](
-                                  filterF: FinalizerFilter[F],
-                                  filterId: FinalizerFilter[Identity],
-                                )
+    filterF: FinalizerFilter[F],
+    filterId: FinalizerFilter[Identity],
+  )
   object Filters {
     def all[F[_]]: Filters[F] = Filters[F](FinalizerFilter.all, FinalizerFilter.all)
   }
 
   class Impl[F[_]: TagK](
-                          injector: Injector,
-                          integrationChecker: IntegrationChecker[F],
-                        ) extends StartupPlanExecutor[F] {
+    injector: Injector,
+    integrationChecker: IntegrationChecker[F],
+  ) extends StartupPlanExecutor[F] {
     def execute(appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
-      injector.produceFX[Identity](appPlan.runtime, filters.filterId)
+      injector
+        .produceFX[Identity](appPlan.runtime, filters.filterId)
         .use {
           runtimeLocator =>
             val runner = runtimeLocator.get[DIEffectRunner[F]]
             implicit val effect: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
 
             runner.run {
-              Injector.inherit(runtimeLocator)
+              Injector
+                .inherit(runtimeLocator)
                 .produceFX[F](appPlan.app.shared, filters.filterF)
                 .use {
                   sharedLocator =>
-                    Injector.inherit(sharedLocator)
+                    Injector
+                      .inherit(sharedLocator)
                       .produceFX[F](appPlan.app.side, filters.filterF)
                       .use {
                         integrationLocator =>
@@ -50,7 +53,8 @@ object StartupPlanExecutor {
                       }
                       .flatMap {
                         _ =>
-                          Injector.inherit(sharedLocator)
+                          Injector
+                            .inherit(sharedLocator)
                             .produceFX[F](appPlan.app.primary, filters.filterF)
                             .use(doRun(_, effect))
                       }

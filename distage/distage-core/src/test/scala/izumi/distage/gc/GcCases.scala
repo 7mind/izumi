@@ -119,7 +119,6 @@ object GcCases {
 
   }
 
-
   object InjectorCase8 {
 
     trait Component
@@ -191,7 +190,6 @@ object GcCases {
         c1.discard()
       }
     }
-
 
   }
 

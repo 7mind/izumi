@@ -1,8 +1,8 @@
 /**
- * Borrowed from akka for convenience
- *
- * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
- */
+  * Borrowed from akka for convenience
+  *
+  * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
+  */
 package izumi.fundamentals.platform.network
 
 import java.net.{InetSocketAddress, NetworkInterface, StandardProtocolFamily}
@@ -12,8 +12,8 @@ import scala.collection.immutable
 import scala.util.Random
 
 /**
- * Utilities to get free socket address.
- */
+  * Utilities to get free socket address.
+  */
 object IzSockets {
 
   val RANDOM_LOOPBACK_ADDRESS = "RANDOM_LOOPBACK_ADDRESS"
@@ -32,35 +32,36 @@ object IzSockets {
   def temporaryLocalPort(udp: Boolean = false): Int = temporaryServerAddress("localhost", udp).getPort
 
   /**
-   * @param address host address. If not set, a loopback IP from the 127.20.0.0/16 range is picked
-   * @param udp if true, select a port that is free for running a UDP server. Otherwise TCP.
-   * @return an address (host+port) that is currently available to bind on
-   */
+    * @param address host address. If not set, a loopback IP from the 127.20.0.0/16 range is picked
+    * @param udp if true, select a port that is free for running a UDP server. Otherwise TCP.
+    * @return an address (host+port) that is currently available to bind on
+    */
   def temporaryServerAddress(address: String = RANDOM_LOOPBACK_ADDRESS, udp: Boolean = false): InetSocketAddress =
     temporaryServerAddresses(1, address, udp).head
 
   def temporaryServerAddresses(numberOfAddresses: Int, hostname: String = RANDOM_LOOPBACK_ADDRESS, udp: Boolean = false): immutable.IndexedSeq[InetSocketAddress] = {
-    Vector.fill(numberOfAddresses) {
+    Vector
+      .fill(numberOfAddresses) {
 
-      val address = hostname match {
-        case RANDOM_LOOPBACK_ADDRESS =>
-          if (canBindOnAlternativeLoopbackAddresses) s"127.20.${Random.nextInt(256)}.${Random.nextInt(256)}"
-          else "127.0.0.1"
-        case other =>
-          other
-      }
+        val address = hostname match {
+          case RANDOM_LOOPBACK_ADDRESS =>
+            if (canBindOnAlternativeLoopbackAddresses) s"127.20.${Random.nextInt(256)}.${Random.nextInt(256)}"
+            else "127.0.0.1"
+          case other =>
+            other
+        }
 
-      if (udp) {
-        val ds = DatagramChannel.open().socket()
-        ds.bind(new InetSocketAddress(address, 0))
-        (ds, new InetSocketAddress(address, ds.getLocalPort))
-      } else {
-        val ss = ServerSocketChannel.open().socket()
-        ss.bind(new InetSocketAddress(address, 0))
-        (ss, new InetSocketAddress(address, ss.getLocalPort))
-      }
+        if (udp) {
+          val ds = DatagramChannel.open().socket()
+          ds.bind(new InetSocketAddress(address, 0))
+          (ds, new InetSocketAddress(address, ds.getLocalPort))
+        } else {
+          val ss = ServerSocketChannel.open().socket()
+          ss.bind(new InetSocketAddress(address, 0))
+          (ss, new InetSocketAddress(address, ss.getLocalPort))
+        }
 
-    }.collect { case (socket, address) => socket.close(); address }
+      }.collect { case (socket, address) => socket.close(); address }
   }
 
   def temporaryServerHostnameAndPort(interface: String = RANDOM_LOOPBACK_ADDRESS): (String, Int) = {

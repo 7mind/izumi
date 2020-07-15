@@ -58,7 +58,12 @@ object LoggerMacroMethods {
     logMacro(c)(c.universe.reify(Log.Level.Crit), new LogMessageMacro0[c.type](c, strict = true).logMessageMacro(message), getEnclosingPosition(c))
   }
 
-  @inline private[this] def logMacro(c: blackbox.Context {type PrefixType = AbstractLogger})(level: c.Expr[Log.Level], message: c.Expr[Log.Message], position: c.Expr[CodePositionMaterializer]): c.Expr[Unit] = {
+  @inline private[this] def logMacro(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Log.Level],
+    message: c.Expr[Log.Message],
+    position: c.Expr[CodePositionMaterializer],
+  ): c.Expr[Unit] = {
     c.universe.reify {
       {
         val self = c.prefix.splice
@@ -70,6 +75,3 @@ object LoggerMacroMethods {
   }
 
 }
-
-
-

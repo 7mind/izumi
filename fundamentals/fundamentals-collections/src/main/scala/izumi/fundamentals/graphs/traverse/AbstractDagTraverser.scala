@@ -7,4 +7,3 @@ trait AbstractDagTraverser[F[_], Node, Trace, Progress] extends ResumableDAGTrav
   def doStep(state: TraverseState[F, Node, Trace, Progress]): F[TraverseState[F, Node, Trace, Progress]]
 
 }
-

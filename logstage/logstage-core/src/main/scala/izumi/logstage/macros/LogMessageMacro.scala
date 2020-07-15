@@ -48,10 +48,11 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
 
       def makeStringContext(isMultiline: Boolean): Tree = {
         val elements = balanced.collect { case e: Chunk.AbstractElement => e.tree }
-        val listExpr = if (isMultiline)
-          c.Expr[Seq[String]](q"Seq(..$elements).map(_.stripMargin)")
-        else
-          c.Expr[Seq[String]](q"Seq(..$elements)")
+        val listExpr =
+          if (isMultiline)
+            c.Expr[Seq[String]](q"Seq(..$elements).map(_.stripMargin)")
+          else
+            c.Expr[Seq[String]](q"Seq(..$elements)")
 
         val scParts = reify {
           listExpr.splice
@@ -127,9 +128,9 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
 
       private def toChunk(head: Tree): Chunk.Primary = {
         val chunk = head match {
-          case t@Literal(Constant(_: String)) =>
+          case t @ Literal(Constant(_: String)) =>
             Chunk.Element(t)
-          case t@Literal(Constant(_)) =>
+          case t @ Literal(Constant(_)) =>
             Chunk.Argument(t)
           case argexpr =>
             Chunk.Argument(argexpr)
@@ -144,13 +145,27 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         val sc = lst.makeStringContext(isMultiline)
         reifyContext(sc, namedArgs)
 
-      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[Tree]) =>
+      case Apply(
+            Select(stringContext @ Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")),
+            args: List[Tree],
+          ) =>
         // qq causes a weird warning here
         //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         reifyContext(stringContext, namedArgs)
 
-      case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[Tree]))), TermName("stripMargin")) =>
+      case Select(
+            Apply(
+              _,
+              List(
+                Apply(
+                  Select(stringContext @ Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")),
+                  args: List[Tree],
+                )
+              ),
+            ),
+            TermName("stripMargin"),
+          ) =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
         reifyContext(sc, namedArgs)
@@ -165,18 +180,20 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         reifyContext(sc, emptyArgs)
 
       case other =>
-        c.warning(other.pos,
+        c.warning(
+          other.pos,
           s"""Complex expression found as an input for a logger: ${other.toString()} ; ${showRaw(other)}.
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |${nameExtractor.example}
-             |""".stripMargin)
+             |""".stripMargin,
+        )
 
         val emptyArgs = reify(List.empty)
         /* reify {
           val repr = c.Expr[String](Literal(Constant(showCode(other)))).splice
           ...
-        */
+         */
         val sc = q"_root_.scala.StringContext($other)"
         reifyContext(sc, emptyArgs)
     }
@@ -186,8 +203,8 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     import c.universe._
     reify {
       Message(
-        c.Expr[StringContext](stringContext).splice
-        , namedArgs.splice
+        c.Expr[StringContext](stringContext).splice,
+        namedArgs.splice,
       )
     }
   }

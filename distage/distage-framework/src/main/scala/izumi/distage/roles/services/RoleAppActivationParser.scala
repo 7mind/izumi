@@ -13,8 +13,8 @@ trait RoleAppActivationParser {
 object RoleAppActivationParser {
 
   class Impl(
-              logger: IzLogger,
-            ) extends RoleAppActivationParser {
+    logger: IzLogger
+  ) extends RoleAppActivationParser {
 
     override def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation = {
       val usedChoices = rawActivations.map {
@@ -28,10 +28,11 @@ object RoleAppActivationParser {
 
     protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): (Axis, Axis.AxisValue) = {
       def options: String = {
-        activationInfo.availableChoices.map {
-          case (axis, members) =>
-            s"$axis:${members.niceList().shift(2)}"
-        }.niceList()
+        activationInfo
+          .availableChoices.map {
+            case (axis, members) =>
+              s"$axis:${members.niceList().shift(2)}"
+          }.niceList()
       }
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {

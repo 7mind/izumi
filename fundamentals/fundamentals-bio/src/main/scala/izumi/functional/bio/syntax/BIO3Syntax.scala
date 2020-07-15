@@ -18,7 +18,6 @@ trait BIO3Syntax extends BIO3ImplicitPuns {
     *     F.timeout(5.seconds)(F.forever(F.unit))
     *   }
     * }}}
-    *
     */
   def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
 }
@@ -143,7 +142,6 @@ object BIO3Syntax {
       *     .sandboxThrowable
       *     .catchAll(_ => BIO(println("Caught error!")))
       * }}}
-      *
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): FR[R, Throwable, A] =
       F.leftMap(F.sandbox(r))(_.toThrowable)

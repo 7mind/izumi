@@ -6,13 +6,14 @@ import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{ResolveImportFOrderedPl
 import izumi.distage.model.plan.repr.{CompactOrderedPlanFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.PlanTopology
-import izumi.distage.model.plan.{Roots, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{OrderedPlan, Roots, SemiPlan}
 import izumi.functional.Renderable
 import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 
-private[plan] trait OrderedPlanExtensions extends Any { this: OrderedPlan.type =>
+private[plan] trait OrderedPlanExtensions extends Any {
+  this: OrderedPlan.type =>
   final def empty: OrderedPlan = OrderedPlan(Vector.empty, Set.empty, PlanTopology.empty)
 
   @inline implicit final def defaultFormatter: Renderable[OrderedPlan] = CompactOrderedPlanFormatter

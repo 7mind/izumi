@@ -6,9 +6,9 @@ import izumi.distage.model.plan.ExecutableOp
 import izumi.logstage.api.IzLogger
 
 class PlanCircularDependencyCheck(
-                                   options: PlanningOptions,
-                                   logger: IzLogger,
-                                 ) {
+  options: PlanningOptions,
+  logger: IzLogger,
+) {
   def verify(plan: OrderedPlan): Unit = {
     if (options.warnOnCircularDeps) {
       val allProxies = plan.steps.collect {

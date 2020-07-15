@@ -64,7 +64,7 @@ trait BIOCatsConversions10 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
     implicit @unused ev: BIOFunctor[F],
     F: BIOAsync[F],
-    Fork: BIOFork[F]
+    Fork: BIOFork[F],
   ): cats.effect.Concurrent[F[Throwable, ?]] with S10 = new BIOCatsConcurrent[F](F, Fork)
 }
 
@@ -125,14 +125,19 @@ object BIOCatsConversions {
 
     @inline override final def bracketCase[A, B](
       acquire: F[Throwable, A]
-    )(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
+    )(use: A => F[Throwable, B]
+    )(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]
+    ): F[Throwable, B] = {
       F.bracketCase(acquire)(
         (a, e: BIOExit[Throwable, B]) =>
           F.orTerminate {
-            release(a, e match {
-              case BIOExit.Success(_) => ExitCase.Completed
-              case value: BIOExit.Failure[Throwable] => ExitCase.Error(value.toThrowable)
-            })
+            release(
+              a,
+              e match {
+                case BIOExit.Success(_) => ExitCase.Completed
+                case value: BIOExit.Failure[Throwable] => ExitCase.Error(value.toThrowable)
+              },
+            )
           }
       )(use)
     }
@@ -180,7 +185,7 @@ object BIOCatsConversions {
     }
     @inline override final def racePair[A, B](
       fa: F[Throwable, A],
-      fb: F[Throwable, B]
+      fb: F[Throwable, B],
     ): F[Throwable, Either[(A, Fiber[F[Throwable, *], B]), (Fiber[F[Throwable, *], A], B)]] = {
       F.map(F.racePair(fa, fb)) {
         case Left((a, f)) => Left((a, f.toCats(F)))

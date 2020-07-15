@@ -11,14 +11,13 @@ import izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkSt
 import scala.util.{Failure, Success, Try}
 
 abstract class FileSink[T <: LogFile](
-                                       val renderingPolicy: RenderingPolicy
-                                       , val fileService: FileService[T]
-                                       , val rotation: FileRotation
-                                       , val config: FileSinkConfig
-                                     ) extends LogSink {
+  val renderingPolicy: RenderingPolicy,
+  val fileService: FileService[T],
+  val rotation: FileRotation,
+  val config: FileSinkConfig,
+) extends LogSink {
 
   def recoverOnFail(e: String): Unit
-
 
   val sinkState: AtomicReference[FileSinkState] = {
     val currentState = restoreSinkState.getOrElse(initState)
@@ -30,16 +29,16 @@ abstract class FileSink[T <: LogFile](
   def restoreSinkState: Option[FileSinkState] = {
     val files = fileService.scanDirectory
     val filesWithSize = files.map(f => (f, fileService.fileSize(f)))
-    filesWithSize.toList.sortWith(_._2 < _._2).headOption.map {
-      case (_, size) if size >= config.maxAllowedSize =>
-        (filesWithSize.size, 0)
-      case (name, size) =>
-        (name, size)
-    }.map {
-      case (curFileId, curFileSize) => FileSinkState(curFileId, curFileSize)
-    }
+    filesWithSize
+      .toList.sortWith(_._2 < _._2).headOption.map {
+        case (_, size) if size >= config.maxAllowedSize =>
+          (filesWithSize.size, 0)
+        case (name, size) =>
+          (name, size)
+      }.map {
+        case (curFileId, curFileSize) => FileSinkState(curFileId, curFileSize)
+      }
   }
-
 
   def processCurrentFile(state: FileSinkState): FileSinkState = {
     if (state.currentFileSize >= config.maxAllowedSize) {
@@ -66,7 +65,7 @@ abstract class FileSink[T <: LogFile](
     current.headOption foreach fileService.removeFile
     fileService.writeToFile(state.currentFileId, payload).map {
       _ =>
-        state.copy(currentFileSize = state.currentFileSize +config.calculateMessageSize(payload), forRotate = others)
+        state.copy(currentFileSize = state.currentFileSize + config.calculateMessageSize(payload), forRotate = others)
     }
   }
 
@@ -93,5 +92,3 @@ abstract class FileSink[T <: LogFile](
 object FileSink {
   type FileIdentity = Int
 }
-
-

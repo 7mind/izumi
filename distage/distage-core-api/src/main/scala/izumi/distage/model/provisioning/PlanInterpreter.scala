@@ -13,10 +13,10 @@ import izumi.reflect.TagK
 
 trait PlanInterpreter {
   def instantiate[F[_]: TagK: DIEffect](
-                                         plan: OrderedPlan,
-                                         parentContext: Locator,
-                                         filterFinalizers: FinalizerFilter[F],
-                                       ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
+    plan: OrderedPlan,
+    parentContext: Locator,
+    filterFinalizers: FinalizerFilter[F],
+  ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {
@@ -35,11 +35,11 @@ object PlanInterpreter {
   }
 
   final case class FailedProvision[F[_]](
-                                          failed: ProvisionImmutable[F],
-                                          plan: OrderedPlan,
-                                          parentContext: Locator,
-                                          failures: Seq[ProvisioningFailure],
-                                        ) {
+    failed: ProvisionImmutable[F],
+    plan: OrderedPlan,
+    parentContext: Locator,
+    failures: Seq[ProvisioningFailure],
+  ) {
     def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
       val repr = failures.map {
         case ProvisioningFailure(op, f) =>
@@ -72,4 +72,3 @@ object PlanInterpreter {
   }
 
 }
-

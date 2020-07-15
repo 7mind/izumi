@@ -10,7 +10,8 @@ import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 
-private[plan] trait SemiPlanExtensions extends Any { this: SemiPlan.type =>
+private[plan] trait SemiPlanExtensions extends Any {
+  this: SemiPlan.type =>
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.

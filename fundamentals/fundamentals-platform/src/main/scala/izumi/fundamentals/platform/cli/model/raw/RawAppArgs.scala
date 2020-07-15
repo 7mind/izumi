@@ -6,9 +6,9 @@ import java.nio.file.Path
 import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
 
 final case class RawAppArgs(
-                             globalParameters: RawEntrypointParams,
-                             roles: Vector[RawRoleParams]
-                           )
+  globalParameters: RawEntrypointParams,
+  roles: Vector[RawRoleParams],
+)
 
 object RawAppArgs {
   def empty: RawAppArgs = RawAppArgs(RawEntrypointParams.empty, Vector.empty)

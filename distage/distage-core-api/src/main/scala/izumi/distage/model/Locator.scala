@@ -19,7 +19,7 @@ import scala.collection.immutable.Queue
   * @see [[Injector]]
   * @see [[Planner]]
   * @see [[Producer]]
-  **/
+  */
 trait Locator {
 
   /** Instances in order of creation
@@ -67,9 +67,9 @@ trait Locator {
   final def run[T](function: ProviderMagnet[T]): T = {
     val fn = function.get
     fn.unsafeApply(fn.diKeys.map {
-        key =>
-          lookupRefOrThrow[Any](key)
-      }).asInstanceOf[T]
+      key =>
+        lookupRefOrThrow[Any](key)
+    }).asInstanceOf[T]
   }
 
   final def runOption[T](function: ProviderMagnet[T]): Option[T] = {

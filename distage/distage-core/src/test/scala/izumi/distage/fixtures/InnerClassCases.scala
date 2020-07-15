@@ -24,7 +24,7 @@ object InnerClassCases {
     class TestModule {
       class TestDependency
 
-      class TestClass(a:  => TestDependency) {
+      class TestClass(a: => TestDependency) {
         def aValue: TestDependency = a
       }
     }

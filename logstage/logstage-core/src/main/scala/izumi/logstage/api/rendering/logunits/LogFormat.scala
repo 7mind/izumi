@@ -16,7 +16,6 @@ trait LogFormat {
   @inline private[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String
 }
 
-
 object LogFormat {
 
   abstract class LogFormatImpl extends LogFormat {
@@ -53,7 +52,14 @@ object LogFormat {
       s"$key=$v"
     }
 
-    @inline private[this] def processUnbalanced(occurences: mutable.HashMap[String, Int], withColors: Boolean, templateBuilder: StringBuilder, messageBuilder: StringBuilder, unbalancedArgs: ArrayBuffer[RenderedParameter], unbalanced: Seq[LogArg]) = {
+    @inline private[this] def processUnbalanced(
+      occurences: mutable.HashMap[String, Int],
+      withColors: Boolean,
+      templateBuilder: StringBuilder,
+      messageBuilder: StringBuilder,
+      unbalancedArgs: ArrayBuffer[RenderedParameter],
+      unbalanced: Seq[LogArg],
+    ) = {
       if (unbalanced.nonEmpty) {
         templateBuilder.append(" {{ ")
         messageBuilder.append(" {{ ")
@@ -68,7 +74,14 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def process(occurences: mutable.HashMap[String, Int], templateBuilder: mutable.StringBuilder, messageBuilder: mutable.StringBuilder, acc: mutable.ArrayBuffer[RenderedParameter], withColors: Boolean)(balanced: collection.Seq[(String, LogArg)]): Unit = {
+    @inline private[this] def process(
+      occurences: mutable.HashMap[String, Int],
+      templateBuilder: mutable.StringBuilder,
+      messageBuilder: mutable.StringBuilder,
+      acc: mutable.ArrayBuffer[RenderedParameter],
+      withColors: Boolean,
+    )(balanced: collection.Seq[(String, LogArg)]
+    ): Unit = {
       balanced.foreach {
         case (part, arg) =>
           val uncoloredRepr = formatArg(arg, withColors = false)
@@ -158,7 +171,6 @@ object LogFormat {
     }
 
   }
-
 
   object Default extends LogFormatImpl {
 

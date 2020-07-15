@@ -77,9 +77,10 @@ trait IzManifest {
   }
 
   protected def gitStatus(mf: jar.Manifest): GitStatus = {
-    (Option(mf.getMainAttributes.getValue(GitBranch))
-      , Try(mf.getMainAttributes.getValue(GitRepoIsClean).toBoolean).toOption
-      , Option(mf.getMainAttributes.getValue(GitHeadRev))
+    (
+      Option(mf.getMainAttributes.getValue(GitBranch)),
+      Try(mf.getMainAttributes.getValue(GitRepoIsClean).toBoolean).toOption,
+      Option(mf.getMainAttributes.getValue(GitHeadRev)),
     ) match {
       case (Some(branch), Some(clean), Some(rev)) =>
         GitStatus(branch, clean, rev)
@@ -88,11 +89,8 @@ trait IzManifest {
     }
   }
 
-
   protected def artifactId(mf: jar.Manifest): IzArtifactId = {
-    (Option(mf.getMainAttributes.getValue(ArtifactId))
-      ,Option(mf.getMainAttributes.getValue(GroupId))
-    ) match {
+    (Option(mf.getMainAttributes.getValue(ArtifactId)), Option(mf.getMainAttributes.getValue(GroupId))) match {
       case (Some(art), Some(group)) =>
         IzArtifactId(group, art)
       case _ =>
@@ -112,10 +110,10 @@ trait IzManifest {
   protected def appBuild(mf: jar.Manifest): BuildStatus = {
     import IzTime._
     (
-      Option(mf.getMainAttributes.getValue(BuiltBy))
-      , Option(mf.getMainAttributes.getValue(BuildJdk))
-      , Option(mf.getMainAttributes.getValue(BuildSbt))
-      , Try(Option(mf.getMainAttributes.getValue(BuildTimestamp)).map(_.toTsZ))
+      Option(mf.getMainAttributes.getValue(BuiltBy)),
+      Option(mf.getMainAttributes.getValue(BuildJdk)),
+      Option(mf.getMainAttributes.getValue(BuildSbt)),
+      Try(Option(mf.getMainAttributes.getValue(BuildTimestamp)).map(_.toTsZ)),
     ) match {
       case (Some(user), Some(jdk), Some(sbt), Success(Some(time))) =>
         BuildStatus(user, jdk, sbt, time)

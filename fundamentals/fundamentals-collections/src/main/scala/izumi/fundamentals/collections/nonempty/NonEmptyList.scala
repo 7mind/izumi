@@ -7,8 +7,6 @@ import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq, mutable}
 import scala.reflect.ClassTag
 
-
-
 final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
 
   /**
@@ -44,7 +42,6 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def ++[U >: T](other: Iterable[U]): NonEmptyList[U] =
     if (other.isEmpty) this else new NonEmptyList(toList ++ other.iterator)
-
 
   /**
     * Returns a new <code>NonEmptyList</code> with the given element prepended.
@@ -167,7 +164,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Indicates whether this <code>NonEmptyList</code> contains a given value as an element.
     *
     * @param elem the element to look for
-    * @return true if this <code>NonEmptyList</code> has an element that is equal (as determined by <code>==)</code> to <code>elem</code>, false otherwise. 
+    * @return true if this <code>NonEmptyList</code> has an element that is equal (as determined by <code>==)</code> to <code>elem</code>, false otherwise.
     */
   def contains(elem: Any): Boolean = toList.contains(elem)
 
@@ -233,7 +230,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   }
 
   /**
-    * Copies all elements of this <code>NonEmptyList</code> to a buffer. 
+    * Copies all elements of this <code>NonEmptyList</code> to a buffer.
     *
     * @param buf the buffer to which elements are copied
     */
@@ -243,7 +240,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   }
 
   /**
-    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>Seq</code> by satisfying a given predicate. 
+    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>Seq</code> by satisfying a given predicate.
     *
     * @tparam B the type of the elements of <code>that</code>
     * @param that the <code>Seq</code> to compare for correspondence
@@ -254,7 +251,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def corresponds[B](that: Seq[B])(p: (T, B) => Boolean): Boolean = toList.corresponds(that)(p)
 
   /**
-    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>Vector</code> by satisfying a given predicate. 
+    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>Vector</code> by satisfying a given predicate.
     *
     * @tparam B the type of the elements of <code>that</code>
     * @param that the <code>Vector</code> to compare for correspondence
@@ -265,7 +262,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def corresponds[B](that: Vector[B])(p: (T, B) => Boolean): Boolean = toList.corresponds(that)(p)
 
   /**
-    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>NonEmptyList</code> by satisfying a given predicate. 
+    * Indicates whether every element of this <code>NonEmptyList</code> relates to the corresponding element of a given <code>NonEmptyList</code> by satisfying a given predicate.
     *
     * @tparam B the type of the elements of <code>that</code>
     * @param that the <code>NonEmptyList</code> to compare for correspondence
@@ -276,17 +273,17 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def corresponds[B](that: NonEmptyList[B])(p: (T, B) => Boolean): Boolean = toList.corresponds(that.toList)(p)
 
   /**
-    * Counts the number of elements in this <code>NonEmptyList</code> that satisfy a predicate. 
+    * Counts the number of elements in this <code>NonEmptyList</code> that satisfy a predicate.
     *
     * @param p the predicate used to test elements.
-    * @return the number of elements satisfying the predicate <code>p</code>. 
+    * @return the number of elements satisfying the predicate <code>p</code>.
     */
   def count(p: T => Boolean): Int = toList.count(p)
 
   /**
     * Builds a new <code>NonEmptyList</code> from this <code>NonEmptyList</code> without any duplicate elements.
     *
-    * @return A new <code>NonEmptyList</code> that contains the first occurrence of every element of this <code>NonEmptyList</code>. 
+    * @return A new <code>NonEmptyList</code> that contains the first occurrence of every element of this <code>NonEmptyList</code>.
     */
   def distinct: NonEmptyList[T] = new NonEmptyList(toList.distinct)
 
@@ -294,7 +291,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Indicates whether this <code>NonEmptyList</code> ends with the given <code>Seq</code>.
     *
     * @param that the sequence to test
-    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith[B](that: Seq[B]): Boolean = toList.endsWith[Any](that)
 
@@ -302,7 +299,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Indicates whether this <code>NonEmptyList</code> ends with the given <code>Vector</code>.
     *
     * @param that the <code>Vector</code> to test
-    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith[B](that: Vector[B]): Boolean = toList.endsWith[Any](that)
 
@@ -311,7 +308,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Indicates whether this <code>NonEmptyList</code> ends with the given <code>NonEmptyList</code>.
     *
     * @param that the <code>NonEmptyList</code> to test
-    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise. 
+    * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a suffix, <code>false</code> otherwise.
     */
   def endsWith[B](that: NonEmptyList[B]): Boolean = toList.endsWith[Any](that.toList)
 
@@ -321,13 +318,13 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
         case nonEmptyList: NonEmptyList[_] => toList == nonEmptyList.toList
         case _ => false
       }
-  */
+   */
 
   /**
     * Indicates whether a predicate holds for at least one of the elements of this <code>NonEmptyList</code>.
     *
     * @param the predicate used to test elements.
-    * @return <code>true</code> if the given predicate <code>p</code> holds for some of the elements of this <code>NonEmptyList</code>, otherwise <code>false</code>. 
+    * @return <code>true</code> if the given predicate <code>p</code> holds for some of the elements of this <code>NonEmptyList</code>, otherwise <code>false</code>.
     */
   def exists(p: T => Boolean): Boolean = toList.exists(p)
 
@@ -335,7 +332,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Finds the first element of this <code>NonEmptyList</code> that satisfies the given predicate, if any.
     *
     * @param p the predicate used to test elements
-    * @return an <code>Some</code> containing the first element in this <code>NonEmptyList</code> that satisfies <code>p</code>, or <code>None</code> if none exists. 
+    * @return an <code>Some</code> containing the first element in this <code>NonEmptyList</code> that satisfies <code>p</code>, or <code>None</code> if none exists.
     */
   def find(p: T => Boolean): Option[T] = toList.find(p)
 
@@ -345,7 +342,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @tparam U the element type of the returned <code>NonEmptyList</code>
     * @param f the function to apply to each element.
     * @return a new <code>NonEmptyList</code> containing elements obtained by applying the given function <code>f</code> to each element of this <code>NonEmptyList</code> and concatenating
-    *    the elements of resulting <code>NonEmptyList</code>s. 
+    *    the elements of resulting <code>NonEmptyList</code>s.
     */
   def flatMap[U](f: T => NonEmptyList[U]): NonEmptyList[U] = {
     val buf = new ArrayBuffer[U]
@@ -359,7 +356,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * formed by the elements of the nested <code>NonEmptyList</code>s.
     *
     * <p>
-    * Note: You cannot use this <code>flatten</code> method on a <code>NonEmptyList</code> that contains a <code>GenTraversableOnce</code>s, because 
+    * Note: You cannot use this <code>flatten</code> method on a <code>NonEmptyList</code> that contains a <code>GenTraversableOnce</code>s, because
     * if all the nested <code>GenTraversableOnce</code>s were empty, you'd end up with an empty <code>NonEmptyList</code>.
     * </p>
     *
@@ -372,7 +369,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Folds the elements of this <code>NonEmptyList</code> using the specified associative binary operator.
     *
     * <p>
-    * The order in which operations are performed on elements is unspecified and may be nondeterministic. 
+    * The order in which operations are performed on elements is unspecified and may be nondeterministic.
     * </p>
     *
     * @tparam U a type parameter for the binary operator, a supertype of T.
@@ -398,7 +395,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>.
     * </p>
     */
   def foldLeft[B](z: B)(op: (B, T) => B): B = toList.foldLeft(z)(op)
@@ -417,7 +414,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>.
     * </p>
     */
   def foldRight[B](z: B)(op: (T, B) => B): B = toList.foldRight(z)(op)
@@ -426,7 +423,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Indicates whether a predicate holds for all elements of this <code>NonEmptyList</code>.
     *
     * @param p the predicate used to test elements.
-    * @return <code>true</code> if the given predicate <code>p</code> holds for all elements of this <code>NonEmptyList</code>, otherwise <code>false</code>. 
+    * @return <code>true</code> if the given predicate <code>p</code> holds for all elements of this <code>NonEmptyList</code>, otherwise <code>false</code>.
     */
   def forall(p: T => Boolean): Boolean = toList.forall(p)
 
@@ -454,18 +451,23 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def groupBy[K](f: T => K): Map[K, NonEmptyList[T]] = {
     val mapKToList = toList.groupBy(f)
-    mapKToList.view.mapValues { list => new NonEmptyList(list) }.toMap
+    mapKToList
+      .view.mapValues {
+        list => new NonEmptyList(list)
+      }.toMap
   }
 
   /**
     * Partitions elements into fixed size <code>NonEmptyList</code>s.
     *
     * @param size the number of elements per group
-    * @return An iterator producing <code>NonEmptyList</code>s of size <code>size</code>, except the last will be truncated if the elements don't divide evenly. 
+    * @return An iterator producing <code>NonEmptyList</code>s of size <code>size</code>, except the last will be truncated if the elements don't divide evenly.
     */
   def grouped(size: Int): Iterator[NonEmptyList[T]] = {
     val itOfList = toList.grouped(size)
-    itOfList.map { list => new NonEmptyList(list) }
+    itOfList.map {
+      list => new NonEmptyList(list)
+    }
   }
 
   /**
@@ -476,7 +478,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   // override def hashCode: Int = toList.hashCode
 
   /**
-    * Selects the first element of this <code>NonEmptyList</code>. 
+    * Selects the first element of this <code>NonEmptyList</code>.
     *
     * @return the first element of this <code>NonEmptyList</code>.
     */
@@ -485,7 +487,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Finds index of first occurrence of some value in this <code>NonEmptyList</code>.
     *
-    * @param elem the element value to search for. 
+    * @param elem the element value to search for.
     * @return the index of the first element of this <code>NonEmptyList</code> that is equal (as determined by <code>==</code>) to <code>elem</code>,
     *     or <code>-1</code>, if none exists.
     */
@@ -494,20 +496,19 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Finds index of first occurrence of some value in this <code>NonEmptyList</code> after or at some start index.
     *
-    * @param elem the element value to search for. 
+    * @param elem the element value to search for.
     * @param from the start index
     * @return the index <code>&gt;=</code> <code>from</code> of the first element of this <code>NonEmptyList</code> that is equal (as determined by <code>==</code>) to <code>elem</code>,
     *     or <code>-1</code>, if none exists.
     */
   def indexOf[U >: T](elem: U, from: Int): Int = toList.indexOf(elem, from)
 
-
   /**
     * Finds first index where this <code>NonEmptyList</code> contains a given <code>Seq</code> as a slice.
     *
     * @param that the <code>Seq</code> defining the slice to look for
     * @return the first index at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: Seq[U]): Int = toList.indexOfSlice(that)
 
@@ -517,7 +518,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>Seq</code> defining the slice to look for
     * @param from the start index
     * @return the first index <code>&gt;=</code> <code>from</code> at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: Seq[U], from: Int): Int = toList.indexOfSlice(that, from)
 
@@ -526,7 +527,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @return the first index such that the elements of this <code>NonEmptyList</code> starting at this index match the elements of
-    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: Vector[U]): Int = toList.indexOfSlice(that)
 
@@ -535,7 +536,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param that the <code>NonEmptyList</code> defining the slice to look for
     * @return the first index such that the elements of this <code>NonEmptyList</code> starting at this index match the elements of
-    *     <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: NonEmptyList[U]): Int = toList.indexOfSlice(that.toList)
 
@@ -545,7 +546,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>Vector</code> defining the slice to look for
     * @param from the start index
     * @return the first index <code>&gt;=</code> <code>from</code> such that the elements of this <code>NonEmptyList</code> starting at this index match the elements of
-    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: Vector[U], from: Int): Int = toList.indexOfSlice(that, from)
 
@@ -555,7 +556,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>NonEmptyList</code> defining the slice to look for
     * @param from the start index
     * @return the first index <code>&gt;=</code> <code>from</code> such that the elements of this <code>NonEmptyList</code> starting at this index match the elements of
-    *     <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *     <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def indexOfSlice[U >: T](that: NonEmptyList[U], from: Int): Int = toList.indexOfSlice(that.toList, from)
 
@@ -579,9 +580,9 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def indexWhere(p: T => Boolean, from: Int): Int = toList.indexWhere(p, from)
 
   /**
-    * Produces the range of all indices of this <code>NonEmptyList</code>. 
+    * Produces the range of all indices of this <code>NonEmptyList</code>.
     *
-    * @return a <code>Range</code> value from <code>0</code> to one less than the length of this <code>NonEmptyList</code>. 
+    * @return a <code>Range</code> value from <code>0</code> to one less than the length of this <code>NonEmptyList</code>.
     */
   def indices: Range = toList.indices
 
@@ -589,7 +590,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Tests whether this <code>NonEmptyList</code> contains given index.
     *
     * @param idx the index to test
-    * @return true if this <code>NonEmptyList</code> contains an element at position <code>idx</code>, <code>false</code> otherwise. 
+    * @return true if this <code>NonEmptyList</code> contains an element at position <code>idx</code>, <code>false</code> otherwise.
     */
   def isDefinedAt(idx: Int): Boolean = toList.isDefinedAt(idx)
 
@@ -615,7 +616,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def iterator: Iterator[T] = toList.iterator
 
   /**
-    * Selects the last element of this <code>NonEmptyList</code>. 
+    * Selects the last element of this <code>NonEmptyList</code>.
     *
     * @return the last element of this <code>NonEmptyList</code>.
     */
@@ -634,66 +635,66 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Finds the index of the last occurrence of some value in this <code>NonEmptyList</code> before or at a given <code>end</code> index.
     *
     * @param elem the element value to search for.
-    * @param end the end index. 
+    * @param end the end index.
     * @return the index <code>&gt;=</code> <code>end</code> of the last element of this <code>NonEmptyList</code> that is equal (as determined by <code>==</code>)
     *     to <code>elem</code>, or <code>-1</code>, if none exists.
     */
   def lastIndexOf[U >: T](elem: U, end: Int): Int = toList.lastIndexOf(elem, end)
 
   /**
-    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>Seq</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>Seq</code> as a slice.
     *
     * @param that the <code>Seq</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: Seq[U]): Int = toList.lastIndexOfSlice(that)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>Seq</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>Seq</code> as a slice.
     *
     * @param that the <code>Seq</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Seq</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: Seq[U], end: Int): Int = toList.lastIndexOfSlice(that, end)
 
   /**
-    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>Vector</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>Vector</code> as a slice.
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: Vector[U]): Int = toList.lastIndexOfSlice(that)
 
   /**
-    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>NonEmptyList</code> as a slice. 
+    * Finds the last index where this <code>NonEmptyList</code> contains a given <code>NonEmptyList</code> as a slice.
     *
     * @param that the <code>NonEmptyList</code> defining the slice to look for
     * @return the last index at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: NonEmptyList[U]): Int = toList.lastIndexOfSlice(that.toList)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>Vector</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>Vector</code> as a slice.
     *
     * @param that the <code>Vector</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>Vector</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: Vector[U], end: Int): Int = toList.lastIndexOfSlice(that, end)
 
   /**
-    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>NonEmptyList</code> as a slice. 
+    * Finds the last index before or at a given end index where this <code>NonEmptyList</code> contains a given <code>NonEmptyList</code> as a slice.
     *
     * @param that the <code>NonEmptyList</code> defining the slice to look for
     * @param end the end index
     * @return the last index <code>&gt;=</code> <code>end</code> at which the elements of this <code>NonEmptyList</code> starting at that index match the elements of
-    *    <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists. 
+    *    <code>NonEmptyList</code> <code>that</code>, or <code>-1</code> of no such subsequence exists.
     */
   def lastIndexOfSlice[U >: T](that: NonEmptyList[U], end: Int): Int = toList.lastIndexOfSlice(that.toList, end)
 
@@ -701,7 +702,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Finds index of last element satisfying some predicate.
     *
     * @param p the predicate used to test elements.
-    * @return the index of the last element of this <code>NonEmptyList</code> that satisfies the predicate <code>p</code>, or <code>-1</code>, if none exists. 
+    * @return the index of the last element of this <code>NonEmptyList</code> that satisfies the predicate <code>p</code>, or <code>-1</code>, if none exists.
     */
   def lastIndexWhere(p: T => Boolean): Int = toList.lastIndexWhere(p)
 
@@ -711,7 +712,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param p the predicate used to test elements.
     * @param end the end index
     * @return the index <code>&gt;=</code> <code>end</code> of the last element of this <code>NonEmptyList</code> that satisfies the predicate <code>p</code>,
-    *     or <code>-1</code>, if none exists. 
+    *     or <code>-1</code>, if none exists.
     */
   def lastIndexWhere(p: T => Boolean, end: Int): Int = toList.lastIndexWhere(p, end)
 
@@ -719,15 +720,15 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * The length of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1. 
+    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
-    * @return the number of elements in this <code>NonEmptyList</code>. 
+    * @return the number of elements in this <code>NonEmptyList</code>.
     */
   def length: Int = toList.length
 
   /**
-    * Compares the length of this <code>NonEmptyList</code> to a test value. 
+    * Compares the length of this <code>NonEmptyList</code> to a test value.
     *
     * @param len the test value that gets compared with the length.
     * @return a value <code>x</code> where
@@ -744,8 +745,8 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Builds a new <code>NonEmptyList</code> by applying a function to all elements of this <code>NonEmptyList</code>.
     *
     * @tparam U the element type of the returned <code>NonEmptyList</code>.
-    * @param f the function to apply to each element. 
-    * @return a new <code>NonEmptyList</code> resulting from applying the given function <code>f</code> to each element of this <code>NonEmptyList</code> and collecting the results. 
+    * @param f the function to apply to each element.
+    * @return a new <code>NonEmptyList</code> resulting from applying the given function <code>f</code> to each element of this <code>NonEmptyList</code> and collecting the results.
     */
   def map[U](f: T => U): NonEmptyList[U] =
     new NonEmptyList(toList.map(f))
@@ -753,57 +754,57 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Finds the largest element.
     *
-    * @return the largest element of this <code>NonEmptyList</code>. 
+    * @return the largest element of this <code>NonEmptyList</code>.
     */
   def max[U >: T](implicit cmp: Ordering[U]): T = toList.max(cmp)
 
   /**
     * Finds the largest result after applying the given function to every element.
     *
-    * @return the largest result of applying the given function to every element of this <code>NonEmptyList</code>. 
+    * @return the largest result of applying the given function to every element of this <code>NonEmptyList</code>.
     */
   def maxBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toList.maxBy(f)(cmp)
 
   /**
     * Finds the smallest element.
     *
-    * @return the smallest element of this <code>NonEmptyList</code>. 
+    * @return the smallest element of this <code>NonEmptyList</code>.
     */
   def min[U >: T](implicit cmp: Ordering[U]): T = toList.min(cmp)
 
   /**
     * Finds the smallest result after applying the given function to every element.
     *
-    * @return the smallest result of applying the given function to every element of this <code>NonEmptyList</code>. 
+    * @return the smallest result of applying the given function to every element of this <code>NonEmptyList</code>.
     */
   def minBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toList.minBy(f)(cmp)
 
   /**
-    * Displays all elements of this <code>NonEmptyList</code> in a string. 
+    * Displays all elements of this <code>NonEmptyList</code> in a string.
     *
     * @return a string representation of this <code>NonEmptyList</code>. In the resulting string, the result of invoking <code>toString</code> on all elements of this
-    *     <code>NonEmptyList</code> follow each other without any separator string. 
+    *     <code>NonEmptyList</code> follow each other without any separator string.
     */
   def mkString: String = toList.mkString
 
   /**
-    * Displays all elements of this <code>NonEmptyList</code> in a string using a separator string. 
+    * Displays all elements of this <code>NonEmptyList</code> in a string using a separator string.
     *
     * @param sep the separator string
     * @return a string representation of this <code>NonEmptyList</code>. In the resulting string, the result of invoking <code>toString</code> on all elements of this
-    *     <code>NonEmptyList</code> are separated by the string <code>sep</code>. 
+    *     <code>NonEmptyList</code> are separated by the string <code>sep</code>.
     */
   def mkString(sep: String): String = toList.mkString(sep)
 
   /**
-    * Displays all elements of this <code>NonEmptyList</code> in a string using start, end, and separator strings. 
+    * Displays all elements of this <code>NonEmptyList</code> in a string using start, end, and separator strings.
     *
     * @param start the starting string.
     * @param sep the separator string.
     * @param end the ending string.
     * @return a string representation of this <code>NonEmptyList</code>. The resulting string begins with the string <code>start</code> and ends with the string
     *     <code>end</code>. Inside, In the resulting string, the result of invoking <code>toString</code> on all elements of this <code>NonEmptyList</code> are
-    *     separated by the string <code>sep</code>. 
+    *     separated by the string <code>sep</code>.
     */
   def mkString(start: String, sep: String, end: String): String = toList.mkString(start, sep, end)
 
@@ -817,10 +818,10 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * A copy of this <code>NonEmptyList</code> with an element value appended until a given target length is reached.
     *
-    * @param len the target length 
+    * @param len the target length
     * @param elem he padding value
     * @return a new <code>NonEmptyList</code> consisting of all elements of this <code>NonEmptyList</code> followed by the minimal number of occurrences
-    *     of <code>elem</code> so that the resulting <code>NonEmptyList</code> has a length of at least <code>len</code>. 
+    *     of <code>elem</code> so that the resulting <code>NonEmptyList</code> has a length of at least <code>len</code>.
     */
   def padTo[U >: T](len: Int, elem: U): NonEmptyList[U] =
     new NonEmptyList(toList.padTo(len, elem))
@@ -828,7 +829,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Produces a new <code>NonEmptyList</code> where a slice of elements in this <code>NonEmptyList</code> is replaced by another <code>NonEmptyList</code>
     *
-    * @param from the index of the first replaced element 
+    * @param from the index of the first replaced element
     * @param that the <code>NonEmptyList</code> whose elements should replace a slice in this <code>NonEmptyList</code>
     * @param replaced the number of elements to drop in the original <code>NonEmptyList</code>
     */
@@ -836,7 +837,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     new NonEmptyList(toList.patch(from, that.toVector, replaced))
 
   /**
-    * Iterates over distinct permutations. 
+    * Iterates over distinct permutations.
     *
     * <p>
     * Here's an example:
@@ -850,7 +851,9 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def permutations: Iterator[NonEmptyList[T]] = {
     val it = toList.permutations
-    it map { list => new NonEmptyList(list) }
+    it map {
+      list => new NonEmptyList(list)
+    }
   }
 
   /**
@@ -858,7 +861,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param p the predicate used to test elements.
     * @return the length of the longest prefix of this <code>NonEmptyList</code> such that every element
-    *     of the segment satisfies the predicate <code>p</code>. 
+    *     of the segment satisfies the predicate <code>p</code>.
     */
   def prefixLength(p: T => Boolean): Int = toList.segmentLength(p, 0)
 
@@ -877,7 +880,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Reduces the elements of this <code>NonEmptyList</code> using the specified associative binary operator.
     *
     * <p>
-    * The order in which operations are performed on elements is unspecified and may be nondeterministic. 
+    * The order in which operations are performed on elements is unspecified and may be nondeterministic.
     * </p>
     *
     * @tparam U a type parameter for the binary operator, a supertype of T.
@@ -898,7 +901,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>.
     * </p>
     */
   def reduceLeft[U >: T](op: (U, T) => U): U = toList.reduceLeft(op)
@@ -927,7 +930,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * </pre>
     *
     * <p>
-    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>. 
+    * where x<sub>1</sub>, ..., x<sub>n</sub> are the elements of this <code>NonEmptyList</code>.
     * </p>
     */
   def reduceRight[U >: T](op: (T, U) => U): U = toList.reduceRight(op)
@@ -944,7 +947,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Returns new <code>NonEmptyList</code> with elements in reverse order.
     *
-    * @return a new <code>NonEmptyList</code> with all elements of this <code>NonEmptyList</code> in reversed order. 
+    * @return a new <code>NonEmptyList</code> with all elements of this <code>NonEmptyList</code> in reversed order.
     */
   def reverse: NonEmptyList[T] =
     new NonEmptyList(toList.reverse)
@@ -953,10 +956,10 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * An iterator yielding elements in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyList.reverseIterator</code> is the same as <code>nonEmptyList.reverse.iterator</code>, but might be more efficient. 
+    * Note: <code>nonEmptyList.reverseIterator</code> is the same as <code>nonEmptyList.reverse.iterator</code>, but might be more efficient.
     * </p>
     *
-    * @return an iterator yielding the elements of this <code>NonEmptyList</code> in reversed order 
+    * @return an iterator yielding the elements of this <code>NonEmptyList</code> in reversed order
     */
   def reverseIterator: Iterator[T] = toList.reverseIterator
 
@@ -964,13 +967,13 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Builds a new <code>NonEmptyList</code> by applying a function to all elements of this <code>NonEmptyList</code> and collecting the results in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyList.reverseMap(f)</code> is the same as <code>nonEmptyList.reverse.map(f)</code>, but might be more efficient. 
+    * Note: <code>nonEmptyList.reverseMap(f)</code> is the same as <code>nonEmptyList.reverse.map(f)</code>, but might be more efficient.
     * </p>
     *
     * @tparam U the element type of the returned <code>NonEmptyList</code>.
-    * @param f the function to apply to each element. 
+    * @param f the function to apply to each element.
     * @return a new <code>NonEmptyList</code> resulting from applying the given function <code>f</code> to each element of this <code>NonEmptyList</code>
-    *     and collecting the results in reverse order. 
+    *     and collecting the results in reverse order.
     */
   def reverseMap[U](f: T => U): NonEmptyList[U] =
     new NonEmptyList(toList.reverseIterator.map(f).toList)
@@ -980,7 +983,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param that the <code>Iterable</code> with which to compare
     * @return <code>true</code>, if both this <code>NonEmptyList</code> and the given <code>Iterable</code> contain the same elements
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements[U >: T](that: Iterable[U]): Boolean = toList.sameElements(that)
 
@@ -989,7 +992,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param that the <code>Vector</code> with which to compare
     * @return <code>true</code>, if both this and the given <code>Vector</code> contain the same elements
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements[U >: T](that: Vector[U]): Boolean = toList.sameElements(that)
 
@@ -998,7 +1001,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @param that the <code>NonEmptyList</code> with which to compare
     * @return <code>true</code>, if both this and the given <code>NonEmptyList</code> contain the same elements
-    *     in the same order, <code>false</code> otherwise. 
+    *     in the same order, <code>false</code> otherwise.
     */
   def sameElements[U >: T](that: NonEmptyList[U]): Boolean = toList.sameElements(that.toList)
 
@@ -1006,7 +1009,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Computes a prefix scan of the elements of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once. 
+    * Note: The neutral element z may be applied more than once.
     * </p>
     *
     * <p>
@@ -1023,7 +1026,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *     times, and must not change the result (<em>e.g.</em>, <code>Nil</code> for list concatenation,
     *     0 for addition, or 1 for multiplication.)
     * @param op a binary operator that must be associative
-    * @return a new <code>NonEmptyList</code> containing the prefix scan of the elements in this <code>NonEmptyList</code> 
+    * @return a new <code>NonEmptyList</code> containing the prefix scan of the elements in this <code>NonEmptyList</code>
     */
   def scan[U >: T](z: U)(op: (U, U) => U): NonEmptyList[U] = new NonEmptyList(toList.scan(z)(op))
 
@@ -1073,7 +1076,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param p the predicate used to test elements.
     * @param from the index where the search starts.
     * @param the length of the longest segment of this <code>NonEmptyList</code> starting from index <code>from</code> such that every element of the
-    *     segment satisfies the predicate <code>p</code>. 
+    *     segment satisfies the predicate <code>p</code>.
     */
   def segmentLength(p: T => Boolean, from: Int): Int = toList.segmentLength(p, from)
 
@@ -1101,10 +1104,10 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * The size of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1. 
+    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
-    * @return the number of elements in this <code>NonEmptyList</code>. 
+    * @return the number of elements in this <code>NonEmptyList</code>.
     */
   def size: Int = toList.size
 
@@ -1115,7 +1118,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param f the transformation function mapping elements to some other domain <code>U</code>.
     * @param ord the ordering assumed on domain <code>U</code>.
     * @return a <code>NonEmptyList</code> consisting of the elements of this <code>NonEmptyList</code> sorted according to the <code>Ordering</code> where
-    *    <code>x &lt; y if ord.lt(f(x), f(y))</code>. 
+    *    <code>x &lt; y if ord.lt(f(x), f(y))</code>.
     */
   def sortBy[U](f: T => U)(implicit ord: Ordering[U]): NonEmptyList[T] = new NonEmptyList(toList.sortBy(f))
 
@@ -1124,7 +1127,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * <p>
     * The sort is stable. That is, elements that are equal (as determined by <code>lt</code>) appear in the same order in the
-    * sorted <code>NonEmptyList</code> as in the original. 
+    * sorted <code>NonEmptyList</code> as in the original.
     * </p>
     *
     * @param the comparison function that tests whether its first argument precedes its second argument in the desired ordering.
@@ -1137,7 +1140,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * <p>
     * The sort is stable. That is, elements that are equal (as determined by <code>lt</code>) appear in the same order in the
-    * sorted <code>NonEmptyList</code> as in the original. 
+    * sorted <code>NonEmptyList</code> as in the original.
     * </p>
     *
     * @param ord the <code>Ordering</code> to be used to compare elements.
@@ -1147,7 +1150,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def sorted[U >: T](implicit ord: Ordering[U]): NonEmptyList[U] = new NonEmptyList(toList.sorted(ord))
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Seq</code>. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Seq</code>.
     *
     * @param that the <code>Seq</code> slice to look for in this <code>NonEmptyList</code>
     * @return <code>true</code> if this <code>NonEmptyList</code> has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1155,7 +1158,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def startsWith[B](that: Seq[B]): Boolean = toList.startsWith[Any](that)
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Seq</code> at the given index. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Seq</code> at the given index.
     *
     * @param that the <code>Seq</code> slice to look for in this <code>NonEmptyList</code>
     * @param offset the index at which this <code>NonEmptyList</code> is searched.
@@ -1164,7 +1167,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def startsWith[B](that: Seq[B], offset: Int): Boolean = toList.startsWith[Any](that, offset)
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Vector</code>. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Vector</code>.
     *
     * @param that the <code>Vector</code> to test
     * @return <code>true</code> if this collection has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1172,7 +1175,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def startsWith[B](that: Vector[B]): Boolean = toList.startsWith[Any](that)
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>NonEmptyList</code>. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>NonEmptyList</code>.
     *
     * @param that the <code>NonEmptyList</code> to test
     * @return <code>true</code> if this collection has <code>that</code> as a prefix, <code>false</code> otherwise.
@@ -1180,7 +1183,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def startsWith[B](that: NonEmptyList[B]): Boolean = toList.startsWith[Any](that.toList)
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Vector</code> at the given index. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>Vector</code> at the given index.
     *
     * @param that the <code>Vector</code> slice to look for in this <code>NonEmptyList</code>
     * @param offset the index at which this <code>NonEmptyList</code> is searched.
@@ -1189,7 +1192,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def startsWith[B](that: Vector[B], offset: Int): Boolean = toList.startsWith[Any](that, offset)
 
   /**
-    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>NonEmptyList</code> at the given index. 
+    * Indicates whether this <code>NonEmptyList</code> starts with the given <code>NonEmptyList</code> at the given index.
     *
     * @param that the <code>NonEmptyList</code> slice to look for in this <code>NonEmptyList</code>
     * @param offset the index at which this <code>NonEmptyList</code> is searched.
@@ -1221,56 +1224,56 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Converts this <code>NonEmptyList</code> into a collection of type <code>Col</code> by copying all elements.
     *
     * @tparam C1 the collection type to build.
-    * @return a new collection containing all elements of this <code>NonEmptyList</code>. 
+    * @return a new collection containing all elements of this <code>NonEmptyList</code>.
     */
   def to[C1](factory: Factory[T, C1]): C1 = factory.fromSpecific(iterator)
 
   /**
     * Converts this <code>NonEmptyList</code> to an array.
     *
-    * @return an array containing all elements of this <code>NonEmptyList</code>. A <code>ClassTag</code> must be available for the element type of this <code>NonEmptyList</code>. 
+    * @return an array containing all elements of this <code>NonEmptyList</code>. A <code>ClassTag</code> must be available for the element type of this <code>NonEmptyList</code>.
     */
   def toArray[U >: T](implicit classTag: ClassTag[U]): Array[U] = toList.toArray
 
   /**
     * Converts this <code>NonEmptyList</code> to a <code>Vector</code>.
     *
-    * @return a <code>Vector</code> containing all elements of this <code>NonEmptyList</code>. 
+    * @return a <code>Vector</code> containing all elements of this <code>NonEmptyList</code>.
     */
   def toVector: Vector[T] = toList.toVector
 
   /**
     * Converts this <code>NonEmptyList</code> to a mutable buffer.
     *
-    * @return a buffer containing all elements of this <code>NonEmptyList</code>. 
+    * @return a buffer containing all elements of this <code>NonEmptyList</code>.
     */
   def toBuffer[U >: T]: mutable.Buffer[U] = toList.toBuffer
 
   /**
     * Converts this <code>NonEmptyList</code> to an immutable <code>IndexedSeq</code>.
     *
-    * @return an immutable <code>IndexedSeq</code> containing all elements of this <code>NonEmptyList</code>. 
+    * @return an immutable <code>IndexedSeq</code> containing all elements of this <code>NonEmptyList</code>.
     */
   def toIndexedSeq: collection.immutable.IndexedSeq[T] = toList.toVector
 
   /**
     * Converts this <code>NonEmptyList</code> to an iterable collection.
     *
-    * @return an <code>Iterable</code> containing all elements of this <code>NonEmptyList</code>. 
+    * @return an <code>Iterable</code> containing all elements of this <code>NonEmptyList</code>.
     */
   def toIterable: Iterable[T] = toList
 
   /**
     * Returns an <code>Iterator</code> over the elements in this <code>NonEmptyList</code>.
     *
-    * @return an <code>Iterator</code> containing all elements of this <code>NonEmptyList</code>. 
+    * @return an <code>Iterator</code> containing all elements of this <code>NonEmptyList</code>.
     */
   def toIterator: Iterator[T] = toList.iterator
 
   /**
     * Converts this <code>NonEmptyList</code> to a list.
     *
-    * @return a list containing all elements of this <code>NonEmptyList</code>. 
+    * @return a list containing all elements of this <code>NonEmptyList</code>.
     */
   // def toList: List[T] = toList
 
@@ -1282,7 +1285,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * in the map. Duplicate keys will be overwritten by later keys.
     * </p>
     *
-    * @return a map of type <code>immutable.Map[K, V]</code> containing all key/value pairs of type <code>(K, V)</code> of this <code>NonEmptyList</code>. 
+    * @return a map of type <code>immutable.Map[K, V]</code> containing all key/value pairs of type <code>(K, V)</code> of this <code>NonEmptyList</code>.
     */
   def toMap[K, V](implicit ev: T <:< (K, V)): Map[K, V] = toList.toMap
 
@@ -1296,7 +1299,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /**
     * Converts this <code>NonEmptyList</code> to a set.
     *
-    * @return a set containing all elements of this <code>NonEmptyList</code>. 
+    * @return a set containing all elements of this <code>NonEmptyList</code>.
     */
   def toSet[U >: T]: Set[U] = toList.toSet
 
@@ -1369,12 +1372,12 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   def union[U >: T](that: Seq[U]): NonEmptyList[U] = new NonEmptyList(toList ++ that)
 
   /**
-    * Converts this <code>NonEmptyList</code> of pairs into two <code>NonEmptyList</code>s of the first and second half of each pair. 
+    * Converts this <code>NonEmptyList</code> of pairs into two <code>NonEmptyList</code>s of the first and second half of each pair.
     *
     * @tparam L the type of the first half of the element pairs
     * @tparam R the type of the second half of the element pairs
     * @param asPair an implicit conversion that asserts that the element type of this <code>NonEmptyList</code> is a pair.
-    * @return a pair of <code>NonEmptyList</code>s, containing the first and second half, respectively, of each element pair of this <code>NonEmptyList</code>. 
+    * @return a pair of <code>NonEmptyList</code>s, containing the first and second half, respectively, of each element pair of this <code>NonEmptyList</code>.
     */
   def unzip[L, R](implicit asPair: T => (L, R)): (NonEmptyList[L], NonEmptyList[R]) = {
     val unzipped = toList.unzip
@@ -1382,13 +1385,13 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   }
 
   /**
-    * Converts this <code>NonEmptyList</code> of triples into three <code>NonEmptyList</code>s of the first, second, and and third element of each triple. 
+    * Converts this <code>NonEmptyList</code> of triples into three <code>NonEmptyList</code>s of the first, second, and and third element of each triple.
     *
     * @tparam L the type of the first member of the element triples
     * @tparam R the type of the second member of the element triples
     * @tparam R the type of the third member of the element triples
     * @param asTriple an implicit conversion that asserts that the element type of this <code>NonEmptyList</code> is a triple.
-    * @return a triple of <code>NonEmptyList</code>s, containing the first, second, and third member, respectively, of each element triple of this <code>NonEmptyList</code>. 
+    * @return a triple of <code>NonEmptyList</code>s, containing the first, second, and third member, respectively, of each element triple of this <code>NonEmptyList</code>.
     */
   def unzip3[L, M, R](implicit asTriple: T => (L, M, R)): (NonEmptyList[L], NonEmptyList[M], NonEmptyList[R]) = {
     val unzipped = toList.unzip3
@@ -1401,7 +1404,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param idx the position of the replacement
     * @param elem the replacing element
     * @throws IndexOutOfBoundsException if the passed index is greater than or equal to the length of this <code>NonEmptyList</code>
-    * @return a copy of this <code>NonEmptyList</code> with the element at position <code>idx</code> replaced by <code>elem</code>. 
+    * @return a copy of this <code>NonEmptyList</code> with the element at position <code>idx</code> replaced by <code>elem</code>.
     */
   def updated[U >: T](idx: Int, elem: U): NonEmptyList[U] =
     try new NonEmptyList(toList.updated(idx, elem))
@@ -1421,7 +1424,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @return a new <code>NonEmptyList</code> containing pairs consisting of corresponding elements of this <code>NonEmptyList</code> and <code>that</code>. The
     *     length of the returned collection is the maximum of the lengths of this <code>NonEmptyList</code> and <code>that</code>. If this <code>NonEmptyList</code>
     *     is shorter than <code>that</code>, <code>thisElem</code> values are used to pad the result. If <code>that</code> is shorter than this
-    *     <code>NonEmptyList</code>, <code>thatElem</code> values are used to pad the result. 
+    *     <code>NonEmptyList</code>, <code>thatElem</code> values are used to pad the result.
     */
   def zipAll[O, U >: T](other: collection.Iterable[O], thisElem: U, otherElem: O): NonEmptyList[(U, O)] =
     new NonEmptyList(toList.zipAll(other, thisElem, otherElem))
@@ -1452,14 +1455,14 @@ object NonEmptyList {
     * Variable argument extractor for <code>NonEmptyList</code>s.
     *
     * @param nonEmptyList: the <code>NonEmptyList</code> containing the elements to extract
-    * @return an <code>Seq</code> containing this <code>NonEmptyList</code>s elements, wrapped in a <code>Some</code> 
+    * @return an <code>Seq</code> containing this <code>NonEmptyList</code>s elements, wrapped in a <code>Some</code>
     */
   def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[Seq[T]] = Some(nonEmptyList.toList)
 
   /*
     // TODO: Figure out how to get case NonEmptyList() to not compile
     def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[(T, Seq[T])] = Some(nonEmptyList.head, nonEmptyList.tail)
-  */
+   */
 
   /**
     * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>Seq</code>.

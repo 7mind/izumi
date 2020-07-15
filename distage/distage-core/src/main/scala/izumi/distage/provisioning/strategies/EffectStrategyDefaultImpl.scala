@@ -10,13 +10,14 @@ import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
-class EffectStrategyDefaultImpl
-  extends EffectStrategy {
+class EffectStrategyDefaultImpl extends EffectStrategy {
 
-  override def executeEffect[F[_]: TagK](context: ProvisioningKeyProvider,
-                                         @unused executor: OperationExecutor,
-                                         op: MonadicOp.ExecuteEffect,
-                                        )(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+  override def executeEffect[F[_]: TagK](
+    context: ProvisioningKeyProvider,
+    @unused executor: OperationExecutor,
+    op: MonadicOp.ExecuteEffect,
+  )(implicit F: DIEffect[F]
+  ): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor
 

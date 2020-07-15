@@ -16,10 +16,15 @@ trait AssertBIO {
 object AssertBIO extends AssertBIO {
 
   object AssertBIOMacro {
-    def impl[F[+_, +_]](c: blackbox.Context)(arg: c.Expr[Boolean])(BIO: c.Expr[BIO[F]], prettifier: c.Expr[Prettifier], pos: c.Expr[org.scalactic.source.Position]): c.Expr[F[Nothing, Assertion]] = {
+    def impl[F[+_, +_]](
+      c: blackbox.Context
+    )(arg: c.Expr[Boolean]
+    )(BIO: c.Expr[BIO[F]],
+      prettifier: c.Expr[Prettifier],
+      pos: c.Expr[org.scalactic.source.Position],
+    ): c.Expr[F[Nothing, Assertion]] = {
       import c.universe._
-      c.Expr[F[Nothing, Assertion]](
-        q"$BIO.sync(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
+      c.Expr[F[Nothing, Assertion]](q"$BIO.sync(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
     }
   }
 

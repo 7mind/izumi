@@ -29,9 +29,12 @@ object AppShutdownStrategy {
     }
 
     def await(logger: IzLogger): Unit = {
-      val shutdownHook = new Thread(() => {
-        stop()
-      }, "termination-hook-latch")
+      val shutdownHook = new Thread(
+        () => {
+          stop()
+        },
+        "termination-hook-latch",
+      )
 
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
@@ -69,9 +72,12 @@ object AppShutdownStrategy {
     }
 
     def await(logger: IzLogger): F[Unit] = {
-      val shutdownHook = new Thread(() => {
-        stop()
-      }, "termination-hook-promise")
+      val shutdownHook = new Thread(
+        () => {
+          stop()
+        },
+        "termination-hook-promise",
+      )
 
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
@@ -109,25 +115,29 @@ object AppShutdownStrategy {
     }
 
     def await(logger: IzLogger): F[Throwable, Unit] = {
-      val shutdownHook = new Thread(() => {
-        stop()
-      }, "termination-hook-promise")
+      val shutdownHook = new Thread(
+        () => {
+          stop()
+        },
+        "termination-hook-promise",
+      )
 
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
 
       val f = shutdownPromise.future
 
-      F.fromFuture { implicit ec =>
-        f.map[Unit] {
-          _ =>
-            try {
-              Runtime.getRuntime.removeShutdownHook(shutdownHook)
-            } catch {
-              case _: IllegalStateException =>
-            }
-            logger.info("Going to shut down...")
-        }
+      F.fromFuture {
+        implicit ec =>
+          f.map[Unit] {
+            _ =>
+              try {
+                Runtime.getRuntime.removeShutdownHook(shutdownHook)
+              } catch {
+                case _: IllegalStateException =>
+              }
+              logger.info("Going to shut down...")
+          }
       }
     }
   }

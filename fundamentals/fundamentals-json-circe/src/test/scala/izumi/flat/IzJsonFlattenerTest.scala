@@ -1,4 +1,3 @@
-
 package izumi.flat
 
 import io.circe.Json
@@ -27,4 +26,3 @@ class IzJsonFlattenerTest extends AnyWordSpec {
     assert(inflated.contains(original))
   }
 }
-

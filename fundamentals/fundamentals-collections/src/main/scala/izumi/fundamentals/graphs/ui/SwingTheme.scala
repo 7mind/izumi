@@ -25,8 +25,7 @@ object SwingTheme {
       if ("Nimbus" == info.getName) {
         javax.swing.UIManager.setLookAndFeel(info.getClassName)
       }
-    }
-    catch {
+    } catch {
       case t: Throwable =>
         t.printStackTrace()
     }

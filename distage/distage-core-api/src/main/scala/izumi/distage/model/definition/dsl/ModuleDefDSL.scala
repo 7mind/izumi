@@ -420,7 +420,7 @@ object ModuleDefDSL {
       *
       *   many[T].addSet(Set(new T, new T, new T))
       * }}}
-      **/
+      */
     final def addSet[I <: Set[_ <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       addSet(ProviderMagnet.lift(function))
 
@@ -831,7 +831,7 @@ object ModuleDefDSL {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
     }
 
-    /** These tags apply ONLY to EmptySet binding itself, not to set elements **/
+    /** These tags apply ONLY to EmptySet binding itself, not to set elements * */
     def tagged(tags: BindingTag*): SetDSL[T] = {
       addOp(AddTagsAll(tags.toSet))(new SetDSL[T](_))
     }
