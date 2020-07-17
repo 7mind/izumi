@@ -11,7 +11,9 @@ import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedPar
 import scala.collection.mutable
 import scala.runtime.RichInt
 
-class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
+class LogstageCirceRenderingPolicy(
+  prettyPrint: Boolean = false
+) extends RenderingPolicy {
 
   import LogstageCirceRenderingPolicy._
 
@@ -145,7 +147,10 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
       Json.fromFields(
         Seq(
           "type" -> Json.fromString(a.getClass.getName),
-          "message" -> Json.fromString(a.getMessage),
+          "message" -> {
+            val m = a.getMessage
+            if (m eq null) Json.Null else Json.fromString(m)
+          },
           "stacktrace" -> Json.fromString(a.stackTrace),
         )
       )
