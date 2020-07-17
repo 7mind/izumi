@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering
 
 import izumi.fundamentals.platform.basics.IzBoolean._
-import izumi.fundamentals.platform.exceptions.IzThrowable
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.time.IzTimeSafe
 import izumi.logstage.DebugProperties
@@ -55,7 +55,6 @@ class StringRenderingPolicy(
         if (context.colored) {
           builder.append(Console.YELLOW)
         }
-        import IzThrowable._
         builder.append(t.stackTrace)
         if (context.colored) {
           builder.append(Console.RESET)
