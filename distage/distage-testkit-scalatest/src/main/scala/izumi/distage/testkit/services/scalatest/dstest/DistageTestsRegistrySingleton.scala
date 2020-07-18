@@ -50,6 +50,16 @@ object DistageTestsRegistrySingleton {
     }
   }
 
+  def resetRegistry(): Unit = {
+    runTracker.clear()
+    registry.clear()
+    registrationOpen.set(true)
+    statuses.clear()
+    suiteReporters.clear()
+    knownSuites.clear()
+    ()
+  }
+
   def registeredTests[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
     val arr = registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty)
     castArray(arr).toSeq
