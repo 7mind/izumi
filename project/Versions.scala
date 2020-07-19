@@ -28,7 +28,7 @@ object V {
 
   // good to drop - scala
   val scala_java_time = "2.0.0-RC5"
-  val scalamock = "4.4.0"
+  val scalamock = "5.0.0"
 
   // java-only dependencies below
   val classgraph = "4.8.87"
