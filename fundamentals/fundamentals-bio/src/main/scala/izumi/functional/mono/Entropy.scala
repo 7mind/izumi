@@ -17,6 +17,7 @@ trait Entropy[+F[_]] {
   def nextFloat(): F[Float]
   def nextGaussian(): F[Double]
   def nextLong(): F[Long]
+  def nextLong(max: Long): F[Long]
   def nextInt(max: Int): F[Int]
   def nextInt(): F[Int]
   def nextTimeUUID(): F[UUID]
@@ -55,6 +56,7 @@ object Entropy {
       override def nextInt(): F[Int] = F.syncSafe(impureEntropy.nextInt())
       override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
       override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
+      override def nextLong(max: Long): F[Long] = F.syncSafe(impureEntropy.nextLong(max))
 
       @nowarn("msg=CanBuildFrom")
       override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
@@ -78,6 +80,7 @@ object Entropy {
     override def nextGaussian(): Double = random.nextGaussian()
     override def nextLong(): Long = random.nextLong()
     override def nextInt(): Int = random.nextInt()
+    override def nextLong(max: Long): Identity[Long] = random.nextLong(max)
   }
 
 }
