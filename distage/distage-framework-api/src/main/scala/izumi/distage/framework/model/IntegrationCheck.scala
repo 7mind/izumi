@@ -11,7 +11,7 @@ import izumi.fundamentals.platform.integration.ResourceCheck
   * Not wrapped in `F` because you shouldn't use async or any non-trivial effect inside IntegrationCheck,
   * it must be _trivial_ and return near-instantly. The execution will be suspended in F.
   */
-trait IntegrationCheck {
+trait IntegrationCheck[F[_]] {
   /** This method must never throw, on error return [[ResourceCheck.Failure]] instead * */
-  def resourcesAvailable(): ResourceCheck
+  def resourcesAvailable(): F[ResourceCheck]
 }

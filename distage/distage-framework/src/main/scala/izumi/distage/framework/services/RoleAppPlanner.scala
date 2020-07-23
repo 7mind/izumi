@@ -56,7 +56,7 @@ object RoleAppPlanner {
       val runtimeKeys = bootstrappedApp.plan.keys
 
       val appPlan = bootstrappedApp.injector.trisectByKeys(bootloader.activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
-        _.collectChildren[IntegrationCheck].map(_.target).toSet
+        _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)

@@ -35,7 +35,7 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
   make[TestRole04[F]]
 
   make[TestRole00Resource[F]]
-  make[TestRole00ResourceIntegrationCheck]
+  make[TestRole00ResourceIntegrationCheck[F]]
 
   make[NotCloseable].from[InheritedCloseable]
   make[ConfigWriter[F]]

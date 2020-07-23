@@ -46,7 +46,7 @@ object IntegrationChecker {
       val instances = integrationComponents
         .toList.map {
           ick =>
-            ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck])
+            ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[F]])
         }.toSet
 
       val good = instances.collect { case (_, Some(ic)) => ic }
@@ -68,25 +68,25 @@ object IntegrationChecker {
       }
     }
 
-    private def runCheck(resource: IntegrationCheck)(implicit F: DIEffect[F]): F[Either[ResourceCheck.Failure, Unit]] = {
-      F.maybeSuspend {
-        logger.debug(s"Checking $resource")
-        try {
-          resource.resourcesAvailable() match {
-            case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
-              logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
-              Left(failure)
-            case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
-              logger.debug(s"Integration check failed, $resource unavailable: $reason")
-              Left(failure)
-            case ResourceCheck.Success() =>
-              Right(())
-          }
-        } catch {
-          case NonFatal(exception) =>
-            logger.error(s"Integration check for $resource threw $exception")
-            Left(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
+    private def runCheck(resource: IntegrationCheck[F])(implicit F: DIEffect[F]): F[Either[ResourceCheck.Failure, Unit]] = {
+      logger.debug(s"Checking $resource")
+      F.definitelyRecover {
+        resource.resourcesAvailable().map {
+          case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
+            logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
+            Left(failure): Either[ResourceCheck.Failure, Unit]
+          case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
+            logger.debug(s"Integration check failed, $resource unavailable: $reason")
+            Left(failure)
+          case ResourceCheck.Success() =>
+            Right(())
         }
+      } {
+        case NonFatal(exception) =>
+          logger.error(s"Integration check for $resource threw $exception")
+          F.pure(Left(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception))))
+        case other =>
+          F.fail(other)
       }
     }
   }

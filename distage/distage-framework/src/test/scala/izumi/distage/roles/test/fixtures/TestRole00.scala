@@ -39,7 +39,7 @@ object roles {
     val resources: Set[TestResource],
     val conflict: Conflict,
     val es: ExecutorService,
-    val counter: XXX_ResourceEffectsRecorder,
+    val counter: XXX_ResourceEffectsRecorder[F],
     val ref: XXX_LocatorLeak,
   ) extends RoleService[F] {
     notCloseable.discard()
@@ -62,12 +62,12 @@ object roles {
     final case class IntegrationOnlyCfg(flag: Boolean)
     final case class IntegrationOnlyCfg2(value: String)
 
-    final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck)
-    final class TestRole00ResourceIntegrationCheck(
+    final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck[F])
+    final class TestRole00ResourceIntegrationCheck[F[_]:DIEffect](
       private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
-    ) extends IntegrationCheck {
-      override def resourcesAvailable(): ResourceCheck = {
+    ) extends IntegrationCheck[F] {
+      override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure{
         assert(cfg2.value == "configvalue:updated")
         ResourceCheck.Success()
       }

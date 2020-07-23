@@ -2,6 +2,7 @@ package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.{ExecutorService, Executors}
 
+import cats.effect.IO
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
@@ -19,26 +20,26 @@ class ConflictPlugin extends PluginDef {
 
 class ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
-  make[IntegrationResource1]
-  make[JustResource1]
-  make[JustResource2]
-  make[ProbeResource0]
-  make[JustResource3]
+  make[IntegrationResource1[IO]]
+  make[JustResource1[IO]]
+  make[JustResource2[IO]]
+  make[ProbeResource0[IO]]
+  make[JustResource3[IO]]
 
   many[TestResource]
-    .ref[IntegrationResource1]
-    .ref[JustResource1]
-    .ref[JustResource2]
-    .ref[ProbeResource0]
-    .ref[JustResource3]
+    .ref[IntegrationResource1[IO]]
+    .ref[JustResource1[IO]]
+    .ref[JustResource2[IO]]
+    .ref[ProbeResource0[IO]]
+    .ref[JustResource3[IO]]
 }
 
 class ResourcesPlugin extends ResourcesPluginBase with PluginDef {
-  make[XXX_ResourceEffectsRecorder]
+  make[XXX_ResourceEffectsRecorder[IO]]
 
-  make[IntegrationResource0]
+  make[IntegrationResource0[IO]]
   many[TestResource]
-    .ref[IntegrationResource0]
+    .ref[IntegrationResource0[IO]]
 }
 
 object ResourcesPlugin {
