@@ -1,7 +1,8 @@
 package distage
 
-import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.definition.BootstrapContextModule
+import izumi.distage.model.definition.StandardAxis.Cycles
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
 

@@ -146,15 +146,17 @@ class DistageTestRunner[F[_]: TagK](
     // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
     val runtimeKeys = runtimePlan.keys
 
-    // produce plan for each test
-    val testPlans = tests.map {
-      distageTest =>
-        val testRoots = distageTest.test.get.diKeys.toSet ++ env.forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
-        PreparedTest(distageTest, plan, env.activationInfo, env.activation, planner)
-    }
-    val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
-    val sharedKeys = envKeys.intersect(env.memoizationRoots) -- runtimeKeys
+              // produce plan for each test
+              val testPlans = tests.map {
+                distageTest =>
+                  val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
+                  val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
+                  val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
+                  PreparedTest(distageTest, plan, env.activationInfo, env.activation, planner)
+              }
+              val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
+              val memoizationRoots = env.memoizationRoots.getActiveKeys(env.activation)
+              val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
 
     // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
     // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized

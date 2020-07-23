@@ -23,11 +23,25 @@ object StandardAxis {
     case object Mock extends AxisValueDef
   }
 
+  object Cycles extends Axis {
+    override def name: String = "cycles"
+
+    /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */
+    case object Proxy extends AxisValueDef
+
+    /** Disable cglib proxies, allow only by-name parameters to resolve cycles */
+    case object Byname extends AxisValueDef
+
+    /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
+    case object Disable extends AxisValueDef
+  }
+
   def prodActivation: Activation = {
     Activation(
       Env -> Env.Prod,
       Repo -> Repo.Prod,
       ExternalApi -> ExternalApi.Prod,
+      Cycles -> Cycles.Proxy,
     )
   }
 
@@ -36,6 +50,7 @@ object StandardAxis {
       Env -> Env.Test,
       Repo -> Repo.Prod,
       ExternalApi -> ExternalApi.Prod,
+      Cycles -> Cycles.Proxy,
     )
   }
 
@@ -44,6 +59,7 @@ object StandardAxis {
       Env -> Env.Test,
       Repo -> Repo.Dummy,
       ExternalApi -> ExternalApi.Mock,
+      Cycles -> Cycles.Proxy,
     )
   }
 
