@@ -6,7 +6,7 @@ object V {
   val collection_compat = "2.1.6"
 
   val kind_projector = "0.11.0"
-  val silencer = "1.7.0"
+  val silencer = "1.7.1"
   val neme_plugin = "0.0.5"
 
   val scalatest = "3.1.2"
