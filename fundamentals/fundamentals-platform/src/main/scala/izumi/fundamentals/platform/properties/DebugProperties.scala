@@ -2,8 +2,6 @@ package izumi.fundamentals.platform.properties
 
 import izumi.fundamentals.platform.strings.IzString._
 
-import scala.language.implicitConversions
-
 /**
   * Marker trait for objects that hold names of Java Properties
   * that control debug output for macros and internals of `izumi` libraries.
