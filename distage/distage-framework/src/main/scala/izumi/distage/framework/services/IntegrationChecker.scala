@@ -48,9 +48,13 @@ object IntegrationChecker {
       val (identityInstances, fInstances) = integrationComponents
         .toList.partitionMap {
           ick =>
+          println(ick)
             if (ick.tpe <:< DIKey[IntegrationCheck[Identity]].tpe) {
+              println("i")
+
               Left(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[Identity]]))
             } else {
+              println("f")
               Right(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[F]]))
             }
         }
@@ -64,8 +68,8 @@ object IntegrationChecker {
 
       if (bad.isEmpty) {
         for {
-          identityChecked <- P.parTraverse(identityChecks)(i => checkWrap(F.maybeSuspend(runCheck(i)), i.toString))
-          fChecked <- P.parTraverse(fChecks)(i => checkWrap(runCheck(i), i.toString))
+          identityChecked <- P.parTraverse(identityChecks)(i => checkWrap(F.maybeSuspend(runCheck[Identity](i)), i.toString))
+          fChecked <- P.parTraverse(fChecks)(i => checkWrap(runCheck[F](i), i.toString))
           results = identityChecked ++ fChecked
           res <- results.collect { case Left(failure) => failure } match {
             case Nil =>
@@ -80,10 +84,11 @@ object IntegrationChecker {
     }
 
     private def runCheck[F1[_]](resource: IntegrationCheck[F1])(implicit F1: DIEffect[F1]): F1[Either[ResourceCheck.Failure, Unit]] = {
+      println(resource)
       resource.resourcesAvailable().map {
         case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
           logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
-          Left(failure): Either[ResourceCheck.Failure, Unit]
+          Left(failure)
         case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
           logger.debug(s"Integration check failed, $resource unavailable: $reason")
           Left(failure)
