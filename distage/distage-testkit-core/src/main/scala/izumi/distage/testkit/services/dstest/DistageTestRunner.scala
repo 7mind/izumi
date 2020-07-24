@@ -287,7 +287,7 @@ class DistageTestRunner[F[_]: TagK](
   )(implicit
     F: DIEffect[F]
   ): F[Unit] = {
-    checker.collectFailures(plans.side.declaredRoots, integrationLocator).flatMap {
+    checker.collectFailures(plans.side, integrationLocator).flatMap {
       case Left(failures) =>
         F.maybeSuspend {
           ignoreIntegrationCheckFailedTests(tests, failures)

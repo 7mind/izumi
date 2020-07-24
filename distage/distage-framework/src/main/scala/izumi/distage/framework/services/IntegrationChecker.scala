@@ -6,6 +6,7 @@ import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -15,11 +16,10 @@ import izumi.logstage.api.IzLogger
 import scala.util.control.NonFatal
 
 trait IntegrationChecker[F[_]] {
-  def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]]
-  final def checkOrFail(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Unit] = {
+  def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]]
+  final def checkOrFail(plan: OrderedPlan, integrationLocator: Locator): F[Unit] = {
     implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
-
-    collectFailures(integrationComponents, integrationLocator).flatMap {
+    collectFailures(plan, integrationLocator).flatMap {
       case Left(failures) =>
         F.fail(new IntegrationCheckException(failures))
       case Right(_) =>
@@ -37,25 +37,27 @@ object IntegrationChecker {
   )(implicit protected val tag: TagK[F]
   ) extends IntegrationChecker[F] {
 
-    override def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
-      if (integrationComponents.nonEmpty) {
-        logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"}: ${integrationComponents.niceList() -> "resourceList"}")
+    override def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
+
+      val steps = plan.steps.filter(op => plan.declaredRoots.contains(op.target)).toSet
+      if (steps.nonEmpty) {
+        logger.info(s"Going to check availability of ${steps.size -> "resources"} ${steps.map(_.target).niceList() -> "resourceList"}")
       }
 
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
       implicit val P: DIEffectAsync[F] = integrationLocator.get[DIEffectAsync[F]]
 
-      val (identityInstances, fInstances) = integrationComponents
+      val (identityInstances, fInstances) = steps
         .toList.partitionMap {
           ick =>
-          println(ick)
-            if (ick.tpe <:< DIKey[IntegrationCheck[Identity]].tpe) {
+            println(ick.instanceType)
+            println(ick.target)
+            if (ick.instanceType <:< DIKey[IntegrationCheck[Identity]].tpe) {
               println("i")
-
-              Left(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[Identity]]))
+              Left(ick -> integrationLocator.lookupInstance[Any](ick.target).map(_.asInstanceOf[IntegrationCheck[Identity]]))
             } else {
               println("f")
-              Right(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[F]]))
+              Right(ick -> integrationLocator.lookupInstance[Any](ick.target).map(_.asInstanceOf[IntegrationCheck[F]]))
             }
         }
 
@@ -84,7 +86,6 @@ object IntegrationChecker {
     }
 
     private def runCheck[F1[_]](resource: IntegrationCheck[F1])(implicit F1: DIEffect[F1]): F1[Either[ResourceCheck.Failure, Unit]] = {
-      println(resource)
       resource.resourcesAvailable().map {
         case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
           logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
