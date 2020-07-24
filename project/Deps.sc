@@ -378,7 +378,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(monix_bio in Scope.Compile.all) ++ Seq(
           scala_java_time in Scope.Test.js,
         ),
-        depends = Seq.empty,
+        depends = Seq(Projects.fundamentals.language),
         platforms = Targets.cross,
       ),
       Artifact(

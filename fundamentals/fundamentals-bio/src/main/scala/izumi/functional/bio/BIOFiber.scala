@@ -21,16 +21,19 @@ object BIOFiber3 {
   implicit final class ToCats[FR[-_, +_, +_], A](private val bioFiber: BIOFiber3[FR, Throwable, A]) extends AnyVal {
     def toCats(implicit F: BIOFunctor3[FR]): cats.effect.Fiber[FR[Any, Throwable, ?], A] = new cats.effect.Fiber[FR[Any, Throwable, ?], A] {
       override def cancel: FR[Any, Throwable, Unit] = F.void(bioFiber.interrupt)
+
       override def join: FR[Any, Throwable, A] = bioFiber.join
     }
   }
+
 }
 
 object BIOFiber {
   @inline def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] = BIOFiber3.fromZIO(f)
-  @inline def fromMonix[E, A](f: monix.bio.Fiber[E, A]): BIOFiber[monix.bio.BIO, E, A] = new BIOFiber[monix.bio.BIO, E, A] {
-    override def join: bio.BIO[E, A] = f.join
-    override def observe: bio.BIO[Nothing, BIOExit[E, A]] = ???
-    override def interrupt: bio.BIO[Nothing, BIOExit[E, A]] = ???
+  @inline def fromMonix[E, A](f: bio.Fiber[E, A]): BIOFiber[bio.IO, E, A] = new BIOFiber[bio.IO, E, A] {
+    override def join: bio.IO[E, A] = f.join
+    // I could perform  only cancel
+    override def observe: bio.IO[Nothing, BIOExit[E, A]] = ???
+    override def interrupt: bio.IO[Nothing, BIOExit[E, A]] = ???
   }
 }
