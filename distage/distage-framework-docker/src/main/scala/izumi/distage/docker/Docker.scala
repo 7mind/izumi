@@ -210,12 +210,14 @@ object Docker {
 
     def parseReusePolicy(name: Option[String]): GlobalDockerReusePolicy = {
       name match {
-        case Some("disabled") =>
+        case Some("ReuseDisabled") =>
           GlobalDockerReusePolicy.ReuseDisabled
-        case Some("always-kill") =>
+        case Some("ReuseButAlwaysKill") =>
           GlobalDockerReusePolicy.ReuseButAlwaysKill
-        case _ =>
+        case Some("ReuseButAlwaysKill") =>
           GlobalDockerReusePolicy.ReuseEnabled
+        case other =>
+          throw new IllegalArgumentException(s"Unexpected config value for reuse policy: $other")
       }
     }
   }
