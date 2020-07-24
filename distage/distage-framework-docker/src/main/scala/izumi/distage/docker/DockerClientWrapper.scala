@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
+import com.github.dockerjava.api.model.Container
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
@@ -16,9 +17,8 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
-import scala.jdk.CollectionConverters._
-import com.github.dockerjava.api.model.Container
 import scala.annotation.nowarn
+import scala.jdk.CollectionConverters._
 
 class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
@@ -75,7 +75,7 @@ object DockerClientWrapper {
     logger: IzLogger,
     clientConfig: ClientConfig,
   ) extends DIResource[F, DockerClientWrapper[F]]
-    with IntegrationCheck {
+    with IntegrationCheck[F] {
 
     private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
       .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
@@ -92,7 +92,7 @@ object DockerClientWrapper {
       .withDockerCmdExecFactory(factory)
       .build
 
-    override def resourcesAvailable(): ResourceCheck = {
+    override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].maybeSuspend {
       try {
         client.infoCmd().exec()
         ResourceCheck.Success()

@@ -139,7 +139,7 @@ class DistageTestRunner[F[_]: TagK](
 
               // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
               val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
-                _.collectChildren[IntegrationCheck].map(_.target).toSet
+                _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
               }
 
               val envMergeCriteria = EnvMergeCriteria(bsPlanMinusActivations, bsModuleMinusActivations, shared, runtimePlan, envExec)
@@ -367,7 +367,7 @@ class DistageTestRunner[F[_]: TagK](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val testIntegrationCheckKeys = testPlan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
+    val testIntegrationCheckKeys = testPlan.collectChildren[IntegrationCheck[F]].map(_.target).toSet -- allSharedKeys
 
     val newAppModule = test.environment.appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys

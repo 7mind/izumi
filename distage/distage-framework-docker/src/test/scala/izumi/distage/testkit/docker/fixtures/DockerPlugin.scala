@@ -21,8 +21,8 @@ class PgSvcExample(
   val cs: AvailablePort @Id("cs"),
   val mq: AvailablePort @Id("mq"),
   val cmd: ReusedOneshotContainer.Container,
-) extends IntegrationCheck {
-  override def resourcesAvailable(): ResourceCheck = {
+) extends IntegrationCheck[Task] {
+  override def resourcesAvailable(): Task[ResourceCheck] = Task.effect {
     new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)
   }
 }
