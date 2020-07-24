@@ -33,7 +33,7 @@ class InjectorDefaultImpl(
   }
 
   @deprecated("used in tests only!", "")
-  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+  private[distage] override def finish(semiPlan: SemiPlan): OrderedPlan = {
     planner.finish(semiPlan)
   }
 

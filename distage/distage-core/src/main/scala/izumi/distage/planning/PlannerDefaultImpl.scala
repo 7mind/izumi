@@ -24,7 +24,6 @@ import izumi.fundamentals.platform.strings.IzString._
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
-  gc: DIGarbageCollector,
   planningObserver: PlanningObserver,
   hook: PlanningHook,
   bindingTranslator: BindingTranslator,
@@ -80,11 +79,11 @@ class PlannerDefaultImpl(
   }
 
   @deprecated("used in tests only!", "will be removed in 0.11.1")
-  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+  private[distage] override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
-      .map(gc.gc)
+      .map(TracingDIGC.gc)
       .map(order)
       .get
   }

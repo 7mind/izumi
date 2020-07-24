@@ -17,7 +17,7 @@ import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInt
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
-import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
+import izumi.distage.planning.gc.TracingDIGC
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -88,13 +88,11 @@ object BootstrapLocator {
     val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
-    val gc = NoopDIGC
     val mp = mirrorProvider
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
-      gc = gc,
       planningObserver = bootstrapObserver,
       hook = hook,
       bindingTranslator = translator,
