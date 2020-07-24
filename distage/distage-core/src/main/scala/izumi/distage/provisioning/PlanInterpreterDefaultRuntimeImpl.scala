@@ -19,6 +19,8 @@ import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.TagK
 
+import scala.collection.compat._
+
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}

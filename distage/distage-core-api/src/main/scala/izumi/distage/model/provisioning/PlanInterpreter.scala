@@ -43,6 +43,7 @@ object PlanInterpreter {
     plan: OrderedPlan,
     parentContext: Locator,
     failures: Seq[ProvisioningFailure],
+    meta: FailedProvisionMeta,
   ) {
     def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
       val repr = failures.map {
