@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.dstest
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import distage._
-import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
@@ -75,6 +75,7 @@ class DistageTestRunner[F[_]: TagK](
       strengthenedKeys: Set[DIKey],
     )
 
+    // FIXME: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
     val unstableKeys = {
       val activationKeys = Set(DIKey[Activation], DIKey[ActivationInfo])
       val recursiveKeys = Set(DIKey[BootstrapModule])
@@ -103,17 +104,23 @@ class DistageTestRunner[F[_]: TagK](
 
               val appModule = provider.appModules().merge overridenBy env.appModule
 
-              val (bsPlanMinusActivations, bsModuleMinusActivations, injector, planner) = {
-                // FIXME: Checking both bootstrap Plan & bootstrap module to prevent `Bootloader` becoming becoming inconsistent
-                //  if used in tests (if BootstrapModule isn't checked it could be different from expected)
-                //  we're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
+              val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
+                // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
+                //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
+
+                // FIXME: We're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
                 //  (planner holds activations & the rest is for Bootloader self-introspection)
-                val bsLocator = new BootstrapLocator(finalBsModule, env.activation)
+
+                // create bsLocator separately because we can't retrieve Plan & Module from Injector
+                // fixme: adding Cycles.Proxy manually here
+                val bsLocator = new BootstrapLocator(finalBsModule, Activation(Cycles -> Cycles.Proxy) ++ env.activation)
+
+                val bsPlanMinusUnstable = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
+                val bsModuleMinusUnstable = bsLocator.get[BootstrapModule].drop(unstableKeys)
+
                 val injector = Injector.inherit(bsLocator)
-                val bsPlanMinusActivations = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
-                val bsModuleMinusActivations = bsLocator.get[BootstrapModule].drop(unstableKeys)
                 val planner = bsLocator.get[Planner]
-                (bsPlanMinusActivations, bsModuleMinusActivations, injector, planner)
+                (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner)
               }
 
               // runtime plan with `runtimeGcRoots`
@@ -146,7 +153,7 @@ class DistageTestRunner[F[_]: TagK](
                 _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
               }
 
-              val envMergeCriteria = EnvMergeCriteria(bsPlanMinusActivations, bsModuleMinusActivations, shared, runtimePlan, envExec)
+              val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
 
               val memoEnvHashCode = envMergeCriteria.hashCode()
               val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
