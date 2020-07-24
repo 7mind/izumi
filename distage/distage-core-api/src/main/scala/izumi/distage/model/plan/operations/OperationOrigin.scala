@@ -4,6 +4,11 @@ import izumi.distage.model.definition.Binding
 
 sealed trait OperationOrigin {
   def toSynthetic: OperationOrigin.Synthetic
+
+  @inline final def fold[A](onUnknown: => A, onDefined: Binding => A): A = this match {
+    case defined: OperationOrigin.Defined => onDefined(defined.binding)
+    case OperationOrigin.Unknown => onUnknown
+  }
 }
 
 object OperationOrigin {

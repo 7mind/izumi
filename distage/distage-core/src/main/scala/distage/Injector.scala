@@ -94,12 +94,6 @@ object Injector extends InjectorFactory {
       new InjectorDefaultImpl(parent, this)
     }
 
-    override final def bootloader(
-      input: PlannerInput,
-      activation: Activation = Activation.empty,
-      bootstrapModule: BootstrapModule = BootstrapModule.empty,
-    ): Bootloader = super.bootloader(input, activation, bootstrapModule)
-
     private[this] def cycleActivation: Activation = Activation(Cycles -> cycleChoice)
   }
 

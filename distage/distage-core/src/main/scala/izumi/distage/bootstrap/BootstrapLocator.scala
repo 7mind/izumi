@@ -17,7 +17,7 @@ import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInt
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
-import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
+import izumi.distage.planning.gc.TracingDIGC
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -28,8 +28,8 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = {
     // BootstrapModule & bootstrap plugins cannot modify `Activation` after 0.11.0,
-    // it's solely under control of `PlannerInput` now,
-    // please open an issue if you need the ability to override Activation using BootstrapModule
+    // it's solely under control of `PlannerInput` now.
+    // Please open an issue if you need the ability to override Activation using BootstrapModule
     val bindings = bindings0 ++ new BootstrapModuleDef {
         make[Activation].fromValue(bootstrapActivation)
         make[BootstrapModule].fromValue(bindings0)
@@ -88,13 +88,11 @@ object BootstrapLocator {
     val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
-    val gc = NoopDIGC
     val mp = mirrorProvider
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
-      gc = gc,
       planningObserver = bootstrapObserver,
       hook = hook,
       bindingTranslator = translator,
@@ -149,12 +147,11 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).from[CglibProxyProvider]
-    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
-
     make[ProxyProvider].tagged(Cycles.Byname).from[ProxyProviderFailingImpl]
-    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
-
     make[ProxyProvider].tagged(Cycles.Disable).from[ProxyProviderFailingImpl]
+
+    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
+    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
   }
 

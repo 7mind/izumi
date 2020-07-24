@@ -1,8 +1,10 @@
 package izumi.distage.planning
 
+import izumi.distage.model.definition.Axis.AxisValue
+
 import scala.annotation.nowarn
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.{Binding, ModuleBase}
+import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
@@ -22,7 +24,6 @@ import izumi.fundamentals.platform.strings.IzString._
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
-  gc: DIGarbageCollector,
   planningObserver: PlanningObserver,
   hook: PlanningHook,
   bindingTranslator: BindingTranslator,
@@ -37,7 +38,7 @@ class PlannerDefaultImpl(
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     resolveConflicts(input) match {
       case Left(errors) =>
-        throwOnConflict(errors)
+        throwOnConflict(input.activation, errors)
 
       case Right(resolved) =>
         val mappedGraph = resolved.predcessors.links.toSeq.map {
@@ -77,12 +78,12 @@ class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  @deprecated("used in tests only!", "")
-  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+  @deprecated("used in tests only!", "will be removed in 0.11.1")
+  private[distage] override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
-      .map(gc.gc)
+      .map(TracingDIGC.gc)
       .map(order)
       .get
   }
@@ -334,27 +335,27 @@ class PlannerDefaultImpl(
       .get
   }
 
-  protected[this] def throwOnConflict(issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
-    val issueRepr = issues.map(formatConflict).niceList()
+  protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
+    val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")
 
     throw new ConflictResolutionException(
       s"""There must be exactly one valid binding for each DIKey.
          |
          |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate between multiple instances with the same type.
          |
-         |List of problematic bindings: $issueRepr
+         |List of problematic bindings:$issueRepr
        """.stripMargin,
       issues,
     )
   }
 
-  protected[this] def formatConflict(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
+  protected[this] def formatConflict(activation: Activation)(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
     conflictResolutionError match {
       case AmbigiousActivationsSet(issues) =>
         val printedActivationSelections = issues.map {
           case (axis, choices) => s"axis: `$axis`, selected: {${choices.map(_.value).mkString(", ")}}"
         }
-        s"""Mulitple axis choices selected for axes, only one choice must be made selected for an axis:
+        s"""Multiple axis choices selected for axes, only one choice must be made selected for an axis:
            |
            |${printedActivationSelections.niceList().shift(4)}""".stripMargin
 
@@ -363,40 +364,43 @@ class PlannerDefaultImpl(
           .map {
             case (k, nodes) =>
               val candidates = conflictingAxisTagsHint(
-                nodes.flatMap(_._1),
-                nodes.map(_._2.meta.origin).collect {
-                  case defined: OperationOrigin.Defined => defined.binding
-                },
+                activeChoices = activation.activeChoices.values.toSet,
+                ops = nodes.map(_._2.meta.origin),
               )
-              s"""Conflict resolution failed key for $k with reason:
+              s"""Conflict resolution failed for key `${k.asString}` with reason:
                  |
-                 |${"reason dunno lmao".shift(4)}
+                 |   Conflicting definitions available without a disambiguating axis choice
                  |
-                 |    Candidates left: ${candidates.niceList().shift(4)}""".stripMargin
+                 |   Candidates left: ${candidates.niceList().shift(4)}""".stripMargin
           }.niceList()
 
       case UnsolvedConflicts(defs) =>
         defs
           .map {
             case (k, axisBinds) =>
-              s"""multiple axee Conflict resolution failed key for $k with reason:
+              s"""Conflict resolution failed for key `${k.asString}` with reason:
                  |
-                 |${"reason axises".shift(4)}
+                 |   Unsolved conflicts.
                  |
-                 |    Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
+                 |   Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
           }.niceList()
     }
   }
 
-  protected[this] def conflictingAxisTagsHint(activeChoices: Set[AxisPoint], ops: Set[Binding]): Seq[String] = {
+  protected[this] def conflictingAxisTagsHint(activeChoices: Set[AxisValue], ops: Set[OperationOrigin]): Seq[String] = {
+    val axisValuesInBindings = ops
+      .iterator.collect {
+        case d: OperationOrigin.Defined => d.binding.tags
+      }.flatten.collect {
+        case AxisTag(t) => t
+      }.toSet
+    val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
     ops.toSeq.map {
       op =>
-        val axisValues = op.tags.collect { case AxisTag(t) => t.toAxisPoint }
+        val bindingTags = op.fold(Set.empty, _.tags.collect { case AxisTag(t) => t })
 
-        val bindingTags = axisValues.diff(activeChoices)
-        val alreadyActiveTags = axisValues.intersect(activeChoices)
-
-        s"${op.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
+        val originStr = op.fold("Unknown", _.origin.toString)
+        s"$originStr, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
     }
   }
 
