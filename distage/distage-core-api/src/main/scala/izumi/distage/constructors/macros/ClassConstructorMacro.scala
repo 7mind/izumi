@@ -42,7 +42,7 @@ object ClassConstructorMacro {
           )
         }
 
-        val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+        val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
         val provider: c.Expr[ProviderMagnet[T]] = mkClassConstructorProvider(reflectionProvider)(targetType)
 

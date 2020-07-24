@@ -50,7 +50,7 @@ object ScalatestInitWorkaround {
         try {
           val suiteClassName = classOf[DistageScalatestTestSuiteRunner[Identity]].getName
           val testClasses = scan.getSubclasses(suiteClassName).asScala.filterNot(_.isAbstract)
-          lazy val debugLogger = TrivialLogger.make[ScalatestInitWorkaroundImpl.type](DebugProperties.`izumi.distage.testkit.debug`)
+          lazy val debugLogger = TrivialLogger.make[ScalatestInitWorkaroundImpl.type](DebugProperties.`izumi.distage.testkit.debug`.name)
           testClasses.foreach(
             classInfo =>
               Try {
@@ -159,7 +159,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMo
   }
 
   private[distage] def doRun(testsInThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
-    val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`)
+    val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`.name)
     debugLogger.log(s"Scalatest Args: $args")
     debugLogger.log(s"""tagsToInclude: ${args.filter.tagsToInclude}
                        |tagsToExclude: ${args.filter.tagsToExclude}

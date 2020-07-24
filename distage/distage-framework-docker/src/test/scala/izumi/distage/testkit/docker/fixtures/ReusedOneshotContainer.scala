@@ -26,7 +26,7 @@ object ReuseCheckContainer extends ContainerDef {
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"if [[ $$(cat ${CmdContainerModule.stateFilePath} | wc -l | awk '{print $$1}') == 1 ]]; then exit 0; else exit 42; fi"),
-      reuse = DockerReusePolicy.KillOnExit,
+      reuse = DockerReusePolicy.KillOnExitNoReuse,
     )
   }
 }

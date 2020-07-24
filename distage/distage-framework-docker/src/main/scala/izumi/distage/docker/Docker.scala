@@ -6,6 +6,8 @@ import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.basics.IzBoolean.any
+import pureconfig.ConfigReader
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -52,8 +54,56 @@ object Docker {
 
   sealed trait DockerReusePolicy
   object DockerReusePolicy {
-    case object KillOnExit extends DockerReusePolicy
+    case object KillOnExitNoReuse extends DockerReusePolicy
     case object KeepAliveOnExitAndReuse extends DockerReusePolicy
+    case object KillOnExitButReuse extends DockerReusePolicy
+  }
+
+  sealed trait GlobalDockerReusePolicy {
+    def enabled: Boolean
+  }
+  object GlobalDockerReusePolicy {
+    case object ReuseDisabled extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = false
+    }
+    case object ReuseButAlwaysKill extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = true
+    }
+    case object ReuseEnabled extends GlobalDockerReusePolicy {
+      override def enabled: Boolean = true
+    }
+  }
+
+  private[docker] def shouldReuse(reusePolicy: DockerReusePolicy, globalReuse: GlobalDockerReusePolicy): Boolean = {
+    val reuseIsOnForContainer = any(
+      reusePolicy == DockerReusePolicy.KeepAliveOnExitAndReuse,
+      reusePolicy == DockerReusePolicy.KillOnExitButReuse,
+    )
+
+    globalReuse match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        false
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        reuseIsOnForContainer
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        reuseIsOnForContainer
+    }
+  }
+
+  private[docker] def shouldKill(reusePolicy: DockerReusePolicy, globalReuse: GlobalDockerReusePolicy): Boolean = {
+    val containerIsVictim = any(
+      reusePolicy == DockerReusePolicy.KillOnExitNoReuse,
+      reusePolicy == DockerReusePolicy.KillOnExitButReuse,
+    )
+
+    globalReuse match {
+      case GlobalDockerReusePolicy.ReuseDisabled =>
+        true
+      case GlobalDockerReusePolicy.ReuseButAlwaysKill =>
+        true
+      case GlobalDockerReusePolicy.ReuseEnabled =>
+        containerIsVictim
+    }
   }
 
   /**
@@ -105,7 +155,7 @@ object Docker {
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
     networks: Set[ContainerNetwork[_]] = Set.empty,
-    reuse: DockerReusePolicy = DockerReusePolicy.KillOnExit,
+    reuse: DockerReusePolicy = DockerReusePolicy.KillOnExitNoReuse,
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
@@ -122,7 +172,7 @@ object Docker {
     * See `docker-reference.conf` for an example configuration.
     * You can `include` the reference configuration if you want to use defaults.
     *
-    * @param allowReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
+    * @param globalReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
     *
     * @param remote       Options to connect to a Remote Docker Daemon,
@@ -142,14 +192,34 @@ object Docker {
   final case class ClientConfig(
     readTimeoutMs: Int = 60000,
     connectTimeoutMs: Int = 1000,
-    allowReuse: Boolean = !DockerSupportProperties.`izumi.distage.docker.reuse-disable`.asBoolean(false),
+    globalReuse: GlobalDockerReusePolicy = ClientConfig.parseReusePolicy(),
     useRemote: Boolean = false,
     useRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
     registry: Option[DockerRegistryConfig] = None,
   )
+
   object ClientConfig {
+    implicit val policyReader: ConfigReader[GlobalDockerReusePolicy] = ConfigReader[String].map(name => parseReusePolicy(Some(name)))
+
     implicit val distageConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.derived
+
+    def parseReusePolicy(): GlobalDockerReusePolicy = {
+      parseReusePolicy(DockerSupportProperties.`izumi.distage.docker.reuse`.strValue())
+    }
+
+    def parseReusePolicy(name: Option[String]): GlobalDockerReusePolicy = {
+      name match {
+        case Some("ReuseDisabled") =>
+          GlobalDockerReusePolicy.ReuseDisabled
+        case Some("ReuseButAlwaysKill") =>
+          GlobalDockerReusePolicy.ReuseButAlwaysKill
+        case Some("ReuseButAlwaysKill") =>
+          GlobalDockerReusePolicy.ReuseEnabled
+        case other =>
+          throw new IllegalArgumentException(s"Unexpected config value for reuse policy: $other")
+      }
+    }
   }
 
   final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)

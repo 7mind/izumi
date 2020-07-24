@@ -24,7 +24,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
 
-  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.providermagnet`)
+  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.providermagnet`.name)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
   import c.universe._

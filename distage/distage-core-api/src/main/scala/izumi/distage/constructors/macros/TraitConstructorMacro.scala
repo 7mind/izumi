@@ -21,7 +21,7 @@ object TraitConstructorMacro {
     traitConstructorAssertion(targetType)
 
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
     val provider: c.Expr[ProviderMagnet[T]] = mkTraitConstructorProvider(symbolToTrait(reflectionProvider)(targetType))
 

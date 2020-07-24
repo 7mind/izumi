@@ -19,6 +19,7 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
+import izumi.fundamentals.platform.basics.IzBoolean._
 
 import scala.annotation.nowarn
 import scala.concurrent.duration._
@@ -44,10 +45,6 @@ case class ContainerResource[F[_], T](
     }
   }
 
-  private[this] def shouldReuse(config: Docker.ContainerConfig[T]): Boolean = {
-    config.reuse == DockerReusePolicy.KeepAliveOnExitAndReuse && client.clientConfig.allowReuse
-  }
-
   override def acquire: F[DockerContainer[T]] = F.suspendF {
     val ports = config.ports.map {
       containerPort =>
@@ -64,18 +61,18 @@ case class ContainerResource[F[_], T](
         PortDecl(containerPort, local, binding, labels)
     }
 
-    if (shouldReuse(config)) {
+    if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
       runReused(ports)
     } else {
       doRun(ports)
     }
   }
 
-  override def release(resource: DockerContainer[T]): F[Unit] = {
-    if (!shouldReuse(resource.containerConfig)) {
-      client.destroyContainer(resource.id, ContainerDestroyMeta.ParameterizedContainer(resource))
+  override def release(container: DockerContainer[T]): F[Unit] = {
+    if (Docker.shouldKill(container.containerConfig.reuse, container.clientConfig.globalReuse)) {
+      client.destroyContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container))
     } else {
-      F.unit
+      F.maybeSuspend(logger.info(s"Will not destroy: $container"))
     }
   }
 
@@ -371,7 +368,7 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      DockerConst.Labels.reuseLabel -> shouldReuse(config).toString
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
     ) ++ client.labels
 }
 
