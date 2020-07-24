@@ -5,8 +5,7 @@ import logstage.LogIO
 
 import scala.language.experimental.macros
 
-trait AbstractMacroLoggerF[F[_]] {
-  this: LogIO[F] =>
+trait AbstractMacroLoggerF[F[_]] { this: LogIO[F] =>
 
   /** Aliases for [[logstage.LogIO#log]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacro[F]

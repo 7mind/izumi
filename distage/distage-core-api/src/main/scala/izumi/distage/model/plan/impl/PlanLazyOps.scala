@@ -5,8 +5,7 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{AbstractPlan, ExecutableOp}
 import izumi.distage.model.reflection._
 
-private[plan] trait PlanLazyOps[OpType <: ExecutableOp] {
-  this: AbstractPlan[OpType] =>
+private[plan] trait PlanLazyOps[OpType <: ExecutableOp] { this: AbstractPlan[OpType] =>
 
   override final def index: Map[DIKey, OpType] = lazyIndex
   override final def definition: ModuleBase = lazyDefn

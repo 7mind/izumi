@@ -10,8 +10,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
 
-private[plan] trait SemiPlanOps extends Any {
-  this: SemiPlan =>
+private[plan] trait SemiPlanOps extends Any { this: SemiPlan =>
 
   override final def toSemi: SemiPlan = this
 

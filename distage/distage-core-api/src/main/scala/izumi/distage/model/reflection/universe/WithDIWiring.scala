@@ -2,8 +2,7 @@ package izumi.distage.model.reflection.universe
 
 import scala.annotation.nowarn
 
-trait WithDIWiring {
-  this: DIUniverseBase with WithDISafeType with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
+trait WithDIWiring { this: DIUniverseBase with WithDISafeType with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
 
   sealed trait Wiring
   object Wiring {

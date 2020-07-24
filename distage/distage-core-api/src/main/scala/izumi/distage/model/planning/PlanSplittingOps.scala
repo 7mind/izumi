@@ -5,8 +5,7 @@ import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection._
 import izumi.distage.model.{Planner, PlannerInput}
 
-trait PlanSplittingOps {
-  this: Planner =>
+trait PlanSplittingOps { this: Planner =>
 
   final def trisectByKeys(activation: Activation, appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     val rewritten = rewrite(appModule)

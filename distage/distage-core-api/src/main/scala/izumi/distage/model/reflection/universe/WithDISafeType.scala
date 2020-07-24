@@ -2,8 +2,7 @@ package izumi.distage.model.reflection.universe
 
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 
-private[distage] trait WithDISafeType {
-  this: DIUniverseBase =>
+private[distage] trait WithDISafeType { this: DIUniverseBase =>
 
   // TODO: hotspot, hashcode on keys is inefficient
   case class SafeType private (

@@ -28,8 +28,7 @@ object RoleAppPlanner {
     bsModule: BootstrapModule,
     logger: IzLogger,
     bootloader: Bootloader,
-  ) extends RoleAppPlanner[F] {
-    self =>
+  ) extends RoleAppPlanner[F] { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],

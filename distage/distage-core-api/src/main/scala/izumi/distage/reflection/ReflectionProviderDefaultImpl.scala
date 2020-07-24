@@ -72,11 +72,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
     val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
     if (excessiveTypes.nonEmpty) {
-      throw new UnsupportedDefinitionException(s"""Augmentation failure.
-                                                  |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
-                                                  |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
-                                                  |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
-                                                  |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
+      throw new UnsupportedDefinitionException(
+        s"""Augmentation failure.
+           |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
+           |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
+           |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
+           |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin
+      )
     }
 
     Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)

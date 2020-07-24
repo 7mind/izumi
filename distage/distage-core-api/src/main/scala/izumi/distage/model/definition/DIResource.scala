@@ -494,12 +494,9 @@ object DIResource {
 
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResource.Self[Identity, A] {
-    this: A =>
-  }
+  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
 
-  trait Self[+F[_], +A] extends DIResourceBase[F, A] {
-    this: A =>
+  trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     def release: F[Unit]
 
     override final type InnerResource = Unit
@@ -507,12 +504,9 @@ object DIResource {
     override final def extract(resource: Unit): A = this
   }
 
-  trait MutableOf[+A] extends DIResource.SelfOf[Identity, A] {
-    this: A =>
-  }
+  trait MutableOf[+A] extends DIResource.SelfOf[Identity, A] { this: A => }
 
-  trait SelfOf[+F[_], +A] extends DIResourceBase[F, A] {
-    this: A =>
+  trait SelfOf[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     val inner: DIResourceBase[F, Unit]
 
     override final type InnerResource = inner.InnerResource
@@ -521,12 +515,9 @@ object DIResource {
     override final def extract(resource: inner.InnerResource): A = this
   }
 
-  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] {
-    this: A =>
-  }
+  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
-  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] {
-    this: A =>
+  abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
     override type InnerResource = Unit
     override final def extract(resource: Unit): A = this
   }
@@ -874,8 +865,7 @@ object DIResource {
       type E = E0
       type A = A0
       type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-    } = new TrifunctorHasResourceTag[R1, A1] {
-      self =>
+    } = new TrifunctorHasResourceTag[R1, A1] { self =>
       type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
       type R = R0
       type E = E0

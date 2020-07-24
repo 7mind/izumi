@@ -3,8 +3,7 @@ package izumi.distage.model.reflection.universe
 import izumi.distage.model.exceptions.AnnotationConflictException
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
-trait WithDISymbolInfo {
-  this: DIUniverseBase with WithDISafeType =>
+trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
   sealed trait SymbolInfo {
     def name: String

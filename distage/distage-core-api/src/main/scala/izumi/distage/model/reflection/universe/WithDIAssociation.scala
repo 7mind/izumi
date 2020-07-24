@@ -2,8 +2,7 @@ package izumi.distage.model.reflection.universe
 
 import scala.reflect.macros.blackbox
 
-private[distage] trait WithDIAssociation {
-  this: DIUniverseBase with WithDISafeType with WithDIKey with WithDISymbolInfo =>
+private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISafeType with WithDIKey with WithDISymbolInfo =>
 
   sealed trait Association {
     def symbol: SymbolInfo

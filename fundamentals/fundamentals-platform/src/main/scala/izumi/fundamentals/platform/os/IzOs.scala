@@ -6,9 +6,7 @@ import java.util.regex.Pattern
 sealed trait OsType
 
 object OsType {
-  sealed trait Nix {
-    this: OsType =>
-  }
+  sealed trait Nix { this: OsType => }
 
   case object Mac extends OsType with Nix
 

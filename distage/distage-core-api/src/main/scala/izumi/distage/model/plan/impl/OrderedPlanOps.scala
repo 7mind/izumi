@@ -10,8 +10,7 @@ import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.Tag
 
-private[plan] trait OrderedPlanOps extends Any {
-  this: OrderedPlan =>
+private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
 
   /**
     * Check for any unresolved dependencies, if this

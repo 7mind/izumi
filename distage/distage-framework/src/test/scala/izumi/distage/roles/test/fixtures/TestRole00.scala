@@ -63,11 +63,11 @@ object roles {
     final case class IntegrationOnlyCfg2(value: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck[F])
-    final class TestRole00ResourceIntegrationCheck[F[_]:DIEffect](
+    final class TestRole00ResourceIntegrationCheck[F[_]: DIEffect](
       private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
     ) extends IntegrationCheck[F] {
-      override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure{
+      override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure {
         assert(cfg2.value == "configvalue:updated")
         ResourceCheck.Success()
       }

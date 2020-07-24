@@ -5,8 +5,7 @@ import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 
-trait ContainerDef {
-  self =>
+trait ContainerDef { self =>
   type Tag
   final type Container = DockerContainer[Tag]
   final type Config = Docker.ContainerConfig[Tag]

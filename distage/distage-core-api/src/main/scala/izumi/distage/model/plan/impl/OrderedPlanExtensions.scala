@@ -12,8 +12,7 @@ import izumi.reflect.Tag
 
 import scala.language.implicitConversions
 
-private[plan] trait OrderedPlanExtensions extends Any {
-  this: OrderedPlan.type =>
+private[plan] trait OrderedPlanExtensions extends Any { this: OrderedPlan.type =>
   final def empty: OrderedPlan = OrderedPlan(Vector.empty, Set.empty, PlanTopology.empty)
 
   @inline implicit final def defaultFormatter: Renderable[OrderedPlan] = CompactOrderedPlanFormatter

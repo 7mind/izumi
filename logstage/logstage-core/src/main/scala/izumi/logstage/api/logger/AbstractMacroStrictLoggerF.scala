@@ -5,8 +5,7 @@ import logstage.strict.LogIOStrict
 
 import scala.language.experimental.macros
 
-trait AbstractMacroStrictLoggerF[F[_]] {
-  this: LogIOStrict[F] =>
+trait AbstractMacroStrictLoggerF[F[_]] { this: LogIOStrict[F] =>
 
   /** Aliases for [[logstage.strict.LogIOStrict#log]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacroStrict[F]

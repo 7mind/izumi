@@ -4,8 +4,7 @@ import scala.language.experimental.macros
 
 import izumi.logstage.macros.LoggerMacroMethods._
 
-trait AbstractMacroLogger {
-  this: AbstractLogger =>
+trait AbstractMacroLogger { this: AbstractLogger =>
 
   /**
     * More efficient aliases for [[log]]
