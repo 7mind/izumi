@@ -427,7 +427,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner),
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
