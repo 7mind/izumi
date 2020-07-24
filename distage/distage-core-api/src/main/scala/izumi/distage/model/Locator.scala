@@ -11,6 +11,13 @@ import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
 import scala.collection.immutable.Queue
+import scala.concurrent.duration.Duration
+
+case class LocatorMeta(timings: Map[DIKey, Duration])
+
+object LocatorMeta {
+  def empty: LocatorMeta = LocatorMeta(Map.empty)
+}
 
 /**
   * The object graph created by executing a `plan`.
@@ -83,6 +90,8 @@ trait Locator {
     }
     args.map(fn.unsafeApply(_).asInstanceOf[T])
   }
+
+  def meta: LocatorMeta
 }
 
 object Locator {
@@ -92,5 +101,7 @@ object Locator {
     override def plan: OrderedPlan = OrderedPlan.empty
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
+
+    override def meta: LocatorMeta = LocatorMeta.empty
   }
 }

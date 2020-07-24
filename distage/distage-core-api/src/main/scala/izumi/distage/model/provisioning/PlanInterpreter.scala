@@ -11,6 +11,8 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection._
 import izumi.reflect.TagK
 
+import scala.concurrent.duration.Duration
+
 trait PlanInterpreter {
   def instantiate[F[_]: TagK: DIEffect](
     plan: OrderedPlan,
@@ -33,6 +35,8 @@ object PlanInterpreter {
       new Finalizer(key, effect, SafeType.getK[F])
     }
   }
+
+  case class FailedProvisionMeta(timings: Map[DIKey, Duration])
 
   final case class FailedProvision[F[_]](
     failed: ProvisionImmutable[F],
