@@ -7,6 +7,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
@@ -44,45 +45,60 @@ object IntegrationChecker {
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
       implicit val P: DIEffectAsync[F] = integrationLocator.get[DIEffectAsync[F]]
 
-      val instances = integrationComponents
-        .toList.map {
+      val (identityInstances, fInstances) = integrationComponents
+        .toList.partitionMap {
           ick =>
-            ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[F]])
-        }.toSet
+            if (ick.tpe <:< DIKey[IntegrationCheck[Identity]].tpe) {
+              Left(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[Identity]]))
+            } else {
+              Right(ick -> integrationLocator.lookupInstance[Any](ick).map(_.asInstanceOf[IntegrationCheck[F]]))
+            }
+        }
 
-      val good = instances.collect { case (_, Some(ic)) => ic }
-      val bad = instances.collect { case (ick, None) => ick }
+      val identityInstancesSet = identityInstances.toSet
+      val fInstancesSet = fInstances.toSet
+
+      val identityChecks = identityInstancesSet.collect { case (_, Some(ic)) => ic }
+      val fChecks = fInstancesSet.collect { case (_, Some(ic)) => ic }
+      val bad = (identityInstancesSet ++ fInstancesSet).collect { case (ick, None) => ick }
 
       if (bad.isEmpty) {
-        P.parTraverse(good)(runCheck)
-          .flatMap {
-            results =>
-              results.collect { case Left(failure) => failure } match {
-                case Nil =>
-                  F.pure(Right(()))
-                case failures =>
-                  F.pure(Left(failures))
-              }
+        for {
+          identityChecked <- P.parTraverse(identityChecks)(i => checkWrap(F.maybeSuspend(runCheck(i)), i.toString))
+          fChecked <- P.parTraverse(fChecks)(i => checkWrap(runCheck(i), i.toString))
+          results = identityChecked ++ fChecked
+          res <- results.collect { case Left(failure) => failure } match {
+            case Nil =>
+              F.pure(Right(()))
+            case failures =>
+              F.pure(Left(failures))
           }
+        } yield res
       } else {
         F.fail(new DIAppBootstrapException(s"Inconsistent locator state: integration components ${bad.mkString("{", ", ", "}")} are missing from locator"))
       }
     }
 
-    private def runCheck(resource: IntegrationCheck[F])(implicit F: DIEffect[F]): F[Either[ResourceCheck.Failure, Unit]] = {
+    private def runCheck[F1[_]](resource: IntegrationCheck[F1])(implicit F1: DIEffect[F1]): F1[Either[ResourceCheck.Failure, Unit]] = {
+      resource.resourcesAvailable().map {
+        case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
+          logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
+          Left(failure): Either[ResourceCheck.Failure, Unit]
+        case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
+          logger.debug(s"Integration check failed, $resource unavailable: $reason")
+          Left(failure)
+        case ResourceCheck.Success() =>
+          Right(())
+      }
+    }
+
+    private def checkWrap(
+      wrap: F[Either[ResourceCheck.Failure, Unit]],
+      resource: String,
+    )(implicit F: DIEffect[F]
+    ): F[Either[ResourceCheck.Failure, Unit]] = {
       logger.debug(s"Checking $resource")
-      F.definitelyRecover {
-        resource.resourcesAvailable().map {
-          case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
-            logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
-            Left(failure): Either[ResourceCheck.Failure, Unit]
-          case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
-            logger.debug(s"Integration check failed, $resource unavailable: $reason")
-            Left(failure)
-          case ResourceCheck.Success() =>
-            Right(())
-        }
-      } {
+      F.definitelyRecover(wrap) {
         case NonFatal(exception) =>
           logger.error(s"Integration check for $resource threw $exception")
           F.pure(Left(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception))))

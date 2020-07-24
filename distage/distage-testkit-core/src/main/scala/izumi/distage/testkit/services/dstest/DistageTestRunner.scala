@@ -381,7 +381,7 @@ class DistageTestRunner[F[_]: TagK](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val testIntegrationCheckKeys = testPlan.collectChildren[IntegrationCheck[F]].map(_.target).toSet -- allSharedKeys
+    val testIntegrationCheckKeys = testPlan.collectChildrenEffect[IntegrationCheck, F].map(_.target).toSet -- allSharedKeys
 
     val newAppModule = test.environment.appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys

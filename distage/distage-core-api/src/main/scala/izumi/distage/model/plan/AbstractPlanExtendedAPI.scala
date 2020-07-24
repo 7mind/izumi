@@ -4,7 +4,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection._
-import izumi.reflect.Tag
+import izumi.fundamentals.platform.functional.Identity
+import izumi.reflect.{Tag, TagK, TagT}
 
 private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any { this: AbstractPlan[OpType] =>
 
@@ -65,6 +66,12 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
         val maybeChild = op.instanceType
         maybeChild <:< parent
     }
+  }
+
+  final def collectChildrenEffect[T[_[_]]: TagT, F[_]: TagK]: Seq[ExecutableOp] = {
+    val identityChildren = collectChildren[T[Identity]]
+    val fChildren = collectChildren[T[F]]
+    identityChildren ++ fChildren
   }
 
   final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
