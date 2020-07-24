@@ -84,7 +84,8 @@ import scala.language.implicitConversions
   * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
   *
   * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
-  * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
+  * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
+  * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
   */
 final case class Functoid[+A](get: Provider) {
   def map[B: Tag](f: A => B): Functoid[B] = {
