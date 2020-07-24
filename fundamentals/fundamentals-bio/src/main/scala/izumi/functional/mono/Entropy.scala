@@ -80,7 +80,7 @@ object Entropy {
     override def nextGaussian(): Double = random.nextGaussian()
     override def nextLong(): Long = random.nextLong()
     override def nextInt(): Int = random.nextInt()
-    override def nextLong(max: Long): Identity[Long] = random.nextLong(max)
+    override def nextLong(max: Long): Long = random.self.nextLong() % max
   }
 
 }
