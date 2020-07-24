@@ -2,7 +2,7 @@ package izumi.distage.testkit.docker.fixtures
 
 import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
-import izumi.distage.docker.examples._
+import izumi.distage.docker.bundled._
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck

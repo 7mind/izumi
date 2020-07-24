@@ -1,4 +1,4 @@
-package izumi.distage.docker.examples
+package izumi.distage.docker.bundled
 
 import izumi.distage.docker.ContainerNetworkDef
 

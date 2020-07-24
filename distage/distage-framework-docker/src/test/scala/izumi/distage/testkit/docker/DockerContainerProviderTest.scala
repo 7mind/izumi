@@ -2,7 +2,7 @@ package izumi.distage.testkit.docker
 
 import distage.SafeType
 import izumi.distage.docker.ContainerResource
-import izumi.distage.docker.examples.PostgresDocker
+import izumi.distage.docker.bundled.PostgresDocker
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
