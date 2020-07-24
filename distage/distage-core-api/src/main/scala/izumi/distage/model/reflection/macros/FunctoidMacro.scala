@@ -1,7 +1,7 @@
 package izumi.distage.model.reflection.macros
 
 import izumi.distage.constructors.DebugProperties
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
@@ -20,7 +20,7 @@ import scala.reflect.macros.blackbox
   *
   * @see [[DebugProperties]]
   */
-class ProviderMagnetMacro(val c: blackbox.Context) {
+class FunctoidMacro(val c: blackbox.Context) {
 
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
 
@@ -32,7 +32,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
-  def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[ProviderMagnet[R]] = {
+  def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
     val result = generateProvider[R](associations, fun)
 
@@ -70,18 +70,18 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
       )
   }
 
-  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter], fun: Tree): c.Expr[ProviderMagnet[R]] = {
+  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter], fun: Tree): c.Expr[Functoid[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftTypeToSafeType, liftableParameter}
 
     val casts = parameters.indices.map(i => q"seqAny($i)")
     val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)
 
-    c.Expr[ProviderMagnet[R]] {
+    c.Expr[Functoid[R]] {
       q"""{
         val fun = $fun
 
-        new ${weakTypeOf[ProviderMagnet[R]]}(
+        new ${weakTypeOf[Functoid[R]]}(
           new ${weakTypeOf[Provider.ProviderImpl[R]]}(
             $parametersNoByName,
             ${liftTypeToSafeType(weakTypeOf[R])},

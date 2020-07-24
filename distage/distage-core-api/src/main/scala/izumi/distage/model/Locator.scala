@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.AbstractLocator
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, TypedRef}
@@ -69,9 +69,9 @@ trait Locator {
     *
     * Works similarly to provider bindings.
     *
-    * @see [[ProviderMagnet]]
+    * @see [[Functoid]]
     */
-  final def run[T](function: ProviderMagnet[T]): T = {
+  final def run[T](function: Functoid[T]): T = {
     val fn = function.get
     fn.unsafeApply(fn.diKeys.map {
       key =>
@@ -79,7 +79,7 @@ trait Locator {
     }).asInstanceOf[T]
   }
 
-  final def runOption[T](function: ProviderMagnet[T]): Option[T] = {
+  final def runOption[T](function: Functoid[T]): Option[T] = {
     val fn = function.get
     val args: Option[Queue[TypedRef[Any]]] = fn.diKeys.foldLeft(Option(Queue.empty[TypedRef[Any]])) {
       (maybeQueue, key) =>

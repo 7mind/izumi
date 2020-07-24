@@ -8,7 +8,7 @@ import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -153,7 +153,7 @@ object DIResource {
   }
 
   implicit final class DIResourceLocatorRun[F[_]](private val resource: DIResourceBase[F, Locator]) extends AnyVal {
-    def run[B](function: ProviderMagnet[F[B]])(implicit F: DIEffect[F]): F[B] =
+    def run[B](function: Functoid[F[B]])(implicit F: DIEffect[F]): F[B] =
       resource.use(_.run(function))
   }
 
@@ -604,8 +604,8 @@ object DIResource {
   implicit final def providerFromCats[F[_]: TagK, A](
     resource: => Resource[F, A]
   )(implicit tag: Tag[DIResource.FromCats[F, A]]
-  ): ProviderMagnet[DIResource.FromCats[F, A]] = {
-    ProviderMagnet.identity[Bracket[F, Throwable]].map {
+  ): Functoid[DIResource.FromCats[F, A]] = {
+    Functoid.identity[Bracket[F, Throwable]].map {
       implicit bracket: Bracket[F, Throwable] =>
         fromCats(resource)
     }
@@ -617,8 +617,8 @@ object DIResource {
   implicit final def providerFromZIO[R, E, A](
     managed: => ZManaged[R, E, A]
   )(implicit tag: Tag[DIResource.FromZIO[R, E, A]]
-  ): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
-    ProviderMagnet.lift(fromZIO(managed))
+  ): Functoid[DIResource.FromZIO[R, E, A]] = {
+    Functoid.lift(fromZIO(managed))
   }
 
   /**
@@ -628,8 +628,8 @@ object DIResource {
   implicit final def providerFromZIONothing[R, A](
     managed: => ZManaged[R, Nothing, A]
   )(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]
-  ): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
-    ProviderMagnet.lift(fromZIO(managed))
+  ): Functoid[DIResource.FromZIO[R, Nothing, A]] = {
+    Functoid.lift(fromZIO(managed))
   }
 
   /**
@@ -638,8 +638,8 @@ object DIResource {
   implicit final def providerFromZLayerHas1[R, E, A: Tag](
     layer: => ZLayer[R, E, Has[A]]
   )(implicit tag: Tag[DIResource.FromZIO[R, E, A]]
-  ): ProviderMagnet[DIResource.FromZIO[R, E, A]] = {
-    ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
+  ): Functoid[DIResource.FromZIO[R, E, A]] = {
+    Functoid.lift(fromZIO(layer.build.map(_.get)))
   }
 
   /**
@@ -649,14 +649,14 @@ object DIResource {
   implicit final def providerFromZLayerNothingHas1[R, A: Tag](
     layer: => ZLayer[R, Nothing, Has[A]]
   )(implicit tag: Tag[DIResource.FromZIO[R, Nothing, A]]
-  ): ProviderMagnet[DIResource.FromZIO[R, Nothing, A]] = {
-    ProviderMagnet.lift(fromZIO(layer.build.map(_.get)))
+  ): Functoid[DIResource.FromZIO[R, Nothing, A]] = {
+    Functoid.lift(fromZIO(layer.build.map(_.get)))
   }
 
   /** Support binding various FP libraries' Resource types in `.fromResource` */
   trait AdaptProvider[A] {
     type Out
-    def apply(a: ProviderMagnet[A])(implicit tag: ResourceTag[Out]): ProviderMagnet[Out]
+    def apply(a: Functoid[A])(implicit tag: ResourceTag[Out]): Functoid[Out]
   }
   object AdaptProvider {
     type Aux[A, B] = AdaptProvider[A] { type Out = B }
@@ -698,11 +698,11 @@ object DIResource {
       new AdaptProvider[Resource[F, A]] {
         type Out = DIResource.FromCats[F, A]
 
-        override def apply(a: ProviderMagnet[Resource[F, A]])(implicit tag: ResourceTag[DIResource.FromCats[F, A]]): ProviderMagnet[DIResource.FromCats[F, A]] = {
+        override def apply(a: Functoid[Resource[F, A]])(implicit tag: ResourceTag[DIResource.FromCats[F, A]]): Functoid[DIResource.FromCats[F, A]] = {
           import tag.tagFull
           implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
 
-          a.zip(ProviderMagnet.identity[Bracket[F, Throwable]])
+          a.zip(Functoid.identity[Bracket[F, Throwable]])
             .map { case (resource, bracket) => fromCats(resource)(bracket) }
         }
       }
@@ -715,7 +715,7 @@ object DIResource {
       new AdaptProvider[ZManaged[R, E, A]] {
         type Out = DIResource.FromZIO[R, E, A]
 
-        override def apply(a: ProviderMagnet[ZManaged[R, E, A]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): Functoid[FromZIO[R, E, A]] = {
           import tag.tagFull
           a.map(fromZIO)
         }
@@ -729,7 +729,7 @@ object DIResource {
       new AdaptProvider[ZLayer[R, E, Has[A]]] {
         type Out = DIResource.FromZIO[R, E, A]
 
-        override def apply(a: ProviderMagnet[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): ProviderMagnet[FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[DIResource.FromZIO[R, E, A]]): Functoid[FromZIO[R, E, A]] = {
           import tag.tagFull
           a.map(layer => fromZIO(layer.map(_.get).build))
         }

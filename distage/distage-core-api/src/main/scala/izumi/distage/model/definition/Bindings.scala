@@ -2,7 +2,7 @@ package izumi.distage.model.definition
 
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
@@ -23,7 +23,7 @@ object Bindings {
   def reference[T: Tag, I <: T: Tag](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false), Set.empty, pos.get.position)
 
-  def provider[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+  def provider[T: Tag](function: Functoid[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(function.get.ret, function.get), Set.empty, pos.get.position)
 
   def emptySet[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
@@ -40,7 +40,7 @@ object Bindings {
     SetElementBinding(DIKey.SetElementKey(setkey, implKey, Some(implDef)), implDef, Set.empty, pos.get.position)
   }
 
-  def setElementProvider[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SetElementBinding = {
+  def setElementProvider[T: Tag](function: Functoid[T])(implicit pos: CodePositionMaterializer): SetElementBinding = {
     val setkey = DIKey.get[Set[T]]
     val implKey = DIKey.TypeKey(function.get.ret)
     val implDef = ImplDef.ProviderImpl(function.get.ret, function.get)
@@ -48,7 +48,7 @@ object Bindings {
   }
 
   def todo[K <: DIKey](key: K)(implicit pos: CodePositionMaterializer): SingletonBinding[K] = {
-    val provider = ProviderMagnet.todoProvider(key)(pos).get
+    val provider = Functoid.todoProvider(key)(pos).get
     SingletonBinding(key, ImplDef.ProviderImpl(provider.ret, provider), Set.empty, pos.get.position)
   }
 }

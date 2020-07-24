@@ -7,7 +7,7 @@ import izumi.distage.docker.Docker.DockerReusePolicy
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.strings.IzString._
@@ -26,7 +26,7 @@ trait ContainerNetworkDef {
 
   def config: Config
 
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): ProviderMagnet[DIResource[F, Network]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): Functoid[DIResource[F, Network]] = {
     tag.discard()
     ContainerNetworkDef.resource[F](this, this.getClass.getSimpleName)
   }

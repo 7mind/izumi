@@ -5,7 +5,7 @@ import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.reflect.Tag
@@ -26,10 +26,10 @@ trait ConfigModuleDef extends ModuleDef {
     make[T].tagged(ConfTag(path)).from(wireConfigWithDefault[T](path)(default))
   }
 
-  @inline final def wireConfig[T: Tag: DIConfigReader](path: String): ProviderMagnet[T] = {
+  @inline final def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
     ConfigModuleDef.wireConfig[T](path)
   }
-  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): ProviderMagnet[T] = {
+  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): Functoid[T] = {
     ConfigModuleDef.wireConfigWithDefault[T](path)(default)
   }
 
@@ -46,10 +46,10 @@ object ConfigModuleDef {
     }
   }
 
-  def wireConfig[T: Tag: DIConfigReader](path: String): ProviderMagnet[T] = {
+  def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
     DIConfigReader[T].decodeAppConfig(path)
   }
-  def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): ProviderMagnet[T] = {
+  def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): Functoid[T] = {
     DIConfigReader[T].decodeAppConfigWithDefault(path)(default)
   }
 }

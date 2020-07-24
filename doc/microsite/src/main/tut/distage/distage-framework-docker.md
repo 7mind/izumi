@@ -148,7 +148,7 @@ provides additional APIs for modiying the container definition.
 
 Use
 @scaladoc[`modifyConfig`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#modifyConfig)
-to modify the configuration of a container. The modifier is instantiated to a `ProviderMagnet`, which
+to modify the configuration of a container. The modifier is instantiated to a `Functoid`, which
 will summon any additional dependencies.
 
 For example, to change the user of the PostgreSQL container:

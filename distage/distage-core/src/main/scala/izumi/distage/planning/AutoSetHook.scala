@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan, Wiring}
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
 
@@ -100,7 +100,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
               newMembers += op.target
               Seq(op)
             } else {
-              val provider = ProviderMagnet(wrap).get
+              val provider = Functoid(wrap).get
               val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
               val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider), op.origin)
               newMembers += newKey

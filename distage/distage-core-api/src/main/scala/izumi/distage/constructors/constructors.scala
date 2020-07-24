@@ -3,32 +3,32 @@ package izumi.distage.constructors
 import izumi.distage.constructors.macros._
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
-import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
 import izumi.reflect.WeakTag
 
 import scala.language.experimental.{macros => enableMacros}
 
 sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T]
-final class ClassConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
-final class TraitConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
-final class FactoryConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
-final class HasConstructor[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructor[T]
+final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class TraitConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
 
 object AnyConstructor {
-  def apply[T](implicit ctor: AnyConstructor[T]): ProviderMagnet[T] = ctor.provider
+  def apply[T](implicit ctor: AnyConstructor[T]): Functoid[T] = ctor.provider
 
   implicit def materialize[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 }
 
 object ClassConstructor {
-  def apply[T](implicit ctor: ClassConstructor[T]): ProviderMagnet[T] = ctor.provider
+  def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
 
   implicit def materialize[T]: ClassConstructor[T] = macro ClassConstructorMacro.mkClassConstructor[T]
 }
 
 object TraitConstructor {
-  def apply[T](implicit ctor: TraitConstructor[T]): ProviderMagnet[T] = ctor.provider
+  def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
 
   implicit def materialize[T]: TraitConstructor[T] = macro TraitConstructorMacro.mkTraitConstructor[T]
 
@@ -43,31 +43,31 @@ object TraitConstructor {
 }
 
 object FactoryConstructor {
-  def apply[T](implicit ctor: FactoryConstructor[T]): ProviderMagnet[T] = ctor.provider
+  def apply[T](implicit ctor: FactoryConstructor[T]): Functoid[T] = ctor.provider
 
   implicit def materialize[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
 }
 
 object HasConstructor {
-  def apply[T](implicit ctor: HasConstructor[T]): ProviderMagnet[T] = ctor.provider
+  def apply[T](implicit ctor: HasConstructor[T]): Functoid[T] = ctor.provider
 
-  val empty: HasConstructor[Any] = new HasConstructor(ProviderMagnet.unit)
+  val empty: HasConstructor[Any] = new HasConstructor(Functoid.unit)
 
   implicit def materialize[T]: HasConstructor[T] = macro HasConstructorMacro.mkHasConstructor[T]
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {
-  def provider: ProviderMagnet[T]
+  def provider: Functoid[T]
 }
 object AnyConstructorOptionalMakeDSL {
-  private[constructors] final class Impl[T](val provider: ProviderMagnet[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
+  private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
 
-  @inline def apply[T](providerMagnet: ProviderMagnet[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
+  @inline def apply[T](providerMagnet: Functoid[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
     new AnyConstructorOptionalMakeDSL.Impl[T](providerMagnet)
   }
 
   def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL.Impl[T] = {
-    AnyConstructorOptionalMakeDSL[T](ProviderMagnet.lift(throwError(tpe, nonWhitelistedMethods)))
+    AnyConstructorOptionalMakeDSL[T](Functoid.lift(throwError(tpe, nonWhitelistedMethods)))
   }
 
   def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {

@@ -3,7 +3,7 @@ package izumi.distage.constructors
 import izumi.fundamentals.platform.properties
 
 /**
-  * Java properties that control debug output of [[AnyConstructor]] & [[izumi.distage.model.providers.ProviderMagnet]] macros
+  * Java properties that control debug output of [[AnyConstructor]] & [[izumi.distage.model.providers.Functoid]] macros
   *
   * @see [[DebugProperties]]
   */
