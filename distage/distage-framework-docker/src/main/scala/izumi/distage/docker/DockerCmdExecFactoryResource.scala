@@ -5,7 +5,7 @@ import com.github.dockerjava.netty.NettyDockerCmdExecFactory
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
 
-class DockerCmdExecFactoryResource[F[_]: DIEffect](
+final class DockerCmdExecFactoryResource[F[_]: DIEffect](
   config: Docker.ClientConfig
 ) extends DIResource.FromAutoCloseable[F, DockerCmdExecFactory](
     DIEffect[F].maybeSuspend {

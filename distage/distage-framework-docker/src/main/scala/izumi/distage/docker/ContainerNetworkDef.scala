@@ -100,7 +100,7 @@ object ContainerNetworkDef {
       try {
         f
       } catch {
-        case c: Throwable if c.getMessage contains "Connection refused" =>
+        case c: Throwable =>
           throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
       }
     }
