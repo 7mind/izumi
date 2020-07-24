@@ -1,11 +1,12 @@
 package izumi.distage.roles
 
-import izumi.distage.roles.services.AppFailureHandler
+import izumi.distage.roles.launcher.RoleAppLauncher
+import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
-abstract class RoleAppMain(
-  launcher: RoleAppLauncher,
+abstract class RoleAppMain[F[_]](
+  launcher: RoleAppLauncher[F],
   failureHandler: AppFailureHandler,
   parserFailureHandler: ParserFailureHandler,
 ) {
@@ -22,7 +23,10 @@ abstract class RoleAppMain(
           val requestedRoles = parameters.roles
           val requestedRoleSet = requestedRoles.map(_.role).toSet
           val knownRequiredRoles = requiredRoles.filterNot(requestedRoleSet contains _.role)
-          launcher.launch(parameters.copy(roles = rolesToLaunch(requestedRoles, knownRequiredRoles)))
+          launcher.launch(parameters.copy(roles = rolesToLaunch(requestedRoles, knownRequiredRoles))).use {
+            app =>
+              app.run()
+          }
       }
     } catch {
       case t: Throwable =>
@@ -37,22 +41,22 @@ abstract class RoleAppMain(
 
 object RoleAppMain {
 
-  class Default(launcher: RoleAppLauncher)
+  class Default[F[_]](launcher: RoleAppLauncher[F])
     extends RoleAppMain(
       launcher,
       AppFailureHandler.TerminatingHandler,
       ParserFailureHandler.TerminatingHandler,
     )
 
-  class Safe(launcher: RoleAppLauncher)
-    extends RoleAppMain(
+  class Safe[F[_]](launcher: RoleAppLauncher[F])
+    extends RoleAppMain[F](
       launcher,
       AppFailureHandler.PrintingHandler,
       ParserFailureHandler.PrintingHandler,
     )
 
-  class Silent(launcher: RoleAppLauncher)
-    extends RoleAppMain(
+  class Silent[F[_]](launcher: RoleAppLauncher[F])
+    extends RoleAppMain[F](
       launcher,
       AppFailureHandler.NullHandler,
       ParserFailureHandler.NullHandler,

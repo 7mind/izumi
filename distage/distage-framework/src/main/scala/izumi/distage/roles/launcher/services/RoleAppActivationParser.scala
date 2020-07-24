@@ -1,4 +1,4 @@
-package izumi.distage.roles.services
+package izumi.distage.roles.launcher.services
 
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.{Activation, Axis}

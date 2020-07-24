@@ -1,4 +1,4 @@
-package izumi.distage.roles
+package izumi.distage.roles.launcher
 
 import java.io.File
 
@@ -7,20 +7,21 @@ import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services._
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.RoleAppLauncherImpl.ActivationConfig
+import izumi.distage.roles.AppShutdownStrategy
+import izumi.distage.roles.launcher.RoleAppLauncher.Options
+import izumi.distage.roles.launcher.RoleAppLauncherImpl.ActivationConfig
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.distage.roles.services.StartupPlanExecutor.Filters
-import izumi.distage.roles.services.{RoleAppActivationParser, _}
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
+import izumi.distage.roles.launcher.services.{RoleAppActivationParser, _}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString._
@@ -49,7 +50,7 @@ import scala.reflect.ClassTag
   * 16. Shutdown executors
   */
 // FIXME: rewrite using DI https://github.com/7mind/izumi/issues/779
-abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
+abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
@@ -68,7 +69,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
   protected def configActivationSection: String = "activation"
   protected def defaultBaseConfigs: Seq[String] = ConfigLoader.defaultBaseConfigs
 
-  def launch(parameters: RawAppArgs): Unit = {
+  def launch(parameters: RawAppArgs): DIResourceBase[Identity, PreparedApp[F]] = {
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
     showBanner(earlyLogger, additionalLibraryReferences)
 
@@ -173,9 +174,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher {
 
   protected def planningOptions(parameters: RawAppArgs): PlanningOptions = {
     PlanningOptions(
-      addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext),
-      warnOnCircularDeps = true,
-      rewriteRules = RewriteRules(),
+      addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext)
     )
   }
 
