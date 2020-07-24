@@ -1,4 +1,4 @@
-package izumi.distage.roles.services
+package izumi.distage.roles.launcher.services
 
 import distage.{Injector, TagK}
 import izumi.distage.framework.services.IntegrationChecker
@@ -7,7 +7,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
-import izumi.distage.roles.services.StartupPlanExecutor.PreparedApp
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.functional.Identity
 
 trait StartupPlanExecutor[F[_]] {

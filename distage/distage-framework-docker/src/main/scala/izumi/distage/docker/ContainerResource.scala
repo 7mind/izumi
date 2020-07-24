@@ -19,7 +19,6 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
-import izumi.fundamentals.platform.basics.IzBoolean._
 
 import scala.annotation.nowarn
 import scala.concurrent.duration._

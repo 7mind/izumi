@@ -1,4 +1,4 @@
-package izumi.distage.roles.services
+package izumi.distage.roles.launcher.services
 
 trait AppFailureHandler {
   def onError(t: Throwable): Unit

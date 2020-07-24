@@ -1,4 +1,4 @@
-package izumi.distage.roles
+package izumi.distage.roles.launcher
 
 import java.io.File
 
@@ -13,12 +13,13 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.RoleAppLauncherImpl.ActivationConfig
+import izumi.distage.roles.AppShutdownStrategy
+import izumi.distage.roles.launcher.RoleAppLauncher.Options
+import izumi.distage.roles.launcher.RoleAppLauncherImpl.ActivationConfig
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.distage.roles.services.StartupPlanExecutor.{Filters, PreparedApp}
-import izumi.distage.roles.services.{RoleAppActivationParser, _}
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
+import izumi.distage.roles.launcher.services.{RoleAppActivationParser, _}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused

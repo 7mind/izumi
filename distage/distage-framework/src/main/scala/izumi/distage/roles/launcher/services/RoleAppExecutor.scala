@@ -1,4 +1,4 @@
-package izumi.distage.roles.services
+package izumi.distage.roles.launcher.services
 
 import distage.TagK
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
@@ -11,7 +11,7 @@ import izumi.distage.roles._
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.distage.roles.services.StartupPlanExecutor.{Filters, PreparedApp}
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger

@@ -14,7 +14,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
-import izumi.distage.roles.services.EarlyLoggers
+import izumi.distage.roles.launcher.services.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner._

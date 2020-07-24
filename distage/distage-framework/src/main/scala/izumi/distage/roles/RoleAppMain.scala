@@ -1,6 +1,7 @@
 package izumi.distage.roles
 
-import izumi.distage.roles.services.AppFailureHandler
+import izumi.distage.roles.launcher.RoleAppLauncher
+import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 

@@ -214,7 +214,7 @@ object Docker {
           GlobalDockerReusePolicy.ReuseDisabled
         case Some("ReuseButAlwaysKill") =>
           GlobalDockerReusePolicy.ReuseButAlwaysKill
-        case Some("ReuseButAlwaysKill") =>
+        case Some("ReuseEnabled") =>
           GlobalDockerReusePolicy.ReuseEnabled
         case other =>
           throw new IllegalArgumentException(s"Unexpected config value for reuse policy: $other")
