@@ -234,14 +234,15 @@ case class ContainerResource[F[_], T](
               labels = inspection.getConfig.getLabels.asScala.toMap,
             )
             logger.debug(s"Matching container found: ${config.image}->${unverified.name}, will try to reuse...")
-            F.definitelyRecover(await(unverified, 0)) {
-              t =>
-//                if (singleshot) {
-//                  nothing
-//                } else {
-                doRun(ports)
-//                }
-            }
+            await(unverified, 0)
+//            F.definitelyRecover() {
+//              t =>
+////                if (singleshot) {
+////                  nothing
+////                } else {
+//                doRun(ports)
+////                }
+//            }
 
           case None =>
             logger.debug(s"No existring container found for ${config.image}, will run...")
