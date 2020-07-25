@@ -15,7 +15,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]
 
     val keyType = op.target.tpe.tag.typeArgs.headOption.getOrElse {
-      throw new IncompatibleTypesException("Expected to be a set type but has no parameters", scalaCollectionSetType, op.element)
+      throw new IncompatibleTypesException("Expected to be a set type but has no parameters", scalaCollectionSetType, op.target.tpe)
     }
 
     val fetched = op.members.map(m => (m, context.fetchKey(m, makeByName = false)))

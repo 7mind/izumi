@@ -11,11 +11,14 @@ import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInsta
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 import zio.ZIO
 
+import scala.collection.mutable
+
 object MemoizationEnv {
   case class MemoizedInstance(uuid: UUID)
   case class TestInstance(uuid: UUID)
-  val anotherTestInstance: TestInstance = TestInstance(UUID.randomUUID())
-  val memoizedInstance: AtomicReference[Option[MemoizedInstance]] = new AtomicReference[Option[MemoizedInstance]](None)
+  final val anotherTestInstance: TestInstance = TestInstance(UUID.randomUUID())
+  final val memoizedInstance: mutable.HashSet[MemoizedInstance] =
+    mutable.HashSet.empty // AtomicReference[Option[MemoizedInstance]] = new AtomicReference[Option[MemoizedInstance]](None)
 }
 
 abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
@@ -26,7 +29,11 @@ abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
             make[MemoizedInstance].from {
               val instance = MemoizedInstance(UUID.randomUUID())
-              MemoizationEnv.memoizedInstance.set(Some(instance))
+//              println(s"SETINSTANCE: $instance")
+              MemoizationEnv.synchronized {
+                MemoizationEnv.memoizedInstance += instance
+              }
+              //.set(Some(instance))
               instance
             }
             make[TestInstance].from(TestInstance(UUID.randomUUID()))
@@ -39,22 +46,22 @@ abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO
 class SameEnvModulesTest1 extends DistageMemoizationEnvsTest {
   "should have the same memoized instance 1" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
   "should have the same memoized instance 2" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }
 
 class SameEnvModulesTest2 extends DistageMemoizationEnvsTest {
   "should have the same memoized instance 1" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
   "should have the same memoized instance 2" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }
 
@@ -70,7 +77,7 @@ class SameEnvWithModuleOverride extends DistageMemoizationEnvsTest {
   "should have the same memoized instance even if module was overriden" in {
     (memoized: MemoizedInstance, test: TestInstance) =>
       assertIO(MemoizationEnv.anotherTestInstance == test) *>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }
 
@@ -80,7 +87,7 @@ class SameEnvWithActivationsOverride extends DistageMemoizationEnvsTest {
   }
   "should have the same memoized instance even if activation was overriden" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }
 
@@ -95,7 +102,7 @@ class DifferentEnvWithMemoizedRootOverride extends DistageMemoizationEnvsTest {
   }
   "should have different memoized instance" in {
     memoized: MemoizedInstance =>
-      assertIO(!MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet != Set(memoized))
   }
 }
 
@@ -108,6 +115,6 @@ class SameEnvWithAdditionalButNotUsedMemoizedRoots extends DistageMemoizationEnv
   }
   "should have the same memoized instance if memoized roots differs, but plan is similar" in {
     memoized: MemoizedInstance =>
-      assertIO(MemoizationEnv.memoizedInstance.get.contains(memoized))
+      assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }

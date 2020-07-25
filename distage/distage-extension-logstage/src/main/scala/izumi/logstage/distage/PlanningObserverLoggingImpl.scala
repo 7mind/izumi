@@ -13,9 +13,6 @@ final class PlanningObserverLoggingImpl(
   override def onPhase10PostGC(plan: SemiPlan): Unit = {
     log.trace(s"[onPhase10PostOrdering]:\n$plan")
   }
-  override def onPhase20Customization(plan: SemiPlan): Unit = {
-    log.trace(s"[onPhase15PostOrdering]:\n$plan")
-  }
   override def onPhase50PreForwarding(plan: SemiPlan): Unit = {
     log.trace(s"[onPhase20PreForwarding]:\n$plan")
   }

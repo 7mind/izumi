@@ -4,6 +4,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
+import izumi.distage.docker.ContainerResource.PortDecl
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
@@ -32,8 +33,6 @@ case class ContainerResource[F[_], T](
   val F: DIEffect[F],
   val P: DIEffectAsync[F],
 ) extends DIResource[F, DockerContainer[T]] {
-
-  import ContainerResource._
 
   private[this] val rawClient = client.rawClient
 
@@ -80,8 +79,10 @@ case class ContainerResource[F[_], T](
       logger.debug(s"Awaiting until alive: $container...")
       try {
         val status = rawClient.inspectContainerCmd(container.id.name).exec()
-        // if container is running or does not have any ports
-        if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
+        if (status.getState.getExitCodeLong == 0L && config.ports.isEmpty) {
+          logger.debug(s"Container has exited but that was a singleshot container $container...")
+          Right(HealthCheckResult.Available)
+        } else if (status.getState.getRunning) {
           logger.debug(s"Trying healthcheck on running $container...")
           Right(config.healthCheck.check(logger, container))
         } else {
@@ -99,8 +100,8 @@ case class ContainerResource[F[_], T](
           }
 
         case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
-          val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
           F.maybeSuspend {
+            val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
             logger.info(s"Looks good: ${out -> "container"}")
             out
           }
@@ -112,14 +113,11 @@ case class ContainerResource[F[_], T](
             logger.debug(s"Health check uncertain, retrying $next/$maxAttempts on $container...")
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
-
             last match {
               case HealthCheckResult.Unavailable =>
                 F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts, no diagnostics available: $container"))
 
               case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
-                import izumi.fundamentals.platform.exceptions.IzThrowable._
-                import izumi.fundamentals.platform.strings.IzString._
                 val sb = new StringBuilder()
                 sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
                 if (unverifiedPorts.nonEmpty) {
@@ -151,7 +149,6 @@ case class ContainerResource[F[_], T](
               case impossible: GoodHealthcheck =>
                 F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
             }
-
           }
 
         case Left(t) =>
@@ -169,14 +166,14 @@ case class ContainerResource[F[_], T](
       for {
         containers <- F.maybeSuspend {
           /**
-            * We will filter out containers only by "running" status if container has any ports to be mapped
-            * and by "exited" status also if there are no ports to map to.
-            * We don't need to list "exited" containers if ports were defined, because they will not perform a successful port check.
+            * We will filter out containers by "running" status if container exposes any ports to be mapped
+            * and by "exited" status also if there are no exposed ports.
+            * We don't need to consider "exited" containers with exposed ports, because they will always fail port check.
             *
-            * Filtering containers like this will allow us to reuse containers that were started and exited eventually.
-            * By reusing containers we are usually assumes that container is runs in a daemon, but if container exited successfully -
-            * - we can't understood was that container's run belong to the one of the previous test runs, or to the current one.
-            * So containers that will exit after doing their job will be reused only in the scope of the current test run.
+            * Filtering containers like this allows us to reuse "oneshot" containers that were started and exited eventually.
+            * When reusing containers we usually assume that a container runs as a daemon, but if a container exited successfully
+            * we can't understand whether that container's run belonged to one of the previous test runs, or to the current one.
+            * So containers that exit will be reused only in the scope of the current test run.
             */
           val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
           val statusFilter = DockerConst.State.running :: exitedOpt
@@ -240,6 +237,15 @@ case class ContainerResource[F[_], T](
             )
             logger.debug(s"Matching container found: ${config.image}->${unverified.name}, will try to reuse...")
             await(unverified, 0)
+//            F.definitelyRecover() {
+//              t =>
+////                if (singleshot) {
+////                  nothing
+////                } else {
+//                doRun(ports)
+////                }
+//            }
+
           case None =>
             logger.debug(s"No existring container found for ${config.image}, will run...")
             doRun(ports)

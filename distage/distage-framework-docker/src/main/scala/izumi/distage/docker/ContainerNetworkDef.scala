@@ -37,19 +37,22 @@ object ContainerNetworkDef {
     new NetworkResource(conf.config, _, prefix, _)(_, _)
   }
 
-  final class NetworkResource[F[_]: DIEffect: DIEffectAsync, T](
+  final class NetworkResource[F[_], T](
     config: ContainerNetworkConfig[T],
     client: DockerClientWrapper[F],
     prefixName: String,
     logger: IzLogger,
+  )(implicit
+    F: DIEffect[F],
+    P: DIEffectAsync[F],
   ) extends DIResource[F, ContainerNetwork[T]] {
     private[this] val rawClient = client.rawClient
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val networkLabels: Map[String, String] = Map(
-      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse),
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
       DockerConst.Labels.namePrefixLabel -> prefix,
-    ).map { case (k, v) => k -> v.toString }
+    )
 
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
@@ -59,7 +62,7 @@ object ContainerNetworkDef {
             val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
             existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
               network =>
-                DIEffect[F].pure(ContainerNetwork(network.getName, network.getId))
+                F.pure(ContainerNetwork(network.getName, network.getId))
             }
           }
         } else {
@@ -70,35 +73,35 @@ object ContainerNetworkDef {
 
     override def release(resource: ContainerNetwork[T]): F[Unit] = {
       if (Docker.shouldKill(config.reuse, client.clientConfig.globalReuse)) {
-        DIEffect[F].unit
-      } else {
-        DIEffect[F].maybeSuspend {
+        F.maybeSuspend {
           logger.info(s"Going to delete ${resource.name -> "network"}")
           rawClient.removeNetworkCmd(resource.id).exec()
           ()
         }
+      } else {
+        F.unit
       }
     }
 
-    private[this] def createNew(): F[ContainerNetwork[T]] = DIEffect[F].maybeSuspend {
-      val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
-      logger.info(s"Going to create ${name -> "network"}")
-      val network = rawClient
-        .createNetworkCmd()
-        .withName(name)
-        .withDriver(config.driver)
-        .withLabels(networkLabels.asJava)
-        .exec()
-      ContainerNetwork(name, network.getId)
+    private[this] def createNew(): F[ContainerNetwork[T]] = {
+      F.maybeSuspend {
+        val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
+        logger.info(s"Going to create ${name -> "network"}")
+        val network = rawClient
+          .createNetworkCmd()
+          .withName(name)
+          .withDriver(config.driver)
+          .withLabels(networkLabels.asJava)
+          .exec()
+        ContainerNetwork(name, network.getId)
+      }
     }
 
-    private[this] def integrationCheckHack[A](f: => A): A = {
+    private[this] def integrationCheckHack[A](f: => F[A]): F[A] = {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-      try {
-        f
-      } catch {
-        case c: Throwable if c.getMessage contains "Connection refused" =>
-          throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+      F.definitelyRecover(f) {
+        c: Throwable =>
+          F.fail(new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))))
       }
     }
 
@@ -112,6 +115,6 @@ object ContainerNetworkDef {
   final case class ContainerNetworkConfig[Tag](
     name: Option[String] = None,
     driver: String = "bridge",
-    reuse: DockerReusePolicy = DockerReusePolicy.KeepAliveOnExitAndReuse,
+    reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,
   )
 }

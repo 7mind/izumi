@@ -1,8 +1,6 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisValue
-
-import scala.annotation.nowarn
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
@@ -12,7 +10,6 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
-import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -20,6 +17,8 @@ import izumi.fundamentals.graphs.tools.MutationResolver._
 import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
+
+import scala.annotation.nowarn
 
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
@@ -76,26 +75,6 @@ class PlannerDefaultImpl(
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     hook.hookDefinition(module)
-  }
-
-  @deprecated("used in tests only!", "will be removed in 0.11.1")
-  private[distage] override def finish(semiPlan: SemiPlan): OrderedPlan = {
-    Value(semiPlan)
-      .map(addImports)
-      .eff(planningObserver.onPhase05PreGC)
-      .map(TracingDIGC.gc)
-      .map(order)
-      .get
-  }
-
-  private[distage] override def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
-    if (roots.isEmpty) {
-      OrderedPlan.empty
-    } else {
-      assert(roots.diff(plan.index.keySet).isEmpty)
-      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
-    }
   }
 
   protected[this] def updateKey(mutSel: MutSel[DIKey]): DIKey = {
@@ -258,8 +237,6 @@ class PlannerDefaultImpl(
   protected[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .eff(planningObserver.onPhase10PostGC)
-      .map(hook.phase20Customization)
-      .eff(planningObserver.onPhase20Customization)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
       .map(reorderOperations)

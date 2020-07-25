@@ -27,7 +27,7 @@ object ExecutableOp {
   sealed trait InstantiationOp extends SemiplanOp {
     def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp
   }
-  final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: OperationOrigin) extends InstantiationOp {
+  final case class CreateSet(target: DIKey, members: Set[DIKey], origin: OperationOrigin) extends InstantiationOp {
     override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): CreateSet = {
       this.copy(target = targets(this.target), members = this.members.map(parameters))
     }

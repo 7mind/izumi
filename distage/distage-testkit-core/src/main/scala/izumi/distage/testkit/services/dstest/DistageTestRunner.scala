@@ -40,7 +40,12 @@ class DistageTestRunner[F[_]: TagK](
       groupAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
         case (level, parallelEnvs) => proceedEnvs(level)(parallelEnvs)
       }
-    } finally reporter.endAll()
+    } catch {
+      case t: Throwable =>
+        reporter.onFailure(t)
+    } finally {
+      reporter.endAll()
+    }
   }
 
   // first we need to plan runtime for our monad. Identity is also supported
@@ -59,22 +64,6 @@ class DistageTestRunner[F[_]: TagK](
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): Map[MemoizationEnvWithPlan, Seq[PreparedTest[F]]] = {
 
-    final case class EnvMergeCriteria(
-      bsPlanMinusActivations: Vector[ExecutableOp],
-      bsModuleMinusActivations: BootstrapModule,
-      sharedPlan: TriSplittedPlan,
-      runtimePlan: OrderedPlan,
-      envExec: EnvExecutionParams,
-    )
-    final case class PackedEnv(
-      envMergeCriteria: EnvMergeCriteria,
-      testPlans: Seq[PreparedTest[F]],
-      anyMemoizationInjector: Injector,
-      anyIntegrationLogger: IzLogger,
-      highestDebugOutputInTests: Boolean,
-      strengthenedKeys: Set[DIKey],
-    )
-
     // FIXME: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
     val unstableKeys = {
       val activationKeys = Set(DIKey[Activation], DIKey[ActivationInfo])
@@ -85,92 +74,21 @@ class DistageTestRunner[F[_]: TagK](
     }
 
     // here we are grouping our tests by memoization env
+
     distageTests.groupBy(_.environment.getExecParams).flatMap {
       case (envExec, grouped) =>
         val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
         val memoizationEnvs = grouped.groupBy(_.environment).flatMap {
           case (env, tests) =>
-            withRecoverFromFailedExecution(grouped) {
-              // make a config loader for current env with logger
-              val config = loadConfig(env, configLoadLogger)
-              val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
-
-              // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-              val options = envExec.planningOptions
-              val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
-
-              val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
-              val finalBsModule = BootstrapLocator.defaultBootstrap overridenBy bsModule
-
-              val appModule = provider.appModules().merge overridenBy env.appModule
-
-              val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
-                // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
-                //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
-
-                // FIXME: We're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
-                //  (planner holds activations & the rest is for Bootloader self-introspection)
-
-                // create bsLocator separately because we can't retrieve Plan & Module from Injector
-                // fixme: adding Cycles.Proxy manually here
-                val bsLocator = new BootstrapLocator(finalBsModule, Activation(Cycles -> Cycles.Proxy) ++ env.activation)
-
-                val bsPlanMinusUnstable = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
-                val bsModuleMinusUnstable = bsLocator.get[BootstrapModule].drop(unstableKeys)
-
-                val injector = Injector.inherit(bsLocator)
-                val planner = bsLocator.get[Planner]
-                (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner)
-              }
-
-              // runtime plan with `runtimeGcRoots`
-              val runtimePlan = injector.plan(PlannerInput(appModule, env.activation, runtimeGcRoots))
-              // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
-              val runtimeKeys = runtimePlan.keys
-
-              // produce plan for each test
-              val testPlans = tests.map {
-                distageTest =>
-                  val testRoots = distageTest.test.get.diKeys.toSet ++ env.forcedRoots
-                  val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
-                  PreparedTest(distageTest, plan, env.activationInfo, env.activation, planner)
-              }
-              val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
-              val sharedKeys = envKeys.intersect(env.memoizationRoots) -- runtimeKeys
-
-              // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
-              // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
-              // weak sets behave as usual
-              val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeKeys).foldLeftWith(List.empty[DIKey]) {
-                case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
-                  (key :: acc) -> b.copy(implementation = r.copy(weak = false))
-                case (acc, b) =>
-                  acc -> b
-              }
-
-              // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
-              val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
-                _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
-              }
-
-              val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
-
-              val memoEnvHashCode = envMergeCriteria.hashCode()
-              val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
-              val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-              if (strengthenedKeys.nonEmpty) {
-                integrationLogger.log(testkitDebugMessagesLogLevel(env.debugOutput))(
-                  s"Strengthened weak components: $strengthenedKeys"
-                )
-              }
-
-              Option(PackedEnv(envMergeCriteria, testPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet))
+            withRecoverFromFailedExecution(tests) {
+              prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests)
             }(None)
         }
         // merge environments together by equality of their shared & runtime plans
         // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
         // so this saves a lot of realloaction of memoized resoorces
         val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
+
         mergedEnvs.map {
           case (EnvMergeCriteria(_, _, shared, runtimePlan, _), packedEnv) =>
             val integrationLogger = packedEnv.head.anyIntegrationLogger
@@ -182,6 +100,89 @@ class DistageTestRunner[F[_]: TagK](
             MemoizationEnvWithPlan(envExec, integrationLogger, shared, runtimePlan, memoizationInjector, highestDebugOutputInTests, allStrengthenedKeys) -> tests
         }
     }
+  }
+
+  private def prepareGroupPlans(
+    unstableKeys: Set[DIKey],
+    envExec: EnvExecutionParams,
+    configLoadLogger: IzLogger,
+    env: TestEnvironment,
+    tests: Seq[DistageTest[F]],
+  ): Option[PackedEnv[F]] = {
+    // make a config loader for current env with logger
+    val config = loadConfig(env, configLoadLogger)
+    val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
+
+    // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
+    val options = envExec.planningOptions
+    val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
+
+    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+    val finalBsModule = BootstrapLocator.defaultBootstrap overridenBy bsModule
+
+    val appModule = provider.appModules().merge overridenBy env.appModule
+
+    val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
+      // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
+      //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
+
+      // FIXME: We're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
+      //  (planner holds activations & the rest is for Bootloader self-introspection)
+
+      // create bsLocator separately because we can't retrieve Plan & Module from Injector
+      // fixme: adding Cycles.Proxy manually here
+      val bsLocator = new BootstrapLocator(finalBsModule, Activation(Cycles -> Cycles.Proxy) ++ env.activation)
+
+      val bsPlanMinusUnstable = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
+      val bsModuleMinusUnstable = bsLocator.get[BootstrapModule].drop(unstableKeys)
+
+      val injector = Injector.inherit(bsLocator)
+      val planner = bsLocator.get[Planner]
+      (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner)
+    }
+
+    // runtime plan with `runtimeGcRoots`
+    val runtimePlan = injector.plan(PlannerInput(appModule, env.activation, runtimeGcRoots))
+    // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
+    val runtimeKeys = runtimePlan.keys
+
+    // produce plan for each test
+    val testPlans = tests.map {
+      distageTest =>
+        val testRoots = distageTest.test.get.diKeys.toSet ++ env.forcedRoots
+        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
+        PreparedTest(distageTest, plan, env.activationInfo, env.activation, planner)
+    }
+    val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
+    val sharedKeys = envKeys.intersect(env.memoizationRoots) -- runtimeKeys
+
+    // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
+    // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
+    // weak sets behave as usual
+    val (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeKeys).foldLeftWith(List.empty[DIKey]) {
+      case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
+        (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+      case (acc, b) =>
+        acc -> b
+    }
+
+    // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
+    val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
+      _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
+    }
+
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
+
+    val memoEnvHashCode = envMergeCriteria.hashCode()
+    val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
+    val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
+    if (strengthenedKeys.nonEmpty) {
+      integrationLogger.log(testkitDebugMessagesLogLevel(env.debugOutput))(
+        s"Strengthened weak components: $strengthenedKeys"
+      )
+    }
+
+    Option(PackedEnv(envMergeCriteria, testPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet))
   }
 
   def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnvWithPlan, Iterable[PreparedTest[F]])]): Unit = {
@@ -555,6 +556,22 @@ class DistageTestRunner[F[_]: TagK](
 }
 
 object DistageTestRunner {
+  final case class EnvMergeCriteria(
+    bsPlanMinusActivations: Vector[ExecutableOp],
+    bsModuleMinusActivations: BootstrapModule,
+    sharedPlan: TriSplittedPlan,
+    runtimePlan: OrderedPlan,
+    envExec: EnvExecutionParams,
+  )
+  final case class PackedEnv[F[_]](
+    envMergeCriteria: EnvMergeCriteria,
+    testPlans: Seq[PreparedTest[F]],
+    anyMemoizationInjector: Injector,
+    anyIntegrationLogger: IzLogger,
+    highestDebugOutputInTests: Boolean,
+    strengthenedKeys: Set[DIKey],
+  )
+
   final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
   final case class DistageTest[F[_]](test: Functoid[F[_]], environment: TestEnvironment, meta: TestMeta)
   final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)

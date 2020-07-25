@@ -291,12 +291,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roleCfgMinStr = new String(Files.readAllBytes(roleCfgMin.toPath), UTF_8)
       val roleCfgMinRestored = ConfigFactory.parseString(roleCfgMinStr)
 
+      assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
       assert(roleCfgMinRestored.hasPath("integrationOnlyCfg"))
       assert(roleCfgMinRestored.hasPath("integrationOnlyCfg2"))
+
       assert(roleCfgMinRestored.hasPath("testservice"))
       assert(roleCfgMinRestored.hasPath("testservice2"))
-      assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
-
       assert(roleCfgMinRestored.getString("testservice2.strval") == "xxx")
       assert(roleCfgMinRestored.getString("testservice.overridenInt") == "111")
     }

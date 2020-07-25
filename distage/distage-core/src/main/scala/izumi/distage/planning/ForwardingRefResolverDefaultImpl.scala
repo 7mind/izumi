@@ -90,7 +90,7 @@ class ForwardingRefResolverDefaultImpl(
     val associations = usedByOps.flatMap {
       case op: InstantiationOp =>
         op match {
-          case ExecutableOp.CreateSet(_, _, members, _) =>
+          case ExecutableOp.CreateSet(_, members, _) =>
             members.map(m => m -> false)
           case _: ExecutableOp.WiringOp.ReferenceKey =>
             Seq(target -> false)

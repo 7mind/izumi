@@ -3,11 +3,10 @@ package izumi.distage
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.reflect.TagK
 
@@ -30,15 +29,6 @@ class InjectorDefaultImpl(
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     planner.rewrite(module)
-  }
-
-  @deprecated("used in tests only!", "")
-  private[distage] override def finish(semiPlan: SemiPlan): OrderedPlan = {
-    planner.finish(semiPlan)
-  }
-
-  private[distage] def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan = {
-    planner.truncate(plan, roots)
   }
 
   override private[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Locator] = {

@@ -34,7 +34,11 @@ trait Provider {
   }
   override final def hashCode(): Int = eqField.hashCode()
   override final def toString: String = s"$funString(${argTypes.mkString(", ")}): $ret"
-  final def funString: String = if (providerType eq ProviderType.Function) fun.toString else providerType.toString
+  final def funString: String = if (providerType eq ProviderType.Function) {
+    "ƒ:" + originalFun.toString
+  } else {
+    "π:" + providerType.toString
+  }
 
   protected[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters

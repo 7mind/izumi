@@ -13,9 +13,6 @@ final class PlanningObserverAggregate(
   override def onPhase10PostGC(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase10PostGC(plan))
   }
-  override def onPhase20Customization(plan: SemiPlan): Unit = {
-    planningObservers.foreach(_.onPhase20Customization(plan))
-  }
   override def onPhase50PreForwarding(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase50PreForwarding(plan))
   }

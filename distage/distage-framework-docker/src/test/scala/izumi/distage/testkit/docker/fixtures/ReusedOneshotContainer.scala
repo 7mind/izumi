@@ -14,7 +14,8 @@ object ReusedOneshotContainer extends ContainerDef {
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"echo `date` >> ${CmdContainerModule.stateFilePath}"),
-      reuse = DockerReusePolicy.KeepAliveOnExitAndReuse,
+      reuse = DockerReusePolicy.ReuseEnabled,
+      autoRemove = false, // we need this container to be preserved after exit as a marker
     )
   }
 }
@@ -26,7 +27,8 @@ object ReuseCheckContainer extends ContainerDef {
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"if [[ $$(cat ${CmdContainerModule.stateFilePath} | wc -l | awk '{print $$1}') == 1 ]]; then exit 0; else exit 42; fi"),
-      reuse = DockerReusePolicy.KillOnExitNoReuse,
+      reuse = DockerReusePolicy.ReuseDisabled,
+      autoRemove = false, // we need this container to be preserved after exit as a marker
     )
   }
 }
@@ -42,8 +44,8 @@ class CmdContainerModule[F[_]: TagK] extends ModuleDef {
 object CmdContainerModule {
   def apply[F[_]: TagK]: CmdContainerModule[F] = new CmdContainerModule[F]
 
-  private val runId = UUID.randomUUID().toString
+  private[this] val runId: String = UUID.randomUUID().toString
 
-  val stateFileMount: Mount = Mount("/tmp/", s"/tmp/docker-test/")
-  val stateFilePath: String = s"/tmp/docker-test/docker-test-${CmdContainerModule.runId}.txt"
+  val stateFileMount: Mount = Mount("/tmp/", "/tmp/docker-test/")
+  val stateFilePath: String = s"/tmp/docker-test/docker-test-$runId.txt"
 }

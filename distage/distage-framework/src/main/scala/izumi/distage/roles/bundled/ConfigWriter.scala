@@ -13,6 +13,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -114,7 +115,7 @@ class ConfigWriter[F[_]: DIEffect](
       new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
-    val plans = context.reboot(cfg).makePlan(Set(roleDIKey))
+    val plans = context.reboot(cfg).makePlan(Set(roleDIKey, DIKey.get[ResolvedConfig]))
 
     def getConfig(plan: OrderedPlan): Option[Config] = {
       plan
