@@ -79,8 +79,10 @@ case class ContainerResource[F[_], T](
       logger.debug(s"Awaiting until alive: $container...")
       try {
         val status = rawClient.inspectContainerCmd(container.id.name).exec()
-        // if container is running or does not have any ports
-        if (status.getState.getRunning || (config.ports.isEmpty && status.getState.getExitCodeLong == 0L)) {
+        if (status.getState.getExitCodeLong == 0L && config.ports.isEmpty) {
+          logger.debug(s"Container has exited but that was a singleshot container $container...")
+          Right(HealthCheckResult.Available)
+        } else if (status.getState.getRunning) {
           logger.debug(s"Trying healthcheck on running $container...")
           Right(config.healthCheck.check(logger, container))
         } else {

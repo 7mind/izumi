@@ -7,7 +7,6 @@ import izumi.fundamentals.platform.console.TrivialLogger
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
   override def onPhase05PreGC(plan: SemiPlan): Unit = {}
   override def onPhase10PostGC(plan: SemiPlan): Unit = {}
-  override def onPhase20Customization(plan: SemiPlan): Unit = {}
 
   override def onPhase50PreForwarding(finalPlan: SemiPlan): Unit = {
     doLog("Resolved Plan", finalPlan.toString)

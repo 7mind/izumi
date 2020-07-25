@@ -36,7 +36,7 @@ object BindingTranslator {
           val setKey = set.key.set
 
           val next = computeProvisioning(SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-          val oldSet = next.sets.getOrElse(target, CreateSet(setKey, target.tpe, Set.empty, OperationOrigin.UserBinding(binding)))
+          val oldSet = next.sets.getOrElse(target, CreateSet(setKey, Set.empty, OperationOrigin.UserBinding(binding)))
           val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
           NextOps(
@@ -45,7 +45,7 @@ object BindingTranslator {
           )
 
         case set: EmptySetBinding[_] =>
-          val newSet = CreateSet(set.key, set.key.tpe, Set.empty, OperationOrigin.UserBinding(binding))
+          val newSet = CreateSet(set.key, Set.empty, OperationOrigin.UserBinding(binding))
 
           NextOps(
             sets = Map(set.key -> newSet),

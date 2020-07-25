@@ -41,8 +41,8 @@ object OpFormatter {
       op match {
         case i: InstantiationOp =>
           i match {
-            case CreateSet(target, tpe, members, origin) =>
-              val repr = doFormat(formatType(tpe), members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
+            case CreateSet(target, members, origin) =>
+              val repr = doFormat("set", members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
               val pos = formatBindingPosition(origin)
               s"${formatKey(target)} $pos := $repr"
 

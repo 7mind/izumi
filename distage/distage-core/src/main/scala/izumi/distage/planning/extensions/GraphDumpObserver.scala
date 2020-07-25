@@ -26,8 +26,6 @@ final class GraphDumpObserver(
 
   override def onPhase10PostGC(plan: SemiPlan): Unit = {}
 
-  override def onPhase20Customization(plan: SemiPlan): Unit = {}
-
   override def onPhase50PreForwarding(plan: SemiPlan): Unit = {}
 
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
@@ -137,7 +135,7 @@ final class GraphDumpObserver(
     val label = op match {
       case op: ExecutableOp.InstantiationOp =>
         op match {
-          case ExecutableOp.CreateSet(_, _, _, _) =>
+          case _: ExecutableOp.CreateSet =>
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {

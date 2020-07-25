@@ -47,7 +47,7 @@ import scala.collection.immutable.ListSet
   *   }
   * }}}
   *
-  * Auto-Sets are NOT subject to [[gc.TracingDIGC Garbage Collection]], they are assembled
+  * Auto-Sets are NOT subject to Garbage Collection, they are assembled
   * *after* garbage collection is done, as such they can't contain garbage by construction
   * and they cannot be designated as GC root keys.
   */
@@ -113,7 +113,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     }
 
     val newSetKeys = ListSet.newBuilder.++=(newMembers).result()
-    val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, OperationOrigin.Unknown)
+    val newSetOp = ExecutableOp.CreateSet(setKey, newSetKeys, OperationOrigin.Unknown)
 
     plan.copy(steps = newSteps :+ newSetOp)
   }
@@ -122,7 +122,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     val allKeys = ListSet.newBuilder.++=(plan.steps.map(_.target)).result()
 
     val withReorderedSetElements = plan.steps.map {
-      case op @ ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
+      case op @ ExecutableOp.CreateSet(`setKey`, newSetKeys, _) =>
         // now reorderedKeys has exactly same elements as newSetKeys but in instantiation order
         val reorderedKeys = allKeys.intersect(newSetKeys)
         op.copy(members = reorderedKeys)
