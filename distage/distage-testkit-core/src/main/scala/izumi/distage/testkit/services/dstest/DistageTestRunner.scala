@@ -171,7 +171,7 @@ class DistageTestRunner[F[_]: TagK](
       _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable.toSet, bsModuleMinusUnstable, shared, runtimePlan, envExec)
 
     val memoEnvHashCode = envMergeCriteria.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
@@ -557,7 +557,7 @@ class DistageTestRunner[F[_]: TagK](
 
 object DistageTestRunner {
   final case class EnvMergeCriteria(
-    bsPlanMinusActivations: Vector[ExecutableOp],
+    bsPlanMinusActivations: Set[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
     sharedPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
