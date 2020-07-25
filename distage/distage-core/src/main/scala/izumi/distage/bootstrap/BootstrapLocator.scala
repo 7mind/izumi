@@ -17,7 +17,6 @@ import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInt
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
-import izumi.distage.planning.gc.TracingDIGC
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -122,7 +121,6 @@ object BootstrapLocator {
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
     make[MirrorProvider].fromValue(mirrorProvider)
-    make[DIGarbageCollector].from[TracingDIGC.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
 

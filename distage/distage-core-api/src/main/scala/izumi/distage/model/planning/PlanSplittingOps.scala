@@ -51,10 +51,15 @@ trait PlanSplittingOps {
   private[this] final def truncateOrReplan(activation: Activation, appModule: ModuleBase, basePlan: OrderedPlan, subplanKeys: Set[DIKey]): OrderedPlan = {
     val isSubset = subplanKeys.diff(basePlan.index.keySet).isEmpty
     if (isSubset) {
-      truncate(basePlan, subplanKeys)
+//      //truncate(basePlan, subplanKeys)
+//      ???
+      // TODO: this can be optimized by truncation instead of replanning
+      toSubplanNoRewrite(activation, appModule, subplanKeys)
+
     } else {
       toSubplanNoRewrite(activation, appModule, subplanKeys)
     }
+
   }
 
   private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {

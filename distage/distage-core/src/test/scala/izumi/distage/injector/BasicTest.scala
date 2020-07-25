@@ -5,7 +5,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
-import izumi.distage.model.definition.{BindingTag, Id}
+import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
@@ -273,29 +273,29 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[Service3].set.size == 3)
   }
 
-  "support Plan.providerImport and Plan.resolveImport" in {
-    import BasicCase1._
-
-    val definition = PlannerInput.noGC(new ModuleDef {
-      make[TestCaseClass2]
-    })
-
-    val injector = mkInjector()
-
-    val plan1 = injector.plan(definition)
-    val plan2 = injector.finish(plan1.toSemi.providerImport {
-      verse: String @Id("verse") =>
-        TestInstanceBinding(verse)
-    })
-    val plan3 = plan2.resolveImport[String](id = "verse") {
-      """ God only knows what I might do, god only knows what I might do, I don't fuck with god, I'm my own through
-        | Take two of these feel like Goku""".stripMargin
-    }
-
-    val context = injector.produce(plan3).unsafeGet()
-
-    assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
-  }
+//  "support Plan.providerImport and Plan.resolveImport" in {
+//    import BasicCase1._
+//
+//    val definition = PlannerInput.noGC(new ModuleDef {
+//      make[TestCaseClass2]
+//    })
+//
+//    val injector = mkInjector()
+//
+//    val plan1 = injector.plan(definition)
+//    val plan2 = injector.finish(plan1.toSemi.providerImport {
+//      verse: String @Id("verse") =>
+//        TestInstanceBinding(verse)
+//    })
+//    val plan3 = plan2.resolveImport[String](id = "verse") {
+//      """ God only knows what I might do, god only knows what I might do, I don't fuck with god, I'm my own through
+//        | Take two of these feel like Goku""".stripMargin
+//    }
+//
+//    val context = injector.produce(plan3).unsafeGet()
+//
+//    assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
+//  }
 
   "preserve type annotations" in {
     import BasicCase4._

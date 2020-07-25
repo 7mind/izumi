@@ -1,54 +1,51 @@
 package izumi.distage.config.extractor
 
-import scala.annotation.nowarn
 import com.typesafe.config.{Config, ConfigFactory}
-import izumi.distage.config.extractor.ConfigPathExtractor.{ConfigPath, ExtractConfigPath, ResolvedConfig}
+import izumi.distage.config.extractor.ConfigPathExtractor.{ConfigPath, ExtractConfigPath1, ResolvedConfig}
+import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.BindingTag.ConfTag
-import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import izumi.distage.model.definition.{Binding, ImplDef, Module, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
+import izumi.fundamentals.platform.language.SourceFilePosition
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 class ConfigPathExtractor extends PlanningHook {
 
-  override def phase20Customization(plan: SemiPlan): SemiPlan = {
-    val paths = plan
-      .steps.collect {
-        case ExtractConfigPath(configPath) => configPath
+  override def hookDefinition(defn: ModuleBase): ModuleBase = {
+    val paths = defn
+      .bindings
+      .collect {
+        case b @ ExtractConfigPath1(configPath) =>
+          configPath
       }.toSet
 
-    val addResolvedConfigOp = resolvedConfigOp(paths)
+    val addResolvedConfigOp = resolvedConfigBindings(paths)
 
-    SemiPlan(plan.steps :+ addResolvedConfigOp, plan.roots)
+    defn ++ Module.make(Set(addResolvedConfigOp))
   }
 
-  private def resolvedConfigOp(paths: Set[ConfigPath]): ExecutableOp.WiringOp.UseInstance = {
+  private def resolvedConfigBindings(paths: Set[ConfigPath]): SingletonBinding[DIKey] = {
     val resolvedConfig = ResolvedConfig(paths)
     val target = DIKey.get[ResolvedConfig]
-    ExecutableOp
-      .WiringOp.UseInstance(
-        target = target,
-        wiring = Instance(target.tpe, resolvedConfig),
-        origin = OperationOrigin.Unknown,
-      )
+    SingletonBinding(
+      target,
+      ImplDef.InstanceImpl(target.tpe, resolvedConfig),
+      Set.empty,
+      SourceFilePosition.unknown,
+    )
   }
 
 }
 
 object ConfigPathExtractor {
 
-  object ExtractConfigPath {
-    def unapply(op: ExecutableOp): Option[ConfigPath] = {
-      op.origin match {
-        case defined: OperationOrigin.Defined =>
-          defined.binding.tags.collectFirst {
-            case ConfTag(path) => ConfigPath(path)
-          }
-        case _ =>
-          None
+  object ExtractConfigPath1 {
+    def unapply(op: Binding): Option[ConfigPath] = {
+      op.tags.collectFirst {
+        case ConfTag(path) => ConfigPath(path)
       }
     }
   }
