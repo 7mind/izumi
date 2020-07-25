@@ -5,6 +5,7 @@ import izumi.distage.model.plan.topology.DepTreeNode._
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.reflection._
 
 import scala.collection.mutable
@@ -51,8 +52,8 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
     }
   }
 
-  private def renderOrigin(origin: OperationOrigin): String = {
-    origin match {
+  private def renderOrigin(origin: EqualizedOperationOrigin): String = {
+    origin.value match {
       case OperationOrigin.UserBinding(binding) =>
         binding.origin.toString
       case OperationOrigin.SyntheticBinding(binding) =>

@@ -14,7 +14,7 @@ private[plan] trait PlanLazyOps[OpType <: ExecutableOp] {
   private[this] final lazy val lazyDefn = {
     val userBindings = steps.flatMap {
       op =>
-        op.origin match {
+        op.origin.value match {
           case OperationOrigin.UserBinding(binding) =>
             Seq(binding)
           case _ =>

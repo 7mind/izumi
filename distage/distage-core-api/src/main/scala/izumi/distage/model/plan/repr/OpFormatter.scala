@@ -7,6 +7,7 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, Insta
 import izumi.distage.model.plan.Wiring.MonadicWiring._
 import izumi.distage.model.plan.Wiring.SingletonWiring._
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider}
 import izumi.fundamentals.platform.strings.IzString._
@@ -16,8 +17,8 @@ trait OpFormatter {
 }
 
 object OpFormatter {
-  def formatBindingPosition(origin: OperationOrigin): String = {
-    origin match {
+  def formatBindingPosition(origin: EqualizedOperationOrigin): String = {
+    origin.value match {
       case OperationOrigin.UserBinding(binding) =>
         binding.origin.toString
       case OperationOrigin.SyntheticBinding(binding) =>
@@ -102,7 +103,7 @@ object OpFormatter {
       }
     }
 
-    private def formatProviderOp(target: DIKey, deps: Wiring, origin: OperationOrigin): String = {
+    private def formatProviderOp(target: DIKey, deps: Wiring, origin: EqualizedOperationOrigin): String = {
       val op = formatProviderWiring(deps)
       val pos = formatBindingPosition(origin)
       s"${formatKey(target)} $pos := $op"

@@ -7,6 +7,7 @@ import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugExcepti
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
@@ -256,8 +257,9 @@ class PlannerDefaultImpl(
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
-          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.toSynthetic)
-          missing -> ImportDependency(missing, refs, maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.value.toSynthetic)
+          val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+          (missing, ImportDependency(missing, refs, origin))
       }
       .toMap
 
@@ -342,7 +344,7 @@ class PlannerDefaultImpl(
             case (k, nodes) =>
               val candidates = conflictingAxisTagsHint(
                 activeChoices = activation.activeChoices.values.toSet,
-                ops = nodes.map(_._2.meta.origin),
+                ops = nodes.map(_._2.meta.origin.value),
               )
               s"""Conflict resolution failed for key `${k.asString}` with reason:
                  |

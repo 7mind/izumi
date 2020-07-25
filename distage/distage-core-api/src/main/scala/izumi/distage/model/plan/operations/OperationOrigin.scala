@@ -2,6 +2,8 @@ package izumi.distage.model.plan.operations
 
 import izumi.distage.model.definition.Binding
 
+import scala.language.implicitConversions
+
 sealed trait OperationOrigin {
   def toSynthetic: OperationOrigin.Synthetic
 
@@ -9,9 +11,26 @@ sealed trait OperationOrigin {
     case defined: OperationOrigin.Defined => onDefined(defined.binding)
     case OperationOrigin.Unknown => onUnknown
   }
+
 }
 
 object OperationOrigin {
+
+  case class EqualizedOperationOrigin(value: OperationOrigin) {
+    override def hashCode(): Int = 0
+
+    override def equals(obj: Any): Boolean = obj match {
+      case _: EqualizedOperationOrigin =>
+        true
+      case _: OperationOrigin =>
+        true
+      case _ => false
+    }
+  }
+  object EqualizedOperationOrigin {
+    implicit def make(o: OperationOrigin): EqualizedOperationOrigin = EqualizedOperationOrigin(o)
+  }
+
   sealed trait Defined extends OperationOrigin {
     def binding: Binding
     override def toSynthetic: Synthetic = SyntheticBinding(binding)

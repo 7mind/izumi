@@ -65,7 +65,7 @@ private[plan] trait OrderedPlanOps extends Any {
         val dependees = topology.dependees.direct(s.target)
         if (dependees.diff(keys).nonEmpty || declaredRoots.contains(s.target)) {
           val dependees = topology.dependees.transitive(s.target).diff(keys)
-          Seq(ImportDependency(s.target, dependees, s.origin.toSynthetic))
+          Seq(ImportDependency(s.target, dependees, s.origin.value.toSynthetic))
         } else {
           Seq.empty
         }
