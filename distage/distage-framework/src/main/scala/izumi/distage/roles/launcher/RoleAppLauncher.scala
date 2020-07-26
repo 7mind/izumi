@@ -2,8 +2,7 @@ package izumi.distage.roles.launcher
 
 import cats.effect.LiftIO
 import distage.{DIResourceBase, TagK, TagKK}
-import izumi.distage.roles.AppShutdownStrategy
-import izumi.distage.roles.AppShutdownStrategy.{BIOShutdownStrategy, CatsEffectIOShutdownStrategy, JvmExitHookLatchShutdownStrategy}
+import izumi.distage.roles.launcher.AppShutdownStrategy.{BIOShutdownStrategy, CatsEffectIOShutdownStrategy, JvmExitHookLatchShutdownStrategy}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.functional.bio.BIOAsync
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

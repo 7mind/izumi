@@ -1,4 +1,4 @@
-package izumi.distage.roles
+package izumi.distage.roles.launcher
 
 import java.util.concurrent.CountDownLatch
 

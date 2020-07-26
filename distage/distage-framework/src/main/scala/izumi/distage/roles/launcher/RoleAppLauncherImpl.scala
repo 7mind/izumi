@@ -13,7 +13,6 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.AppShutdownStrategy
 import izumi.distage.roles.launcher.RoleAppLauncher.Options
 import izumi.distage.roles.launcher.RoleAppLauncherImpl.ActivationConfig
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException

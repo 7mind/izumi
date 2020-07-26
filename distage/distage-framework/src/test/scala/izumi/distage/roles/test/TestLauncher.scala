@@ -2,9 +2,8 @@ package izumi.distage.roles.test
 
 import cats.effect.IO
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.AppShutdownStrategy.ImmediateExitShutdownStrategy
-import izumi.distage.roles._
-import izumi.distage.roles.launcher.RoleAppLauncher
+import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
+import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher}
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 class TestLauncher extends RoleAppLauncher.LauncherF[IO] {
