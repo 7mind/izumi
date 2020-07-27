@@ -187,7 +187,7 @@ object BIOCatsConversions {
       fa: F[Throwable, A],
       fb: F[Throwable, B],
     ): F[Throwable, Either[(A, Fiber[F[Throwable, *], B]), (Fiber[F[Throwable, *], A], B)]] = {
-      F.map(F.racePair(fa, fb)) {
+      F.map(Fork.racePair(fa, fb)) {
         case Left((a, f)) => Left((a, f.toCats(F)))
         case Right((f, b)) => Right((f.toCats(F), b))
       }

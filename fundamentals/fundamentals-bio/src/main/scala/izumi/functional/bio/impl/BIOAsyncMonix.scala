@@ -3,16 +3,16 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.{Success, Termination, Trace}
-import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber}
+import izumi.functional.bio.{BIOAsync, BIOExit}
 import monix.bio
 import monix.bio.{Cause, IO, Task}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-object BIOMonix extends BIOMonix
+object BIOAsyncMonix extends BIOAsyncMonix
 
-class BIOMonix extends BIOAsync[IO] {
+class BIOAsyncMonix extends BIOAsync[IO] {
   override final def pure[A](a: A): IO[Nothing, A] = IO.pure(a)
   override final def sync[A](effect: => A): IO[Nothing, A] = IO.evalTotal(effect)
   override final def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.eval(effect)
@@ -38,8 +38,8 @@ class BIOMonix extends BIOAsync[IO] {
   override final def flatMap[R, E, A, B](r: IO[E, A])(f: A => IO[E, B]): IO[E, B] = r.flatMap(f)
   override final def tap[R, E, A](r: IO[E, A])(f: A => IO[E, Unit]): IO[E, A] = r.flatMap(a => f(a).map(_ => a))
 
-  // TODO
-  override final def tapBoth[R, E, A, E1 >: E](r: IO[E, A])(err: E => IO[E1, Unit], succ: A => IO[E1, Unit]): IO[E1, A] = ???
+  override final def tapBoth[R, E, A, E1 >: E](r: IO[E, A])(err: E => IO[E1, Unit], succ: A => IO[E1, Unit]): IO[E1, A] =
+    r.tapError(err).flatMap(a => succ(a).map(_ => a))
 
   override final def flatten[R, E, A](r: IO[E, IO[E, A]]): IO[E, A] = r.flatten
   override final def *>[R, E, A, B](r: IO[E, A], next: => IO[E, B]): IO[E, B] = r.flatMap(_ => next)
@@ -71,18 +71,12 @@ class BIOMonix extends BIOAsync[IO] {
   override final def traverse_[R, E, A](l: Iterable[A])(f: A => IO[E, Unit]): IO[E, Unit] = IO.traverse(l)(f).void
   override final def sequence_[R, E](l: Iterable[IO[E, Unit]]): IO[E, Unit] = IO.sequence(l).void
 
-  override final def sandbox[R, E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = ???
-  override final def yieldNow: IO[Nothing, Unit] = IO.unit // ???
+  override final def sandbox[R, E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.redeemCauseWith(cause => IO.raiseError(fromMonixCause(cause)), a => IO.pure(a))
+  override final def yieldNow: IO[Nothing, Unit] = IO.unit
   override final def never: IO[Nothing, Nothing] = IO.never
 
   override final def race[R, E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = IO.raceMany(List(r1, r2))
-  // TODO: don't know how to convert to BIOFiber
-  override final def racePair[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, Either[(A, BIOFiber[IO, E, B]), (BIOFiber[IO, E, A], B)]] = {
-    IO.racePair(fa, fb).map {
-      case Left((value, fiber)) => Left(value, BIOFiber.fromMonix(fiber))
-      case Right((fiber, value)) => Right(BIOFiber.fromMonix(fiber), value)
-    }
-  }
+
   override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
     IO.async(cb => register(cb apply Try(_)))
   }
@@ -108,9 +102,10 @@ class BIOMonix extends BIOAsync[IO] {
       } else {
         bio.Task.async {
           cb =>
-            cs.handle[Unit] { (v: A, t: Throwable) =>
-              val io = Option(t).fold[Either[bio.Cause[Throwable], A]](Right(v))(_ => Left(bio.Cause.Error(t)))
-              cb(io)
+            cs.handle[Unit] {
+              (v: A, t: Throwable) =>
+                val io = Option(t).fold[Either[Cause[Throwable], A]](Right(v))(_ => Left(Cause.Error(t)))
+                cb(io)
             }
         }
       }
@@ -123,21 +118,23 @@ class BIOMonix extends BIOAsync[IO] {
   override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.parTraverse(l)(f)
   override def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, Unit] = IO.parTraverse(l)(f).void
 
-  //TODO
-  override final def zipWithPar[R, E, A, B, C](fa: IO[E, A], fb: IO[E, B])(f: (A, B) => C): IO[E, C] = ???
-  override final def zipPar[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, (A, B)] = ???
-  override final def zipParLeft[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, A] = ???
-  override final def zipParRight[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, B] = ???
+  override final def zipWithPar[R, E, A, B, C](fa: IO[E, A], fb: IO[E, B])(f: (A, B) => C): IO[E, C] = IO.mapBoth(fa, fb)(f)
+  override final def zipPar[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, (A, B)] = IO.parZip2(fa, fb)
+  override final def zipParLeft[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, A] = IO.parZip2(fa, fb).map { case (a, _) => a }
+  override final def zipParRight[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, B] = IO.parZip2(fa, fb).map { case (_, b) => b }
 
   private[this] def toIzBIO[E, A](exit: Either[Option[Cause[E]], A]): BIOExit[E, A] = {
     exit match {
       case Left(None) => Termination(new Throwable("The task was cancelled."), Trace.empty)
-      case Left(Some(error)) => error match {
-        case Cause.Error(value) => BIOExit.Error(value, Trace.empty)
-        case Cause.Termination(value) => BIOExit.Termination(value, Trace.empty)
-      }
+      case Left(Some(error)) => fromMonixCause(error)
       case Right(value) => Success(value)
     }
   }
-}
 
+  private[this] def fromMonixCause[E](cause: Cause[E]): BIOExit.Failure[E] = {
+    cause match {
+      case Cause.Error(value) => BIOExit.Error(value, Trace.empty)
+      case Cause.Termination(value) => BIOExit.Termination(value, Trace.empty)
+    }
+  }
+}
