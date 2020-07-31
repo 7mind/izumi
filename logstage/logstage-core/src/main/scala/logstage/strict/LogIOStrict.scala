@@ -6,19 +6,12 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLoggerF}
 import izumi.logstage.api.rendering.StrictEncoded
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
-import logstage.{Level, UnsafeLogIO}
+import logstage.{EncodingAwareAbstractLogIO, Level}
 
 import scala.language.implicitConversions
 
-trait LogIOStrict[F[_]] extends UnsafeLogIO[F] with AbstractMacroStrictLoggerF[F] {
-  def log(entry: Entry): F[Unit]
-  def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
-  def withCustomContext(context: CustomContext): LogIOStrict[F]
-
-  final def withCustomContext(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContextMap(context.toMap)
-  final def withCustomContextMap(context: Map[String, StrictEncoded]): LogIOStrict[F] = withCustomContext(CustomContext.fromMap(context))
-  final def apply(context: CustomContext): LogIOStrict[F] = withCustomContext(context)
-  final def apply(context: (String, StrictEncoded)*): LogIOStrict[F] = withCustomContextMap(context.toMap)
+trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroStrictLoggerF[F] {
+  override type Self[f[_]] = LogIOStrict[f]
 }
 
 object LogIOStrict {

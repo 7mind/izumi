@@ -1,6 +1,5 @@
 package izumi.logstage.sink
 
-import scala.annotation.nowarn
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
@@ -11,6 +10,7 @@ import logstage.strict.LogIOStrict
 import org.scalatest.Assertions
 import org.scalatest.exceptions.TestFailedException
 
+import scala.annotation.nowarn
 import scala.util.Random
 
 @ExposedTestScope
@@ -127,10 +127,20 @@ class ExampleService(logger: IzLogger) {
       val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
       logStrict.crit(s"Suspended message: clap your hands! $map")
     }
+    val rawOk = {
+      val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
+      logStrict.raw.crit(s"Suspended raw message: clap your hands! $map")
+    }
+    val rawWithCtxOk = {
+      val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
+      logStrict.raw("extra" -> "zzz").crit(s"Suspended raw message with extra context: clap your hands! $map")
+    }
     basic()
     expressionsOk()
     subtypesOk()
     mapsOk()
+    rawOk()
+    rawWithCtxOk()
   }
 
   private def makeException(message: String): RuntimeException = {

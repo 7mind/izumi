@@ -9,15 +9,8 @@ import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait LogIO[F[_]] extends UnsafeLogIO[F] with AbstractMacroLoggerF[F] {
-  def log(entry: Entry): F[Unit]
-  def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
-  def withCustomContext(context: CustomContext): LogIO[F]
-
-  final def withCustomContext(context: (String, AnyEncoded)*): LogIO[F] = withCustomContextMap(context.toMap)
-  final def withCustomContextMap(context: Map[String, AnyEncoded]): LogIO[F] = withCustomContext(CustomContext.fromMap(context))
-  final def apply(context: CustomContext): LogIO[F] = withCustomContext(context)
-  final def apply(context: (String, AnyEncoded)*): LogIO[F] = withCustomContextMap(context.toMap)
+trait LogIO[F[_]] extends EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
+  override type Self[f[_]] = LogIO[f]
 }
 
 object LogIO {
