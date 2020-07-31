@@ -1,6 +1,7 @@
 package izumi.logstage.api.rendering
 
 import izumi.fundamentals.platform.language.unused
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 trait LogstageCodec[-T] {
   def write(writer: LogstageWriter, value: T): Unit
@@ -59,5 +60,9 @@ sealed trait LogstageCodecLowPriority {
   implicit final lazy val LogstageCodecDouble: LogstageCodec[Double] = _.write(_)
   implicit final lazy val LogstageCodecBigDecimal: LogstageCodec[BigDecimal] = _.write(_)
   implicit final lazy val LogstageCodecBigInt: LogstageCodec[BigInt] = _.write(_)
+  implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
+    (w, t) =>
+      w.write(t.stackTrace)
+  }
 
 }
