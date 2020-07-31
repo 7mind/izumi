@@ -2,8 +2,8 @@ package izumi.functional.bio.impl
 
 import java.util.concurrent.CompletionStage
 
-import izumi.functional.bio.BIOExit.{Success, Termination, Trace}
-import izumi.functional.bio.{BIOAsync, BIOExit}
+import izumi.functional.bio.BIOExit.MonixExit._
+import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber}
 import monix.bio
 import monix.bio.{Cause, IO, Task}
 
@@ -77,6 +77,13 @@ class BIOAsyncMonix extends BIOAsync[IO] {
 
   override final def race[R, E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = IO.raceMany(List(r1, r2))
 
+  override final def racePair[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, Either[(A, BIOFiber[IO, E, B]), (BIOFiber[IO, E, A], B)]] = {
+    IO.racePair(fa, fb).flatMap {
+      case Left((a, fiberB)) => fiberB.cancel.void.map(_ => Left((a, BIOFiber.fromMonix(fiberB))))
+      case Right((fiberA, b)) => fiberA.cancel.void.map(_ => Right((BIOFiber.fromMonix(fiberA), b)))
+    }
+  }
+
   override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
     IO.async(cb => register(cb apply Try(_)))
   }
@@ -122,19 +129,4 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def zipPar[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, (A, B)] = IO.parZip2(fa, fb)
   override final def zipParLeft[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, A] = IO.parZip2(fa, fb).map { case (a, _) => a }
   override final def zipParRight[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, B] = IO.parZip2(fa, fb).map { case (_, b) => b }
-
-  private[this] def toIzBIO[E, A](exit: Either[Option[Cause[E]], A]): BIOExit[E, A] = {
-    exit match {
-      case Left(None) => Termination(new Throwable("The task was cancelled."), Trace.empty)
-      case Left(Some(error)) => fromMonixCause(error)
-      case Right(value) => Success(value)
-    }
-  }
-
-  private[this] def fromMonixCause[E](cause: Cause[E]): BIOExit.Failure[E] = {
-    cause match {
-      case Cause.Error(value) => BIOExit.Error(value, Trace.empty)
-      case Cause.Termination(value) => BIOExit.Termination(value, Trace.empty)
-    }
-  }
 }

@@ -375,7 +375,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = allMonadsOptional ++ Seq(monix_bio in Scope.Compile.all) ++ Seq(
+        libs = allMonadsOptional ++ Seq(
           scala_java_time in Scope.Test.js,
         ),
         depends = Seq(Projects.fundamentals.language),
@@ -396,8 +396,8 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ Seq(zio_core)).map(_ in Scope.Test.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Optional.all)
+  final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
