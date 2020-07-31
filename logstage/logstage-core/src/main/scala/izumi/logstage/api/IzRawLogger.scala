@@ -17,4 +17,3 @@ final private[api] class IzRawLogger(routingLogger: RoutingLogger) extends Routi
   def apply(context: CustomContext): Self = withCustomContext(context)
   def apply(context: (String, AnyEncoded)*): Self = withCustomContextMap(context.toMap)
 }
-

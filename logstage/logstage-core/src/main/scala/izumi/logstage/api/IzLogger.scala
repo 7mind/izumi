@@ -8,7 +8,7 @@ class IzLogger(
   override val router: LogRouter,
   override val customContext: Log.CustomContext,
 ) extends RoutingLogger
-  with AbstractMacroLogger { self =>
+  with AbstractMacroLogger {
 
   override type Self = IzLogger
 
