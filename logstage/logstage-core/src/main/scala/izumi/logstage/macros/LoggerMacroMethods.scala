@@ -4,6 +4,7 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
 import izumi.logstage.api.Log
+import izumi.logstage.api.Log.Message
 import izumi.logstage.api.logger.AbstractLogger
 
 import scala.reflect.macros.blackbox
@@ -56,6 +57,30 @@ object LoggerMacroMethods {
 
   def scCritMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     logMacro(c)(c.universe.reify(Log.Level.Crit), new LogMessageMacro0[c.type](c, strict = true).logMessageMacro(message), getEnclosingPosition(c))
+  }
+
+  def scTraceMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Trace), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
+  }
+
+  def scDebugMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Debug), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
+  }
+
+  def scInfoMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Info), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
+  }
+
+  def scWarnMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Warn), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
+  }
+
+  def scErrorMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Error), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
+  }
+
+  def scCritMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
+    logMacro(c)(c.universe.reify(Log.Level.Crit), c.universe.reify(Message.raw(message.splice)), getEnclosingPosition(c))
   }
 
   @inline private[this] def logMacro(

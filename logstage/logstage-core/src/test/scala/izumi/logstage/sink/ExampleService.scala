@@ -26,10 +26,15 @@ class ExampleService(logger: IzLogger) {
     logger.info(s"A simple message: $justAnArg")
     logger.info(s"A simple message with iterable argument: $justAList")
 
+    logger.raw.info(s"A simple raw message: $justAnArg")
+
     val loggerWithContext = logger("userId" -> "xxx")
     loggerWithContext.trace(s"Custom context will be added into this message. Dummy: $justAnArg")
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
     loggerWithSubcontext.info(s"Both custom contexts will be added into this message. Dummy: $justAnArg")
+
+    loggerWithSubcontext.raw.info(s"Both custom contexts will be added into this raw message. Dummy: $justAnArg")
+    loggerWithSubcontext.raw("extra" -> "zzz").info(s"Even more custom context will be added into this raw message. Dummy: $justAnArg")
 
     logger.crit(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
     logger.crit(s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}")
