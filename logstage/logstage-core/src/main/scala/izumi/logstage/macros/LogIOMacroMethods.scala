@@ -8,75 +8,75 @@ import scala.reflect.macros.blackbox
 
 object LogIOMacroMethods {
   def scTraceMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Trace, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Trace, Mode.NonStrict)
   }
 
   def scDebugMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Debug, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Debug, Mode.NonStrict)
   }
 
   def scInfoMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Info, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Info, Mode.NonStrict)
   }
 
   def scWarnMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Warn, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Warn, Mode.NonStrict)
   }
 
   def scErrorMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Error, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Error, Mode.NonStrict)
   }
 
   def scCritMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Crit, mode = Mode.NonStrict)
+    doLog(c)(message, Log.Level.Crit, Mode.NonStrict)
   }
 
   def scTraceMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Trace, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Trace, Mode.Strict)
   }
 
   def scDebugMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Debug, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Debug, Mode.Strict)
   }
 
   def scInfoMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Info, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Info, Mode.Strict)
   }
 
   def scWarnMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Warn, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Warn, Mode.Strict)
   }
 
   def scErrorMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Error, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Error, Mode.Strict)
   }
 
   def scCritMacroStrict[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Crit, mode = Mode.Strict)
+    doLog(c)(message, Log.Level.Crit, Mode.Strict)
   }
 
   def scTraceMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Trace, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Trace, Mode.Raw)
   }
 
   def scDebugMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Debug, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Debug, Mode.Raw)
   }
 
   def scInfoMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Info, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Info, Mode.Raw)
   }
 
   def scWarnMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Warn, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Warn, Mode.Raw)
   }
 
   def scErrorMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Error, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Error, Mode.Raw)
   }
 
   def scCritMacroRaw[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Log.Level.Crit, mode = Mode.Raw)
+    doLog(c)(message, Log.Level.Crit, Mode.Raw)
   }
 
   private[this] def doLog[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String], level: Level, mode: Mode): c.universe.Expr[F[Unit]] = {
