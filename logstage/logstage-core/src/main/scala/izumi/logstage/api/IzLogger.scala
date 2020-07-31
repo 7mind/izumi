@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogger, AbstractMacroRawLogger, LogRouter, RoutingLogger}
+import izumi.logstage.api.logger.{AbstractMacroLogger, LogRouter, RoutingLogger}
 import izumi.logstage.api.rendering.AnyEncoded
 
 class IzLogger(
