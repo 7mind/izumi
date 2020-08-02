@@ -17,6 +17,11 @@ class LogstageCirceRenderingPolicy(
 
   import LogstageCirceRenderingPolicy._
 
+  protected def EventKey = "event"
+  protected def ContextKey = "context"
+  protected def MetaKey = "meta"
+  protected def TextKey = "text"
+
   override def render(entry: Log.Entry): String = {
     val result = mutable.ArrayBuffer[(String, Json)]()
 
@@ -28,7 +33,7 @@ class LogstageCirceRenderingPolicy(
     )
 
     if (params.nonEmpty) {
-      result += "event" -> params.asJson
+      result += EventKey -> params.asJson
     }
 
     val ctx = parametersToJson[LogArg](
@@ -38,7 +43,7 @@ class LogstageCirceRenderingPolicy(
     )
 
     if (ctx.nonEmpty) {
-      result += "context" -> ctx.asJson
+      result += ContextKey -> ctx.asJson
     }
 
     result ++= makeEventEnvelope(entry, formatted)
@@ -78,8 +83,8 @@ class LogstageCirceRenderingPolicy(
     )
 
     val tail = Seq(
-      "meta" -> eventInfo,
-      "text" -> Json.fromFields(
+      MetaKey -> eventInfo,
+      TextKey -> Json.fromFields(
         Seq(
           "template" -> Json.fromString(formatted.template),
           "message" -> Json.fromString(formatted.message),
