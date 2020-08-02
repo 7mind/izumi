@@ -1,13 +1,14 @@
 package izumi.logstage.api.logger
 
+import izumi.logstage.api.Log
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.rendering.AnyEncoded
 
-final class RawLogger[E <: AnyEncoded](delegate: RoutingLogger) extends EncodingAwareRoutingLogger[E] with AbstractMacroRawLogger {
+final class RawLogger[E <: AnyEncoded](delegate: EncodingAwareAbstractLogger[E]) extends EncodingAwareAbstractLogger[E] with AbstractMacroRawLogger {
   override type Self = RawLogger[E]
 
-  def router: LogRouter = delegate.router
-  def customContext: CustomContext = delegate.customContext
+  def unsafeLog(entry: Log.Entry): Unit = delegate.unsafeLog(entry)
+  def acceptable(loggerId: Log.LoggerId, logLevel: Log.Level): Boolean = delegate.acceptable(loggerId, logLevel)
 
-  def withCustomContext(context: CustomContext): RawLogger[E] = new RawLogger(delegate.withCustomContext(context))
+  def withCustomContext(context: CustomContext): Self = new RawLogger(delegate.withCustomContext(context))
 }

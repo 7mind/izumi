@@ -6,12 +6,14 @@ import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLoggerF}
 import izumi.logstage.api.rendering.StrictEncoded
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
-import logstage.{EncodingAwareAbstractLogIO, Level}
+import logstage.{EncodingAwareAbstractLogIO, Level, LogIORaw}
 
 import scala.language.implicitConversions
 
 trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroStrictLoggerF[F] {
   override type Self[f[_]] = LogIOStrict[f]
+
+  final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
 }
 
 object LogIOStrict {

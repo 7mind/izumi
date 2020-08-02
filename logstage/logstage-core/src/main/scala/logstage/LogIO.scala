@@ -11,6 +11,8 @@ import scala.language.implicitConversions
 
 trait LogIO[F[_]] extends EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
   override type Self[f[_]] = LogIO[f]
+
+  final def raw: LogIORaw[F, AnyEncoded] = new LogIORaw(this)
 }
 
 object LogIO {
