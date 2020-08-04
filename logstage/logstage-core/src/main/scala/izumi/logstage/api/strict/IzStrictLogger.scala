@@ -1,24 +1,22 @@
 package izumi.logstage.api.strict
 
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.{AbstractMacroStrictLogger, LogRouter, RoutingLogger}
+import izumi.logstage.api.logger.{AbstractMacroStrictLogger, EncodingAwareAbstractLogger, LogRouter, RawLogger, RoutingLogger}
 import izumi.logstage.api.rendering.StrictEncoded
-import izumi.logstage.api.{IzLogger, IzLoggerConvenienceApi, Log}
+import izumi.logstage.api.{IzLoggerConvenienceApi, Log}
 
 class IzStrictLogger(
   override val router: LogRouter,
   override val customContext: Log.CustomContext,
 ) extends RoutingLogger
+  with EncodingAwareAbstractLogger[StrictEncoded]
   with AbstractMacroStrictLogger {
 
-  override def withCustomContext(context: CustomContext): IzLogger = new IzLogger(router, customContext + context)
-  final def withCustomContext(context: (String, StrictEncoded)*): IzLogger = withCustomContextMap(context.toMap)
-  final def withCustomContextMap(context: Map[String, StrictEncoded]): IzLogger = withCustomContext(CustomContext.fromMap(context))
+  override type Self = IzStrictLogger
 
-  final def apply(context: CustomContext): IzLogger = withCustomContext(context)
-  final def apply(context: (String, StrictEncoded)*): IzLogger = withCustomContextMap(context.toMap)
-  final def apply(context: Map[String, StrictEncoded]): IzLogger = withCustomContextMap(context)
+  def withCustomContext(context: CustomContext): Self = new IzStrictLogger(router, customContext + context)
 
+  def raw: RawLogger[StrictEncoded] = new RawLogger(this)
 }
 
 object IzStrictLogger extends IzLoggerConvenienceApi[IzStrictLogger] {

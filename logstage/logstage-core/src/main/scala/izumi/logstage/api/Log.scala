@@ -176,7 +176,9 @@ object Log {
     /** Construct [[Message]] from a string interpolation */
     implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
 
-    def empty: Message = Message(new StringContext(""), Nil)
+    def raw(message: String): Message = Message(StringContext(message), Nil)
+
+    def empty: Message = raw("")
   }
 
   object StrictMessage {

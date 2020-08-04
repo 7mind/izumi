@@ -1,6 +1,5 @@
 package izumi.logstage.sink
 
-import scala.annotation.nowarn
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
@@ -11,6 +10,7 @@ import logstage.strict.LogIOStrict
 import org.scalatest.Assertions
 import org.scalatest.exceptions.TestFailedException
 
+import scala.annotation.nowarn
 import scala.util.Random
 
 @ExposedTestScope
@@ -26,10 +26,15 @@ class ExampleService(logger: IzLogger) {
     logger.info(s"A simple message: $justAnArg")
     logger.info(s"A simple message with iterable argument: $justAList")
 
+    logger.raw.info(s"A simple raw message: $justAnArg")
+
     val loggerWithContext = logger("userId" -> "xxx")
     loggerWithContext.trace(s"Custom context will be added into this message. Dummy: $justAnArg")
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
     loggerWithSubcontext.info(s"Both custom contexts will be added into this message. Dummy: $justAnArg")
+
+    loggerWithSubcontext.raw.info(s"Both custom contexts will be added into this raw message. Dummy: $justAnArg")
+    loggerWithSubcontext.raw("extra" -> "zzz").info(s"Even more custom context will be added into this raw message. Dummy: $justAnArg")
 
     logger.crit(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
     logger.crit(s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}")
@@ -122,10 +127,20 @@ class ExampleService(logger: IzLogger) {
       val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
       logStrict.crit(s"Suspended message: clap your hands! $map")
     }
+    val rawOk = {
+      val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
+      logStrict.raw.crit(s"Suspended raw message: clap your hands! $map")
+    }
+    val rawWithCtxOk = {
+      val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))
+      logStrict.raw("extra" -> "zzz").crit(s"Suspended raw message with extra context: clap your hands! $map")
+    }
     basic()
     expressionsOk()
     subtypesOk()
     mapsOk()
+    rawOk()
+    rawWithCtxOk()
   }
 
   private def makeException(message: String): RuntimeException = {

@@ -6,6 +6,8 @@ import izumi.logstage.api.Log
 /** Logger that forwards entries to [[LogRouter]] */
 trait RoutingLogger extends AbstractLogger {
 
+  override type Self <: RoutingLogger
+
   def router: LogRouter
   def customContext: CustomContext
 
