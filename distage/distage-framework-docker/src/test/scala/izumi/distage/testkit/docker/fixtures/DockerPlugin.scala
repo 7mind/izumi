@@ -20,10 +20,13 @@ class PgSvcExample(
   val kafka: AvailablePort @Id("kafka"),
   val cs: AvailablePort @Id("cs"),
   val mq: AvailablePort @Id("mq"),
+  val pgfw: AvailablePort @Id("pgfw"),
   val cmd: ReusedOneshotContainer.Container,
 ) extends IntegrationCheck[Task] {
   override def resourcesAvailable(): Task[ResourceCheck] = Task.effect {
-    new PortCheck(10.milliseconds).checkPort(pg.hostV4, pg.port)
+    val portCheck = new PortCheck(10.milliseconds)
+    portCheck.checkPort(pg.hostV4, pg.port)
+    portCheck.checkPort(pgfw.hostV4, pgfw.port)
   }
 }
 
@@ -40,6 +43,7 @@ object DockerPlugin extends PluginDef {
   include(KafkaDockerModule[Task])
   include(ElasticMQDockerModule[Task])
   include(CmdContainerModule[Task])
+  include(PostgresFlyWayDockerModule[Task])
 
   make[AvailablePort].named("mq").tagged(Env.Test).from {
     cs: ElasticMQDocker.Container =>
@@ -54,6 +58,11 @@ object DockerPlugin extends PluginDef {
   make[AvailablePort].named("kafka").tagged(Env.Test).from {
     kafka: KafkaDocker.Container =>
       kafka.availablePorts.first(KafkaDocker.primaryPort)
+  }
+
+  make[AvailablePort].named("pgfw").tagged(Env.Test).from {
+    cs: PostgresFlyWayDocker.Container =>
+      cs.availablePorts.first(PostgresFlyWayDocker.primaryPort)
   }
 
   // this container will start once `DynamoContainer` is up and running
