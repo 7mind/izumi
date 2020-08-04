@@ -6,6 +6,8 @@ import izumi.logstage.api.Log.{CustomContext, LoggerId}
 
 trait AbstractLogger {
 
+  type Self <: AbstractLogger
+
   /** Log Entry if `logLevel` is above the threshold configured for this logger. */
   @inline final def log(entry: Log.Entry): Unit = {
     if (acceptable(entry.context.static.id, entry.context.dynamic.level)) {
@@ -34,5 +36,7 @@ trait AbstractLogger {
   /** Check if `loggerId` is not blacklisted and `logLevel` is above the configured threshold */
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
 
-  def withCustomContext(context: CustomContext): AbstractLogger
+  def withCustomContext(context: CustomContext): Self
+
+  final def apply(context: CustomContext): Self = withCustomContext(context)
 }
