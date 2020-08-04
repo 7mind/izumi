@@ -5,6 +5,8 @@ import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 trait LogstageCodec[-T] {
   def write(writer: LogstageWriter, value: T): Unit
+
+  final def contramap[U](f: U => T): LogstageCodec[U] = (w, v) => write(w, f(v))
 }
 
 object LogstageCodec extends LogstageCodecLowPriority {
