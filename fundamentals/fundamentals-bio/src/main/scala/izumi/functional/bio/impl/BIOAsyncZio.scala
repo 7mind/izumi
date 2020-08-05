@@ -69,8 +69,8 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
     f.onExit(cleanup apply ZIOExit.toBIOExit(_))
   }
 
-  @inline override final def traverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreach(l)(f)
-  @inline override final def sequence[R, E, A, B](l: Iterable[ZIO[R, E, A]]): ZIO[R, E, List[A]] = ZIO.collectAll(l)
+  @inline override final def traverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreach(l.toList)(f)
+  @inline override final def sequence[R, E, A, B](l: Iterable[ZIO[R, E, A]]): ZIO[R, E, List[A]] = ZIO.collectAll(l.toList)
   @inline override final def traverse_[R, E, A](l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = ZIO.foreach_(l)(f)
   @inline override final def sequence_[R, E](l: Iterable[ZIO[R, E, Unit]]): ZIO[R, E, Unit] = ZIO.foreach_(l)(identity)
 
@@ -118,10 +118,10 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def uninterruptible[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible
 
   @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] =
-    ZIO.foreachParN(maxConcurrent)(l)(f(_).interruptible)
+    ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
   @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] =
     ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
-  @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f(_).interruptible)
+  @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l.toList)(f(_).interruptible)
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
 
   @inline override final def zipWithPar[R, E, A, B, C](fa: ZIO[R, E, A], fb: ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = fa.zipWithPar(fb)(f)
