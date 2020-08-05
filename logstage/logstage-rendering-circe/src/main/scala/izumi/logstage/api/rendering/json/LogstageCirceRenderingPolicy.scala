@@ -11,9 +11,16 @@ import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedPar
 import scala.collection.mutable
 import scala.runtime.RichInt
 
-class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
+class LogstageCirceRenderingPolicy(
+  prettyPrint: Boolean = false
+) extends RenderingPolicy {
 
   import LogstageCirceRenderingPolicy._
+
+  protected def EventKey = "event"
+  protected def ContextKey = "context"
+  protected def MetaKey = "meta"
+  protected def TextKey = "text"
 
   override def render(entry: Log.Entry): String = {
     val result = mutable.ArrayBuffer[(String, Json)]()
@@ -22,21 +29,21 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     val params = parametersToJson[RenderedParameter](
       formatted.parameters ++ formatted.unbalanced,
       _.normalizedName,
-      repr
+      repr,
     )
 
     if (params.nonEmpty) {
-      result += "event" -> params.asJson
+      result += EventKey -> params.asJson
     }
 
     val ctx = parametersToJson[LogArg](
       entry.context.customContext.values,
       _.name,
-      v => repr(Format.formatArg(v, withColors = false))
+      v => repr(Format.formatArg(v, withColors = false)),
     )
 
     if (ctx.nonEmpty) {
-      result += "context" -> ctx.asJson
+      result += ContextKey -> ctx.asJson
     }
 
     result ++= makeEventEnvelope(entry, formatted)
@@ -57,26 +64,32 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   protected def makeEventEnvelope(entry: Log.Entry, formatted: RenderedMessage): Seq[(String, Json)] = {
     import izumi.fundamentals.platform.time.IzTime._
 
-    val eventInfo = Json.fromFields(Seq(
-      "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
-      "logger" -> Json.fromString(entry.context.static.id.id),
-      "line" -> Json.fromInt(entry.context.static.position.line),
-      "file" -> Json.fromString(entry.context.static.position.file),
-      "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
-      "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
-      "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
-      "thread" -> Json.fromFields(Seq(
-        "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
-        "name" -> Json.fromString(entry.context.dynamic.threadData.threadName)
-      )),
-    ))
+    val eventInfo = Json.fromFields(
+      Seq(
+        "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
+        "logger" -> Json.fromString(entry.context.static.id.id),
+        "line" -> Json.fromInt(entry.context.static.position.line),
+        "file" -> Json.fromString(entry.context.static.position.file),
+        "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
+        "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
+        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
+        "thread" -> Json.fromFields(
+          Seq(
+            "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
+            "name" -> Json.fromString(entry.context.dynamic.threadData.threadName),
+          )
+        ),
+      )
+    )
 
     val tail = Seq(
-      "meta" -> eventInfo,
-      "text" -> Json.fromFields(Seq(
-        "template" -> Json.fromString(formatted.template),
-        "message" -> Json.fromString(formatted.message),
-      ))
+      MetaKey -> eventInfo,
+      TextKey -> Json.fromFields(
+        Seq(
+          "template" -> Json.fromString(formatted.template),
+          "message" -> Json.fromString(formatted.message),
+        )
+      ),
     )
     tail
   }
@@ -98,12 +111,10 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   protected def repr(parameter: RenderedParameter): Json = {
     val mapStruct: PartialFunction[Any, Json] = {
       case a: Iterable[_] =>
-        val params = a
-          .map {
-            v =>
-              mapListElement.apply(v)
-          }
-          .toList
+        val params = a.map {
+          v =>
+            mapListElement.apply(v)
+        }.toList
         Json.arr(params: _*)
       case _ =>
         Json.fromString(parameter.repr)
@@ -138,11 +149,16 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     case a: Long =>
       Json.fromLong(a)
     case a: Throwable =>
-      Json.fromFields(Seq(
-        "type" -> Json.fromString(a.getClass.getName),
-        "message" -> Json.fromString(a.getMessage),
-        "stacktrace" -> Json.fromString(a.stackTrace),
-      ))
+      Json.fromFields(
+        Seq(
+          "type" -> Json.fromString(a.getClass.getName),
+          "message" -> {
+            val m = a.getMessage
+            if (m eq null) Json.Null else Json.fromString(m)
+          },
+          "stacktrace" -> Json.fromString(a.stackTrace),
+        )
+      )
   }
 
   private val mapToString: PartialFunction[Any, Json] = {
