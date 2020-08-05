@@ -33,6 +33,8 @@ class PgSvcExample(
 object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
 
 object DockerPlugin extends PluginDef {
+  val postgresFlyWayDocker = new PostgresFlyWayDocker("postgres", "postgres", "postgres", this.getClass.getResource("/sql").getPath)
+
   include(DockerSupportModule[Task])
   make[DynamoDocker.Container].fromResource {
     DynamoDocker.make[Task]
@@ -43,7 +45,7 @@ object DockerPlugin extends PluginDef {
   include(KafkaDockerModule[Task])
   include(ElasticMQDockerModule[Task])
   include(CmdContainerModule[Task])
-  include(PostgresFlyWayDockerModule[Task])
+  include(postgresFlyWayDocker.module[Task])
 
   make[AvailablePort].named("mq").tagged(Env.Test).from {
     cs: ElasticMQDocker.Container =>
@@ -61,8 +63,8 @@ object DockerPlugin extends PluginDef {
   }
 
   make[AvailablePort].named("pgfw").tagged(Env.Test).from {
-    cs: PostgresFlyWayDocker.Container =>
-      cs.availablePorts.first(PostgresFlyWayDocker.primaryPort)
+    cs: postgresFlyWayDocker.Container =>
+      cs.availablePorts.first(postgresFlyWayDocker.primaryPort)
   }
 
   // this container will start once `DynamoContainer` is up and running
