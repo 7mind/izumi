@@ -6,6 +6,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.plan.Roots
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class AxisTest extends AnyWordSpec with MkInjector {
@@ -60,12 +61,14 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Dummy).from[Impl0]
     }
 
-    val context = Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots.Everything)).unsafeGet()
+    val context = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots.Everything))
+      .unsafeGet()
 
     assert(context.find[JustTrait].isEmpty)
   }
 
-  "report conflict if there's both an implementation with no axis and the current choice" in {
+  "progression test: should report conflict if there's both an implementation with no axis and the current choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -73,10 +76,18 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assert(Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait]))).unsafeGet().get[JustTrait].isInstanceOf[Impl1])
+    assertThrows[TestFailedException] {
+      assertThrows[Throwable] {
+        val instance = Injector()
+          .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+          .unsafeGet()
+          .get[JustTrait]
+        assert(instance.isInstanceOf[Impl1]) // should fail to produce, not choose `Repo.Prod`
+      }
+    }
   }
 
-  "report conflict if there's both an implementation with no axis and the opposite choice" in {
+  "progression test: should report conflict if there's both an implementation with no axis and the opposite choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -84,7 +95,15 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Dummy).from[Impl1]
     }
 
-    assert(Injector().produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait]))).unsafeGet().get[JustTrait].isInstanceOf[Impl0])
+    assertThrows[TestFailedException] {
+      assertThrows[Throwable] {
+        val instance = Injector()
+          .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+          .unsafeGet()
+          .get[JustTrait]
+        assert(instance.isInstanceOf[Impl0]) // should fail to produce, not choose untagged
+      }
+    }
   }
 
 }
