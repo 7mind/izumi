@@ -1,17 +1,45 @@
 package izumi.distage.docker.bundled
 
-import distage.Id
+import distage.{Id, ModuleDef, TagK}
 import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
-import izumi.distage.model.definition.ModuleDef
-import izumi.reflect.TagK
 
+/**
+  * Note: default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker,
+  * however, this cannot work if `resources` folder is virtual, inside the JAR, i.e. this module will only work
+  * in development mode when resources are files on the filesystem.
+  * If you need to use [[PostgresFlyWayDocker]] with JARs, please instantiate class [[PostgresFlyWayDocker]]
+  * with a custom `flywaySqlPath` parameter
+  */
+object PostgresFlyWayDocker
+  extends PostgresFlyWayDocker(
+    flyWaySqlPath = classOf[PostgresFlyWayDocker].getResource("/sql").getPath,
+    user = "postgres",
+    password = "postgres",
+    database = "postgres",
+    schema = "public",
+  )
+
+object PostgresFlyWayDockerModule {
+  def apply[F[_]: TagK]: ModuleDef = PostgresFlyWayDocker.module[F]
+  def apply[F[_]: TagK](
+    flyWaySqlPath: String,
+    user: String = "postgres",
+    password: String = "postgres",
+    database: String = "postgres",
+    schema: String = "public",
+  ): ModuleDef = new PostgresFlyWayDocker(flyWaySqlPath, user, password, database, schema).module[F]
+}
+
+/**
+  * @param flyWaySqlPath path to the migrations directory
+  */
 class PostgresFlyWayDocker(
-  user: String,
-  password: String,
-  database: String,
   flyWaySqlPath: String,
+  user: String = "postgres",
+  password: String = "postgres",
+  database: String = "postgres",
   schema: String = "public",
 ) extends ContainerDef { self =>
   val primaryPort: DockerPort = DockerPort.TCP(5432)
@@ -25,7 +53,7 @@ class PostgresFlyWayDocker(
     )
   }
 
-  def module[F[_]: TagK](implicit ev0: distage.Tag[self.Tag]): ModuleDef = new ModuleDef {
+  def module[F[_]: TagK](implicit ev: distage.Tag[self.Tag]): ModuleDef = new ModuleDef {
     // Network binding, to be able to access Postgres container from the FlyWay container
     make[FlyWayNetwork.Network].fromResource {
       FlyWayNetwork.make[F]

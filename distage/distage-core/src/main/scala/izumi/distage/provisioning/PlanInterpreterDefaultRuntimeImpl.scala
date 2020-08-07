@@ -19,8 +19,7 @@ import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.reflect.TagK
 
-import scala.collection.compat._
-
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -133,7 +132,9 @@ class PlanInterpreterDefaultRuntimeImpl(
       case _ => false
     }
 
+    @nowarn("msg=Unused import")
     def makeMeta() = {
+      import scala.collection.compat._
       LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
     }
 

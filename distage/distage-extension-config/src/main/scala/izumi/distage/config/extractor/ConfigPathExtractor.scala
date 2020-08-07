@@ -15,12 +15,10 @@ import scala.jdk.CollectionConverters._
 class ConfigPathExtractor extends PlanningHook {
 
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
-    val paths = defn
-      .bindings
-      .collect {
-        case b @ ExtractConfigPath1(configPath) =>
-          configPath
-      }.toSet
+    val paths = defn.bindings.collect {
+      case ExtractConfigPath1(configPath) =>
+        configPath
+    }
 
     val addResolvedConfigOp = resolvedConfigBindings(paths)
 
