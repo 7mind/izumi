@@ -32,7 +32,7 @@ object Docker {
       override def protocol: String = "tcp"
     }
     sealed trait UDPBase extends DockerPort {
-      override def protocol: String = "tcp"
+      override def protocol: String = "udp"
     }
     sealed trait Static extends DockerPort {
       def number: Int
