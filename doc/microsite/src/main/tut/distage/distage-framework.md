@@ -83,7 +83,6 @@ Injector().produceRun(module) {
 Automatic derivation of config codecs is based on [pureconfig-magnolia](https://github.com/pureconfig/pureconfig).
 Pureconfig codecs for a type will be used if they exist.
 
-
 You don't have to explicitly `make[AppConfig]` in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles, unless you want to override default behavior. By default, tests and roles will try to read the configurations from resources with the following names, in order:
 
 ```
@@ -102,7 +101,21 @@ You don't have to explicitly `make[AppConfig]` in @ref[distage-testkit](distage-
 type _ref = izumi.distage.testkit.TestConfig
 ```
 
-Where `distage-testkit` uses @scaladoc[`TestConfig#testBaseName`](izumi.distage.testkit.TestConfig#testBaseName) instead of `roleName` 
+Where `distage-testkit` uses @scaladoc[`TestConfig#testBaseName`](izumi.distage.testkit.TestConfig#testBaseName) instead of `roleName`.
+
+When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
+Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
+
+Example:
+
+```
+  ./launcher -c global.conf :role1 -c role1.conf :role2 -c role2.conf
+```
+
+Here configs will be loaded in the following order, with higher priority earlier:
+
+  - explicits: `role1.conf`, `role2.conf`, `global.conf`,
+  - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf` 
 
 ### Plugins
 
