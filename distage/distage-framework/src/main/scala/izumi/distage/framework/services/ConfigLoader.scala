@@ -63,7 +63,7 @@ object ConfigLoader {
       val commonReferenceConfigs = defaultBaseConfigs.flatMap(defaultConfigReferences)
       val commonExplicitConfigs = baseConfig.map(ConfigSource.File).toList
 
-      val (roleReferenceConfigs, roleExplicitConfigs) = moreConfigs.partitionMap {
+      val (roleReferenceConfigs, roleExplicitConfigs) = (moreConfigs: Iterable[(String, Option[File])]).partitionMap {
         case (role, None) => Left(defaultConfigReferences(role))
         case (_, Some(file)) => Right(ConfigSource.File(file))
       }
