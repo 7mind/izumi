@@ -11,6 +11,7 @@ import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference,
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -25,6 +26,20 @@ import scala.util.{Failure, Success, Try}
   *   - common.conf
   *   - common-reference.conf
   *   - common-reference-dev.conf
+  *
+  * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
+  * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
+  *
+  * Example:
+  *
+  * {{{
+  *   ./launcher -c global.conf :role1 -c role1.conf :role2 -c role2.conf
+  * }}}
+  *
+  * Here configs will be loaded in the following order, with higher priority earlier:
+  *
+  *   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
+  *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
   */
 trait ConfigLoader {
   def loadConfig(): AppConfig
@@ -42,17 +57,19 @@ object ConfigLoader {
     defaultBaseConfigs: Seq[String],
   ) extends ConfigLoader {
 
+    @nowarn("msg=Unused import")
     def loadConfig(): AppConfig = {
-      val commonConfigFiles = baseConfig.fold(
-        defaultBaseConfigs.flatMap(toConfig(_, baseConfig))
-      )(f => Seq(ConfigSource.File(f)))
+      import scala.collection.compat._
 
-      val roleConfigFiles = moreConfigs.flatMap {
-        case (referenceName, maybeConfigFile) =>
-          toConfig(referenceName, maybeConfigFile)
-      }.toList
+      val commonReferenceConfigs = defaultBaseConfigs.flatMap(defaultConfigReferences)
+      val commonExplicitConfigs = baseConfig.map(ConfigSource.File).toList
 
-      val allConfigs = roleConfigFiles ++ commonConfigFiles
+      val (roleReferenceConfigs, roleExplicitConfigs) = (moreConfigs: Iterable[(String, Option[File])]).partitionMap {
+        case (role, None) => Left(defaultConfigReferences(role))
+        case (_, Some(file)) => Right(ConfigSource.File(file))
+      }
+
+      val allConfigs = (roleExplicitConfigs.iterator ++ commonExplicitConfigs ++ roleReferenceConfigs.iterator.flatten ++ commonReferenceConfigs).toList
 
       val cfgInfo = allConfigs.map {
         case r: ConfigSource.Resource =>
@@ -138,10 +155,6 @@ object ConfigLoader {
           case None => Set.empty
         }
       }
-    }
-
-    protected def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
-      maybeConfigFile.fold(defaultConfigReferences(name))(f => Seq(ConfigSource.File(f)))
     }
 
     protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
