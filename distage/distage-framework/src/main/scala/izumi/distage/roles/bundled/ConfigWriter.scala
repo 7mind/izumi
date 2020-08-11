@@ -3,20 +3,17 @@ package izumi.distage.roles.bundled
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import scala.annotation.nowarn
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
-import izumi.distage.config.extractor.ConfigPathExtractorModule
 import izumi.distage.framework.services.RoleAppPlanner
+import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.plan.ExecutableOp.WiringOp
-import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.reflection.DIKey
-import izumi.distage.roles.bundled.ConfigWriter.{ConfigurableComponent, WriteReference}
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import izumi.functional.Value
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.language.unused
@@ -25,47 +22,53 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.LogstageModule
 
-import scala.util._
+import scala.annotation.nowarn
+import scala.collection.compat.immutable.ArraySeq
+import scala.util.Try
 
-class ConfigWriter[F[_]: DIEffect](
+final class ConfigWriter[F[_]](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
-  context: RoleAppPlanner[F],
-  //appModule: ModuleBase@Id("application.module"),
+  roleAppPlanner: RoleAppPlanner[F],
+  F: DIEffect[F],
 ) extends RoleTask[F] {
 
-  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+  // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
+  //  After https://github.com/7mind/izumi/issues/779 this will no longer be necessary
+  private[this] val _HackyMandatorySection = ConfigPath("activation")
+
+  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = F.maybeSuspend {
     val config = ConfigWriter.parse(roleParameters)
-    DIEffect[F].maybeSuspend(writeReferenceConfig(config))
+    writeReferenceConfig(config)
   }
 
   private[this] def writeReferenceConfig(options: WriteReference): Unit = {
     val configPath = Paths.get(options.targetDir).toFile
     logger.info(s"Config ${configPath.getAbsolutePath -> "directory to use"}...")
 
-    if (!configPath.exists())
+    if (!configPath.exists()) {
       configPath.mkdir()
+    }
 
-    //val maybeVersion = IzManifest.manifest[LAUNCHER]().map(IzManifest.read).map(_.version)
     logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
 
-    val commonConfig = buildConfig(options, ConfigurableComponent("common", Some(launcherVersion)))
+    val commonComponent = ConfigurableComponent("common", Some(launcherVersion), None)
+    val commonConfig = buildConfig(options, commonComponent)
+
     if (!options.includeCommon) {
-      val commonComponent = ConfigurableComponent("common", Some(launcherVersion))
       writeConfig(options, commonComponent, None, commonConfig)
     }
 
     roleInfo.availableRoleBindings.foreach {
       role =>
-        val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
-        val refConfig = buildConfig(options, component.copy(parent = Some(commonConfig)))
-        val version = if (options.useLauncherVersion) {
-          Some(ArtifactVersion(launcherVersion.version))
+        val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version), Some(commonConfig))
+        val refConfig = buildConfig(options, component)
+        val versionedComponent = if (options.useLauncherVersion) {
+          component.copy(version = Some(ArtifactVersion(launcherVersion.version)))
         } else {
-          component.version
+          component
         }
-        val versionedComponent = component.copy(version = version)
 
         try {
           writeConfig(options, versionedComponent, None, refConfig)
@@ -83,18 +86,16 @@ class ConfigWriter[F[_]: DIEffect](
   }
 
   private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
-    val referenceConfig = s"${cmp.componentId}-reference.conf"
-    logger.info(s"[${cmp.componentId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
+    val referenceConfig = s"${cmp.roleId}-reference.conf"
+    logger.info(s"[${cmp.roleId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
 
-    val reference = cmp
-      .parent
-      .filter(_ => config.includeCommon)
-      .fold(
-        ConfigFactory.parseResourcesAnySyntax(referenceConfig)
-      )(parent => ConfigFactory.parseResourcesAnySyntax(referenceConfig).withFallback(parent)).resolve()
+    val reference = Value(ConfigFactory.parseResourcesAnySyntax(referenceConfig))
+      .mut(cmp.parent.filter(_ => config.includeCommon))(_.withFallback(_))
+      .get
+      .resolve()
 
     if (reference.isEmpty) {
-      logger.warn(s"[${cmp.componentId}] Reference config is empty.")
+      logger.warn(s"[${cmp.roleId}] Reference config is empty.")
     }
 
     val resolved = ConfigFactory
@@ -110,39 +111,27 @@ class ConfigWriter[F[_]: DIEffect](
   private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
 
-    val cfg = Seq(
-      new ConfigPathExtractorModule,
-      new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
+    val bootstrapOverride = Seq(
+      new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false)
     ).overrideLeft
 
-    val plans = context.reboot(cfg).makePlan(Set(roleDIKey, DIKey.get[ResolvedConfig]))
+    val plans = roleAppPlanner
+      .reboot(bootstrapOverride)
+      .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: OrderedPlan): Option[Config] = {
-      plan
-        .filter[ResolvedConfig]
-        .collectFirst {
-          case WiringOp.UseInstance(_, Instance(_, r: ResolvedConfig), _) =>
-            r.minimized(config)
-        }
+    def getConfig(plan: OrderedPlan): Iterator[ConfigPath] = {
+      plan.steps.iterator.collect {
+        case ExtractConfigPath(path) => path
+      }
     }
 
-    def getConfigOrEmpty(plan: OrderedPlan) = {
-      getConfig(plan) getOrElse ConfigFactory.empty()
-    }
+    val resolvedConfig =
+      (getConfig(plans.app.primary) ++
+      getConfig(plans.app.side) ++
+      getConfig(plans.app.shared)).toSet + _HackyMandatorySection
 
     if (plans.app.primary.steps.exists(_.target == roleDIKey)) {
-      val cfg = getConfig(plans.app.primary)
-        .orElse(getConfig(plans.app.shared))
-        .orElse(getConfig(plans.app.side))
-
-      cfg
-        .map(_.withFallback(getConfigOrEmpty(plans.app.side)))
-        .map(_.withFallback(getConfigOrEmpty(plans.app.shared)))
-        .map(_.withFallback(getConfigOrEmpty(plans.runtime)))
-        .orElse {
-          logger.error(s"Couldn't produce minimized config for $roleDIKey")
-          None
-        }
+      Some(ConfigWriter.minimized(resolvedConfig, config))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
       None
@@ -150,43 +139,35 @@ class ConfigWriter[F[_]: DIEffect](
   }
 
   private[this] def writeConfig(config: WriteReference, cmp: ConfigurableComponent, suffix: Option[String], typesafeConfig: Config): Try[Unit] = {
-    val fileName = outputFileName(cmp.componentId, cmp.version, config.asJson, suffix)
+    val fileName = outputFileName(cmp.roleId, cmp.version, config.asJson, suffix)
     val target = Paths.get(config.targetDir, fileName)
 
     Try {
       val cfg = typesafeConfig.root().render(configRenderOptions.setJson(config.asJson))
       val bytes = cfg.getBytes(StandardCharsets.UTF_8)
       Files.write(target, bytes)
-      logger.info(s"[${cmp.componentId}] Reference config saved -> $target (${bytes.size} bytes)")
+      logger.info(s"[${cmp.roleId}] Reference config saved -> $target (${bytes.size} bytes)")
     }.recover {
       case e: Throwable =>
-        logger.error(s"[${cmp.componentId -> "component id" -> null}] Can't write reference config to $target, ${e.getMessage -> "message"}")
+        logger.error(s"[${cmp.roleId -> "component id" -> null}] Can't write reference config to $target, ${e.getMessage -> "message"}")
     }
   }
 
   // TODO: sdk?
   @nowarn("msg=Unused import")
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
-    import scala.jdk.CollectionConverters._
     import scala.collection.compat._
+    import scala.jdk.CollectionConverters._
 
     ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
   }
 
   private[this] def outputFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {
-    val extension = if (asJson) {
-      "json"
-    } else {
-      "conf"
-    }
-
+    val extension = if (asJson) "json" else "conf"
     val vstr = version.map(_.version).getOrElse("0.0.0-UNKNOWN")
-    suffix match {
-      case Some(value) =>
-        s"$service-$value-$vstr.$extension"
-      case None =>
-        s"$service-$vstr.$extension"
-    }
+    val suffixStr = suffix.fold("")("-" + _)
+
+    s"$service$suffixStr-$vstr.$extension"
   }
 
   private[this] final val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
@@ -212,9 +193,9 @@ object ConfigWriter extends RoleDescriptor {
   )
 
   final case class ConfigurableComponent(
-    componentId: String,
+    roleId: String,
     version: Option[ArtifactVersion],
-    parent: Option[Config] = None,
+    parent: Option[Config],
   )
 
   object Options extends ParserDef {
@@ -236,6 +217,43 @@ object ConfigWriter extends RoleDescriptor {
       includeCommon,
       useLauncherVersion,
     )
+  }
+
+  @nowarn("msg=Unused import")
+  def minimized(requiredPaths: Set[ConfigPath], source: Config): Config = {
+    import scala.collection.compat._
+    import scala.jdk.CollectionConverters._
+
+    val paths = requiredPaths.map(_.toPath)
+
+    ConfigFactory.parseMap {
+      source
+        .root().unwrapped().asScala
+        .view
+        .filterKeys(key => paths.exists(_.startsWith(key)))
+        .toMap
+        .asJava
+    }
+  }
+
+  object ExtractConfigPath {
+    def unapply(op: ExecutableOp): Option[ConfigPath] = {
+      op.origin.value match {
+        case defined: OperationOrigin.Defined =>
+          defined.binding.tags.collectFirst {
+            case ConfTag(path) => ConfigPath(path)
+          }
+        case _ =>
+          None
+      }
+    }
+  }
+
+  final case class ConfigPath(parts: Seq[String]) {
+    def toPath: String = parts.mkString(".")
+  }
+  object ConfigPath {
+    def apply(path: String): ConfigPath = new ConfigPath(ArraySeq.unsafeWrapArray(path.split('.')))
   }
 
 }

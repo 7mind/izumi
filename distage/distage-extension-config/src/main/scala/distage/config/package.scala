@@ -1,6 +1,6 @@
 package distage
 
-import izumi.distage.config.{codec, extractor, model}
+import izumi.distage.config.{codec, model}
 
 package object config extends DistageConfig {
 
@@ -14,7 +14,5 @@ package object config extends DistageConfig {
 
   override type DIConfigReader[T] = codec.DIConfigReader[T]
   override val DIConfigReader: codec.DIConfigReader.type = codec.DIConfigReader
-
-  override type ConfigPathExtractorModule = extractor.ConfigPathExtractorModule
 
 }

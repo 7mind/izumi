@@ -5,10 +5,10 @@ final class Value[A] private (private val value: A) extends AnyVal {
     new Value(f(this.value))
   }
 
-  @inline def mut[C, B](context: Option[C])(f: (C, A) => A): Value[A] = {
+  @inline def mut[C, B](context: Option[C])(f: (A, C) => A): Value[A] = {
     context match {
       case Some(ctx) =>
-        new Value(f(ctx, this.value))
+        new Value(f(this.value, ctx))
       case None =>
         this
     }

@@ -41,9 +41,9 @@ trait PlanSplittingOps { this: Planner =>
     assert(sharedPlan.declaredRoots == sharedKeys)
 
     TriSplittedPlan(
-      subplan,
-      primplan,
-      sharedPlan,
+      side = subplan,
+      primary = primplan,
+      shared = sharedPlan,
     )
   }
 
@@ -62,15 +62,12 @@ trait PlanSplittingOps { this: Planner =>
   }
 
   private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
-    toSubplan(activation, appModule, extractedRoots, planNoRewrite)
-  }
-
-  private[this] final def toSubplan(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan = {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
-      plan(PlannerInput(appModule, activation, extractedRoots))
+      planNoRewrite(PlannerInput(appModule, activation, extractedRoots))
     } else {
       OrderedPlan.empty
     }
   }
+
 }

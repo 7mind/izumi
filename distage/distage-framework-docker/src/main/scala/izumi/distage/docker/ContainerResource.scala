@@ -272,14 +272,14 @@ case class ContainerResource[F[_], T](
       out <- F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
         val cmd = Value(baseCmd)
-          .mut(config.name) { case (n, c) => c.withName(n) }
+          .mut(config.name)(_.withName(_))
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
           .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
           .mut(adjustedEnv.nonEmpty)(_.withEnv(adjustedEnv.map { case (k, v) => s"$k=$v" }.toList.asJava))
           .mut(config.cmd.nonEmpty)(_.withCmd(config.cmd.toList.asJava))
           .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
-          .mut(config.cwd)((cwd, cmd) => cmd.withWorkingDir(cwd))
-          .mut(config.user)((user, cmd) => cmd.withUser(user))
+          .mut(config.cwd)(_.withWorkingDir(_))
+          .mut(config.user)(_.withUser(_))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
           .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))

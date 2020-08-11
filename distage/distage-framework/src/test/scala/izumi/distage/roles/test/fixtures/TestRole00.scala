@@ -35,6 +35,7 @@ object roles {
     val conf: TestServiceConf,
     val conf2: TestServiceConf2,
     val dummies: Set[Dummy],
+    val setElems: Set[SetElement],
     val resource: TestRole00Resource[F],
     val resources: Set[TestResource],
     val conflict: Conflict,
@@ -61,6 +62,8 @@ object roles {
 
     final case class IntegrationOnlyCfg(flag: Boolean)
     final case class IntegrationOnlyCfg2(value: String)
+
+    final case class SetElementOnlyCfg(abc: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck[F])
     final class TestRole00ResourceIntegrationCheck[F[_]: DIEffect](
