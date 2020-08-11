@@ -1,6 +1,7 @@
 package izumi.fundamentals.bio.test
 
 import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
+import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
@@ -46,6 +47,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
 
     x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(()))
+    x[bio.IO](bio.UIO.evalTotal(()), bio.UIO.evalTotal(()))
   }
 
   "BIOAsync3.race is callable along with all BIOParallel syntax" in {
@@ -69,6 +71,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
 
     assert(new X[zio.IO].hello != null)
+    assert(new X[bio.IO].hello != null)
   }
 
   "BIO.widen/widenError is callable" in {
@@ -118,6 +121,11 @@ class BIOSyntaxTest extends AnyWordSpec {
     y[zio.IO]
     z[zio.IO]
     zz[zio.IO]
+
+    x[bio.IO]
+    y[bio.IO]
+    z[bio.IO]
+    zz[bio.IO]
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
@@ -174,6 +182,11 @@ class BIOSyntaxTest extends AnyWordSpec {
       z[zio.IO],
       `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+    )
+
+    lazy val _ = (
+      x[bio.IO],
+      z[bio.IO],
     )
   }
 

@@ -4,8 +4,9 @@ import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
-import izumi.functional.bio.impl.BIOAsyncZio
+import izumi.functional.bio.impl.{BIOAsyncMonix, BIOAsyncZio}
 import izumi.fundamentals.platform.language.unused
+import monix.bio
 import zio.ZIO
 
 import scala.language.implicitConversions
@@ -69,6 +70,7 @@ sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
 }
 
 sealed trait BIORootInstancesLowPriority6 {
+  @inline implicit final def BIOMonix: Predefined.Of[BIOAsync[bio.IO]] = Predefined(BIOAsyncMonix)
   @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with BIOFunctor3[f], FR[-_, +_, +_], R0](
     implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
