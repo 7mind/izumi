@@ -2,14 +2,13 @@ package com.github.pshirshov.configapp
 
 import distage.Id
 import distage.config.{AppConfig, ConfigModuleDef}
-import izumi.distage.config.extractor.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.language.Quirks
 
 // application
 trait TestAppService
 
-class TestConfigApp(val services: Set[TestAppService], val usedConfig: ResolvedConfig, val appConfig: AppConfig)
+class TestConfigApp(val services: Set[TestAppService], val appConfig: AppConfig)
 
 // config structures
 case class HostPort(port: Int, host: String)
@@ -80,9 +79,4 @@ object TestConfigApp {
     make[TestConfigApp]
   })
 
-  final val setDefinition = PlannerInput.noGC(new ConfigModuleDef {
-    many[TestAppService].add[DataPuller1]
-    makeConfigNamed[HostPort]("DataPuller1.target")
-    makeConfigNamed[HostPort]("DataPuller1.source")
-  })
 }

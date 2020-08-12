@@ -4,6 +4,7 @@ import distage.LocatorRef
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.effect.DIEffect
+import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 
@@ -11,6 +12,9 @@ import scala.collection.mutable
 
 object Fixture {
   trait Dummy
+
+  trait SetElement
+  final case class SetElement1(setElementOnlyCfg: SetElementOnlyCfg) extends SetElement
 
   case class TestServiceConf2(
     strval: String

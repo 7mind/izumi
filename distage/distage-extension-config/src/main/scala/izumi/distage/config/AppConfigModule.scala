@@ -9,6 +9,7 @@ class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
 
   def this(config: Config) = this(AppConfig(config))
 }
+
 object AppConfigModule {
   def apply(appConfig: AppConfig): AppConfigModule = new AppConfigModule(appConfig)
   def apply(config: Config): AppConfigModule = new AppConfigModule(config)

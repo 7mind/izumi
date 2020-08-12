@@ -10,7 +10,7 @@ import izumi.distage.roles.bundled.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00
-import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
@@ -26,6 +26,9 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
 
   make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]
+
+  many[SetElement]
+    .add[SetElement1]
 
   make[TestTask00[F]]
   make[TestRole00[F]]
@@ -46,6 +49,7 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
 
   makeConfig[TestServiceConf]("testservice")
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
+  makeConfig[SetElementOnlyCfg]("setElementConfig")
 
   makeConfigNamed[IntegrationOnlyCfg2]("integrationOnlyCfg2")
   make[IntegrationOnlyCfg2].from {

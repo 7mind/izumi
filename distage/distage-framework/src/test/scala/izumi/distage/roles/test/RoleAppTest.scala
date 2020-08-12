@@ -23,10 +23,11 @@ import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
-  private val prefix = "target/configwriter"
+  private final val targetPath = "target/configwriter"
 
   private val overrides = Map(
     "testservice.systemPropInt" -> "265",
@@ -263,47 +264,66 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
-        TestEntrypoint.main(
-          Array(
-            "-ll",
-            logLevel,
-            ":configwriter",
-            "-t",
-            prefix,
-          )
-        )
+        TestEntrypoint.main(Array("-ll", logLevel, ":configwriter", "-t", targetPath))
       }
 
       val cwCfg = cfg("configwriter", version)
       val cwCfgMin = cfg("configwriter-minimized", version)
 
-      val roleCfg = cfg("testrole00", version)
-      val roleCfgMin = cfg("testrole00-minimized", version)
-
       assert(cwCfg.exists(), s"$cwCfg exists")
       assert(cwCfgMin.exists(), s"$cwCfgMin exists")
-      assert(roleCfg.exists(), s"$roleCfg exists")
-      assert(roleCfgMin.exists(), s"$roleCfgMin exists")
-
       assert(cwCfg.length() > cwCfgMin.length())
-      assert(roleCfg.length() > roleCfgMin.length())
 
-      val roleCfgMinStr = new String(Files.readAllBytes(roleCfgMin.toPath), UTF_8)
-      val roleCfgMinRestored = ConfigFactory.parseString(roleCfgMinStr)
+      val role0Cfg = cfg("testrole00", version)
+      val role0CfgMin = cfg("testrole00-minimized", version)
 
-      assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
-      assert(roleCfgMinRestored.hasPath("integrationOnlyCfg"))
-      assert(roleCfgMinRestored.hasPath("integrationOnlyCfg2"))
+      assert(role0Cfg.exists(), s"$role0Cfg exists")
+      assert(role0CfgMin.exists(), s"$role0CfgMin exists")
+      assert(role0Cfg.length() > role0CfgMin.length())
 
-      assert(roleCfgMinRestored.hasPath("testservice"))
-      assert(roleCfgMinRestored.hasPath("testservice2"))
-      assert(roleCfgMinRestored.getString("testservice2.strval") == "xxx")
-      assert(roleCfgMinRestored.getString("testservice.overridenInt") == "111")
+      val role0CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role0CfgMin.toPath), UTF_8))
+
+      assert(!role0CfgMinParsed.hasPath("unrequiredEntry"))
+      assert(!role0CfgMinParsed.hasPath("logger"))
+      assert(!role0CfgMinParsed.hasPath("listconf"))
+
+      assert(role0CfgMinParsed.hasPath("integrationOnlyCfg"))
+      assert(role0CfgMinParsed.hasPath("integrationOnlyCfg2"))
+      assert(role0CfgMinParsed.hasPath("setElementConfig"))
+      assert(role0CfgMinParsed.hasPath("testservice2"))
+      assert(role0CfgMinParsed.hasPath("testservice"))
+
+      assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
+      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "111")
+      assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 265)
+      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala == List("111", "222"))
+
+      val role4Cfg = cfg("testrole04", version)
+      val role4CfgMin = cfg("testrole04-minimized", version)
+
+      assert(role4Cfg.exists(), s"$role4Cfg exists")
+      assert(role4CfgMin.exists(), s"$role4CfgMin exists")
+      assert(role4Cfg.length() > role4CfgMin.length())
+
+      val role4CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role4CfgMin.toPath), UTF_8))
+
+      assert(!role4CfgMinParsed.hasPath("unrequiredEntry"))
+      assert(!role4CfgMinParsed.hasPath("logger"))
+      assert(!role4CfgMinParsed.hasPath("integrationOnlyCfg"))
+      assert(!role4CfgMinParsed.hasPath("integrationOnlyCfg2"))
+      assert(!role4CfgMinParsed.hasPath("setElementConfig"))
+      assert(!role4CfgMinParsed.hasPath("testservice2"))
+      assert(!role4CfgMinParsed.hasPath("testservice"))
+
+      assert(role4CfgMinParsed.hasPath("listconf"))
+
+//      assert(role0CfgMinParsed.hasPath("activation"))
+//      assert(role4CfgMinParsed.hasPath("activation"))
     }
 
   }
 
   private def cfg(role: String, version: ArtifactVersion): File = {
-    Paths.get(prefix, s"$role-${version.version}.json").toFile
+    Paths.get(targetPath, s"$role-${version.version}.json").toFile
   }
 }

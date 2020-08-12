@@ -5,7 +5,6 @@ import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp._
 import com.typesafe.config._
 import distage.Injector
-import izumi.distage.config.extractor.ConfigPathExtractorModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
@@ -26,24 +25,6 @@ final class ConfigTest extends AnyWordSpec {
   }
 
   "Config resolver" should {
-    "resolve config references" in {
-      val injector = Injector(new ConfigPathExtractorModule)
-      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.definition))
-
-      val context = injector.produce(plan).unsafeGet()
-
-      assert(context.get[HttpServer1].listenOn.port == 8081)
-      assert(context.get[HttpServer2].listenOn.port == 8082)
-
-      assert(context.get[DataPuller1].target.port == 9001)
-      assert(context.get[DataPuller2].target.port == 9002)
-      assert(context.get[DataPuller3].target.port == 9003)
-
-      assert(context.get[Set[TestAppService]].size == 5)
-
-      val testConfigApp = context.get[TestConfigApp]
-      assert(!testConfigApp.usedConfig.minimized(testConfigApp.appConfig.config).entrySet().isEmpty)
-    }
 
 //    "be idempotent under Injector.finish" in {
 //      val injector = Injector(new ConfigPathExtractorModule)
@@ -61,15 +42,6 @@ final class ConfigTest extends AnyWordSpec {
 //
 //      assert(context.get[Set[TestAppService]].size == 5)
 //    }
-
-    "resolve config references in set elements" in {
-      val injector = Injector(new ConfigPathExtractorModule)
-      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.setDefinition))
-
-      val context = injector.produce(plan).unsafeGet()
-
-      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
-    }
 
     "resolve config maps" in {
       val injector = Injector()
