@@ -44,10 +44,9 @@ with atomic or group isolation levels.
 For demonstration, our application will use `ZIO[-R, +E, +A]`. Starting with a model and service
 interface:
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 import zio._
 import zio.console.{Console, putStrLn}
 
@@ -98,10 +97,9 @@ The default config (`super.config`) has a `pluginConfig` that will scan the pack
 for modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation
 for more information. For this example, the module will be provided using `moduleOverrides`:
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 import com.typesafe.config.ConfigFactory
 import izumi.distage.config.AppConfigModule
 import izumi.distage.effect.modules.ZIODIEffectModule
@@ -151,10 +149,9 @@ import org.scalatest.Assertions
 
 For the example application:
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 final class ScoreSimpleTest extends Test {
   "Score" should {
 
@@ -200,10 +197,9 @@ For the example application we'll use this to verify the `Score.echoConfig` meth
 the `Config` required is from the `distage` object graph defined in `moduleOverrides` above. By using
 is a function from `Config` the required argument will be injected by `distage-testkit`.
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 final class ScoreEffectsTest extends Test {
   "testkit operations with effects" should {
 
@@ -237,10 +233,9 @@ assertions and assertions with effects described above.
 
 A test that verifies the bonus service always returns one would be:
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 abstract class BonusServiceIsZeroTest extends Test {
   "BonusService" should {
     "return one" in {
@@ -298,10 +293,9 @@ prototypes. For a real system we'd have a production implementation. Such as an 
 that performs an HTTP requests to a REST service. We'll introduce a production service, but the
 actual query will be unimplemented.
 
-```scala
-package app
-```
-```scala mdoc
+```scala mdoc:to-string
+"fakepackage app": Unit
+
 object ProdBonusService {
   class Impl(console: Console.Service, url: String) extends BonusService {
     override def queryCurrentBonus = for {
@@ -338,10 +332,9 @@ The example application will use the
 @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod`
 tags.
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 import distage.plugins._
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
@@ -364,10 +357,9 @@ be scanned by `distage` for `PluginDef` instances.
 
 Continuing with the pattern, a trait will control which repo is activated:
 
-```scala
-package app
-```
-```scala mdoc
+```scala mdoc:to-string
+"fakepackage app": Unit
+
 trait DummyTest extends Test {
   override def config = super
     .config.copy(
@@ -391,10 +383,9 @@ When extended beyond this small example this pattern simplifies system level tes
 and even a pragmatic form of
 [N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming)
 
-```scala
-package app
-```
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 final class ProdBonusServiceIsZeroTest extends BonusServiceIsZeroTest with ProdTest
 
 final class DummyBonusServiceIsZeroTest extends BonusServiceIsZeroTest with DummyTest
