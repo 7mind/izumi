@@ -12,7 +12,7 @@ import izumi.fundamentals.platform.files.IzFiles
 
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success}
 
 sealed trait ResourceLocation
@@ -26,34 +26,37 @@ class IzResources(clazz: Class[_]) {
     classLocationUrl[C]()
       .flatMap {
         url =>
-          val location = Paths.get(url.toURI)
-          val locFile = location.toFile
-          val resolved = location.resolve(name)
-          val resolvedFile = resolved.toFile
+          try {
+            val location = Paths.get(url.toURI)
+            val locFile = location.toFile
+            val resolved = location.resolve(name)
+            val resolvedFile = resolved.toFile
 
-          if (locFile.exists() && locFile.isFile) { // read from jar
-            val jar = new JarFile(locFile)
+            if (locFile.exists() && locFile.isFile) { // read from jar
+              val jar = new JarFile(locFile)
 
-            Option(jar.getEntry(name)) match {
-              case Some(entry) =>
-                Some(ResourceLocation.Jar(locFile, jar, entry))
-              case None =>
-                jar.close()
-                None
+              Option(jar.getEntry(name)) match {
+                case Some(entry) =>
+                  Some(ResourceLocation.Jar(locFile, jar, entry))
+                case None =>
+                  jar.close()
+                  None
+              }
+            } else if (resolvedFile.exists()) {
+              Some(ResourceLocation.Filesystem(resolvedFile))
+            } else {
+              None
             }
-          } else if (resolvedFile.exists()) {
-            Some(ResourceLocation.Filesystem(resolvedFile))
-          } else {
-            None
-          }
+          } catch { case _: Throwable => None }
       }
       .getOrElse(ResourceLocation.NotFound)
   }
 
   def classLocationUrl[C: ClassTag](): Option[URL] = {
-    import scala.reflect._
     val clazz = classTag[C].runtimeClass
-    Option(clazz.getProtectionDomain.getCodeSource.getLocation)
+    try {
+      Option(clazz.getProtectionDomain.getCodeSource.getLocation)
+    } catch { case _: Throwable => None }
   }
 
   def getPath(resPath: String): Option[PathReference] = {
