@@ -7,6 +7,7 @@ import distage.config.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
 import izumi.distage.model.exceptions.DIException
 import izumi.fundamentals.platform.resources.IzResources
+import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
@@ -73,8 +74,10 @@ object ConfigLoader {
       val cfgInfo = allConfigs.map {
         case r: ConfigSource.Resource =>
           IzResources.getPath(r.name) match {
-            case Some(value) =>
-              s"$r (exists: ${value.path})"
+            case Some(LoadablePathReference(path, _)) =>
+              s"$r (available: $path)"
+            case Some(UnloadablePathReference(path)) =>
+              s"$r (exists: $path)"
             case None =>
               s"$r (missing)"
           }
