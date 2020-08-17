@@ -73,7 +73,7 @@ object RoleProvider {
     }
 
     // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???
-    private[this] def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
+    protected def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
       val roleClassName = role.cls.getName
       try {
         Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
