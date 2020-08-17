@@ -3,8 +3,11 @@ package leaderboard.plugins
 import distage.plugins.PluginDef
 import distage.{ModuleDef, TagKK}
 import izumi.distage.roles.bundled.BundledRolesModule
+import leaderboard.api.{HttpApi, LadderApi, ProfileApi}
+import leaderboard.http.HttpServer
 import leaderboard.repo.{Ladder, Profiles, Ranks}
 import leaderboard.{LadderRole, LeaderboardRole, ProfileRole}
+import org.http4s.dsl.Http4sDsl
 import zio.IO
 
 object LeaderboardPlugin extends PluginDef {
@@ -28,7 +31,21 @@ object LeaderboardPlugin extends PluginDef {
     }
 
     def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      // The `ladder` API
+      make[LadderApi[F]]
+      // The `profile` API
+      make[ProfileApi[F]]
+
+      // A set of all APIs
+      many[HttpApi[F]]
+        .weak[LadderApi[F]] // add ladder API as a _weak reference_
+        .weak[ProfileApi[F]] // add profiles API as a _weak reference_
+
+      make[HttpServer[F]].fromResource[HttpServer.Impl[F]]
+
       make[Ranks[F]].from[Ranks.Impl[F]]
+
+      make[Http4sDsl[F[Throwable, ?]]]
     }
 
     def repoDummy[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {

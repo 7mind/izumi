@@ -1829,7 +1829,11 @@ lazy val `testapp` = project.in(file("distage/testapp"))
       "org.typelevel" %% "cats-core" % V.cats,
       "org.typelevel" %% "cats-effect" % V.cats_effect,
       "dev.zio" %% "zio" % V.zio,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats,
+      "org.http4s" %% "http4s-dsl" % V.http4s,
+      "org.http4s" %% "http4s-circe" % V.http4s,
+      "org.http4s" %% "http4s-blaze-server" % V.http4s,
+      "org.http4s" %% "http4s-blaze-client" % V.http4s
     )
   )
   .settings(

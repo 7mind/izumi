@@ -4,7 +4,8 @@ import distage.{DIResource, DIResourceBase}
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.functional.bio.BIOApplicative
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import leaderboard.repo.Ranks
+import leaderboard.api.{LadderApi, ProfileApi}
+import leaderboard.http.HttpServer
 import logstage.LogBIO
 
 import scala.annotation.unused
@@ -23,10 +24,11 @@ import scala.annotation.unused
   * }}}
   */
 final class LadderRole[F[+_, +_]: BIOApplicative](
-  @unused ladderApi: Ranks[F],
+  @unused ladderApi: LadderApi[F],
+  @unused runningServer: HttpServer[F],
   log: LogBIO[F],
-) extends RoleService[F[Throwable, *]] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, *], Unit] = {
+) extends RoleService[F[Throwable, ?]] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, ?], Unit] = {
     DIResource.liftF(log.info("Ladder API started!"))
   }
 }
@@ -48,10 +50,11 @@ object LadderRole extends RoleDescriptor {
   * }}}
   */
 final class ProfileRole[F[+_, +_]: BIOApplicative](
-  @unused ladderApi: Ranks[F],
+  @unused profileApi: ProfileApi[F],
+  @unused runningServer: HttpServer[F],
   log: LogBIO[F],
-) extends RoleService[F[Throwable, *]] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, *], Unit] = {
+) extends RoleService[F[Throwable, ?]] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, ?], Unit] = {
     DIResource.liftF(log.info("Profile API started!"))
   }
 }
@@ -86,8 +89,8 @@ final class LeaderboardRole[F[+_, +_]: BIOApplicative](
   @unused ladderRole: LadderRole[F],
   @unused profileRole: ProfileRole[F],
   log: LogBIO[F],
-) extends RoleService[F[Throwable, *]] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, *], Unit] = {
+) extends RoleService[F[Throwable, ?]] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F[Throwable, ?], Unit] = {
     DIResource.liftF(log.info("Ladder & Profile APIs started!"))
   }
 }

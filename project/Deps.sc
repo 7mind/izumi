@@ -484,7 +484,7 @@ object Izumi {
       ),
       Artifact(
         name = ArtifactId("testapp"),
-        libs = (cats_all ++ zio_all).map(_ in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
         depends = Seq(
           Projects.distage.framework,
           Projects.distage.plugins,

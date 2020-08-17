@@ -2,14 +2,12 @@ package leaderboard
 
 import distage.Activation
 import distage.plugins.PluginConfig
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.reflection.SafeType
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.bundled.{ConfigWriter, Help}
 import izumi.distage.roles.launcher.RoleAppLauncher
 import izumi.distage.roles.launcher.services.RoleProvider
 import izumi.distage.roles.model.RoleDescriptor
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.logstage.api.IzLogger
 import zio.IO
@@ -54,28 +52,27 @@ sealed abstract class MainBase(
   activation: Activation,
   override val requiredRoles: Vector[RawRoleParams] = Vector(RawRoleParams(LeaderboardRole.id)),
 ) extends RoleAppMain.Default(
-    launcher = new RoleAppLauncher.LauncherBIO[zio.IO] {
+    launcher = new RoleAppLauncher.LauncherBIO[IO] {
 //      override val pluginConfig = PluginConfig.cached("leaderboard.plugins")
       override val pluginConfig = PluginConfig.staticallyAvailablePlugins("leaderboard.plugins")
       override val requiredActivations = activation
 
-      override protected def makeRoleProvider(logger: IzLogger, activeRoleNames: Set[String]): RoleProvider[zio.IO[Throwable, *]] = {
-        new RoleProvider.Impl[zio.IO[Throwable, *]](logger, activeRoleNames) {
+      override protected def makeRoleProvider(logger: IzLogger, activeRoleNames: Set[String]): RoleProvider[IO[Throwable, *]] = {
+        new RoleProvider.Impl[IO[Throwable, *]](logger, activeRoleNames) {
           override protected def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
-            if (role == SafeType.get[LeaderboardRole[zio.IO]]) {
+            if (role == SafeType.get[LeaderboardRole[IO]]) {
               Some(LeaderboardRole)
-            } else if (role == SafeType.get[LadderRole[zio.IO]]) {
+            } else if (role == SafeType.get[LadderRole[IO]]) {
               Some(LadderRole)
-            } else if (role == SafeType.get[ProfileRole[zio.IO]]) {
+            } else if (role == SafeType.get[ProfileRole[IO]]) {
               Some(ProfileRole)
-            } else if (role == SafeType.get[ConfigWriter[zio.IO[Throwable, *]]]) {
+            } else if (role == SafeType.get[ConfigWriter[IO[Throwable, *]]]) {
               Some(ConfigWriter)
-            } else if (role == SafeType.get[Help[zio.IO[Throwable, *]]]) {
+            } else if (role == SafeType.get[Help[IO[Throwable, *]]]) {
               Some(Help)
             } else {
               None
             }
-
           }
         }
 
