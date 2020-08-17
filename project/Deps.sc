@@ -503,7 +503,6 @@ object Izumi {
 //              "-H:ResourceConfigurationFiles=resource-config.json",
 //              "-H:ReflectionConfigurationFiles=reflection-config.json",
               //"-H:IncludeResources=.*\\\\.conf",
-              "--initialize-at-build-time=scala,izumi,pureconfig,zio,org.slf4j",
 //              "--initialize-at-build-time=io.netty.util.ObjectUtil,io.netty.util.internal.logging",
 //              "--initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger",
 //              "--initialize-at-run-time=io.netty.channel,io.netty.handler",
