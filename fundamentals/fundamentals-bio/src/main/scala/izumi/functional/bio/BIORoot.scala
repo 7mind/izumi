@@ -69,8 +69,11 @@ sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
   @inline implicit final def BIOLocalZIO: Predefined.Of[BIOLocal[ZIO]] = Predefined(BIOAsyncZio)
 }
 
-sealed trait BIORootInstancesLowPriority6 {
+sealed trait BIORootInstancesLowPriority6 extends BIORootInstancesLowPriority7 {
   @inline implicit final def BIOMonix: Predefined.Of[BIOAsync[bio.IO]] = Predefined(BIOAsyncMonix)
+}
+
+sealed trait BIORootInstancesLowPriority7 {
   @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with BIOFunctor3[f], FR[-_, +_, +_], R0](
     implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =

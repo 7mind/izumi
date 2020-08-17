@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.impl.BIOTemporalZio
+import izumi.functional.bio.impl.{BIOTemporalMonix, BIOTemporalZio}
+import monix.bio
 import zio.ZIO
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -31,4 +32,8 @@ trait BIOTemporal3[F[-_, +_, +_]] extends BIOAsync3[F] with BIOTemporalInstances
 private[bio] sealed trait BIOTemporalInstances
 object BIOTemporalInstances {
   @inline implicit final def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO] = new BIOTemporalZio(clockService)
+}
+
+sealed trait BIOTemporalInstancesLowPriority1 {
+  @inline implicit final def BIOTemporal2Monix(implicit clock: Clock2[bio.IO]): BIOTemporal[bio.IO] = new BIOTemporalMonix(clock)
 }
