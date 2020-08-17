@@ -487,6 +487,7 @@ object Izumi {
         libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
         depends = Seq(
           Projects.distage.framework,
+          Projects.distage.docker,
           Projects.distage.plugins,
         ).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
