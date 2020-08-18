@@ -1,25 +1,26 @@
 package izumi.distage.effect.modules
 
-import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, Sync, Timer}
+import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, Effect, Sync, Timer}
 import cats.{Applicative, Functor, Monad, MonadError, Parallel}
 import distage.{ModuleDef, TagK}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.functional.mono.SyncSafe
-import monix.bio.Task
 
 /**
   * Module definition that binds effect TC instances for an arbitrary F[_].
-  *
   */
-class PolymorphicCatsDIEffectModule[F[_]: ConcurrentEffect: TagK] extends ModuleDef {
-  implicit private def diEffectRunner: DIEffectRunner[F] =
-    new DIEffectRunner[F] {
-      override def run[A](f: => F[A]): A = ConcurrentEffect[F].toIO(f).unsafeRunSync()
-    }
+class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
+  make[DIEffectRunner[F]].from {
+    implicit F: ConcurrentEffect[F] => DIEffectRunner.catsAndMonix
+  }
 
-  addImplicit[DIEffectRunner[F]]
-  addImplicit[DIApplicative[F]]
-  addImplicit[DIEffect[F]]
+  make[DIApplicative[F]].from {
+    implicit F: Applicative[F] => DIApplicative.fromCats
+  }
+
+  make[DIEffect[F]].from {
+    implicit F: Sync[F] => DIEffect.fromCatsEffect
+  }
 
   make[DIEffectAsync[F]].from {
     (P0: Parallel[F], T0: Timer[F], C0: Concurrent[F]) =>
@@ -29,18 +30,19 @@ class PolymorphicCatsDIEffectModule[F[_]: ConcurrentEffect: TagK] extends Module
       DIEffectAsync[F]
   }
 
-  addImplicit[Functor[F]]
-  addImplicit[Applicative[F]]
-  addImplicit[Monad[F]]
-  addImplicit[MonadError[F, Throwable]]
-  addImplicit[Bracket[F, Throwable]]
-  addImplicit[Sync[F]]
-  addImplicit[Async[F]]
-  addImplicit[SyncSafe[F]]
+  make[Functor[F]].using[ConcurrentEffect[F]]
+  make[Applicative[F]].using[ConcurrentEffect[F]]
+  make[Monad[F]].using[ConcurrentEffect[F]]
+  make[MonadError[F, Throwable]].using[ConcurrentEffect[F]]
+  make[Bracket[F, Throwable]].using[ConcurrentEffect[F]]
+  make[Sync[F]].using[ConcurrentEffect[F]]
+  make[Async[F]].using[ConcurrentEffect[F]]
+  make[SyncSafe[F]].from {
+    implicit F: Sync[F] => SyncSafe.fromSync
+  }
+  make[Effect[F]].using[ConcurrentEffect[F]]
 }
 
 object PolymorphicCatsDIEffectModule {
-  final def apply[F[_]: ConcurrentEffect: TagK]: PolymorphicCatsDIEffectModule[F] =
-    new PolymorphicCatsDIEffectModule[F]
+  final def apply[F[_]: TagK]: PolymorphicCatsDIEffectModule[F] = new PolymorphicCatsDIEffectModule[F]
 }
-

@@ -4,8 +4,6 @@ import cats.Parallel
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, IO, IOApp, Timer}
 import izumi.distage.model.definition.ModuleDef
 
-import scala.concurrent.ExecutionContext
-
 object CatsDIEffectModule extends CatsDIEffectModule
 
 trait CatsDIEffectModule extends ModuleDef {
@@ -16,9 +14,7 @@ trait CatsDIEffectModule extends ModuleDef {
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
   make[Timer[IO]].from((_: PublicIOApp).timer)
-
-  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  include(PolymorphicCatsDIEffectModule.apply[IO])
+  include(PolymorphicCatsDIEffectModule[IO])
 }
 
 trait PublicIOApp extends IOApp {
