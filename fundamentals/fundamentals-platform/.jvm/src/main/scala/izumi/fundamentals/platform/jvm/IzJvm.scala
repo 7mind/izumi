@@ -12,6 +12,15 @@ trait IzJvm {
 
   import izumi.fundamentals.platform.time.IzTime._
 
+  def isGraalNativeImage(): Boolean = {
+    val props = Seq(
+      "org.graalvm.nativeimage.imagecode",
+      "org.graalvm.nativeimage.kind",
+    )
+    props.exists(p => Option(System.getProperty(p)).isDefined)
+
+  }
+
   def uptime: Duration = Duration(getUptime, scala.concurrent.duration.MILLISECONDS)
 
   def startTime: ZonedDateTime = getStartTime.asEpochMillisUtc

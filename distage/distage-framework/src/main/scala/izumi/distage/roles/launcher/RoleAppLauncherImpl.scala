@@ -185,7 +185,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
     )
 
     val activeRoleNames = parameters.roles.map(_.role).toSet
-    val roleProvider = new RoleProvider.Impl(logger, activeRoleNames)
+    val roleProvider = makeRoleProvider(logger, activeRoleNames)
     val roles = roleProvider.getInfo(bindings)
 
     logger.info(s"Available ${roles.render() -> "roles"}")
@@ -202,6 +202,10 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
     }
 
     roles
+  }
+
+  protected def makeRoleProvider(logger: IzLogger, activeRoleNames: Set[String]): RoleProvider[F] = {
+    new RoleProvider.Impl(logger, activeRoleNames, reflectionEnabled = true)
   }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {
