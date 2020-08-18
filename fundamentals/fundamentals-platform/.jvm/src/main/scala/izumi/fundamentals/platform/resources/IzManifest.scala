@@ -5,40 +5,38 @@ import java.util.jar
 import java.util.jar.JarFile
 
 import izumi.fundamentals.platform.resources.IzResources.ResourceLocation
-import izumi.fundamentals.platform.time.IzTime
+import izumi.fundamentals.platform.time.IzTime.{EPOCH, stringToParseableTime}
 
 import scala.reflect.ClassTag
 import scala.util.{Success, Try}
 
+object IzManifest extends IzManifest
+
 trait IzManifest {
-  val GitBranch = "X-Git-Branch"
-  val GitRepoIsClean = "X-Git-Repo-Is-Clean"
-  val GitHeadRev = "X-Git-Head-Rev"
-  val BuiltBy = "X-Built-By"
-  val BuildJdk = "X-Build-JDK"
-  val BuildSbt = "X-Build-SBT"
+  val GitBranch: String = "X-Git-Branch"
+  val GitRepoIsClean: String = "X-Git-Repo-Is-Clean"
+  val GitHeadRev: String = "X-Git-Head-Rev"
+  val BuiltBy: String = "X-Built-By"
+  val BuildJdk: String = "X-Build-JDK"
+  val BuildSbt: String = "X-Build-SBT"
 
-  val Version = "X-Version"
-  val ImplementationVersion = "Implementation-Version"
-  val VersionJava = "Version"
-  val VersionBundle = "Bundle-Version"
+  val Version: String = "X-Version"
+  val ImplementationVersion: String = "Implementation-Version"
+  val VersionJava: String = "Version"
+  val VersionBundle: String = "Bundle-Version"
 
-  val BuildTimestamp = "X-Build-Timestamp"
-  val ArtifactId = "Specification-Title"
-  val GroupId = "Specification-Vendor"
+  val BuildTimestamp: String = "X-Build-Timestamp"
+  val ArtifactId: String = "Specification-Title"
+  val GroupId: String = "Specification-Vendor"
 
   val ManifestName: String = JarFile.MANIFEST_NAME
 
-  def manifest[C: ClassTag](): Option[java.util.jar.Manifest] = {
-    manifest[C](ManifestName)
-  }
-
-  def manifest[C: ClassTag](name: String): Option[java.util.jar.Manifest] = {
-    IzResources.jarResource[C](name) match {
+  def manifest[C: ClassTag](filename: String = ManifestName): Option[jar.Manifest] = {
+    IzResources.jarResource[C](filename) match {
       case ResourceLocation.Filesystem(file) =>
         val is = new FileInputStream(file)
         try {
-          Some(new java.util.jar.Manifest(is))
+          Some(new jar.Manifest(is))
         } finally {
           is.close()
         }
@@ -55,25 +53,17 @@ trait IzManifest {
     }
   }
 
-  def manifestCl(): Option[jar.Manifest] = {
-    manifest(ManifestName)
-  }
-
-  def manifestCl(name: String): Option[jar.Manifest] = {
-    IzResources
-      .read(name)
-      .map {
-        is =>
-          new java.util.jar.Manifest(is)
-      }
+  def manifestCl(filename: String = ManifestName): Option[jar.Manifest] = {
+    IzResources.read(filename).map(new jar.Manifest(_))
   }
 
   def read(mf: jar.Manifest): IzArtifact = {
-    val git = gitStatus(mf)
-    val build = appBuild(mf)
-    val version = appVersion(mf)
-    val artifact = artifactId(mf)
-    IzArtifact(artifact, version, build, git)
+    IzArtifact(
+      id = artifactId(mf),
+      version = appVersion(mf),
+      build = appBuild(mf),
+      git = gitStatus(mf),
+    )
   }
 
   protected def gitStatus(mf: jar.Manifest): GitStatus = {
@@ -110,7 +100,6 @@ trait IzManifest {
   }
 
   protected def appBuild(mf: jar.Manifest): BuildStatus = {
-    import IzTime._
     (
       Option(mf.getMainAttributes.getValue(BuiltBy))
       , Option(mf.getMainAttributes.getValue(BuildJdk))
@@ -121,16 +110,14 @@ trait IzManifest {
         BuildStatus(user, jdk, sbt, time)
 
       case _ =>
-        BuildStatus("?user", "?jdk", "?sbt", IzTime.EPOCH)
+        BuildStatus("?user", "?jdk", "?sbt", EPOCH)
 
     }
   }
 
-  private def getFirst(mf: jar.Manifest)(strings: Seq[String]) = {
+  private[this] def getFirst(mf: jar.Manifest)(strings: Seq[String]): Option[String] = {
     strings.foldLeft(Option.empty[String]) {
       case (acc, v) => acc.orElse(Option(mf.getMainAttributes.getValue(v)))
     }
   }
 }
-
-object IzManifest extends IzManifest

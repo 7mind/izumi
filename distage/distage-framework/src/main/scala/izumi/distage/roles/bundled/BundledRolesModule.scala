@@ -4,14 +4,15 @@ import java.time.{Instant, ZonedDateTime}
 
 import distage.TagK
 import izumi.distage.model.definition.ModuleDef
+import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.resources._
 import izumi.fundamentals.platform.time.IzTime
 
 import scala.reflect.ClassTag
 
-abstract class BundledRolesModule[F[_]: TagK] extends ModuleDef {
-  make[ConfigWriter[F]]
-  make[Help[F]]
+abstract class BundledRolesModule[F[_]: TagK] extends ModuleDef with RoleModuleDef {
+  makeRole[ConfigWriter[F]]
+  makeRole[Help[F]]
   make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(versionString))
 
   protected def versionString: String

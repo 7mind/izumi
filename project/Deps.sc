@@ -440,7 +440,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.frameworkApi,
-        libs = Seq.empty,
+        libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
