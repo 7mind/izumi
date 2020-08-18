@@ -205,7 +205,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
   }
 
   protected def makeRoleProvider(logger: IzLogger, activeRoleNames: Set[String]): RoleProvider[F] = {
-    new RoleProvider.Impl(logger, activeRoleNames)
+    new RoleProvider.Impl(logger, activeRoleNames, reflectionEnabled = true)
   }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {

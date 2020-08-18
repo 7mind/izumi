@@ -23,7 +23,12 @@ object RoleProvider {
   class Impl[F[_]: TagK](
     logger: IzLogger,
     requiredRoles: Set[String],
+    reflectionEnabled: Boolean,
   ) extends RoleProvider[F] {
+
+    private def reflectionEnabled(): Boolean = {
+      reflectionEnabled && Option(System.getProperty("org.graalvm.nativeimage.imagecode")).isEmpty
+    }
 
     def getInfo(bindings: Seq[Binding]): RolesInfo = {
       val availableBindings = getRoles(bindings)
@@ -56,16 +61,21 @@ object RoleProvider {
       }.flatMap {
           case Right((roleBinding, descriptor)) => mkRoleBinding(roleBinding, descriptor)
           case Left(roleBinding) =>
-            getDescriptor(roleBinding.key.tpe) match {
-              case Some(descriptor) =>
-                logger.warn(
-                  s"""${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"}: using deprecated reflective look-up of `RoleDescriptor` companion object.
-                     |Please use `RoleModuleDef` & `makeRole` to create a role binding explicitly, instead.""".stripMargin
-                )
-                mkRoleBinding(roleBinding, descriptor)
-              case None =>
-                logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
-                throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
+            if (reflectionEnabled()) {
+              reflectCompanionDescriptor(roleBinding.key.tpe) match {
+                case Some(descriptor) =>
+                  logger.warn(
+                    s"""${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"}: using deprecated reflective look-up of `RoleDescriptor` companion object.
+                       |Please use `RoleModuleDef` & `makeRole` to create a role binding explicitly, instead.""".stripMargin
+                  )
+                  mkRoleBinding(roleBinding, descriptor)
+                case None =>
+                  logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
+                  throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
+              }
+            } else {
+              logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no RoleDescriptor, companion reflection is disabled")
+              throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no RoleDescriptor, companion reflection is disabled")
             }
         }
     }
@@ -86,7 +96,7 @@ object RoleProvider {
     }
 
     // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???
-    protected def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
+    protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
       val roleClassName = role.cls.getName
       try {
         Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
