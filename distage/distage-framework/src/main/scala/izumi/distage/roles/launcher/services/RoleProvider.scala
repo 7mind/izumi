@@ -8,6 +8,7 @@ import izumi.distage.roles.model.definition.RoleTag
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
+import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.logstage.api.IzLogger
 
@@ -27,7 +28,7 @@ object RoleProvider {
   ) extends RoleProvider[F] {
 
     private def reflectionEnabled(): Boolean = {
-      reflectionEnabled && Option(System.getProperty("org.graalvm.nativeimage.imagecode")).isEmpty
+      reflectionEnabled && !IzJvm.isGraalNativeImage()
     }
 
     def getInfo(bindings: Seq[Binding]): RolesInfo = {
