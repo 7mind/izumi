@@ -3,6 +3,7 @@ import izumi.sbtgen._
 import izumi.sbtgen.model._
 
 object Izumi {
+  7
 
   object V {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
@@ -131,6 +132,7 @@ object Izumi {
     val doobie = Seq(
       Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
       Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto),
+      Library("org.tpolecat", "doobie-hikari", V.doobie, LibraryType.Auto),
     )
 
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
@@ -480,6 +482,43 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
+      Artifact(
+        name = ArtifactId("testapp"),
+        libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
+        depends = Seq(
+          Projects.distage.framework,
+          Projects.distage.docker,
+          Projects.distage.plugins,
+        ).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
+      ),
+      Artifact(
+        name = ArtifactId("testapp-launcher"),
+        libs = Seq.empty,
+        settings = Seq(
+          "graalVMNativeImageOptions" ++= Seq(
+              "--no-fallback",
+              "-H:+ReportExceptionStackTraces",
+              "-H:+TraceClassInitialization",
+//              "-H:ResourceConfigurationFiles=resource-config.json",
+//              "-H:ReflectionConfigurationFiles=reflection-config.json",
+              //"-H:IncludeResources=.*\\\\.conf",
+//              "--initialize-at-build-time=io.netty.util.ObjectUtil,io.netty.util.internal.logging",
+//              "--initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger",
+//              "--initialize-at-run-time=io.netty.channel,io.netty.handler",
+//              "--initialize-at-run-time=io.netty.channel.unix.Socket",
+//              "--initialize-at-run-time=io.netty.channel.unix.IovArray",
+//              "--initialize-at-run-time=io.netty.channel.epoll.EpollEventLoop",
+//              "--initialize-at-run-time=io.netty.channel.unix.Errors",
+//              "--initialize-at-run-time=io.netty.util.internal.MacAddressUtil",
+              "--allow-incomplete-classpath",
+              "--report-unsupported-elements-at-runtime",
+            )
+        ),
+        depends = Seq(ArtifactId("testapp")).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
+        plugins = Plugins(Seq(Plugin("GraalVMNativeImagePlugin", Platform.Jvm))),
+      ),
     ),
     pathPrefix = Projects.distage.basePath,
     defaultPlatforms = Targets.cross,
@@ -677,6 +716,7 @@ object Izumi {
         SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
         SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
         SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
+        SbtPlugin("com.typesafe.sbt", "sbt-native-packager", "1.7.5"),
       ),
   )
 }
