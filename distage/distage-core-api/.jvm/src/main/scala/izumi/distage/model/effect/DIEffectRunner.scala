@@ -1,6 +1,6 @@
 package izumi.distage.model.effect
 
-import cats.effect.{ConcurrentEffect, IO}
+import cats.effect.{Effect, IO}
 import izumi.functional.bio.BIORunner
 import izumi.fundamentals.platform.functional.Identity
 import monix.bio.Task
@@ -12,9 +12,9 @@ trait DIEffectRunner[F[_]] {
 object DIEffectRunner {
   def apply[F[_]: DIEffectRunner]: DIEffectRunner[F] = implicitly
 
-  def catsAndMonix[F[_]: ConcurrentEffect]: DIEffectRunner[F] =
+  def catsAndMonix[F[_]: Effect]: DIEffectRunner[F] =
     new DIEffectRunner[F] {
-      override def run[A](f: => F[A]): A = ConcurrentEffect[F].toIO(f).unsafeRunSync()
+      override def run[A](f: => F[A]): A = Effect[F].toIO(f).unsafeRunSync()
     }
 
   implicit object IdentityImpl extends DIEffectRunner[Identity] {

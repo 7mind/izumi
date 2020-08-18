@@ -11,7 +11,7 @@ import izumi.functional.mono.SyncSafe
   */
 class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
   make[DIEffectRunner[F]].from {
-    implicit F: ConcurrentEffect[F] => DIEffectRunner.catsAndMonix
+    implicit F: Effect[F] => DIEffectRunner.catsAndMonix
   }
 
   make[DIApplicative[F]].from {

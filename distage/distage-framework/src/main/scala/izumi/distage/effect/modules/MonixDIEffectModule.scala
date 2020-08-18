@@ -13,7 +13,7 @@ object MonixDIEffectModule extends MonixDIEffectModule
 
 trait MonixDIEffectModule extends ModuleDef {
   implicit val scheduler: Scheduler = Scheduler.global
-  implicit val ce = new CatsConcurrentEffectForTask()(scheduler, bio.IO.defaultOptions)
+  implicit val ce: CatsConcurrentEffectForTask = new CatsConcurrentEffectForTask()(scheduler, bio.IO.defaultOptions)
 
   make[Parallel[Task]].from(new CatsParallelForTask[Throwable])
   make[ConcurrentEffect[Task]]
