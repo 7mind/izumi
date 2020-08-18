@@ -1313,7 +1313,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(

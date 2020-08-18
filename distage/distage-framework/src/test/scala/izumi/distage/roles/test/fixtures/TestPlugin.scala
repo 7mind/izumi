@@ -7,6 +7,7 @@ import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.{ConfigWriter, Help}
+import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -14,7 +15,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, I
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
+class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Env.Prod)
 
   private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
@@ -30,8 +31,8 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
   many[SetElement]
     .add[SetElement1]
 
-  make[TestTask00[F]]
-  make[TestRole00[F]]
+  makeRole[TestTask00[F]]
+  makeRole[TestRole00[F]]
   make[TestRole01[F]]
   make[TestRole02[F]]
   make[TestRole03[F]]
