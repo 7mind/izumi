@@ -3,12 +3,11 @@ package izumi.distage.staticinjector.plugins.macros
 import com.typesafe.config.ConfigFactory
 import distage._
 import io.github.classgraph.ClassGraph
-import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StandardAxis.Cycles
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}

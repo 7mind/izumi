@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicReference
 import izumi.distage.AbstractLocator
 import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
 import izumi.distage.model._
-import izumi.distage.model.definition.StandardAxis.Cycles
 import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan._

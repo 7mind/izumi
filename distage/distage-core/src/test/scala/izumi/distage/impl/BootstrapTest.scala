@@ -1,8 +1,7 @@
 package izumi.distage.impl
 
 import distage.{Activation, DIKey}
-import izumi.distage.bootstrap.BootstrapLocator
-import izumi.distage.model.definition.StandardAxis.Cycles
+import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.planning.PlanAnalyzerDefaultImpl

@@ -5,7 +5,6 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.TestConfig.{ParallelLevel, TaggedKeys}

@@ -9,7 +9,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
-import izumi.distage.testkit.distagesuite.fixtures.{ActiveComponent, ApplePaymentProvider, ForcedRootProbe, ForcedRootResource, MockCache, MockCachedUserService, MockUserRepository, TestActiveComponent}
+import izumi.distage.testkit.distagesuite.fixtures._
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest, DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
