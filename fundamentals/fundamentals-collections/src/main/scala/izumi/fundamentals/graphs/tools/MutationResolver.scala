@@ -9,7 +9,7 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC.WeakEdge
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.{nowarn, tailrec, unused}
 
 @nowarn("msg=Unused import")
 object MutationResolver {
@@ -180,8 +180,8 @@ object MutationResolver {
     }
 
     private def resolveConflict(
-      invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
-      activations: Set[AxisPoint],
+      @unused invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
+      @unused activations: Set[AxisPoint],
     )(conflict: NonEmptyList[(Annotated[N], Node[N, V])]
     ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
 
