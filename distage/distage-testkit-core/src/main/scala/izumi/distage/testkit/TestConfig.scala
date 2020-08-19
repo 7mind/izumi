@@ -1,12 +1,15 @@
 package izumi.distage.testkit
 
+import distage._
 import distage.config.AppConfig
-import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
 import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.TestConfig.{ParallelLevel, TaggedKeys}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
+
+import scala.language.implicitConversions
 
 /**
   * General options:
@@ -87,8 +90,8 @@ final case class TestConfig(
   activation: Activation = StandardAxis.testProdActivation,
   moduleOverrides: Module = Module.empty,
   bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-  memoizationRoots: Set[_ <: DIKey] = Set.empty,
-  forcedRoots: Set[_ <: DIKey] = Set.empty,
+  memoizationRoots: TaggedKeys = TaggedKeys.empty,
+  forcedRoots: TaggedKeys = TaggedKeys.empty,
   // parallelism options
   parallelEnvs: ParallelLevel = ParallelLevel.Unlimited,
   parallelSuites: ParallelLevel = ParallelLevel.Unlimited,
@@ -108,6 +111,26 @@ object TestConfig {
       pluginConfig = PluginConfig.cached(Seq(packageName)),
       configBaseName = s"${packageName.split('.').last}-test",
     )
+  }
+
+  final case class TaggedKeys(keys: Map[Set[_ <: AxisValue], Set[_ <: DIKey]]) {
+    @inline def getActiveKeys(activation: Activation): Set[DIKey] = {
+      keys
+        .filter {
+          case (axesValues, _) =>
+            axesValues.forall(v => activation.activeChoices.get(v.axis).contains(v))
+        }.flatMap(_._2).toSet
+    }
+    @inline def ++(other: TaggedKeys): TaggedKeys = {
+      val allKeys = this.keys.toSeq ++ other.keys.toSeq
+      val updatedKeys = allKeys.groupBy(_._1).map { case (k, vals) => k -> vals.flatMap(_._2).toSet }
+      TaggedKeys(updatedKeys)
+    }
+  }
+  object TaggedKeys {
+    val empty: TaggedKeys = TaggedKeys(Map.empty)
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set))
+    @inline implicit def fromMap[SA <: Set[_ <: AxisValue], SD <: Set[_ <: DIKey]](map: Map[SA, SD]): TaggedKeys = TaggedKeys(map.map(identity))
   }
 
   sealed trait ParallelLevel
