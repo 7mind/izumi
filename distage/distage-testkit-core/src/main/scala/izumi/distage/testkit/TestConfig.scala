@@ -107,7 +107,7 @@ object TestConfig {
     )
   }
 
-  final case class TaggedKeys(keys: Map[Set[AxisValue], Set[DIKey]]) {
+  final case class TaggedKeys(keys: Map[Set[_ <: AxisValue], Set[_ <: DIKey]]) {
     @inline def getActiveKeys(activation: Activation): Set[DIKey] = {
       keys
         .filter {
@@ -123,8 +123,8 @@ object TestConfig {
   }
   object TaggedKeys {
     val empty: TaggedKeys = TaggedKeys(Map.empty)
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set.map[DIKey](identity)))
-    @inline implicit def fromMap(map: Map[Set[AxisValue], Set[DIKey]]): TaggedKeys = TaggedKeys(map)
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set))
+    @inline implicit def fromMap[SA <: Set[_ <: AxisValue], SD <: Set[_ <: DIKey]](map: Map[SA, SD]): TaggedKeys = TaggedKeys(map.map(identity))
   }
 
   sealed trait ParallelLevel

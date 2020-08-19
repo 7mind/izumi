@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.DIKey
 import distage.plugins.PluginDef
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.tagged.DistageTestTaggedAxesExampleBase.{DepsCounters, DummyDep, PrdDep}
@@ -15,8 +14,8 @@ abstract class DistageTestTaggedAxesExampleBase extends DistageBIOEnvSpecScalate
   override protected def config: TestConfig = super
     .config.copy(
       forcedRoots = Map(
-        Set(Repo.Prod: AxisValue) -> Set(DIKey[PrdDep]),
-        Set(Repo.Dummy: AxisValue) -> Set(DIKey[DummyDep]),
+        Set(Repo.Prod) -> Set(DIKey[PrdDep]),
+        Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
       ),
       pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
           make[PrdDep]
