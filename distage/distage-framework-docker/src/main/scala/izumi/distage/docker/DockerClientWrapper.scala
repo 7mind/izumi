@@ -52,7 +52,7 @@ class DockerClientWrapper[F[_]](
         }
       }
     } {
-      e => F.maybeSuspend(logger.warn(s"Got failure during container destroy ${e.getMessage -> "message"}"))
+      failure => F.maybeSuspend(logger.warn(s"Got failure during container destroy $failure"))
     }
   }
 }
