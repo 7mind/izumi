@@ -148,8 +148,8 @@ final class ConfigWriter[F[_]](
       Files.write(target, bytes)
       logger.info(s"[${cmp.roleId}] Reference config saved -> $target (${bytes.size} bytes)")
     }.recover {
-      case e: Throwable =>
-        logger.error(s"[${cmp.roleId -> "component id" -> null}] Can't write reference config to $target, ${e.getMessage -> "message"}")
+      case error: Throwable =>
+        logger.error(s"[${cmp.roleId -> "component id" -> null}] Can't write reference config to $target, $error")
     }
   }
 

@@ -84,7 +84,7 @@ class DistageScalatestReporter extends TestReporter {
             testName,
             recordedEvents = Vector.empty,
             analysis = Vector.empty,
-            throwable = Some(t),
+            throwable = Option(t),
             duration = Some(duration.toMillis),
             location = Some(LineInFile(test.pos.line, test.pos.file, None)),
             formatter = formatter,

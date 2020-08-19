@@ -31,8 +31,8 @@ final class HttpGetCheck[Tag](
             ContainerHealthCheck.HealthCheckResult.Unavailable
           }
         } catch {
-          case t: Throwable =>
-            logger.warn(s"Cannot establish HTTP connection with $port due to ${t.getMessage -> "failure"}")
+          case failure: Throwable =>
+            logger.warn(s"Cannot establish HTTP connection with $port due to $failure")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         }
       case _ =>

@@ -5,6 +5,7 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 class CglibProxyProvider extends ProxyProvider {
@@ -47,7 +48,7 @@ class CglibProxyProvider extends ProxyProvider {
       case f: Throwable =>
         throw new CgLibInstantiationOpException(
           s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: " +
-          s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.getMessage}",
+          s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.stackTrace}",
           clazz,
           proxyContext.params,
           proxyContext.op,
