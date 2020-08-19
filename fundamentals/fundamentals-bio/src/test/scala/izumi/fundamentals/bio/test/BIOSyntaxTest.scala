@@ -176,7 +176,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
-    lazy val _ = (
+    lazy val zioTest = (
       x[zio.IO],
       y[zio.IO](_: BIOTemporal[zio.IO]),
       z[zio.IO],
@@ -184,8 +184,9 @@ class BIOSyntaxTest extends AnyWordSpec {
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
     )
 
-    lazy val _ = (
+    lazy val monixTest = (
       x[bio.IO],
+      y[bio.IO](_: BIOTemporal[bio.IO]),
       z[bio.IO],
     )
   }
