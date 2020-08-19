@@ -41,8 +41,8 @@ final class PostgreSqlProtocolCheck[Tag](
             ContainerHealthCheck.HealthCheckResult.Unavailable
           }
         } catch {
-          case t: Throwable =>
-            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. ${t.getMessage -> "Failure"}")
+          case failure: Throwable =>
+            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. $failure")
             ContainerHealthCheck.HealthCheckResult.Unavailable
         } finally {
           socket.close()

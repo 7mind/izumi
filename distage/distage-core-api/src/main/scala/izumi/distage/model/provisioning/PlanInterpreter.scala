@@ -2,13 +2,14 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection._
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.reflect.TagK
 
 import scala.concurrent.duration.Duration
@@ -53,7 +54,7 @@ object PlanInterpreter {
             case di: DIException => di.getClass.getSimpleName
             case o => o.getClass.getName
           }
-          s"${op.target} $pos, $name: ${f.getMessage}"
+          s"${op.target} $pos, $name: ${f.stackTrace}"
       }
 
       val ccFailed = repr.size
