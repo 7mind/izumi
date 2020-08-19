@@ -107,24 +107,24 @@ object TestConfig {
     )
   }
 
-  final case class TaggedKeys(keys: Map[Set[_ <: AxisValue], Set[_ <: DIKey]]) {
-    @inline def getActiveKeys(activation: Activation): Set[DIKey] = {
+  final case class TaggedKeys(keys: Map[Set[AxisValue], Set[DIKey]]) {
+    def getActiveKeys(activation: Activation): Set[DIKey] = {
       keys
-        .filter {
+        .iterator.filter {
           case (axesValues, _) =>
             axesValues.forall(v => activation.activeChoices.get(v.axis).contains(v))
-        }.flatMap(_._2).toSet
+        }.flatMap(_._2.iterator).toSet
     }
-    @inline def ++(other: TaggedKeys): TaggedKeys = {
-      val allKeys = this.keys.toSeq ++ other.keys.toSeq
-      val updatedKeys = allKeys.groupBy(_._1).map { case (k, vals) => k -> vals.flatMap(_._2).toSet }
+    def ++(that: TaggedKeys): TaggedKeys = {
+      val allKeys = (this.keys.iterator ++ that.keys.iterator).toSeq
+      val updatedKeys = allKeys.groupBy(_._1).map { case (k, vals) => k -> vals.iterator.flatMap(_._2.iterator).toSet }
       TaggedKeys(updatedKeys)
     }
   }
   object TaggedKeys {
     val empty: TaggedKeys = TaggedKeys(Map.empty)
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set))
-    @inline implicit def fromMap[SA <: Set[_ <: AxisValue], SD <: Set[_ <: DIKey]](map: Map[SA, SD]): TaggedKeys = TaggedKeys(map.map(identity))
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set.toSet[DIKey]))
+    @inline implicit def fromMap[SA <: Set[_ <: AxisValue]](map: Map[SA, Set[_ <: DIKey]]): TaggedKeys = TaggedKeys(map.asInstanceOf[Map[Set[AxisValue], Set[DIKey]]])
   }
 
   sealed trait ParallelLevel
