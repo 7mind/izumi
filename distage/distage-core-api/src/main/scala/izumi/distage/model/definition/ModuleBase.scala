@@ -133,8 +133,7 @@ object ModuleBase {
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
       mergedKeys.flatMap {
-        k =>
-          newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
+        k => newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
       }
     }
   }

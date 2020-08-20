@@ -17,7 +17,11 @@ object MutationResolver {
   import scala.collection.immutable
 
   final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
-    def validChoice(a: AxisPoint): Boolean = activationChoices.get(a.axis).forall(_ == a)
+    protected[this] def validChoice(a: AxisPoint): Boolean = {
+      // forall, as in, AxisPoint without an explicit choice is allowed through and should raise conflict in later stages
+      // if there's another AxisPoint for the same axis (revisit this though)
+      activationChoices.get(a.axis).forall(_ == a)
+    }
     def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)
   }
   object ActivationChoices {
@@ -103,12 +107,10 @@ object MutationResolver {
         grouped = onlyValid.map { case (key, node) => (key.key, (key, node)) }.toMultimap
         onlyCorrect <- traceGrouped(invalid.toMultimap, activations, weak)(roots, roots, grouped, Map.empty)
       } yield {
-        val nonAmbigious = onlyCorrect.filterNot(_._1.isMutator).map {
-          case (k, _) => (k.key, k.axis)
-        }
+        val nonAmbiguous = onlyCorrect.filterNot(_._1.isMutator).map { case (k, _) => (k.key, k.axis) }
         val result = onlyCorrect.map {
           case (key, node) =>
-            (key, Node(node.deps.map(d => Selected(d, nonAmbigious.getOrElse(d, Set.empty))), node.meta))
+            (key, Node(node.deps.map(d => Selected(d, nonAmbiguous.getOrElse(d, Set.empty))), node.meta))
         }
         SemiIncidenceMatrix(result)
       }

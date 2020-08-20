@@ -111,9 +111,7 @@ final class ConfigWriter[F[_]](
   private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
 
-    val bootstrapOverride = Seq(
-      new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false)
-    ).overrideLeft
+    val bootstrapOverride = new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false)
 
     val plans = roleAppPlanner
       .reboot(bootstrapOverride)
