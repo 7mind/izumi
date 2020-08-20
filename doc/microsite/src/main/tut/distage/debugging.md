@@ -22,7 +22,7 @@ val badPlan = Injector().plan(badModule, Roots.Everything)
 ```
 
 ```scala mdoc:crash:to-string
-badPlan.assertImportsResolvedOrThrow
+badPlan.assertImportsResolvedOrThrow()
 ```
 
 ```scala mdoc:to-string
@@ -33,7 +33,7 @@ val goodModule = new ModuleDef {
 
 val plan = Injector().plan(goodModule, Roots.Everything)
 
-plan.assertImportsResolvedOrThrow
+plan.assertImportsResolvedOrThrow()
 ```
 
 ### Pretty-printing plans
