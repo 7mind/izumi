@@ -4,11 +4,11 @@
 
 ### Quick Start
 
-The `distage-testkit` simplifies pragmatic pure-FP testing. The `DistageSpecScalatest` are
-[ScalaTest](https://www.scalatest.org/) base classes for effect types of `Identity`, `F[_]`,
-`F[+_, +_]` and `F[-_, +_, +_]`. These provide an interface similar to ScalaTest's
-[`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html). However,
-`distage-testkit` has additional capabilities: first class support for effect types as well as
+The `distage-testkit` simplifies pragmatic pure functional programming testing. `DistageSpecScalatest` are
+[ScalaTest](https://www.scalatest.org/) base classes for the effect types of `Identity`, `F[_]`,
+`F[+_, +_]` and `F[-_, +_, +_]`. They provide an interface similar to ScalaTest's
+[`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
+`distage-testkit` has additional capabilities such as first class support for effect types and
 dependency injection.
 
 Usage of `distage-testkit` generally follows these steps:
@@ -19,13 +19,13 @@ Usage of `distage-testkit` generally follows these steps:
     - `F[+_, +_]` - @scaladoc[`DistageBIOSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOSpecScalatest)
     - `F[-_, +_, +_]` - @scaladoc[`DistageBIOEnvSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOEnvSpecScalatest)
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
-3. Establish test case context using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
+3. Establish test case contexts using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
    [`must`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/MustVerb.html),
    and [`can`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/CanVerb.html).
-4. Introduce test cases using one of the `in` methods. Test cases can have a variety of forms. From
+4. Introduce test cases using one of the `in` methods. These test cases can have a variety of forms, from
    pure functions returning an
-   [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html) to effectful
-   functions with dependencies.
+   [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html), to effectful
+   functions with dependencies:
     - No effect type / `Identity` - @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
     - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
     - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
@@ -34,15 +34,13 @@ Usage of `distage-testkit` generally follows these steps:
 
 ### API Overview
 
-To demonstrate the usage of `distage-testkit` we'll consider a hypothetical game scoring system. This
-will have a model, logic and service which we'll then define test cases to verify.
-
-The highest value tests to develop, [in our experience](https://blog.7mind.io/constructive-test-taxonomy.html),
-are those that verify communication behavior of components. These are tests of blackbox interfaces,
+The highest value tests to develop [in our experience](https://blog.7mind.io/constructive-test-taxonomy.html) are those that verify the communication behavior of components. These are tests of blackbox interfaces,
 with atomic or group isolation levels.
 
-For demonstration, our application will use `ZIO[-R, +E, +A]`. Starting with a model and service
-interface:
+To demonstrate usage of `distage-testkit` we'll consider a hypothetical game score system. This
+system will have a model, logic, and service which we'll then define test cases to verify. Our application will use `ZIO[-R, +E, +A]`.
+
+We'll start with the following model and service interface for the game score system:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -80,22 +78,24 @@ object Score {
 }
 ```
 
+This represents a game score system where the player can collect Stars or Mangoes with differently configured and calculated point values.
+
 #### `DistageSpecScalatest` Base Classes
 
-There are test suite base classes for functor, bifunctor and trifunctor effect types. Typically, pick
-one that matches the application's effect type:
+There are test suite base classes for functor, bifunctor and trifunctor effect types. We will be choosing the
+one that matches our application's effect type from the following:
 
 - No effect type - @scaladoc[`DistageSpecScalatest[Identity]`](izumi.distage.testkit.scalatest.DistageSpecScalatest)
 - `F[_]` - @scaladoc[`DistageSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageSpecScalatest)
 - `F[+_, +_]` - @scaladoc[`DistageBIOSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOSpecScalatest)
 - `F[-_, +_, +_]` - @scaladoc[`DistageBIOEnvSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOEnvSpecScalatest)
 
-For the example application, the tests use a `ZIO[-R, +E, +A]` effect type. From above, this means
+For our demonstration application the tests use the `ZIO[-R, +E, +A]` effect type. This means we'll be
 using `DistageBIOEnvSpecScalatest` for the test suite base class.
 
-The default config (`super.config`) has a `pluginConfig` that will scan the package the test is in
-for modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation
-for more information. For this example, the module will be provided using `moduleOverrides`:
+The default config (`super.config`) has `pluginConfig`, which will scan the package the test is in
+for according modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation
+for more information. For our demonstration the module will be provided using `moduleOverrides` like so:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -125,29 +125,31 @@ abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
 #### Test Cases
 
 In `WordSpec`, a test case is a sentence (a `String`) followed by `in` then the body. In
-`distage-testkit` the body of the test case is not limited to only a function returning an
+`distage-testkit` the body of the test case is not limited to a function returning an
 [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
 @scaladoc[Functions that take arguments](izumi.distage.model.providers.ProviderMagnet)
-and functions using effect types are also supported.  Functions arguments and effect environments
+and functions using effect types are also supported.  Function arguments and effect environments
 will be provided according to the `distage` object graph.
 
 #### Test Cases - Assertions
 
-All of the base classes support test cases that are: assertions ; functions returning an
-assertion; functions returning unit that fail on exception.
+All of the base classes support test cases that are:
+  - Assertions.
+  - Functions returning an assertion.
+  - Functions returning unit that fail on exception.
 
 These are introduced using `in` from
 @scaladoc[DistageAbstractScalatestSpec.LowPriorityIdentityOverloads](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
 
-The assertion methods are the same as ScalaTest: The base classes extend
-[ScalaTest Assertions](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html)
+The assertion methods are the same as ScalaTest as the base classes extend
+[ScalaTest Assertions](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
 
 ```scala mdoc:invisible
 // minimal check of that scalatest ref
 import org.scalatest.Assertions
 ```
 
-For the example application:
+Let's now create a simple test for our demonstration application:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -183,8 +185,8 @@ final class ScoreSimpleTest extends Test {
 
 #### Assertions with Effects
 
-All of the base classes support test cases that are effects with assertions. Like above, functions
-returning effects will have arguments provided from the DI graph. These test cases are supported by
+All of the base classes support test cases that are effects with assertions. As mentioned earlier, functions
+returning effects will have arguments provided from the `distage` object graph. These test cases are supported by
 @scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper).
 
 The different effect types fix the `F[_]` argument for this syntax:
@@ -193,9 +195,9 @@ The different effect types fix the `F[_]` argument for this syntax:
 - `DistageBIOSpecScalatest`: `F[Throwable, _]`
 - `DistageBIOEnvSpecScalatest`: `F[Any, Throwable, _]`
 
-For the example application we'll use this to verify the `Score.echoConfig` method.  Additionally,
-the `Config` required is from the `distage` object graph defined in `moduleOverrides` above. By using
-is a function from `Config` the required argument will be injected by `distage-testkit`.
+With our demonstration application we'll use this to verify the `Score.echoConfig` method.
+The `Config` required is from the `distage` object graph defined in `moduleOverrides`. By using
+is a function from `Config`, the required argument will be injected by `distage-testkit`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -228,10 +230,10 @@ final class ScoreEffectsTest extends Test {
 #### Assertions with Effects with Environments
 
 @scaladoc[The `in` method for `F[_, _, _]` effect types](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
-supports injection of environments from the object graph. This is in addition to the simple
-assertions and assertions with effects described above.
+supports injection of environments from the object graph in addition to simple
+assertions and assertions with effects.
 
-A test that verifies the bonus service always returns one would be:
+A test that verifies the bonus service always returns a value of `1` in our demonstration would be:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -250,17 +252,17 @@ abstract class BonusServiceIsZeroTest extends Test {
 }
 ```
 
-While this compiles, this test cannot be run without the object graph containing a `BonusService`
+While this compiles this test cannot be run without the object graph containing a `BonusService`
 resource.
-For `ZIO[-R, +E, +A]` the `Has` bindings are injected from `ZLayer`, `ZManaged` `ZIO` or any
+For `ZIO[-R, +E, +A]`, the `Has` bindings are injected from `ZLayer`, `ZManaged` `ZIO` or any
 `F[_, _, _]: BIOLocal`.
 See @ref[here for details on ZIO Has injection ](basics.md#zio-has-bindings).
 
-Our example application has a dummy and production implementation of the `BonusService`.  For each
-implementation a `ZManaged` is provided. With the `ZManaged` resources added to the object
+Our demonstration application has a dummy and production implementation of the `BonusService`.  For each
+implementation, a `ZManaged` is provided. With the `ZManaged` resources added to the object
 graph test cases can inject `Has[BonusService]`.
 
-For demonstration of [reuse and memoization](#resource-reuse-memoization) the bonus value will be
+For demonstration of [reuse and memoization](#resource-reuse-memoization), the bonus value will be
 equal to the number of times the resource was acquired.
 
 ```scala
@@ -288,10 +290,12 @@ object DummyBonusService {
 }
 ```
 
-This small implementation is useful for verification. Both automated tests as well as functional
-prototypes. For a real system we'd have a production implementation. Such as an implementation
-that performs an HTTP requests to a REST service. We'll introduce a production service, but the
-actual query will be unimplemented.
+This small implementation is useful for verification in both automated tests as well as functional
+prototypes.
+
+For a real system we'd build a production implementation like the following. Such an implementation
+would perform an HTTP request to a REST service. We'll introduce a production service, but this
+actual query will be unimplemented for our demonstration:
 
 ```scala mdoc:to-string
 "fakepackage app": Unit
@@ -318,19 +322,19 @@ object ProdBonusService {
 
 #### Pattern: Dual Test Tactic
 
-The testing of `BonusService` in the example application will follow the Dual Test Tactic. See
-the blog post [Unit, Functional, Integration? You are doing it
+The testing of `BonusService` in our demonstration application will follow the Dual Test Tactic. See
+our blog post [Unit, Functional, Integration? You are doing it
 wrong](https://blog.7mind.io/constructive-test-taxonomy.html) for a discussion of test taxonomy and
 the value of this tactic.
 
-A `ZIO` resouce for `BonusService` must be in the `distage` object graph for a `Has[BonusService]` to be
-injected into the `ZIO` environment. One option: Define separate modules for the dummy and prod
-implementations. One module would be referenced by tests and the other by production. However, this
+A `ZIO` resource for `BonusService` must be in the `distage` object graph for a `Has[BonusService]` to be
+injected into the `ZIO` environment. One option is to define separate modules for the dummy and production
+implementations. One module would be referenced by tests and the other only by production. However, this
 is not as useful as both implementations in the same object graph but different activations.
 
-The example application will use the
+Our demonstration application will use the
 @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod`
-tags.
+tags:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -351,8 +355,8 @@ object BonusServicePlugin extends PluginDef {
 ```
 
 Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
-This `PluginDef` is in the same package as the test. Namely `app`. By default,
-the `pluginConfig` for the test will include the test's pacakge. Which will
+This `PluginDef` is in the same package as the test, namely `app`. By default
+the `pluginConfig` for the test will include the test's package, which will
 be scanned by `distage` for `PluginDef` instances.
 
 Continuing with the pattern, a trait will control which repo is activated:
@@ -375,13 +379,13 @@ trait ProdTest extends Test {
 }
 ```
 
-With these a production test and a dummy test can be introduced for the example
+With these a production test and a dummy test can be introduced for the demonstration game score
 application. Note how these are the same scenario, `BonusServiceIsZeroTest`,
 but differ in activations.
 
-When extended beyond this small example this pattern simplifies system level tests, sanity checks,
+When extended beyond this small example, this pattern simplifies system level tests, sanity checks,
 and even a pragmatic form of
-[N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming)
+[N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming):
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -412,7 +416,7 @@ org.scalatest.shortstacks.nocolor.run(t)
 
 #### Test Case Context
 
-The `testkit` ScalaTest base classes include the verbs for establishing test context:
+The `testkit` ScalaTest base classes include the following verbs for establishing test context:
 
 - [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html)
 - [`must`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/MustVerb.html)
@@ -421,34 +425,34 @@ The `testkit` ScalaTest base classes include the verbs for establishing test con
 #### Configuration
 
 The test suite class for your application should override the `def config: TestConfig` attributed.
-Among other options, the config defines the plugin configuration, module overrides and activation
-axes. See the d@scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig) for more
+The config defines the plugin configuration, module overrides and activation
+axes, and other options. See the d@scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig) for more
 information.
 
 ### Syntax Summary
 
 For `F[_]` including `Identity`:
 
-- `in { assert(???) }` - test case is a function returning an
+- `in { assert(???) }`: The test case is a function returning an
    [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
-- `in { (a: A, b: B) => assert(???) }` - test case is a function returning an assertion. The `a` and
+- `in { (a: A, b: B) => assert(???) }`: The test case is a function returning an assertion. The `a` and
    `b` will be injected from the object graph.
-- `in { (a: A, b: B) => ???: F[Unit] }` - test case is a function returning an effect to be
+- `in { (a: A, b: B) => ???: F[Unit] }`: The test case is a function returning an effect to be
   executed. The `a` and `b` will be injected from the object graph. The test case will fail if the
   effect fails.
-- `in { (a: A, b: B) => ???: F[Assertion] }` - test case is a function returning an effect to be
+- `in { (a: A, b: B) => ???: F[Assertion] }`: The test case is a function returning an effect to be
   executed. The `a` and `b` will be injected from the object graph. The test case will fail if the
   effect fails or produces a failure assertion.
 
-For `F[-_, +_, +_]`, same as above with `F[Any, Throwable, _]`:
+For `F[-_, +_, +_]`, it's same with `F[Any, Throwable, _]`:
 
-- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Unit] }` - test case is an effect requiring an
+- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Unit] }`: The test case is an effect requiring an
   environment. The test case will fail if the effect fails. The environment will be injected from
   the object graph.
-- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }` - test case is an effect
+- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }`: The test case is an effect
   requiring an environment. The test case will fail if the effect fails or produces a failure
   assertion. The environment will be injected from the object graph.
-- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }` - test case is a
+- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }`: The test case is a
   function producing an effect requiring an environment. All of `a: A`, `b: B`, `Has[C]` and `Has[D]`
   will be injected from the object graph.
 
@@ -467,7 +471,7 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertBIO
 ### Resource Reuse - Memoization
 
 Injected values are summoned from the dependency injection graph for each test. Without
-using memoization resources will be acquired and released for each test. This may be
+using memoization, resources will be acquired and released for each test. This may be
 unwanted. For instance, a single Postgres Docker may be wanted for all tests.
 The test config has a
 @scaladoc[`memoizationRoots`](izumi.distage.testkit.TestConfig#memoizationRoots)
@@ -478,16 +482,14 @@ property for sharing components across tests.
 #### Using `IntegrationCheck`
 
 Implementation classes that inherit from
-@scaladoc[`izumi.distage.roles.model.IntegrationCheck`](izumi.distage.roles.model.IntegrationCheck) (
+@scaladoc[`izumi.distage.roles.model.IntegrationCheck`](izumi.distage.roles.model.IntegrationCheck). You
 can specify a `resourceCheck()` method that will be called before test instantiation to check if
-external test dependencies (such as docker containers in
+external test dependencies (such as Docker containers in
 @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources)) are available for
 the test or role. If not, the test will be canceled/ignored.
 
-This feature allows you to e.g. selectively run only the fast in-memory tests that have no external
-dependencies if you have shut down your test environment.
-
-Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s
+This feature allows you to therefore selectively run only the fast in-memory tests that have no external
+dependencies. Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s
 @ref[Roles](distage-framework.md#roles).
 
 Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.services.StartupPlanExecutor) to execute the
@@ -670,5 +672,3 @@ abstract class LadderTest extends LeaderboardTest {
 
 }
 ```
-
-### Troubleshooting
