@@ -45,6 +45,7 @@ object PlanInterpreter {
     parentContext: Locator,
     failures: Seq[ProvisioningFailure],
     meta: FailedProvisionMeta,
+    fullStackTraces: Boolean,
   ) {
     def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
       val repr = failures.map {
@@ -54,7 +55,8 @@ object PlanInterpreter {
             case di: DIException => di.getClass.getSimpleName
             case o => o.getClass.getName
           }
-          s"${op.target} $pos, $name: ${f.stackTrace}"
+          val trace = if (fullStackTraces) f.stackTrace else f.getMessage
+          s"${op.target} $pos, $name: $trace"
       }
 
       val ccFailed = repr.size

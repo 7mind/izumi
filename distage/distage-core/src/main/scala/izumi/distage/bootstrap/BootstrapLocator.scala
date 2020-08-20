@@ -72,6 +72,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 
 object BootstrapLocator {
   @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+  private[this] val fullStackTraces: Boolean = DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
 
   private final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
@@ -112,11 +113,13 @@ object BootstrapLocator {
       resourceStrategy = new ResourceStrategyDefaultImpl,
       failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = verifier,
+      fullStackTraces = fullStackTraces,
     )
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
+    make[Boolean].named("distage.init-proxies-asap").fromValue(DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true))
+    make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
