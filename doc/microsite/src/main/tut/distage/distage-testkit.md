@@ -30,7 +30,7 @@ Usage of `distage-testkit` generally follows these steps:
     - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
     - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
     - @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
-    - Magnet for test cases dependent on injectables: @scaladoc[`ProviderMagnet`](izumi.distage.model.providers.ProviderMagnet)
+    - Magnet for test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
 
@@ -127,7 +127,7 @@ abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
 In `WordSpec`, a test case is a sentence (a `String`) followed by `in` then the body. In
 `distage-testkit` the body of the test case is not limited to a function returning an
 [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
-@scaladoc[Functions that take arguments](izumi.distage.model.providers.ProviderMagnet)
+@scaladoc[Functions that take arguments](izumi.distage.model.providers.Functoid)
 and functions using effect types are also supported.  Function arguments and effect environments
 will be provided according to the `distage` object graph.
 
@@ -197,7 +197,7 @@ The different effect types fix the `F[_]` argument for this syntax:
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method.
 The `Config` required is from the `distage` object graph defined in `moduleOverrides`. By using
-is a function from `Config`, the required argument will be injected by `distage-testkit`.
+a function from `Config`, the required argument will be injected by `distage-testkit`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -265,10 +265,9 @@ graph test cases can inject `Has[BonusService]`.
 For demonstration of [reuse and memoization](#resource-reuse-memoization), the bonus value will be
 equal to the number of times the resource was acquired.
 
-```scala
-package app
-```
-```scala mdoc
+```scala mdoc:fakepackage:to-string
+"fakepackage app": Unit
+
 object DummyBonusService {
   var acquireCount: Int = 0
   var releaseCount: Int = 0
@@ -297,7 +296,7 @@ For a real system we'd build a production implementation like the following. Suc
 would perform an HTTP request to a REST service. We'll introduce a production service, but this
 actual query will be unimplemented for our demonstration:
 
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
 object ProdBonusService {
@@ -361,7 +360,7 @@ be scanned by `distage` for `PluginDef` instances.
 
 Continuing with the pattern, a trait will control which repo is activated:
 
-```scala mdoc:to-string
+```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
 trait DummyTest extends Test {
@@ -426,7 +425,7 @@ The `testkit` ScalaTest base classes include the following verbs for establishin
 
 The test suite class for your application should override the `def config: TestConfig` attributed.
 The config defines the plugin configuration, module overrides and activation
-axes, and other options. See the d@scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig) for more
+axes, and other options. See the @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig) for more
 information.
 
 ### Syntax Summary
@@ -444,15 +443,15 @@ For `F[_]` including `Identity`:
   executed. The `a` and `b` will be injected from the object graph. The test case will fail if the
   effect fails or produces a failure assertion.
 
-For `F[-_, +_, +_]`, it's same with `F[Any, Throwable, _]`:
+For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
 
-- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Unit] }`: The test case is an effect requiring an
+- `in { ???: F[zio.Has[C] with zio.Has[D], _, Unit] }`: The test case is an effect requiring an
   environment. The test case will fail if the effect fails. The environment will be injected from
   the object graph.
-- `in { ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }`: The test case is an effect
+- `in { ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is an effect
   requiring an environment. The test case will fail if the effect fails or produces a failure
   assertion. The environment will be injected from the object graph.
-- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], Throwable, Assertion] }`: The test case is a
+- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is a
   function producing an effect requiring an environment. All of `a: A`, `b: B`, `Has[C]` and `Has[D]`
   will be injected from the object graph.
 
@@ -482,7 +481,7 @@ property for sharing components across tests.
 #### Using `IntegrationCheck`
 
 Implementation classes that inherit from
-@scaladoc[`izumi.distage.roles.model.IntegrationCheck`](izumi.distage.roles.model.IntegrationCheck). You
+@scaladoc[`izumi.distage.framework.model.IntegrationCheck`](izumi.distage.framework.model.IntegrationCheck). You
 can specify a `resourceCheck()` method that will be called before test instantiation to check if
 external test dependencies (such as Docker containers in
 @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources)) are available for
@@ -492,7 +491,7 @@ This feature allows you to therefore selectively run only the fast in-memory tes
 dependencies. Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s
 @ref[Roles](distage-framework.md#roles).
 
-Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.services.StartupPlanExecutor) to execute the
+Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.launcher.services.StartupPlanExecutor) to execute the
 checks manually.
 
 ### Parallel Execution
