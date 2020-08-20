@@ -75,7 +75,7 @@ class IzResources(clazz: Class[_]) {
     } catch {
       case _: FileSystemNotFoundException =>
         IzFiles.getFs(u.toURI) match {
-          case Failure(exception) =>
+          case Failure(_) =>
             Some(UnloadablePathReference(u.toURI))
           //throw exception
           case Success(fs) =>
