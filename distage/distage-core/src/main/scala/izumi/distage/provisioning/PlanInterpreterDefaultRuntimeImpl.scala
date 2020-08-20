@@ -2,6 +2,7 @@ package izumi.distage.provisioning
 
 import java.util.concurrent.atomic.AtomicReference
 
+import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
@@ -34,7 +35,8 @@ class PlanInterpreterDefaultRuntimeImpl
 , resourceStrategy: ResourceStrategy
 
 , failureHandler: ProvisioningFailureInterceptor
-, verifier: ProvisionOperationVerifier,
+, verifier: ProvisionOperationVerifier
+, fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces")
 ) extends PlanInterpreter with OperationExecutor {
 
   override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizerFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
@@ -120,13 +122,13 @@ class PlanInterpreterDefaultRuntimeImpl
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
       immutable = mutProvisioningContext.toImmutable
       res <- if (failedImportsOrEffects) {
-        F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
+        F.maybeSuspend(Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, fullStackTraces))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
       } else {
         F.traverse_(otherSteps)(processStep)
           .flatMap { _ =>
             F.maybeSuspend {
               if (mutFailures.nonEmpty) {
-                Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector))
+                Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, fullStackTraces))
               } else {
                 val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), immutable)
                 val res = Right(finalLocator)
