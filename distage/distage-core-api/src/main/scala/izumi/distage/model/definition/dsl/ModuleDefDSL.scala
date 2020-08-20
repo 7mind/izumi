@@ -17,6 +17,8 @@ import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
+import scala.collection.immutable.ListSet
+
 /**
   * DSL for defining module Bindings.
   *
@@ -76,7 +78,8 @@ trait ModuleDefDSL
   override final def bindings: Set[Binding] = freeze
 
   private[this] final def freeze: Set[Binding] = {
-    ModuleBase.tagwiseMerge(retaggedIncludes ++ frozenState)
+    // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
+    ListSet(retaggedIncludes ++ frozenState: _*)
       .map(_.addTags(frozenTags))
       .++(asIsIncludes)
   }
