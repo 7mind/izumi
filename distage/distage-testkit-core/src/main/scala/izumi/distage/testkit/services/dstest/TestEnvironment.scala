@@ -7,7 +7,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.TestConfig.{ParallelLevel, TaggedKeys}
+import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
 import izumi.logstage.api.{IzLogger, Log}
@@ -18,8 +18,8 @@ final case class TestEnvironment(
   roles: RolesInfo,
   activationInfo: ActivationInfo,
   activation: Activation,
-  memoizationRoots: TaggedKeys,
-  forcedRoots: TaggedKeys,
+  memoizationRoots: AxisDIKeys,
+  forcedRoots: AxisDIKeys,
   parallelEnvs: ParallelLevel,
   bootstrapFactory: BootstrapFactory,
   configBaseName: String,

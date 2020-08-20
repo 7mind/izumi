@@ -5,10 +5,12 @@ import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig.{ParallelLevel, TaggedKeys}
+import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
 
+import scala.annotation.nowarn
+import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
 
 /**
@@ -90,8 +92,8 @@ final case class TestConfig(
   activation: Activation = StandardAxis.testProdActivation,
   moduleOverrides: Module = Module.empty,
   bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-  memoizationRoots: TaggedKeys = TaggedKeys.empty,
-  forcedRoots: TaggedKeys = TaggedKeys.empty,
+  memoizationRoots: AxisDIKeys = AxisDIKeys.empty,
+  forcedRoots: AxisDIKeys = AxisDIKeys.empty,
   // parallelism options
   parallelEnvs: ParallelLevel = ParallelLevel.Unlimited,
   parallelSuites: ParallelLevel = ParallelLevel.Unlimited,
@@ -113,24 +115,49 @@ object TestConfig {
     )
   }
 
-  final case class TaggedKeys(keys: Map[Set[AxisValue], Set[DIKey]]) {
+  final case class AxisDIKeys(keyMap: Map[Set[AxisValue], Set[DIKey]]) {
+    /**
+      * Consider a section to be activated if for each Axis, one of the Axis Choices in the section is present in the Activation
+      *
+      *  - empty section is always activated
+      *  - axis values for _different_ axes are implicitly under an AND relationship - all axes must be present in Activation to pass
+      *  - axis values for _the same_ axis are implicitly under an OR relationship - Activation must contain one of the axis choices for the same axis to pass
+      *
+      *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
+      *  you cannot specify multiple axis values for _the same_ axis on bindings.
+      *
+      *  @see [[izumi.fundamentals.graphs.tools.MutationResolver.ActivationChoices#allValid]]
+      */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
-      keys
-        .iterator.filter {
-          case (axesValues, _) =>
-            axesValues.forall(v => activation.activeChoices.get(v.axis).contains(v))
-        }.flatMap(_._2.iterator).toSet
+      def activatedSection(axisValues: Set[AxisValue], activation: Activation): Boolean = {
+        axisValues
+          .groupBy(_.axis)
+          .forall {
+            case (axis, axisValues) =>
+              activation.activeChoices.get(axis).exists(axisValues.contains)
+          }
+      }
+      keyMap
+        .iterator.flatMap {
+          case (axisValues, keys) if activatedSection(axisValues, activation) => keys
+          case _ => Nil
+        }.toSet
     }
-    def ++(that: TaggedKeys): TaggedKeys = {
-      val allKeys = (this.keys.iterator ++ that.keys.iterator).toSeq
-      val updatedKeys = allKeys.groupBy(_._1).map { case (k, vals) => k -> vals.iterator.flatMap(_._2.iterator).toSet }
-      TaggedKeys(updatedKeys)
+
+    @nowarn("msg=Unused import")
+    def ++(that: AxisDIKeys): AxisDIKeys = {
+      import scala.collection.compat._
+      val allKeys = ArraySeq.unsafeWrapArray((this.keyMap.iterator ++ that.keyMap.iterator).toArray)
+      val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.flatMap(_._2).toSet }
+      AxisDIKeys(updatedKeys)
     }
   }
-  object TaggedKeys {
-    val empty: TaggedKeys = TaggedKeys(Map.empty)
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): TaggedKeys = TaggedKeys(Map(Set.empty -> set.toSet[DIKey]))
-    @inline implicit def fromMap[SA <: Set[_ <: AxisValue]](map: Map[SA, Set[_ <: DIKey]]): TaggedKeys = TaggedKeys(map.asInstanceOf[Map[Set[AxisValue], Set[DIKey]]])
+  object AxisDIKeys {
+    val empty: AxisDIKeys = AxisDIKeys(Map.empty)
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): AxisDIKeys = AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
+    @inline implicit def fromMap[SA <: Set[_ <: AxisValue]](map: Map[SA, Set[_ <: DIKey]]): AxisDIKeys = AxisDIKeys(
+      map.asInstanceOf[Map[Set[AxisValue], Set[DIKey]]]
+    )
   }
 
   sealed trait ParallelLevel
