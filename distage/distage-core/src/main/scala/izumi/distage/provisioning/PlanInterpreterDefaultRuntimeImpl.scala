@@ -2,6 +2,7 @@ package izumi.distage.provisioning
 
 import java.util.concurrent.atomic.AtomicReference
 
+import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.distage.model.definition.DIResource
@@ -35,6 +36,7 @@ class PlanInterpreterDefaultRuntimeImpl(
   resourceStrategy: ResourceStrategy,
   failureHandler: ProvisioningFailureInterceptor,
   verifier: ProvisionOperationVerifier,
+  fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
 ) extends PlanInterpreter
   with OperationExecutor {
 
@@ -139,7 +141,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     def doFail(immutable: Provision.ProvisionImmutable[F]): Either[FailedProvision[F], LocatorDefaultImpl[F]] = {
-      Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings)))
+      Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
     }
 
     for {
