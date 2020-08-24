@@ -77,8 +77,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "start roles regression test" in {
       val probe = new XXX_TestWhiteboxProbe()
-      def summon[A](implicit ev: A): ev.type = ev
-      val abc = summon[ForcedRecompilationToken]
+      def summon[A <: AnyRef](implicit ev: A): ev.type = ev
+      val abc = summon[ForcedRecompilationToken[_]]
 
       new RoleAppMain.Silent(
         new TestLauncher {
@@ -90,7 +90,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 new TestPlugin,
                 new AdoptedAutocloseablesCasePlugin,
                 probe,
-                new PluginDef[abc.X]()(abc: abc.type) {
+                new PluginDef[abc.Token]()(abc: abc.type) {
                   make[TestResource].from[IntegrationResource0[IO]]
                   many[TestResource]
                     .ref[TestResource]
