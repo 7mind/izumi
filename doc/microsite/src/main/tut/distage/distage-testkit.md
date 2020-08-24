@@ -334,6 +334,10 @@ is not as useful as both implementations in the same object graph but different 
 Our demonstration application will use the
 @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod`
 tags:
+g
+```scala mdoc:invisible
+implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.distage.plugins.ForcedRecompilationToken["abc"] = null
+```
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
