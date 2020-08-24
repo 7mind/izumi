@@ -5,12 +5,27 @@ import java.io.ByteArrayInputStream
 import distage.DIResource
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOTemporal}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOMonad, BIOPrimitives, BIOTemporal, F}
+import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
+
+  "test " in {
+    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int) = F.mkRef(0).flatMap(ref => ref.update(_ + i) *> ref.get)
+
+    def assertT() = {
+      implicit val bioMonad: BIOMonad[Identity2] = null
+      implicit val primitives: BIOPrimitives[Identity2] = null
+      try adder[Identity2](0)
+      catch {
+        case _: NullPointerException =>
+      }
+    }
+
+    assertT()
+  }
 
   "Using DIResource & DIEffect objects succeeds event if there's no cats or zio on the classpath" in {
 
@@ -20,15 +35,22 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     And("DIEffect in DIEffect object resolve")
     assert(x[Identity] == 1)
 
-    def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
-      val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
-      F.unit
-    }
+      assertCompiles("""import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+                       |
+                       |def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+                       |  F.mkRef(0)
+                       |   .flatMap(ref => ref.update(_ + i) *> ref.get)
+                       |""".stripMargin)
 
     type EitherFn[-R, +E, +A] = R => Either[E, A]
     implicit val bioEitherFn: BIO3[EitherFn] = null
     try threeTo2[EitherFn]
     catch { case _: NullPointerException => }
+
+    def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
+      val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
+      F.unit
+    }
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }

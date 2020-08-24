@@ -533,7 +533,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie ++ List(monix_bio)).map(_ in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "coverageEnabled" := false,
