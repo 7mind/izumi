@@ -8,6 +8,7 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.PlannerInput
+import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
@@ -140,24 +141,10 @@ object StaticPluginCheckerMacro {
     )
 
     import c.universe._
-    val quoted: List[c.Tree] = loadedPlugins.map {
-      p =>
-        val clazz = p.getClass
-        val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
-        val runtimeClassSymbol = runtimeMirror.classSymbol(clazz)
 
-        val macroMirror: c.universe.Mirror = c.mirror
+    val pluginsList: List[c.Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(loadedPlugins)
 
-        if (runtimeClassSymbol.isModuleClass) {
-          val tgt = macroMirror.staticModule(runtimeClassSymbol.module.fullName)
-          q"$tgt"
-        } else {
-          val tgt = macroMirror.staticClass(runtimeClassSymbol.fullName)
-          q"new $tgt"
-        }
-    }.toList
-
-    c.Expr[Unit](q"{ lazy val _ = $quoted ; () }")
+    c.Expr[Unit](q"{ lazy val _ = $pluginsList ; () }")
   }
 
   def check(

@@ -31,9 +31,16 @@ object StaticPluginLoader {
         new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
       }
 
-      val quoted: List[Tree] = loadedPlugins.map {
-        p =>
-          val clazz = p.getClass
+      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins)
+
+      c.Expr[List[PluginBase]](q"$quoted")
+    }
+
+    def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[PluginBase]): List[c.Tree] = {
+      import c.universe._
+      loadedPlugins.map {
+        plugin =>
+          val clazz = plugin.getClass
           val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
           val runtimeClassSymbol = runtimeMirror.classSymbol(clazz)
 
@@ -47,9 +54,7 @@ object StaticPluginLoader {
             q"new $tgt"
           }
       }.toList
-
-      c.Expr[List[PluginBase]](q"$quoted")
     }
-
   }
+
 }
