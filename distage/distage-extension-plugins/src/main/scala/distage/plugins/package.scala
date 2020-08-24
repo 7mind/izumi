@@ -1,13 +1,13 @@
 package distage
 
-import izumi.distage.plugins.load
+import izumi.distage.plugins.{ForcedRecompilationToken, load}
 
 package object plugins extends DistagePlugins {
 
   override type PluginBase = izumi.distage.plugins.PluginBase
   override val PluginBase: izumi.distage.plugins.PluginBase.type = izumi.distage.plugins.PluginBase
 
-  override type PluginDef = izumi.distage.plugins.PluginDef
+  override type PluginDef[T <: String] = izumi.distage.plugins.PluginDef[T]
 
   override type BootstrapPlugin = izumi.distage.plugins.BootstrapPlugin
   override val BootstrapPlugin: izumi.distage.plugins.BootstrapPlugin.type = izumi.distage.plugins.BootstrapPlugin

@@ -24,7 +24,7 @@ class PluginLoaderDefaultImpl extends PluginLoader {
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
-    val pluginDef = classOf[PluginDef]
+    val pluginDef = classOf[PluginDef[_]]
     val whitelistedClasses = Seq(pluginDef.getName)
 
     def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {

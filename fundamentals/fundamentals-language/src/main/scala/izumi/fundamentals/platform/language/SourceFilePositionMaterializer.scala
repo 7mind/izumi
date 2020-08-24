@@ -13,6 +13,8 @@ object SourceFilePositionMaterializer {
   object SourcePositionMaterializerMacro {
 
     // scalactic.source.Position does all that manually and uses `setType`s to avoid retypechecking, oh well might as well...
+    // PS: To ensure that retypechecking does not happen, put a known bad type into `setType` and watch compiler crash.
+    //     If it _doesn't_ crash, that means one of the tree nodes was missing a `setType`
 
     def literal(c: blackbox.Context)(tpe: c.Type)(a: Any): c.universe.Literal = {
       c.internal.setType(c.universe.Literal(c.universe.Constant(a)), tpe)

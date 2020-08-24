@@ -18,7 +18,7 @@ class ConflictPlugin extends PluginDef {
   make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
-class ResourcesPluginBase extends ModuleDef {
+trait ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
   make[IntegrationResource1[IO]]
   make[JustResource1[IO]]
@@ -34,7 +34,7 @@ class ResourcesPluginBase extends ModuleDef {
     .ref[JustResource3[IO]]
 }
 
-class ResourcesPlugin extends ResourcesPluginBase with PluginDef {
+class ResourcesPlugin extends PluginDef with ResourcesPluginBase {
   make[XXX_ResourceEffectsRecorder[IO]]
 
   make[IntegrationResource0[IO]]

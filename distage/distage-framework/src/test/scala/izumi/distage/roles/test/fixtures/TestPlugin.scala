@@ -15,7 +15,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, I
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef with RoleModuleDef {
+class TestPluginBase[F[_]: TagK] extends PluginDef with CatsDIEffectModule with ConfigModuleDef with RoleModuleDef {
   tag(Env.Prod)
 
   private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
@@ -24,6 +24,7 @@ class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with 
     case None =>
       s"0.0.0-${System.currentTimeMillis()}"
   }
+  def i = { ???; () }
 
   make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]
