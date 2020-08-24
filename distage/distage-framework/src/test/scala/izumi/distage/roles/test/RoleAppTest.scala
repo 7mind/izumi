@@ -14,7 +14,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
-import izumi.distage.plugins.{ForcedRecompilationToken, PluginConfig}
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
@@ -77,8 +77,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "start roles regression test" in {
       val probe = new XXX_TestWhiteboxProbe()
-      def summon[A <: AnyRef](implicit ev: A): ev.type = ev
-      val abc = summon[ForcedRecompilationToken[_]]
 
       new RoleAppMain.Silent(
         new TestLauncher {
@@ -90,7 +88,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 new TestPlugin,
                 new AdoptedAutocloseablesCasePlugin,
                 probe,
-                new PluginDef[abc.Token]()(abc: abc.type) {
+                new PluginDef {
                   make[TestResource].from[IntegrationResource0[IO]]
                   many[TestResource]
                     .ref[TestResource]
