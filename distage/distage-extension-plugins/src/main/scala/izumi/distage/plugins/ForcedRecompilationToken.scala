@@ -14,9 +14,7 @@ import scala.reflect.macros.whitebox
   *
   * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-time checks]]
   */
-final abstract class ForcedRecompilationToken[T] {
-  type Token = T
-}
+final abstract class ForcedRecompilationToken[T]
 
 object ForcedRecompilationToken {
   implicit def materialize[T <: String]: ForcedRecompilationToken[T] = macro UniqueRecompilationTokenMacro.whiteboxMaterializeImpl
