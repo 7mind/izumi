@@ -75,7 +75,9 @@ object StaticPluginCheckerMacro {
     configFileRegex: c.Expr[String],
   ): c.Expr[Unit] = {
 
-    val abort = c.abort(c.enclosingPosition, _: String): Unit
+    val abort: String => Unit = {
+      c.abort(c.enclosingPosition, _: String): Unit
+    }
 
     val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
 
@@ -87,37 +89,42 @@ object StaticPluginCheckerMacro {
 
     val configRegex = ReflectionUtil.getStringLiteral(c)(configFileRegex.tree)
 
-    val configModule = if (configRegex == "") {
-      None
-    } else {
-      val scanResult = new ClassGraph().scan()
-      val configUrls =
-        try {
-          val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+    val configModule: Option[AppConfigModule] = {
+      if (configRegex == "") {
+        None
+      } else {
+        val scanResult = new ClassGraph().scan()
+        val configUrls =
           try {
-            resourceList.getURLs.asScala.toList
-          } finally resourceList.close()
-        } finally scanResult.close()
+            val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+            try {
+              resourceList.getURLs.asScala.toList
+            } finally resourceList.close()
+          } finally scanResult.close()
+        val referenceConfig = {
+          configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
+        }
 
-      val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
-
-      Some(new AppConfigModule(AppConfig(referenceConfig)))
+        Some(new AppConfigModule(AppConfig(referenceConfig)))
+      }
     }
 
-    val gcRootPath = ReflectionUtil.getStringLiteral(c)(gcRoot.tree)
-
-    val gcRootModule: Option[ModuleBase] = if (gcRootPath == "") {
-      None
-    } else {
-      Some(constructClass[ModuleBase](gcRootPath, abort))
+    val gcRootModule: Option[ModuleBase] = {
+      val gcRootPath = ReflectionUtil.getStringLiteral(c)(gcRoot.tree)
+      if (gcRootPath == "") {
+        None
+      } else {
+        Some(constructClass[ModuleBase](gcRootPath, abort))
+      }
     }
 
-    val requirementsPath = ReflectionUtil.getStringLiteral(c)(requirements.tree)
-
-    val requirementsModule = if (requirementsPath == "") {
-      None
-    } else {
-      Some(constructClass[ModuleRequirements](requirementsPath, abort))
+    val requirementsModule = {
+      val requirementsPath = ReflectionUtil.getStringLiteral(c)(requirements.tree)
+      if (requirementsPath == "") {
+        None
+      } else {
+        Some(constructClass[ModuleRequirements](requirementsPath, abort))
+      }
     }
 
     val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq.filter(_.nonEmpty)
@@ -126,20 +133,38 @@ object StaticPluginCheckerMacro {
       loadedPlugins = loadedPlugins,
       configModule = configModule,
       additional = Module.empty,
-      root = gcRootModule,
+      rootModule = gcRootModule,
       moduleRequirements = requirementsModule,
       activations = activationsVals,
       abort = abort,
     )
 
-    c.universe.reify(())
+    import c.universe._
+    val quoted: List[c.Tree] = loadedPlugins.map {
+      p =>
+        val clazz = p.getClass
+        val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
+        val runtimeClassSymbol = runtimeMirror.classSymbol(clazz)
+
+        val macroMirror: c.universe.Mirror = c.mirror
+
+        if (runtimeClassSymbol.isModuleClass) {
+          val tgt = macroMirror.staticModule(runtimeClassSymbol.module.fullName)
+          q"$tgt"
+        } else {
+          val tgt = macroMirror.staticClass(runtimeClassSymbol.fullName)
+          q"new $tgt"
+        }
+    }.toList
+
+    c.Expr[Unit](q"{ lazy val _ = $quoted ; () }")
   }
 
   def check(
     loadedPlugins: Seq[PluginBase],
     configModule: Option[AppConfigModule],
     additional: ModuleBase,
-    root: Option[ModuleBase],
+    rootModule: Option[ModuleBase],
     moduleRequirements: Option[ModuleRequirements],
     activations: Seq[String],
     abort: String => Unit,
@@ -150,7 +175,7 @@ object StaticPluginCheckerMacro {
       make[AppConfig].from(AppConfig(ConfigFactory.empty()))
     })
 
-    val module = config overridenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
+    val module = config overridenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ rootModule.toList.merge.morph[PluginBase])
 
     val logger = IzLogger.NullLogger
 
@@ -162,12 +187,12 @@ object StaticPluginCheckerMacro {
       new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
 
-    val finalPlan = injector.plan(PlannerInput(module, activation, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
-    val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
+    val rootKeys = rootModule.fold(Set.empty[DIKey])(_.keys)
+    val finalPlan = injector.plan(PlannerInput(module, activation, rootKeys)).locateImports(bootstrap)
+    val imports = finalPlan.unresolvedImports.left.toOption.getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true
     }
-    import izumi.fundamentals.platform.strings.IzString._
 
     if (imports.nonEmpty)
       abort(

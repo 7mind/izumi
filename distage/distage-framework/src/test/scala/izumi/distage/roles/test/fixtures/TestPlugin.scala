@@ -24,7 +24,6 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with CatsDIEffectModule with 
     case None =>
       s"0.0.0-${System.currentTimeMillis()}"
   }
-  def i = { ???; () }
 
   make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]

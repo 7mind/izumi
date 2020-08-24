@@ -1,17 +1,17 @@
 package izumi.distage.roles.test
 
-import com.github.pshirshov.test.plugins.{DependingPlugin, EmptyTestPlugin, StaticTestPlugin}
-import izumi.distage.plugins.{PluginConfig, StaticPluginScanner}
+import com.github.pshirshov.test.plugins.{DependingPlugin, EmptyTestPlugin, ObjectTestPlugin, StaticTestPlugin}
+import izumi.distage.plugins.{PluginConfig, StaticPluginLoader}
 import izumi.distage.plugins.load.PluginLoader
 import org.scalatest.wordspec.AnyWordSpec
 
-class StaticPluginScannerTest extends AnyWordSpec {
+class StaticPluginLoaderTest extends AnyWordSpec {
 
   "Static plugin scanner" should {
 
     "Prepopulate plugins list in compile time" in {
-      val plugins = StaticPluginScanner.staticallyAvailablePlugins("com.github.pshirshov.test.plugins")
-      assert(plugins.size == 5)
+      val plugins = StaticPluginLoader.staticallyAvailablePlugins("com.github.pshirshov.test.plugins")
+      assert(plugins.size == 6)
       assert(
         plugins.map(_.getClass).toSet == Set(
           EmptyTestPlugin.getClass,
@@ -19,13 +19,14 @@ class StaticPluginScannerTest extends AnyWordSpec {
           classOf[DependingPlugin],
           classOf[DependingPlugin.NestedDoublePlugin],
           DependingPlugin.NestedDoublePlugin.getClass,
+          ObjectTestPlugin.getClass,
         )
       )
     }
 
     "Prepopulate plugins list in compile time (PluginConfig)" in {
       val plugins = PluginLoader().load(PluginConfig.staticallyAvailablePlugins("com.github.pshirshov.test.plugins"))
-      assert(plugins.size == 5)
+      assert(plugins.size == 6)
       assert(
         plugins.map(_.getClass).toSet == Set(
           EmptyTestPlugin.getClass,
@@ -33,6 +34,7 @@ class StaticPluginScannerTest extends AnyWordSpec {
           classOf[DependingPlugin],
           classOf[DependingPlugin.NestedDoublePlugin],
           DependingPlugin.NestedDoublePlugin.getClass,
+          ObjectTestPlugin.getClass,
         )
       )
     }
