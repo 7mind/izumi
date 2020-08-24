@@ -1,7 +1,7 @@
 package distage.plugins
 
 import izumi.distage.plugins
-import izumi.distage.plugins.{ForcedRecompilationToken, load}
+import izumi.distage.plugins.load
 
 trait DistagePlugins {
 

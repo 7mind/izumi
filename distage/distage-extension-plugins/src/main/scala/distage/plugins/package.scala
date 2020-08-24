@@ -1,6 +1,6 @@
 package distage
 
-import izumi.distage.plugins.{ForcedRecompilationToken, load}
+import izumi.distage.plugins.load
 
 package object plugins extends DistagePlugins {
 
