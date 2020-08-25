@@ -12,19 +12,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
-  "test" in {
-    assertCompiles("""import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
-                     |
-                     |def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
-                     |  F.mkRef(0)
-                     |   .flatMap(ref => ref.update(_ + i) *> ref.get)
-                     |""".stripMargin)
-
-    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] = {
-      F.mkRef(0)
-        .flatMap(ref => ref.update(_ + i) *> ref.get)
-    }
-
+  "test 2" in {
     // update ref from the environment and return result
     def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] = {
       F.access {
@@ -37,11 +25,38 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     }
 
     locally {
+      implicit val ask: BIOMonadAsk[Identity3] = null
+      intercept[NullPointerException](adderEnv[Identity3](0))
+    }
+  }
+
+  "test 1" in {
+    assertCompiles("""import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+
+                      def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+                        F.mkRef(0)
+                         .flatMap(ref => ref.update(_ + i) *> ref.get)
+
+                      // update ref from the environment and return result
+                      def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+                        F.access {
+                          ref =>
+                            for {
+                              _   <- ref.update(_ + i)
+                              res <- ref.get
+                            } yield res
+                        }
+                     """)
+
+    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] = {
+      F.mkRef(0)
+        .flatMap(ref => ref.update(_ + i) *> ref.get)
+    }
+
+    locally {
       implicit val bioMonad: BIOMonad[Identity2] = null
       implicit val primitives: BIOPrimitives[Identity2] = null
-      implicit val ask: BIOMonadAsk[Identity3] = null
       intercept[NullPointerException](adder[Identity2](0))
-      intercept[NullPointerException](adderEnv[Identity3](0))
     }
   }
 
