@@ -122,7 +122,7 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.parTraverseN(maxConcurrent)(l)(f)
   override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, Unit] = IO.parTraverseN(maxConcurrent)(l)(f).void
   override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.parTraverse(l)(f)
-  override def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, Unit] = IO.parTraverse(l)(f).void
+  override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, Unit] = IO.parTraverse(l)(f).void
 
   override final def zipWithPar[R, E, A, B, C](fa: IO[E, A], fb: IO[E, B])(f: (A, B) => C): IO[E, C] = IO.mapBoth(fa, fb)(f)
   override final def zipPar[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, (A, B)] = IO.parZip2(fa, fb)

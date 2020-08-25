@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import cats.data.Kleisli
+import izumi.functional.bio.BIORootInstancesLowPriority6._BIOAsyncMonixBIO
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
@@ -60,12 +61,29 @@ sealed trait BIORootInstancesLowPriority4 extends BIORootInstancesLowPriority5 {
 }
 
 sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
-  @inline implicit final def BIOZIO: Predefined.Of[BIOAsync3[ZIO]] = Predefined(BIOAsyncZio)
   @inline implicit final def BIOLocalZIO: Predefined.Of[BIOLocal[ZIO]] = Predefined(BIOAsyncZio)
-  @inline implicit final def BIOMonix: Predefined.Of[BIOAsync[monix.bio.IO[+?, +?]]] = Predefined(BIOAsyncMonix)
+  @inline implicit final def BIOZIO: Predefined.Of[BIOAsync3[ZIO]] = Predefined(BIOAsyncZio)
 }
 
-sealed trait BIORootInstancesLowPriority6 {
+sealed trait BIORootInstancesLowPriority6 extends BIORootInstancesLowPriority7 {
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
+  @inline implicit final def BIOMonix[A](implicit @unused M: _BIOAsyncMonixBIO[A]): Predefined.Of[A] = BIOAsyncMonix.asInstanceOf[Predefined.Of[A]]
+}
+
+object BIORootInstancesLowPriority6 {
+  final abstract class _BIOAsyncMonixBIO[A]
+  object _BIOAsyncMonixBIO {
+    @inline implicit final def get: _BIOAsyncMonixBIO[BIOAsync[monix.bio.IO]] = null
+  }
+}
+
+sealed trait BIORootInstancesLowPriority7 {
   @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with BIOFunctor3[f], FR[-_, +_, +_], R0](
     implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
