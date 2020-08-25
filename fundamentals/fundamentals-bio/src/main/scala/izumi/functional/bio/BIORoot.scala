@@ -6,7 +6,6 @@ import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
 import izumi.functional.bio.impl.{BIOAsyncMonix, BIOAsyncZio}
 import izumi.fundamentals.platform.language.unused
-import monix.bio
 import zio.ZIO
 
 import scala.language.implicitConversions
@@ -14,9 +13,8 @@ import scala.language.implicitConversions
 trait BIORoot extends DivergenceHelper with PredefinedHelper
 
 object BIORoot extends BIORootInstancesLowPriority1 {
-  @inline implicit final def BIOConvertFromBIOMonadAsk[FR[-_, +_, +_]](implicit BIOMonadAsk: NotPredefined.Of[BIOMonadAsk[FR]]): BIOMonad3[FR] with S1 = S1(
-    BIOMonadAsk.InnerF
-  )
+  @inline implicit final def BIOConvertFromBIOMonadAsk[FR[-_, +_, +_]](implicit BIOMonadAsk: NotPredefined.Of[BIOMonadAsk[FR]]): BIOMonad3[FR] with S1 =
+    S1(BIOMonadAsk.InnerF)
 
   @inline implicit final def AttachBIOLocal[FR[-_, +_, +_], R](@unused self: BIOFunctor3[FR])(implicit BIOLocal: BIOLocal[FR]): BIOLocal.type = BIOLocal
   @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BIOPrimitives: BIOPrimitives3[FR]): BIOPrimitives.type =
@@ -31,9 +29,8 @@ object BIORoot extends BIORootInstancesLowPriority1 {
 }
 
 sealed trait BIORootInstancesLowPriority1 extends BIORootInstancesLowPriority2 {
-  @inline implicit final def BIOConvertFromBIOParallel[FR[-_, +_, +_]](implicit BIOParallel: NotPredefined.Of[BIOParallel3[FR]]): BIOMonad3[FR] with S2 = S2(
-    BIOParallel.InnerF
-  )
+  @inline implicit final def BIOConvertFromBIOParallel[FR[-_, +_, +_]](implicit BIOParallel: NotPredefined.Of[BIOParallel3[FR]]): BIOMonad3[FR] with S2 =
+    S2(BIOParallel.InnerF)
 
   @inline implicit final def AttachBIOArrowChoice[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BIOArrowChoice: BIOArrowChoice[FR]): BIOArrowChoice.type =
     BIOArrowChoice
@@ -53,15 +50,13 @@ sealed trait BIORootInstancesLowPriority2 extends BIORootInstancesLowPriority3 {
 }
 
 sealed trait BIORootInstancesLowPriority3 extends BIORootInstancesLowPriority4 {
-  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] with S4 = S4(
-    BIOProfunctor.InnerF
-  )
+  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[BIOProfunctor[FR]]): BIOFunctor3[FR] with S4 =
+    S4(BIOProfunctor.InnerF)
 }
 
 sealed trait BIORootInstancesLowPriority4 extends BIORootInstancesLowPriority5 {
-  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] with S5 = S5(
-    BIOBifunctor.InnerF
-  )
+  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[BIOBifunctor3[FR]]): BIOFunctor3[FR] with S5 =
+    S5(BIOBifunctor.InnerF)
 }
 
 sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
@@ -70,7 +65,7 @@ sealed trait BIORootInstancesLowPriority5 extends BIORootInstancesLowPriority6 {
 }
 
 sealed trait BIORootInstancesLowPriority6 extends BIORootInstancesLowPriority7 {
-  @inline implicit final def BIOMonix: Predefined.Of[BIOAsync[bio.IO]] = Predefined(BIOAsyncMonix)
+  @inline implicit final def BIOMonix: Predefined.Of[BIOAsync[monix.bio.IO]] = Predefined(BIOAsyncMonix)
 }
 
 sealed trait BIORootInstancesLowPriority7 {

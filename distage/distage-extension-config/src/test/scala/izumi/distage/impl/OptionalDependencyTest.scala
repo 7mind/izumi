@@ -5,42 +5,58 @@ import java.io.ByteArrayInputStream
 import distage.DIResource
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOMonad, BIOPrimitives, BIOTemporal, F}
-import izumi.fundamentals.platform.functional.{Identity, Identity2}
+import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3, BIOTemporal, F}
+import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
-  "test " in {
-    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int) = F.mkRef(0).flatMap(ref => ref.update(_ + i) *> ref.get)
+  "test" in {
+    assertCompiles("""import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+                     |
+                     |def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+                     |  F.mkRef(0)
+                     |   .flatMap(ref => ref.update(_ + i) *> ref.get)
+                     |""".stripMargin)
 
-    def assertT() = {
-      implicit val bioMonad: BIOMonad[Identity2] = null
-      implicit val primitives: BIOPrimitives[Identity2] = null
-      try adder[Identity2](0)
-      catch {
-        case _: NullPointerException =>
+    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] = {
+      F.mkRef(0)
+        .flatMap(ref => ref.update(_ + i) *> ref.get)
+    }
+
+    // update ref from the environment and return result
+    def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] = {
+      F.access {
+        ref =>
+          for {
+            _ <- ref.update(_ + i)
+            res <- ref.get
+          } yield res
       }
     }
 
-    assertT()
+    locally {
+      implicit val bioMonad: BIOMonad[Identity2] = null
+      implicit val primitives: BIOPrimitives[Identity2] = null
+      implicit val ask: BIOMonadAsk[Identity3] = null
+      intercept[NullPointerException](adder[Identity2](0))
+      intercept[NullPointerException](adderEnv[Identity3](0))
+    }
   }
 
-  "Using DIResource & DIEffect objects succeeds event if there's no cats or zio on the classpath" in {
+  "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
+    When("There's no cats/zio/monix on classpath")
+    assertCompiles("import scala._")
+    assertDoesNotCompile("import cats._")
+    assertDoesNotCompile("import zio._")
+    assertDoesNotCompile("import monix._")
 
     Then("DIEffect methods can be called")
     def x[F[_]: DIEffect] = DIEffect[F].pure(1)
 
     And("DIEffect in DIEffect object resolve")
     assert(x[Identity] == 1)
-
-      assertCompiles("""import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
-                       |
-                       |def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
-                       |  F.mkRef(0)
-                       |   .flatMap(ref => ref.update(_ + i) *> ref.get)
-                       |""".stripMargin)
 
     type EitherFn[-R, +E, +A] = R => Either[E, A]
     implicit val bioEitherFn: BIO3[EitherFn] = null

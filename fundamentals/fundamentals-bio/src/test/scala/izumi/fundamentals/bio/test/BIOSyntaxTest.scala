@@ -189,6 +189,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       y[bio.IO](_: BIOTemporal[bio.IO]),
       z[bio.IO],
     )
+    lazy val _ = (zioTest, monixTest)
   }
 
   "Support BIO syntax for ZIO with wildcard import" in {

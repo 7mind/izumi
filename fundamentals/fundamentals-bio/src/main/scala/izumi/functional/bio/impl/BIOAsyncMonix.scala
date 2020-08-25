@@ -4,7 +4,6 @@ import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.MonixExit._
 import izumi.functional.bio.{BIOAsync, BIOExit, BIOFiber}
-import monix.bio
 import monix.bio.{Cause, IO, Task}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -107,13 +106,13 @@ class BIOAsyncMonix extends BIOAsync[IO] {
           case util.Success(value) => Task.pure(value)
         }
       } else {
-        bio.Task.async {
+        IO.async {
           cb =>
             cs.handle[Unit] {
               (v: A, t: Throwable) =>
                 val io = Option(t).fold[Either[Cause[Throwable], A]](Right(v))(_ => Left(Cause.Error(t)))
                 cb(io)
-            }
+            }; ()
         }
       }
     }
