@@ -2,4 +2,4 @@ package izumi.distage.plugins
 
 import izumi.distage.model.definition.ModuleDef
 
-trait PluginDef extends PluginBase with ModuleDef
+abstract class PluginDef[T <: String](implicit ev: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef

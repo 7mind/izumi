@@ -1,9 +1,9 @@
 package izumi.distage.roles.test
 
-import izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
 import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
 class StaticPluginCheckerTest extends AnyWordSpec {
 

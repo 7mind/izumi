@@ -83,7 +83,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           override protected def pluginConfig: PluginConfig = {
             PluginConfig.const(
               Seq(
-                new ResourcesPluginBase().morph[PluginBase],
+                new ResourcesPluginBase {}.morph[PluginBase],
                 new ConflictPlugin,
                 new TestPlugin,
                 new AdoptedAutocloseablesCasePlugin,

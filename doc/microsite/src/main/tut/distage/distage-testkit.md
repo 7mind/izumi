@@ -335,6 +335,10 @@ Our demonstration application will use the
 @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod`
 tags:
 
+```scala mdoc:invisible
+implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.distage.plugins.ForcedRecompilationToken["abc"] = null
+```
+
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 

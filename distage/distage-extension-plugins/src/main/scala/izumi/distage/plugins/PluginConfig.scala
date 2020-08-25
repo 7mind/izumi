@@ -1,5 +1,7 @@
 package izumi.distage.plugins
 
+import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
+
 import scala.language.experimental.macros
 
 final case class PluginConfig(
@@ -39,7 +41,7 @@ object PluginConfig {
     * WARN: will _not_ find plugins defined in current module, only those defined in dependency modules (similarly to
     *       how you cannot call Scala macros defined in the current module)
     */
-  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginScannerMacro.staticallyAvailablePluginConfig
+  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
 
   /** Create a [[PluginConfig]] that simply returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false, plugins, Nil)
