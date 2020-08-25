@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import zio.{Cause, Exit, FiberFailure}
+import monix.bio
 
 sealed trait BIOExit[+E, +A] {
   def map[B](f: A => B): BIOExit[E, B]
@@ -117,6 +118,23 @@ object BIOExit {
     override final val InnerF: BIOFunctor[BIOExit] = BIOMonadBIOExit
     override final def bimap[R, E, A, E2, A2](r: BIOExit[E, A])(f: E => E2, g: A => A2): BIOExit[E2, A2] = r.leftMap(f).map(g)
     override final def leftMap[R, E, A, E2](r: BIOExit[E, A])(f: E => E2): BIOExit[E2, A] = r.leftMap(f)
+  }
+
+  object MonixExit {
+    @inline def toIzBIO[E, A](exit: Either[Option[bio.Cause[E]], A]): BIOExit[E, A] = {
+      exit match {
+        case Left(None) => Termination(new Throwable("The task was cancelled."), Trace.empty)
+        case Left(Some(error)) => fromMonixCause(error)
+        case Right(value) => Success(value)
+      }
+    }
+
+    @inline def fromMonixCause[E](cause: bio.Cause[E]): BIOExit.Failure[E] = {
+      cause match {
+        case bio.Cause.Error(value) => BIOExit.Error(value, Trace.empty)
+        case bio.Cause.Termination(value) => BIOExit.Termination(value, Trace.empty)
+      }
+    }
   }
 
 }

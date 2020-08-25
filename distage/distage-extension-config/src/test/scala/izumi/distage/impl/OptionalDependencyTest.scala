@@ -5,20 +5,66 @@ import java.io.ByteArrayInputStream
 import distage.DIResource
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3, BIOTemporal, F}
+import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
-  "Using DIResource & DIEffect objects succeeds event if there's no cats or zio on the classpath" in {
+  "test 2" in {
+    // update ref from the environment and return result
+    def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] = {
+      F.access {
+        ref =>
+          for {
+            _ <- ref.update(_ + i)
+            res <- ref.get
+          } yield res
+      }
+    }
+
+    locally {
+      implicit val ask: BIOMonadAsk[Identity3] = null
+      intercept[NullPointerException](adderEnv[Identity3](0))
+    }
+  }
+
+  "test 1" in {
+    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] = {
+      F.mkRef(0)
+        .flatMap(ref => ref.update(_ + i) *> ref.get)
+    }
+
+    locally {
+      implicit val bioMonad: BIOMonad[Identity2] = null
+      implicit val primitives: BIOPrimitives[Identity2] = null
+      intercept[NullPointerException](adder[Identity2](0))
+    }
+  }
+
+  "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
+    When("There's no cats/zio/monix on classpath")
+    assertCompiles("import scala._")
+    assertDoesNotCompile("import cats._")
+    assertDoesNotCompile("import zio._")
+    assertDoesNotCompile("import monix._")
 
     Then("DIEffect methods can be called")
     def x[F[_]: DIEffect] = DIEffect[F].pure(1)
 
     And("DIEffect in DIEffect object resolve")
     assert(x[Identity] == 1)
+
+    type EitherFn[-R, +E, +A] = R => Either[E, A]
+    implicit val bioEitherFn: BIO3[EitherFn] = null
+    try threeTo2[EitherFn]
+    catch { case _: NullPointerException => }
+
+    def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
+      val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
+      F.unit
+    }
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }
