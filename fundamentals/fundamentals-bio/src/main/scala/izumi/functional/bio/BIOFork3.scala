@@ -7,6 +7,7 @@ trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
 }
 
 private[bio] sealed trait BIOForkInstances
+
 object BIOForkInstances extends LowPriorityBIOForkInstances {
   implicit val BIOForkZio: BIOFork3[ZIO] = new BIOFork3[ZIO] {
     override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber3[ZIO, E, A]] =

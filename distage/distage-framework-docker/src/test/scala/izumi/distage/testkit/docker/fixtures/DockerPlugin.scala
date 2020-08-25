@@ -4,7 +4,7 @@ import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
 import izumi.distage.docker.bundled._
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, MonixDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
@@ -30,7 +30,7 @@ class PgSvcExample(
   }
 }
 
-object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
+object MonadPlugin extends PluginDef with CatsDIEffectModule with MonixDIEffectModule with ZIODIEffectModule
 
 object DockerPlugin extends PluginDef {
   include(DockerSupportModule[Task])

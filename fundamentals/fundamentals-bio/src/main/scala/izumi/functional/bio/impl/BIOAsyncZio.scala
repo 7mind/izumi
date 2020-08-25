@@ -84,6 +84,7 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
     r1.interruptible.raceFirst(r2.interruptible)
   }
+
   @inline override final def racePair[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],

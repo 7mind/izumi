@@ -11,6 +11,7 @@ import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstan
 import izumi.distage.testkit.scalatest.DistageSpecScalatest
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
+import monix.bio
 import org.scalatest.Assertion
 import zio.Task
 
@@ -18,6 +19,7 @@ object DistageParallelLevelTest {
   val idCounter = new AtomicInteger(0)
   val cioCounter = new AtomicInteger(0)
   val zioCounter = new AtomicInteger(0)
+  val monixCounter = new AtomicInteger(0)
 }
 
 abstract class DistageParallelLevelTest[F[_]: TagK](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
@@ -77,5 +79,14 @@ final class DistageParallelLevelTestZIO3 extends DistageParallelLevelTest[Task](
 final class DistageParallelLevelTestZIO4 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO5 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter) {
+  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
+}
+
+final class DistageParallelLevelTestBIO1 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestBIO2 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestBIO3 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestBIO4 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestBIO5 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestBIO6 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter) {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
