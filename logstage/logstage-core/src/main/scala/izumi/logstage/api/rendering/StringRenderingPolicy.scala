@@ -11,8 +11,9 @@ import izumi.logstage.api.{Log, rendering}
 
 class StringRenderingPolicy(
   options: RenderingOptions,
-  template: Option[Renderer.Aggregate] = None,
+  template: Option[Renderer.Aggregate],
 ) extends RenderingPolicy {
+
   protected val context: RenderingOptions = {
     // it may be a good idea to remove these direct queries to the environment may
 

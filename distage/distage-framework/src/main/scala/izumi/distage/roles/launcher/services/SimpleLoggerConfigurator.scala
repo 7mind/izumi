@@ -27,7 +27,7 @@ class SimpleLoggerConfigurator(
       new LogstageCirceRenderingPolicy()
     } else {
       val options = logconf.options.getOrElse(RenderingOptions.default)
-      new StringRenderingPolicy(options)
+      new StringRenderingPolicy(options, None)
     }
 
     val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))
