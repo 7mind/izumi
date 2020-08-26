@@ -17,7 +17,7 @@ import scala.reflect.macros.whitebox
 final abstract class ForcedRecompilationToken[T]
 
 object ForcedRecompilationToken {
-  implicit def materialize[T <: String]: ForcedRecompilationToken[T] = macro UniqueRecompilationTokenMacro.whiteboxMaterializeImpl
+  implicit def materialize[T]: ForcedRecompilationToken[T] = macro UniqueRecompilationTokenMacro.whiteboxMaterializeImpl
 
   object UniqueRecompilationTokenMacro {
     final val compilerLaunchId = java.util.UUID.randomUUID().toString
