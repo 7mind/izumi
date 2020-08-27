@@ -1,8 +1,9 @@
 package izumi.functional.bio
 
-import java.util.concurrent._
+import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
@@ -10,9 +11,14 @@ import zio.{Cause, IO, Runtime, Supervisor}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
-  def unsafeRunSyncAsEither[E, A](io: => F[E, A]): BIOExit[E, A]
+  def unsafeRunSync[E, A](io: => F[E, A]): BIOExit[E, A]
+  def unsafeRunAsync[E, A](io: => F[E, A])(callback: BIOExit[E, A] => Unit): Unit
+  def unsafeRunAsyncAsFuture[E, A](io: => F[E, A]): Future[BIOExit[E, A]]
 
-  def unsafeRunAsyncAsEither[E, A](io: => F[E, A])(callback: BIOExit[E, A] => Unit): Unit
+  @deprecated("use `unsafeRunSync`", "0.11")
+  final def unsafeRunSyncAsEither[E, A](io: => F[E, A]): BIOExit[E, A] = unsafeRunSync(io)
+  @deprecated("use `unsafeRunAsync`", "0.11")
+  final def unsafeRunAsyncAsEither[E, A](io: => F[E, A])(callback: BIOExit[E, A] => Unit): Unit = unsafeRunAsync(io)(callback)
 }
 
 object BIORunner {
@@ -46,7 +52,7 @@ object BIORunner {
     val runtime: Runtime[Unit] = Runtime((), platform)
 
     override def unsafeRun[E, A](io: => IO[E, A]): A = {
-      unsafeRunSyncAsEither(io) match {
+      unsafeRunSync(io) match {
         case BIOExit.Success(value) =>
           value
 
@@ -55,13 +61,19 @@ object BIORunner {
       }
     }
 
-    override def unsafeRunAsyncAsEither[E, A](io: => IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
+    override def unsafeRunAsync[E, A](io: => IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
       runtime.unsafeRunAsync[E, A](io)(exitResult => callback(ZIOExit.toBIOExit(exitResult)))
     }
 
-    override def unsafeRunSyncAsEither[E, A](io: => IO[E, A]): BIOExit[E, A] = {
+    override def unsafeRunSync[E, A](io: => IO[E, A]): BIOExit[E, A] = {
       val result = runtime.unsafeRunSync(io)
       ZIOExit.toBIOExit(result)
+    }
+
+    override def unsafeRunAsyncAsFuture[E, A](io: => IO[E, A]): Future[BIOExit[E, A]] = {
+      val p = scala.concurrent.Promise[BIOExit[E, A]]()
+      unsafeRunAsync(io)(p.success)
+      p.future
     }
   }
 
