@@ -1,13 +1,14 @@
 package izumi.functional.bio
 
-import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 
-import scala.concurrent.Future
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, IO, Runtime, Supervisor}
+
+import scala.concurrent.Future
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
