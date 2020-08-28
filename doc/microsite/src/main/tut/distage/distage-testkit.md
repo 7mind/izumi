@@ -428,9 +428,13 @@ The `testkit` ScalaTest base classes include the following verbs for establishin
 #### Configuration
 
 The test suite class for your application should override the `def config: TestConfig` attributed.
-The config defines the plugin configuration, module overrides and activation
-axes, and other options. See the @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig) for more
-information.
+The config defines the plugin configuration, memoization, module overrides and other options.
+
+See also:
+
+- @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig).
+- [Memoization](#resource-reuse---memoization)
+- [Parallel Execution](#parallel-execution)
 
 ### Syntax Summary
 
@@ -473,12 +477,68 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertBIO
 
 ### Resource Reuse - Memoization
 
-Injected values are summoned from the dependency injection graph for each test. Without
-using memoization, resources will be acquired and released for each test. This may be
-unwanted. For instance, a single Postgres Docker may be wanted for all tests.
-The test config has a
-@scaladoc[`memoizationRoots`](izumi.distage.testkit.TestConfig#memoizationRoots)
-property for sharing components across tests.
+Injected values are summoned from the object graph for each test. Without using memoization, the
+components will be acquired and released for each test. This may be unwanted. For example, a single
+Postgres container may be required for a sequence of test cases.  In which case we'd want to memoize
+the postgress component for the duration of those test cases.  Configuring memoization enables
+changing whether instantiating a component results in a fresh component or reuses the existing,
+memoized, instance.
+
+Further, memoization is essential in scheduling parallel execution of tests. See [the parallel
+execution section for further information.](#parallel-execution)
+
+#### Memoization Environments
+
+The memoization applied when an component is summoned is defined by the **memoization environment**.
+Each distinct memoization environment uses a distinct memoization store. When a component instance is
+memoized that instance is shared across all tests that use the same memoization environment.  The
+@scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) contains the options that define the
+memoization environment:
+
+1. `memoizationRoots` - These components will be acquired once and shared across all tests that used
+   the same memoization environment.
+2. `activation` - Chosen activation axis. Changes in Activation that alter implementations of
+   components in memoizationRoots OR their dependencies will cause the test to execute in a new
+   memoization environment.
+3. `pluginConfig` - Defines the plugins to source module definitions.
+4. `forcedRoots` - Components treated as a dependency of every test. A component added to this and
+   `memoizationRoots` will be acquired at the start of all tests and released at the end of all tests.
+5. `moduleOverrides` - Overrides the modules from `pluginConfig`.
+
+The module environment depends on instantiation of the `memoizationRoots` and `forcedRoots` components.
+Changes to the config that alter implementations of these components *or* their dependencies will
+change the memoization environment used. This includes, but is not limited to, changes to
+`activation`, `pluginConfig` and `moduleOverrides`.
+
+When the `TestConfig` option @scaladoc[`debugOutput`](izumi.distage.testkit.TestConfig)
+is true the debug output will include memoization environment diagnostics.  This can also be
+controlled using the `izumi.distage.testkit.debug` system property.
+
+#### Example: Postgres Dependency
+
+#### Psuedocode
+
+Imagine that the lookup of an instance for a component uses a hypothetical function `lookup(graph,
+type and tag)`. This function is memoized using storage specific to the current memoization
+environment. This memoization environment is uniquely defined by the test config options above. This
+would have pseudocode like:
+
+```
+rootComponents = planRoots(memoizationRoots, activation, forcedRoots, ...)
+memoizationEnvironment = getOrCreate(rootComponents)
+memoizationStore = memoizationEnvironment.store
+...
+for each test case
+  add forcedRoots to component dependencies
+  for each component dependency:
+    if memoizationStore contains component
+    then
+      instance = memoizationStore.lookup(component)
+    else
+      instance = acquireComponent(component)
+      memoizationStore.add(component, instance)
+    ...
+```
 
 ### Test Selection
 
