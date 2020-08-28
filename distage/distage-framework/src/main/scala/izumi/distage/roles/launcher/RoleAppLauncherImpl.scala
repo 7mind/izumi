@@ -13,13 +13,13 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.launcher.RoleAppLauncher.Options
-import izumi.distage.roles.launcher.RoleAppLauncherImpl.ActivationConfig
+import izumi.distage.roles.launcher.RoleAppLauncherImpl.{ActivationConfig, Options}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
 import izumi.distage.roles.launcher.services.{RoleAppActivationParser, _}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
@@ -49,10 +49,13 @@ import scala.reflect.ClassTag
   * 16. Shutdown executors
   */
 // FIXME: rewrite using DI https://github.com/7mind/izumi/issues/779
-abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
-  protected def pluginConfig: PluginConfig
+case class RoleAppLauncherImpl[F[_]: TagK](
+  protected val shutdownStrategy: AppShutdownStrategy[F],
+  protected val pluginConfig: PluginConfig,
+) extends RoleAppLauncher[F] {
+
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
-  protected def shutdownStrategy: AppShutdownStrategy[F]
+  //protected def shutdownStrategy: AppShutdownStrategy[F]
 
   protected def additionalLibraryReferences: Seq[LibraryReference] = Vector.empty
 
@@ -278,7 +281,16 @@ abstract class RoleAppLauncherImpl[F[_]: TagK] extends RoleAppLauncher[F] {
 object RoleAppLauncherImpl {
 
   final case class ActivationConfig(choices: Map[String, String])
+
   object ActivationConfig {
     implicit val diConfigReader: DIConfigReader[ActivationConfig] = DIConfigReader[Map[String, String]].map(ActivationConfig(_))
+  }
+
+  object Options extends ParserDef {
+    final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val configParam = arg("config", "c", "path to config file", "<path>")
+    final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
+    final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 }

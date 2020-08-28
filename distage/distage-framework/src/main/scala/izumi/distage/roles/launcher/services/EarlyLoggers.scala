@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher.services
 
 import izumi.distage.config.model.AppConfig
-import izumi.distage.roles.launcher.RoleAppLauncher.Options
+import izumi.distage.roles.launcher.RoleAppLauncherImpl.Options
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams}
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.{IzLogger, Log}
