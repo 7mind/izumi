@@ -207,8 +207,12 @@ object DIResource {
     }
   }
 
-  def pure[A](a: A): DIResource[Identity, A] = {
-    DIResource.makeSimple(a)(_ => ())
+  def pure[F[_], A](a: A)(implicit F: DIApplicative[F]): DIResource[F, A] = {
+    DIResource.liftF(F.pure(a))
+  }
+
+  def unit[F[_]](implicit F: DIApplicative[F]): DIResource[F, Unit] = {
+    DIResource.liftF(F.unit)
   }
 
   /** Convert [[cats.effect.Resource]] to [[DIResource]] */
