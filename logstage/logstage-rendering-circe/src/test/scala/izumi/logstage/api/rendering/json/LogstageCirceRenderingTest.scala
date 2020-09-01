@@ -55,7 +55,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
 
       val list = List("a", "b", "c")
       val withCustomCodec = WithCustomCodec()
-      val withCustomDerivedCodec = WithCustomDerivedCodec(42, "hatersgonnahate", List(Map("kudah" -> "kukarek")))
+      val withCustomDerivedCodec = WithCustomDerivedCodec(42, "hatersgonnahate", List(Map("kudah" -> "kukarek")), true)
 
       val subLogger = logger("list" -> list, "custom" -> withCustomCodec, "derived" -> withCustomDerivedCodec)
 
@@ -70,7 +70,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       def verifyBlock(d: Map[String, Json]) = {
         assert(d("list") == json"""["a","b","c"]""")
         assert(d("custom") == json"""{"a":[1,"b"]}""")
-        assert(d("derived") == json"""{"a":42,"b":"hatersgonnahate","c":[{"kudah":"kukarek"}]}""")
+        assert(d("derived") == json"""{"a":42,"b":"hatersgonnahate","c":[{"kudah":"kukarek"}],"d":true}""")
       }
 
       verifyBlock(data)
@@ -120,7 +120,7 @@ object LogstageCirceRenderingTest {
     }
   }
 
-  case class WithCustomDerivedCodec(a: Int, b: String, c: List[Map[String, String]])
+  case class WithCustomDerivedCodec(a: Int, b: String, c: List[Map[String, String]], d: Boolean)
   object WithCustomDerivedCodec {
     implicit val JsonCodec: Codec.AsObject[WithCustomDerivedCodec] = io.circe.derivation.deriveCodec[WithCustomDerivedCodec]
     implicit val LsCodec: LogstageCodec[WithCustomDerivedCodec] = logstage.circe.fromCirce[WithCustomDerivedCodec]

@@ -73,9 +73,9 @@ class LogstageCirceWriter extends LogstageWriter {
 
   override def nextMapElementOpen(): Unit = {}
 
-  override def write(a: Boolean): Unit = {}
-
   override def writeNull(): Unit = stack.push(Token.Value(Json.Null))
+
+  override def write(a: Boolean): Unit = stack.push(Token.Value(Json.fromBoolean(a)))
 
   override def write(a: Byte): Unit = stack.push(Token.Value(Json.fromInt(a.toInt)))
 
