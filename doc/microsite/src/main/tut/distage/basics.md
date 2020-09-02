@@ -835,7 +835,7 @@ and can be summoned at need.
 
 ### Tagless Final Style
 
-Tagless Final is one of the popular patterns for structuring purely-functional applications. If you're not familiar with tagless final you can skip this section.
+Tagless Final is one of the popular patterns for structuring purely-functional applications.
 
 Brief introduction to tagless final:
 
