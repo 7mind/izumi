@@ -76,6 +76,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       verifyBlock(data)
       verifyBlock(context)
     }
+
     "serialize throwable as object" in {
       val (logger, sink) = setupJsonLogger(debug)
 
