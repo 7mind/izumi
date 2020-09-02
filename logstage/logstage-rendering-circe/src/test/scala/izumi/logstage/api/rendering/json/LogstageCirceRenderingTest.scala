@@ -76,6 +76,25 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       verifyBlock(data)
       verifyBlock(context)
     }
+
+    "serialize throwable as object" in {
+      val (logger, sink) = setupJsonLogger(debug)
+
+      val throwable = new Exception("throwme")
+
+      logger.info(s"$throwable")
+
+      val renderedMessages = sink.fetchRendered()
+      assert(renderedMessages.nonEmpty)
+      val eventJson = parse(renderedMessages.head).toOption.get.hcursor
+      val data = eventJson.downField("event").focus.get.asObject.map(_.toMap).get
+
+      assert(data("throwable").isObject)
+      val throwableMap = data("throwable").asObject.map(_.toMap).get
+      assert(throwableMap("type") == json""""java.lang.Exception"""")
+      assert(throwableMap("message") == json""""throwme"""")
+      assert(throwableMap("stacktrace").asString.get.nonEmpty)
+    }
   }
 
   def setupJsonLogger(debug: Boolean): (IzLogger, TestSink) = {
