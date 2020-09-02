@@ -2,7 +2,6 @@ package izumi.logstage.api.rendering.json
 
 import io.circe._
 import io.circe.syntax._
-import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.logunits.LogFormat
