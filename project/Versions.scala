@@ -1,12 +1,12 @@
 object V {
   // izumi
-  val izumi_reflect = "1.0.0-M4"
+  val izumi_reflect = "1.0.0-M6"
 
   // foundation
   val collection_compat = "2.1.6"
 
   val kind_projector = "0.11.0"
-  val silencer = "1.7.0"
+  val silencer = "1.7.1"
 
   val scalatest = "3.2.2"
 
