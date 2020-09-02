@@ -1,11 +1,11 @@
 package izumi.logstage.api.rendering.json
 
 import io.circe.Json
-import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.api.rendering.json.LogstageCirceWriter.Token
+import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 
 class LogstageCirceWriter extends LogstageWriter {
-  import LogstageCirceWriter._
   private val stack = scala.collection.mutable.Stack[Token]()
 
   def translate(): Json = {
@@ -103,12 +103,12 @@ object LogstageCirceWriter {
   sealed trait Token
   object Token {
     sealed trait Struct extends Token
-    case class Value(value: Json) extends Token
-    case class Open(map: Boolean) extends Struct
+    final case class Value(value: Json) extends Token
+    final case class Open(map: Boolean) extends Struct
     case object Close extends Struct
-
   }
-  def write(codec: LogstageCodec[Any], value: Any): Json = {
+
+  def write[T](codec: LogstageCodec[T], value: T): Json = {
     val writer = new LogstageCirceWriter()
     codec.write(writer, value)
     writer.translate()

@@ -2,7 +2,6 @@ package izumi.logstage.api.rendering.json
 
 import io.circe._
 import io.circe.syntax._
-import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.logunits.LogFormat
@@ -149,23 +148,16 @@ class LogstageCirceRenderingPolicy(
     case a: Long =>
       Json.fromLong(a)
     case a: Throwable =>
-      Json.fromFields(
-        Seq(
-          "type" -> Json.fromString(a.getClass.getName),
-          "message" -> {
-            val m = a.getMessage
-            if (m eq null) Json.Null else Json.fromString(m)
-          },
-          "stacktrace" -> Json.fromString(a.stackTrace),
-        )
-      )
+      LogstageCirceWriter.write(LogstageCodec.LogstageCodecThrowable, a)
   }
 
   private val mapToString: PartialFunction[Any, Json] = {
     case o => Json.fromString(o.toString)
   }
 
-  private val mapListElement = mapScalar orElse mapToString
+  private val mapListElement: PartialFunction[Any, Json] = {
+    mapScalar orElse mapToString
+  }
 }
 
 object LogstageCirceRenderingPolicy {
