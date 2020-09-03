@@ -101,9 +101,9 @@ for more information. For our demonstration the module will be provided using `m
 "fakepackage app": Unit
 
 import com.typesafe.config.ConfigFactory
-import izumi.distage.config.AppConfigModule
+import distage.config.AppConfigModule
+import distage.ModuleDef
 import izumi.distage.effect.modules.ZIODIEffectModule
-import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 
 abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
@@ -342,9 +342,9 @@ implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.dis
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import distage.plugins._
-import izumi.distage.model.definition.Activation
-import izumi.distage.model.definition.StandardAxis.Repo
+import distage.plugins.PluginDef
+import distage.Activation
+import distage.StandardAxis.Repo
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]
@@ -564,10 +564,9 @@ object Rnd {
 ```
 
 ```scala mdoc:to-string
-import distage.{DIKey, ModuleDef}
-import izumi.distage.model.definition.Activation
-import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.plugins.PluginConfig
+import distage.{Activation, DIKey, ModuleDef}
+import distage.StandardAxis.Repo
+import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 import leaderboard.model.{Score, UserId}
