@@ -36,7 +36,6 @@ private[plan] object OrderedPlanExtensions {
   final class OrderedPlanCatsOps(private val plan: OrderedPlan) extends AnyVal {
 
     import cats.Applicative
-    import cats.instances.vector._
     import cats.syntax.functor._
     import cats.syntax.traverse._
 

@@ -35,8 +35,6 @@ private[plan] object PlanCatsSyntaxImpl {
   object CatsMonoid {
     @inline implicit final def get: CatsMonoid[Monoid] = null
   }
-
-  import cats.instances.vector._
   import cats.syntax.functor._
   import cats.syntax.traverse._
 
