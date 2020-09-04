@@ -52,14 +52,18 @@ import scala.reflect.ClassTag
 case class RoleAppLauncherImpl[F[_]: TagK](
   protected val shutdownStrategy: AppShutdownStrategy[F],
   protected val pluginConfig: PluginConfig,
+  bootstrapPluginConfig: PluginConfig @Id("bootstrap"),
   earlyLogger: IzLogger @Id("early"),
   defaultLogLevel: Log.Level @Id("early"),
   bootstrapLoader: PluginLoader @Id("bootstrap"),
   mainLoader: PluginLoader @Id("main"),
-  configLoader: ConfigLoader,
+  //configLoader: ConfigLoader,
+  config: AppConfig,
+  defaultActivations: Activation @Id("main"),
+  requiredActivations: Activation @Id("additional"),
 ) extends RoleAppLauncher[F] {
 
-  protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
+  //protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   //protected def shutdownStrategy: AppShutdownStrategy[F]
 
   protected def additionalLibraryReferences: Seq[LibraryReference] = Vector.empty
@@ -67,8 +71,8 @@ case class RoleAppLauncherImpl[F[_]: TagK](
   protected def appOverride: ModuleBase = ModuleBase.empty
   protected def bsOverride: BootstrapModule = BootstrapModule.empty
 
-  protected def defaultActivations: Activation = StandardAxis.prodActivation
-  protected def requiredActivations: Activation = Activation.empty
+//  protected def defaultActivations: Activation = StandardAxis.prodActivation
+//  protected def requiredActivations: Activation = Activation.empty
 
   //protected def defaultLogLevel: Log.Level = Log.Level.Info
   protected def defaultLogFormatJson: Boolean = false
@@ -84,7 +88,7 @@ case class RoleAppLauncherImpl[F[_]: TagK](
     val appPlugins = mainLoader.load(pluginConfig)
     val roles = loadRoles(parameters, earlyLogger, appPlugins, bsPlugins)
 
-    val config = configLoader.loadConfig()
+    //val config = configLoader.loadConfig()
     val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
 
     val appPlan = createAppPlan(parameters, roles, appPlugins, bsPlugins, config, lateLogger)

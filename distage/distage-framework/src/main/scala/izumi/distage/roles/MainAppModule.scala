@@ -1,7 +1,9 @@
 package izumi.distage.roles
 
-import distage.{DIResourceBase, Id, ModuleDef, TagK}
+import distage.{DIResourceBase, Id, ModuleDef, StandardAxis, TagK}
+import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader
+import izumi.distage.model.definition.Activation
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
@@ -52,6 +54,7 @@ class MainAppModule[F[_]: TagK](
       EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
   }
 
+  make[PluginConfig].named("bootstrap").fromValue(PluginConfig.empty)
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
@@ -59,6 +62,13 @@ class MainAppModule[F[_]: TagK](
 
   make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
   make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderParameters _)
+  make[AppConfig].from {
+    configLoader: ConfigLoader =>
+      configLoader.loadConfig()
+  }
+
+  make[Activation].named("main").fromValue(StandardAxis.prodActivation)
+  make[Activation].named("additional").fromValue(Activation.empty)
 //
 //  make[PluginLoader].named("main").from[PluginLoaderDefaultImpl]
 
