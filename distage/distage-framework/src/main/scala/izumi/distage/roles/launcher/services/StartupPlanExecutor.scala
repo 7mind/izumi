@@ -29,10 +29,6 @@ object StartupPlanExecutor {
     }
   }
 
-  def apply[F[_]: TagK](injector: Injector, checker: IntegrationChecker[F]): StartupPlanExecutor[F] = {
-    new StartupPlanExecutor.Impl[F](injector, checker)
-  }
-
   final case class Filters[F[_]](
     filterF: FinalizerFilter[F],
     filterId: FinalizerFilter[Identity],

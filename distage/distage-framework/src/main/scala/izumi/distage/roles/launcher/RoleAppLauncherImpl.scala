@@ -2,15 +2,10 @@ package izumi.distage.roles.launcher
 
 import distage._
 import izumi.distage.config.codec.DIConfigReader
-import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services._
-import izumi.distage.model.definition.Activation
 import izumi.distage.model.recursive.Bootloader
-import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.merge.PluginMergeStrategy
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.distage.roles.launcher.services._
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
@@ -18,7 +13,7 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzManifest
-import izumi.logstage.api.{IzLogger, Log}
+import izumi.logstage.api.IzLogger
 
 import scala.reflect.ClassTag
 
@@ -49,10 +44,12 @@ case class RoleAppLauncherImpl[F[_]: TagK](
   roles: RolesInfo,
   bsModule: ModuleBase @Id("bootstrap"),
   appModule: ModuleBase @Id("main"),
-  roots: Set[DIKey] @Id("distage.roles.roots"),
   options: PlanningOptions,
   finalBsModule: BootstrapModule @Id("roleapp"),
   bootloader: Bootloader @Id("roleapp"),
+  appPlan: RoleAppPlanner.AppStartupPlans,
+  startupExecutor: StartupPlanExecutor[F],
+  roleAppExecutor: RoleAppExecutor[F],
 ) extends RoleAppLauncher[F] {
   protected def additionalLibraryReferences: Seq[LibraryReference] = Vector.empty
 
@@ -60,39 +57,11 @@ case class RoleAppLauncherImpl[F[_]: TagK](
     showBanner(earlyLogger, additionalLibraryReferences)
     lateLogger.info(s"Loaded ${bsModule.bindings.size -> "bootstrap bindings"}...")
     lateLogger.info(s"Loaded ${appModule.bindings.size -> "app bindings"}...")
-
     validate(bsModule, appModule)
-
-    val planner = makePlanner(options, finalBsModule, lateLogger, bootloader)
-
-    val appPlan = planner.makePlan(roots)
     lateLogger.info(s"Planning finished. ${appPlan.app.primary.keys.size -> "main ops"}, ${appPlan.app.side.keys.size -> "integration ops"}, ${appPlan
       .app.shared.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
-    val roleAppExecutor = {
-      val injector = appPlan.injector
-      val startupExecutor = makeStartupExecutor(lateLogger, injector)
-      makeExecutor(parameters, roles, lateLogger, startupExecutor)
-    }
     roleAppExecutor.runPlan(appPlan)
-  }
-
-  protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger, reboot: Bootloader): RoleAppPlanner[F] = {
-    new RoleAppPlanner.Impl[F](options, bsModule, lateLogger, reboot)
-  }
-
-  protected def makeExecutor(
-    parameters: RawAppArgs,
-    roles: RolesInfo,
-    lateLogger: IzLogger,
-    startupPlanExecutor: StartupPlanExecutor[F],
-    filters: Filters[F] = Filters.all,
-  ): RoleAppExecutor[F] = {
-    new RoleAppExecutor.Impl[F](shutdownStrategy, roles, lateLogger, parameters, startupPlanExecutor, filters)
-  }
-
-  protected def makeStartupExecutor(lateLogger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
-    StartupPlanExecutor(injector, new IntegrationChecker.Impl[F](lateLogger))
   }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {

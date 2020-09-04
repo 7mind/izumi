@@ -25,9 +25,9 @@ object RoleAppPlanner {
 
   class Impl[F[_]: TagK](
     options: PlanningOptions,
-    bsModule: BootstrapModule,
+    bsModule: BootstrapModule @Id("roleapp"),
     logger: IzLogger,
-    bootloader: Bootloader,
+    bootloader: Bootloader @Id("roleapp"),
   ) extends RoleAppPlanner[F] { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(

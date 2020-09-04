@@ -3,14 +3,13 @@ package izumi.distage.roles
 import distage._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher}
+import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.Tag
-import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
   def main(args: Array[String]): Unit = {

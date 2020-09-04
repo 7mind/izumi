@@ -1,21 +1,21 @@
 package izumi.distage.roles
 
-import distage.{BootstrapModule, DIKey, DIResourceBase, Id, Injector, Module, ModuleBase, ModuleDef, PlannerInput, StandardAxis, TagK}
+import distage.{BootstrapModule, DIResourceBase, Id, Injector, Module, ModuleDef, PlannerInput, StandardAxis, TagK}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoader, ModuleProvider}
+import izumi.distage.framework.services._
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.RoleAppLauncherImpl.Options
-import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleProvider}
+import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
+import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleAppExecutor, RoleProvider, StartupPlanExecutor}
 import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
@@ -174,9 +174,25 @@ class MainAppModule[F[_]: TagK](
       Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation)
   }
 
+  make[RoleAppPlanner[F]].from[RoleAppPlanner.Impl[F]]
+
+  make[RoleAppPlanner.AppStartupPlans].from {
+    (planner: RoleAppPlanner[F], roots: Set[DIKey] @Id("distage.roles.roots")) =>
+      planner.makePlan(roots)
+  }
+  make[Injector].from {
+    plan: RoleAppPlanner.AppStartupPlans =>
+      plan.injector
+  }
+
+  make[IntegrationChecker[F]].from[IntegrationChecker.Impl[F]]
+  make[StartupPlanExecutor[F]].from[StartupPlanExecutor.Impl[F]]
+
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
     (launcher: RoleAppLauncher[F], args: RawAppArgs) =>
       launcher.launch(args)
   }
 
+  make[Filters[F]].fromValue(Filters.all[F])
+  make[RoleAppExecutor[F]].from[RoleAppExecutor.Impl[F]]
 }
