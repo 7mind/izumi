@@ -6,7 +6,7 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.services.ActivationInfoExtractor
+import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.PlannerInput
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
@@ -169,8 +169,8 @@ object StaticPluginCheckerMacro {
     val bootstrap = new BootstrapLocator(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Proxy))
     val injector = Injector.inherit(bootstrap)
 
-    val activation = {
-      val activationInfo = ActivationInfoExtractor.findAvailableChoices(module)
+    val activation: Activation = {
+      val activationInfo = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(module)
       new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
 

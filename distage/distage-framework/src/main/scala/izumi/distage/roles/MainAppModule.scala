@@ -1,15 +1,19 @@
 package izumi.distage.roles
 
-import distage.{DIResourceBase, Id, ModuleDef, StandardAxis, TagK}
+import distage.{DIResourceBase, Id, ModuleBase, ModuleDef, StandardAxis, TagK}
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.services.ConfigLoader
-import izumi.distage.model.definition.Activation
+import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoader}
+import izumi.distage.model.definition.{Activation, ModuleBase}
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleProvider}
-import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
+import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
+import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
@@ -102,6 +106,40 @@ class MainAppModule[F[_]: TagK](
       defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
     ) =>
       EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
+  }
+
+  make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
+  make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
+
+  make[RolesInfo].from {
+    provider: RoleProvider[F] =>
+      provider.loadRoles()
+  }
+
+  make[ModuleBase].named("main").from {
+    (strategy: PluginMergeStrategy @Id("main"), plugins: Seq[PluginBase] @Id("main")) =>
+      strategy.merge(plugins)
+  }
+  make[ModuleBase].named("bootstrap").from {
+    (strategy: PluginMergeStrategy @Id("bootstrap"), plugins: Seq[PluginBase] @Id("bootstrap")) =>
+      strategy.merge(plugins)
+  }
+
+  make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.ActivationChoicesExtractorImpl]
+  make[ActivationInfo].from {
+    (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
+      activationExtractor.findAvailableChoices(appModule)
+  }
+
+  make[Set[DIKey]].named("distage.roles.roots").from {
+    rolesInfo: RolesInfo =>
+      rolesInfo.requiredComponents
+  }
+
+  make[ActivationParser].from[ActivationParser.ActivationParserImpl]
+  make[Activation].named("primary").from {
+    parser: ActivationParser =>
+      parser.parseActivation()
   }
 
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
