@@ -8,20 +8,16 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services._
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.recursive.Bootloader
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.merge.PluginMergeStrategy
-import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.launcher.RoleAppLauncherImpl.{ActivationConfig, Options}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
-import izumi.distage.roles.launcher.services.{RoleAppActivationParser, _}
+import izumi.distage.roles.launcher.services._
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzManifest
-import izumi.fundamentals.platform.strings.IzString._
-import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
 import scala.reflect.ClassTag
@@ -48,26 +44,17 @@ import scala.reflect.ClassTag
 // FIXME: rewrite using DI https://github.com/7mind/izumi/issues/779
 case class RoleAppLauncherImpl[F[_]: TagK](
   protected val shutdownStrategy: AppShutdownStrategy[F],
-  bootstrapPluginConfig: PluginConfig @Id("bootstrap"),
   lateLogger: IzLogger,
   earlyLogger: IzLogger @Id("early"),
-  defaultLogLevel: Log.Level @Id("early"),
   roles: RolesInfo,
-  config: AppConfig,
   bsModule: ModuleBase @Id("bootstrap"),
   appModule: ModuleBase @Id("main"),
-  bsMergeStrategy: PluginMergeStrategy @Id("bootstrap"),
-  mergeStrategy: PluginMergeStrategy @Id("main"),
-  activationInfo: ActivationInfo,
   roots: Set[DIKey] @Id("distage.roles.roots"),
-  activation: Activation @Id("primary"),
+  options: PlanningOptions,
+  finalBsModule: BootstrapModule @Id("roleapp"),
+  bootloader: Bootloader @Id("roleapp"),
 ) extends RoleAppLauncher[F] {
   protected def additionalLibraryReferences: Seq[LibraryReference] = Vector.empty
-
-  protected def appOverride: ModuleBase = ModuleBase.empty
-  protected def bsOverride: BootstrapModule = BootstrapModule.empty
-
-  //protected def defaultLogFormatJson: Boolean = false
 
   def launch(parameters: RawAppArgs): DIResourceBase[Identity, PreparedApp[F]] = {
     showBanner(earlyLogger, additionalLibraryReferences)
@@ -76,12 +63,6 @@ case class RoleAppLauncherImpl[F[_]: TagK](
 
     validate(bsModule, appModule)
 
-    val options = planningOptions(parameters)
-    val moduleProvider = makeModuleProvider(options, parameters, activationInfo, activation, roles, config, lateLogger.router)
-
-    val finalBsModule = moduleProvider.bootstrapModules().merge overridenBy bsModule overridenBy bsOverride
-    val finalAppModule = moduleProvider.appModules().merge overridenBy appModule overridenBy appOverride
-    val bootloader = Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation)
     val planner = makePlanner(options, finalBsModule, lateLogger, bootloader)
 
     val appPlan = planner.makePlan(roots)
@@ -112,31 +93,6 @@ case class RoleAppLauncherImpl[F[_]: TagK](
 
   protected def makeStartupExecutor(lateLogger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
     StartupPlanExecutor(injector, new IntegrationChecker.Impl[F](lateLogger))
-  }
-
-  protected def makeModuleProvider(
-    options: PlanningOptions,
-    parameters: RawAppArgs,
-    activationInfo: ActivationInfo,
-    @unused activation: Activation,
-    roles: RolesInfo,
-    config: AppConfig,
-    logRouter: LogRouter,
-  ): ModuleProvider = {
-    new ModuleProvider.Impl(
-      logRouter = logRouter,
-      config = config,
-      roles = roles,
-      options = options,
-      args = parameters,
-      activationInfo = activationInfo,
-    )
-  }
-
-  protected def planningOptions(parameters: RawAppArgs): PlanningOptions = {
-    PlanningOptions(
-      addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext)
-    )
   }
 
   protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): Unit = {

@@ -1,15 +1,18 @@
 package izumi.distage.roles
 
-import distage.{DIResourceBase, Id, ModuleBase, ModuleDef, StandardAxis, TagK}
+import distage.{BootstrapModule, DIKey, DIResourceBase, Id, Injector, Module, ModuleBase, ModuleDef, PlannerInput, StandardAxis, TagK}
 import izumi.distage.config.model.AppConfig
+import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoader}
+import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.{Activation, ModuleBase}
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.RoleAppLauncherImpl.Options
 import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleProvider}
 import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
@@ -17,6 +20,7 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.Tag
 
@@ -142,8 +146,37 @@ class MainAppModule[F[_]: TagK](
       parser.parseActivation()
   }
 
+  make[PlanningOptions].from {
+    parameters: RawAppArgs =>
+      PlanningOptions(
+        addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext)
+      )
+  }
+
+  make[LogRouter].from {
+    logger: IzLogger =>
+      logger.router
+  }
+  make[ModuleProvider].from[ModuleProvider.Impl]
+
+  make[BootstrapModule].named("roleapp").from {
+    (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>
+      provider.bootstrapModules().merge overridenBy bsModule
+  }
+
+  make[Module].named("roleapp").from {
+    (provider: ModuleProvider, appModule: ModuleBase @Id("main")) =>
+      provider.appModules().merge overridenBy appModule
+  }
+
+  make[Bootloader].named("roleapp").from {
+    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots")) =>
+      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation)
+  }
+
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
     (launcher: RoleAppLauncher[F], args: RawAppArgs) =>
       launcher.launch(args)
   }
+
 }
