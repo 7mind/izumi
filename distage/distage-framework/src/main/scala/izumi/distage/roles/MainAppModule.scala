@@ -8,12 +8,14 @@ import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.reflect.Tag
 
 class MainAppModule[F[_]: TagK](
   args: ArgV,
   additionalRoles: AdditionalRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
+)(implicit t: Tag[TagK[F]]
 ) extends ModuleDef {
   make[ArgV].fromValue(args)
   make[CLIParser].from[CLIParserImpl]
@@ -31,11 +33,14 @@ class MainAppModule[F[_]: TagK](
       }
   }
 
-  //make[RoleAppLauncher[F]].fromValue(launcher)
+  addImplicit[TagK[F]]
+
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].fromValue(pluginConfig)
+
+//make[RoleAppLauncher[F]].fromValue(launcher)
 //  make[RoleAppLauncher[F]].fromValue(??? : RoleAppLauncherImpl[F]) //.from[RoleAppLauncherImpl[F]]
-  make[RoleAppLauncher[F]].from(new RoleAppLauncherImpl[F](_, _))
+  make[RoleAppLauncher[F]].from[RoleAppLauncherImpl[F]]
 
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
     (launcher: RoleAppLauncher[F], args: RawAppArgs) =>

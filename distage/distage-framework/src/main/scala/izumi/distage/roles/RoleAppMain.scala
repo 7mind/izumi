@@ -3,14 +3,16 @@ package izumi.distage.roles
 import distage._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.RoleAppLauncher
+import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher}
 import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
+import izumi.reflect.Tag
+import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
-abstract class RoleAppMain[F[_]: TagK]() {
+abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
   def main(args: Array[String]): Unit = {
     try {
       val argv = ArgV(args)
@@ -38,7 +40,7 @@ abstract class RoleAppMain[F[_]: TagK]() {
     new MainAppModule[F](
       args,
       AdditionalRoles(requiredRoles(args)),
-      ???,
+      makeShutdownStrategy(),
       makePluginConfig(),
     )
   }
@@ -47,7 +49,8 @@ abstract class RoleAppMain[F[_]: TagK]() {
     AppFailureHandler.TerminatingHandler
   }
 
-  protected def makeLauncher(): RoleAppLauncher[F]
+  @deprecated("to remove", "04/09/2020")
+  protected def makeShutdownStrategy(): AppShutdownStrategy[F]
 
   protected def makePluginConfig(): PluginConfig
 
