@@ -4,10 +4,10 @@ import distage.{DIResourceBase, Id, ModuleDef, StandardAxis, TagK}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition.Activation
-import izumi.distage.plugins.PluginConfig
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.services.EarlyLoggers
+import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleProvider}
 import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -42,7 +42,9 @@ class MainAppModule[F[_]: TagK](
   addImplicit[TagK[F]]
 
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
-  make[PluginConfig].fromValue(pluginConfig)
+  make[PluginConfig]
+    .named("main")
+    .fromValue(pluginConfig)
 
   make[RoleAppLauncher[F]].from[RoleAppLauncherImpl[F]]
 
@@ -67,10 +69,40 @@ class MainAppModule[F[_]: TagK](
       configLoader.loadConfig()
   }
 
+  make[Seq[PluginBase]]
+    .named("bootstrap")
+    .from {
+      (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
+        loader.load(config)
+    }
+
+  make[Seq[PluginBase]]
+    .named("main")
+    .from {
+      (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
+        loader.load(config)
+    }
+
   make[Activation].named("main").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
+
 //
 //  make[PluginLoader].named("main").from[PluginLoaderDefaultImpl]
+
+  make[Boolean].named("distage.roles.reflection").fromValue(true)
+  make[Boolean].named("distage.roles.logs.json").fromValue(false)
+  make[RoleProvider[F]].from[RoleProvider.Impl[F]]
+
+  make[IzLogger].from {
+    (
+      parameters: RawAppArgs,
+      defaultLogLevel: Log.Level @Id("early"),
+      earlyLogger: IzLogger @Id("early"),
+      config: AppConfig,
+      defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
+    ) =>
+      EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
+  }
 
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
     (launcher: RoleAppLauncher[F], args: RawAppArgs) =>
