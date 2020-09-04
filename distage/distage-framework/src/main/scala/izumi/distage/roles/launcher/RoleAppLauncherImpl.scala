@@ -52,6 +52,11 @@ import scala.reflect.ClassTag
 case class RoleAppLauncherImpl[F[_]: TagK](
   protected val shutdownStrategy: AppShutdownStrategy[F],
   protected val pluginConfig: PluginConfig,
+  earlyLogger: IzLogger @Id("early"),
+  defaultLogLevel: Log.Level @Id("early"),
+  bootstrapLoader: PluginLoader @Id("bootstrap"),
+  mainLoader: PluginLoader @Id("main"),
+  configLoader: ConfigLoader,
 ) extends RoleAppLauncher[F] {
 
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
@@ -65,21 +70,21 @@ case class RoleAppLauncherImpl[F[_]: TagK](
   protected def defaultActivations: Activation = StandardAxis.prodActivation
   protected def requiredActivations: Activation = Activation.empty
 
-  protected def defaultLogLevel: Log.Level = Log.Level.Info
+  //protected def defaultLogLevel: Log.Level = Log.Level.Info
   protected def defaultLogFormatJson: Boolean = false
 
   protected def configActivationSection: String = "activation"
-  protected def defaultBaseConfigs: Seq[String] = ConfigLoader.defaultBaseConfigs
+//  protected def defaultBaseConfigs: Seq[String] = ConfigLoader.defaultBaseConfigs
 
   def launch(parameters: RawAppArgs): DIResourceBase[Identity, PreparedApp[F]] = {
-    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+    //val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
     showBanner(earlyLogger, additionalLibraryReferences)
 
-    val bsPlugins = makeBootstrapPluginLoader(earlyLogger).load(bootstrapPluginConfig)
-    val appPlugins = makePluginLoader(earlyLogger).load(pluginConfig)
+    val bsPlugins = bootstrapLoader.load(bootstrapPluginConfig)
+    val appPlugins = mainLoader.load(pluginConfig)
     val roles = loadRoles(parameters, earlyLogger, appPlugins, bsPlugins)
 
-    val config = makeConfigLoader(earlyLogger, parameters).loadConfig()
+    val config = configLoader.loadConfig()
     val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
 
     val appPlan = createAppPlan(parameters, roles, appPlugins, bsPlugins, config, lateLogger)
@@ -134,8 +139,8 @@ case class RoleAppLauncherImpl[F[_]: TagK](
   protected def makeAppMergeStrategy(@unused lateLogger: IzLogger, @unused parameters: RawAppArgs, @unused roles: RolesInfo): PluginMergeStrategy =
     SimplePluginMergeStrategy
 
-  protected def makePluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
-  protected def makeBootstrapPluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
+//  protected def makePluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
+//  protected def makeBootstrapPluginLoader(@unused earlyLogger: IzLogger): PluginLoader = new PluginLoaderDefaultImpl()
 
   protected def makePlanner(options: PlanningOptions, bsModule: BootstrapModule, lateLogger: IzLogger, reboot: Bootloader): RoleAppPlanner[F] = {
     new RoleAppPlanner.Impl[F](options, bsModule, lateLogger, reboot)
@@ -235,19 +240,10 @@ case class RoleAppLauncherImpl[F[_]: TagK](
       throw new DIAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
   }
 
-  protected def makeConfigLoader(earlyLogger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
-    val (maybeGlobalConfig, roleConfigs) = makeConfigLoaderParameters(parameters)
-    new ConfigLoader.LocalFSImpl(earlyLogger, maybeGlobalConfig, roleConfigs, defaultBaseConfigs)
-  }
-
-  protected def makeConfigLoaderParameters(parameters: RawAppArgs): (Option[File], Map[String, Option[File]]) = {
-    val maybeGlobalConfig = parameters.globalParameters.findValue(Options.configParam).asFile
-    val roleConfigs = parameters.roles.map {
-      roleParams =>
-        roleParams.role -> roleParams.roleParameters.findValue(Options.configParam).asFile
-    }
-    (maybeGlobalConfig, roleConfigs.toMap)
-  }
+//  protected def makeConfigLoader(earlyLogger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
+//    val args = makeConfigLoaderParameters(parameters)
+//    new ConfigLoader.LocalFSImpl(earlyLogger, args, defaultBaseConfigs)
+//  }
 
   protected def parseActivationInfo(@unused lateLogger: IzLogger, appModule: ModuleBase): ActivationInfo = {
     ActivationInfoExtractor.findAvailableChoices(appModule)

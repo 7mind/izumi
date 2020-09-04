@@ -1,13 +1,17 @@
 package izumi.distage.roles
 
-import distage.{DIResourceBase, ModuleDef, TagK}
+import distage.{DIResourceBase, Id, ModuleDef, TagK}
+import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.plugins.PluginConfig
+import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.services.EarlyLoggers
 import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.Tag
 
 class MainAppModule[F[_]: TagK](
@@ -38,9 +42,25 @@ class MainAppModule[F[_]: TagK](
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].fromValue(pluginConfig)
 
-//make[RoleAppLauncher[F]].fromValue(launcher)
-//  make[RoleAppLauncher[F]].fromValue(??? : RoleAppLauncherImpl[F]) //.from[RoleAppLauncherImpl[F]]
   make[RoleAppLauncher[F]].from[RoleAppLauncherImpl[F]]
+
+  make[Log.Level].named("early").fromValue(Log.Level.Info)
+
+  //make[IzLogger].named("early").from(EarlyLoggers.makeEarlyLogger _)
+  make[IzLogger].named("early").from {
+    (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early")) =>
+      EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+  }
+
+  make[PluginLoader]
+    .named("bootstrap")
+    .aliased[PluginLoader]("main")
+    .from[PluginLoaderDefaultImpl]
+
+  make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
+  make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderParameters _)
+//
+//  make[PluginLoader].named("main").from[PluginLoaderDefaultImpl]
 
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
     (launcher: RoleAppLauncher[F], args: RawAppArgs) =>
