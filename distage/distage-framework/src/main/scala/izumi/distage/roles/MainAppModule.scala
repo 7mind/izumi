@@ -78,7 +78,6 @@ class MainAppModule[F[_]: TagK](
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
 
-  //make[IzLogger].named("early").from(EarlyLoggers.makeEarlyLogger _)
   make[IzLogger].named("early").from {
     (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early"), banner: StartupBanner) =>
       val logger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
@@ -116,9 +115,6 @@ class MainAppModule[F[_]: TagK](
   make[Activation].named("main").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
-//
-//  make[PluginLoader].named("main").from[PluginLoaderDefaultImpl]
-
   make[Boolean].named("distage.roles.reflection").fromValue(true)
   make[Boolean].named("distage.roles.logs.json").fromValue(false)
   make[RoleProvider[F]].from[RoleProvider.Impl[F]]
@@ -141,14 +137,6 @@ class MainAppModule[F[_]: TagK](
     provider: RoleProvider[F] =>
       provider.loadRoles()
   }
-
-//  make[ModuleBase].named("main").from {
-
-//  }
-//  make[ModuleBase].named("bootstrap").from {
-//    (strategy: PluginMergeStrategy @Id("bootstrap"), plugins: Seq[PluginBase] @Id("bootstrap")) =>
-//      strategy.merge(plugins)
-//  }
 
   make[ModulePair].from {
     (
