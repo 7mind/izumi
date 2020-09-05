@@ -4,7 +4,6 @@ import distage.{LocatorRef, ModuleDef}
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.tags.TagExpr.Strings.C
 
 @ExposedTestScope
 object BasicCases {
