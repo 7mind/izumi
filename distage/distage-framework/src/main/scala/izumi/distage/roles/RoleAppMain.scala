@@ -49,7 +49,6 @@ abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
     AppFailureHandler.TerminatingHandler
   }
 
-  @deprecated("to remove", "04/09/2020")
   protected def makeShutdownStrategy(): AppShutdownStrategy[F]
 
   protected def makePluginConfig(): PluginConfig

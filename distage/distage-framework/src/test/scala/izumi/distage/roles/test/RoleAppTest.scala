@@ -18,6 +18,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
+import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -27,6 +28,7 @@ import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
@@ -39,11 +41,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
   class TestEntrypointBase extends RoleAppMain[IO] {
     override protected def makeShutdownStrategy(): AppShutdownStrategy[IO] = {
-      new ImmediateExitShutdownStrategy()
+      new ImmediateExitShutdownStrategy[IO]
     }
 
+    override protected def createEarlyFailureHandler(): AppFailureHandler = AppFailureHandler.NullHandler
+
     override protected def makePluginConfig(): PluginConfig = PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
-  } //.Silent(new TestLauncher)
+  }
 
   object TestEntrypoint extends TestEntrypointBase
 
@@ -119,50 +123,54 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 //      assert(probe.resources.getCheckedResources().toSet.size == 2)
 //      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource], probe.locator.get[IntegrationResource1[IO]]))
 //    }
-//
-//    "be able to read activations from config" in {
-//      new RoleAppMain.Silent(new TestLauncher)
-//        .main(
-//          Array(
-//            "-ll",
-//            logLevel,
-//            ":" + TestRole03.id,
-//          )
-//        )
-//    }
-//
-//    "override config activations from command-line" in {
-//      val err = Try {
-//        new RoleAppMain.Silent(new TestLauncher)
-//          .main(
-//            Array(
-//              "-ll",
-//              logLevel,
-//              "-u",
-//              "axiscomponentaxis:incorrect",
-//              ":" + TestRole03.id,
-//            )
-//          )
-//      }.failed.get
-//      assert(err.getMessage.contains(TestRole03.expectedError))
-//    }
-//
-//    "be able to override list configs using system properties" in {
-//      withProperties(
-//        "listconf.ints.0" -> "3",
-//        "listconf.ints.1" -> "2",
-//        "listconf.ints.2" -> "1",
-//      ) {
-//        new RoleAppMain.Silent(new TestLauncher)
-//          .main(
-//            Array(
-//              "-ll",
-//              logLevel,
-//              ":" + TestRole04.id,
-//            )
-//          )
-//      }
-//    }
+
+    "be able to read activations from config" in {
+      new TestEntrypointBase()
+        .main(
+          Array(
+            "-ll",
+            logLevel,
+            ":" + TestRole03.id,
+          )
+        )
+    }
+
+    "override config activations from command-line" in {
+      try {
+        new TestEntrypointBase()
+          .main(
+            Array(
+              "-ll",
+              logLevel,
+              "-u",
+              "axiscomponentaxis:incorrect",
+              ":" + TestRole03.id,
+            )
+          )
+        fail("The app is expected to fail")
+      } catch {
+        case err: Throwable =>
+          assert(err.getMessage.contains(TestRole03.expectedError))
+      }
+
+    }
+
+    "be able to override list configs using system properties" in {
+      withProperties(
+        "listconf.ints.0" -> "3",
+        "listconf.ints.1" -> "2",
+        "listconf.ints.2" -> "1",
+      ) {
+        new TestEntrypointBase()
+          .main(
+            Array(
+              "-ll",
+              logLevel,
+              ":" + TestRole04.id,
+            )
+          )
+      }
+    }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
       val probe = new XXX_TestWhiteboxProbe()
