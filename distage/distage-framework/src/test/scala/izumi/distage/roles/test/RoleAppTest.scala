@@ -7,7 +7,7 @@ import java.util.UUID
 
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
-import distage.plugins.PluginDef
+import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
@@ -87,42 +87,41 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]]))
     }
 
-//    "start roles regression test" in {
-//      val probe = new XXX_TestWhiteboxProbe()
-//
-//      new RoleAppMain.Silent(
-//        new TestLauncher {
-//          override protected def pluginConfig: PluginConfig = {
-//            PluginConfig.const(
-//              Seq(
-//                new ResourcesPluginBase {}.morph[PluginBase],
-//                new ConflictPlugin,
-//                new TestPlugin,
-//                new AdoptedAutocloseablesCasePlugin,
-//                probe,
-//                new PluginDef {
-//                  make[TestResource].from[IntegrationResource0[IO]]
-//                  many[TestResource]
-//                    .ref[TestResource]
-//                  include(CatsDIEffectModule)
-//                },
-//              )
-//            )
-//          }
-//        }
-//      ).main(
-//        Array(
-//          "-ll",
-//          logLevel,
-//          ":" + AdoptedAutocloseablesCase.id,
-//          ":" + TestRole00.id,
-//        )
-//      )
-//
-//      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
-//      assert(probe.resources.getCheckedResources().toSet.size == 2)
-//      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource], probe.locator.get[IntegrationResource1[IO]]))
-//    }
+    "start roles regression test" in {
+      val probe = new XXX_TestWhiteboxProbe()
+
+      new TestEntrypointBase() {
+        override protected def makePluginConfig(): PluginConfig = {
+          PluginConfig.const(
+            Seq(
+              new ResourcesPluginBase {}.morph[PluginBase],
+              new ConflictPlugin,
+              new TestPlugin,
+              new AdoptedAutocloseablesCasePlugin,
+              probe,
+              new PluginDef {
+                make[TestResource].from[IntegrationResource0[IO]]
+                many[TestResource]
+                  .ref[TestResource]
+                include(CatsDIEffectModule)
+              },
+            )
+          )
+        }
+      }
+        .main(
+          Array(
+            "-ll",
+            logLevel,
+            ":" + AdoptedAutocloseablesCase.id,
+            ":" + TestRole00.id,
+          )
+        )
+
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+      assert(probe.resources.getCheckedResources().toSet.size == 2)
+      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource], probe.locator.get[IntegrationResource1[IO]]))
+    }
 
     "be able to read activations from config" in {
       new TestEntrypointBase()
