@@ -4,6 +4,7 @@ import distage.{LocatorRef, ModuleDef}
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.tags.TagExpr.Strings.C
 
 @ExposedTestScope
 object BasicCases {
@@ -177,10 +178,15 @@ Forest fire, climbin' higher, real life, it can wait""")
   }
 
   object BasicCase7 {
-    type Port = Int @Id("port")
-    type Address = String @Id("address")
+    final val port = "port"
+    final val address = "address"
+    type Port = Int @Id(port)
+    type Address = String @Id(address)
 
     final case class ServerConfig(port: Port, address: Address)
+
+    type ComponentSpecial[F[_]] = Component[F] @Id("special")
+    final case class Component[F[_]](s: F[String])
   }
 
   object BasicCase8 {

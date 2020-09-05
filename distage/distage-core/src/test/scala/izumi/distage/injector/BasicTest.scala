@@ -10,6 +10,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException, UnconfiguredMutatorAxis}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -397,6 +398,25 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     assert(context.get[ServerConfig].port == context.get[Int]("port"))
     assert(context.get[ServerConfig].address == context.get[String]("address"))
+  }
+
+  "Can abstract over Id annotations with higher-kinded type aliases" in {
+    import BasicCase7._
+
+//    def ctor[F[_]](componentSpecial: ComponentSpecial[F]): Component[F] = componentSpecial
+    def ctor[F[_]](componentSpecial: Component[F] @Id("special")): Component[F] = componentSpecial
+    def ctor[F[_]](@Id("special") componentSpecial: Component[F]): Component[F] = componentSpecial
+
+    class Definition[F[_]: TagK](pure: String => F[String]) extends ModuleDef {
+      make[Component[F]].named("special").from(Component(pure("abc")))
+      make[Component[F]].from(ctor[F] _)
+    }
+
+    val definition = PlannerInput.noGC(new Definition[Identity](identity))
+
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[Component[Identity]].s == "abc")
   }
 
   "support mutations" in {
