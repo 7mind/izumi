@@ -7,6 +7,7 @@ import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
+import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.Tag
@@ -58,4 +59,12 @@ abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
 object RoleAppMain {
   case class ArgV(args: Array[String])
   case class AdditionalRoles(knownRequiredRoles: Vector[RawRoleParams])
+
+  object Options extends ParserDef {
+    final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val configParam = arg("config", "c", "path to config file", "<path>")
+    final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
+    final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
+  }
 }

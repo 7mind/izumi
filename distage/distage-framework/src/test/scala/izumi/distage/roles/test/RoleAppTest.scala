@@ -7,7 +7,7 @@ import java.util.UUID
 
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
-import distage.plugins.{PluginBase, PluginDef}
+import distage.plugins.PluginDef
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
@@ -16,18 +16,17 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
-import izumi.distage.roles.launcher.{AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
+import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
-import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 import scala.jdk.CollectionConverters._
-import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
@@ -70,7 +69,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val probe = new XXX_TestWhiteboxProbe()
 
       new TestEntrypointBase {
-        override protected def makePluginConfig(): PluginConfig = super.makePluginConfig overridenBy probe
+        override protected def makePluginConfig(): PluginConfig = super.makePluginConfig() overridenBy probe
       }.main(
         Array(
           "-ll",

@@ -8,6 +8,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
 
 import scala.util.control.NonFatal
@@ -37,7 +38,7 @@ object IntegrationChecker {
 
     override def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
       if (integrationComponents.nonEmpty) {
-        logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"} ${integrationComponents -> "resourceList"}")
+        logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"}: ${integrationComponents.niceList() -> "resourceList"}")
       }
 
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]

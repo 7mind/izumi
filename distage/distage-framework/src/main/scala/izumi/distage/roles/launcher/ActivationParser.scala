@@ -4,7 +4,7 @@ import distage.Id
 import distage.config.AppConfig
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.roles.launcher.RoleAppLauncherImpl.{ActivationConfig, Options}
+import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.launcher.services.RoleAppActivationParser
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichString
@@ -31,7 +31,7 @@ object ActivationParser {
     def parseActivation(): Activation = {
       val parser = new RoleAppActivationParser.Impl(lateLogger)
 
-      val cmdChoices = parameters.globalParameters.findValues(Options.use).map(_.value.split2(':'))
+      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(_.value.split2(':'))
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       val configChoices = if (config.config.hasPath(configActivationSection)) {

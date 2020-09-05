@@ -7,7 +7,7 @@ import distage.Id
 import distage.config.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
 import izumi.distage.model.exceptions.DIException
-import izumi.distage.roles.launcher.RoleAppLauncherImpl.Options
+import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
@@ -56,10 +56,10 @@ object ConfigLoader {
   case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
   object Args {
     def makeConfigLoaderParameters(parameters: RawAppArgs): ConfigLoader.Args = {
-      val maybeGlobalConfig = parameters.globalParameters.findValue(Options.configParam).asFile
+      val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
       val roleConfigs = parameters.roles.map {
         roleParams =>
-          roleParams.role -> roleParams.roleParameters.findValue(Options.configParam).asFile
+          roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile
       }
       ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap, ConfigLoader.defaultBaseConfigs)
     }

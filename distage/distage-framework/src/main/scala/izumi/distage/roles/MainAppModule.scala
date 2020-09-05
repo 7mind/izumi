@@ -12,17 +12,37 @@ import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.RoleAppLauncherImpl.Options
+import izumi.distage.roles.launcher.ModuleValidator.{ModulePair, ValidatedModulePair}
+import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, ModuleValidator, StartupBanner}
 import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
 import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleAppExecutor, RoleProvider, StartupPlanExecutor}
-import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, RoleAppLauncher, RoleAppLauncherImpl}
-import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.Tag
+
+/**
+  * Application flow:
+  * 1. Parse commandline parameters
+  * 2. Create "early logger" (console sink & configurable log level)
+  * 3. Show startup banner
+  * 4. Load raw config
+  * 5. Create "late logger" using config
+  * 6. Enumerate app plugins and bootstrap plugins
+  * 7. Enumerate available roles, show role info and and apply merge strategy/conflict resolution
+  * 8. Validate loaded roles (for non-emptyness and conflicts between bootstrap and app plugins)
+  * 9. Build plan for DIEffect runner
+  * 10. Build plan for integration checks
+  * 11. Build plan for application
+  * 12. Run role tasks
+  * 13. Run role services
+  * 14. Await application termination
+  * 15. Run finalizers
+  * 16. Shutdown executors
+  */
 
 class MainAppModule[F[_]: TagK](
   args: ArgV,
@@ -47,6 +67,8 @@ class MainAppModule[F[_]: TagK](
       }
   }
 
+  many[LibraryReference]
+
   addImplicit[TagK[F]]
 
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
@@ -54,14 +76,14 @@ class MainAppModule[F[_]: TagK](
     .named("main")
     .fromValue(pluginConfig)
 
-  make[RoleAppLauncher[F]].from[RoleAppLauncherImpl[F]]
-
   make[Log.Level].named("early").fromValue(Log.Level.Info)
 
   //make[IzLogger].named("early").from(EarlyLoggers.makeEarlyLogger _)
   make[IzLogger].named("early").from {
-    (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early")) =>
-      EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+    (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early"), banner: StartupBanner) =>
+      val logger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+      banner.showBanner(logger)
+      logger
   }
 
   make[PluginConfig].named("bootstrap").fromValue(PluginConfig.empty)
@@ -120,13 +142,36 @@ class MainAppModule[F[_]: TagK](
       provider.loadRoles()
   }
 
+//  make[ModuleBase].named("main").from {
+
+//  }
+//  make[ModuleBase].named("bootstrap").from {
+//    (strategy: PluginMergeStrategy @Id("bootstrap"), plugins: Seq[PluginBase] @Id("bootstrap")) =>
+//      strategy.merge(plugins)
+//  }
+
+  make[ModulePair].from {
+    (
+      strategy: PluginMergeStrategy @Id("main"),
+      plugins: Seq[PluginBase] @Id("main"),
+      bsStrategy: PluginMergeStrategy @Id("bootstrap"),
+      bsPlugins: Seq[PluginBase] @Id("bootstrap"),
+    ) =>
+      ModulePair(bsStrategy.merge(bsPlugins), strategy.merge(plugins))
+  }
+
+  make[ModuleValidator].from[ModuleValidator.ModuleValidatorImpl]
+
+  make[ValidatedModulePair].from {
+    (validator: ModuleValidator, modules: ModulePair) =>
+      validator.validate(modules)
+  }
+
   make[ModuleBase].named("main").from {
-    (strategy: PluginMergeStrategy @Id("main"), plugins: Seq[PluginBase] @Id("main")) =>
-      strategy.merge(plugins)
+    modules: ValidatedModulePair => modules.appModule
   }
   make[ModuleBase].named("bootstrap").from {
-    (strategy: PluginMergeStrategy @Id("bootstrap"), plugins: Seq[PluginBase] @Id("bootstrap")) =>
-      strategy.merge(plugins)
+    modules: ValidatedModulePair => modules.bootstrapAutoModule
   }
 
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.ActivationChoicesExtractorImpl]
@@ -149,7 +194,7 @@ class MainAppModule[F[_]: TagK](
   make[PlanningOptions].from {
     parameters: RawAppArgs =>
       PlanningOptions(
-        addGraphVizDump = parameters.globalParameters.hasFlag(Options.dumpContext)
+        addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)
       )
   }
 
@@ -189,9 +234,11 @@ class MainAppModule[F[_]: TagK](
   make[StartupPlanExecutor[F]].from[StartupPlanExecutor.Impl[F]]
 
   make[DIResourceBase[Identity, PreparedApp[F]]].from {
-    (launcher: RoleAppLauncher[F], args: RawAppArgs) =>
-      launcher.launch(args)
+    (roleAppExecutor: RoleAppExecutor[F], appPlan: RoleAppPlanner.AppStartupPlans) =>
+      roleAppExecutor.runPlan(appPlan)
   }
+
+  make[StartupBanner].from[StartupBanner.StartupBannerImpl]
 
   make[Filters[F]].fromValue(Filters.all[F])
   make[RoleAppExecutor[F]].from[RoleAppExecutor.Impl[F]]
