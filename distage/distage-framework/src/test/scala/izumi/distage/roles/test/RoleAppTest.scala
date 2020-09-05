@@ -28,7 +28,6 @@ import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.jdk.CollectionConverters._
-import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
