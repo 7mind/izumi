@@ -20,7 +20,6 @@ import scala.reflect.ClassTag
 
 trait RoleProvider[F[_]] {
   def loadRoles(): RolesInfo
-  //def getInfo(bindings: Seq[Binding], requiredRoles: Set[String]): RolesInfo
 }
 
 object RoleProvider {

@@ -4,7 +4,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 
-case class PreparedApp[F[_]](
+final case class PreparedApp[F[_]](
   app: DIResource.DIResourceBase[F, Locator],
   runner: DIEffectRunner[F],
   effect: DIEffect[F],

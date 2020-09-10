@@ -53,7 +53,7 @@ trait ConfigLoader {
 object ConfigLoader {
   val defaultBaseConfigs = Seq("application", "common")
 
-  case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
+  final case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
   object Args {
     def makeConfigLoaderParameters(parameters: RawAppArgs): ConfigLoader.Args = {
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
