@@ -33,7 +33,7 @@ object V {
   val scalamock = "5.0.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.89"
+  val classgraph = "4.8.90"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
