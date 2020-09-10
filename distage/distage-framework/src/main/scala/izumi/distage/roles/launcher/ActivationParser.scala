@@ -5,7 +5,6 @@ import distage.config.AppConfig
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.launcher.services.RoleAppActivationParser
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichString
 import logstage.IzLogger

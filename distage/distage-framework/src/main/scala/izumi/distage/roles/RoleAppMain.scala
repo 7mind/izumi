@@ -3,9 +3,7 @@ package izumi.distage.roles
 import distage._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.AppShutdownStrategy
-import izumi.distage.roles.launcher.services.AppFailureHandler
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity

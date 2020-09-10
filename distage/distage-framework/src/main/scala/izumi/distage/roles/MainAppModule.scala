@@ -1,6 +1,6 @@
 package izumi.distage.roles
 
-import distage.{BootstrapModule, DIResourceBase, Id, Injector, Module, ModuleDef, PlannerInput, StandardAxis, TagK}
+import distage._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
@@ -13,9 +13,8 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.ModuleValidator.{ModulePair, ValidatedModulePair}
-import izumi.distage.roles.launcher.{ActivationParser, AppShutdownStrategy, ModuleValidator, StartupBanner}
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
-import izumi.distage.roles.launcher.services.{EarlyLoggers, RoleAppExecutor, RoleProvider, StartupPlanExecutor}
+import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
+import izumi.distage.roles.launcher._
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
@@ -213,21 +212,16 @@ class MainAppModule[F[_]: TagK](
     (planner: RoleAppPlanner[F], roots: Set[DIKey] @Id("distage.roles.roots")) =>
       planner.makePlan(roots)
   }
-  make[Injector].from {
-    plan: RoleAppPlanner.AppStartupPlans =>
-      plan.injector
-  }
 
   make[IntegrationChecker[F]].from[IntegrationChecker.Impl[F]]
-  make[StartupPlanExecutor[F]].from[StartupPlanExecutor.Impl[F]]
-
-  make[DIResourceBase[Identity, PreparedApp[F]]].from {
-    (roleAppExecutor: RoleAppExecutor[F], appPlan: RoleAppPlanner.AppStartupPlans) =>
-      roleAppExecutor.runPlan(appPlan)
-  }
+  make[RoleAppEntrypoint[F]].from[RoleAppEntrypoint.Impl[F]]
 
   make[StartupBanner].from[StartupBanner.StartupBannerImpl]
 
-  make[Filters[F]].fromValue(Filters.all[F])
-  make[RoleAppExecutor[F]].from[RoleAppExecutor.Impl[F]]
+  make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
+  make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
+  make[DIResourceBase[Identity, PreparedApp[F]]].from {
+    transformer: AppResourceProvider[F] =>
+      transformer.makeAppResource()
+  }
 }

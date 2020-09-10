@@ -1,4 +1,4 @@
-package izumi.distage.roles.launcher.services
+package izumi.distage.roles.launcher
 
 import distage.{Id, _}
 import izumi.distage.model.definition.Binding

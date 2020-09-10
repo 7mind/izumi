@@ -1,4 +1,4 @@
-package izumi.distage.roles.launcher.services
+package izumi.distage.roles.launcher
 
 import distage.{Injector, TagK}
 import izumi.distage.framework.services.IntegrationChecker
@@ -7,64 +7,42 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.PreparedApp
 import izumi.fundamentals.platform.functional.Identity
 
-trait StartupPlanExecutor[F[_]] {
-  def execute(
-    appPlan: AppStartupPlans,
-    filters: StartupPlanExecutor.Filters[F],
-  )(doRun: (Locator, DIEffect[F]) => F[Unit]
-  ): DIResource.DIResourceBase[Identity, PreparedApp[F]]
+trait AppResourceProvider[F[_]] {
+  def makeAppResource(): DIResource.DIResourceBase[Identity, PreparedApp[F]]
 }
 
-object StartupPlanExecutor {
-  case class PreparedApp[F[_]](
-    app: DIResource.DIResourceBase[F, Locator],
-    runner: DIEffectRunner[F],
-    effect: DIEffect[F],
-  ) {
-    def run(): Unit = {
-      runner.run(app.use(_ => effect.unit)(effect))
-    }
-  }
+object AppResourceProvider {
 
-  final case class Filters[F[_]](
+  final case class FinalizerFilters[F[_]](
     filterF: FinalizerFilter[F],
     filterId: FinalizerFilter[Identity],
   )
-  object Filters {
-    def all[F[_]]: Filters[F] = Filters[F](FinalizerFilter.all, FinalizerFilter.all)
+  object FinalizerFilters {
+    def all[F[_]]: FinalizerFilters[F] = FinalizerFilters[F](FinalizerFilter.all, FinalizerFilter.all)
   }
 
   class Impl[F[_]: TagK](
-    injector: Injector,
     integrationChecker: IntegrationChecker[F],
-  ) extends StartupPlanExecutor[F] {
-    def execute(
-      appPlan: AppStartupPlans,
-      filters: StartupPlanExecutor.Filters[F],
-    )(doRun: (Locator, DIEffect[F]) => F[Unit]
-    ): DIResource.DIResourceBase[Identity, PreparedApp[F]] = {
-      injector
+    entrypoint: RoleAppEntrypoint[F],
+    filters: FinalizerFilters[F],
+    appPlan: AppStartupPlans,
+  ) extends AppResourceProvider[F] {
+    def makeAppResource(): DIResource.DIResourceBase[Identity, PreparedApp[F]] = {
+      appPlan
+        .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
             val runner = runtimeLocator.get[DIEffectRunner[F]]
             implicit val effect: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
 
-            PreparedApp(prepareMainResource(appPlan, filters, doRun, runtimeLocator)(effect), runner, effect)
+            PreparedApp(prepareMainResource(runtimeLocator)(effect), runner, effect)
         }
     }
 
-    private def prepareMainResource(
-      appPlan: AppStartupPlans,
-      filters: Filters[F],
-      doRun: (Locator, DIEffect[F]) => F[Unit],
-      runtimeLocator: Locator,
-    )(implicit
-      effect: DIEffect[F]
-    ): DIResource.DIResourceBase[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit effect: DIEffect[F]): DIResource.DIResourceBase[F, Locator] = {
       Injector
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app.shared, filters.filterF)
@@ -82,7 +60,7 @@ object StartupPlanExecutor {
                   Injector
                     .inherit(sharedLocator)
                     .produceFX[F](appPlan.app.primary, filters.filterF)
-                    .evalTap(doRun(_, effect))
+                    .evalTap(entrypoint.runTasksAndRoles(_, effect))
               }
         }
     }

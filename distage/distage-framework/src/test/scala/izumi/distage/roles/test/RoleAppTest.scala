@@ -16,9 +16,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.launcher.AppShutdownStrategy
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
-import izumi.distage.roles.launcher.services.AppFailureHandler
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00

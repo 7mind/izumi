@@ -12,7 +12,7 @@ import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
-import izumi.distage.roles.launcher.services.RoleAppActivationParser
+import izumi.distage.roles.launcher.RoleAppActivationParser
 import izumi.distage.staticinjector.plugins.ModuleRequirements
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.ReflectionUtil

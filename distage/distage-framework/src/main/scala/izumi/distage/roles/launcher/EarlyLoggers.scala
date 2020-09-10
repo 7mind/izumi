@@ -1,4 +1,4 @@
-package izumi.distage.roles.launcher.services
+package izumi.distage.roles.launcher
 
 import izumi.distage.config.model.AppConfig
 import izumi.distage.roles.RoleAppMain

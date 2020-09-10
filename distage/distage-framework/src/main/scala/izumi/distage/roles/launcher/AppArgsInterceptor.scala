@@ -1,4 +1,4 @@
-package izumi.distage.roles
+package izumi.distage.roles.launcher
 
 import izumi.distage.roles.RoleAppMain.AdditionalRoles
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
