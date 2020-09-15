@@ -1,46 +1,28 @@
-package izumi.distage.roles.launcher.services
+package izumi.distage.roles.launcher
 
 import distage.TagK
-import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource
-import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.roles.launcher.AppShutdownStrategy
-import izumi.distage.roles.launcher.services.StartupPlanExecutor.{Filters, PreparedApp}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 
-trait RoleAppExecutor[F[_]] {
-  def runPlan(appPlan: AppStartupPlans): DIResourceBase[Identity, PreparedApp[F]]
+trait RoleAppEntrypoint[F[_]] {
+  def runTasksAndRoles(locator: Locator, effect: DIEffect[F]): F[Unit]
 }
 
-object RoleAppExecutor {
-
+object RoleAppEntrypoint {
   class Impl[F[_]: TagK](
-    hook: AppShutdownStrategy[F],
     roles: RolesInfo,
     lateLogger: IzLogger,
     parameters: RawAppArgs,
-    startupPlanExecutor: StartupPlanExecutor[F],
-    filters: Filters[F],
-  ) extends RoleAppExecutor[F] {
+    hook: AppShutdownStrategy[F],
+  ) extends RoleAppEntrypoint[F] {
 
-    final def runPlan(appPlan: AppStartupPlans): DIResourceBase[Identity, PreparedApp[F]] = {
-      DIResource
-        .makeSimple(())(_ => hook.release())
-        .flatMap {
-          _ =>
-            startupPlanExecutor.execute(appPlan, filters)(doRun)
-        }
-    }
-
-    protected def doRun(locator: Locator, effect: DIEffect[F]): F[Unit] = {
+    override def runTasksAndRoles(locator: Locator, effect: DIEffect[F]): F[Unit] = {
       val roleIndex = getRoleIndex(locator)
       implicit val e: DIEffect[F] = effect
       for {
@@ -146,6 +128,6 @@ object RoleAppExecutor {
             }
         }.toMap
     }
-  }
 
+  }
 }

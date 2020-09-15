@@ -2,16 +2,17 @@ package izumi.fundamentals.platform.cli
 
 import izumi.fundamentals.platform.cli.CLIParser.ParserError
 import izumi.fundamentals.platform.cli.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.language.Quirks
 
 trait ParserFailureHandler {
-  def onParserError(e: CLIParser.ParserError): Unit
+  def onParserError(e: ParserError): RawAppArgs
 }
 
 object ParserFailureHandler {
 
   object TerminatingHandler extends ParserFailureHandler {
-    override def onParserError(e: CLIParser.ParserError): Nothing = {
+    override def onParserError(e: ParserError): Nothing = {
       System.err.println(makeMessage(e))
       System.exit(1)
       throw new IllegalStateException("System.exit() didn't work")
@@ -19,14 +20,16 @@ object ParserFailureHandler {
   }
 
   object PrintingHandler extends ParserFailureHandler {
-    override def onParserError(e: CLIParser.ParserError): Unit = {
+    override def onParserError(e: ParserError): RawAppArgs = {
       System.err.println(makeMessage(e))
+      RawAppArgs.empty
     }
   }
 
   object NullHandler extends ParserFailureHandler {
-    override def onParserError(e: CLIParser.ParserError): Unit = {
+    override def onParserError(e: ParserError): RawAppArgs = {
       Quirks.discard(e)
+      RawAppArgs.empty
     }
   }
 
