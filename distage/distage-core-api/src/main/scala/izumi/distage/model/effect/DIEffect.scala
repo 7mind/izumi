@@ -137,8 +137,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
 private[effect] sealed trait LowPriorityDIEffectInstances {
 
   /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    * This instance uses the 'no more orphans' technique to provide an Optional instance IFF you have
+    * cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
