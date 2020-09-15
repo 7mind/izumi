@@ -1,8 +1,8 @@
-package izumi.distage.roles.launcher.services
+package izumi.distage.roles.launcher
 
 import com.typesafe.config.Config
 import izumi.distage.config.codec.DIConfigReader
-import izumi.distage.roles.launcher.services.SimpleLoggerConfigurator.SinksConfig
+import izumi.distage.roles.launcher.SimpleLoggerConfigurator.SinksConfig
 import izumi.logstage.api.Log.Level.Warn
 import izumi.logstage.api.Log.Message
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}

@@ -18,10 +18,10 @@ abstract class DistageTestTaggedAxesExampleBase extends DistageBIOEnvSpecScalate
         Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
       ),
       pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
-          make[PrdDep]
-          make[DummyDep]
-          make[DepsCounters]
-        },
+        make[PrdDep]
+        make[DummyDep]
+        make[DepsCounters]
+      },
     )
 }
 

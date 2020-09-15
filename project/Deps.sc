@@ -205,50 +205,50 @@ object Izumi {
       )
 
       final val rootSettings = Defaults.SharedOptions ++ Seq(
-          "crossScalaVersions" := "Nil".raw,
-          "scalaVersion" := Targets.targetScala.head.value,
-          "organization" in SettingScope.Build := "io.7mind.izumi",
-          "sonatypeProfileName" := "io.7mind",
-          "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
-          "publishTo" in SettingScope.Build :=
-            """
-              |(if (!isSnapshot.value) {
-              |    sonatypePublishToBundle.value
-              |  } else {
-              |    Some(Opts.resolver.sonatypeSnapshots)
-              |})
-              |""".stripMargin.raw,
-          "credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
-          "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
-          "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
-          "developers" in SettingScope.Build :=
-            """List(
+        "crossScalaVersions" := "Nil".raw,
+        "scalaVersion" := Targets.targetScala.head.value,
+        "organization" in SettingScope.Build := "io.7mind.izumi",
+        "sonatypeProfileName" := "io.7mind",
+        "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
+        "publishTo" in SettingScope.Build :=
+          """
+            |(if (!isSnapshot.value) {
+            |    sonatypePublishToBundle.value
+            |  } else {
+            |    Some(Opts.resolver.sonatypeSnapshots)
+            |})
+            |""".stripMargin.raw,
+        "credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
+        "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
+        "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
+        "developers" in SettingScope.Build :=
+          """List(
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
-          "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-          "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
-        )
+        "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
+        "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
+      )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
-          "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-          "scalacOptions" ++= Seq(
-              SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-              SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
-                ),
-              SettingKey.Default := Const.EmptySeq,
-            ),
-          "scalacOptions" ++= Seq(
-              SettingKey(Some(scala212), Some(true)) := Seq(
-                  "-opt:l:inline",
-                  "-opt-inline-from:izumi.**",
-                ),
-              SettingKey(Some(scala213), Some(true)) := Seq(
-                  "-opt:l:inline",
-                  "-opt-inline-from:izumi.**",
-                ),
-              SettingKey.Default := Const.EmptySeq,
-            ),
-        )
+        "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala212), None) := Defaults.Scala212Options,
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
+          ),
+          SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala212), Some(true)) := Seq(
+            "-opt:l:inline",
+            "-opt-inline-from:izumi.**",
+          ),
+          SettingKey(Some(scala213), Some(true)) := Seq(
+            "-opt:l:inline",
+            "-opt-inline-from:izumi.**",
+          ),
+          SettingKey.Default := Const.EmptySeq,
+        ),
+      )
 
     }
 
@@ -376,17 +376,17 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++ Seq(
-            scala_java_time in Scope.Test.js
-          ),
+          scala_java_time in Scope.Test.js
+        ),
         depends = Seq(Projects.fundamentals.language),
         platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.fundamentalsJsonCirce,
         libs = circe ++ Seq(
-            jawn in Scope.Compile.js,
-            scala_reflect in Scope.Provided.all,
-          ),
+          jawn in Scope.Compile.js,
+          scala_reflect in Scope.Provided.all,
+        ),
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
       ),
@@ -416,8 +416,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.core,
         libs = allMonadsTest ++ Seq(
-            scala_java_time in Scope.Test.js
-          ),
+          scala_java_time in Scope.Test.js
+        ),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
@@ -466,19 +466,17 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitCore,
         libs = allMonadsOptional,
-        depends =
-          Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
         libs = allMonadsOptional ++ Seq(
-            scalamock in Scope.Test.all,
-            scalatest.dependency in Scope.Compile.all,
-          ),
-        depends =
-          Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
+          scalamock in Scope.Test.all,
+          scalatest.dependency in Scope.Compile.all,
+        ),
+        depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
@@ -628,8 +626,8 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq.empty,
         settings = Projects.sbtplugins.settings ++ Seq(
-            SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
-          ),
+          SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
+        ),
         plugins = Plugins(
           enabled = Seq.empty,
           disabled = Seq(Plugin("ScoverageSbtPlugin")),
@@ -671,14 +669,14 @@ object Izumi {
     globalPlugins = Projects.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
-        SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
-        SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
-        SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
-        SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
-        SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
-        SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
-        SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
-        SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
-      ),
+      SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
+      SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
+      SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
+      SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
+      SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
+    ),
   )
 }

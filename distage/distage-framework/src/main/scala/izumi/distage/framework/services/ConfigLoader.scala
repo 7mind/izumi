@@ -3,9 +3,12 @@ package izumi.distage.framework.services
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
+import distage.Id
 import distage.config.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
 import izumi.distage.model.exceptions.DIException
+import izumi.distage.roles.RoleAppMain
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString._
@@ -50,11 +53,21 @@ trait ConfigLoader {
 object ConfigLoader {
   val defaultBaseConfigs = Seq("application", "common")
 
+  final case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
+  object Args {
+    def makeConfigLoaderParameters(parameters: RawAppArgs): ConfigLoader.Args = {
+      val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
+      val roleConfigs = parameters.roles.map {
+        roleParams =>
+          roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile
+      }
+      ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap, ConfigLoader.defaultBaseConfigs)
+    }
+  }
+
   class LocalFSImpl(
-    logger: IzLogger,
-    baseConfig: Option[File],
-    moreConfigs: Map[String, Option[File]],
-    defaultBaseConfigs: Seq[String],
+    logger: IzLogger @Id("early"),
+    args: Args,
   ) extends ConfigLoader {
 
     @nowarn("msg=Unused import")
@@ -62,9 +75,9 @@ object ConfigLoader {
       import scala.collection.compat._
 
       val commonReferenceConfigs = defaultBaseConfigs.flatMap(defaultConfigReferences)
-      val commonExplicitConfigs = baseConfig.map(ConfigSource.File).toList
+      val commonExplicitConfigs = args.global.map(ConfigSource.File).toList
 
-      val (roleReferenceConfigs, roleExplicitConfigs) = (moreConfigs: Iterable[(String, Option[File])]).partitionMap {
+      val (roleReferenceConfigs, roleExplicitConfigs) = (args.role: Iterable[(String, Option[File])]).partitionMap {
         case (role, None) => Left(defaultConfigReferences(role))
         case (_, Some(file)) => Right(ConfigSource.File(file))
       }

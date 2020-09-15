@@ -373,8 +373,8 @@ case class ContainerResource[F[_], T](
   }
 
   private val stableLabels = Map(
-      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
-    ) ++ client.labels
+    DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
+  ) ++ client.labels
 }
 
 object ContainerResource {

@@ -15,9 +15,7 @@ trait BIOApplicative3[F[-_, +_, +_]] extends BIOFunctor3[F] {
   def <*[R, E, A, B](firstOp: F[R, E, A], secondOp: => F[R, E, B]): F[R, E, A] = map2(firstOp, secondOp)((a, _) => a)
 
   def traverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]] = map(
-    l.foldLeft(pure(Queue.empty[B]): F[R, E, Queue[B]])(
-      (q, a) => map2(q, f(a))(_ :+ _)
-    )
+    l.foldLeft(pure(Queue.empty[B]): F[R, E, Queue[B]])((q, a) => map2(q, f(a))(_ :+ _))
   )(_.toList)
 
   @inline final def forever[R, E, A](r: F[R, E, A]): F[R, E, Nothing] = *>(r, forever(r))

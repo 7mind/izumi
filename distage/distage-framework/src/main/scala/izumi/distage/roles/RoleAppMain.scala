@@ -1,65 +1,67 @@
 package izumi.distage.roles
 
-import izumi.distage.roles.launcher.RoleAppLauncher
-import izumi.distage.roles.launcher.services.AppFailureHandler
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
-import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
+import distage._
+import izumi.distage.plugins.PluginConfig
+import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
+import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
+import izumi.fundamentals.platform.cli.model.schema.ParserDef
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.unused
+import izumi.reflect.Tag
 
-abstract class RoleAppMain[F[_]](
-  launcher: RoleAppLauncher[F],
-  failureHandler: AppFailureHandler,
-  parserFailureHandler: ParserFailureHandler,
-) {
-  protected def parse(args: Array[String]): Either[CLIParser.ParserError, RawAppArgs] = new CLIParser().parse(args)
-  protected def requiredRoles: Vector[RawRoleParams] = Vector.empty
-
+abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
   def main(args: Array[String]): Unit = {
     try {
-      parse(args) match {
-        case Left(parserFailure) =>
-          parserFailureHandler.onParserError(parserFailure)
-
-        case Right(parameters) =>
-          val requestedRoles = parameters.roles
-          val requestedRoleSet = requestedRoles.map(_.role).toSet
-          val knownRequiredRoles = requiredRoles.filterNot(requestedRoleSet contains _.role)
-          launcher.launch(parameters.copy(roles = rolesToLaunch(requestedRoles, knownRequiredRoles))).use {
-            app =>
-              app.run()
-          }
+      val argv = ArgV(args)
+      val appModule = makeAppModule(argv)
+      val overrideModule = makeAppModuleOverride(argv)
+      Injector.NoProxies().produceRun(appModule.overridenBy(overrideModule)) {
+        appResource: DIResourceBase[Identity, PreparedApp[F]] =>
+          appResource.use(_.run())
       }
     } catch {
       case t: Throwable =>
-        failureHandler.onError(t)
+        createEarlyFailureHandler().onError(t)
     }
   }
 
-  protected def rolesToLaunch(requestedRoles: Vector[RawRoleParams], knownRequiredRoles: Vector[RawRoleParams]): Vector[RawRoleParams] = {
-    knownRequiredRoles ++ requestedRoles
+  protected def requiredRoles(@unused args: ArgV): Vector[RawRoleParams] = {
+    Vector.empty
   }
+
+  protected def makeAppModuleOverride(@unused args: ArgV): Module = {
+    Module.empty
+  }
+
+  protected def makeAppModule(args: ArgV): Module = {
+    new MainAppModule[F](
+      args,
+      AdditionalRoles(requiredRoles(args)),
+      makeShutdownStrategy(),
+      makePluginConfig(),
+    )
+  }
+
+  protected def createEarlyFailureHandler(): AppFailureHandler = {
+    AppFailureHandler.TerminatingHandler
+  }
+
+  protected def makeShutdownStrategy(): AppShutdownStrategy[F]
+
+  protected def makePluginConfig(): PluginConfig
+
 }
 
 object RoleAppMain {
+  case class ArgV(args: Array[String])
+  case class AdditionalRoles(knownRequiredRoles: Vector[RawRoleParams])
 
-  class Default[F[_]](launcher: RoleAppLauncher[F])
-    extends RoleAppMain(
-      launcher,
-      AppFailureHandler.TerminatingHandler,
-      ParserFailureHandler.TerminatingHandler,
-    )
-
-  class Safe[F[_]](launcher: RoleAppLauncher[F])
-    extends RoleAppMain[F](
-      launcher,
-      AppFailureHandler.PrintingHandler,
-      ParserFailureHandler.PrintingHandler,
-    )
-
-  class Silent[F[_]](launcher: RoleAppLauncher[F])
-    extends RoleAppMain[F](
-      launcher,
-      AppFailureHandler.NullHandler,
-      ParserFailureHandler.NullHandler,
-    )
-
+  object Options extends ParserDef {
+    final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val configParam = arg("config", "c", "path to config file", "<path>")
+    final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
+    final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
+  }
 }

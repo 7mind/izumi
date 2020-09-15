@@ -96,27 +96,27 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
   override protected def config: TestConfig = super
     .config.copy(
       pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
-          make[SetCounter]
+        make[SetCounter]
 
-          make[SetElement1]
-          make[SetElement2]
-          make[SetElement3]
-          make[SetElement4]
-          make[SetElementRetainer]
+        make[SetElement1]
+        make[SetElement2]
+        make[SetElement3]
+        make[SetElement4]
+        make[SetElementRetainer]
 
-          many[SetElement]
-            .weak[SetElement1]
-            .weak[SetElement2]
-            .weak[SetElement3]
-            .weak[SetElement4]
+        many[SetElement]
+          .weak[SetElement1]
+          .weak[SetElement2]
+          .weak[SetElement3]
+          .weak[SetElement4]
 
-          many[SetElement]
-            .named("unmemoized-set")
-            .weak[SetElement1]
-            .weak[SetElement2]
-            .weak[SetElement3]
-            .weak[SetElement4]
-        }
+        many[SetElement]
+          .named("unmemoized-set")
+          .weak[SetElement1]
+          .weak[SetElement2]
+          .weak[SetElement3]
+          .weak[SetElement4]
+      }
     )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]

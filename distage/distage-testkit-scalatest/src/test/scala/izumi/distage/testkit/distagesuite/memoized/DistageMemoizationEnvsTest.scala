@@ -27,15 +27,15 @@ abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO
       .config.copy(
         memoizationRoots = Set(DIKey.get[MemoizedInstance]),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
-            make[MemoizedInstance].from {
-              val instance = MemoizedInstance(UUID.randomUUID())
-              MemoizationEnv.synchronized {
-                MemoizationEnv.memoizedInstance += instance
-              }
-              instance
+          make[MemoizedInstance].from {
+            val instance = MemoizedInstance(UUID.randomUUID())
+            MemoizationEnv.synchronized {
+              MemoizationEnv.memoizedInstance += instance
             }
-            make[TestInstance].from(TestInstance(UUID.randomUUID()))
-          },
+            instance
+          }
+          make[TestInstance].from(TestInstance(UUID.randomUUID()))
+        },
         activation = distage.Activation(Repo -> Repo.Prod),
       )
   }
@@ -61,8 +61,8 @@ class SameEnvWithModuleOverride extends DistageMemoizationEnvsTest {
     super
       .config.copy(
         pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
-            make[TestInstance].from(MemoizationEnv.anotherTestInstance)
-          }
+          make[TestInstance].from(MemoizationEnv.anotherTestInstance)
+        }
       )
   }
   "should have the same memoized instance even if module was overriden" in {
@@ -84,8 +84,8 @@ class DifferentEnvWithMemoizedRootOverride extends DistageMemoizationEnvsTest {
     super
       .config.copy(
         pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
-            make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
-          }
+          make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
+        }
       )
   }
   "should have different memoized instance" in {

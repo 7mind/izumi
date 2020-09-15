@@ -25,9 +25,9 @@ object RoleAppPlanner {
 
   class Impl[F[_]: TagK](
     options: PlanningOptions,
-    bsModule: BootstrapModule,
+    bsModule: BootstrapModule @Id("roleapp"),
     logger: IzLogger,
-    bootloader: Bootloader,
+    bootloader: Bootloader @Id("roleapp"),
   ) extends RoleAppPlanner[F] { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
@@ -64,7 +64,12 @@ object RoleAppPlanner {
       check.verify(appPlan.side)
       check.verify(appPlan.primary)
 
-      AppStartupPlans(bootstrappedApp.plan, appPlan, bootstrappedApp.injector)
+      val out = AppStartupPlans(bootstrappedApp.plan, appPlan, bootstrappedApp.injector)
+      logger.info(
+        s"Planning finished. ${out.app.primary.keys.size -> "main ops"}, ${out.app.side.keys.size -> "integration ops"}, ${out
+          .app.shared.keys.size -> "shared ops"}, ${out.runtime.keys.size -> "runtime ops"}"
+      )
+      out
     }
 
   }

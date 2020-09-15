@@ -16,15 +16,17 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
+import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
+import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.jdk.CollectionConverters._
-import scala.util.Try
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
@@ -35,7 +37,17 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "testservice.systemPropList.1" -> "222",
   )
 
-  object TestEntrypoint extends RoleAppMain.Silent(new TestLauncher)
+  class TestEntrypointBase extends RoleAppMain[IO] {
+    override protected def makeShutdownStrategy(): AppShutdownStrategy[IO] = {
+      new ImmediateExitShutdownStrategy[IO]
+    }
+
+    override protected def createEarlyFailureHandler(): AppFailureHandler = AppFailureHandler.NullHandler
+
+    override protected def makePluginConfig(): PluginConfig = PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
+  }
+
+  object TestEntrypoint extends TestEntrypointBase
 
   class XXX_TestWhiteboxProbe extends PluginDef {
     val resources = new XXX_ResourceEffectsRecorder[IO]
@@ -51,18 +63,16 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     include(CatsDIEffectModule)
   }
 
-  val logLevel = "warn"
-  //val logLevel = "info"
+//  val logLevel = "warn"
+  val logLevel = "info"
 
   "Role Launcher" should {
     "be able to start roles" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      new RoleAppMain.Silent(
-        new TestLauncher {
-          override protected def pluginConfig: PluginConfig = super.pluginConfig overridenBy probe
-        }
-      ).main(
+      new TestEntrypointBase {
+        override protected def makePluginConfig(): PluginConfig = super.makePluginConfig() overridenBy probe
+      }.main(
         Array(
           "-ll",
           logLevel,
@@ -78,34 +88,33 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "start roles regression test" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      new RoleAppMain.Silent(
-        new TestLauncher {
-          override protected def pluginConfig: PluginConfig = {
-            PluginConfig.const(
-              Seq(
-                new ResourcesPluginBase {}.morph[PluginBase],
-                new ConflictPlugin,
-                new TestPlugin,
-                new AdoptedAutocloseablesCasePlugin,
-                probe,
-                new PluginDef {
-                  make[TestResource].from[IntegrationResource0[IO]]
-                  many[TestResource]
-                    .ref[TestResource]
-                  include(CatsDIEffectModule)
-                },
-              )
+      new TestEntrypointBase() {
+        override protected def makePluginConfig(): PluginConfig = {
+          PluginConfig.const(
+            Seq(
+              new ResourcesPluginBase {}.morph[PluginBase],
+              new ConflictPlugin,
+              new TestPlugin,
+              new AdoptedAutocloseablesCasePlugin,
+              probe,
+              new PluginDef {
+                make[TestResource].from[IntegrationResource0[IO]]
+                many[TestResource]
+                  .ref[TestResource]
+                include(CatsDIEffectModule)
+              },
             )
-          }
+          )
         }
-      ).main(
-        Array(
-          "-ll",
-          logLevel,
-          ":" + AdoptedAutocloseablesCase.id,
-          ":" + TestRole00.id,
+      }
+        .main(
+          Array(
+            "-ll",
+            logLevel,
+            ":" + AdoptedAutocloseablesCase.id,
+            ":" + TestRole00.id,
+          )
         )
-      )
 
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
       assert(probe.resources.getCheckedResources().toSet.size == 2)
@@ -113,7 +122,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "be able to read activations from config" in {
-      new RoleAppMain.Silent(new TestLauncher)
+      new TestEntrypointBase()
         .main(
           Array(
             "-ll",
@@ -124,8 +133,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "override config activations from command-line" in {
-      val err = Try {
-        new RoleAppMain.Silent(new TestLauncher)
+      try {
+        new TestEntrypointBase()
           .main(
             Array(
               "-ll",
@@ -135,8 +144,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               ":" + TestRole03.id,
             )
           )
-      }.failed.get
-      assert(err.getMessage.contains(TestRole03.expectedError))
+        fail("The app is expected to fail")
+      } catch {
+        case err: Throwable =>
+          assert(err.getMessage.contains(TestRole03.expectedError))
+      }
+
     }
 
     "be able to override list configs using system properties" in {
@@ -145,7 +158,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         "listconf.ints.1" -> "2",
         "listconf.ints.2" -> "1",
       ) {
-        new RoleAppMain.Silent(new TestLauncher)
+        new TestEntrypointBase()
           .main(
             Array(
               "-ll",
@@ -161,10 +174,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-          make[TestResource].from[IntegrationResource0[IO]]
-          many[TestResource]
-            .ref[TestResource]
-        } ++ CatsDIEffectModule ++ probe
+        make[TestResource].from[IntegrationResource0[IO]]
+        many[TestResource]
+          .ref[TestResource]
+      } ++ CatsDIEffectModule ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -194,13 +207,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-          make[TestResource].fromResource {
-            r: IntegrationResource1[IO] =>
-              DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
-          }
-          many[TestResource]
-            .ref[TestResource]
-        } ++ probe
+        make[TestResource].fromResource {
+          r: IntegrationResource1[IO] =>
+            DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
+        }
+        many[TestResource]
+          .ref[TestResource]
+      } ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -229,14 +242,14 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder[IO]
       val definition = new ResourcesPluginBase {
-          make[IntegrationResource0[IO]]
-          make[TestResource].using[IntegrationResource0[IO]]
-          make[TestResource with AutoCloseable].using[IntegrationResource0[IO]]
-          many[TestResource]
-            .ref[TestResource]
-            .ref[TestResource with AutoCloseable]
-          make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
-        } ++ CatsDIEffectModule
+        make[IntegrationResource0[IO]]
+        make[TestResource].using[IntegrationResource0[IO]]
+        make[TestResource with AutoCloseable].using[IntegrationResource0[IO]]
+        many[TestResource]
+          .ref[TestResource]
+          .ref[TestResource with AutoCloseable]
+        make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
+      } ++ CatsDIEffectModule
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),

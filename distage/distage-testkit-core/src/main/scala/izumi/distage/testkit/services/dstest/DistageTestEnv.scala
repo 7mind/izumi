@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.dstest
 
 import distage.plugins.PluginLoader
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ActivationInfoExtractor
+import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
@@ -36,11 +36,11 @@ trait DistageTestEnv {
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
     val bootstrapModule = mergeStrategy.merge(bsPlugins) overridenBy testConfig.bootstrapOverrides
-    val availableActivations = ActivationInfoExtractor.findAvailableChoices(appModule)
+    val availableActivations = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(appModule)
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
-        make[ActivationInfo].fromValue(availableActivations)
-      }
+      make[ActivationInfo].fromValue(availableActivations)
+    }
 
     TestEnvironment(
       bsModule = bsModule,

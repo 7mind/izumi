@@ -80,9 +80,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         F.pure(None: Option[Int]).flatMap {
           _.fold(
             F.unit.widenError[Throwable].widen[AnyVal]
-          )(
-            _ => F.fail(new RuntimeException)
-          )
+          )(_ => F.fail(new RuntimeException))
         }
       }
     }

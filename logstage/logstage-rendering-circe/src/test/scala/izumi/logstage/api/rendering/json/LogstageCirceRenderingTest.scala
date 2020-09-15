@@ -44,9 +44,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       }
 
       assert {
-        renderedMessages.exists(
-          x => x.contains("\"map\" : {") && x.contains(raw""""Str" : "Branch(\"subtypes are fine in strict\")"""")
-        )
+        renderedMessages.exists(x => x.contains("\"map\" : {") && x.contains(raw""""Str" : "Branch(\"subtypes are fine in strict\")""""))
       }
     }
 
