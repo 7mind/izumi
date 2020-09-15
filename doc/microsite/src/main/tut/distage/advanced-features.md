@@ -183,7 +183,7 @@ class C(val b: B) extends PrintResource("C")
 
 val bootstrapModule = new BootstrapModuleDef {
   many[PlanningHook]
-    .add(new AutoSetHook[PrintResource, PrintResource](identity))
+    .add(new AutoSetHook[PrintResource, PrintResource])
 }
 
 val appModule = new ModuleDef {

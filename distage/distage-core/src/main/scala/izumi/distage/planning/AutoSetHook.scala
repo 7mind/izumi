@@ -18,7 +18,7 @@ import scala.collection.immutable.ListSet
   * Usage:
   *
   * {{{
-  *   val collectCloseables = new AutoSetHook[AutoCloseable, AutoCloseable](identity)
+  *   val collectCloseables = new AutoSetHook[AutoCloseable, AutoCloseable]
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
