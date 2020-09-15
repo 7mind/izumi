@@ -55,7 +55,7 @@ object Provision {
     override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
       import scala.collection.compat._
       ProvisionImmutable(
-        instances.view.filterKeys(allRequiredKeys.contains).to(mutable.LinkedHashMap), // 2.13 compa
+        mutable.LinkedHashMap(instances.toSeq.filter(kv => allRequiredKeys.contains(kv._1)): _*), // 2.13 compa
         imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
         finalizers.filter(allRequiredKeys contains _.key),
       )

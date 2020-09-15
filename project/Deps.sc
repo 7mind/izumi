@@ -335,6 +335,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.functional
         ),
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.fundamentals.platform,

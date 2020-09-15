@@ -6,8 +6,9 @@ import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.unused
+import izumi.fundamentals.collections.OrderedSetShim
 
-import scala.collection.immutable.ListSet
+import scala.collection.Iterable
 
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
@@ -26,21 +27,20 @@ class SetStrategyDefaultImpl extends SetStrategy {
     val newSet = fetched.flatMap {
       case (m, Some(value)) if m.tpe =:= op.target.tpe =>
         // in case member type == set type we just merge them
-        value.asInstanceOf[Seq[Any]]
+        value.asInstanceOf[Iterable[Any]]
 
       case (m, Some(value)) if m.tpe.tag.withoutArgs <:< scalaCollectionSetType.tag.withoutArgs && m.tpe.tag.typeArgs.headOption.exists(_ <:< keyType) =>
         // if member set element type is compatible with this set element type we also just merge them
-        value.asInstanceOf[Seq[Any]]
+        value.asInstanceOf[Iterable[Any]]
 
       case (_, Some(value)) =>
-        Seq(value)
+        Iterable(value)
 
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }
 
-    val asSet = ListSet(newSet: _*)
-
+    val asSet = new OrderedSetShim[Any](newSet)
     Seq(NewObjectOp.NewInstance(op.target, asSet))
   }
 }
