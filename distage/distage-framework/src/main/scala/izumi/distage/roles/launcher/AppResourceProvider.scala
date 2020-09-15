@@ -53,7 +53,7 @@ object AppResourceProvider {
               .produceFX[F](appPlan.app.side, filters.filterF)
               .evalTap {
                 integrationLocator =>
-                  integrationChecker.checkOrFail(appPlan.app.side.declaredRoots, integrationLocator)
+                  integrationChecker.checkOrFail(appPlan.app.side, integrationLocator)
               }
               .flatMap {
                 _ => // we don't need integration locator
