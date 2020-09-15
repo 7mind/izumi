@@ -1,19 +1,21 @@
 package izumi.distage.gc
 
 import distage.{AutoSetModule, Injector}
+import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 
 trait MkGcInjector {
   def mkInjector(): Injector = {
-    Injector(AutoSetModule().register[AutoCloseable])
+    val debug = false
+    val more = if (debug) {
+      Seq(GraphDumpBootstrapModule())
+    } else {
+      Seq.empty
+    }
+
+    Injector((Seq(AutoSetModule().register[AutoCloseable]) ++ more): _*)
   }
+
   def mkNoCglibInjector(): Injector = {
     Injector.NoProxies(AutoSetModule().register[AutoCloseable])
   }
-
-//  implicit class InjectorExt(injector: Injector) {
-//    def finishProduce(plan: OrderedPlan): Locator = {
-//      val updated = injector.finish(plan.toSemi)
-//      injector.produce(updated).unsafeGet()
-//    }
-//  }
 }

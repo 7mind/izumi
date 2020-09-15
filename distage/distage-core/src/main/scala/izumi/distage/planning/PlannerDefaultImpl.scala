@@ -149,6 +149,7 @@ class PlannerDefaultImpl(
 
     val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.iterator
+      // this is a minor optimization but it makes some conflict resolution strategies impossible
       //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
         b =>

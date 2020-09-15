@@ -101,7 +101,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         )
       )
 
-      println(plan.render())
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx] != null)
     }

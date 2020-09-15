@@ -1,6 +1,7 @@
 package izumi.fundamentals.graphs.tools
 
 import izumi.fundamentals.graphs.ToposortError
+import izumi.fundamentals.graphs.ToposortError.InconsistentInput
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.annotation.{nowarn, tailrec}
@@ -23,7 +24,9 @@ final class Toposort {
         Right(done)
       } else { // circular dependency
         val maybeNext = for {
-          resolved <- break.onLoop(done, hasPreds)
+          loopMembers <- Right(hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap)
+          _ <- if (loopMembers.isEmpty) Left(InconsistentInput(IncidenceMatrix(hasPreds))) else Right(())
+          resolved <- break.onLoop(done, loopMembers)
           next = hasPreds.view.filterKeys(k => !resolved.breakAt.contains(k)).mapValues(_ -- resolved.breakAt).toMap
 
         } yield {
@@ -45,4 +48,24 @@ final class Toposort {
     }
   }
 
+  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+    test(toPreds, Set.empty, key, key)
+  }
+
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+    val deps = toPreds.getOrElse(toTest, Set.empty)
+
+    if (deps.contains(needle)) {
+      true
+    } else {
+      deps.exists {
+        d =>
+          if (stack.contains(d)) {
+            false
+          } else {
+            test(toPreds, stack + d, d, needle)
+          }
+      }
+    }
+  }
 }
