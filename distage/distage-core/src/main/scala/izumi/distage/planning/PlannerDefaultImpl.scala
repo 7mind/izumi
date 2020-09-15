@@ -73,7 +73,6 @@ class PlannerDefaultImpl(
           .eff(planningObserver.onPhase10PostGC)
           .map(makeOrdered)
           .map(forwardingRefResolver.resolve)
-          .map(hook.phase90AfterForwarding)
           .eff(planningObserver.onPhase90AfterForwarding)
           .eff(sanityChecker.assertFinalPlanSane)
           .get

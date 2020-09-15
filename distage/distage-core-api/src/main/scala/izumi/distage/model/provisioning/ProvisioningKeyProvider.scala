@@ -2,6 +2,8 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.reflection.DIKey
 
+import scala.collection.Map
+
 trait ProvisioningKeyProvider {
   /** Return the object referred by `key` if available
     *
@@ -18,5 +20,6 @@ trait ProvisioningKeyProvider {
   def importKey(key: DIKey): Option[Any]
 
   def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider
-  def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider
+
+  def instances: Map[DIKey, Any]
 }

@@ -98,20 +98,4 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
     }
 
   }
-
-  override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
-    val allKeys = ListSet.newBuilder.++=(plan.steps.map(_.target)).result()
-
-    val withReorderedSetElements = plan.steps.map {
-      case op @ ExecutableOp.CreateSet(`setKey`, newSetKeys, _) =>
-        // now reorderedKeys has exactly same elements as newSetKeys but in instantiation order
-        val reorderedKeys = allKeys.intersect(newSetKeys)
-        op.copy(members = reorderedKeys)
-
-      case op =>
-        op
-    }
-
-    plan.copy(steps = withReorderedSetElements)
-  }
 }

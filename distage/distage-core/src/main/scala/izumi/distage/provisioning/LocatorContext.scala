@@ -31,11 +31,11 @@ final case class LocatorContext(
     locator.lookupInstance[Any](key)
   }
 
-  override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider = {
-    LocatorContext(provision.narrow(allRequiredKeys), locator)
+  override def instances: collection.Map[DIKey, Any] = {
+    provision.instances
   }
 
-  override def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider = {
-    LocatorContext(provision.extend(values: Map[DIKey, Any]), locator)
+  override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider = {
+    LocatorContext(provision.narrow(allRequiredKeys), locator)
   }
 }

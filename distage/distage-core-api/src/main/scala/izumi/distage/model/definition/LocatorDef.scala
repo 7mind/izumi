@@ -66,7 +66,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
         val setKey = key.set
-        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
+        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[collection.Set[Any]] + instance))
       case e: EmptySetBinding[_] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>
