@@ -49,11 +49,11 @@ final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopB
 
       current.clear()
       current ++= hasPreds.toSeq.map {
-          case (s, p) =>
-            val links = p.intersect(found)
-            output.getOrElseUpdate(s, mutable.LinkedHashSet.empty[N]) ++= links
-            (s, p.diff(found))
-        }
+        case (s, p) =>
+          val links = p.intersect(found)
+          output.getOrElseUpdate(s, mutable.LinkedHashSet.empty[N]) ++= links
+          (s, p.diff(found))
+      }
 
       run()
     }

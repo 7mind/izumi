@@ -39,8 +39,8 @@ trait DistageTestEnv {
     val availableActivations = ActivationInfoExtractor.findAvailableChoices(appModule)
 
     val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
-        make[ActivationInfo].fromValue(availableActivations)
-      }
+      make[ActivationInfo].fromValue(availableActivations)
+    }
 
     TestEnvironment(
       bsModule = bsModule,

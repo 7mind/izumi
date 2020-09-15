@@ -161,10 +161,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-          make[TestResource].from[IntegrationResource0[IO]]
-          many[TestResource]
-            .ref[TestResource]
-        } ++ CatsDIEffectModule ++ probe
+        make[TestResource].from[IntegrationResource0[IO]]
+        many[TestResource]
+          .ref[TestResource]
+      } ++ CatsDIEffectModule ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -194,13 +194,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-          make[TestResource].fromResource {
-            r: IntegrationResource1[IO] =>
-              DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
-          }
-          many[TestResource]
-            .ref[TestResource]
-        } ++ probe
+        make[TestResource].fromResource {
+          r: IntegrationResource1[IO] =>
+            DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
+        }
+        many[TestResource]
+          .ref[TestResource]
+      } ++ probe
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -229,14 +229,14 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder[IO]
       val definition = new ResourcesPluginBase {
-          make[IntegrationResource0[IO]]
-          make[TestResource].using[IntegrationResource0[IO]]
-          make[TestResource with AutoCloseable].using[IntegrationResource0[IO]]
-          many[TestResource]
-            .ref[TestResource]
-            .ref[TestResource with AutoCloseable]
-          make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
-        } ++ CatsDIEffectModule
+        make[IntegrationResource0[IO]]
+        make[TestResource].using[IntegrationResource0[IO]]
+        make[TestResource with AutoCloseable].using[IntegrationResource0[IO]]
+        many[TestResource]
+          .ref[TestResource]
+          .ref[TestResource with AutoCloseable]
+        make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
+      } ++ CatsDIEffectModule
       val roots = Set(DIKey.get[Set[TestResource]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),

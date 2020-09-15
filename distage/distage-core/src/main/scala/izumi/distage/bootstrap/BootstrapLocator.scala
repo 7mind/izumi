@@ -30,9 +30,9 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
     // it's solely under control of `PlannerInput` now.
     // Please open an issue if you need the ability to override Activation using BootstrapModule
     val bindings = bindings0 ++ new BootstrapModuleDef {
-        make[Activation].fromValue(bootstrapActivation)
-        make[BootstrapModule].fromValue(bindings0)
-      }
+      make[Activation].fromValue(bootstrapActivation)
+      make[BootstrapModule].fromValue(bindings0)
+    }
 
     BootstrapLocator
       .bootstrapPlanner

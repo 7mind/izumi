@@ -270,9 +270,7 @@ class FunctoidTest extends AnyWordSpec {
 
     "map2 is correct" in {
       val fn = Functoid
-        .pure(5).map2(Functoid.identity[String])(
-          (i: Int, s: String) => StringContext(s + i)
-        )
+        .pure(5).map2(Functoid.identity[String])((i: Int, s: String) => StringContext(s + i))
 
       assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
       assert(fn.get.parameters.size == 1)
@@ -282,9 +280,7 @@ class FunctoidTest extends AnyWordSpec {
 
     "flatAp is correct" in {
       val fn = Functoid
-        .pure(5).flatAp(
-          (s: String) => (i: Int) => StringContext(s + i)
-        )
+        .pure(5).flatAp((s: String) => (i: Int) => StringContext(s + i))
 
       assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
       assert(fn.get.parameters.size == 1)
@@ -293,9 +289,7 @@ class FunctoidTest extends AnyWordSpec {
     }
 
     "ap is correct" in {
-      val fn = Functoid(
-        (s: String) => (i: Int) => StringContext(s + i)
-      ).ap(Functoid.pure(5))
+      val fn = Functoid((s: String) => (i: Int) => StringContext(s + i)).ap(Functoid.pure(5))
 
       assert(fn.get.unsafeApply(Seq(TypedRef("Hello"))) == StringContext("Hello5"))
       assert(fn.get.parameters.size == 1)
