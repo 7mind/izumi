@@ -8,7 +8,7 @@ import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.collections.OrderedSetShim
 
-import scala.collection.Iterable
+import scala.collection.{Iterable, mutable}
 
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
@@ -20,9 +20,15 @@ class SetStrategyDefaultImpl extends SetStrategy {
     }
 
     val allOrderedInstances = context.instances.keySet
-    val orderedMembers = allOrderedInstances.intersect(op.members)
 
-    val fetched = orderedMembers.map(m => (m, context.fetchKey(m, makeByName = false))).toSeq
+    // this assertion is correct though disabled because it's weird and, probably, unnecessary slow
+    /*assert(
+      Set("scala.collection.mutable.LinkedHashMap$DefaultKeySet", "scala.collection.mutable.LinkedHashMap$LinkedKeySet").contains(allOrderedInstances.getClass.getName),
+      s"got: ${allOrderedInstances.getClass.getName}",
+    )*/
+
+    val orderedMembersSeq: Seq[DIKey] = allOrderedInstances.intersect(op.members).toSeq
+    val fetched = orderedMembersSeq.map(m => (m, context.fetchKey(m, makeByName = false)))
 
     val newSet = fetched.flatMap {
       case (m, Some(value)) if m.tpe =:= op.target.tpe =>
