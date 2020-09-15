@@ -15,13 +15,6 @@ final class PlanningHookAggregate(
     }
   }
 
-  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    hooks.foldLeft(plan) {
-      case (acc, hook) =>
-        hook.phase50PreForwarding(acc)
-    }
-  }
-
   override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>

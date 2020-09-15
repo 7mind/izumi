@@ -239,8 +239,6 @@ class PlannerDefaultImpl(
   protected[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .eff(planningObserver.onPhase10PostGC)
-      .map(hook.phase50PreForwarding)
-      .eff(planningObserver.onPhase50PreForwarding)
       .map(reorderOperations)
       .map(postOrdering)
       .get

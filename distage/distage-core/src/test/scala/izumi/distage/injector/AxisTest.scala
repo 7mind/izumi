@@ -6,7 +6,6 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.plan.Roots
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class AxisTest extends AnyWordSpec with MkInjector {

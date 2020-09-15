@@ -26,8 +26,6 @@ final class GraphDumpObserver(
 
   override def onPhase10PostGC(plan: SemiPlan): Unit = {}
 
-  override def onPhase50PreForwarding(plan: SemiPlan): Unit = {}
-
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
     val dotfileFull = render(finalPlan, withGc = true)
     val dotfileMin = render(finalPlan, withGc = false)

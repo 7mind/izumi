@@ -1,11 +1,15 @@
 package izumi.distage.planning
 
-import izumi.distage.model.definition.ImplDef
+import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
+import izumi.distage.model.definition.{Binding, DIResource, ImplDef, ModuleBase}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan, Wiring}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection._
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
 import scala.collection.immutable.ListSet
@@ -51,71 +55,51 @@ import scala.collection.immutable.ListSet
   * *after* garbage collection is done, as such they can't contain garbage by construction
   * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING) extends PlanningHook {
+class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING)(implicit pos: CodePositionMaterializer) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
-
-    val cleaned = plan.steps.flatMap {
-      op =>
-        op.target match {
-          // we should throw out all existing elements of the set
-          case `setKey` =>
-            Seq.empty
-
-          // and we should throw out existing set definition
-          case s: DIKey.SetElementKey if s.set == setKey =>
-            Seq.empty
-
-          case _ =>
-            Seq(op)
-        }
-    }
-
-    val newSteps = cleaned.flatMap {
-      // do not process top-level references to avoid duplicates (the target of reference will be included anyway)
-      case op: ExecutableOp.WiringOp.ReferenceKey =>
-        Seq(op)
-
-      case op =>
-        op.target match {
-          case `setKey` =>
-            // throw out previous set if any
-            op match {
-              case op: ExecutableOp.CreateSet =>
-                newMembers ++= op.members
-                Seq.empty
-              case _ =>
-                Seq.empty
-            }
-
-          case s: DIKey.SetElementKey if s.set == setKey =>
-            Seq(op)
-
-          case _ if op.instanceType <:< instanceType =>
-            if (instanceType == setElementType) {
-              newMembers += op.target
-              Seq(op)
+  override def hookDefinition(defn: ModuleBase): ModuleBase = {
+    val setMembers: Set[Binding.ImplBinding] = defn.bindings.flatMap {
+      case i: ImplBinding =>
+        i.implementation match {
+          case implDef: ImplDef.DirectImplDef =>
+            val implType = implDef.implType
+            if (implType <:< setElementType) {
+              Some(i)
             } else {
-              val provider = Functoid(wrap).get
-              val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
-              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider), op.origin)
-              newMembers += newKey
-              Seq(op, newOp)
+              None
             }
 
-          case _ =>
-            Seq(op)
+          case implDef: ImplDef.RecursiveImplDef =>
+            if (implDef.implType <:< setElementType) {
+              Some(i)
+            } else {
+              None
+            }
         }
+      case _: EmptySetBinding[_] =>
+        None
+
     }
 
-    val newSetKeys = ListSet.newBuilder.++=(newMembers).result()
-    val newSetOp = ExecutableOp.CreateSet(setKey, newSetKeys, OperationOrigin.Unknown)
+    if (setMembers.isEmpty) {
+      defn
+    } else {
+      val position = pos.get.position
 
-    plan.copy(steps = newSteps :+ newSetOp)
+      val elementOps: Set[Binding] = setMembers.map {
+        b =>
+          val implType = b.implementation.implType
+          val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = true)
+
+          SetElementBinding(SetElementKey(setKey, b.key, None), impl, Set.empty, position)
+      }
+      val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, position))
+      defn ++ ModuleBase.make(ops ++ elementOps)
+    }
+
   }
 
   override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
