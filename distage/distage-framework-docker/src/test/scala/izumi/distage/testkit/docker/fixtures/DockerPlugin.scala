@@ -7,7 +7,7 @@ import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.effect.modules.{CatsDIEffectModule, MonixDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Id
-import izumi.distage.model.definition.StandardAxis.Env
+import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import zio.Task
@@ -45,22 +45,22 @@ object DockerPlugin extends PluginDef {
   include(CmdContainerModule[Task])
   include(PostgresFlyWayDockerModule[Task])
 
-  make[AvailablePort].named("mq").tagged(Env.Test).from {
+  make[AvailablePort].named("mq").tagged(Mode.Test).from {
     cs: ElasticMQDocker.Container =>
       cs.availablePorts.first(ElasticMQDocker.primaryPort)
   }
 
-  make[AvailablePort].named("cs").tagged(Env.Test).from {
+  make[AvailablePort].named("cs").tagged(Mode.Test).from {
     cs: CassandraDocker.Container =>
       cs.availablePorts.first(CassandraDocker.primaryPort)
   }
 
-  make[AvailablePort].named("kafka").tagged(Env.Test).from {
+  make[AvailablePort].named("kafka").tagged(Mode.Test).from {
     kafka: KafkaDocker.Container =>
       kafka.availablePorts.first(KafkaDocker.primaryPort)
   }
 
-  make[AvailablePort].named("pgfw").tagged(Env.Test).from {
+  make[AvailablePort].named("pgfw").tagged(Mode.Test).from {
     cs: PostgresFlyWayDocker.Container =>
       cs.availablePorts.first(PostgresFlyWayDocker.primaryPort)
   }
@@ -71,17 +71,17 @@ object DockerPlugin extends PluginDef {
   }
 
   // these lines are for test scope
-  make[AvailablePort].named("pg").tagged(Env.Test).from {
+  make[AvailablePort].named("pg").tagged(Mode.Test).from {
     pg: PostgresDocker.Container =>
       pg.availablePorts.first(PostgresDocker.primaryPort)
   }
-  make[AvailablePort].named("ddb").tagged(Env.Test).from {
+  make[AvailablePort].named("ddb").tagged(Mode.Test).from {
     dn: DynamoDocker.Container =>
       dn.availablePorts.first(DynamoDocker.primaryPort)
   }
 
   // and this one is for production
-  make[AvailablePort].named("pg").tagged(Env.Prod).from {
+  make[AvailablePort].named("pg").tagged(Mode.Prod).from {
     pgPort: Int @Id("postgres.port") =>
       AvailablePort.local(pgPort)
   }

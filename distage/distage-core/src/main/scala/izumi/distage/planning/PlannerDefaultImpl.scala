@@ -15,7 +15,7 @@ import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.MutationResolver._
-import izumi.fundamentals.graphs.tools.{GC, Toposort}
+import izumi.fundamentals.graphs.tools.{GC, MutationResolver, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
 
@@ -29,6 +29,7 @@ class PlannerDefaultImpl(
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
+  resolver: MutationResolver[DIKey, Int, InstantiationOp],
 ) extends Planner {
 
   override def plan(input: PlannerInput): OrderedPlan = {
@@ -115,7 +116,7 @@ class PlannerDefaultImpl(
 
     val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.iterator
-      .filter(b => activationChoices.allValid(toAxis(b)))
+      //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
         b =>
           val next = bindingTranslator.computeProvisioning(b)
@@ -166,7 +167,7 @@ class PlannerDefaultImpl(
     val weakSetMembers = findWeakSetMembers(sets, matrix, roots)
 
     for {
-      resolution <- new MutationResolverImpl[DIKey, Int, InstantiationOp]().resolve(matrix, roots, activations, weakSetMembers)
+      resolution <- resolver.resolve(matrix, roots, activations, weakSetMembers)
       retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
       membersToDrop =
         resolution

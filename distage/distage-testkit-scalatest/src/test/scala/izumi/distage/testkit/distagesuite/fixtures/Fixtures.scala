@@ -7,7 +7,7 @@ import distage.TagK
 import izumi.distage.effect.modules.{CatsDIEffectModule, MonixDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.definition.StandardAxis.Env
+import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
@@ -30,8 +30,8 @@ abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockCache[F]]
   make[MockCachedUserService[F]]
   make[ApplePaymentProvider[F]]
-  make[ActiveComponent].from(TestActiveComponent).tagged(Env.Test)
-  make[ActiveComponent].from(ProdActiveComponent).tagged(Env.Prod)
+  make[ActiveComponent].from(TestActiveComponent).tagged(Mode.Test)
+  make[ActiveComponent].from(ProdActiveComponent).tagged(Mode.Prod)
 }
 
 trait ActiveComponent

@@ -10,8 +10,8 @@ import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin._
 
 class ConflictPlugin extends PluginDef {
-  make[Conflict].tagged(Env.Prod).from[Conflict1]
-  make[Conflict].tagged(Env.Test).from[Conflict2]
+  make[Conflict].tagged(Mode.Prod).from[Conflict1]
+  make[Conflict].tagged(Mode.Test).from[Conflict2]
   make[Conflict].from[Conflict3]
 
   make[UnsolvableConflict].from[UnsolvableConflict1]

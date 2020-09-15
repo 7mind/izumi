@@ -7,6 +7,7 @@ import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
 import izumi.distage.model._
 import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
+import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
@@ -19,6 +20,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
+import izumi.fundamentals.graphs.tools.MutationResolver
+import izumi.fundamentals.graphs.tools.MutationResolver.MutationResolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
@@ -89,6 +92,7 @@ object BootstrapLocator {
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
+    val resolver = new MutationResolverImpl[DIKey, Int, InstantiationOp]()
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
@@ -98,6 +102,7 @@ object BootstrapLocator {
       bindingTranslator = translator,
       analyzer = analyzer,
       mirrorProvider = mp,
+      resolver = resolver,
     )
   }
 
@@ -126,6 +131,8 @@ object BootstrapLocator {
     make[MirrorProvider].fromValue(mirrorProvider)
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
+
+    make[MutationResolver[DIKey, Int, InstantiationOp]].from[MutationResolverImpl[DIKey, Int, InstantiationOp]]
 
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]

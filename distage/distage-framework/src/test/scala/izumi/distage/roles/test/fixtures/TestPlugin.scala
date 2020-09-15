@@ -16,7 +16,7 @@ import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
 class TestPluginBase[F[_]: TagK] extends PluginDef with CatsDIEffectModule with MonixDIEffectModule with ConfigModuleDef with RoleModuleDef {
-  tag(Env.Prod)
+  tag(Mode.Prod)
 
   private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
     case Some(value) =>

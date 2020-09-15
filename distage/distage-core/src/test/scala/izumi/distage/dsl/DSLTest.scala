@@ -6,7 +6,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.StandardAxis.{Env, Repo}
+import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -639,13 +639,13 @@ class DSLTest extends AnyWordSpec with MkInjector {
       class X
 
       val module = new ModuleDef {
-        make[X].tagged(Repo.Prod, Env.Prod)
-        make[X].tagged(Repo.Dummy, Env.Prod)
-        make[X].tagged(Env.Test)
+        make[X].tagged(Repo.Prod, Mode.Prod)
+        make[X].tagged(Repo.Dummy, Mode.Prod)
+        make[X].tagged(Mode.Test)
       }
       val bindings = (module ++ module).overridenBy(module).bindings
       assert(bindings.size == 3)
-      assert(bindings.map(_.tags) == Set(Set[BindingTag](Repo.Prod, Env.Prod), Set[BindingTag](Repo.Dummy, Env.Prod), Set[BindingTag](Env.Test)))
+      assert(bindings.map(_.tags) == Set(Set[BindingTag](Repo.Prod, Mode.Prod), Set[BindingTag](Repo.Dummy, Mode.Prod), Set[BindingTag](Mode.Test)))
     }
 
   }

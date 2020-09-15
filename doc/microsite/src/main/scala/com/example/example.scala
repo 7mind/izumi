@@ -1,7 +1,7 @@
 package com.example
 
 import distage.DIKey
-import distage.StandardAxis.Env
+import distage.StandardAxis.Mode
 import distage.config.ConfigModuleDef
 import distage.plugins.PluginDef
 import izumi.distage.staticinjector.plugins.ModuleRequirements
@@ -15,7 +15,7 @@ final class OtherService
 
 // OtherService class is not defined here, even though Service depends on it
 final class AppPlugin extends PluginDef with ConfigModuleDef {
-  tag(Env.Prod)
+  tag(Mode.Prod)
 
   make[Service]
   makeConfig[Config]("config")

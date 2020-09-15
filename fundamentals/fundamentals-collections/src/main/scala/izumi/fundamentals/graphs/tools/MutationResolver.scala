@@ -7,9 +7,19 @@ import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC.WeakEdge
+import izumi.fundamentals.graphs.tools.MutationResolver.{Annotated, AxisPoint, Resolution, SemiEdgeSeq}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.annotation.{nowarn, tailrec}
+
+trait MutationResolver[N, I, V] {
+  def resolve(
+    predcessors: SemiEdgeSeq[Annotated[N], N, V],
+    roots: Set[N],
+    activations: Set[AxisPoint],
+    weak: Set[WeakEdge[N]],
+  ): Either[List[ConflictResolutionError[N, V]], Resolution[N, V]]
+}
 
 @nowarn("msg=Unused import")
 object MutationResolver {
@@ -59,7 +69,7 @@ object MutationResolver {
   private final case class MainResolutionStatus[N, V](resolved: SemiIncidenceMatrix[Annotated[N], N, V], unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   final case class WithContext[V, N](meta: V, remaps: Map[N, MutSel[N]])
 
-  class MutationResolverImpl[N, I, V] {
+  class MutationResolverImpl[N, I, V] extends MutationResolver[N, I, V] {
 
     def resolve(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
@@ -94,7 +104,7 @@ object MutationResolver {
       }
     }
 
-    private def resolveAxis(
+    protected def resolveAxis(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
       weak: Set[WeakEdge[N]],
@@ -107,6 +117,7 @@ object MutationResolver {
         grouped = onlyValid.map { case (key, node) => (key.key, (key, node)) }.toMultimap
         onlyCorrect <- traceGrouped(invalid.toMultimap, activations, weak)(roots, roots, grouped, Map.empty)
       } yield {
+
         val nonAmbiguous = onlyCorrect.filterNot(_._1.isMutator).map { case (k, _) => (k.key, k.axis) }
         val result = onlyCorrect.map {
           case (key, node) =>
@@ -116,7 +127,7 @@ object MutationResolver {
       }
     }
 
-    private def nonAmbigiousActivations(
+    protected def nonAmbigiousActivations(
       activations: Set[AxisPoint]
     ): Either[List[AmbigiousActivationsSet[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
@@ -181,21 +192,24 @@ object MutationResolver {
       }
     }
 
-    private def resolveConflict(
+    protected def resolveConflict(
       @nowarn invalid: ImmutableMultiMap[Annotated[N], Node[N, V]],
       @nowarn activations: Set[AxisPoint],
     )(conflict: NonEmptyList[(Annotated[N], Node[N, V])]
     ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
+      // keep in mind: `invalid` contains elements which are known to be inactive (there is a conflicting axis point)
+      conflict.size match {
+        case 1 =>
+          Right(Map(conflict.head))
+        case _ =>
+          val hasAxis = conflict.toList.filter(_._1.axis.nonEmpty)
+          hasAxis match {
+            case head :: Nil =>
+              Right(Map(head))
 
-      if (conflict.size == 1) {
-        Right(Map(conflict.head))
-      } else {
-        val hasAxis = conflict.toList.filter(_._1.axis.nonEmpty)
-        if (hasAxis.size == 1) {
-          Right(Map(hasAxis.head))
-        } else {
-          Left(List(ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)))
-        }
+            case more =>
+              Left(List(ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)))
+          }
       }
     }
 
