@@ -146,9 +146,10 @@ will be provided according to the `distage` object graph.
 #### Assertions
 
 All of the base classes support test cases that are:
-  - Assertions.
-  - Functions returning an assertion.
-  - Functions returning unit that fail on exception.
+
+- Assertions.
+- Functions returning an assertion.
+- Functions returning unit that fail on exception.
 
 These are introduced using `in` from
 @scaladoc[DistageAbstractScalatestSpec.LowPriorityIdentityOverloads](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
@@ -191,8 +192,8 @@ class ScoreSimpleTest extends Test {
 ```
 
 <pre>
-```scala mdoc:passthrough
-// change these blocks to `passthrough` instead of `invisible` to view test results.
+```scala mdoc:invisible
+// change this block to `passthrough` instead of `invisible` to view test results.
 // The goal is to demonstrate testkit plugin integration. `package` is not
 // currently supported in mdoc code. To hack around this the `package app` code
 // blocks are not interpreted and the actual test tested is the one below.
@@ -217,9 +218,10 @@ org.scalatest.shortstacks.nocolor.run(new ScoreSimpleTest with MdocTest)
 
 #### Assertions with Effects
 
-All of the base classes support test cases that are effects with assertions. As mentioned earlier, functions
-returning effects will have arguments provided from the `distage` object graph. These test cases are supported by
-@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper).
+All of the base classes support test cases that are effects with assertions. Functions returning
+effects will have arguments provided from the object graph. These test cases are supported
+by @scaladoc[`in` from
+DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper).
 
 The different effect types fix the `F[_]` argument for this syntax:
 
@@ -255,7 +257,7 @@ class ScoreEffectsTest extends Test {
 }
 ```
 
-```scala mdoc:passthrough
+```scala mdoc:invisible
 MdocTest.preRunSetup()
 org.scalatest.shortstacks.nocolor.run(new ScoreEffectsTest with MdocTest)
 ```
@@ -464,7 +466,7 @@ The config defines the plugin configuration, memoization, module overrides and o
 See also:
 
 - @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig).
-- [Memoization](#resource-reuse---memoization)
+- [Memoization](#resource-reuse-memoization)
 - [Execution Order](#execution-order)
 
 ### Syntax Summary
@@ -508,19 +510,48 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertBIO
 
 ### Execution Order
 
-By default, test cases are executed in parallel.
+By default, tests are executed in parallel. This includes tests using `Identity`, monix, ZIO, and
+monads in the cats effect hierarchy. `Identity` is treated as the effect type for imperative
+code. This behavior and the behavior of cats effect monads is provided by low priority implicits of
+`DIEffect`, `DIEffectAsync`, and `DIEffectRunner`. These components can be provided by the
+application if different behavior or other effects types are required.
+
+The execution of tests is grouped into:
+
+- [memoization environments](#resource-reuse-memoization).
+- test suite
+- test cases
+
+The default is to run all of these in parallel. The
+@scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each
+of these groups. The default is
+@scaladoc[`Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not
+constrain the number of parallel tests. `Fixed(n: Int)` limits the execution to at most `n` test
+cases. While `Sequential` executes the test cases one at a time.
+
+- `parallelEnvs` - Parallel level for distinct memoization environments.
+- `parallelSuites` - Parallel level for test suites.
+- `parallelTests` - Parallel level for test cases.
+
+If a group is configured to execute sequentially this will execute after the parallel tests.
+
+For example, the `BonusServiceTest` above consists of two test cases and one test suite. Both test
+cases will be executed in parallel using the async behavior of the effect type. The
+`NotUsingMemoTest` and `UsingMemoTest` below demonstrate executing the test cases sequentially for
+each test suite. However, the test suites will execute in parallel as they use the same memoization
+environment.
 
 ### Resource Reuse - Memoization
 
 Injected values are summoned from the object graph for each test. Without using memoization, the
 components will be acquired and released for each test. This may be unwanted. For example, a single
-Postgres container may be required for a sequence of test cases.  In which case we'd want to memoize
-the postgress component for the duration of those test cases.  Configuring memoization enables
-changing whether instantiating a component results in a fresh component or reuses the existing,
+PostgreSQL container may be required for a sequence of test cases.  In which case the PostgreSQL
+component should be memoized for the duration of those test cases.  Configuring memoization enables
+changing whether instantiating a component results in a fresh component or reuses an existing,
 memoized, instance.
 
-Further, memoization is essential in scheduling parallel execution of tests. See [the parallel
-execution section for further information.](#execution-order)
+Further, the memoization environment determines how the test cases are scheduled for execution. See
+[the execution order section for further information.](#execution-order)
 
 #### Memoization Environments
 
@@ -651,7 +682,7 @@ The memoization roots include `BonusService`. This results in the same `BonusSer
 each test case.
 
 This test requires the effect of the first test case to occur prior to the second test case. As
-discussed [Execution Order section](#exeuction-order): Without configuring test cases for sequential
+discussed [Execution Order section](#execution-order): Without configuring test cases for sequential
 parallel level this order would not be guaranteed.
 
 Note that the test did *not* use the same `BonusService` instance as `NotUsingMemoTest`. The config
@@ -757,9 +788,6 @@ This feature allows you to therefore selectively run only the fast in-memory tes
 dependencies. Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s
 @ref[Roles](distage-framework.md#roles).
 
-Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.launcher.services.StartupPlanExecutor) to execute the
-checks manually.
-
 ### References
 
 - Slides for [Hyper-pragmatic Pure FP testing with
@@ -778,9 +806,9 @@ checks manually.
 
 This is an excerpt from [distage-example](https://github.com/7mind/distage-example). Techniques in that example to look for:
 
-- Placing the `Profiles` component in the `memoizationRoots`. The axis `Repo.Prod` uses a postgres
+- Placing the `Profiles` component in the `memoizationRoots`. The axis `Repo.Prod` uses a PostgreSQL
   docker container. This is shared across test cases since the `Profiles[IO]` depends on the
-  postgres connection which then depends on the container instance.
+  PostgreSQL connection which then depends on the container instance.
 - Use of `Scene.Managed` to use `Axis.Prod` components in a managed environment.
 
 ```scala mdoc:reset:invisible:to-string
