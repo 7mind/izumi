@@ -70,9 +70,43 @@ class PlannerDefaultImpl(
 
         Value(SemiPlan(steps, input.roots))
           .map(addImports)
-          .map(order)
+          .eff(planningObserver.onPhase10PostGC)
+          .map(makeOrdered)
+          .map(forwardingRefResolver.resolve)
+          .map(hook.phase90AfterForwarding)
+          .eff(planningObserver.onPhase90AfterForwarding)
+          .eff(sanityChecker.assertFinalPlanSane)
           .get
     }
+  }
+
+  protected[this] def makeOrdered(completedPlan: SemiPlan): OrderedPlan = {
+    val topology = analyzer.topology(completedPlan.steps)
+
+    val index = completedPlan.index
+
+    val maybeBrokenLoops = new Toposort().cycleBreaking(
+      predcessors = IncidenceMatrix(topology.dependencies.graph),
+      break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
+    )
+
+    val sortedKeys = maybeBrokenLoops match {
+      case Left(value) =>
+        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
+
+      case Right(value) =>
+        value
+    }
+
+    val sortedOps = sortedKeys.flatMap(index.get).toVector
+
+    val roots = completedPlan.roots match {
+      case Roots.Of(roots) =>
+        roots.toSet
+      case Roots.Everything =>
+        topology.effectiveRoots
+    }
+    OrderedPlan(sortedOps, roots, topology)
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
@@ -236,14 +270,6 @@ class PlannerDefaultImpl(
     }
   }
 
-  protected[this] def order(semiPlan: SemiPlan): OrderedPlan = {
-    Value(semiPlan)
-      .eff(planningObserver.onPhase10PostGC)
-      .map(reorderOperations)
-      .map(postOrdering)
-      .get
-  }
-
   @nowarn("msg=Unused import")
   protected[this] def addImports(plan: SemiPlan): SemiPlan = {
     import scala.collection.compat._
@@ -273,44 +299,6 @@ class PlannerDefaultImpl(
       case Roots.Everything => Vector.empty
     }
     SemiPlan(missingRoots ++ allOps, plan.roots)
-  }
-
-  protected[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
-    val topology = analyzer.topology(completedPlan.steps)
-
-    val index = completedPlan.index
-
-    val maybeBrokenLoops = new Toposort().cycleBreaking(
-      predcessors = IncidenceMatrix(topology.dependencies.graph),
-      break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
-    )
-
-    val sortedKeys = maybeBrokenLoops match {
-      case Left(value) =>
-        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
-
-      case Right(value) =>
-        value
-    }
-
-    val sortedOps = sortedKeys.flatMap(index.get).toVector
-
-    val roots = completedPlan.roots match {
-      case Roots.Of(roots) =>
-        roots.toSet
-      case Roots.Everything =>
-        topology.effectiveRoots
-    }
-    OrderedPlan(sortedOps, roots, topology)
-  }
-
-  protected[this] def postOrdering(almostPlan: OrderedPlan): OrderedPlan = {
-    Value(almostPlan)
-      .map(forwardingRefResolver.resolve)
-      .map(hook.phase90AfterForwarding)
-      .eff(planningObserver.onPhase90AfterForwarding)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .get
   }
 
   protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {

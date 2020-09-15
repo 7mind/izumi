@@ -7,9 +7,6 @@ final class PlanningObserverAggregate(
   planningObservers: Set[PlanningObserver]
 ) extends PlanningObserver {
 
-  override def onPhase05PreGC(plan: SemiPlan): Unit = {
-    planningObservers.foreach(_.onPhase05PreGC(plan))
-  }
   override def onPhase10PostGC(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase10PostGC(plan))
   }

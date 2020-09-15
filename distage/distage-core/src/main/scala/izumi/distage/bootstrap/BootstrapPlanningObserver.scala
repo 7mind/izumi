@@ -5,9 +5,6 @@ import izumi.distage.model.planning.PlanningObserver
 import izumi.fundamentals.platform.console.TrivialLogger
 
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
-  override def onPhase05PreGC(plan: SemiPlan): Unit = {}
-  override def onPhase10PostGC(plan: SemiPlan): Unit = {}
-
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = {
     doLog("Final Plan", finalPlan.toString)
   }

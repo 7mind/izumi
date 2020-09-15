@@ -20,11 +20,10 @@ final class GraphDumpObserver(
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
 
-  override def onPhase05PreGC(plan: SemiPlan): Unit = synchronized {
+  // TODO: elements removed by gc were lost, we need to address that as a part of #1220
+  override def onPhase10PostGC(plan: SemiPlan): Unit = synchronized {
     beforeFinalization.set(plan)
   }
-
-  override def onPhase10PostGC(plan: SemiPlan): Unit = {}
 
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
     val dotfileFull = render(finalPlan, withGc = true)

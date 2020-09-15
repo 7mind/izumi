@@ -7,11 +7,9 @@ import izumi.logstage.api.IzLogger
 final class PlanningObserverLoggingImpl(
   log: IzLogger
 ) extends PlanningObserver {
-  override def onPhase05PreGC(plan: SemiPlan): Unit = {
-    log.trace(s"[onPhase05PreFinalization]:\n$plan")
-  }
+
   override def onPhase10PostGC(plan: SemiPlan): Unit = {
-    log.trace(s"[onPhase10PostOrdering]:\n$plan")
+    log.trace(s"[onPhase10PostGC]:\n$plan")
   }
   override def onPhase90AfterForwarding(plan: OrderedPlan): Unit = {
     log.trace(s"[onPhase30AfterForwarding]:\n$plan")
