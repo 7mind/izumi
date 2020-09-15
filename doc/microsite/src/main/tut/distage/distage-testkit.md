@@ -8,8 +8,8 @@ The `distage-testkit` simplifies pragmatic pure functional programming testing. 
 [ScalaTest](https://www.scalatest.org/) base classes for the effect types of `Identity`, `F[_]`,
 `F[+_, +_]` and `F[-_, +_, +_]`. They provide an interface similar to ScalaTest's
 [`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
-`distage-testkit` has additional capabilities such as first class support for effect types and
-dependency injection.
+`distage-testkit` has additional capabilities such as: first class support for effect types;
+dependency injection; and parallel execution.
 
 Usage of `distage-testkit` generally follows these steps:
 
@@ -34,11 +34,14 @@ Usage of `distage-testkit` generally follows these steps:
 
 ### API Overview
 
-The highest value tests to develop [in our experience](https://blog.7mind.io/constructive-test-taxonomy.html) are those that verify the communication behavior of components. These are tests of blackbox interfaces,
-with atomic or group isolation levels.
+The highest value tests to develop [in our
+experience](https://blog.7mind.io/constructive-test-taxonomy.html) are those that verify the
+communication behavior of components. These are tests of blackbox interfaces, with atomic or group
+isolation levels.
 
 To demonstrate usage of `distage-testkit` we'll consider a hypothetical game score system. This
-system will have a model, logic, and service which we'll then define test cases to verify. Our application will use `ZIO[-R, +E, +A]`.
+system will have a model, logic, and service which we'll then define test cases to verify. Our
+application will use `ZIO[-R, +E, +A]`.
 
 We'll start with the following model and service interface for the game score system:
 
@@ -81,20 +84,23 @@ object Score {
 }
 ```
 
-This represents a game score system where the player can collect Stars or Mangoes with differently configured and calculated point values.
+This represents a game score system where the player can collect Stars or Mangoes with differently
+configured and calculated point values.
 
 #### `DistageSpecScalatest` Base Classes
 
-There are test suite base classes for functor, bifunctor and trifunctor effect types. We will be choosing the
-one that matches our application's effect type from the following:
+There are test suite base classes for functor, bifunctor and trifunctor effect types. We will be
+choosing the one that matches our application's effect type from the following:
 
-- No effect type - @scaladoc[`DistageSpecScalatest[Identity]`](izumi.distage.testkit.scalatest.DistageSpecScalatest)
+- No effect type, imperative usage - @scaladoc[`DistageSpecScalatest[Identity]`](izumi.distage.testkit.scalatest.DistageSpecScalatest)
 - `F[_]` - @scaladoc[`DistageSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageSpecScalatest)
 - `F[+_, +_]` - @scaladoc[`DistageBIOSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOSpecScalatest)
 - `F[-_, +_, +_]` - @scaladoc[`DistageBIOEnvSpecScalatest[F]`](izumi.distage.testkit.scalatest.DistageBIOEnvSpecScalatest)
 
-For our demonstration application the tests use the `ZIO[-R, +E, +A]` effect type. This means we'll be
-using `DistageBIOEnvSpecScalatest` for the test suite base class.
+The effect monad is expected to support sync and async effects. `distage-testkit` provides this
+support for `Identity`, monix, ZIO, and monads in the cats effect heirarchy. For our demonstration
+application the tests use the `ZIO[-R, +E, +A]` effect type. This means we'll be using
+`DistageBIOEnvSpecScalatest` for the test suite base class.
 
 The default config (`super.config`) has `pluginConfig`, which will scan the package the test is in
 for according modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation
@@ -121,7 +127,8 @@ abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
         include(ZIODIEffectModule)
         make[Config].from(defaultConfig)
         make[Console.Service].fromHas(Console.live)
-      }
+      },
+      debugOutput = true
     )
 }
 ```
@@ -136,7 +143,7 @@ In `WordSpec`, a test case is a sentence (a `String`) followed by `in` then the 
 and functions using effect types are also supported.  Function arguments and effect environments
 will be provided according to the `distage` object graph.
 
-#### Test Cases - Assertions
+#### Assertions
 
 All of the base classes support test cases that are:
   - Assertions.
@@ -159,7 +166,7 @@ Let's now create a simple test for our demonstration application:
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-final class ScoreSimpleTest extends Test {
+class ScoreSimpleTest extends Test {
   "Score" should {
 
     "increase by config star value" in {
@@ -183,11 +190,30 @@ final class ScoreSimpleTest extends Test {
 }
 ```
 
-```scala mdoc:invisible
-// run the test to verify the docs
-// Not enough value to showing the output. plus the formatting is bad.
-// org.scalatest.shortstacks.nocolor.run(new ScoreSimpleTest)
+<pre>
+```scala mdoc:passthrough
+// change these blocks to `passthrough` instead of `invisible` to view test results.
+// The goal is to demonstrate testkit plugin integration. `package` is not
+// currently supported in mdoc code. To hack around this the `package app` code
+// blocks are not interpreted and the actual test tested is the one below.
+import izumi.distage.plugins.PluginConfig
+
+trait MdocTest extends DummyTest {
+  override def config = super.config.copy(
+    pluginConfig = PluginConfig.cached(Seq(getClass.getPackage.getName))
+  )
+}
+
+object MdocTest {
+  def preRunSetup() = {
+    izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.resetRegistry()
+  }
+}
+
+MdocTest.preRunSetup()
+org.scalatest.shortstacks.nocolor.run(new ScoreSimpleTest with MdocTest)
 ```
+</pre>
 
 #### Assertions with Effects
 
@@ -208,7 +234,7 @@ a function from `Config`, the required argument will be injected by `distage-tes
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-final class ScoreEffectsTest extends Test {
+class ScoreEffectsTest extends Test {
   "testkit operations with effects" should {
 
     "assertions in effects" in {
@@ -229,8 +255,9 @@ final class ScoreEffectsTest extends Test {
 }
 ```
 
-```scala mdoc:invisible
-//org.scalatest.shortstacks.nocolor.run(new ScoreEffectsTest)
+```scala mdoc:passthrough
+MdocTest.preRunSetup()
+org.scalatest.shortstacks.nocolor.run(new ScoreEffectsTest with MdocTest)
 ```
 
 #### Assertions with Effects with Environments
@@ -415,18 +442,6 @@ final class DummyBonusServiceTest extends BonusServiceTest with DummyTest
 
 <pre>
 ```scala mdoc:invisible
-// change this block to `passthrough` instead of `invisible` to view test results.
-// The goal is to demonstrate testkit plugin integration. `package` is not
-// currently supported in mdoc code. To hack around this the `package app` code
-// blocks are not interpreted and the actual test tested is the one below.
-izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.resetRegistry()
-trait MdocTest extends DummyTest {
-  override def config = super.config.copy(
-    pluginConfig = super.config.pluginConfig.copy(
-      overrides = Seq(BonusServicePlugin)
-    )
-  )
-}
 
 val mdocBonusServiceTest = new BonusServiceTest with MdocTest
 org.scalatest.shortstacks.nocolor.run(mdocBonusServiceTest)
@@ -450,7 +465,7 @@ See also:
 
 - @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig).
 - [Memoization](#resource-reuse---memoization)
-- [Parallel Execution](#parallel-execution)
+- [Execution Order](#execution-order)
 
 ### Syntax Summary
 
@@ -491,6 +506,10 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertBIO
 
 - `assertBIO[F[+_, +_] : BIO](???: Boolean): F[Nothing, Assertion]`
 
+### Execution Order
+
+By default, test cases are executed in parallel.
+
 ### Resource Reuse - Memoization
 
 Injected values are summoned from the object graph for each test. Without using memoization, the
@@ -501,7 +520,7 @@ changing whether instantiating a component results in a fresh component or reuse
 memoized, instance.
 
 Further, memoization is essential in scheduling parallel execution of tests. See [the parallel
-execution section for further information.](#parallel-execution)
+execution section for further information.](#execution-order)
 
 #### Memoization Environments
 
@@ -542,7 +561,7 @@ import izumi.distage.testkit.TestConfig
 class NotUsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
-      // require the test cases to run sequentially
+      // this demo requires the tests to run sequentially
       parallelTests = TestConfig.ParallelLevel.Sequential
     )
 
@@ -578,7 +597,7 @@ a new `BonusService` instance for each test case.
 <pre>
 ```scala mdoc:invisible
 // change this block to `passthrough` instead of `invisible` to view test results.
-izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.resetRegistry()
+MdocTest.preRunSetup()
 val mdocNotUsingMemoTest = new NotUsingMemoTest with MdocTest
 org.scalatest.shortstacks.nocolor.run(mdocNotUsingMemoTest)
 ```
@@ -596,7 +615,7 @@ class UsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
-      // require the test cases to run sequentially
+      // this demo requires the test cases to run sequentially
       parallelTests = TestConfig.ParallelLevel.Sequential
     )
 
@@ -620,12 +639,20 @@ class UsingMemoTest extends DummyTest {
         _ <- console.putStrLn(s"bonusService = ${bonusService}")
         currentBonus <- bonusService.queryCurrentBonus
         expectedBonus = defaultConfig.defaultBonus + delta
+        // verify the change in the first case modified this bonusService
         _ <- assertIO(currentBonus == expectedBonus)
       } yield ()
     }
   }
 }
 ```
+
+The memoization roots include `BonusService`. This results in the same `BonusService` instance for
+each test case.
+
+This test requires the effect of the first test case to occur prior to the second test case. As
+discussed [Execution Order section](#exeuction-order): Without configuring test cases for sequential
+parallel level this order would not be guaranteed.
 
 Note that the test did *not* use the same `BonusService` instance as `NotUsingMemoTest`. The config
 for each test has different memoization roots. This results in different [memoization
@@ -642,7 +669,7 @@ class AnotherUsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
-      // require the test cases to run sequentially
+      // this demo requires the test cases to run sequentially
       parallelTests = TestConfig.ParallelLevel.Sequential
     )
 
@@ -673,7 +700,7 @@ bonusService = repl.MdocSession$App$DummyBonusService$Impl@2843b83b
 <pre>
 ```scala mdoc:invisible
 // change this block to `passthrough` instead of `invisible` to view test results.
-izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.resetRegistry()
+MdocTest.preRunSetup()
 val mdocUsingMemoTest = new UsingMemoTest with MdocTest
 val mdocAnotherUsingMemoTest = new AnotherUsingMemoTest with MdocTest
 // while this looks to only run one test this will run both.
@@ -711,11 +738,9 @@ for each test case
 ### Forced Roots
 
 The `forcedRoots` of `TestConfig` specifies components added to the dependencies of every test within
-this memoization environment. Without memoization these will be acquired and release each test
-case. With memoization these will be acquired before all and released after all tests within this
-memoization environment.
-
-
+this memoization environment. Without memoization these are acquired and release each test case. With
+memoization these are acquired before all and released after all tests within this memoization
+environment.
 
 ### Test Selection
 
@@ -734,10 +759,6 @@ dependencies. Integration checks are executed only in `distage-testkit` tests an
 
 Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.launcher.services.StartupPlanExecutor) to execute the
 checks manually.
-
-### Parallel Execution
-
-TODO
 
 ### References
 
