@@ -1,15 +1,12 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import izumi.distage.model.definition.{Binding, DIResource, ImplDef, ModuleBase}
-import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan, Wiring}
+import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
 
 import scala.collection.immutable.ListSet
@@ -55,7 +52,7 @@ import scala.collection.immutable.ListSet
   * *after* garbage collection is done, as such they can't contain garbage by construction
   * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING)(implicit pos: CodePositionMaterializer) extends PlanningHook {
+class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]

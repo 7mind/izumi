@@ -14,13 +14,7 @@ import izumi.distage.model.planning.PlanningHook
 abstract class AutoSetModule extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {
     many[T]
-    many[PlanningHook].add(new AutoSetHook[T, T](identity))
-    this
-  }
-
-  def register[T: Tag, B: Tag](wrap: T => B): AutoSetModule = {
-    many[B]
-    many[PlanningHook].add(new AutoSetHook[T, B](wrap))
+    many[PlanningHook].add(new AutoSetHook[T, T])
     this
   }
 }
