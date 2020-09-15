@@ -68,7 +68,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(context.find[JustTrait].isEmpty)
   }
 
-  "progression test: should report conflict if there's both an implementation with no axis and the current choice" in {
+  "should not report conflict if there's both an implementation with no axis and the current choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -76,18 +76,15 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assertThrows[TestFailedException] {
-      assertThrows[Throwable] {
-        val instance = Injector()
-          .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
-          .unsafeGet()
-          .get[JustTrait]
-        assert(instance.isInstanceOf[Impl1]) // should fail to produce, not choose `Repo.Prod`
-      }
-    }
+    val instance = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+      .unsafeGet()
+      .get[JustTrait]
+    assert(instance.isInstanceOf[Impl1])
+
   }
 
-  "progression test: should report conflict if there's both an implementation with no axis and the opposite choice" in {
+  "should not report conflict if there's both an implementation with no axis and the opposite choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -95,15 +92,11 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Dummy).from[Impl1]
     }
 
-    assertThrows[TestFailedException] {
-      assertThrows[Throwable] {
-        val instance = Injector()
-          .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
-          .unsafeGet()
-          .get[JustTrait]
-        assert(instance.isInstanceOf[Impl0]) // should fail to produce, not choose untagged
-      }
-    }
+    val instance = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+      .unsafeGet()
+      .get[JustTrait]
+    assert(instance.isInstanceOf[Impl0])
   }
 
 }
