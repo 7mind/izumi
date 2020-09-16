@@ -193,7 +193,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side, locator).unsafeRunSync()
+              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
@@ -229,7 +229,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side, locator).unsafeRunSync()
+              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
@@ -270,7 +270,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side, locator).unsafeRunSync()
+              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
               assert(initCounter.getStartedCloseables().size == 2)
               assert(initCounter.getCheckedResources().size == 1)

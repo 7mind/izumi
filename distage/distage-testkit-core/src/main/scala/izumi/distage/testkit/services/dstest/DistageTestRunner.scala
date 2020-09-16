@@ -171,7 +171,7 @@ class DistageTestRunner[F[_]: TagK](
 
     // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
     val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
-      _.collectChildrenEffect[IntegrationCheck, F].map(_.target).toSet
+      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
     }
 
     val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
@@ -288,7 +288,7 @@ class DistageTestRunner[F[_]: TagK](
   )(implicit
     F: DIEffect[F]
   ): F[Unit] = {
-    checker.collectFailures(plans.side, integrationLocator).flatMap {
+    checker.collectFailures(plans.sideRoots1, plans.sideRoots2, integrationLocator).flatMap {
       case Some(failures) =>
         F.maybeSuspend {
           ignoreIntegrationCheckFailedTests(tests, failures)
@@ -382,14 +382,17 @@ class DistageTestRunner[F[_]: TagK](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val testIntegrationCheckKeys = testPlan.collectChildrenEffect[IntegrationCheck, F].map(_.target).toSet -- allSharedKeys
+    val (testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect) = {
+      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+      (res1 -- allSharedKeys, res2 -- allSharedKeys)
+    }
 
     val newAppModule = test.environment.appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys
     // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
 //    val newRoots = testPlan.keys -- allSharedKeys // ++ allStrengthenedKeys.intersect(moduleKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ allStrengthenedKeys.intersect(moduleKeys)
-    val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeys)
+    val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(

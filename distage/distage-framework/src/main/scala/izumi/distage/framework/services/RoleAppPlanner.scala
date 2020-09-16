@@ -8,6 +8,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 
 trait RoleAppPlanner[F[_]] {
@@ -55,7 +56,7 @@ object RoleAppPlanner {
       val runtimeKeys = bootstrappedApp.plan.keys
 
       val appPlan = bootstrappedApp.injector.trisectByKeys(bootloader.activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
-        _.collectChildrenEffect[IntegrationCheck, F].map(_.target).toSet
+        _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)

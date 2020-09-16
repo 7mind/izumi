@@ -60,7 +60,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       .toSeq
       .map {
         case (dp, ap) =>
-          (dp: DockerPort, NonEmptyList(ap.head, ap.tail.toList: _*))
+          (dp: DockerPort, NonEmptyList(ap.head, ap.tail))
       }
       .toMap
 

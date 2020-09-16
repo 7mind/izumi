@@ -1442,16 +1442,24 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   */
 object NonEmptyList {
 
+  /**
+    * Constructs a new <code>NonEmptyList</code> of one element
+    */
   def apply[T](singleElement: T): NonEmptyList[T] = new NonEmptyList[T](singleElement :: Nil)
 
   /**
-    * Constructs a new <code>NonEmptyList</code> given at least one element.
+    * Constructs a new <code>NonEmptyList</code> given at least two elements.
     *
     * @tparam T the type of the element contained in the new <code>NonEmptyList</code>
     * @param firstElement the first element (with index 0) contained in this <code>NonEmptyList</code>
     * @param otherElements a varargs of zero or more other elements (with index 1, 2, 3, ...) contained in this <code>NonEmptyList</code>
     */
-  def apply[T](firstElement: T, otherElements: T*): NonEmptyList[T] = new NonEmptyList(firstElement :: otherElements.toList)
+  def apply[T](firstElement: T, secondElement: T, otherElements: T*): NonEmptyList[T] = new NonEmptyList(firstElement :: secondElement :: otherElements.toList)
+
+  /**
+    * Constructs a new <code>NonEmptyList</code> given at least one element.
+    */
+  def apply[T](firstElement: T, otherElements: Iterable[T]): NonEmptyList[T] = new NonEmptyList(firstElement :: otherElements.toList)
 
   /**
     * Variable argument extractor for <code>NonEmptyList</code>s.
@@ -1473,7 +1481,7 @@ object NonEmptyList {
     * @return a <code>NonEmptyList</code> containing the elements of the given <code>Seq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>Seq</code> is empty
     */
-  def from[T](seq: Seq[T]): Option[NonEmptyList[T]] =
+  def from[T](seq: Iterable[T]): Option[NonEmptyList[T]] =
     seq.headOption match {
       case None => None
       case Some(first) => Some(new NonEmptyList(first :: seq.tail.toList))
