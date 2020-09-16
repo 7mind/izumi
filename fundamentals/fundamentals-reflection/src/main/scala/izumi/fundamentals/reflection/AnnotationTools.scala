@@ -8,7 +8,6 @@ object AnnotationTools {
 
   def getAllAnnotations(u: Universe)(symb: u.Symbol): List[u.Annotation] = {
     val out = symb.annotations ++ getAllTypeAnnotations(u)(symb.typeSignature)
-    println(s"AE0: $symb => $out ${symb.typeSignature}")
     out
   }
 
@@ -19,7 +18,6 @@ object AnnotationTools {
       case _ =>
         Nil
     }
-    println(s"AE1: $typ => ${typ.finalResultType.dealias} $out")
     out
   }
 
