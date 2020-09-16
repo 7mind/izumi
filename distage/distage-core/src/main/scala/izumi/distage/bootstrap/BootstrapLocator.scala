@@ -155,12 +155,10 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).from[CglibProxyProvider]
-    make[ProxyProvider].tagged(Cycles.Byname).from[ProxyProviderFailingImpl]
-    make[ProxyProvider].tagged(Cycles.Disable).from[ProxyProviderFailingImpl]
+    make[ProxyProvider].from[ProxyProviderFailingImpl]
 
-    make[ProxyStrategy].tagged(Cycles.Proxy).from[ProxyStrategyDefaultImpl]
-    make[ProxyStrategy].tagged(Cycles.Byname).from[ProxyStrategyDefaultImpl]
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
+    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }
 
   final val defaultBootstrapActivation: Activation = Activation(Cycles -> Cycles.Proxy)
