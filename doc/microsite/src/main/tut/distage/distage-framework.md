@@ -63,7 +63,7 @@ val module = new ConfigModuleDef {
   // declare paths to parse
   makeConfig[Conf]("conf")
   makeConfig[OtherConf]("conf").named("other")
- 
+
   // add config instance
   make[AppConfig].from(AppConfig(ConfigFactory.parseString(
     """conf {
@@ -77,7 +77,7 @@ val module = new ConfigModuleDef {
 Injector().produceRun(module) {
   configPrinter: ConfigPrinter =>
     configPrinter.print()
-} 
+}
 ```
 
 Automatic derivation of config codecs is based on [pureconfig-magnolia](https://github.com/pureconfig/pureconfig).
@@ -115,11 +115,11 @@ Example:
 Here configs will be loaded in the following order, with higher priority earlier:
 
   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
-  - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf` 
+  - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
 
 ### Plugins
 
-`distage-extension-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`. 
+`distage-extension-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`.
 Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time with new `Plugin` classes
 on the classpath. Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long
 as they're defined in a separate module.
@@ -216,7 +216,7 @@ final class OtherService
 // error: OtherService is not bound here, even though Service depends on it
 final class AppPlugin extends PluginDef with ConfigModuleDef {
   tag(Env.Prod)
-  
+
   make[Service]
   makeConfig[Config]("config")
 }
@@ -249,7 +249,7 @@ import izumi.distage.staticinjector.plugins.StaticPluginChecker
 
 final class AppPluginTest extends AnyWordSpec {
   "App plugin will work (if OtherService is provided later)" in {
-    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("env:prod", ".*.application.conf")   
+    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("mode:prod", ".*.application.conf")
   }
 }
 ```

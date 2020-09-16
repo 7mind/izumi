@@ -1,6 +1,6 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.planning.PlanningObserver
 import izumi.fundamentals.platform.console.TrivialLogger
 

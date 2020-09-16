@@ -15,15 +15,6 @@ trait InjectorFactory {
   def apply(overrides: BootstrapModule*): Injector
 
   /**
-    * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes
-    *
-    * @param activation A map of axes of configuration to choices along these axes
-    * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
-    *                  They can be used to extend the Injector, e.g. add ability to inject config values
-    */
-  def apply(activation: Activation, overrides: BootstrapModule*): Injector
-
-  /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
     * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
@@ -33,14 +24,27 @@ trait InjectorFactory {
   def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]]
+    * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes for the bootstrap environment.
+    * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
+    *
+    * @param activation A map of axes of configuration to choices along these axes
+    * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
+    *                  They can be used to extend the Injector, e.g. add ability to inject config values
+    */
+  def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector
+
+  /**
+    * Create a new Injector from a custom [[BootstrapContextModule]].
+    * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
     *
     * @param activation A map of axes of configuration to choices along these axes
     * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  def apply(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
+  def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from results of a previous Injector's run

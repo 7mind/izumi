@@ -5,10 +5,10 @@ import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.collections.OrderedSetShim
+import izumi.fundamentals.platform.language.unused
 
-import scala.collection.{Iterable, mutable}
+import scala.collection.Iterable
 
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp.NewInstance] = {

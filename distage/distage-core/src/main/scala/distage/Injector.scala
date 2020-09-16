@@ -18,17 +18,6 @@ object Injector extends InjectorFactory {
   }
 
   /**
-    * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes
-    *
-    * @param activation A map of axes of configuration to choices along these axes
-    * @param overrides  Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
-    *                   They can be used to extend the Injector, e.g. add ability to inject config values
-    */
-  override def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-    bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
-  }
-
-  /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
     * @param bootstrapBase See [[BootstrapLocator.defaultBootstrap]]
@@ -40,14 +29,29 @@ object Injector extends InjectorFactory {
   }
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]] and the chosen [[izumi.distage.model.definition.Activation]] axes
+    * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes for the bootstrap environment.
+    * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
     *
     * @param activation A map of axes of configuration to choices along these axes
-    * @param bootstrapBase See [[BootstrapLocator.defaultBootstrap]]
+    * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
+    *                  They can be used to extend the Injector, e.g. add ability to inject config values
+    */
+  override def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector = {
+    bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
+  }
+
+  /**
+    * Create a new Injector from a custom [[BootstrapContextModule]].
+    * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
+    *
+    * @param activation A map of axes of configuration to choices along these axes
+    * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def apply(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+  override def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
     bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
@@ -78,15 +82,15 @@ object Injector extends InjectorFactory {
       bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation, overrides.merge)
     }
 
-    override final def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
-      bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation ++ activation, overrides.merge)
-    }
-
     override final def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
       bootstrap(bootstrapBase, cycleActivation, overrides.merge)
     }
 
-    override final def apply(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+    override final def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector = {
+      bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation ++ activation, overrides.merge)
+    }
+
+    override final def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
       bootstrap(bootstrapBase, cycleActivation ++ activation, overrides.merge)
     }
 
