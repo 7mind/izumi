@@ -14,7 +14,7 @@ object StandardAxis {
 
   /**
     * Any entities which may store and persist state or "repositories".
-    * E.g. databases, message queues, KV storages, file systems, etc.
+    * e.g. databases, message queues, KV storages, file systems, etc.
     */
   object Repo extends Axis {
     override def name: String = "repo"
@@ -25,16 +25,16 @@ object StandardAxis {
 
   /**
     * Third-party integrations which are not controlled by the application and provided "as is".
-    * E.g. Facebook API, Google API, etc.
+    * e.g. Facebook API, Google API, etc.
     */
   object World extends Axis {
     override def name: String = "world"
 
     case object Real extends AxisValueDef
-    case object Dummy extends AxisValueDef
+    case object Mock extends AxisValueDef
   }
 
-  @deprecated("Use StandardAxis.Externals instead", "0.11.0")
+  @deprecated("Use StandardAxis.World instead", "0.11.0")
   final val ExternalApi = World
 
   /**
@@ -75,7 +75,7 @@ object StandardAxis {
     Activation(
       Mode -> Mode.Test,
       Repo -> Repo.Dummy,
-      World -> World.Dummy,
+      World -> World.Mock,
       Scene -> Scene.Managed,
     )
   }
