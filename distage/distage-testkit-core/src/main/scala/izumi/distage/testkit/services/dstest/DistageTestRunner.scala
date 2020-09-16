@@ -19,6 +19,7 @@ import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, PreparedTest}
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -288,16 +289,16 @@ class DistageTestRunner[F[_]: TagK](
     F: DIEffect[F]
   ): F[Unit] = {
     checker.collectFailures(plans.side, integrationLocator).flatMap {
-      case Left(failures) =>
+      case Some(failures) =>
         F.maybeSuspend {
           ignoreIntegrationCheckFailedTests(tests, failures)
         }
-      case Right(_) =>
+      case None =>
         onSuccess
     }
   }
 
-  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: Seq[ResourceCheck.Failure]): Unit = {
+  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
     tests.foreach {
       test =>
         reporter.testStatus(test.meta, TestStatus.Ignored(failures))
@@ -584,7 +585,7 @@ object DistageTestRunner {
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
-    final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
+    final case class Ignored(checks: NonEmptyList[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
@@ -601,10 +602,8 @@ object DistageTestRunner {
   }
 
   object ProvisioningIntegrationException {
-    def unapply(arg: ProvisioningException): Option[Seq[ResourceCheck.Failure]] = {
-      Some(arg.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq)
-        .filter(_.nonEmpty)
-        .map(_.flatten)
+    def unapply(arg: ProvisioningException): Option[NonEmptyList[ResourceCheck.Failure]] = {
+      NonEmptyList.from(arg.getSuppressed.iterator.collect { case i: IntegrationCheckException => i.failures.toList }.flatten.toList)
     }
   }
 

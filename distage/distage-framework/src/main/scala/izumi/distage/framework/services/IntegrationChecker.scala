@@ -1,28 +1,30 @@
 package izumi.distage.framework.services
 
-import distage.{DIKey, TagK}
+import distage.{SafeType, TagK}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.nowarn
 import scala.util.control.NonFatal
 
 trait IntegrationChecker[F[_]] {
-  def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]]
+  def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Option[NonEmptyList[ResourceCheck.Failure]]]
   final def checkOrFail(plan: OrderedPlan, integrationLocator: Locator): F[Unit] = {
     implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
     collectFailures(plan, integrationLocator).flatMap {
-      case Left(failures) =>
+      case Some(failures) =>
         F.fail(new IntegrationCheckException(failures))
-      case Right(_) =>
+      case None =>
         F.unit
     }
   }
@@ -34,10 +36,12 @@ object IntegrationChecker {
 
   class Impl[F[_]](
     logger: IzLogger
-  )(implicit protected val tag: TagK[F]
+  )(implicit override protected val tag: TagK[F]
   ) extends IntegrationChecker[F] {
 
-    override def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
+    @nowarn("msg=Unused import")
+    override def collectFailures(plan: OrderedPlan, integrationLocator: Locator): F[Option[NonEmptyList[ResourceCheck.Failure]]] = {
+      import scala.collection.compat._
 
       val steps = plan.steps.filter(op => plan.declaredRoots.contains(op.target)).toSet
       if (steps.nonEmpty) {
@@ -47,22 +51,19 @@ object IntegrationChecker {
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
       implicit val P: DIEffectAsync[F] = integrationLocator.get[DIEffectAsync[F]]
 
-      val (identityInstances, fInstances) = steps
-        .toList.partitionMap {
+      val (identityInstancesSet, fInstancesSet) = {
+        steps.partitionMap {
           ick =>
-            println(ick.instanceType)
-            println(ick.target)
-            if (ick.instanceType <:< DIKey[IntegrationCheck[Identity]].tpe) {
-              println("i")
+            val idTpe = SafeType.get[IntegrationCheck[Identity]]
+            if (ick.instanceType <:< idTpe) {
+              println("i" -> ick.target -> ick.instanceType)
               Left(ick -> integrationLocator.lookupInstance[Any](ick.target).map(_.asInstanceOf[IntegrationCheck[Identity]]))
             } else {
-              println("f")
+              println("f" -> ick.target -> ick.instanceType)
               Right(ick -> integrationLocator.lookupInstance[Any](ick.target).map(_.asInstanceOf[IntegrationCheck[F]]))
             }
         }
-
-      val identityInstancesSet = identityInstances.toSet
-      val fInstancesSet = fInstances.toSet
+      }
 
       val identityChecks = identityInstancesSet.collect { case (_, Some(ic)) => ic }
       val fChecks = fInstancesSet.collect { case (_, Some(ic)) => ic }
@@ -73,12 +74,7 @@ object IntegrationChecker {
           identityChecked <- P.parTraverse(identityChecks)(i => checkWrap(F.maybeSuspend(runCheck[Identity](i)), i.toString))
           fChecked <- P.parTraverse(fChecks)(i => checkWrap(runCheck[F](i), i.toString))
           results = identityChecked ++ fChecked
-          res <- results.collect { case Left(failure) => failure } match {
-            case Nil =>
-              F.pure(Right(()))
-            case failures =>
-              F.pure(Left(failures))
-          }
+          res = NonEmptyList.from(results.collect { case Left(failure) => failure })
         } yield res
       } else {
         F.fail(new DIAppBootstrapException(s"Inconsistent locator state: integration components ${bad.mkString("{", ", ", "}")} are missing from locator"))

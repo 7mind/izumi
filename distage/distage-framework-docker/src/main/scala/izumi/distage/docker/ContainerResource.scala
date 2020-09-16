@@ -187,7 +187,7 @@ case class ContainerResource[F[_], T](
               .asScala.toList.sortBy(_.getId)
           } catch {
             case c: Throwable =>
-              throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+              throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
           }
         }
         candidate = {

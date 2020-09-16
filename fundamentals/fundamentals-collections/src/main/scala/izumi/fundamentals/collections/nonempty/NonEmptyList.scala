@@ -1442,6 +1442,8 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   */
 object NonEmptyList {
 
+  def apply[T](singleElement: T): NonEmptyList[T] = new NonEmptyList[T](singleElement :: Nil)
+
   /**
     * Constructs a new <code>NonEmptyList</code> given at least one element.
     *

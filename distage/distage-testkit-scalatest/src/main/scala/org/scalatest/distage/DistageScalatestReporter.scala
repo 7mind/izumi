@@ -110,7 +110,7 @@ class DistageScalatestReporter extends TestReporter {
         doReport(suiteId1)(
           TestCanceled(
             _,
-            s"ignored: ${checks.niceList()}",
+            s"ignored: ${checks.toList.niceList()}",
             suiteName1,
             suiteId1,
             Some(suiteClassName1),

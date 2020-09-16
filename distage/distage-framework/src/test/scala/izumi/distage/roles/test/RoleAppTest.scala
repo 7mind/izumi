@@ -243,6 +243,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder[IO]
       val initCounterIdentity = new XXX_ResourceEffectsRecorder[Identity]
+
       val definition = new ResourcesPluginBase {
         make[IntegrationResource0[Identity]]
         make[TestResource[Identity]].using[IntegrationResource0[Identity]]
@@ -254,6 +255,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
       } ++ CatsDIEffectModule ++ IdentityDIEffectModule
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
+
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
         BootstrapModule.empty,
@@ -263,6 +265,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
+
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
