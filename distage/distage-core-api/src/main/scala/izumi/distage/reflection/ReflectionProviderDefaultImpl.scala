@@ -33,6 +33,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case Some(v) =>
         throw new BadIdAnnotationException(typeOfIdAnnotation.toString, v)
       case None =>
+        println(s"$parameterSymbol: $typeKey")
         JSRAnnotationTools.uniqueJSRNameAnno(u.u)(parameterSymbol.annotations) match {
           case Some(value) =>
             typeKey.named(value)

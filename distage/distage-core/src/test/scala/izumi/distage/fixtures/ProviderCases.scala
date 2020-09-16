@@ -34,6 +34,7 @@ object ProviderCases {
 
     case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
     case class ClassTypeAnn(x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+    case class ClassTypeAnnJavax(x: String @javax.inject.Named("classtypeann1"), y: Int @javax.inject.Named("classtypeann2"))
     class ClassTypeAnnByName(@unused x: => String @Id("classtypeann1"), @unused y: => Int @Id("classtypeann2"))
 
     class Poly[F[_]]

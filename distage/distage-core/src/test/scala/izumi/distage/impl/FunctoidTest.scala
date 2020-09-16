@@ -230,6 +230,13 @@ class FunctoidTest extends AnyWordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
+    "handle case class .apply references with javax.inject.Named annotations" in {
+      val fn = Functoid.apply(ClassTypeAnnJavax.apply _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
     "handle generic case class .apply references with type annotations" in {
       val fn = Functoid.apply(ClassTypeAnnT.apply[String, Int] _).get
 
