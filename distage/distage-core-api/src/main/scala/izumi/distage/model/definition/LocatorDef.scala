@@ -1,7 +1,6 @@
 package izumi.distage.model.definition
 
 import izumi.distage.AbstractLocator
-import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
@@ -19,6 +18,7 @@ import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection._
+import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.{Tag, TagK}
 
@@ -66,7 +66,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
         val setKey = key.set
-        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[collection.Set[Any]] + instance))
+        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
       case e: EmptySetBinding[_] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>

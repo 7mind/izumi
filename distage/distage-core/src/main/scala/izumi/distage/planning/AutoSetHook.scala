@@ -2,14 +2,11 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
 import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
-
-import scala.collection.immutable.ListSet
 
 /**
   * A hook that will collect all implementations with types that are {{{_ <: T}}} into a `Set[T]` set binding

@@ -12,7 +12,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
   "distage" should {
     "support JSR330 @Named anno" in {
       IzScala.scalaRelease match {
-        case ScalaRelease.`2_13`(bugfix) =>
+        case ScalaRelease.`2_13`(_) =>
           val definition = PlannerInput.noGC(new ModuleDef {
             make[Int].named("port").from(80)
             make[String].named("address").from("localhost")

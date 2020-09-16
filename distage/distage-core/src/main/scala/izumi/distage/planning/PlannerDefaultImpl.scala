@@ -145,7 +145,6 @@ class PlannerDefaultImpl(
     import scala.collection.compat._
 
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
-    val activationChoices = ActivationChoices(activations)
 
     val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.iterator
