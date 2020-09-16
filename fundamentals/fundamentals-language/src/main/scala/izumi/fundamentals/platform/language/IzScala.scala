@@ -1,6 +1,8 @@
 package izumi.fundamentals.platform.language
 
+import scala.language.experimental.macros
 import scala.math.Ordering.Implicits._
+import scala.reflect.macros.blackbox
 
 object IzScala {
 
@@ -40,5 +42,25 @@ object IzScala {
     }
   }
 
-  def scalaRelease: ScalaRelease = ScalaRelease.parse(scala.util.Properties.versionNumberString)
+  def scalaRelease: IzScala.ScalaRelease = macro ScalaReleaseMacro.scalaRelease
+
+  object ScalaReleaseMacro {
+
+    def scalaRelease(c: blackbox.Context): c.Expr[IzScala.ScalaRelease] = {
+      import c.universe._
+
+      ScalaRelease.parse(scala.util.Properties.versionNumberString) match {
+        case ScalaRelease.`2_12`(bugfix) =>
+          c.Expr[ScalaRelease](q"${symbolOf[ScalaRelease.`2_12`].asClass.companion}($bugfix)")
+        case ScalaRelease.`2_13`(bugfix) =>
+          c.Expr[ScalaRelease](q"${symbolOf[ScalaRelease.`2_13`].asClass.companion}($bugfix)")
+        case ScalaRelease.Unsupported(parts) =>
+          c.Expr[ScalaRelease](q"${symbolOf[ScalaRelease.Unsupported].asClass.companion}(..${parts.toList})")
+        case ScalaRelease.Unknown(verString) =>
+          c.Expr[ScalaRelease](q"${symbolOf[ScalaRelease.Unknown].asClass.companion}($verString)")
+      }
+    }
+
+  }
+
 }
