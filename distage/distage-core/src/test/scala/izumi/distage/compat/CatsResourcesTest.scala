@@ -112,7 +112,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     assertCompiles(
       """
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => Resource.pure("42") }
+           make[String].fromResource { (_: Unit) => Resource.pure[cats.Id, String]("42") }
          }
       """
     )
@@ -120,7 +120,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       assertCompiles(
         """
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => Resource.pure(42) }
+           make[String].fromResource { (_: Unit) => Resource.pure[cats.Id, Int](42) }
          }
       """
       )

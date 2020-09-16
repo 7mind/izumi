@@ -8,8 +8,6 @@ import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
 
-import scala.language.reflectiveCalls
-
 sealed trait Binding {
   def key: DIKey
   def origin: SourceFilePosition
