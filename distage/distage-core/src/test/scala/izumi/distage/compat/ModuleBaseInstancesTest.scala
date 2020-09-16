@@ -1,6 +1,6 @@
 package izumi.distage.compat
 
-import cats.implicits._
+import cats.syntax.all._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.model.definition.Bindings.binding
 import izumi.distage.model.definition._

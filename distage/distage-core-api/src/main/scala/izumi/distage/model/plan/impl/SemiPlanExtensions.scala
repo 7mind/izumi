@@ -28,8 +28,6 @@ private[plan] trait SemiPlanExtensions extends Any { this: SemiPlan.type =>
 }
 
 private[plan] object SemiPlanExtensions {
-
-  import cats.instances.vector._
   import cats.syntax.functor._
   import cats.syntax.traverse._
 

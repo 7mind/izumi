@@ -33,7 +33,7 @@ class CatsConversionTest extends AnyWordSpec {
       ().iterateWhileM(_ => ().pure)(_ => true)
     }
     def c2[F[+_, +_]: BIO]: F[Nothing, List[Unit]] = {
-      import cats.implicits._
+      import cats.syntax.all._
 
       List(1, 2, 3).traverseFilter {
         case 2 => F.pure(Some(()))
