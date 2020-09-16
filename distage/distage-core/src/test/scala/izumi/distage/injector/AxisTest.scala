@@ -67,7 +67,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(context.find[JustTrait].isEmpty)
   }
 
-  "should not report conflict if there's both an implementation with no axis and the current choice" in {
+  "should choose implementation with the current axis choice if there's both an implementation with no axis and the current choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -80,19 +80,18 @@ class AxisTest extends AnyWordSpec with MkInjector {
       .unsafeGet()
       .get[JustTrait]
     assert(instance.isInstanceOf[Impl1])
-
   }
 
-  "should not report conflict if there's both an implementation with no axis and the opposite choice" in {
+  "should choose implementation with no axis as a default if there's both an implementation with no axis and the opposite choice" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
       make[JustTrait].from[Impl0]
-      make[JustTrait].tagged(Repo.Dummy).from[Impl1]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     val instance = Injector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[JustTrait])))
       .unsafeGet()
       .get[JustTrait]
     assert(instance.isInstanceOf[Impl0])
