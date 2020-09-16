@@ -207,7 +207,7 @@ object MutationResolver {
             case head :: Nil =>
               Right(Map(head))
 
-            case more =>
+            case _ =>
               Left(List(ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)))
           }
       }

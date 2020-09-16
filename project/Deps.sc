@@ -136,6 +136,8 @@ object Izumi {
     )
 
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
+
+    val javaXInject = Library("javax.inject", "javax.inject", "1", LibraryType.Invariant)
   }
 
   import Deps._
@@ -367,6 +369,7 @@ object Izumi {
           Projects.fundamentals.platform,
           Projects.fundamentals.functional,
         ),
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.fundamentals.functional,
@@ -417,7 +420,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.core,
         libs = allMonadsTest ++ Seq(
-          scala_java_time in Scope.Test.js
+          scala_java_time in Scope.Test.js,
+          javaXInject in Scope.Test.all,
         ),
         depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),

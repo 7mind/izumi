@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.{BadIdAnnotationException, UnsupportedDefinitionException, UnsupportedWiringException}
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
-import izumi.fundamentals.reflection.ReflectionUtil
+import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
@@ -33,7 +33,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case Some(v) =>
         throw new BadIdAnnotationException(typeOfIdAnnotation.toString, v)
       case None =>
-        typeKey
+        JSRAnnotationTools.uniqueJSRNameAnno(u.u)(parameterSymbol.annotations) match {
+          case Some(value) =>
+            typeKey.named(value)
+          case None =>
+            typeKey
+        }
     }
   }
 
