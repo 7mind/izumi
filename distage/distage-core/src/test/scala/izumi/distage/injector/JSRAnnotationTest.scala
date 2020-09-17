@@ -57,7 +57,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
-        make[ServerConfigWithParamAnnos]
+        make[ServerConfigWithParamAnnos].from(new ServerConfigWithParamAnnos(_, _, _, _))
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -130,7 +130,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithParamAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with field annos when functoid takes companion as function" in {
+    "work with field annos when functoid takes overriden companion as function" in {
       val definition = PlannerInput.noGC(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
@@ -190,6 +190,24 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithParamAnnos].address == context.get[String]("address"))
       assert(context.get[ServerConfigWithParamAnnos].address1 == context.get[String]("address1"))
     }
+
+    "work with param annos when functoid takes overriden companion as function" in {
+      val definition = PlannerInput.noGC(new ModuleDef {
+        make[Int].named("port").from(80)
+        make[String].named("address").from("localhost")
+        make[Int].named("port1").from(90)
+        make[String].named("address1").from("localhost1")
+        make[ServerConfigWithParamAnnosOverridenObject].from(ServerConfigWithParamAnnosOverridenObject)
+      })
+
+      val context = Injector.Standard().produce(definition).unsafeGet()
+
+      assert(context.get[ServerConfigWithParamAnnosOverridenObject].port == context.get[Int]("port"))
+      assert(context.get[ServerConfigWithParamAnnosOverridenObject].port1 == context.get[Int]("port1"))
+
+      assert(context.get[ServerConfigWithParamAnnosOverridenObject].address == context.get[String]("address"))
+      assert(context.get[ServerConfigWithParamAnnosOverridenObject].address1 == context.get[String]("address1"))
+    }
   }
 }
 
@@ -221,5 +239,13 @@ object JSRAnnotationTest {
     @javax.inject.Named(value = "port1") port1: Int,
     @javax.inject.Named("address1") address1: String,
   )
+
+  final case class ServerConfigWithParamAnnosOverridenObject(
+    port: Port,
+    address: Address,
+    @javax.inject.Named(value = "port1") port1: Int,
+    @javax.inject.Named("address1") address1: String,
+  )
+  object ServerConfigWithParamAnnosOverridenObject extends ((Int, Address, Int, String) => ServerConfigWithParamAnnosOverridenObject)
 
 }

@@ -57,13 +57,14 @@ class FunctoidMacro(val c: blackbox.Context) {
     case Function(args, body) =>
       analyzeMethodRef(args.map(_.symbol), body)
     case _ if tree.tpe ne null =>
-      val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
       if (tree.tpe.typeSymbol.isModuleClass) {
+        val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
         val overridenFunctionNApply = tree
           .tpe.typeSymbol.info.decl(TermName("apply")).alternatives
           .find(_.overrides.exists(functionNClasses contains _.owner))
+
         overridenFunctionNApply.fold(analyzeValRef(tree.tpe)) {
-          m => analyzeMethodRef(m.asMethod.paramLists.flatten, tree)
+          method => analyzeMethodRef(extractMethodReferenceParams(method), tree)
         }
       } else {
         analyzeValRef(tree.tpe)
@@ -110,12 +111,11 @@ class FunctoidMacro(val c: blackbox.Context) {
     }
 
     val lambdaParams = lambdaArgs.map(association)
-    val (methodReferenceParams) = body match {
+    val methodReferenceParams = body match {
       case Apply(f, _) =>
         logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
-        val params = f.symbol.asMethod.typeSignature.paramLists.flatten
-        params.map(association)
+        extractMethodReferenceParams(f.symbol).map(association)
       case _ =>
         logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
@@ -152,6 +152,26 @@ class FunctoidMacro(val c: blackbox.Context) {
     } else {
       lambdaParams
     }
+  }
+
+  protected[this] def extractMethodReferenceParams(symbol: Symbol): List[Symbol] = {
+    val isSyntheticCaseClassApply = {
+      symbol.name.decodedName.toString == "apply" &&
+      symbol.isSynthetic &&
+      symbol.owner.companion.isClass &&
+      symbol.owner.companion.asClass.isCaseClass
+    }
+
+    val method = if (isSyntheticCaseClassApply) {
+      // since this is a _synthetic_ apply, its signature must match the case class constructor exactly, so we don't check it
+      val constructor = symbol.owner.companion.asClass.primaryConstructor
+      logger.log(s"Matched method reference as a synthetic apply corresponding to primary constructor $constructor")
+      constructor
+    } else {
+      symbol.asMethod
+    }
+
+    method.typeSignature.paramLists.flatten
   }
 
   protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
