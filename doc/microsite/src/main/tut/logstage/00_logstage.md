@@ -164,7 +164,7 @@ def load(entity: Entity): cats.effect.IO[Unit] = cats.effect.IO.unit
 
 ```scala mdoc:to-string
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import logstage.LogIO
 import io.circe.Printer
 import io.circe.syntax._

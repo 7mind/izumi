@@ -1,5 +1,6 @@
 package izumi.distage.model.plan
 
+import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.strings.IzString._
 
 /**
@@ -11,10 +12,12 @@ final case class TriSplittedPlan(
   side: OrderedPlan,
   primary: OrderedPlan,
   shared: OrderedPlan,
+  sideRoots1: Set[DIKey],
+  sideRoots2: Set[DIKey],
 )
 
 object TriSplittedPlan {
-  implicit class TriPlanEx(split: TriSplittedPlan) {
+  implicit final class TriPlanEx(private val split: TriSplittedPlan) extends AnyVal {
     def render(): String = {
       Seq(
         split.shared.render().listing("Shared Plan"),

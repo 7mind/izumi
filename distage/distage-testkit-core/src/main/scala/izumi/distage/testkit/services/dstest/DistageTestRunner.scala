@@ -19,6 +19,7 @@ import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnvWithPlan, PreparedTest}
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -170,7 +171,7 @@ class DistageTestRunner[F[_]: TagK](
 
     // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
     val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
-      _.collectChildren[IntegrationCheck[F]].map(_.target).toSet
+      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
     }
 
     val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
@@ -287,17 +288,17 @@ class DistageTestRunner[F[_]: TagK](
   )(implicit
     F: DIEffect[F]
   ): F[Unit] = {
-    checker.collectFailures(plans.side.declaredRoots, integrationLocator).flatMap {
-      case Left(failures) =>
+    checker.collectFailures(plans.sideRoots1, plans.sideRoots2, integrationLocator).flatMap {
+      case Some(failures) =>
         F.maybeSuspend {
           ignoreIntegrationCheckFailedTests(tests, failures)
         }
-      case Right(_) =>
+      case None =>
         onSuccess
     }
   }
 
-  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: Seq[ResourceCheck.Failure]): Unit = {
+  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
     tests.foreach {
       test =>
         reporter.testStatus(test.meta, TestStatus.Ignored(failures))
@@ -381,14 +382,17 @@ class DistageTestRunner[F[_]: TagK](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val testIntegrationCheckKeys = testPlan.collectChildren[IntegrationCheck[F]].map(_.target).toSet -- allSharedKeys
+    val (testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect) = {
+      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+      (res1 -- allSharedKeys, res2 -- allSharedKeys)
+    }
 
     val newAppModule = test.environment.appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys
     // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
 //    val newRoots = testPlan.keys -- allSharedKeys // ++ allStrengthenedKeys.intersect(moduleKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ allStrengthenedKeys.intersect(moduleKeys)
-    val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeys)
+    val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
@@ -584,7 +588,7 @@ object DistageTestRunner {
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
-    final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
+    final case class Ignored(checks: NonEmptyList[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
@@ -601,10 +605,8 @@ object DistageTestRunner {
   }
 
   object ProvisioningIntegrationException {
-    def unapply(arg: ProvisioningException): Option[Seq[ResourceCheck.Failure]] = {
-      Some(arg.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq)
-        .filter(_.nonEmpty)
-        .map(_.flatten)
+    def unapply(arg: ProvisioningException): Option[NonEmptyList[ResourceCheck.Failure]] = {
+      NonEmptyList.from(arg.getSuppressed.iterator.collect { case i: IntegrationCheckException => i.failures.toList }.flatten.toList)
     }
   }
 

@@ -327,7 +327,7 @@ To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDe
 For example, we may declare many [http4s](https://http4s.org) routes and serve them all from a central router:
 
 ```scala mdoc:silent:reset:to-string
-import cats.implicits._
+import cats.syntax.foldable._
 import cats.effect.{Bracket, IO, Resource}
 import distage.{Roots, ModuleDef, Injector}
 import org.http4s._

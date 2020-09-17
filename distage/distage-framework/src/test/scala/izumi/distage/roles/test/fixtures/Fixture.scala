@@ -44,9 +44,9 @@ object Fixture {
 
   case class XXX_LocatorLeak(locatorRef: LocatorRef)
 
-  trait TestResource
+  trait TestResource[F[_]]
 
-  trait ProbeResource[F[_]] extends TestResource with AutoCloseable {
+  trait ProbeResource[F[_]] extends TestResource[F] with AutoCloseable {
     def counter: XXX_ResourceEffectsRecorder[F]
     counter.onStart(this)
 
@@ -66,9 +66,9 @@ object Fixture {
 
   case class ProbeResource0[F[_]: DIEffect](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
 
-  case class JustResource1[F[_]: DIEffect](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource
-  case class JustResource2[F[_]: DIEffect](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource
-  case class JustResource3[F[_]: DIEffect](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource
+  case class JustResource1[F[_]: DIEffect](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource2[F[_]: DIEffect](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource3[F[_]: DIEffect](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
 
   trait AxisComponent
   object AxisComponentIncorrect extends AxisComponent

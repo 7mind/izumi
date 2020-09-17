@@ -37,7 +37,7 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
     val split = injector.trisectByKeys(Activation.empty, definition.bindings, primary) {
       baseplan =>
         assert(sub.intersect(baseplan.index.keySet).isEmpty)
-        sub
+        (sub, Set.empty)
     }
 
     assert(Set(sc0, sc1, sc2).diff(split.shared.index.keySet).isEmpty)
@@ -67,7 +67,7 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
       primary ++ sub,
     )
 
-    val split = injector.trisectByKeys(Activation.empty, definition.bindings, primary)(_ => sub)
+    val split = injector.trisectByKeys(Activation.empty, definition.bindings, primary)(_ => (sub, Set.empty))
 
     val sideIndex = split.side.index
     val primaryIndex = split.primary.index

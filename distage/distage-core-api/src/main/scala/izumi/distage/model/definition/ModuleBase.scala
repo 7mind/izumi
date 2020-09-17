@@ -145,7 +145,7 @@ object ModuleBase {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
-
+    import cats.instances.set._
     new PartialOrder[T] with Hash[T] {
       override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
       override def hash(x: T): Int = x.hashCode()

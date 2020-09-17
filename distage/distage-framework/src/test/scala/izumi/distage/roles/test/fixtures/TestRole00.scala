@@ -37,7 +37,7 @@ object roles {
     val dummies: Set[Dummy],
     val setElems: Set[SetElement],
     val resource: TestRole00Resource[F],
-    val resources: Set[TestResource],
+    val resources: Set[TestResource[F]],
     val conflict: Conflict,
     val es: ExecutorService,
     val counter: XXX_ResourceEffectsRecorder[F],

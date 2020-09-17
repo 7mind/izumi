@@ -8,6 +8,7 @@ import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.Functoid
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.strings.IzString._
@@ -19,7 +20,6 @@ import scala.jdk.CollectionConverters._
 
 trait ContainerNetworkDef {
   type Tag
-
   final type Network = ContainerNetwork[Tag]
   final type Config = ContainerNetworkConfig[Tag]
   final val Config = ContainerNetworkConfig
@@ -101,7 +101,7 @@ object ContainerNetworkDef {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
       F.definitelyRecover(f) {
         c: Throwable =>
-          F.fail(new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))))
+          F.fail(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))))
       }
     }
 
