@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
-import distage.{DIKey, Injector, Module}
-import izumi.distage.fixtures.BasicCases.BasicCase1.JustTrait
+import distage.{DIKey, Id, Injector, Module}
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
@@ -155,5 +154,23 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .unsafeGet()
         .get[Set[SetTrait]]
     }
+  }
+
+  "work correctly with named Unit" in {
+    class X(u: Unit @Id("x")) { val x: Unit = u }
+
+    val definition = new ModuleDef {
+      make[Unit].named("x").tagged(Repo.Dummy).fromValue(())
+      make[Unit].named("x").tagged(Repo.Prod).fromValue(())
+      make[X]
+    }
+
+    val instance = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[X])))
+      .unsafeGet()
+      .get[X]
+
+    assert(definition.bindings.size == 3)
+    assert(instance.x ne null)
   }
 }

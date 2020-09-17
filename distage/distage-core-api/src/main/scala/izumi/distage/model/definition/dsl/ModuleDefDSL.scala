@@ -5,7 +5,6 @@ import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag, T
 import izumi.distage.model.definition._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.AddTagsAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
@@ -138,25 +137,19 @@ object ModuleDefDSL {
       *   make[Unit].from(constructor)
       * }}}
       *
-      * Annotation processing is done by a macro and macros are rarely perfect,
-      * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _) or (method(_))
-      * Annotation info may be lost ONLY in a few cases detailed below, though:
-      *  - If an annotated method has been hidden by an intermediate `val`
-      *  - If an `.apply` method of a case class is passed when case class _parameters_ are annotated, not their types
-      *
-      * As such, prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
-      *
-      * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
-      * not preserve parameter annotations from case class definitions:
+      * Using intermediate vals will lose annotations when converting a method into a function value,
+      * Prefer passing inline lambdas such as `{ x => y }` or method references such as `(method _)` or `(method(_))`.:
       *
       * {{{
-      *   case class X(@Id("special") i: Int)
+      *   def constructorMethod(@Id("special") i: Int): Unit = ()
       *
-      *   make[X].from(X.apply _) // summons regular Int
-      *   make[X].from(new X(_)) // summons special Int
+      *   val constructor = constructorMethod _
+      *
+      *   make[Unit].from(constructor) // SURPRISE: Will summon regular Int, not a "special" Int from DI object graph
+      *   make[Unit].from(constructorMethod _) // Will work correctly: summon "special" Int
       * }}}
       *
-      * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
+      * Prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
       *
       * {{{
       *   case class X(i: Int @Id("special"))
@@ -164,19 +157,11 @@ object ModuleDefDSL {
       *   make[X].from(X.apply _) // summons special Int
       * }}}
       *
-      * Using intermediate vals will lose annotations when converting a method into a function value,
-      * prefer using annotated method directly as method reference `(method _)`:
+      * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
       *
-      * {{{
-      *   def constructorMethod(@Id("special") i: Int): Unit = ()
-      *
-      *   val constructor = constructorMethod _
-      *
-      *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
-      * }}}
-      *
-      * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]
-      * @see 'Magnet' in the name refers to the Magnet Pattern: http://spray.io/blog/2012-12-13-the-magnet-pattern/
+      * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
+      * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
+      * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */
     final def from[I <: T](function: Functoid[I]): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))

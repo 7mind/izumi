@@ -47,8 +47,16 @@ trait Injector extends Planner with Producer {
     *     .produceF[F](moduleDef, Roots(fn.get.diKeys.toSet))
     *     .use(_.run(fn))
     * }}}
+    *
+    * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
+    * @param activation A map of axes of configuration to choices along these axes
+    * @param function   N-ary [[Functoid]] function for which arguments will be designated as roots and provided from the object graph
     */
-  final def produceRunF[F[_]: TagK: DIEffect, A](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] = {
+  final def produceRunF[F[_]: TagK: DIEffect, A](
+    bindings: ModuleBase,
+    activation: Activation = Activation.empty,
+  )(function: Functoid[F[A]]
+  ): F[A] = {
     produceF[F](plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
   }
 
@@ -85,6 +93,10 @@ trait Injector extends Planner with Producer {
     *     .produceF[F](moduleDef, Roots(fn.get.diKeys.toSet))
     *     .evalMap(_.run(fn))
     * }}}
+    *
+    * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
+    * @param activation A map of axes of configuration to choices along these axes
+    * @param function   N-ary [[Functoid]] function for which arguments will be designated as roots and provided from the object graph
     */
   final def produceEvalF[F[_]: TagK: DIEffect, A](
     bindings: ModuleBase,
@@ -118,6 +130,9 @@ trait Injector extends Planner with Producer {
     *     .produceF[F](moduleDef, Roots(DIKey.get[A]))
     *     .map(_.get[A])
     * }}}
+    *
+    * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
+    * @param activation A map of axes of configuration to choices along these axes
     */
   final def produceGetF[F[_]: TagK: DIEffect, A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
@@ -148,7 +163,7 @@ trait Injector extends Planner with Producer {
     *              and garbage collection roots.
     *
     *              Garbage collector will remove all bindings that aren't direct or indirect dependencies
-    *              of the chosen root DIKeys from the plan - they will never be instantiated.
+    *              of the chosen `root` DIKeys from the plan - they will never be instantiated.
     *
     *              If left empty, garbage collection will not be performed – that would be equivalent to
     *              designating all DIKeys as roots.

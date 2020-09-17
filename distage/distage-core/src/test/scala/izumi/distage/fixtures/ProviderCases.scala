@@ -49,6 +49,7 @@ object ProviderCases {
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
     }
 
+    final class Component1[F[_]](val dep: Unit @Id("needed"))
   }
 
   object ProviderCase2 {

@@ -2,10 +2,12 @@ package izumi.distage.impl
 
 import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
+import izumi.distage.fixtures.BasicCases.BasicCase7
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.ProjectAttributeMacro
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.exceptions.TestFailedException
@@ -376,15 +378,27 @@ class FunctoidTest extends AnyWordSpec {
       assertTypeError("Functoid.apply(defconfannfn2 _)")
     }
 
-    "progression test: Can't handle case class .apply references with argument annotations" in {
+    "extract Id annotations from higher-kinded type aliases" in {
+      import BasicCase7._
+
+      def ctor[F[_]](componentSpecial: ComponentSpecial[F]): Component[F] = componentSpecial
+
+      def fn[F[_]: TagK]: Functoid[ComponentSpecial[F]] = Functoid.apply(ctor[F] _)
+
+      assert(fn[Identity].get.diKeys == Seq(DIKey[Component[Identity]]("special")))
+    }
+
+    "extract Id annotations of parameterized ClassConstructor" in {
+      val fn = ClassConstructor[Component1[Option]]
+
+      assert(fn.get.diKeys == Seq(DIKey[Unit]("needed")))
+    }
+
+    "can handle case class .apply references with argument annotations" in {
       val fn = Functoid.apply(ClassArgAnn.apply _).get
 
-      intercept[TestFailedException] {
-        assert(fn.diKeys.contains(DIKey.get[String].named("classargann1")))
-      }
-      intercept[TestFailedException] {
-        assert(fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
-      }
+      assert(fn.diKeys.contains(DIKey.get[String].named("classargann1")))
+      assert(fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
     }
 
     "progression test: Can't expand functions with implicit arguments" in {

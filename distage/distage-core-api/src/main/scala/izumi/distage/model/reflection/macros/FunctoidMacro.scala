@@ -57,7 +57,18 @@ class FunctoidMacro(val c: blackbox.Context) {
     case Function(args, body) =>
       analyzeMethodRef(args.map(_.symbol), body)
     case _ if tree.tpe ne null =>
-      analyzeValRef(tree.tpe)
+      if (tree.tpe.typeSymbol.isModuleClass) {
+        val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
+        val overridenFunctionNApply = tree
+          .tpe.typeSymbol.info.decl(TermName("apply")).alternatives
+          .find(_.overrides.exists(functionNClasses contains _.owner))
+
+        overridenFunctionNApply.fold(analyzeValRef(tree.tpe)) {
+          method => analyzeMethodRef(extractMethodReferenceParams(method), tree)
+        }
+      } else {
+        analyzeValRef(tree.tpe)
+      }
     case _ =>
       c.abort(
         tree.pos,
@@ -104,37 +115,67 @@ class FunctoidMacro(val c: blackbox.Context) {
       case Apply(f, _) =>
         logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
-        val params = f.symbol.asMethod.typeSignature.paramLists.flatten
-        params.map(association)
+        extractMethodReferenceParams(f.symbol).map(association)
       case _ =>
         logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
-        List()
+        Nil
     }
 
     logger.log(s"lambda params: $lambdaParams")
     logger.log(s"method ref params: $methodReferenceParams")
 
-    val annotationsOnLambda = lambdaParams.flatMap(_.symbol.annotations)
-    val annotationsOnMethod = methodReferenceParams.flatMap(_.symbol.annotations)
+    def annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
+      val annotationsOnLambda = lambdaParams.iterator.map(_.symbol.annotations)
+      val annotationsOnMethod = Predef.wrapRefArray(methodReferenceParams.iterator.map(_.symbol.annotations).toArray)
+
+      annotationsOnMethod.exists(_.nonEmpty) &&
+      annotationsOnLambda.zipAll(annotationsOnMethod.iterator, null, null).forall {
+        case (null, _) => false
+        case (_, null) => false
+        case (left, right) =>
+          left.iterator.zipAll(right.iterator, null, null).forall {
+            case (l, r) => (l eq null) || l == r
+          }
+      }
+    }
 
     // if method reference has more annotations, get parameters from reference instead
     // to preserve annotations!
-    if (methodReferenceParams.size == lambdaParams.size &&
-      annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
-      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
+    if (annotationsOnMethodAreNonEmptyAndASuperset) {
+      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved/unrelated
       // But lambda params should be sufficiently 'grounded' at this point
       // (Besides, lambda types are the ones specified by the caller, we should respect them)
       methodReferenceParams.zip(lambdaParams).map {
         case (mArg, lArg) =>
           mArg.copy(
-            symbol = mArg.symbol.withTpe(lArg.symbol.finalResultType),
+            symbol = lArg.symbol.withAnnotations(mArg.symbol.annotations),
             key = mArg.key.withTpe(lArg.key.tpe),
           )
       }
     } else {
       lambdaParams
     }
+  }
+
+  protected[this] def extractMethodReferenceParams(symbol: Symbol): List[Symbol] = {
+    val isSyntheticCaseClassApply = {
+      symbol.name.decodedName.toString == "apply" &&
+      symbol.isSynthetic &&
+      symbol.owner.companion.isClass &&
+      symbol.owner.companion.asClass.isCaseClass
+    }
+
+    val method = if (isSyntheticCaseClassApply) {
+      // since this is a _synthetic_ apply, its signature must match the case class constructor exactly, so we don't check it
+      val constructor = symbol.owner.companion.asClass.primaryConstructor
+      logger.log(s"Matched method reference as a synthetic apply corresponding to primary constructor $constructor")
+      constructor
+    } else {
+      symbol.asMethod
+    }
+
+    method.typeSignature.paramLists.flatten
   }
 
   protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
