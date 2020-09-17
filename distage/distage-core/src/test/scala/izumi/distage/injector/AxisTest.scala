@@ -159,7 +159,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
 
   "work correctly with named Unit" in {
-    class X(u: Unit @Id("x")) { val x = u }
+    class X(u: Unit @Id("x")) { val x: Unit = u }
 
     val definition = new ModuleDef {
       make[Unit].named("x").tagged(Repo.Dummy).fromValue(())

@@ -101,7 +101,7 @@ class JsonFlattener {
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {
-      Left(List())
+      Left(Nil)
     } else {
       val (p, tpe) = path.splitAt(idx)
 

@@ -109,19 +109,26 @@ class FunctoidMacro(val c: blackbox.Context) {
       case _ =>
         logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
-        List()
+        Nil
     }
 
     logger.log(s"lambda params: $lambdaParams")
     logger.log(s"method ref params: $methodReferenceParams")
 
-    val annotationsOnLambda = lambdaParams.flatMap(_.symbol.annotations)
-    val annotationsOnMethod = methodReferenceParams.flatMap(_.symbol.annotations)
+    def annotationsOnMethodAreASuperset: Boolean = {
+      val annotationsOnLambda = lambdaParams.iterator.map(_.symbol.annotations)
+      val annotationsOnMethod = methodReferenceParams.iterator.map(_.symbol.annotations)
+      annotationsOnLambda.zip(annotationsOnMethod).forall {
+        case (left, right) =>
+          left.iterator.zipAll(right, null, null).forall {
+            case (l, r) => (l eq null) || l == r
+          }
+      }
+    }
 
     // if method reference has more annotations, get parameters from reference instead
     // to preserve annotations!
-    if (methodReferenceParams.size == lambdaParams.size &&
-      annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
+    if (methodReferenceParams.size == lambdaParams.size && annotationsOnMethodAreASuperset) {
       // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
       // But lambda params should be sufficiently 'grounded' at this point
       // (Besides, lambda types are the ones specified by the caller, we should respect them)
