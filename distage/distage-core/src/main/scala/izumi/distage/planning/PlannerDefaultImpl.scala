@@ -3,7 +3,7 @@ package izumi.distage.planning
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{BadSetElementTags, ConflictResolutionException, DIBugException, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException, UnconfiguredMutatorAxis, UnconfiguredSetElementAxis}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -174,8 +174,22 @@ class PlannerDefaultImpl(
               toAxis(b)
           }
 
-          (Annotated(n.target, mutIndex, axis), n)
-      }.toVector
+          (Annotated(n.target, mutIndex, axis), n, b)
+      }
+      .filter {
+        case (Annotated(key, Some(_), axis), _, b) =>
+          isProperlyActivatedSetElement(ac, axis) {
+            unconfigured =>
+              throw new UnconfiguredMutatorAxis(s"Mutator for $key defined at ${b.origin} with unconfigured axis: ${unconfigured.mkString(",")}", key, b.origin)
+          }
+        case _ =>
+          true
+      }
+      .map {
+        case (a, o, _) =>
+          (a, o)
+      }
+      .toVector
 
     val ops: Vector[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
       case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
@@ -217,18 +231,13 @@ class PlannerDefaultImpl(
                 memberKey =>
                   reverseOpIndex.get(memberKey) match {
                     case Some(value :: Nil) =>
-                      if (ac.allValid(value)) {
-                        if (ac.allConfigured(value)) {
-                          true
-                        } else {
-                          throw new BadSetElementTags(
-                            s"Set ${firstOp.target} has element $memberKey has axis with points undefined in current context",
+                      isProperlyActivatedSetElement(ac, value) {
+                        unconfigured =>
+                          throw new UnconfiguredSetElementAxis(
+                            s"Set ${firstOp.target} has element $memberKey with unconfigured axis: ${unconfigured.mkString(",")}",
                             memberKey,
                             firstOp.target,
                           )
-                        }
-                      } else {
-                        false
                       }
                     case Some(other) =>
                       throw DIBugException(s"Set element has multiple axis sets: $memberKey, unexpected axis sets: $other")
@@ -239,12 +248,6 @@ class PlannerDefaultImpl(
               }
 
             val result = firstOp.copy(members = members)
-
-//            val mergedSet = v.tail.foldLeft(v.head) {
-//              case (op, acc) =>
-//                acc.copy(members = acc.members ++ op.members)
-//            }
-//            val filtered = mergedSet
             (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
         }
         .toMap
@@ -287,6 +290,18 @@ class PlannerDefaultImpl(
             predcessors = resolution.graph.predcessors.without(membersToDrop),
           )
     } yield resolved
+  }
+
+  private def isProperlyActivatedSetElement(ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Boolean): Boolean = {
+    if (ac.allValid(value)) {
+      if (ac.allConfigured(value)) {
+        true
+      } else {
+        onError(ac.findUnconfigured(value))
+      }
+    } else {
+      false
+    }
   }
 
   protected[this] def findWeakSetMembers(

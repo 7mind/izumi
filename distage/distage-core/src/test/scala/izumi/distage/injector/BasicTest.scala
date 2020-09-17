@@ -6,7 +6,8 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
-import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException}
+import izumi.distage.model.definition.StandardAxis.Repo
+import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException, UnconfiguredMutatorAxis}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
 import org.scalatest.exceptions.TestFailedException
@@ -416,4 +417,86 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     assert(context.get[Mutable].b.contains(SomethingUseful("x")))
   }
+
+  "support mutations with axis tags when axis is configured" in {
+    import Mutations01._
+
+    val definition = PlannerInput.noGC(
+      new ModuleDef {
+        make[SomethingUseful].fromValue(SomethingUseful("x"))
+
+        make[Mutable].fromValue(Mutable(1, None))
+
+        modify[Mutable].by {
+          _.flatAp {
+            (u: SomethingUseful) => (m: Mutable) =>
+              m.copy(b = Some(u))
+          }
+        }
+
+        modify[Mutable]
+          .by {
+            _.map {
+              (m: Mutable) =>
+                m.copy(a = m.a + 10)
+            }
+          }.tagged(Repo.Prod)
+
+        modify[Mutable]
+          .by {
+            _.map {
+              (m: Mutable) =>
+                m.copy(a = m.a + 20)
+            }
+          }.tagged(Repo.Dummy)
+      },
+      Activation(Repo -> Repo.Prod),
+    )
+
+    val context = Injector.Standard().produce(definition).unsafeGet()
+
+    assert(context.get[Mutable].b.contains(SomethingUseful("x")))
+    assert(context.get[Mutable].a == 11)
+  }
+
+  "support mutations with axis tags when axis is unconfigured" in {
+    import Mutations01._
+
+    val definition = PlannerInput.noGC(
+      new ModuleDef {
+        make[SomethingUseful].fromValue(SomethingUseful("x"))
+
+        make[Mutable].fromValue(Mutable(1, None))
+
+        modify[Mutable].by {
+          _.flatAp {
+            (u: SomethingUseful) => (m: Mutable) =>
+              m.copy(b = Some(u))
+          }
+        }
+
+        modify[Mutable]
+          .by {
+            _.map {
+              (m: Mutable) =>
+                m.copy(a = m.a + 10)
+            }
+          }.tagged(Repo.Prod)
+
+        modify[Mutable]
+          .by {
+            _.map {
+              (m: Mutable) =>
+                m.copy(a = m.a + 20)
+            }
+          }.tagged(Repo.Dummy)
+      },
+      Activation.empty,
+    )
+
+    intercept[UnconfiguredMutatorAxis] {
+      Injector.Standard().produce(definition).unsafeGet()
+    }
+  }
+
 }
