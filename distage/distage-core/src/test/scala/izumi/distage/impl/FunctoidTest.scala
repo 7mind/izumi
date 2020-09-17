@@ -397,7 +397,7 @@ class FunctoidTest extends AnyWordSpec {
       assert(fn.get.diKeys == Seq(DIKey[Unit]("needed")))
     }
 
-    "progression test: Can't handle case class .apply references with argument annotations" in {
+    "can handle case class .apply references with argument annotations" in {
       val fn = Functoid.apply(ClassArgAnn.apply _).get
 
       intercept[TestFailedException] {
