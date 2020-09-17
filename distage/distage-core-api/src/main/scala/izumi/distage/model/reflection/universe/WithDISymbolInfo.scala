@@ -17,6 +17,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
     def withTpe(tpe: TypeNative): SymbolInfo
     def withIsByName(boolean: Boolean): SymbolInfo
+    def withAnnotations(annotations: List[u.Annotation]): SymbolInfo
     //def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
   }
 
@@ -38,6 +39,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       override final val name: String = underlying.name.toTermName.toString
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
+      override final def withAnnotations(annotations: List[u.Annotation]): SymbolInfo = copy(annotations = annotations)
     }
 
     private[distage] object Runtime {
@@ -76,6 +78,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
     ) extends SymbolInfo {
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
+      override final def withAnnotations(annotations: List[u.Annotation]): SymbolInfo = copy(annotations = annotations)
     }
     object Static {
       def syntheticFromType(transformName: String => String)(tpe: TypeNative): SymbolInfo.Static = {

@@ -400,12 +400,8 @@ class FunctoidTest extends AnyWordSpec {
     "can handle case class .apply references with argument annotations" in {
       val fn = Functoid.apply(ClassArgAnn.apply _).get
 
-      intercept[TestFailedException] {
-        assert(fn.diKeys.contains(DIKey.get[String].named("classargann1")))
-      }
-      intercept[TestFailedException] {
-        assert(fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
-      }
+      assert(fn.diKeys.contains(DIKey.get[String].named("classargann1")))
+      assert(fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
     }
 
     "progression test: Can't expand functions with implicit arguments" in {

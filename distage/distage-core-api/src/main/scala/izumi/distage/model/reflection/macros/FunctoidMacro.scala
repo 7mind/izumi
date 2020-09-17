@@ -125,10 +125,14 @@ class FunctoidMacro(val c: blackbox.Context) {
     logger.log(s"lambda params: $lambdaParams")
     logger.log(s"method ref params: $methodReferenceParams")
 
-    def annotationsOnMethodAreASuperset: Boolean = {
+    def annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
       val annotationsOnLambda = lambdaParams.iterator.map(_.symbol.annotations)
-      val annotationsOnMethod = methodReferenceParams.iterator.map(_.symbol.annotations)
-      annotationsOnLambda.zip(annotationsOnMethod).forall {
+      val annotationsOnMethod = methodReferenceParams.iterator.map(_.symbol.annotations).toArray
+
+      annotationsOnMethod.exists(_.nonEmpty) &&
+      annotationsOnLambda.zipAll(annotationsOnMethod, null, null).forall {
+        case (null, _) => false
+        case (_, null) => false
         case (left, right) =>
           left.iterator.zipAll(right, null, null).forall {
             case (l, r) => (l eq null) || l == r
@@ -138,14 +142,14 @@ class FunctoidMacro(val c: blackbox.Context) {
 
     // if method reference has more annotations, get parameters from reference instead
     // to preserve annotations!
-    if (methodReferenceParams.size == lambdaParams.size && annotationsOnMethodAreASuperset) {
-      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
+    if (annotationsOnMethodAreNonEmptyAndASuperset) {
+      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved/unrelated
       // But lambda params should be sufficiently 'grounded' at this point
       // (Besides, lambda types are the ones specified by the caller, we should respect them)
       methodReferenceParams.zip(lambdaParams).map {
         case (mArg, lArg) =>
           mArg.copy(
-            symbol = mArg.symbol.withTpe(lArg.symbol.finalResultType),
+            symbol = lArg.symbol.withAnnotations(mArg.symbol.annotations),
             key = mArg.key.withTpe(lArg.key.tpe),
           )
       }
