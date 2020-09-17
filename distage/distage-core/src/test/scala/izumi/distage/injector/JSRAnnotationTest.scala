@@ -129,6 +129,7 @@ object JSRAnnotationTest {
     port1: Int @javax.inject.Named(value = "port1"),
     address1: String @javax.inject.Named("address1"),
   )
+  object ServerConfigWithFieldAnnos extends ((Int, Address) => ServerConfigWithFieldAnnos)
 
   final case class ServerConfigWithTypeAnnos(
     port: Port,

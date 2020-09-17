@@ -57,7 +57,17 @@ class FunctoidMacro(val c: blackbox.Context) {
     case Function(args, body) =>
       analyzeMethodRef(args.map(_.symbol), body)
     case _ if tree.tpe ne null =>
-      analyzeValRef(tree.tpe)
+      val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
+      if (tree.tpe.typeSymbol.isModuleClass) {
+        val overridenFunctionNApply = tree
+          .tpe.typeSymbol.info.decl(TermName("apply")).alternatives
+          .find(_.overrides.exists(functionNClasses contains _.owner))
+        overridenFunctionNApply.fold(analyzeValRef(tree.tpe)) {
+          m => analyzeMethodRef(m.asMethod.paramLists.flatten, tree)
+        }
+      } else {
+        analyzeValRef(tree.tpe)
+      }
     case _ =>
       c.abort(
         tree.pos,
@@ -100,7 +110,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     }
 
     val lambdaParams = lambdaArgs.map(association)
-    val methodReferenceParams = body match {
+    val (methodReferenceParams) = body match {
       case Apply(f, _) =>
         logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
