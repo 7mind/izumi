@@ -130,11 +130,11 @@ class FunctoidMacro(val c: blackbox.Context) {
       val annotationsOnMethod = Predef.wrapRefArray(methodReferenceParams.iterator.map(_.symbol.annotations).toArray)
 
       annotationsOnMethod.exists(_.nonEmpty) &&
-      annotationsOnLambda.zipAll(annotationsOnMethod, null, null).forall {
+      annotationsOnLambda.zipAll(annotationsOnMethod.iterator, null, null).forall {
         case (null, _) => false
         case (_, null) => false
         case (left, right) =>
-          left.iterator.zipAll(right, null, null).forall {
+          left.iterator.zipAll(right.iterator, null, null).forall {
             case (l, r) => (l eq null) || l == r
           }
       }
