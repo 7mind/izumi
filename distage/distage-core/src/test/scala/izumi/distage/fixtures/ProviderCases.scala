@@ -1,5 +1,6 @@
 package izumi.distage.fixtures
 
+import distage.Id
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
@@ -49,6 +50,7 @@ object ProviderCases {
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
     }
 
+    final class Component1[F[_]](dep: Unit @Id("needed"))
   }
 
   object ProviderCase2 {

@@ -391,6 +391,12 @@ class FunctoidTest extends AnyWordSpec {
       assert(fn[Identity].get.diKeys == Seq(DIKey[Component[Identity]]("special")))
     }
 
+    "extract Id annotations of parameterized ClassConstructor" in {
+      val fn = ClassConstructor[Component1[Option]]
+
+      assert(fn.get.diKeys == Seq(DIKey[Unit]("needed")))
+    }
+
     "progression test: Can't handle case class .apply references with argument annotations" in {
       val fn = Functoid.apply(ClassArgAnn.apply _).get
 

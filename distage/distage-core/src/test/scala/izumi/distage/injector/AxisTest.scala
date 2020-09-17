@@ -156,4 +156,23 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .get[Set[SetTrait]]
     }
   }
+
+
+  "work correctly with named Unit" in {
+    class X(u: Unit @Id("x")) { val x = u }
+
+    val definition = new ModuleDef {
+      make[Unit].named("x").tagged(Repo.Dummy).fromValue(())
+      make[Unit].named("x").tagged(Repo.Prod).fromValue(())
+      make[X]
+    }
+
+    val instance = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[X])))
+      .unsafeGet()
+      .get[X]
+
+    assert(definition.bindings.size == 3)
+    assert(instance.x == ())
+  }
 }
