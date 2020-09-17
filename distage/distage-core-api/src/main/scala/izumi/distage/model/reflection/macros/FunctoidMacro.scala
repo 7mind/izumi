@@ -127,7 +127,7 @@ class FunctoidMacro(val c: blackbox.Context) {
 
     def annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
       val annotationsOnLambda = lambdaParams.iterator.map(_.symbol.annotations)
-      val annotationsOnMethod = methodReferenceParams.iterator.map(_.symbol.annotations).toArray
+      val annotationsOnMethod = Predef.wrapRefArray(methodReferenceParams.iterator.map(_.symbol.annotations).toArray)
 
       annotationsOnMethod.exists(_.nonEmpty) &&
       annotationsOnLambda.zipAll(annotationsOnMethod, null, null).forall {
