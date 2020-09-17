@@ -7,6 +7,7 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver
 import izumi.logstage.api.Log
 
 import scala.annotation.nowarn
@@ -120,7 +121,7 @@ object TestConfig {
       *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
       *  you cannot specify multiple axis values for _the same_ axis on bindings.
       *
-      *  @see [[izumi.fundamentals.graphs.tools.MutationResolver.ActivationChoices#allValid]]
+      *  @see [[MutationResolver.ActivationChoices#allValid]]
       */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
       def activatedSection(axisValues: Set[AxisValue], activation: Activation): Boolean = {

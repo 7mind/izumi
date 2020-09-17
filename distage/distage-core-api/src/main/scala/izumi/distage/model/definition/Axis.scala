@@ -1,7 +1,7 @@
 package izumi.distage.model.definition
 
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.fundamentals.graphs.tools.MutationResolver.AxisPoint
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.AxisPoint
 
 trait Axis { self =>
   def name: String = getClass.getName.toLowerCase.split('.').last.split('$').last

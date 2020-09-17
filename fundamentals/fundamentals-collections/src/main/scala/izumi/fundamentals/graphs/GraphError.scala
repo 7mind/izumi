@@ -1,6 +1,6 @@
 package izumi.fundamentals.graphs
 
-import izumi.fundamentals.graphs.tools.MutationResolver.{Annotated, AxisPoint, MutSel, Node}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, MutSel, Node}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 sealed trait AbstractGraphError

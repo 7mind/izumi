@@ -3,7 +3,7 @@ package izumi.distage.planning
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{BadSetElementTags, ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -14,8 +14,9 @@ import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.MutationResolver._
-import izumi.fundamentals.graphs.tools.{GC, MutationResolver, Toposort}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver._
+import izumi.fundamentals.graphs.tools.mutations.{ActivationChoices, MutationResolver}
+import izumi.fundamentals.graphs.tools.{GC, Toposort}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
 
@@ -145,6 +146,7 @@ class PlannerDefaultImpl(
     import scala.collection.compat._
 
     val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
+    val ac = ActivationChoices(activations)
 
     val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = input
       .bindings.bindings.iterator
@@ -164,7 +166,15 @@ class PlannerDefaultImpl(
             case _ =>
               None
           }
-          (Annotated(n.target, mutIndex, toAxis(b)), n)
+
+          val axis = n match {
+            case _: CreateSet =>
+              Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
+            case _ =>
+              toAxis(b)
+          }
+
+          (Annotated(n.target, mutIndex, axis), n)
       }.toVector
 
     val ops: Vector[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
@@ -172,21 +182,72 @@ class PlannerDefaultImpl(
       case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
     }
 
-    val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = allOps
+    val allSetOps = allOps
       .collect { case (target, op: CreateSet) => (target, op) }
-      .groupBy(_._1)
-      .view
-      .mapValues(_.map(_._2))
-      .mapValues {
-        v =>
-          val mergedSet = v.tail.foldLeft(v.head) {
-            case (op, acc) =>
-              acc.copy(members = acc.members ++ op.members)
-          }
-          val filtered = mergedSet
-          Node(filtered.members, filtered: InstantiationOp)
+
+    val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps
+      .filter(_._1.mut.isEmpty)
+      .map {
+        case (a, _) =>
+          (a.key, a.axis)
       }
+      .groupBy(_._1)
+      .view.mapValues(_.map(_._2).toList)
       .toMap
+
+    val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] =
+      allSetOps
+        .groupBy {
+          case (a, _) =>
+            assert(a.mut.isEmpty)
+            assert(a.axis.isEmpty, a.toString)
+            a.key
+        }
+        .view
+        .mapValues(_.map(_._2))
+        .map {
+          case (setKey, ops) =>
+            val firstOp = ops.head
+
+            val members = ops
+              .tail.foldLeft(ops.head.members) {
+                case (acc, op) =>
+                  acc ++ op.members
+              }.filter {
+                memberKey =>
+                  reverseOpIndex.get(memberKey) match {
+                    case Some(value :: Nil) =>
+                      if (ac.allValid(value)) {
+                        if (ac.allConfigured(value)) {
+                          true
+                        } else {
+                          throw new BadSetElementTags(
+                            s"Set ${firstOp.target} has element $memberKey has axis with points undefined in current context",
+                            memberKey,
+                            firstOp.target,
+                          )
+                        }
+                      } else {
+                        false
+                      }
+                    case Some(other) =>
+                      throw DIBugException(s"Set element has multiple axis sets: $memberKey, unexpected axis sets: $other")
+                    case None =>
+                      true
+                  }
+
+              }
+
+            val result = firstOp.copy(members = members)
+
+//            val mergedSet = v.tail.foldLeft(v.head) {
+//              case (op, acc) =>
+//                acc.copy(members = acc.members ++ op.members)
+//            }
+//            val filtered = mergedSet
+            (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
+        }
+        .toMap
 
     val matrix = SemiEdgeSeq(ops ++ sets)
 

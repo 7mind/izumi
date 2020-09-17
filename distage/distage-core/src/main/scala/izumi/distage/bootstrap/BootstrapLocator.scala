@@ -20,8 +20,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.fundamentals.graphs.tools.MutationResolver
-import izumi.fundamentals.graphs.tools.MutationResolver.MutationResolverImpl
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.MutationResolverImpl
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK

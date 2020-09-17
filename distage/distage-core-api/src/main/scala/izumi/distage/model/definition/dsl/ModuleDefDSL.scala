@@ -830,19 +830,19 @@ object ModuleDefDSL {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
     }
 
-    /** These tags apply ONLY to EmptySet binding itself, not to set elements * */
-    def tagged(tags: BindingTag*): SetDSL[T] = {
-      addOp(AddTagsAll(tags.toSet))(new SetDSL[T](_))
-    }
+//    /** These tags apply ONLY to EmptySet binding itself, not to set elements * */
+//    def tagged(tags: BindingTag*): SetDSL[T] = {
+//      addOp(AddTagsAll(tags.toSet))(new SetDSL[T](_))
+//    }
   }
 
   final class SetNamedDSL[T](
     override protected val mutableState: SetRef
   ) extends SetDSLMutBase[T] {
 
-    def tagged(tags: BindingTag*): SetNamedDSL[T] = {
-      addOp(AddTagsAll(tags.toSet))(new SetNamedDSL[T](_))
-    }
+//    def tagged(tags: BindingTag*): SetNamedDSL[T] = {
+//      addOp(AddTagsAll(tags.toSet))(new SetNamedDSL[T](_))
+//    }
   }
 
   final class SetElementDSL[T](

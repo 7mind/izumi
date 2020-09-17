@@ -1,10 +1,13 @@
 package izumi.distage.injector
 
 import distage.{DIKey, Injector, Module}
+import izumi.distage.fixtures.BasicCases.BasicCase1.JustTrait
 import izumi.distage.fixtures.BasicCases._
+import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StandardAxis.Repo
+import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
+import izumi.distage.model.exceptions.BadSetElementTags
 import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -97,4 +100,60 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(instance.isInstanceOf[Impl0])
   }
 
+  "#1221: choose set elements with expected axis tag" in {
+    import SetCase1._
+
+    val definition = new ModuleDef {
+      many[SetTrait]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl2].tagged(Repo.Dummy)
+        .add[SetImpl5]
+    }
+
+    val instance = Injector()
+      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance.size == 2)
+    assert(!instance.exists(_.isInstanceOf[SetImpl1]))
+    assert(instance.exists(_.isInstanceOf[SetImpl2]))
+    assert(instance.exists(_.isInstanceOf[SetImpl5]))
+  }
+
+  "#1221: throw on elements with at least one undefined axis when element is unique" in {
+    import SetCase1._
+
+    val definition = new ModuleDef {
+      many[SetTrait]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl5]
+    }
+
+    intercept[BadSetElementTags] {
+      Injector()
+        .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
+        .unsafeGet()
+        .get[Set[SetTrait]]
+    }
+  }
+
+  "#1221: throw on elements with at least one undefined axis" in {
+    import SetCase1._
+
+    val definition = new ModuleDef {
+      many[SetTrait]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl2].tagged(Repo.Dummy)
+        .add[SetImpl3].tagged(Repo.Dummy, Mode.Test)
+        .add[SetImpl5]
+    }
+
+    intercept[BadSetElementTags] {
+      Injector()
+        .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
+        .unsafeGet()
+        .get[Set[SetTrait]]
+    }
+  }
 }

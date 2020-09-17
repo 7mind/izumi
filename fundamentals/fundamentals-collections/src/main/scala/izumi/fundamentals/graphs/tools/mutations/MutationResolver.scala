@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs.tools
+package izumi.fundamentals.graphs.tools.mutations
 
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
@@ -7,7 +7,7 @@ import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.GC.WeakEdge
-import izumi.fundamentals.graphs.tools.MutationResolver.{Annotated, AxisPoint, Resolution, SemiEdgeSeq}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, Resolution, SemiEdgeSeq}
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.annotation.{nowarn, tailrec}
@@ -25,20 +25,6 @@ trait MutationResolver[N, I, V] {
 object MutationResolver {
   import scala.collection.compat._
   import scala.collection.immutable
-
-  final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
-    protected[this] def validChoice(a: AxisPoint): Boolean = {
-      // forall, as in, AxisPoint without an explicit choice is allowed through and should raise conflict in later stages
-      // if there's another AxisPoint for the same axis (revisit this though)
-      activationChoices.get(a.axis).forall(_ == a)
-    }
-    def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)
-  }
-  object ActivationChoices {
-    def apply(activations: Set[AxisPoint]): ActivationChoices = {
-      new ActivationChoices(activations.map(a => (a.axis, a)).toMap)
-    }
-  }
 
   final case class Node[N, V](deps: Set[N], meta: V)
   final case class RemappedValue[V, N](meta: V, remapped: Map[N, MutSel[N]])

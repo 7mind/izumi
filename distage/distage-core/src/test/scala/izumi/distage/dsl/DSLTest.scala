@@ -235,7 +235,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val definition = new ModuleDef {
         many[SetTrait]
-          .named("n1").tagged("A", "B")
+          .named("n1")
           .add[SetImpl1].tagged("A")
           .add[SetImpl2].tagged("B")
           .add[SetImpl3].tagged("A") // merge
@@ -246,13 +246,13 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
         make[Service2].tagged("CC")
 
-        many[SetTrait].tagged("A", "B")
+        many[SetTrait]
       }
 
       assert(definition.bindings.size == 9)
       assert(definition.bindings.count(_.tags.strings == Set("A")) == 2)
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 2)
-      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 0)
       assert(definition.bindings.count(_.tags.strings == Set("CA")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("CB")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 0)
@@ -266,16 +266,15 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val definition = new ModuleDef {
         many[SetTrait]
-          .named("n1").tagged("A", "B")
+          .named("n1")
           .addSetValue(set).tagged("A") // merge
           .addSetValue(set).tagged("B") // merge
       }
 
-      println(definition)
       assert(definition.bindings.size == 4)
       assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
-      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 0)
     }
 
     "Set bindings with the same source position but different implementations do not conflict" in {

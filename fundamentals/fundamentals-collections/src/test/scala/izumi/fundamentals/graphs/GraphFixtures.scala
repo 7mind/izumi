@@ -1,7 +1,7 @@
 package izumi.fundamentals.graphs
 
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.MutationResolver.{Annotated, AxisPoint, MutSel, Node, SemiEdgeSeq, WithContext}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, MutSel, Node, SemiEdgeSeq, WithContext}
 
 object GraphFixtures {
   final val directed = IncidenceMatrix(
