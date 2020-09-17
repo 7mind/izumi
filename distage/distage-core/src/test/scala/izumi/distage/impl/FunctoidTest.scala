@@ -1,11 +1,16 @@
 package izumi.distage.impl
 
 import distage._
+import izumi.distage.fixtures.BasicCases
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
+import izumi.distage.fixtures.BasicCases.BasicCase7
+import izumi.distage.fixtures.BasicCases.BasicCase7.{Component, ComponentSpecial}
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
+import izumi.distage.model.PlannerInput
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.ProjectAttributeMacro
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.exceptions.TestFailedException
@@ -374,6 +379,16 @@ class FunctoidTest extends AnyWordSpec {
     "fail on multiple conflicting annotations on the same parameter" in {
       assertTypeError("Functoid.apply(defconfannfn _)")
       assertTypeError("Functoid.apply(defconfannfn2 _)")
+    }
+
+    "extract Id annotations from higher-kinded type aliases" in {
+      import BasicCase7._
+
+      def ctor[F[_]](componentSpecial: ComponentSpecial[F]): Component[F] = componentSpecial
+
+      def fn[F[_]: TagK]: Functoid[ComponentSpecial[F]] = Functoid.apply(ctor[F] _)
+
+      assert(fn[Identity].get.diKeys == Seq(DIKey[Component[Identity]]("special")))
     }
 
     "progression test: Can't handle case class .apply references with argument annotations" in {
