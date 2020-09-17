@@ -10,7 +10,6 @@ import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
@@ -124,11 +123,11 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     *   })
     * }}}
     */
-  final protected[this] def modify[T: Tag]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
-  final private def _modify[T: Tag](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): Unit = {
-    val p: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
-    val binding = Bindings.provider[T](p).copy(isMutator = true)
-    _registered(new SingletonRef(binding)).discard()
+  final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
+  final private def _modify[T: Tag](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): SingletonRef = {
+    val newProvider: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
+    val binding = Bindings.provider[T](newProvider).copy(isMutator = true)
+    _registered(new SingletonRef(binding))
   }
 
   final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
@@ -140,17 +139,23 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
 object AbstractBindingDefDSL {
 
   final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
-    def apply[I <: T: Tag](f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
       by(_.map(f))
 
-    def apply[I <: T: Tag](name: Identifier)(f: T => I)(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
+    def apply(name: Identifier)(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
       by(name)(_.map(f))
 
-    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit =
-      dsl._modify(DIKey.get[T])(f)
+    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f))
 
-    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): Unit = {
-      dsl._modify(DIKey.get[T].named(name))(f)
+    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL = {
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f))
+    }
+  }
+
+  final class ModifyTaggingDSL(private val ref: SingletonRef) extends AnyVal {
+    def tagged(tags: BindingTag*): ModifyTaggingDSL = {
+      new ModifyTaggingDSL(ref.append(AddTags(tags.toSet)))
     }
   }
 
