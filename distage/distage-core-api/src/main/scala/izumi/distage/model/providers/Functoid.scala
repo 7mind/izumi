@@ -44,41 +44,24 @@ import scala.language.implicitConversions
   *   make[Unit].from(constructor)
   * }}}
   *
-  * Annotation processing is done by a macro and macros are rarely perfect,
-  * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _) or (method(_))
-  * Annotation info may be lost ONLY in a few cases detailed below, though:
-  *  - If an annotated method has been hidden by an intermediate `val`
-  *  - If an `.apply` method of a case class is passed when case class _parameters_ are annotated, not their types
-  *
-  * As such, prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
-  *
-  * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
-  * not preserve parameter annotations from case class definitions:
-  *
-  * {{{
-  *  case class X(@Id("special") i: Int)
-  *
-  *  make[X].from(X.apply _) // summons regular Int
-  *  make[X].from(new X(_)) // summons special Int
-  * }}}
-  *
-  * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
-  *
-  * {{{
-  *   case class X(i: Int @Id("special"))
-  *
-  *   make[X].from(X.apply _) // summons special Int
-  * }}}
-  *
   * Using intermediate vals will lose annotations when converting a method into a function value,
-  * prefer using annotated method directly as method reference `(method _)`:
+  * Prefer passing inline lambdas such as `{ x => y }` or method references such as `(method _)` or `(method(_))`.:
   *
   * {{{
   *   def constructorMethod(@Id("special") i: Int): Unit = ()
   *
   *   val constructor = constructorMethod _
   *
-  *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
+  *   make[Unit].from(constructor) // SURPRISE: Will summon regular Int, not a "special" Int from DI object graph
+  *   make[Unit].from(constructorMethod _) // Will work correctly: summon "special" Int
+  * }}}
+  *
+  * Prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
+  *
+  * {{{
+  *   case class X(i: Int @Id("special"))
+  *
+  *   make[X].from(X.apply _) // summons special Int
   * }}}
   *
   * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
