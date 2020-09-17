@@ -1,12 +1,9 @@
 package izumi.distage.impl
 
 import distage._
-import izumi.distage.fixtures.BasicCases
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.BasicCases.BasicCase7
-import izumi.distage.fixtures.BasicCases.BasicCase7.{Component, ComponentSpecial}
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.ProjectAttributeMacro

@@ -10,7 +10,6 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException, UnconfiguredMutatorAxis}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
-import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
-import distage.{DIKey, Injector, Module}
-import izumi.distage.fixtures.BasicCases.BasicCase1.JustTrait
+import distage.{DIKey, Id, Injector, Module}
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
@@ -157,7 +156,6 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
   }
 
-
   "work correctly with named Unit" in {
     class X(u: Unit @Id("x")) { val x: Unit = u }
 
@@ -173,6 +171,6 @@ class AxisTest extends AnyWordSpec with MkInjector {
       .get[X]
 
     assert(definition.bindings.size == 3)
-    assert(instance.x == ())
+    assert(instance.x ne null)
   }
 }

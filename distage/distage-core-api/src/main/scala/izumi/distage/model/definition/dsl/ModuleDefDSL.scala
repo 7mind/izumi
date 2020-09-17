@@ -5,7 +5,6 @@ import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag, T
 import izumi.distage.model.definition._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.AddTagsAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}

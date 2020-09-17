@@ -7,7 +7,6 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver
 import izumi.logstage.api.Log
 
 import scala.annotation.nowarn
