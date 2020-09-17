@@ -36,8 +36,8 @@ private[plan] object OrderedPlanExtensions {
   final class OrderedPlanCatsOps(private val plan: OrderedPlan) extends AnyVal {
 
     import cats.Applicative
-    import cats.syntax.functor._
-    import cats.syntax.traverse._
+    import cats.instances.vector._
+    import cats.syntax.all._
 
     def traverse[F[_]: Applicative](f: SemiplanOp => F[SemiplanOp]): F[SemiPlan] =
       plan.toSemi.steps.traverse(f).map(SemiPlan(_, Roots(plan.declaredRoots)))
