@@ -12,7 +12,7 @@ trait BIOFiber3[F[-_, +_, +_], +E, +A] {
 }
 
 object BIOFiber3 {
-  def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] =
+  @inline def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] =
     new BIOFiber3[ZIO, E, A] {
       override val join: IO[E, A] = f.join
       override val observe: IO[Nothing, BIOExit[E, A]] = f.await.map(ZIOExit.toBIOExit[E, A])
@@ -26,14 +26,14 @@ object BIOFiber3 {
       override def join: FR[Any, Throwable, A] = bioFiber.join
     }
   }
-
 }
 
 object BIOFiber {
   @inline def fromZIO[E, A](f: Fiber[E, A]): BIOFiber3[ZIO, E, A] = BIOFiber3.fromZIO(f)
-  @inline def fromMonix[E, A](f: bio.Fiber[E, A]): BIOFiber[bio.IO, E, A] = new BIOFiber[bio.IO, E, A] {
-    override val join: bio.IO[E, A] = f.join
-    override val observe: bio.IO[Nothing, BIOExit[E, A]] = f.join.redeemCause(c => fromMonixCause(c), a => BIOExit.Success(a))
-    override val interrupt: bio.IO[Nothing, Unit] = f.cancel.void
-  }
+  @inline def fromMonix[E, A](f: bio.Fiber[E, A]): BIOFiber[bio.IO, E, A] =
+    new BIOFiber[bio.IO, E, A] {
+      override val join: bio.IO[E, A] = f.join
+      override val observe: bio.IO[Nothing, BIOExit[E, A]] = f.join.redeemCause(c => fromMonixCause(c), a => BIOExit.Success(a))
+      override val interrupt: bio.IO[Nothing, Unit] = f.cancel.void
+    }
 }
