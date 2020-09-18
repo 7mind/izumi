@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 trait BIOProfunctor[FR[-_, +_, +_]] extends BIORoot {
-  val InnerF: BIOFunctor3[FR]
+  def InnerF: BIOFunctor3[FR]
 
   def dimap[R1, E, A1, R2, A2](fra: FR[R1, E, A1])(fr: R2 => R1)(fa: A1 => A2): FR[R2, E, A2]
 

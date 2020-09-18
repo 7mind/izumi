@@ -13,6 +13,9 @@ import scala.util.Try
 object BIOAsyncZio extends BIOAsyncZio
 
 class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
+  @inline override final def InnerF: BIOMonad3[ZIO] = this
+
+  @inline override final def unit: ZIO[Any, Nothing, Unit] = ZIO.unit
   @inline override final def pure[A](a: A): ZIO[Any, Nothing, A] = ZIOSucceedNow(a)
   @inline override final def sync[A](effect: => A): ZIO[Any, Nothing, A] = ZIO.effectTotal(effect)
   @inline override final def syncThrowable[A](effect: => A): ZIO[Any, Throwable, A] = ZIO.effect(effect)
@@ -132,8 +135,6 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def zipPar[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, (A, B)] = fa <&> fb
   @inline override final def zipParLeft[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, A] = fa <& fb
   @inline override final def zipParRight[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, B] = fa &> fb
-
-  @inline override final val InnerF: BIOMonad3[ZIO] = this
 
   @inline override final def ask[R]: ZIO[R, Nothing, R] = ZIO.environment
   @inline override final def askWith[R, A](f: R => A): ZIO[R, Nothing, A] = ZIO.access(f)

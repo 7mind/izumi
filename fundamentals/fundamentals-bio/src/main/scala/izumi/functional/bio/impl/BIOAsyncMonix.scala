@@ -12,6 +12,7 @@ import scala.util.Try
 object BIOAsyncMonix extends BIOAsyncMonix
 
 class BIOAsyncMonix extends BIOAsync[IO] {
+  override final def unit: IO[Nothing, Unit] = IO.unit
   override final def pure[A](a: A): IO[Nothing, A] = IO.pure(a)
   override final def sync[A](effect: => A): IO[Nothing, A] = IO.evalTotal(effect)
   override final def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.eval(effect)

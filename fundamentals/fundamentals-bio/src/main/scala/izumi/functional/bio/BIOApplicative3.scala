@@ -23,7 +23,7 @@ trait BIOApplicative3[F[-_, +_, +_]] extends BIOFunctor3[F] {
   def sequence[R, E, A, B](l: Iterable[F[R, E, A]]): F[R, E, List[A]] = traverse(l)(identity)
   def sequence_[R, E](l: Iterable[F[R, E, Unit]]): F[R, E, Unit] = void(traverse(l)(identity))
 
-  final val unit: F[Any, Nothing, Unit] = pure(())
+  def unit: F[Any, Nothing, Unit] = pure(())
   @inline final def traverse[R, E, A, B](o: Option[A])(f: A => F[R, E, B]): F[R, E, Option[B]] = o match {
     case Some(a) => map(f(a))(Some(_))
     case None => pure(None)

@@ -1,8 +1,7 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.BIOTemporalInstancesLowPriority1.{_BIOTemporalMonixBIO, _TimerMonixUIO}
 import izumi.functional.bio.impl.{BIOTemporalMonix, BIOTemporalZio}
-import izumi.fundamentals.platform.language.unused
+import monix.bio
 import zio.ZIO
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -34,22 +33,6 @@ private[bio] sealed trait BIOTemporalInstances
 object BIOTemporalInstances extends BIOTemporalInstancesLowPriority1 {
   @inline implicit final def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO] = new BIOTemporalZio(clockService)
 }
-
 sealed trait BIOTemporalInstancesLowPriority1 {
-  @inline implicit final def BIOTemporalMonix[BIOTemporalMonixBIO, TimerMonixUIO](
-    implicit
-    @unused A: _BIOTemporalMonixBIO[BIOTemporalMonixBIO],
-    @unused T: _TimerMonixUIO[TimerMonixUIO],
-    timer: TimerMonixUIO,
-  ): BIOTemporalMonixBIO = new BIOTemporalMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[BIOTemporalMonixBIO]
-}
-object BIOTemporalInstancesLowPriority1 {
-  final abstract class _BIOTemporalMonixBIO[A]
-  object _BIOTemporalMonixBIO {
-    @inline implicit final def get: _BIOTemporalMonixBIO[BIOTemporal[monix.bio.IO]] = null
-  }
-  final abstract class _TimerMonixUIO[A]
-  object _TimerMonixUIO {
-    @inline implicit final def get: _TimerMonixUIO[cats.effect.Timer[monix.bio.UIO]] = null
-  }
+  @inline implicit final def BIOTemporalMonix(implicit clock: cats.effect.Timer[bio.UIO]): BIOTemporal[bio.IO] = new BIOTemporalMonix(clock)
 }

@@ -180,7 +180,7 @@ class BIOSyntaxTest extends AnyWordSpec {
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
-    def y[F[+_, +_]: BIOTemporal] = {
+    def y[F[+_, +_]: BIOTemporal: BIOFork] = {
       F.timeout(F.forever(F.unit))(5.seconds) *>
       F.map(z[F])(_ => ())
     }

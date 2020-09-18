@@ -5,7 +5,7 @@ import java.util.concurrent.CompletionStage
 import scala.concurrent.{ExecutionContext, Future}
 
 trait BIOAsync3[F[-_, +_, +_]] extends BIO3[F] with BIOParallel3[F] {
-  override val InnerF: BIOMonad3[F] = this
+  override def InnerF: BIOMonad3[F] = this
   final type Canceler = F[Any, Nothing, Unit]
 
   def async[E, A](register: (Either[E, A] => Unit) => Unit): F[Any, E, A]

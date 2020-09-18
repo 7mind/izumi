@@ -3,7 +3,7 @@ package izumi.functional.bio
 import cats.data.Kleisli
 
 trait BIOLocal[FR[-_, +_, +_]] extends BIOMonadAsk[FR] with BIOArrowChoice[FR] with BIOLocalInstances {
-  override val InnerF: BIOMonad3[FR]
+  override def InnerF: BIOMonad3[FR]
 
   def provide[R, E, A](fr: FR[R, E, A])(env: => R): FR[Any, E, A] = contramap(fr)((_: Any) => env)
 

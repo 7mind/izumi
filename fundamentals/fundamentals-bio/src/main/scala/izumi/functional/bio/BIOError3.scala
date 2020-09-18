@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
-import zio.ZIO
 
 trait BIOError3[F[-_, +_, +_]] extends BIOApplicativeError3[F] with BIOMonad3[F] {
 

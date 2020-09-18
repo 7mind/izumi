@@ -3,7 +3,7 @@ package izumi.functional.bio
 import scala.util.Try
 
 trait BIOApplicativeError3[F[-_, +_, +_]] extends BIOGuarantee3[F] with BIOBifunctor3[F] {
-  override val InnerF: BIOFunctor3[F] = this
+  override def InnerF: BIOFunctor3[F] = this
 
   def fail[E](v: => E): F[Any, E, Nothing]
 

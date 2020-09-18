@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import distage.DIResource
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIO3, BIOAsync, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3, BIOTemporal, F}
+import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOApplicativeError3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -56,9 +56,11 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     And("DIEffect in DIEffect object resolve")
     assert(x[Identity] == 1)
 
-    type EitherFn[-R, +E, +A] = R => Either[E, A]
-    implicit val bioEitherFn: BIO3[EitherFn] = null
-    try threeTo2[EitherFn]
+    trait SomeBIO[+E, +A]
+
+    type SomeBIO3[-R, +E, +A] = R => SomeBIO[E, A]
+    implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
+    try threeTo2[SomeBIO3]
     catch { case _: NullPointerException => }
 
     def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
@@ -68,22 +70,42 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }
-    try BIO[Either, Unit](())(null)
+    try BIO[SomeBIO, Unit](())(null)
     catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("DIResource.fromCats(null)")
 //    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
-    BIOAsync[Either](null)
+    BIOAsync[SomeBIO](null)
 
     DIResource.makePair(Some((1, Some(()))))
 
-    And("Can search for BIO/BIOAsync")
+    And("Can search for all hierarchy classes")
     def optSearch[A >: Null](implicit a: A = null) = a
-    optSearch[BIOTemporal[Either]]
-    optSearch[BIOAsync[Either]]
-    optSearch[BIO[Either]]
+    optSearch[BIOFunctor[SomeBIO]]
+    optSearch[BIOApplicative[SomeBIO]]
+    optSearch[BIOMonad[SomeBIO]]
+    optSearch[BIOBifunctor[SomeBIO]]
+    optSearch[BIOGuarantee[SomeBIO]]
+    optSearch[BIOApplicativeError[SomeBIO]]
+    optSearch[BIOError[SomeBIO]]
+    optSearch[BIOBracket[SomeBIO]]
+    optSearch[BIOPanic[SomeBIO]]
+    optSearch[BIOParallel[SomeBIO]]
+    optSearch[BIO[SomeBIO]]
+    optSearch[BIOAsync[SomeBIO]]
+    optSearch[BIOTemporal[SomeBIO]]
+    optSearch[BIOAsk[SomeBIO3]]
+    optSearch[BIOMonadAsk[SomeBIO3]]
+    optSearch[BIOProfunctor[SomeBIO3]]
+    optSearch[BIOArrow[SomeBIO3]]
+    optSearch[BIOArrowChoice[SomeBIO3]]
+    optSearch[BIOLocal[SomeBIO3]]
+
+    optSearch[BIOFork[SomeBIO]]
+    optSearch[BIOPrimitives[SomeBIO]]
+    optSearch[BlockingIO[SomeBIO]]
 
     And("`No More Orphans` type provider object is accessible")
     LowPriorityDIEffectInstances._Sync.hashCode()
