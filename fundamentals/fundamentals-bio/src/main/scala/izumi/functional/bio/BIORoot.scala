@@ -23,7 +23,7 @@ object BIORoot extends BIORootInstancesLowPriority1 {
   @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BIOFork: BIOFork3[FR]): BIOFork.type = BIOFork
   @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 
-  implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](private val FR0: BIOFunctor3[FR]) extends AnyVal {
+  implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](@unused private val FR0: BIOFunctor3[FR]) extends AnyVal {
     @inline def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, ?], R, A])(implicit FR: BIOMonadAsk[FR]): FR[R, E, A] = FR.fromKleisli(k)
     @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: BIOLocal[FR]): Kleisli[FR[Any, E, ?], R, A] = FR.toKleisli(fr)
   }

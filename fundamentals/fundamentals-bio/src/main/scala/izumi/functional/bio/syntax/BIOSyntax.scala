@@ -190,6 +190,7 @@ object BIOSyntax {
   }
   trait BIOImplicitPuns2 extends BIOImplicitPuns3 {
     @inline implicit final def BIOParallel[F[+_, +_]: BIOParallel, E, A](self: F[E, A]): BIOSyntax.BIOParallelOps[F, E, A] = new BIOSyntax.BIOParallelOps[F, E, A](self)
+    @inline implicit final def BIOParallel[F[+_, +_]: BIOMonad, E, A](self: F[E, A]): BIOSyntax.BIOMonadOps[F, E, A] = new BIOSyntax.BIOMonadOps[F, E, A](self)
     @inline final def BIOParallel[F[+_, +_]: BIOParallel]: BIOParallel[F] = implicitly
   }
   trait BIOImplicitPuns3 extends BIOImplicitPuns4 {

@@ -1,13 +1,13 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOError, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
 import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
-import zio.Has
 
 import scala.concurrent.duration._
 
 class BIOSyntaxTest extends AnyWordSpec {
+
+  implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
 
   "BIOParallel.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     import izumi.functional.bio.BIOParallel
@@ -25,6 +25,7 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "BIOParallel3.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     import izumi.functional.bio.BIOParallel3
+
     def x[F[-_, +_, +_]: BIOParallel3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
       a.zipPar(b)
       a.zipParLeft(b)
@@ -38,6 +39,7 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "BIOAsync.race is callable along with all BIOParallel syntax" in {
     import izumi.functional.bio.BIOAsync
+
     def x[F[+_, +_]: BIOAsync](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
       a zipPar b
       a zipParLeft b
@@ -67,6 +69,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIO.apply is callable" in {
+    import izumi.functional.bio.BIO
+
     class X[F[+_, +_]: BIO] {
       def hello = BIO(println("hello world!"))
     }
@@ -76,6 +80,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIO.widen/widenError is callable" in {
+    import izumi.functional.bio.{BIO, F}
+
     def x[F[+_, +_]: BIO]: F[Throwable, AnyVal] = {
       identity[F[Throwable, AnyVal]] {
         F.pure(None: Option[Int]).flatMap {
@@ -90,7 +96,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOBracket.bracketCase & guaranteeCase are callable" in {
-    import izumi.functional.bio.{BIOBracket, BIOExit}
+    import izumi.functional.bio.{BIOBracket, BIOExit, F}
 
     def x[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
       F.pure(None).bracketCase(release = {
@@ -128,6 +134,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
+    import izumi.functional.bio.{BIOMonad, F}
+
     def x[F[+_, +_]: BIOMonad] = {
       F.ifThenElse(F.pure(false): F[RuntimeException, Boolean])(F.pure(()), F.pure(()): F[Throwable, Any]) *>
       F.when(F.pure(false): F[RuntimeException, Boolean])(F.pure(()): F[Throwable, Unit])
@@ -137,6 +145,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "withFilter test" in {
+    import izumi.functional.bio.{BIOError, F}
+
     def x[F[+_, +_]: BIOError]: F[NoSuchElementException, Unit] = {
       assertDoesNotCompile(
         """
@@ -177,6 +187,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "F / FR summoners examples" in {
+    import izumi.functional.bio.{BIOFork, BIOFork3, BIOFunctor, BIOMonad, BIOMonad3, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
+
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
@@ -200,7 +212,6 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
     lazy val zioTest = {
-      implicit val zioClock: zio.clock.Clock = Has(zio.clock.Clock.Service.live)
       (
         x[zio.IO],
         y[zio.IO],
@@ -220,6 +231,7 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "Support BIO syntax for ZIO with wildcard import" in {
     import izumi.functional.bio._
+
     zio.IO.effectTotal(List(4)).flatMap {
       F.traverse(_)(_ => zio.IO.unit)
     } *> F.unit
@@ -228,6 +240,8 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "FR: Local/Ask summoners examples" in {
+    import izumi.functional.bio.{BIOArrow, BIOAsk, BIOBifunctor3, BIOLocal, BIOMonad3, BIOMonadAsk, BIOProfunctor, BIOTemporal3, F}
+
     def x[FR[-_, +_, +_]: BIOMonad3: BIOAsk] = {
       F.unit *> F.ask[Int].map {
         _: Int =>
@@ -312,28 +326,7 @@ class BIOSyntaxTest extends AnyWordSpec {
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
-    def docExamples() = {
-      import izumi.functional.bio.{BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3, F}
 
-      def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
-        F.mkRef(0)
-          .flatMap(ref => ref.update(_ + i) *> ref.get)
-
-      // update ref from the environment and return result
-      def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
-        F.access {
-          ref =>
-            for {
-              _ <- ref.update(_ + i)
-              res <- ref.get
-            } yield res
-        }
-      lazy val _ = (
-        adder[zio.IO](1),
-        adderEnv[zio.ZIO](1),
-      )
-    }
-    implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
     lazy val _ = (
       x[zio.ZIO],
       onlyMonadAsk[zio.ZIO],
@@ -345,7 +338,32 @@ class BIOSyntaxTest extends AnyWordSpec {
       biotemporalPlusLocal[zio.ZIO],
       biomonadPlusLocal[zio.ZIO],
       bifunctorOnly[zio.ZIO],
-      docExamples(),
     )
+  }
+
+  "doc examples" in {
+    locally {
+      import izumi.functional.bio.{BIOMonad, BIOPrimitives, F}
+      def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+        F.mkRef(0)
+          .flatMap(ref => ref.update(_ + i) *> ref.get)
+
+      lazy val _ = adder[zio.IO](1)
+    }
+
+    locally {
+      import izumi.functional.bio.{BIOMonadAsk, BIORef3, F}
+      // update ref from the environment and return result
+      def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+        F.access {
+          ref =>
+            for {
+              _ <- ref.update(_ + i)
+              res <- ref.get
+            } yield res
+        }
+
+      lazy val _ = adderEnv[zio.ZIO](1)
+    }
   }
 }
