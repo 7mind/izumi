@@ -6,7 +6,7 @@ import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, BIOMonad3, __PlatformSpecific}
 import zio.ZIO.{CanFilter, ZIOWithFilterOps}
 import zio.internal.ZIOSucceedNow
-import zio.{NeedsEnv, ZIO}
+import zio.{NeedsEnv, ZIO, ZScope}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -82,17 +82,19 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def never: ZIO[Any, Nothing, Nothing] = ZIO.never
 
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
-    r1.interruptible.raceFirst(r2.interruptible)
+    r1.interruptible.overrideForkScope(ZScope.global)
+      .raceFirst(r2.interruptible.overrideForkScope(ZScope.global))
+      .resetForkScope
   }
 
   @inline override final def racePair[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],
   ): ZIO[R, E, Either[(A, BIOFiber3[ZIO, E, B]), (BIOFiber3[ZIO, E, A], B)]] = {
-    (r1.interruptible raceWith r2.interruptible)(
+    (r1.interruptible.overrideForkScope(ZScope.global) raceWith r2.interruptible.overrideForkScope(ZScope.global))(
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
       { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((BIOFiber.fromZIO(f), rv))) },
-    )
+    ).resetForkScope
   }
 
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): ZIO[Any, E, A] = {
