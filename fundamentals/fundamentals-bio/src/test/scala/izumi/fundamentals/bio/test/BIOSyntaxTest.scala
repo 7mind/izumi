@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOMonadError, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
+import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOError, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
 import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -136,7 +136,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "withFilter test" in {
-    def x[F[+_, +_]: BIOMonadError]: F[NoSuchElementException, Unit] = {
+    def x[F[+_, +_]: BIOError]: F[NoSuchElementException, Unit] = {
       assertDoesNotCompile(
         """
         for {

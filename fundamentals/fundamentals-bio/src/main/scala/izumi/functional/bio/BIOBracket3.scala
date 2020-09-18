@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-trait BIOBracket3[F[-_, +_, +_]] extends BIOMonadError3[F] {
+trait BIOBracket3[F[-_, +_, +_]] extends BIOError3[F] {
   def bracketCase[R, E, A, B](acquire: F[R, E, A])(release: (A, BIOExit[E, B]) => F[R, Nothing, Unit])(use: A => F[R, E, B]): F[R, E, B]
 
   def bracket[R, E, A, B](acquire: F[R, E, A])(release: A => F[R, Nothing, Unit])(use: A => F[R, E, B]): F[R, E, B] = {

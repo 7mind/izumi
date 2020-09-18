@@ -45,6 +45,10 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def <*[R, E, A, B](r: IO[E, A], next: => IO[E, B]): IO[E, A] = r.flatMap(a => next.map(_ => a))
   override final def map2[R, E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = r1.flatMap(a => r2.map(f(a, _)))
 
+  override final def leftMap2[R, E, A, E2, E3](firstOp: IO[E, A], secondOp: => IO[E2, A])(f: (E, E2) => E3): IO[E3, A] =
+    firstOp.onErrorHandleWith(e => secondOp.mapError(f(e, _)))
+  override final def orElse[R, E, A, E2](r: IO[E, A], f: => IO[E2, A]): IO[E2, A] = r.onErrorHandleWith(_ => f)
+
   override final def redeem[R, E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.redeemWith(err, succ)
   override final def catchAll[R, E, A, E2](r: IO[E, A])(f: E => IO[E2, A]): IO[E2, A] = r.onErrorHandleWith(f)
   override final def catchSome[R, E, A, E1 >: E](r: IO[E, A])(f: PartialFunction[E, IO[E1, A]]): IO[E1, A] = r.onErrorRecoverWith(f)

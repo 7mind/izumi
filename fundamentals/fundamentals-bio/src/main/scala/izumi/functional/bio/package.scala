@@ -65,9 +65,9 @@ package object bio extends BIO3Syntax with BIOSyntax {
   type BIOBifunctor[F[+_, +_]] = BIOBifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOApplicative[F[+_, +_]] = BIOApplicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOGuarantee[F[+_, +_]] = BIOGuarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOError[F[+_, +_]] = BIOError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOApplicativeError[F[+_, +_]] = BIOApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOMonad[F[+_, +_]] = BIOMonad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOMonadError[F[+_, +_]] = BIOMonadError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOError[F[+_, +_]] = BIOError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOBracket[F[+_, +_]] = BIOBracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOPanic[F[+_, +_]] = BIOPanic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIO[F[+_, +_]] = BIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
@@ -126,4 +126,10 @@ package object bio extends BIO3Syntax with BIOSyntax {
   ): C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
     instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
+
+  @deprecated("Use BIOError", "0.11")
+  type BIOMonadError[F[+_, +_]] = BIOError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+
+  @deprecated("Use BIOError3", "0.11")
+  type BIOMonadError3[FR[-_, +_, +_]] = BIOError3[FR]
 }
