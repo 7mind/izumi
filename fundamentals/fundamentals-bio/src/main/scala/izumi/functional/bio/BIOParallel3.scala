@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-trait BIOParallel3[F[-_, +_, +_]] extends BIORoot[F] {
+trait BIOParallel3[F[-_, +_, +_]] extends BIORootBifunctor[F] {
   def InnerF: BIOMonad3[F]
 
   def parTraverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]

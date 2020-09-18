@@ -7,7 +7,7 @@ import zio.ZIO
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-trait BIOTemporal3[F[-_, +_, +_]] extends BIORoot[F] with BIOTemporalInstances {
+trait BIOTemporal3[F[-_, +_, +_]] extends BIORootBifunctor[F] with BIOTemporalInstances {
   def InnerF: BIOError3[F]
 
   def sleep(duration: Duration): F[Any, Nothing, Unit]

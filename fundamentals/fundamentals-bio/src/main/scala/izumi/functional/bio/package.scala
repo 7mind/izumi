@@ -4,30 +4,39 @@ import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
 /**
-  *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-hierarchy.svg)
+  *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg)
   *
   *  {{{
-  *  [BIOFunctor3]<:--[BIOApplicative3]
-  *  [BIOApplicative3]<:--[BIOGuarantee3]
-  *  [BIOApplicative3]<:--[BIOMonad3]
-  *  [BIOBifunctor3]<:--[BIOApplicativeError3]
-  *  [BIOGuarantee3]<:--[BIOApplicativeError3]
-  *  [BIOApplicativeError3]<:--[BIOError3]
-  *  [BIOMonad3]<:--[BIOError3]
-  *  [BIOError3]<:--[BIOBracket3]
-  *  [BIOBracket3]<:--[BIOPanic3]
-  *  [BIOPanic3]<:--[BIO3]
-  *  [BIO3]<:--[BIOAsync3]
-  *  [BIOParallel3]<:--[BIOAsync3]
-  *  [BIOError3]<:--[BIOTemporal3]
+  *  [BIOFunctor3]<--[BIOBifunctor3]
+  *  [BIOBifunctor3]<--[BIOApplicativeError3]
+  *  [BIOFunctor3]<--[BIOApplicative3]
+  *  [BIOApplicative3]<--[BIOGuarantee3]
+  *  [BIOApplicative3]<--[BIOMonad3]
+  *  [BIOGuarantee3]<--[BIOApplicativeError3]
+  *  [BIOApplicativeError3]<--[BIOError3]
+  *  [BIOMonad3]<--[BIOError3]
+  *  [BIOError3]<--[BIOBracket3]
+  *  [BIOBracket3]<--[BIOPanic3]
+  *  [BIOPanic3]<--[BIO3]
+  *  [BIO3]<--[BIOAsync3]
+  *  [BIOMonad3]<--[BIOParallel3]
+  *  [BIOParallel3]<--[BIOAsync3]
+  *  [BIOError3]<--[BIOTemporal3]
   *
-  *  [BIOProfunctor]<:--[BIOArrow]
-  *  [BIOArrow]<:--[BIOArrowChoice]
-  *  [BIOArrowChoice]<:--[BIOLocal]
+  *  [BIOFunctor3]<--[BIOProfunctor]
+  *  [BIOProfunctor]<--[BIOArrow]
+  *  [BIOArrow]<--[BIOArrowChoice]
+  *  [BIOArrowChoice]<--[BIOLocal]
   *
-  *  [BIOAsk]<:--[BIOMonadAsk]
-  *  [BIOMonadAsk]<:--[BIOLocal]
+  *  [BIOApplicative3]<--[BIOAsk]
+  *  [BIOMonad3]<--[BIOMonadAsk]
+  *  [BIOAsk]<--[BIOMonadAsk]
+  *  [BIOMonadAsk]<--[BIOLocal]
+  *  }}}
   *
+  *  Auxiliary algebras:
+  *
+  *  {{{
   *  [cats.effect.*]<:--[BIOCatsConversions]
   *
   *  [BIOFiber]<:--[BIOFork3]
@@ -52,11 +61,11 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  inheritance hierarchy:
   *
   *  {{{
-  *  [BIOBifunctor3]<--[BIOError3]
   *  [BIOFunctor3]<--[BIOApplicative3]
   *  [BIOApplicative3]<--[BIOGuarantee3]
   *  [BIOApplicative3]<--[BIOMonad3]
   *  [BIOGuarantee3]<--[BIOApplicativeError3]
+  *  [BIOBifunctor3]<--[BIOApplicativeError3]
   *  [BIOApplicativeError3]<--[BIOError3]
   *  [BIOMonad3]<--[BIOError3]
   *  [BIOError3]<--[BIOBracket3]
@@ -76,12 +85,20 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *
   *  current hierarchy roots:
   *
+  *  bifunctor:
   *  - BIOFunctor3
   *  - BIOBifunctor3
   *  - BIOParallel3
   *  - BIOTemporal3
+  *
+  *  trifunctor:
   *  - BIOProfunctor
   *  - BIOAsk
+  *
+  *  standalone:
+  *  - BIOFork3
+  *  - BlockingIO3
+  *  - BIOPrimitives
   */
 /*
   New root checklist:

@@ -2,8 +2,8 @@
 out: index.html
 ---
 
-BIO
-===
+BIO Hierarchy
+=============
 
 BIO is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
 

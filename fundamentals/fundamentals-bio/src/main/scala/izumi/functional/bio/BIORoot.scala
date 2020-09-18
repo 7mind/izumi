@@ -10,7 +10,11 @@ import zio.ZIO
 
 import scala.language.implicitConversions
 
-trait BIORoot[F[-_, +_, +_]] extends DivergenceHelper with PredefinedHelper
+trait BIORoot extends DivergenceHelper with PredefinedHelper
+
+trait BIORootBifunctor[F[-_, +_, +_]] extends BIORoot
+
+trait BIORootTrifunctor[F[-_, +_, +_]] extends BIORoot
 
 object BIORoot extends BIORootInstancesLowPriority1 {
   @inline implicit final def BIOConvertFromBIOTemporal[FR[-_, +_, +_]](implicit BIOTemporal: NotPredefined.Of[BIOTemporal3[FR]]): BIOError3[FR] with S1 =
@@ -88,7 +92,7 @@ sealed trait BIORootInstancesLowPriority7 extends BIORootInstancesLowPriority8 {
 }
 
 sealed trait BIORootInstancesLowPriority8 {
-  @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with BIORoot[f], FR[-_, +_, +_], R0](
+  @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with BIORootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
     Divergent(cast3To2[C, FR, R0](BIOFunctor3))
