@@ -1,5 +1,8 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.LowPriorityBIOForkInstances._BIOForkMonixBIO
+import izumi.fundamentals.platform.language.unused
+import monix.bio.IO
 import zio.ZIO
 
 trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
@@ -21,6 +24,21 @@ object BIOForkInstances extends LowPriorityBIOForkInstances {
   }
 }
 
-sealed trait LowPriorityBIOForkInstances {
+sealed trait LowPriorityBIOForkInstances extends LowPriorityBIOForkInstances1 {
+  implicit def BIOForkMonix[BIOForkMonixBIO](implicit @unused M: _BIOForkMonixBIO[BIOForkMonixBIO]): BIOForkMonixBIO = {
+    new BIOFork[monix.bio.IO] {
+      override def fork[R, E, A](f: IO[E, A]): IO[Nothing, BIOFiber[monix.bio.IO, E, A]] = f.start.map(BIOFiber.fromMonix)
+    }.asInstanceOf[BIOForkMonixBIO]
+  }
+}
+
+object LowPriorityBIOForkInstances {
+  final abstract class _BIOForkMonixBIO[A]
+  object _BIOForkMonixBIO {
+    @inline implicit final def get: _BIOForkMonixBIO[BIOFork[monix.bio.IO]] = null
+  }
+}
+
+sealed trait LowPriorityBIOForkInstances1 {
   @inline implicit final def BIOFork3To2[FR[-_, +_, +_], R](implicit BIOFork3: BIOFork3[FR]): BIOFork[FR[R, +?, +?]] = cast3To2(BIOFork3)
 }

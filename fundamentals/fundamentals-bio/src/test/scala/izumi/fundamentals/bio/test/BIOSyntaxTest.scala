@@ -3,6 +3,7 @@ package izumi.fundamentals.bio.test
 import izumi.functional.bio.{BIO, BIOArrow, BIOAsk, BIOBifunctor3, BIOError, BIOFork, BIOFork3, BIOFunctor, BIOLocal, BIOMonad, BIOMonad3, BIOMonadAsk, BIOPrimitives, BIOPrimitives3, BIOProfunctor, BIOTemporal, BIOTemporal3, F}
 import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
+import zio.Has
 
 import scala.concurrent.duration._
 
@@ -198,17 +199,20 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
-    lazy val zioTest = (
-      x[zio.IO],
-      y[zio.IO](_: BIOTemporal[zio.IO]),
-      z[zio.IO],
-      `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
-      `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
-    )
+    lazy val zioTest = {
+      implicit val zioClock: zio.clock.Clock = Has(zio.clock.Clock.Service.live)
+      (
+        x[zio.IO],
+        y[zio.IO],
+        z[zio.IO],
+        `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
+        `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+      )
+    }
 
     lazy val monixTest = (
       x[bio.IO],
-      y[bio.IO](_: BIOTemporal[bio.IO]),
+      y[bio.IO],
       z[bio.IO],
     )
     lazy val _ = (zioTest, monixTest)
