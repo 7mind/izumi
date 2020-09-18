@@ -60,7 +60,7 @@ class DistageTestRunner[F[_]: TagK](
     *  Performs tests grouping by it's memoization environment.
     *  [[TestEnvironment.EnvExecutionParams]] - contains only parts of environment that will not affect plan.
     *  Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
-    *  By result you'll got [[MemoizationEnvWithPlan]] mapped to tests wit it's plans.
+    *  By result you'll got [[MemoizationEnvWithPlan]] mapped to tests with it's plans.
     *  [[MemoizationEnvWithPlan]] represents memoization environment, with shared [[TriSplittedPlan]], [[Injector]], and runtime plan.
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): Map[MemoizationEnvWithPlan, Seq[PreparedTest[F]]] = {
@@ -87,7 +87,7 @@ class DistageTestRunner[F[_]: TagK](
         }
         // merge environments together by equality of their shared & runtime plans
         // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
-        // so this saves a lot of realloaction of memoized resoorces
+        // so this saves a lot of realloaction of memoized resources
         val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
 
         mergedEnvs.map {
