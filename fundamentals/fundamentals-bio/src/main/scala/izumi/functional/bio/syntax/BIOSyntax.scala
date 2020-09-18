@@ -97,8 +97,17 @@ object BIOSyntax {
       *
       * {{{
       *   for {
-      *    (1, 2) <- F.pure((2, 1))
+      *     (1, 2) <- F.pure((2, 1))
       *   } yield ()
+      * }}}
+      *
+      * Use [[widenError]] to for pattern matching with non-Throwable errors:
+      *
+      * {{{
+      *   val f = for {
+      *     (1, 2) <- F.pure((2, 1)).widenError[Option[Unit]]
+      *   } yield ()
+      *   // f: F[Option[Unit], Unit] = F.fail(Some(())
       * }}}
       */
     @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit filter: BIOWithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =

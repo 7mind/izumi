@@ -52,12 +52,6 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def redeem[R, E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.redeemWith(err, succ)
   override final def catchAll[R, E, A, E2](r: IO[E, A])(f: E => IO[E2, A]): IO[E2, A] = r.onErrorHandleWith(f)
   override final def catchSome[R, E, A, E1 >: E](r: IO[E, A])(f: PartialFunction[E, IO[E1, A]]): IO[E1, A] = r.onErrorRecoverWith(f)
-  override final def withFilter[R, E, A](r: IO[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): IO[E, A] =
-    r.flatMap {
-      a =>
-        if (predicate(a)) IO.pure(a)
-        else IO.raiseError(ev(new NoSuchElementException("The value doesn't satisfy the predicate")))
-    }
 
   override final def guarantee[R, E, A](f: IO[E, A], cleanup: IO[Nothing, Unit]): IO[E, A] = f.guarantee(cleanup)
   override final def attempt[R, E, A](r: IO[E, A]): IO[Nothing, Either[E, A]] = r.attempt

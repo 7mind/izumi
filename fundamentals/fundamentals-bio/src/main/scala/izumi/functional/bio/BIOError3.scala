@@ -27,12 +27,22 @@ trait BIOError3[F[-_, +_, +_]] extends BIOApplicativeError3[F] with BIOMonad3[F]
   def tapBoth[R, E, A, E1 >: E](r: F[R, E, A])(err: E => F[R, E1, Unit], succ: A => F[R, E1, Unit]): F[R, E1, A] = {
     tap(tapError[R, E, A, E1](r)(err))(succ)
   }
+
   /** for-comprehensions sugar:
     *
     * {{{
     *   for {
-    *    (1, 2) <- F.pure((2, 1))
+    *     (1, 2) <- F.pure((2, 1))
     *   } yield ()
+    * }}}
+    *
+    * Use [[widenError]] to for pattern matching with non-Throwable errors:
+    *
+    * {{{
+    *   val f = for {
+    *     (1, 2) <- F.pure((2, 1)).widenError[Option[Unit]]
+    *   } yield ()
+    *   // f: F[Option[Unit], Unit] = F.fail(Some(())
     * }}}
     */
   @inline final def withFilter[R, E, A](r: F[R, E, A])(predicate: A => Boolean)(implicit filter: BIOWithFilter[E], pos: SourceFilePositionMaterializer): F[R, E, A] = {
