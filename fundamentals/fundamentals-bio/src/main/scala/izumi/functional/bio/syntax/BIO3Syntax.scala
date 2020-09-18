@@ -244,6 +244,8 @@ object BIO3Syntax {
   trait BIO3ImplicitPuns2 extends BIO3ImplicitPuns3 {
     @inline implicit final def BIOParallel3[FR[-_, +_, +_]: BIOParallel3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOParallel3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOParallel3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOParallel3[F[-_, +_, +_]: BIOMonad3, R, E, A](self: F[R, E, A]): BIO3Syntax.BIOMonad3Ops[F, R, E, A] =
+      new BIO3Syntax.BIOMonad3Ops[F, R, E, A](self)
     @inline final def BIOParallel3[FR[-_, +_, +_]: BIOParallel3]: BIOParallel3[FR] = implicitly
   }
   trait BIO3ImplicitPuns3 extends BIO3ImplicitPuns4 {
