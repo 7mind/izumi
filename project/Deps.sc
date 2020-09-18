@@ -400,8 +400,8 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ zio_all ++ Seq(monix_bio)).map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ zio_all ++ Seq(monix_bio)).map(_ in Scope.Test.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Optional.all)
+  final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
@@ -455,7 +455,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect, zio_interop_cats in Scope.Provided.all),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
