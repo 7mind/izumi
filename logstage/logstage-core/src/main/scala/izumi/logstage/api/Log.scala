@@ -69,10 +69,16 @@ object Log {
 
   }
 
-  final case class LogArg(path: Seq[String], value: Any, hiddenName: Boolean, codec: Option[LogstageCodec[_]]) {
+  final case class LogArgTyped[T](path: Seq[String], value: T, hiddenName: Boolean, codec: Option[LogstageCodec[T]]) {
     def name: String = path.last
   }
 
+  type LogArg = LogArgTyped[Any]
+  object LogArg {
+    def apply[T](value: Seq[String], t: T, hiddenName: Boolean, codec: Option[LogstageCodec[T]]): LogArg = {
+      LogArgTyped(value, t, hiddenName, codec.map(t => t.asInstanceOf[LogstageCodec[Any]]))
+    }
+  }
   type LogContext = Seq[LogArg]
 
   final case class CustomContext(values: LogContext) {
@@ -82,7 +88,7 @@ object Log {
   object CustomContext {
     def fromMap(map: Map[String, AnyEncoded]): CustomContext = {
       val logArgs = map.map {
-        case (k, v) => LogArg(Seq(k), v.value, hiddenName = false, v.codec)
+        case (k, v) => LogArg(Seq(k), v.value, hiddenName = false, v.codec.map(_.asInstanceOf[LogstageCodec[Any]]))
       }.toList
 
       CustomContext(logArgs)

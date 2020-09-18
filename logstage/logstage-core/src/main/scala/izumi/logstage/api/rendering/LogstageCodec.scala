@@ -6,6 +6,8 @@ import izumi.fundamentals.platform.exceptions.IzThrowable._
 trait LogstageCodec[-T] {
   def write(writer: LogstageWriter, value: T): Unit
 
+  def makeReprWriter(colored: Boolean): ExtendedLogstageWriter[String] = new LogstageReprWriter(colored)
+
   final def contramap[U](f: U => T): LogstageCodec[U] = (w, v) => write(w, f(v))
 }
 
@@ -62,20 +64,13 @@ sealed trait LogstageCodecLowPriority {
   implicit final lazy val LogstageCodecDouble: LogstageCodec[Double] = _.write(_)
   implicit final lazy val LogstageCodecBigDecimal: LogstageCodec[BigDecimal] = _.write(_)
   implicit final lazy val LogstageCodecBigInt: LogstageCodec[BigInt] = _.write(_)
+
   implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
     (w, t) =>
       w.openMap()
-
-      w.write("type")
-      w.write(t.getClass.getName)
-
-      w.write("message")
-      val m = t.getMessage
-      if (m eq null) w.writeNull() else w.write(m)
-
-      w.write("stacktrace")
-      w.write(t.stackTrace)
-
+      w.writeMapElement("type", Some(t.getClass.getName))
+      w.writeMapElement("message", Option(t.getMessage))
+      w.writeMapElement("stacktrace", Some(t.stackTrace))
       w.closeMap()
   }
 

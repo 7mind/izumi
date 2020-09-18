@@ -79,7 +79,11 @@ object Extractor {
       val values = entry.context.customContext.values
 
       val out = if (values.nonEmpty) {
-        values.map(v => LogFormat.Default.formatKv(context.colored)(v.name, v.value)).mkString(", ")
+        values
+          .map {
+            v => LogFormat.Default.formatKv(context.colored)(v.name, v.codec, v.value)
+          }
+          .mkString(", ")
       } else {
         ""
       }

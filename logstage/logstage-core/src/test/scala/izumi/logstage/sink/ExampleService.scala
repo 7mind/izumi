@@ -72,7 +72,7 @@ class ExampleService(logger: IzLogger) {
 
   private def testCornercases(): Unit = {
     val arg1 = 5
-    val nullarg = null
+    val nullarg: Integer = null
     val exception = makeException("Boom!")
     logger.warn("[Cornercase] non-interpolated expression: " + 1)
     logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")

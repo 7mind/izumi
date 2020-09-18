@@ -3,7 +3,7 @@ package izumi.logstage.api.rendering
 import scala.language.implicitConversions
 
 sealed trait AnyEncoded {
-  type T
+  type T <: Any
   def value: T
   def codec: Option[LogstageCodec[T]]
 }

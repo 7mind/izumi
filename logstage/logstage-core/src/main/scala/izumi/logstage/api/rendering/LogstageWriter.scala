@@ -12,6 +12,19 @@ trait LogstageWriter extends LogstageScalarWriter {
   def mapElementSplitter(): Unit
 
   def writeNull(): Unit
+
+  final def writeMapElement(key: String, value: Option[String]): Unit = {
+    nextMapElementOpen()
+    write(key)
+    mapElementSplitter()
+    value match {
+      case Some(value) =>
+        write(value)
+      case None =>
+        writeNull()
+    }
+    nextMapElementClose()
+  }
 }
 
 trait LogstageScalarWriter {

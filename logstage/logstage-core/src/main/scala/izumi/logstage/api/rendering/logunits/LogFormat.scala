@@ -3,24 +3,28 @@ package izumi.logstage.api.rendering.logunits
 import izumi.fundamentals.platform.exceptions.IzThrowable
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
-import izumi.logstage.api.rendering.{RenderedMessage, RenderedParameter}
+import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Failure, Success, Try}
 
 trait LogFormat {
   @inline def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter
   @inline def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage
-
-  @inline private[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String
+  @inline def formatKv(withColor: Boolean)(name: String, codec: Option[LogstageCodec[Any]], value: Any): String
 }
 
 object LogFormat {
 
   abstract class LogFormatImpl extends LogFormat {
     def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter = {
-      RenderedParameter(arg, argToString(arg.value, withColors), normalizeName(arg.name))
+      RenderedParameter(arg, argToString(arg.codec, arg.value, withColors), normalizeName(arg.name))
+    }
+
+    def formatKv(withColor: Boolean)(name: String, codec: Option[LogstageCodec[Any]], value: Any): String = {
+      val key = wrapped(withColor, Console.GREEN, name)
+      val v = argToString(codec, value, withColor)
+      s"$key=$v"
     }
 
     def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
@@ -44,12 +48,6 @@ object LogFormat {
       processUnbalanced(occurences, withColors, templateBuilder, messageBuilder, unbalancedArgs, unbalanced)
 
       RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.toSeq, unbalancedArgs.toSeq)
-    }
-
-    @inline private[logunits] def formatKv(withColor: Boolean)(name: String, value: Any): String = {
-      val key = wrapped(withColor, Console.GREEN, name)
-      val v = argToString(value, withColor)
-      s"$key=$v"
     }
 
     @inline private[this] def processUnbalanced(
@@ -112,13 +110,13 @@ object LogFormat {
           templateBuilder.append(handle(part))
 
           val maybeColoredRepr = if (withColors) {
-            argToString(uncoloredRepr.arg.value, withColors)
+            argToString(arg.codec, uncoloredRepr.arg.value, withColors)
           } else {
             uncoloredRepr.repr
           }
 
           if (!uncoloredRepr.arg.hiddenName) {
-            messageBuilder.append(formatKv(withColors)(visibleName, maybeColoredRepr))
+            messageBuilder.append(formatKvStrings(withColors, visibleName, maybeColoredRepr))
           } else {
             messageBuilder.append(maybeColoredRepr)
           }
@@ -139,7 +137,13 @@ object LogFormat {
       StringContext.processEscapes(part)
     }
 
-    @inline private[this] def argToString(argValue: Any, withColors: Boolean): String = {
+    @inline private[this] def formatKvStrings(withColor: Boolean, name: String, value: String): String = {
+      val key = wrapped(withColor, Console.GREEN, name)
+      val v = wrapped(withColor, Console.CYAN, value)
+      s"$key=$v"
+    }
+
+    @inline private[this] def argToString(codec: Option[LogstageCodec[Any]], argValue: Any, withColors: Boolean): String = {
       argValue match {
         case null =>
           wrapped(withColors, Console.YELLOW, "null")
@@ -148,11 +152,18 @@ object LogFormat {
           wrapped(withColors, Console.YELLOW, e.toString)
 
         case _ =>
-          Try(toString(argValue)) match {
-            case Success(s) =>
-              wrapped(withColors, Console.CYAN, s)
+          try {
+            codec match {
+              case Some(codec) =>
+                val writer = codec.makeReprWriter(withColors)
+                codec.write(writer, argValue)
+                wrapped(withColors, Console.CYAN, writer.translate())
+              case None =>
+                wrapped(withColors, Console.CYAN, toString(argValue))
 
-            case Failure(f) =>
+            }
+          } catch {
+            case f: Throwable =>
               import IzThrowable._
               val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stackTrace} "
               wrapped(withColors, Console.RED, message)
