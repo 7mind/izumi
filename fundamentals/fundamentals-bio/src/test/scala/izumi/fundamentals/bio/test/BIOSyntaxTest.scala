@@ -186,14 +186,14 @@ class BIOSyntaxTest extends AnyWordSpec {
     yy[zio.IO]
   }
 
-  "F / FR summoners examples" in {
+  "F summoner examples" in {
     import izumi.functional.bio.{BIOFork, BIOFork3, BIOFunctor, BIOMonad, BIOMonad3, BIOPrimitives, BIOPrimitives3, BIOTemporal, F}
 
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
     def y[F[+_, +_]: BIOTemporal: BIOFork] = {
-      F.timeout(F.forever(F.unit))(5.seconds) *>
+      F.timeout(5.seconds)(F.forever(F.unit)) *>
       F.map(z[F])(_ => ())
     }
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
@@ -364,6 +364,19 @@ class BIOSyntaxTest extends AnyWordSpec {
         }
 
       lazy val _ = adderEnv[zio.ZIO](1)
+    }
+
+    locally {
+      import izumi.functional.bio.{BIOTemporal, F}
+
+      def y[F[+_, +_]: BIOTemporal] = {
+        F.timeout(5.seconds)(F.forever(F.unit))
+      }
+
+      lazy val _ = (
+        y[zio.IO],
+        y[monix.bio.IO],
+      )
     }
   }
 }

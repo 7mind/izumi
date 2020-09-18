@@ -3,49 +3,93 @@ package izumi.functional
 import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
+/**
+  *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-hierarchy.svg)
+  *
+  *  {{{
+  *  [BIOFunctor3]<:--[BIOApplicative3]
+  *  [BIOApplicative3]<:--[BIOGuarantee3]
+  *  [BIOApplicative3]<:--[BIOMonad3]
+  *  [BIOBifunctor3]<:--[BIOApplicativeError3]
+  *  [BIOGuarantee3]<:--[BIOApplicativeError3]
+  *  [BIOApplicativeError3]<:--[BIOError3]
+  *  [BIOMonad3]<:--[BIOError3]
+  *  [BIOError3]<:--[BIOBracket3]
+  *  [BIOBracket3]<:--[BIOPanic3]
+  *  [BIOPanic3]<:--[BIO3]
+  *  [BIO3]<:--[BIOAsync3]
+  *  [BIOParallel3]<:--[BIOAsync3]
+  *  [BIOError3]<:--[BIOTemporal3]
+  *
+  *  [BIOProfunctor]<:--[BIOArrow]
+  *  [BIOArrow]<:--[BIOArrowChoice]
+  *  [BIOArrowChoice]<:--[BIOLocal]
+  *
+  *  [BIOAsk]<:--[BIOMonadAsk]
+  *  [BIOMonadAsk]<:--[BIOLocal]
+  *
+  *  [cats.effect.*]<:--[BIOCatsConversions]
+  *
+  *  [BIOFiber]<:--[BIOFork3]
+  *  [BIOFork3]<:--[BIOFork]
+  *
+  *  [BlockingIO3]<:--[BlockingIO]
+  *
+  *  [BIOPromise]<:--[BIOPrimitives3]
+  *  [BIOSemaphore]<:--[BIOPrimitives3]
+  *  [BIORef]<:--[BIOPrimitives3]
+  *  [BIOPrimitives3]<:--[BIOPrimitives]
+  *
+  *  [Entropy3]<:--[Entropy2]
+  *  [Entropy2]<:--[Entropy]
+  *
+  *  [Clock3]<:--[Clock2]
+  *  [Clock2]<:--[Clock]
+  *
+  *  [BIORunner]
+  *  }}}
+  *
+  *  inheritance hierarchy:
+  *
+  *  {{{
+  *  [BIOBifunctor3]<--[BIOError3]
+  *  [BIOFunctor3]<--[BIOApplicative3]
+  *  [BIOApplicative3]<--[BIOGuarantee3]
+  *  [BIOApplicative3]<--[BIOMonad3]
+  *  [BIOGuarantee3]<--[BIOApplicativeError3]
+  *  [BIOApplicativeError3]<--[BIOError3]
+  *  [BIOMonad3]<--[BIOError3]
+  *  [BIOError3]<--[BIOBracket3]
+  *  [BIOBracket3]<--[BIOPanic3]
+  *  [BIOPanic3]<--[BIO3]
+  *  [BIO3]<--[BIOAsync3]
+  *  [BIOParallel3]<--[BIOAsync3]
+  *  [BIOTemporal3]
+  *
+  *  [BIOProfunctor]<--[BIOArrow]
+  *  [BIOArrow]<--[BIOArrowChoice]
+  *  [BIOArrowChoice]<--[BIOLocal]
+  *
+  *  [BIOAsk]<--[BIOMonadAsk]
+  *  [BIOMonadAsk]<--[BIOLocal]
+  *  }}}
+  *
+  *  current hierarchy roots:
+  *
+  *  - BIOFunctor3
+  *  - BIOBifunctor3
+  *  - BIOParallel3
+  *  - BIOTemporal3
+  *  - BIOProfunctor
+  *  - BIOAsk
+  */
 /*
-  Current inheritance hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-hierarchy.svg)
+  New root checklist:
 
-  [BIOFunctor3]<:--[BIOApplicative3]
-  [BIOApplicative3]<:--[BIOGuarantee3]
-  [BIOApplicative3]<:--[BIOMonad3]
-  [BIOBifunctor3]<:--[BIOError3]
-  [BIOGuarantee3]<:--[BIOError3]
-  [BIOError3]<:--[BIOMonadError3]
-  [BIOMonad3]<:--[BIOMonadError3]
-  [BIOMonadError3]<:--[BIOBracket3]
-  [BIOBracket3]<:--[BIOPanic3]
-  [BIOPanic3]<:--[BIO3]
-  [BIO3]<:--[BIOAsync3]
-  [BIOParallel3]<:--[BIOAsync3]
-  [BIOAsync3]<:--[BIOTemporal3]
-
-  [BIOProfunctor]<:--[BIOArrow]
-  [BIOArrow]<:--[BIOArrowChoice]
-  [BIOArrowChoice]<:--[BIOLocal]
-
-  [BIOAsk]<:--[BIOMonadAsk]
-  [BIOMonadAsk]<:--[BIOLocal]
-
-  [cats.effect.*]<:--[BIOCatsConversions]
-
-  [BIOFiber]<:--[BIOFork3]
-  [BIOFork3]<:--[BIOFork]
-
-  [BlockingIO3]<:--[BlockingIO]
-
-  [BIOPromise]<:--[BIOPrimitives3]
-  [BIOSemaphore]<:--[BIOPrimitives3]
-  [BIORef]<:--[BIOPrimitives3]
-  [BIOPrimitives3]<:--[BIOPrimitives]
-
-  [Entropy3]<:--[Entropy2]
-  [Entropy2]<:--[Entropy]
-
-  [Clock3]<:--[Clock2]
-  [Clock2]<:--[Clock]
-
-  [BIORunner]
+  [ ] - add syntax in BIOSyntax3 & BIOSyntax at the same name as type
+  [ ] - add conversions for new root's InnerF at the same name in BIOSyntax3 & BIOSyntax
+  [ ] - add new attachments in BIORootInstanceLowPriorityN
+  [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN (conversions implicit priority: from most specific InnerF to least specific)
  */
 package object bio extends BIO3Syntax with BIOSyntax {
 

@@ -26,5 +26,7 @@ class BIOTemporalMonix(timer: Timer[UIO]) extends BIOAsyncMonix with BIOTemporal
       .flatMap(loop)
   }
 
-  @inline override def timeout[R, E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = r.timeout(FiniteDuration(duration.length, duration.unit))
+  @inline override def timeout[R, E, A](duration: Duration)(r: IO[E, A]): IO[E, Option[A]] = {
+    r.timeout(FiniteDuration(duration.length, duration.unit))
+  }
 }

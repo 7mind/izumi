@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import izumi.fundamentals.platform.language.unused
 
-trait BIOFunctor3[F[-_, +_, +_]] extends BIORoot {
+trait BIOFunctor3[F[-_, +_, +_]] extends BIORoot[F] {
   def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B]
 
   def as[R, E, A, B](r: F[R, E, A])(v: => B): F[R, E, B] = map(r)(_ => v)

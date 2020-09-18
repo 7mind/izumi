@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-trait BIOAsk[FR[-_, +_, +_]] extends BIORoot {
+trait BIOAsk[FR[-_, +_, +_]] extends BIORoot[FR] {
   def InnerF: BIOApplicative3[FR]
   def ask[R]: FR[R, Nothing, R]
 

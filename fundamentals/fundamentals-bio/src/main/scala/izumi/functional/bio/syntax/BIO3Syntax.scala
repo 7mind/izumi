@@ -185,16 +185,14 @@ object BIO3Syntax {
     @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
   }
 
-  final class BIOTemporal3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOTemporal3[FR])
-    extends BIOAsync3Ops(r) {
+  final class BIOTemporal3Ops[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: BIOTemporal3[FR]) {
     @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: => FR[R1, E2, A2]): FR[R1, E2, A2] =
       F.retryOrElse[R1, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E1 >: E, A2](tooManyAttemptsError: => E1, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E1, A2] =
-      F.repeatUntil[R, E1, A2](new BIOFunctor3Ops(r)(F).widen)(tooManyAttemptsError, sleep, maxAttempts)
+      F.repeatUntil[R, E1, A2](new BIOFunctor3Ops(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
-    @inline final def timeout(duration: Duration): FR[R, E, Option[A]] = F.timeout(r)(duration)
-    @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): FR[R, E1, A] =
-      F.flatMap(timeout(duration): FR[R, E1, Option[A]])(_.fold[FR[R, E1, A]](F.fail(e))(F.pure))
+    @inline final def timeout(duration: Duration): FR[R, E, Option[A]] = F.timeout(duration)(r)
+    @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): FR[R, E1, A] = F.timeoutFail(duration)(e, r)
   }
 
   final class BIOFork3Ops[FR[-_, +_, +_], -R, +E, +A](private val r: FR[R, E, A])(implicit private val F: BIOFork3[FR]) {
@@ -230,6 +228,8 @@ object BIO3Syntax {
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {
     @inline implicit final def BIOTemporal3[FR[-_, +_, +_]: BIOTemporal3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOTemporal3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOTemporal3Ops[FR, R, E, A](self)
+    @inline implicit final def BIOTemporal3[FR[-_, +_, +_]: BIOError3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOError3Ops[FR, R, E, A] =
+      new BIO3Syntax.BIOError3Ops[FR, R, E, A](self)
     @inline final def BIOTemporal3[FR[-_, +_, +_]: BIOTemporal3]: BIOTemporal3[FR] = implicitly
 
     @inline implicit final def BIOFork3[FR[-_, +_, +_]: BIOFork3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFork3Ops[FR, R, E, A] =

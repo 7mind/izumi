@@ -6,7 +6,7 @@ import java.util.concurrent.{Executors, ThreadFactory}
 import cats.Parallel
 import cats.effect.{Concurrent, Timer}
 import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Concurrent, _Parallel, _Timer}
-import izumi.functional.bio.{BIOTemporal, F}
+import izumi.functional.bio.{BIOAsync, BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -66,7 +66,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     }
   }
 
-  implicit def fromBIOTemporal[F[+_, +_]: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
+  implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
