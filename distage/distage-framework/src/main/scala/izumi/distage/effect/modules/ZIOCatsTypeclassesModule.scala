@@ -17,10 +17,8 @@ class ZIOCatsTypeclassesModule extends ModuleDef {
     implicit r: Runtime[Any] =>
       implicitly[ConcurrentEffect[Task]]
   }
-  make[Timer[Task]].from {
-    implicit zclock: zio.clock.Clock =>
-      Timer[Task]
-  }
+  make[Timer[Task]].from(Timer[Task])
+
   make[Blocker].from {
     pool: ThreadPoolExecutor @Id("zio.io") =>
       Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(pool))
