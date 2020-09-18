@@ -741,7 +741,7 @@ org.scalatest.shortstacks.nocolor.run(mdocAnotherUsingMemoTest)
 ```
 </pre>
 
-#### Psuedocode
+#### Pseudocode
 
 Suppose that the lookup of an instance for a component uses a hypothetical function `lookup(graph,
 type and tag)`. This function is memoized using storage specific to the current memoization
@@ -804,12 +804,12 @@ dependencies. Integration checks are executed only in `distage-testkit` tests an
 
 ## Extended Example
 
-This is an excerpt from [distage-example](https://github.com/7mind/distage-example). Techniques in that example to look for:
+This is an excerpt from [distage-example](https://github.com/7mind/distage-example), specifically the [tests](https://github.com/7mind/distage-example/blob/develop/src/test/scala/leaderboard/tests.scala) source. Techniques in that example to look for:
 
 - Placing the `Profiles` component in the `memoizationRoots`. The axis `Repo.Prod` uses a PostgreSQL
   docker container. This is shared across test cases since the `Profiles[IO]` depends on the
   PostgreSQL connection which then depends on the container instance.
-- Use of `Scene.Managed` to use `Axis.Prod` components in a managed environment.
+- Use of `Scene.Managed` to use `Repo.Prod` components in a managed environment.
 
 ```scala mdoc:reset:invisible:to-string
 type QueryFailure = Throwable
@@ -844,8 +844,6 @@ object leaderboard {
   }
 }
 
-object PostgresDockerModule extends distage.ModuleDef
-
 trait Rnd[F[_, _]] {
   def apply[A]: F[Nothing, A]
 }
@@ -856,7 +854,7 @@ object Rnd {
 
 ```scala mdoc:to-string
 import distage.{Activation, DIKey, ModuleDef}
-import distage.StandardAxis.Repo
+import distage.StandardAxis.{Scene, Repo}
 import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
@@ -866,34 +864,34 @@ import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
 abstract class LeaderboardTest extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
-  override def config = super.config.copy(
+  override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
-      // For testing, setup a docker container with postgres,
-      // instead of trying to connect to an external database
-      include(PostgresDockerModule)
     },
-    // instantiate Ladder & Profiles only once per test-run and
+    // For testing, setup a docker container with postgres,
+    // instead of trying to connect to an external database
+    activation = Activation(Scene -> Scene.Managed),
+    // Instantiate Ladder & Profiles only once per test-run and
     // share them and all their dependencies across all tests.
-    // this includes the Postgres Docker container above and
-    // table DDLs
+    // this includes the Postgres Docker container above and table DDLs
     memoizationRoots = Set(
       DIKey[Ladder[IO]],
       DIKey[Profiles[IO]],
     ),
+    configBaseName = "leaderboard-test",
   )
 }
 
 trait DummyTest extends LeaderboardTest {
   override final def config = super.config.copy(
-    activation = Activation(Repo -> Repo.Dummy),
+    activation = super.config.activation ++ Activation(Repo -> Repo.Dummy)
   )
 }
 
 trait ProdTest extends LeaderboardTest {
   override final def config = super.config.copy(
-    activation = Activation(Repo -> Repo.Prod),
+    activation = super.config.activation ++ Activation(Repo -> Repo.Prod)
   )
 }
 
