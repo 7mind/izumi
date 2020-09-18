@@ -148,7 +148,31 @@ class BIOSyntaxTest extends AnyWordSpec {
         (1, 2) <- F.pure((2, 1))
       } yield ()
     }
+    def y[F[+_, +_]: BIOError]: F[Any, Unit] = {
+      for {
+        (1, 2) <- F.pure((2, 1))
+      } yield ()
+    }
+    def z[F[+_, +_]: BIOError]: F[String, Unit] = {
+      for {
+        (1, 2) <- F.pure((2, 1)).widenError[String]
+      } yield ()
+    }
+    def xx[F[+_, +_]: BIOError]: F[Unit, Unit] = {
+      for {
+        (1, 2) <- F.pure((2, 1)).widenError[Unit]
+      } yield ()
+    }
+    def yy[F[+_, +_]: BIOError]: F[Option[Throwable], Unit] = {
+      for {
+        (1, 2) <- F.pure((2, 1)).widenError[Option[Throwable]]
+      } yield ()
+    }
     x[zio.IO]
+    y[zio.IO]
+    z[zio.IO]
+    xx[zio.IO]
+    yy[zio.IO]
   }
 
   "F / FR summoners examples" in {
