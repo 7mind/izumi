@@ -400,8 +400,8 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
+  final val allMonadsOptional = (cats_all ++ zio_all ++ Seq(monix_bio)).map(_ in Scope.Optional.all)
+  final val allMonadsTest = (cats_all ++ zio_all ++ Seq(monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,

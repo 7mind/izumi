@@ -573,6 +573,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional
     )
   )
@@ -782,6 +783,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
@@ -987,6 +989,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "javax.inject" % "javax.inject" % "1" % Test
     )
@@ -1506,6 +1509,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
@@ -1614,6 +1618,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "com.github.docker-java" % "docker-java" % V.docker_java
     )
@@ -1721,6 +1726,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional
     )
   )
@@ -1826,6 +1832,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
@@ -1933,6 +1940,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional
     )
   )
