@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import izumi.fundamentals.platform.language.unused
 
-trait BIOBifunctor3[F[-_, +_, +_]] extends BIORoot {
+trait BIOBifunctor3[F[-_, +_, +_]] extends BIORootBifunctor[F] {
   def InnerF: BIOFunctor3[F]
 
   def bimap[R, E, A, E2, A2](r: F[R, E, A])(f: E => E2, g: A => A2): F[R, E2, A2]

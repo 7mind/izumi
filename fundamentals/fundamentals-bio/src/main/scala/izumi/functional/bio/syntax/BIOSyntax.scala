@@ -163,14 +163,13 @@ object BIOSyntax {
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
   }
 
-  final class BIOTemporalOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOTemporal[F]) extends BIOAsyncOps(r) {
+  final class BIOTemporalOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOTemporal[F]) {
     @inline final def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2] = F.retryOrElse[Any, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
-      F.repeatUntil[Any, E2, A2](new BIOFunctorOps(r)(F).widen)(tooManyAttemptsError, sleep, maxAttempts)
+      F.repeatUntil[Any, E2, A2](new BIOFunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
-    @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(r)(duration)
-    @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] =
-      F.flatMap(timeout(duration): F[E1, Option[A]])(_.fold[F[E1, A]](F.fail(e))(F.pure))
+    @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
+    @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
   }
 
   final class BIOForkOps[F[+_, +_], +E, +A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
@@ -179,6 +178,7 @@ object BIOSyntax {
 
   trait BIOImplicitPuns extends BIOImplicitPuns1 {
     @inline implicit final def BIOTemporal[F[+_, +_]: BIOTemporal, E, A](self: F[E, A]): BIOSyntax.BIOTemporalOps[F, E, A] = new BIOSyntax.BIOTemporalOps[F, E, A](self)
+    @inline implicit final def BIOTemporal[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] = new BIOSyntax.BIOErrorOps[F, E, A](self)
     @inline final def BIOTemporal[F[+_, +_]: BIOTemporal]: BIOTemporal[F] = implicitly
 
     @inline implicit final def BIOFork[F[+_, +_]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)

@@ -7,12 +7,12 @@ import zio.{IO, Task, ZIO}
 
 class BIOSoundnessTest extends AnyWordSpec {
   /*
-    There's a `<: BIOFunctor3[f]` constraint now in BIOConvert3To2
+    There's a `<: BIORootBifunctor[f]` constraint now in BIOConvert3To2
     to prevent trifunctorial classes from being converted to bifunctorial,
     but it's still circumventable by inheriting from BIOFunctor + Trifunctor
     hierarchies in one implicit instance, like `BIOAsync[F] with BIOLocal[F]`.
 
-    A solution would be to add a marker type member inside instances:
+    A solution may be to add a marker type member inside instances:
 
     trait FunctorialityHelper {
       type Functoriality

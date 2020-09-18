@@ -3,7 +3,7 @@ package izumi.functional.bio.impl
 import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, BIOMonad3, __PlatformSpecific}
+import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO, ZScope}
 
@@ -13,7 +13,7 @@ import scala.util.Try
 object BIOAsyncZio extends BIOAsyncZio
 
 class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
-  @inline override final def InnerF: BIOMonad3[ZIO] = this
+  @inline override final def InnerF: this.type = this
 
   @inline override final def unit: ZIO[Any, Nothing, Unit] = ZIO.unit
   @inline override final def pure[A](a: A): ZIO[Any, Nothing, A] = ZIOSucceedNow(a)
