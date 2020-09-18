@@ -30,10 +30,10 @@ trait BIOTemporal3[F[-_, +_, +_]] extends BIOAsync3[F] with BIOTemporalInstances
 }
 
 private[bio] sealed trait BIOTemporalInstances
-object BIOTemporalInstances {
+object BIOTemporalInstances extends BIOTemporalInstancesLowPriority1 {
   @inline implicit final def BIOTemporal3Zio(implicit clockService: zio.clock.Clock): BIOTemporal3[ZIO] = new BIOTemporalZio(clockService)
 }
 
 sealed trait BIOTemporalInstancesLowPriority1 {
-  @inline implicit final def BIOTemporal2Monix(implicit clock: Clock2[bio.IO]): BIOTemporal[bio.IO] = new BIOTemporalMonix(clock)
+  @inline implicit final def BIOTemporalMonix(implicit timer: cats.effect.Timer[monix.bio.UIO]): BIOTemporal[bio.IO] = new BIOTemporalMonix(timer)
 }

@@ -1,26 +1,29 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.{BIOTemporal, Clock2}
-import monix.bio.IO
+import java.util.concurrent.TimeUnit
+
+import cats.effect.Timer
+import izumi.functional.bio.BIOTemporal
+import monix.bio.{IO, UIO}
 
 import scala.concurrent.duration._
 
-class BIOTemporalMonix(clock: Clock2[IO]) extends BIOAsyncMonix with BIOTemporal[IO] {
+class BIOTemporalMonix(timer: Timer[UIO]) extends BIOAsyncMonix with BIOTemporal[IO] {
   @inline override def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(FiniteDuration(duration.length, duration.unit))
   @inline override def retryOrElse[R, E, A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A]): IO[E2, A] = {
-    val boundary = clock.now().map(_.toEpochSecond + duration.toSeconds)
-    def loop: IO[E2, A] = {
+    def loop(maxTime: Long): IO[E2, A] = {
       r.redeemCauseWith(
         _ =>
           for {
-            now <- clock.now()
-            time <- boundary
-            res <- if (now.toEpochSecond < time) loop else orElse
+            now <- timer.clock.monotonic(TimeUnit.NANOSECONDS)
+            res <- if (now < maxTime) loop(maxTime) else orElse
           } yield res,
         res => IO.pure(res),
       )
     }
-    loop
+    timer
+      .clock.monotonic(TimeUnit.NANOSECONDS).map(_ + duration.toNanos)
+      .flatMap(loop)
   }
 
   @inline override def timeout[R, E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = r.timeout(FiniteDuration(duration.length, duration.unit))
