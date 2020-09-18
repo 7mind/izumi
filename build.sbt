@@ -1507,8 +1507,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Provided
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional
     )
   )
   .settings(
