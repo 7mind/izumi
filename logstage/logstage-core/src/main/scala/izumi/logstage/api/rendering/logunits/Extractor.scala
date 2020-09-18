@@ -69,7 +69,7 @@ object Extractor {
 
   class Message extends Extractor {
     override def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode = {
-      LETree.TextNode(LogFormat.Default.formatMessage(entry, context.colored).message)
+      LETree.TextNode(LogFormat.Default.formatMessage(entry, context).message)
     }
   }
 

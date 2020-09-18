@@ -3,14 +3,15 @@ package izumi.logstage.api.rendering.logunits
 import izumi.fundamentals.platform.exceptions.IzThrowable
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
-import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter}
+import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter, RenderingOptions}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait LogFormat {
+  @inline def formatMessage(entry: Log.Entry, options: RenderingOptions): RenderedMessage
+
   @inline def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter
-  @inline def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage
   @inline def formatKv(withColor: Boolean)(name: String, codec: Option[LogstageCodec[Any]], value: Any): String
 }
 
@@ -27,7 +28,8 @@ object LogFormat {
       s"$key=$v"
     }
 
-    def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
+    def formatMessage(entry: Log.Entry, options: RenderingOptions): RenderedMessage = {
+      val withColors = options.colored
       val templateBuilder = new StringBuilder()
       val messageBuilder = new StringBuilder()
 
@@ -47,7 +49,42 @@ object LogFormat {
       val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
       processUnbalanced(occurences, withColors, templateBuilder, messageBuilder, unbalancedArgs, unbalanced)
 
+      if (options.withExceptions) {
+        messageBuilder.append(traceThrowables(options, entry))
+      }
+
       RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.toSeq, unbalancedArgs.toSeq)
+    }
+
+    def traceThrowables(options: RenderingOptions, entry: Log.Entry): String = {
+      import izumi.fundamentals.platform.exceptions.IzThrowable._
+
+      val throwables = entry.throwables
+      if (throwables.nonEmpty) {
+        throwables
+          .zipWithIndex
+          .map {
+            case (t, idx) =>
+              val builder = new StringBuilder
+              if (options.colored) {
+                builder.append(Console.YELLOW)
+                builder.append("💔 ")
+              }
+              if (throwables.size > 1) {
+                builder.append(s"Exception #$idx:\n")
+              }
+
+              // TODO: we may try to use codec here
+              builder.append(t.value.stackTrace)
+              if (options.colored) {
+                builder.append(Console.RESET)
+              }
+              builder.toString()
+          }
+          .mkString("\n", "\n", "")
+      } else {
+        ""
+      }
     }
 
     @inline private[this] def processUnbalanced(
@@ -149,6 +186,7 @@ object LogFormat {
           wrapped(withColors, Console.YELLOW, "null")
 
         case e: Throwable =>
+          // TODO: we may try to use codec here
           wrapped(withColors, Console.YELLOW, e.toString)
 
         case _ =>

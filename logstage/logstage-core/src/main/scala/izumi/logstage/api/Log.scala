@@ -142,6 +142,18 @@ object Log {
       message.args.map(_.value).collectFirst { case t: Throwable => t }
     }
 
+    def throwables: Seq[LogArgTyped[Throwable]] = {
+      message
+        .args
+        .map {
+          a => (a.value, a)
+        }
+        .collect {
+          case (t: Throwable, c) =>
+            LogArgTyped(c.path, t, c.hiddenName, c.codec.map(_.asInstanceOf[LogstageCodec[Throwable]]))
+        }
+    }
+
     @inline def addCustomContext(ctx: CustomContext): Entry = {
       if (ctx.values.isEmpty) {
         this

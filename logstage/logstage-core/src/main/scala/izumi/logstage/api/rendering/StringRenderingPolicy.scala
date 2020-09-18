@@ -1,7 +1,6 @@
 package izumi.logstage.api.rendering
 
 import izumi.fundamentals.platform.basics.IzBoolean._
-import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.time.IzTimeSafe
 import izumi.logstage.DebugProperties
@@ -37,33 +36,7 @@ class StringRenderingPolicy(
   }
 
   override def render(entry: Log.Entry): String = {
-    val sb = new StringBuffer()
-
-    sb.append(renderer.render(entry, context))
-
-    if (options.withExceptions) {
-      sb.append(traceThrowable(entry))
-    }
-
-    sb.toString
-  }
-
-  def traceThrowable(entry: Log.Entry): String = {
-    entry.firstThrowable match {
-      case Some(t) =>
-        val builder = new StringBuilder
-        builder.append('\n')
-        if (context.colored) {
-          builder.append(Console.YELLOW)
-        }
-        builder.append(t.stackTrace)
-        if (context.colored) {
-          builder.append(Console.RESET)
-        }
-        builder.toString()
-      case None =>
-        ""
-    }
+    renderer.render(entry, context)
   }
 }
 

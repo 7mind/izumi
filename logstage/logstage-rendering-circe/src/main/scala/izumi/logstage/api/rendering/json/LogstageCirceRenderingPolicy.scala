@@ -5,7 +5,7 @@ import io.circe.syntax._
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.logunits.LogFormat
-import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter, RenderingPolicy}
+import izumi.logstage.api.rendering.{LogstageCodec, RenderedMessage, RenderedParameter, RenderingOptions, RenderingPolicy}
 
 import scala.collection.mutable
 import scala.runtime.RichInt
@@ -24,7 +24,7 @@ class LogstageCirceRenderingPolicy(
   override def render(entry: Log.Entry): String = {
     val result = mutable.ArrayBuffer[(String, Json)]()
 
-    val formatted = Format.formatMessage(entry, withColors = false)
+    val formatted = Format.formatMessage(entry, RenderingOptions(withExceptions = false, colored = false))
     val params = parametersToJson[RenderedParameter](
       formatted.parameters ++ formatted.unbalanced,
       _.normalizedName,
