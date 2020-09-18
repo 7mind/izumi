@@ -4,7 +4,6 @@ import java.util.concurrent.CompletionStage
 
 import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIOAsync3, BIOExit, BIOFiber, BIOFiber3, BIOLocal, BIOMonad3, __PlatformSpecific}
-import zio.ZIO.{CanFilter, ZIOWithFilterOps}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO, ZScope}
 
@@ -43,6 +42,11 @@ class BIOAsyncZio extends BIOAsync3[ZIO] with BIOLocal[ZIO] {
   @inline override final def *>[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, B] = f *> next
   @inline override final def <*[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, A] = f <* next
   @inline override final def map2[R, E, A, B, C](r1: ZIO[R, E, A], r2: => ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = r1.zipWith(r2)(f)
+
+  @inline override final def leftMap2[R, E, A, E2, E3](firstOp: ZIO[R, E, A], secondOp: => ZIO[R, E2, A])(f: (E, E2) => E3): ZIO[R, E3, A] = {
+    firstOp.catchAll(e => secondOp.mapError(f(e, _)))
+  }
+  @inline override final def orElse[R, E, A, E2](r: ZIO[R, E, A], f: => ZIO[R, E2, A]): ZIO[R, E2, A] = r.orElse(f)
 
   @inline override final def redeem[R, E, A, E2, B](r: ZIO[R, E, A])(err: E => ZIO[R, E2, B], succ: A => ZIO[R, E2, B]): ZIO[R, E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[R, E, A, E2](r: ZIO[R, E, A])(f: E => ZIO[R, E2, A]): ZIO[R, E2, A] = r.catchAll(f)

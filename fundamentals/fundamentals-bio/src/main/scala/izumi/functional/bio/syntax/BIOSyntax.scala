@@ -2,7 +2,7 @@ package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
 import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
-import izumi.fundamentals.platform.language.unused
+import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -50,21 +50,16 @@ object BIOSyntax {
     @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r, cleanup)
   }
 
-  class BIOErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOError[F]) extends BIOGuaranteeOps(r) {
+  class BIOApplicativeErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOApplicativeError[F])
+    extends BIOGuaranteeOps(r) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
+    @inline final def orElse[E2, A1 >: A](r2: => F[E2, A1]): F[E2, A1] = F.orElse(r, r2)
+    @inline final def leftMap2[E2, A1 >: A, E3](r2: => F[E2, A1])(f: (E, E2) => E3): F[E3, A1] = F.leftMap2(r, r2)(f)
+
     @inline final def widenError[E1 >: E]: F[E1, A] = r
     @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
-
-    @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A2, E2](r)(h)
-    @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[Any, E, A2, E1](r)(h)
-
-    @inline final def redeemPure[B](err: E => B, succ: A => B): F[Nothing, B] = F.redeemPure(r)(err, succ)
-
-    @inline final def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.tapError[Any, E, A, E1](r)(f)
-
-    @inline final def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
   }
 
   final class BIOMonadOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonad[F]) extends BIOApplicativeOps(r) {
@@ -74,13 +69,21 @@ object BIOSyntax {
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
   }
 
-  class BIOMonadErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonadError[F]) extends BIOErrorOps(r) {
+  class BIOErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOError[F]) extends BIOApplicativeErrorOps(r) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
     @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E1, A, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
+    @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A2, E2](r)(h)
+    @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[Any, E, A2, E1](r)(h)
+
     @inline final def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[Any, E, A, E2, B](r)(err, succ)
+    @inline final def redeemPure[B](err: E => B, succ: A => B): F[Nothing, B] = F.redeemPure(r)(err, succ)
+
+    @inline final def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
+
+    @inline final def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.tapError[Any, E, A, E1](r)(f)
 
     @inline final def leftFlatMap[E2](f: E => F[Nothing, E2]): F[E2, A] = F.leftFlatMap(r)(f)
     @inline final def flip: F[A, E] = F.flip(r)
@@ -98,10 +101,11 @@ object BIOSyntax {
       *   } yield ()
       * }}}
       */
-    @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E1): F[E1, A] = F.withFilter[Any, E1, A](r)(predicate)
+    @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit filter: BIOWithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
+      F.withFilter[Any, E1, A](r)(predicate)
   }
 
-  class BIOBracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOBracket[F]) extends BIOMonadErrorOps(r) {
+  class BIOBracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOBracket[F]) extends BIOErrorOps(r) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
     @inline final def bracketCase[E1 >: E, B](release: (A, BIOExit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
     @inline final def guaranteeCase(cleanup: BIOExit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
@@ -200,13 +204,14 @@ object BIOSyntax {
     @inline final def BIOBracket[F[+_, +_]: BIOBracket]: BIOBracket[F] = implicitly
   }
   trait BIOImplicitPuns6 extends BIOImplicitPuns7 {
-    @inline implicit final def BIOMonadError[F[+_, +_]: BIOMonadError, E, A](self: F[E, A]): BIOSyntax.BIOMonadErrorOps[F, E, A] =
-      new BIOSyntax.BIOMonadErrorOps[F, E, A](self)
-    @inline final def BIOMonadError[F[+_, +_]: BIOMonadError]: BIOMonadError[F] = implicitly
+    @inline implicit final def BIOError[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
+      new BIOSyntax.BIOErrorOps[F, E, A](self)
+    @inline final def BIOError[F[+_, +_]: BIOError]: BIOError[F] = implicitly
   }
   trait BIOImplicitPuns7 extends BIOImplicitPuns8 {
-    @inline implicit final def BIOError[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] = new BIOSyntax.BIOErrorOps[F, E, A](self)
-    @inline final def BIOError[F[+_, +_]: BIOError]: BIOError[F] = implicitly
+    @inline implicit final def BIOApplicativeError[F[+_, +_]: BIOApplicativeError, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeErrorOps[F, E, A] =
+      new BIOSyntax.BIOApplicativeErrorOps[F, E, A](self)
+    @inline final def BIOApplicativeError[F[+_, +_]: BIOApplicativeError]: BIOApplicativeError[F] = implicitly
   }
   trait BIOImplicitPuns8 extends BIOImplicitPuns9 {
     @inline implicit final def BIOGuarantee[F[+_, +_]: BIOGuarantee, E, A](self: F[E, A]): BIOSyntax.BIOGuaranteeOps[F, E, A] =
@@ -228,9 +233,16 @@ object BIOSyntax {
     @inline implicit final def BIOBifunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
-  trait BIOImplicitPuns12 {
+  trait BIOImplicitPuns12 extends BIOImplicitPuns13 {
     @inline implicit final def BIOFunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOFunctor[F[+_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
+  }
+  trait BIOImplicitPuns13 {
+    @deprecated("Use BIOError", "0.11")
+    @inline implicit final def BIOMonadError[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
+      new BIOSyntax.BIOErrorOps[F, E, A](self)
+    @deprecated("Use BIOError", "0.11")
+    @inline final def BIOMonadError[F[+_, +_]: BIOError]: BIOError[F] = implicitly
   }
 
 }
