@@ -4,8 +4,9 @@ import java.util.concurrent.CompletionStage
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait BIOAsync3[F[-_, +_, +_]] extends BIO3[F] with BIOParallel3[F] {
-  override def InnerF: BIOMonad3[F] = this
+trait BIOAsync3[F[-_, +_, +_]] extends BIOConcurrent3[F] with BIO3[F] {
+  override def InnerF: BIOPanic3[F] = this
+
   final type Canceler = F[Any, Nothing, Unit]
 
   def async[E, A](register: (Either[E, A] => Unit) => Unit): F[Any, E, A]
@@ -15,18 +16,8 @@ trait BIOAsync3[F[-_, +_, +_]] extends BIO3[F] with BIOParallel3[F] {
   def fromFuture[A](mkFuture: ExecutionContext => Future[A]): F[Any, Throwable, A]
   def fromFutureJava[A](javaFuture: => CompletionStage[A]): F[Any, Throwable, A]
 
-  def yieldNow: F[Any, Nothing, Unit]
-
-  /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
-  def race[R, E, A](r1: F[R, E, A], r2: F[R, E, A]): F[R, E, A]
-
-  /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
-  def racePair[R, E, A, B](fa: F[R, E, A], fb: F[R, E, B]): F[R, E, Either[(A, BIOFiber3[F, E, B]), (BIOFiber3[F, E, A], B)]]
-
-  def uninterruptible[R, E, A](r: F[R, E, A]): F[R, E, A]
-
   // defaults
-  def never: F[Any, Nothing, Nothing] = async(_ => ())
+  override def never: F[Any, Nothing, Nothing] = async(_ => ())
 
   @inline final def fromFuture[A](mkFuture: => Future[A]): F[Any, Throwable, A] = fromFuture(_ => mkFuture)
 }

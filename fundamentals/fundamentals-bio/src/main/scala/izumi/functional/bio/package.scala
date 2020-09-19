@@ -19,8 +19,11 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  [BIOBracket3]<--[BIOPanic3]
   *  [BIOPanic3]<--[BIO3]
   *  [BIO3]<--[BIOAsync3]
+  *
   *  [BIOMonad3]<--[BIOParallel3]
-  *  [BIOParallel3]<--[BIOAsync3]
+  *  [BIOParallel3]<--[BIOConcurrent3]
+  *  [BIOConcurrent3]<--[BIOAsync3]
+  *
   *  [BIOError3]<--[BIOTemporal3]
   *
   *  [BIOFunctor3]<--[BIOProfunctor]
@@ -71,14 +74,16 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  [BIOError3]<--[BIOBracket3]
   *  [BIOBracket3]<--[BIOPanic3]
   *  [BIOPanic3]<--[BIO3]
+  *
+  *  [BIOParallel3]<--[BIOConcurrent3]
+  *  [BIOConcurrent3]<--[BIOAsync3]
   *  [BIO3]<--[BIOAsync3]
-  *  [BIOParallel3]<--[BIOAsync3]
+  *
   *  [BIOTemporal3]
   *
   *  [BIOProfunctor]<--[BIOArrow]
   *  [BIOArrow]<--[BIOArrowChoice]
   *  [BIOArrowChoice]<--[BIOLocal]
-  *
   *  [BIOAsk]<--[BIOMonadAsk]
   *  [BIOMonadAsk]<--[BIOLocal]
   *  }}}
@@ -101,12 +106,13 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  - BIOPrimitives
   */
 /*
-  New root checklist:
+  New BIO typeclass checklist:
 
   [ ] - add syntax in BIOSyntax3 & BIOSyntax at the same name as type
-  [ ] - add conversions for new root's InnerF at the same name in BIOSyntax3 & BIOSyntax
+  [ ] - add syntax for new root's InnerF at the same name in BIOSyntax3 & BIOSyntax
   [ ] - add new attachments in BIORootInstanceLowPriorityN
-  [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN (conversions implicit priority: from most specific InnerF to least specific)
+  [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN
+        (conversions implicit priority: from most specific InnerF to least specific)
  */
 package object bio extends BIO3Syntax with BIOSyntax {
 
@@ -133,6 +139,7 @@ package object bio extends BIO3Syntax with BIOSyntax {
   type BIOPanic[F[+_, +_]] = BIOPanic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIO[F[+_, +_]] = BIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOParallel[F[+_, +_]] = BIOParallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOConcurrent[F[+_, +_]] = BIOConcurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOAsync[F[+_, +_]] = BIOAsync3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type BIOTemporal[F[+_, +_]] = BIOTemporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 

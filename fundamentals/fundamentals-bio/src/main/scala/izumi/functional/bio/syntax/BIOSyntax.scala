@@ -147,13 +147,20 @@ object BIOSyntax {
       F.bracket[Any, E1, A, B](r)(c => F.sync(c.close()))(use)
   }
 
-  final class BIOParallelOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOParallel[F]) {
+  class BIOParallelOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOParallel[F]) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
     @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
-
+  final class BIOConcurrentOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOConcurrent[F])
+    extends BIOParallelOps(r)(F) {
+    @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
+    @inline final def racePair[E1 >: E, A1 >: A](
+      that: F[E1, A1]
+    ): F[E1, Either[(A, BIOFiber[F, E1, A1]), (BIOFiber[F, E1, A], A1)]] = F.racePair(r, that)
+    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
+  }
   class BIOAsyncOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOAsync[F]) extends BIOOps(r) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
@@ -161,6 +168,10 @@ object BIOSyntax {
     @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
 
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
+    @inline final def racePair[E1 >: E, A1 >: A](
+      that: F[E1, A1]
+    ): F[E1, Either[(A, BIOFiber[F, E1, A1]), (BIOFiber[F, E1, A], A1)]] = F.racePair(r, that)
+    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
   final class BIOTemporalOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: BIOTemporal[F]) {
@@ -189,11 +200,18 @@ object BIOSyntax {
     @inline final def BIOAsync[F[+_, +_]: BIOAsync]: BIOAsync[F] = implicitly
   }
   trait BIOImplicitPuns2 extends BIOImplicitPuns3 {
+    @inline implicit final def BIOConcurrent[F[+_, +_]: BIOConcurrent, E, A](self: F[E, A]): BIOSyntax.BIOConcurrentOps[F, E, A] =
+      new BIOSyntax.BIOConcurrentOps[F, E, A](self)
+    @inline implicit final def BIOConcurrent[F[+_, +_]: BIOPanic, E, A](self: F[E, A]): BIOSyntax.BIOPanicOps[F, E, A] =
+      new BIOSyntax.BIOPanicOps[F, E, A](self)
+    @inline final def BIOConcurrent[F[+_, +_]: BIOConcurrent]: BIOConcurrent[F] = implicitly
+  }
+  trait BIOImplicitPuns3 extends BIOImplicitPuns4 {
     @inline implicit final def BIOParallel[F[+_, +_]: BIOParallel, E, A](self: F[E, A]): BIOSyntax.BIOParallelOps[F, E, A] = new BIOSyntax.BIOParallelOps[F, E, A](self)
     @inline implicit final def BIOParallel[F[+_, +_]: BIOMonad, E, A](self: F[E, A]): BIOSyntax.BIOMonadOps[F, E, A] = new BIOSyntax.BIOMonadOps[F, E, A](self)
     @inline final def BIOParallel[F[+_, +_]: BIOParallel]: BIOParallel[F] = implicitly
   }
-  trait BIOImplicitPuns3 extends BIOImplicitPuns4 {
+  trait BIOImplicitPuns4 extends BIOImplicitPuns5 {
     @inline implicit final def BIO[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
     /**
       * Shorthand for [[BIO#syncThrowable]]
@@ -205,49 +223,49 @@ object BIOSyntax {
     @inline final def BIO[F[+_, +_], A](effect: => A)(implicit F: BIO[F]): F[Throwable, A] = F.syncThrowable(effect)
     @inline final def BIO[F[+_, +_]: BIO]: BIO[F] = implicitly
   }
-  trait BIOImplicitPuns4 extends BIOImplicitPuns5 {
+  trait BIOImplicitPuns5 extends BIOImplicitPuns6 {
     @inline implicit final def BIOPanic[F[+_, +_]: BIOPanic, E, A](self: F[E, A]): BIOSyntax.BIOPanicOps[F, E, A] = new BIOSyntax.BIOPanicOps[F, E, A](self)
     @inline final def BIOPanic[F[+_, +_]: BIOPanic]: BIOPanic[F] = implicitly
   }
-  trait BIOImplicitPuns5 extends BIOImplicitPuns6 {
+  trait BIOImplicitPuns6 extends BIOImplicitPuns7 {
     @inline implicit final def BIOBracket[F[+_, +_]: BIOBracket, E, A](self: F[E, A]): BIOSyntax.BIOBracketOps[F, E, A] = new BIOSyntax.BIOBracketOps[F, E, A](self)
     @inline final def BIOBracket[F[+_, +_]: BIOBracket]: BIOBracket[F] = implicitly
   }
-  trait BIOImplicitPuns6 extends BIOImplicitPuns7 {
+  trait BIOImplicitPuns7 extends BIOImplicitPuns8 {
     @inline implicit final def BIOError[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
       new BIOSyntax.BIOErrorOps[F, E, A](self)
     @inline final def BIOError[F[+_, +_]: BIOError]: BIOError[F] = implicitly
   }
-  trait BIOImplicitPuns7 extends BIOImplicitPuns8 {
+  trait BIOImplicitPuns8 extends BIOImplicitPuns9 {
     @inline implicit final def BIOApplicativeError[F[+_, +_]: BIOApplicativeError, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeErrorOps[F, E, A] =
       new BIOSyntax.BIOApplicativeErrorOps[F, E, A](self)
     @inline final def BIOApplicativeError[F[+_, +_]: BIOApplicativeError]: BIOApplicativeError[F] = implicitly
   }
-  trait BIOImplicitPuns8 extends BIOImplicitPuns9 {
+  trait BIOImplicitPuns9 extends BIOImplicitPuns10 {
     @inline implicit final def BIOGuarantee[F[+_, +_]: BIOGuarantee, E, A](self: F[E, A]): BIOSyntax.BIOGuaranteeOps[F, E, A] =
       new BIOSyntax.BIOGuaranteeOps[F, E, A](self)
     @inline final def BIOGuarantee[F[+_, +_]: BIOGuarantee]: BIOGuarantee[F] = implicitly
   }
-  trait BIOImplicitPuns9 extends BIOImplicitPuns10 {
+  trait BIOImplicitPuns10 extends BIOImplicitPuns11 {
     @inline implicit final def BIOMonad[F[+_, +_]: BIOMonad, E, A](self: F[E, A]): BIOSyntax.BIOMonadOps[F, E, A] = new BIOSyntax.BIOMonadOps[F, E, A](self)
     @inline final def BIOMonad[F[+_, +_]: BIOMonad]: BIOMonad[F] = implicitly
   }
-  trait BIOImplicitPuns10 extends BIOImplicitPuns11 {
+  trait BIOImplicitPuns11 extends BIOImplicitPuns12 {
     @inline implicit final def BIOApplicative[F[+_, +_]: BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] =
       new BIOSyntax.BIOApplicativeOps[F, E, A](self)
     @inline final def BIOApplicative[F[+_, +_]: BIOApplicative]: BIOApplicative[F] = implicitly
   }
-  trait BIOImplicitPuns11 extends BIOImplicitPuns12 {
+  trait BIOImplicitPuns12 extends BIOImplicitPuns13 {
     @inline implicit final def BIOBifunctor[F[+_, +_]: BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] =
       new BIOSyntax.BIOBifunctorOps[F, E, A](self)
     @inline implicit final def BIOBifunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOBifunctor[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
   }
-  trait BIOImplicitPuns12 extends BIOImplicitPuns13 {
+  trait BIOImplicitPuns13 extends BIOImplicitPuns14 {
     @inline implicit final def BIOFunctor[F[+_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
     @inline final def BIOFunctor[F[+_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
   }
-  trait BIOImplicitPuns13 {
+  trait BIOImplicitPuns14 {
     @deprecated("Use BIOError", "0.11")
     @inline implicit final def BIOMonadError[F[+_, +_]: BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
       new BIOSyntax.BIOErrorOps[F, E, A](self)

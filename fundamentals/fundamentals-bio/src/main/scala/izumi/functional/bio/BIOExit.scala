@@ -121,7 +121,7 @@ object BIOExit {
   }
 
   object MonixExit {
-    @inline def toIzBIO[E, A](exit: Either[Option[bio.Cause[E]], A]): BIOExit[E, A] = {
+    @inline def toBIOExit[E, A](exit: Either[Option[bio.Cause[E]], A]): BIOExit[E, A] = {
       exit match {
         case Left(None) => Termination(new Throwable("The task was cancelled."), Trace.empty)
         case Left(Some(error)) => fromMonixCause(error)
