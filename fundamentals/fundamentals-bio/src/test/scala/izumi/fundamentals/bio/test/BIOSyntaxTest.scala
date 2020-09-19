@@ -50,7 +50,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.unit
     }
 
-    x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
+    x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(()))
   }
 
   "BIOConcurrent3 syntax / attachment / conversion works" in {
