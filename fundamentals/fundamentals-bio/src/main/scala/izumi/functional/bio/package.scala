@@ -19,8 +19,11 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  [BIOBracket3]<--[BIOPanic3]
   *  [BIOPanic3]<--[BIO3]
   *  [BIO3]<--[BIOAsync3]
+  *
   *  [BIOMonad3]<--[BIOParallel3]
-  *  [BIOParallel3]<--[BIOAsync3]
+  *  [BIOParallel3]<--[BIOConcurrent3]
+  *  [BIOConcurrent3]<--[BIOAsync3]
+  *
   *  [BIOError3]<--[BIOTemporal3]
   *
   *  [BIOFunctor3]<--[BIOProfunctor]
@@ -71,15 +74,16 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  [BIOError3]<--[BIOBracket3]
   *  [BIOBracket3]<--[BIOPanic3]
   *  [BIOPanic3]<--[BIO3]
+  *
+  *  [BIOParallel3]<--[BIOConcurrent3]
+  *  [BIOConcurrent3]<--[BIOAsync3]
   *  [BIO3]<--[BIOAsync3]
   *
-  *  [BIOParallel3]<--[BIOAsync3]
   *  [BIOTemporal3]
   *
   *  [BIOProfunctor]<--[BIOArrow]
   *  [BIOArrow]<--[BIOArrowChoice]
   *  [BIOArrowChoice]<--[BIOLocal]
-  *
   *  [BIOAsk]<--[BIOMonadAsk]
   *  [BIOMonadAsk]<--[BIOLocal]
   *  }}}
