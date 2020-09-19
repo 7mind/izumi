@@ -15,11 +15,12 @@ trait MonixDIEffectModule extends ModuleDef {
   implicit val scheduler: Scheduler = Scheduler.global
   implicit val ce: CatsConcurrentEffectForTask = new CatsConcurrentEffectForTask()(scheduler, bio.IO.defaultOptions)
 
-  make[Parallel[Task]].from(new CatsParallelForTask[Throwable])
   make[ConcurrentEffect[Task]]
     .from(new CatsConcurrentEffectForTask()(scheduler, bio.IO.defaultOptions)).aliased[Concurrent[Task]]
 
-  make[ContextShift[Task]].from(SchedulerEffect.contextShift(scheduler))
-  make[Timer[Task]].from(SchedulerEffect.timer(scheduler))
+  addImplicit[Parallel[Task]].from(new CatsParallelForTask[Throwable])
+  addImplicit[ContextShift[Task]]
+  addImplicit[Timer[Task]]
+
   include(PolymorphicCatsDIEffectModule[Task])
 }
