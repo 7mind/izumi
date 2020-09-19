@@ -16,7 +16,7 @@ object StartupBanner {
 
       showDepData(logger, "Application is about to start", None)
 
-      val withIzumi = LibraryReference("izumi", Some(IzumiVersion.version())) +: referenceLibraries.toSeq.sortBy(_.libraryName)
+      val withIzumi = LibraryReference("izumi", Some(IzArtifact.current())) +: referenceLibraries.toSeq.sortBy(_.libraryName)
       withIzumi.foreach {
         lib =>
           showDepData(logger, s"... using ${lib.libraryName}", lib.artifact)

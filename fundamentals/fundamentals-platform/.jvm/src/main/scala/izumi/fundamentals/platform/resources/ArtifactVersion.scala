@@ -5,6 +5,9 @@ import java.time.{Instant, LocalDateTime}
 import izumi.fundamentals.platform.time.IzTime
 import izumi.fundamentals.platform.time.IzTime._
 
+import scala.language.experimental.macros
+import scala.reflect.macros.blackbox
+
 case class IzArtifactId(groupId: String, artifactId: String) {
   override def toString: String = s"$groupId:$artifactId"
 }
@@ -51,4 +54,27 @@ object IzArtifact {
     BuildStatus(UNDEFINED, UNDEFINED, UNDEFINED, LocalDateTime.ofInstant(Instant.EPOCH, IzTime.TZ_UTC)),
     GitStatus(UNDEFINED, repoClean = false, UNDEFINED),
   )
+
+  def current(): IzArtifact = macro IzArtifactMacroImpl.make
+}
+
+object IzArtifactMacroImpl {
+  def make(c: blackbox.Context)(): c.Expr[IzArtifact] = {
+    import c.universe._
+
+    c.Expr[IzArtifact] {
+      q"""{          
+          import izumi.fundamentals.platform.build.BuildAttributes._
+          import izumi.fundamentals.platform.build.MacroParameters._
+                    
+          ${symbolOf[IzArtifact].asClass.companion}(
+            ${symbolOf[IzArtifactId].asClass.companion}(projectGroupId().getOrElse("???"), artifactName().getOrElse("???")),
+            ${symbolOf[ArtifactVersion].asClass.companion}(artifactVersion().getOrElse("???")),
+            ${symbolOf[BuildStatus].asClass.companion}(userName().getOrElse("???"), javaVersion().getOrElse("???"), sbtVersion().getOrElse("???"), buildTimestamp()),
+            ${symbolOf[GitStatus].asClass.companion}(gitBranch().getOrElse("???"), repoClean = gitRepoClean().getOrElse(false), gitHeadCommit().getOrElse("???")),
+          )
+          }
+       """
+    }
+  }
 }
