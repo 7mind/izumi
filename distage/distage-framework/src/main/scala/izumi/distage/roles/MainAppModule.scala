@@ -42,7 +42,6 @@ import izumi.reflect.Tag
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-
 class MainAppModule[F[_]: TagK](
   args: ArgV,
   additionalRoles: AdditionalRoles,
