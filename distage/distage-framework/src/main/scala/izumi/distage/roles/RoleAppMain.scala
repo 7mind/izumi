@@ -11,11 +11,12 @@ import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
+import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.reflect.Tag
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]]) {
+abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]], artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
@@ -48,6 +49,7 @@ abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]]) {
       additionalRoles = AdditionalRoles(requiredRoles(args)),
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
+      appArtifact = artifact.get,
     )
   }
 
@@ -58,15 +60,16 @@ abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]]) {
 
 object RoleAppMain {
 
-  abstract class LauncherF[F[_]: TagK: LiftIO](executionContext: ExecutionContext = ExecutionContext.global) extends RoleAppMain[F] {
+  abstract class LauncherF[F[_]: TagK: LiftIO](executionContext: ExecutionContext = ExecutionContext.global)(implicit artifact: IzArtifactMaterializer)
+    extends RoleAppMain[F] {
     override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync] extends RoleAppMain[F[Throwable, ?]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, *]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, *]] = new BIOShutdownStrategy[F]
   }
 
-  abstract class LauncherIdentity extends RoleAppMain[Identity] {
+  abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {
     override protected def shutdownStrategy: AppShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
   }
 

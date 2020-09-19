@@ -19,6 +19,7 @@ import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.Tag
@@ -47,6 +48,7 @@ class MainAppModule[F[_]: TagK](
   additionalRoles: AdditionalRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
+  appArtifact: IzArtifact,
 )(implicit t: Tag[TagK[F]]
 ) extends ModuleDef {
   make[ArgV].fromValue(args)
@@ -70,6 +72,7 @@ class MainAppModule[F[_]: TagK](
   }
 
   many[LibraryReference]
+  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   addImplicit[TagK[F]]
 
