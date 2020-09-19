@@ -1,8 +1,11 @@
 package izumi.distage.roles
 
 import distage._
+import cats.effect._
+import izumi.functional.bio._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.AppShutdownStrategy._
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
@@ -10,10 +13,15 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.Tag
 
-abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
+import scala.concurrent.ExecutionContext
+
+abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]]) {
+  protected def pluginConfig: PluginConfig
+  protected def shutdownStrategy: AppShutdownStrategy[F]
+
   def main(args: Array[String]): Unit = {
+    val argv = ArgV(args)
     try {
-      val argv = ArgV(args)
       val appModule = makeAppModule(argv)
       val overrideModule = makeAppModuleOverride(argv)
       Injector.NoProxies().produceRun(appModule.overridenBy(overrideModule)) {
@@ -22,7 +30,7 @@ abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
       }
     } catch {
       case t: Throwable =>
-        createEarlyFailureHandler().onError(t)
+        createEarlyFailureHandler(argv).onError(t)
     }
   }
 
@@ -36,26 +44,34 @@ abstract class RoleAppMain[F[_]: TagK]()(implicit t: Tag[TagK[F]]) {
 
   protected def makeAppModule(args: ArgV): Module = {
     new MainAppModule[F](
-      args,
-      AdditionalRoles(requiredRoles(args)),
-      makeShutdownStrategy(),
-      makePluginConfig(),
+      args = args,
+      additionalRoles = AdditionalRoles(requiredRoles(args)),
+      shutdownStrategy = shutdownStrategy,
+      pluginConfig = pluginConfig,
     )
   }
 
-  protected def createEarlyFailureHandler(): AppFailureHandler = {
+  protected def createEarlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
     AppFailureHandler.TerminatingHandler
   }
-
-  protected def makeShutdownStrategy(): AppShutdownStrategy[F]
-
-  protected def makePluginConfig(): PluginConfig
-
 }
 
 object RoleAppMain {
-  case class ArgV(args: Array[String])
-  case class AdditionalRoles(knownRequiredRoles: Vector[RawRoleParams])
+
+  abstract class LauncherF[F[_]: TagK: LiftIO](executionContext: ExecutionContext = ExecutionContext.global) extends RoleAppMain[F] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+  }
+
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync] extends RoleAppMain[F[Throwable, ?]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+  }
+
+  abstract class LauncherIdentity extends RoleAppMain[Identity] {
+    override protected def shutdownStrategy: AppShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
+  }
+
+  final case class ArgV(args: Array[String])
+  final case class AdditionalRoles(knownRequiredRoles: Vector[RawRoleParams])
 
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
