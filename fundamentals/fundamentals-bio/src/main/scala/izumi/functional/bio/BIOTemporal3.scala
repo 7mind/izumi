@@ -12,6 +12,7 @@ trait BIOTemporal3[F[-_, +_, +_]] extends BIORootBifunctor[F] with BIOTemporalIn
 
   def sleep(duration: Duration): F[Any, Nothing, Unit]
   def timeout[R, E, A](duration: Duration)(r: F[R, E, A]): F[R, E, Option[A]]
+
   def retryOrElse[R, E, A, E2](r: F[R, E, A])(duration: FiniteDuration, orElse: => F[R, E2, A]): F[R, E2, A]
 
   @inline final def timeoutFail[R, E, A](duration: Duration)(e: E, r: F[R, E, A]): F[R, E, A] = {

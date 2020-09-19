@@ -8,10 +8,9 @@ trait BIO3[F[-_, +_, +_]] extends BIOPanic3[F] {
 
   def syncThrowable[A](effect: => A): F[Any, Throwable, A]
   def sync[A](effect: => A): F[Any, Nothing, A]
+  def suspend[R, A](effect: => F[R, Throwable, A]): F[R, Throwable, A] = flatten(syncThrowable(effect))
 
   @inline final def apply[A](effect: => A): F[Any, Throwable, A] = syncThrowable(effect)
-
-  def suspend[R, A](effect: => F[R, Throwable, A]): F[R, Throwable, A] = flatten(syncThrowable(effect))
 
   // defaults
   override def fromEither[E, A](effect: => Either[E, A]): F[Any, E, A] = flatMap(sync(effect)) {
