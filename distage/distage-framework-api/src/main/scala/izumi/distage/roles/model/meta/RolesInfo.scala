@@ -23,7 +23,7 @@ object RolesInfo {
         .availableRoleBindings.map {
           r =>
             val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
-            s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.source.getOrElse("N/A")}"
+            s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.descriptor.artifact.getOrElse("N/A")}"
         }.sorted.niceList()
   }
 }

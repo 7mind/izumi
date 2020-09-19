@@ -1,4 +1,4 @@
-
+import com.typesafe.sbt.SbtGit.GitKeys._
 
 enablePlugins(SbtgenVerificationPlugin)
 
@@ -46,6 +46,9 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -147,6 +150,9 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -264,6 +270,9 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -387,6 +396,9 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -482,6 +494,9 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -585,6 +600,9 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -691,6 +709,9 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -796,6 +817,9 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -895,6 +919,9 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1001,6 +1028,9 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1103,6 +1133,9 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1208,6 +1241,9 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1310,6 +1346,9 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1409,6 +1448,9 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1521,6 +1563,9 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1629,6 +1674,9 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1734,6 +1782,9 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1842,6 +1893,9 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1947,6 +2001,9 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2046,6 +2103,9 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2150,6 +2210,9 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2250,6 +2313,9 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2440,6 +2506,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2538,6 +2607,9 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2852,7 +2924,13 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    scalacOptions in ThisBuild += """-Xmacro-settings:scalatest-version=VExpr(V.scalatest)"""
+    scalacOptions in ThisBuild ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}",
+      s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}",
+      s"-Xmacro-settings:git-described-version=${gitDescribedVersion.value.getOrElse("")}",
+      s"-Xmacro-settings:git-head-commit=${gitHeadCommit.value.getOrElse("")}"
+    )
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

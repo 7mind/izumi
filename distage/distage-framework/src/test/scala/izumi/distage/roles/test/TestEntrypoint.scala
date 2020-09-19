@@ -3,6 +3,7 @@ package izumi.distage.roles.test
 import cats.effect.IO
 import distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
@@ -15,5 +16,9 @@ class TestEntrypointBase extends RoleAppMain.LauncherF[IO] {
 
   override protected def shutdownStrategy: ImmediateExitShutdownStrategy[IO] = {
     new ImmediateExitShutdownStrategy()
+  }
+
+  override protected def createEarlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {
+    AppFailureHandler.NullHandler
   }
 }

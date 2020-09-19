@@ -1,7 +1,6 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 
