@@ -7,7 +7,7 @@ import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
-import izumi.logstage.api.IzLogger
+//import izumi.logstage.api.IzLogger
 import zio.blocking.Blocking
 import zio.internal.Executor
 import zio.internal.tracing.TracingConfig
@@ -97,17 +97,18 @@ trait ZIODIEffectModule extends ModuleDef {
   make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
   make[BIORunner[IO]].using[ZIORunner]
   make[TracingConfig].fromValue(TracingConfig.enabled)
-  make[FailureHandler].from {
-    logger: IzLogger =>
-      FailureHandler.Custom {
-        case BIOExit.Error(error, trace) =>
-          logger.warn(s"Fiber errored out due to unhandled $error $trace")
-        case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
-          logger.trace(s"Fiber interrupted with $interrupt $trace")
-        case BIOExit.Termination(defect, _, trace) =>
-          logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
-      }
-  }
+  // ???
+//  make[FailureHandler].from {
+//    logger: IzLogger =>
+//      FailureHandler.Custom {
+//        case BIOExit.Error(error, trace) =>
+//          logger.warn(s"Fiber errored out due to unhandled $error $trace")
+//        case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
+//          logger.trace(s"Fiber interrupted with $interrupt $trace")
+//        case BIOExit.Termination(defect, _, trace) =>
+//          logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
+//      }
+//  }
   make[ZIORunner].from {
     (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
       BIORunner.createZIO(
