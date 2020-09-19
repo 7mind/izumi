@@ -18,14 +18,14 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def pure[A](a: A): IO[Nothing, A] = IO.pure(a)
   override final def sync[A](effect: => A): IO[Nothing, A] = IO.evalTotal(effect)
   override final def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.eval(effect)
-  override final def suspend[R, A](effect: => IO[Throwable, A]): IO[Throwable, A] = IO.suspendTotal(effect)
+  override final def suspend[R, A](effect: => IO[Throwable, A]): IO[Throwable, A] = IO.suspend(effect)
 
   override final def fail[E](v: => E): IO[E, Nothing] = IO.raiseError(v)
   override final def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.terminate(v)
 
-  override final def fromEither[E, V](effect: => Either[E, V]): IO[E, V] = IO.fromEither(effect)
-  override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): IO[E, A] = IO.fromEither(effect.toRight(errorOnNone))
-  override final def fromTry[A](effect: => Try[A]): IO[Throwable, A] = IO.fromTry(effect)
+  override final def fromEither[E, V](effect: => Either[E, V]): IO[E, V] = IO.suspendTotal(IO.fromEither(effect))
+  override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): IO[E, A] = IO.suspendTotal(IO.fromEither(effect.toRight(errorOnNone)))
+  override final def fromTry[A](effect: => Try[A]): IO[Throwable, A] = IO.suspendTotal(IO.fromTry(effect))
 
   override final def void[R, E, A](r: IO[E, A]): IO[E, Unit] = r.void
   override final def map[R, E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
@@ -46,7 +46,7 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def flatten[R, E, A](r: IO[E, IO[E, A]]): IO[E, A] = r.flatten
   override final def *>[R, E, A, B](r: IO[E, A], next: => IO[E, B]): IO[E, B] = r.flatMap(_ => next)
   override final def <*[R, E, A, B](r: IO[E, A], next: => IO[E, B]): IO[E, A] = r.flatMap(a => next.map(_ => a))
-  override final def map2[R, E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = r1.flatMap(a => r2.map(f(a, _)))
+  override final def map2[R, E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = IO.map2(r1, r2)(f)
 
   override final def leftMap2[R, E, A, E2, E3](firstOp: IO[E, A], secondOp: => IO[E2, A])(f: (E, E2) => E3): IO[E3, A] =
     firstOp.onErrorHandleWith(e => secondOp.mapError(f(e, _)))
@@ -60,27 +60,33 @@ class BIOAsyncMonix extends BIOAsync[IO] {
   override final def attempt[R, E, A](r: IO[E, A]): IO[Nothing, Either[E, A]] = r.attempt
   override final def redeemPure[R, E, A, B](r: IO[E, A])(err: E => B, succ: A => B): IO[Nothing, B] = r.redeem(err, succ)
 
-  override final def bracket[R, E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = acquire.bracket(use)(release)
-  override final def bracketCase[R, E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
-    acquire.bracketE(use)((a, exit) => release(a, toIzBIO(exit)))
+  override final def bracket[R, E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
+    acquire.bracket(use = use)(release = release)
   }
-  override final def guaranteeCase[R, E, A](f: IO[E, A], cleanup: BIOExit[E, A] => IO[Nothing, Unit]): IO[E, A] = f.bracketE(IO.pure)((_, exit) => cleanup(toIzBIO(exit)))
+  override final def bracketCase[R, E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
+    acquire.bracketE(use = use)(release = (a, exit) => release(a, toBIOExit(exit)))
+  }
+  override final def guaranteeCase[R, E, A](f: IO[E, A], cleanup: BIOExit[E, A] => IO[Nothing, Unit]): IO[E, A] = {
+    IO.unit.bracketE(use = _ => f)(release = (_, exit) => cleanup(toBIOExit(exit)))
+  }
 
-  override final def traverse[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.traverse(l)(f).map(_.toList)
+  override final def traverse[R, E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.traverse(l)(f)
   override final def sequence[R, E, A, B](l: Iterable[IO[E, A]]): IO[E, List[A]] = IO.sequence(l)
   override final def traverse_[R, E, A](l: Iterable[A])(f: A => IO[E, Unit]): IO[E, Unit] = IO.traverse(l)(f).void
   override final def sequence_[R, E](l: Iterable[IO[E, Unit]]): IO[E, Unit] = IO.sequence(l).void
 
-  override final def sandbox[R, E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.redeemCauseWith(cause => IO.raiseError(fromMonixCause(cause)), a => IO.pure(a))
-  override final def yieldNow: IO[Nothing, Unit] = IO.unit
+  override final def sandbox[R, E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = {
+    r.redeemCauseWith(cause => IO.raiseError(fromMonixCause(cause)), a => IO.pure(a))
+  }
+  override final def yieldNow: IO[Nothing, Unit] = IO.shift
   override final def never: IO[Nothing, Nothing] = IO.never
 
-  override final def race[R, E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = IO.raceMany(List(r1, r2))
+  override final def race[R, E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = IO.race(r1, r2).map(_.merge)
 
   override final def racePair[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, Either[(A, BIOFiber[IO, E, B]), (BIOFiber[IO, E, A], B)]] = {
-    IO.racePair(fa, fb).flatMap {
-      case Left((a, fiberB)) => fiberB.cancel.void.map(_ => Left((a, BIOFiber.fromMonix(fiberB))))
-      case Right((fiberA, b)) => fiberA.cancel.void.map(_ => Right((BIOFiber.fromMonix(fiberA), b)))
+    IO.racePair(fa, fb).map {
+      case Left((a, fiberB)) => Left((a, BIOFiber.fromMonix(fiberB)))
+      case Right((fiberA, b)) => Right((BIOFiber.fromMonix(fiberA), b))
     }
   }
 
@@ -127,6 +133,6 @@ class BIOAsyncMonix extends BIOAsync[IO] {
 
   override final def zipWithPar[R, E, A, B, C](fa: IO[E, A], fb: IO[E, B])(f: (A, B) => C): IO[E, C] = IO.mapBoth(fa, fb)(f)
   override final def zipPar[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, (A, B)] = IO.parZip2(fa, fb)
-  override final def zipParLeft[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, A] = IO.parZip2(fa, fb).map { case (a, _) => a }
-  override final def zipParRight[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, B] = IO.parZip2(fa, fb).map { case (_, b) => b }
+  override final def zipParLeft[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, A] = IO.parMap2(fa, fb)((a, _) => a)
+  override final def zipParRight[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, B] = IO.parMap2(fa, fb)((_, b) => b)
 }
