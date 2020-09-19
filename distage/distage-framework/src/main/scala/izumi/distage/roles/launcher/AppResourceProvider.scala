@@ -4,7 +4,6 @@ import distage.{Injector, TagK}
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter

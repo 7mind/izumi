@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.roles.model.meta.LibraryReference
-import izumi.fundamentals.platform.resources.IzArtifact
+import izumi.fundamentals.platform.resources.{IzArtifact, IzArtifactMaterializer}
 import izumi.logstage.api.IzLogger
 
 trait StartupBanner {
@@ -16,7 +16,7 @@ object StartupBanner {
 
       showDepData(logger, "Application is about to start", None)
 
-      val withIzumi = LibraryReference("izumi", Some(IzArtifact.current())) +: referenceLibraries.toSeq.sortBy(_.libraryName)
+      val withIzumi = LibraryReference("izumi", Some(IzArtifactMaterializer.currentArtifact)) +: referenceLibraries.toSeq.sortBy(_.libraryName)
       withIzumi.foreach {
         lib =>
           showDepData(logger, s"... using ${lib.libraryName}", lib.artifact)

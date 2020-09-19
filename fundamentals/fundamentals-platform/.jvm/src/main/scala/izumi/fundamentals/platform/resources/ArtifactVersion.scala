@@ -2,6 +2,8 @@ package izumi.fundamentals.platform.resources
 
 import java.time.{Instant, LocalDateTime}
 
+import izumi.fundamentals.platform.language.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePositionMaterializer.SourcePositionMaterializerMacro
 import izumi.fundamentals.platform.time.IzTime
 import izumi.fundamentals.platform.time.IzTime._
 
@@ -48,31 +50,38 @@ case class IzArtifact(id: IzArtifactId, version: ArtifactVersion, build: BuildSt
 
 object IzArtifact {
   val UNDEFINED = "UNDEFINED"
+
   def undefined: IzArtifact = IzArtifact(
     IzArtifactId(UNDEFINED, UNDEFINED),
     ArtifactVersion(UNDEFINED),
     BuildStatus(UNDEFINED, UNDEFINED, UNDEFINED, LocalDateTime.ofInstant(Instant.EPOCH, IzTime.TZ_UTC)),
     GitStatus(UNDEFINED, repoClean = false, UNDEFINED),
   )
-
-  def current(): IzArtifact = macro IzArtifactMacroImpl.make
 }
 
-object IzArtifactMacroImpl {
-  def make(c: blackbox.Context)(): c.Expr[IzArtifact] = {
+final case class IzArtifactMaterializer(get: IzArtifact) extends AnyVal
+
+object IzArtifactMaterializer {
+  @inline def currentArtifact(implicit ev: IzArtifactMaterializer): IzArtifact = ev.get
+
+  implicit def materialize: IzArtifactMaterializer = macro SourceFilePositionMaterializerImpl.make
+}
+
+object SourceFilePositionMaterializerImpl {
+  def make(c: blackbox.Context): c.Expr[IzArtifactMaterializer] = {
     import c.universe._
 
-    c.Expr[IzArtifact] {
+    c.Expr[IzArtifactMaterializer] {
       q"""{          
           import izumi.fundamentals.platform.build.BuildAttributes._
           import izumi.fundamentals.platform.build.MacroParameters._
                     
-          ${symbolOf[IzArtifact].asClass.companion}(
+          ${symbolOf[IzArtifactMaterializer].asClass.companion}(${symbolOf[IzArtifact].asClass.companion}(
             ${symbolOf[IzArtifactId].asClass.companion}(projectGroupId().getOrElse("???"), artifactName().getOrElse("???")),
             ${symbolOf[ArtifactVersion].asClass.companion}(artifactVersion().getOrElse("???")),
             ${symbolOf[BuildStatus].asClass.companion}(userName().getOrElse("???"), javaVersion().getOrElse("???"), sbtVersion().getOrElse("???"), buildTimestamp()),
             ${symbolOf[GitStatus].asClass.companion}(gitBranch().getOrElse("???"), repoClean = gitRepoClean().getOrElse(false), gitHeadCommit().getOrElse("???")),
-          )
+          ))
           }
        """
     }
