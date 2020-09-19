@@ -51,9 +51,13 @@ class MainAppModule[F[_]: TagK](
 )(implicit t: Tag[TagK[F]]
 ) extends ModuleDef {
   make[ArgV].fromValue(args)
-  make[CLIParser].from[CLIParserImpl]
+
   make[AdditionalRoles].fromValue(additionalRoles)
-  make[ParserFailureHandler].from[ParserFailureHandler.TerminatingHandler.type]
+  make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
+  make[PluginConfig].named("main").fromValue(pluginConfig)
+
+  make[CLIParser].from[CLIParserImpl]
+  make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
   make[AppArgsInterceptor].from[AppArgsInterceptor.AppArgsInterceptorImpl]
 
   make[RawAppArgs].from {
@@ -69,11 +73,6 @@ class MainAppModule[F[_]: TagK](
   many[LibraryReference]
 
   addImplicit[TagK[F]]
-
-  make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
-  make[PluginConfig]
-    .named("main")
-    .fromValue(pluginConfig)
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
 

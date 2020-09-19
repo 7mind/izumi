@@ -37,6 +37,38 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
   }
 
+  "BIOConcurrent syntax / attachment / conversion works" in {
+    import izumi.functional.bio.{BIOConcurrent, F}
+
+    def x[F[+_, +_]: BIOConcurrent](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b)
+      a.guaranteeCase(_ => a.race(b).catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
+      F.unit
+    }
+
+    x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
+  }
+
+  "BIOConcurrent3 syntax / attachment / conversion works" in {
+    import izumi.functional.bio.{BIOConcurrent3, F}
+
+    def x[F[-_, +_, +_]: BIOConcurrent3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b)
+      a.guaranteeCase(_ => a.race(b).catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
+      F.unit
+    }
+
+    x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
+  }
+
   "BIOAsync.race is callable along with all BIOParallel syntax" in {
     import izumi.functional.bio.BIOAsync
 

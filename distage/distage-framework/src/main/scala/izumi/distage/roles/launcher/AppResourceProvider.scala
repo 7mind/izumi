@@ -5,12 +5,13 @@ import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
-  def makeAppResource(): DIResource.DIResourceBase[Identity, PreparedApp[F]]
+  def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]]
 }
 
 object AppResourceProvider {
@@ -29,7 +30,7 @@ object AppResourceProvider {
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
   ) extends AppResourceProvider[F] {
-    def makeAppResource(): DIResource.DIResourceBase[Identity, PreparedApp[F]] = {
+    def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]] = {
       appPlan
         .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
@@ -42,7 +43,7 @@ object AppResourceProvider {
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit effect: DIEffect[F]): DIResource.DIResourceBase[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit effect: DIEffect[F]): DIResourceBase[F, Locator] = {
       Injector
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app.shared, filters.filterF)
