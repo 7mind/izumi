@@ -5,7 +5,7 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.build.ProjectAttributeMacro
+import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -242,7 +242,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "support constant types in class strategy" in {
-    assume(ScalaRelease.parse(ProjectAttributeMacro.extractScalaVersion().get) >= ScalaRelease.`2_13`(0))
+    assume(ScalaRelease.parse(MacroParameters.scalaVersion().get) >= ScalaRelease.`2_13`(0))
     assertCompiles(
       """
         new ModuleDef {

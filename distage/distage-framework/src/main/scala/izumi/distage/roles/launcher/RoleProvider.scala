@@ -11,12 +11,10 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.jvm.IzJvm
-import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
 
 import scala.collection.immutable.Set
-import scala.reflect.ClassTag
 
 trait RoleProvider[F[_]] {
   def loadRoles(): RolesInfo
@@ -123,8 +121,7 @@ object RoleProvider {
     private[this] def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): Seq[RoleBinding] = {
       val impltype = roleBinding.implementation.implType
       val runtimeClass = roleBinding.key.tpe.cls
-      val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-      Seq(RoleBinding(roleBinding, runtimeClass, impltype, roleDescriptor, src))
+      Seq(RoleBinding(roleBinding, runtimeClass, impltype, roleDescriptor))
     }
 
     // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???

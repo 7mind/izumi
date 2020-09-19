@@ -105,7 +105,7 @@ class IzResources(clazz: Class[_]) {
 
 }
 
-object IzResourcesDirty extends IzResources(IzManifest.getClass) {
+object IzResourcesDirty extends IzResources(classOf[ResourceLocation]) {
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
@@ -178,7 +178,7 @@ object IzResourcesDirty extends IzResources(IzManifest.getClass) {
   }
 }
 
-object IzResources extends IzResources(IzManifest.getClass) {
+object IzResources extends IzResources(classOf[ResourceLocation]) {
 
   case class FileContent(path: Path, content: Array[Byte])
 

@@ -228,10 +228,19 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
+        "scalacOptions" in SettingScope.Build ++= Seq(
+          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
+          """s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}"""".raw,
+          """s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}"""".raw,
+          """s"-Xmacro-settings:git-described-version=${gitDescribedVersion.value.getOrElse("")}"""".raw,
+          """s"-Xmacro-settings:git-head-commit=${gitHeadCommit.value.getOrElse("")}"""".raw,
+        ),
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
+        "scalacOptions" ++= Seq(
+          """s"-Xmacro-settings:product-name=${name.value}"""".raw
+        ),
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
@@ -662,7 +671,9 @@ object Izumi {
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
     rootSettings = Projects.root.rootSettings,
-    imports = Seq.empty,
+    imports = Seq(
+      Import("com.typesafe.sbt.SbtGit.GitKeys._")
+    ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       ScopedLibrary(nemePlugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),

@@ -1,11 +1,8 @@
 package izumi.distage.roles.launcher
 
-import izumi.distage.framework.services._
 import izumi.distage.roles.model.meta.LibraryReference
-import izumi.fundamentals.platform.resources.IzManifest
+import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
-
-import scala.reflect.ClassTag
 
 trait StartupBanner {
   def showBanner(logger: IzLogger): Unit
@@ -16,16 +13,18 @@ object StartupBanner {
     referenceLibraries: Set[LibraryReference]
   ) extends StartupBanner {
     def showBanner(logger: IzLogger): Unit = {
-      val withIzumi = LibraryReference("izumi", classOf[ConfigLoader]) +: referenceLibraries.toSeq.sortBy(_.libraryName)
-      showDepData(logger, "Application is about to start", this.getClass)
+
+      showDepData(logger, "Application is about to start", None)
+
+      val withIzumi = LibraryReference("izumi", Some(IzumiVersion.version())) +: referenceLibraries.toSeq.sortBy(_.libraryName)
       withIzumi.foreach {
-        lib => showDepData(logger, s"... using ${lib.libraryName}", lib.clazz)
+        lib =>
+          showDepData(logger, s"... using ${lib.libraryName}", lib.artifact)
       }
     }
 
-    private def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {
-      val mf = IzManifest.manifest()(ClassTag(clazz)).map(IzManifest.read)
-      val details = mf.getOrElse("{No version data}")
+    private def showDepData(logger: IzLogger, msg: String, clazz: Option[IzArtifact]): Unit = {
+      val details = clazz.map(_.toString).getOrElse("{No version data}")
       logger.info(s"$msg : $details")
     }
   }

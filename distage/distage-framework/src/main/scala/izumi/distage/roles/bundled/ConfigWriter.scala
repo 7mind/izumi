@@ -62,7 +62,7 @@ final class ConfigWriter[F[_]](
 
     roleInfo.availableRoleBindings.foreach {
       role =>
-        val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version), Some(commonConfig))
+        val component = ConfigurableComponent(role.descriptor.id, role.descriptor.artifact.map(_.version), Some(commonConfig))
         val refConfig = buildConfig(options, component)
         val versionedComponent = if (options.useLauncherVersion) {
           component.copy(version = Some(ArtifactVersion(launcherVersion.version)))
