@@ -74,10 +74,17 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   override final def bindings: Set[Binding] = freeze
 
   private[this] final def freeze: Set[Binding] = {
+    val frozenTags0 = frozenTags
     // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    ListSet(retaggedIncludes ++ frozenState: _*)
-      .map(_.addTags(frozenTags))
-      .++(asIsIncludes)
+    // FIXME: remove ListSet
+    ListSet
+      .newBuilder.++= {
+        retaggedIncludes
+          .iterator
+          .++(frozenState.iterator)
+          .map(_.addTags(frozenTags0))
+          .++(asIsIncludes.iterator)
+      }.result()
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
