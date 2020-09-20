@@ -6,23 +6,25 @@ import izumi.distage.model.definition.ModuleDef
 
 object CatsDIEffectModule extends CatsDIEffectModule
 
+/** `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
+  *
+  * - Adds [[cats.effect]] typeclass instances for `cats-effect`
+  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `cats-effect` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  */
 trait CatsDIEffectModule extends ModuleDef {
+  include(PolymorphicCatsDIEffectModule[IO])
+
+  make[ConcurrentEffect[IO]].from(IO.ioConcurrentEffect(_: ContextShift[IO]))
+
   make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
-  make[ConcurrentEffect[IO]]
-    .from(IO.ioConcurrentEffect(_: ContextShift[IO]))
-    .aliased[Concurrent[IO]]
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
   make[Timer[IO]].from((_: PublicIOApp).timer)
-
-  make[PublicIOApp].from {
-    new PublicIOApp { override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0)) }
-  }
-
-  include(PolymorphicCatsDIEffectModule[IO])
+  make[PublicIOApp]
 }
 
 trait PublicIOApp extends IOApp {
   override def contextShift: ContextShift[IO] = super.contextShift
   override def timer: Timer[IO] = super.timer
+  override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0))
 }

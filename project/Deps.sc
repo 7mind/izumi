@@ -15,6 +15,7 @@ object Izumi {
     val cats_effect = Version.VExpr("V.cats_effect")
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
+    val monix = Version.VExpr("V.monix")
     val monix_bio = Version.VExpr("V.monix_bio")
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
@@ -91,6 +92,7 @@ object Izumi {
     final val zio_interop_cats =
       Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_all = Seq(zio_core, zio_interop_cats)
+    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
     final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
@@ -407,7 +409,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio, izumi_reflect)).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
@@ -426,7 +428,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all) ++ Seq(
+        libs = allMonadsOptional ++ Seq(
+          monix in Scope.Optional.all,
+          monix_bio in Scope.Optional.all,
+          zio_interop_cats in Scope.Optional.all,
+        ) ++ Seq(
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),

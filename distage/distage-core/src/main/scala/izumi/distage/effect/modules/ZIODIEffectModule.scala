@@ -17,6 +17,12 @@ import scala.concurrent.ExecutionContext
 
 object ZIODIEffectModule extends ZIODIEffectModule
 
+/** `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
+  *
+  * - Adds [[izumi.functional.bio]] typeclass instances for ZIO
+  * - Adds [[cats.effect]] typeclass instances for ZIO
+  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  */
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner2[IO]].from[DIEffectRunner.BIOImpl[IO]]
   addImplicit[DIApplicative2[IO]]
@@ -97,7 +103,7 @@ trait ZIODIEffectModule extends ModuleDef {
   make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
   make[BIORunner[IO]].using[ZIORunner]
   make[TracingConfig].fromValue(TracingConfig.enabled)
-  // ???
+  // FIXME: depends on IzLogger ???
 //  make[FailureHandler].from {
 //    logger: IzLogger =>
 //      FailureHandler.Custom {

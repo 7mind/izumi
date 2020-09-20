@@ -6,6 +6,7 @@ import izumi.fundamentals.platform.functional.Identity
 
 object IdentityDIEffectModule extends IdentityDIEffectModule
 
+/** `Identity` effect type (aka no effect type / imperative Scala) support for `distage` resources, effects, roles & tests */
 trait IdentityDIEffectModule extends ModuleDef {
   addImplicit[DIApplicative[Identity]]
   addImplicit[DIEffect[Identity]]

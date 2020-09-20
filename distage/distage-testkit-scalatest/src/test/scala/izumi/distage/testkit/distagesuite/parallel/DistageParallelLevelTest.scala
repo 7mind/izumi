@@ -11,7 +11,6 @@ import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstan
 import izumi.distage.testkit.scalatest.DistageSpecScalatest
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
-import monix.bio
 import org.scalatest.Assertion
 import zio.Task
 
@@ -82,11 +81,11 @@ final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
 
-final class DistageParallelLevelTestBIO1 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestBIO2 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestBIO3 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestBIO4 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestBIO5 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestBIO6 extends DistageParallelLevelTest[bio.Task](DistageParallelLevelTest.monixCounter) {
+final class DistageParallelLevelTestMonixBIO1 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestMonixBIO2 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestMonixBIO3 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestMonixBIO4 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestMonixBIO5 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+final class DistageParallelLevelTestMonixBIO6 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter) {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
