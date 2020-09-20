@@ -16,7 +16,7 @@ import izumi.reflect.Tag
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK](implicit t: Tag[TagK[F]], artifact: IzArtifactMaterializer) {
+abstract class RoleAppMain[F[_]: TagK](implicit artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
   protected def shutdownStrategy: AppShutdownStrategy[F]
 

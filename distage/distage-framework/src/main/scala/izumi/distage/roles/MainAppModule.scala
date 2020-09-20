@@ -12,8 +12,8 @@ import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.ModuleValidator.{ModulePair, ValidatedModulePair}
 import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
+import izumi.distage.roles.launcher.ModuleValidator.{ModulePair, ValidatedModulePair}
 import izumi.distage.roles.launcher._
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -22,7 +22,6 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
-import izumi.reflect.Tag
 
 /**
   * Application flow:
@@ -49,7 +48,6 @@ class MainAppModule[F[_]: TagK](
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
   appArtifact: IzArtifact,
-)(implicit t: Tag[TagK[F]]
 ) extends ModuleDef {
   make[ArgV].fromValue(args)
 

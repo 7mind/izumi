@@ -87,12 +87,10 @@ object Izumi {
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
     final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto)
 
-    final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
-    final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
-    final val zio_all = Seq(
-      zio_core,
-      zio_interop_cats,
-    )
+    final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_interop_cats =
+      Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_all = Seq(zio_core, zio_interop_cats)
     final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
@@ -409,7 +407,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio, izumi_reflect)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
@@ -545,7 +543,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie).map(_ in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "coverageEnabled" := false,
