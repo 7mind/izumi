@@ -506,7 +506,11 @@ Provided by trait @scaladoc[AssertCIO](izumi.distage.testkit.scalatest.AssertCIO
 
 Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertBIO):
 
-- `assertBIO[F[+_, +_] : BIO](???: Boolean): F[Nothing, Assertion]`
+- `assertBIO[F[+_, +_]: BIO](???: Boolean): F[Nothing, Assertion]`
+
+Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertSync):
+
+- `assertIO[F[_]: Sync](???: Boolean): F[Assertion]`
 
 ### Execution Order
 
