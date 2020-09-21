@@ -18,7 +18,7 @@ import scala.collection.mutable
 
 object MonadPlugin extends PluginDef {
   include(CatsDIEffectModule)
-  include(MonixBIODIEffectModule(monix.execution.Scheduler.global))
+  include(MonixBIODIEffectModule())
   include(ZIODIEffectModule)
 }
 

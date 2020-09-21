@@ -1,7 +1,7 @@
 package izumi.distage.effect.modules
 
 import cats.Parallel
-import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
 import izumi.distage.model.definition.ModuleDef
 
 object CatsDIEffectModule extends CatsDIEffectModule

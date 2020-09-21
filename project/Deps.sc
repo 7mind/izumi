@@ -389,7 +389,8 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++ Seq(
-          scala_java_time in Scope.Test.js
+          monix_bio in Scope.Optional.all,
+          scala_java_time in Scope.Test.js,
         ),
         depends = Seq(Projects.fundamentals.language),
         platforms = Targets.cross,
@@ -490,7 +491,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
-        libs = allMonadsOptional ++ Seq(
+        libs = allMonadsOptional ++ allMonadsTest ++ Seq(
           scalamock in Scope.Test.all,
           scalatest.dependency in Scope.Compile.all,
         ),
