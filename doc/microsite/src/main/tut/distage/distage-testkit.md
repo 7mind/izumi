@@ -815,6 +815,12 @@ This is an excerpt from [distage-example](https://github.com/7mind/distage-examp
   PostgreSQL connection which then depends on the container instance.
 - Use of `Scene.Managed` to use `Repo.Prod` components in a managed environment.
 
+You may also take other projects' test suites written with `distage-testkit` as reference:
+
+- [tests in `d4s` library](https://github.com/PlayQ/d4s/tree/develop/d4s-test/src/test/scala/d4s)
+- [tests in `distage-testkit` library](https://github.com/7mind/izumi/tree/develop/distage/distage-testkit-scalatest/src/test/scala/izumi/distage/testkit/distagesuite)
+- [tests in `distage-framework-docker` library](https://github.com/7mind/izumi/tree/develop/distage/distage-framework-docker/src/test/scala/izumi/distage/testkit/docker)
+
 ```scala mdoc:reset:invisible:to-string
 type QueryFailure = Throwable
 
