@@ -4,7 +4,7 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.DIResource.makeSimple
+import izumi.distage.model.definition.Lifecycle.makeSimple
 import izumi.distage.model.definition.ImplDef.DirectImplDef
 import izumi.distage.model.definition._
 import izumi.distage.model.planning.PlanningHook
@@ -30,7 +30,7 @@ class ResourceRewriter(
     } else defn
   }
 
-  private def rewrite[TGT: Tag](convert: TGT => DIResource[Identity, TGT])(b: Binding): Seq[Binding] = {
+  private def rewrite[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
     b match {
       case implBinding: Binding.ImplBinding =>
         implBinding match {
@@ -58,12 +58,12 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
+  private def rewriteImpl[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
         if (implType <:< SafeType.get[TGT]) {
-          val resourceType = SafeType.get[DIResource[Identity, TGT]]
+          val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
 
           implDef match {
             case _: ImplDef.ReferenceImpl =>
@@ -120,8 +120,8 @@ object ResourceRewriter {
 
   final case class RewriteRules(applyRewrites: Boolean = true)
 
-  /** Like [[DIResource.fromAutoCloseable]], but with added logging */
-  def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
+  /** Like [[Lifecycle.fromAutoCloseable]], but with added logging */
+  def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
     makeSimple(acquire) {
       ac =>
         logger.info(s"Closing $ac...")
@@ -129,8 +129,8 @@ object ResourceRewriter {
     }
   }
 
-  /** Like [[DIResource.fromExecutorService]], but with added logging */
-  def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
+  /** Like [[Lifecycle.fromExecutorService]], but with added logging */
+  def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
     makeSimple(acquire) {
       es =>
         if (!(es.isShutdown || es.isTerminated)) {

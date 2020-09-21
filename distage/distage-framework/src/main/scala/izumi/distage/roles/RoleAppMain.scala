@@ -25,7 +25,7 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
       val appModule = makeAppModule(argv)
       val overrideModule = makeAppModuleOverride(argv)
       Injector.NoProxies[Identity]().produceRun(appModule.overridenBy(overrideModule)) {
-        appResource: DIResourceBase[Identity, PreparedApp[F]] =>
+        appResource: Lifecycle[Identity, PreparedApp[F]] =>
           appResource.use(_.run())
       }
     } catch {

@@ -5,7 +5,7 @@ import java.util.UUID
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.{DockerReusePolicy, Mount}
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 
 object ReusedOneshotContainer extends ContainerDef {
   override def config: Config = {
@@ -38,7 +38,7 @@ class CmdContainerModule[F[_]: TagK] extends ModuleDef {
     ReusedOneshotContainer.make[F]
   }
 
-  make[DIResourceBase[F, ReuseCheckContainer.Container]].from(ReuseCheckContainer.make[F])
+  make[Lifecycle[F, ReuseCheckContainer.Container]].from(ReuseCheckContainer.make[F])
 }
 
 object CmdContainerModule {

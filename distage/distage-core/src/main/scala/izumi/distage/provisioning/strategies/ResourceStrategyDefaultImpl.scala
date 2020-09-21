@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
@@ -31,13 +31,13 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
     val resourceKey = op.effectKey
     context.fetchKey(resourceKey, makeByName = false) match {
       case Some(resource0) if isEffect =>
-        val resource = resource0.asInstanceOf[DIResourceBase[F, Any]]
+        val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
         resource.acquire.map {
           innerResource =>
             Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => resource.release(innerResource)))
         }
       case Some(resourceSimple) =>
-        val resource = resourceSimple.asInstanceOf[DIResourceBase[Identity, Any]]
+        val resource = resourceSimple.asInstanceOf[Lifecycle[Identity, Any]]
         F.maybeSuspend(resource.acquire).map {
           innerResource =>
             Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => F.maybeSuspend(resource.release(innerResource))))

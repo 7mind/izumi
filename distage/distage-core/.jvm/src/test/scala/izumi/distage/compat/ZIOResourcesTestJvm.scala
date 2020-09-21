@@ -4,7 +4,7 @@ import cats.effect.Bracket
 import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.BIO
 import izumi.fundamentals.platform.language.unused
@@ -67,7 +67,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       definition.bindings.foreach {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
+          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
         case _ =>
           fail()
@@ -172,7 +172,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       definition.bindings.foreach {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
+          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
         case _ =>
           fail()

@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.PluginDef
@@ -68,6 +68,6 @@ class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: M
 class ForcedRootProbe {
   var started = false
 }
-class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe) extends DIResource.SelfNoClose[F, ForcedRootResource[F]] {
+class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
   override def acquire: F[Unit] = DIEffect[F].maybeSuspend(forcedRootProbe.started = true)
 }

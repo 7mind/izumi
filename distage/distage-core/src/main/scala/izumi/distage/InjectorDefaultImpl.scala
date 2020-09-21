@@ -1,6 +1,6 @@
 package izumi.distage
 
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.{Activation, BootstrapModule, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.OrderedPlan

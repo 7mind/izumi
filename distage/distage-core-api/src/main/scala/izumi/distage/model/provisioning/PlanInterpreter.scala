@@ -1,7 +1,7 @@
 package izumi.distage.model.provisioning
 
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.plan.OrderedPlan
@@ -19,7 +19,7 @@ trait PlanInterpreter {
     plan: OrderedPlan,
     parentContext: Locator,
     filterFinalizers: FinalizerFilter[F],
-  ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
+  ): Lifecycle[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {

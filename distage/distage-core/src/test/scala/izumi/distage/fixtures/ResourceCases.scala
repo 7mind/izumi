@@ -2,7 +2,7 @@ package izumi.distage.fixtures
 
 import java.util.concurrent.atomic.AtomicReference
 
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.fundamentals.platform.language.Quirks._
@@ -27,7 +27,7 @@ object ResourceCases {
 
     val queueEffect = Suspend2(mutable.Queue.empty[Ops])
 
-    class XResource(queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], X] {
+    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle[Suspend2[Nothing, ?], X] {
       override def acquire: Suspend2[Nothing, X] = Suspend2 {
         queue += XStart
         new X
@@ -40,7 +40,7 @@ object ResourceCases {
       }.void
     }
 
-    class YResource(x: X, queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], Y] {
+    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle[Suspend2[Nothing, ?], Y] {
       x.discard()
 
       override def acquire: Suspend2[Nothing, Y] = Suspend2 {
@@ -55,7 +55,7 @@ object ResourceCases {
       }.void
     }
 
-    class ZFaultyResource(y: Y) extends DIResource[Suspend2[Throwable, ?], Z] {
+    class ZFaultyResource(y: Y) extends Lifecycle[Suspend2[Throwable, ?], Z] {
       y.discard()
 
       override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
@@ -79,13 +79,13 @@ object ResourceCases {
     class S3Component(val s: S3Client) extends IntegrationComponent
     class S3ClientImpl(val c: S3Component) extends S3Client
 
-    def s3ComponentResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Client: S3Client): DIResource[F, S3Component] =
-      DIResource.make(
+    def s3ComponentResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Client: S3Client): Lifecycle[F, S3Component] =
+      Lifecycle.make(
         acquire = ref.update(_ :+ ComponentStart).map(_ => new S3Component(s3Client))
       )(release = _ => ref.update(_ :+ ComponentStop).map(_ => ()))
 
-    def s3clientResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Component: S3Component): DIResource[F, S3ClientImpl] =
-      DIResource.make(
+    def s3clientResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Component: S3Component): Lifecycle[F, S3ClientImpl] =
+      Lifecycle.make(
         acquire = ref.update(_ :+ ClientStart).map(_ => new S3ClientImpl(s3Component))
       )(release = _ => ref.update(_ :+ ClientStop).map(_ => ()))
 
@@ -97,7 +97,7 @@ object ResourceCases {
       var initialized: Boolean = false
     }
 
-    class SimpleResource extends DIResource.Simple[Res] {
+    class SimpleResource extends Lifecycle.Simple[Res] {
       override def acquire: Res = {
         val x = new Res; x.initialized = true; x
       }
@@ -107,7 +107,7 @@ object ResourceCases {
       }
     }
 
-    class SuspendResource extends DIResource[Suspend2[Nothing, ?], Res] {
+    class SuspendResource extends Lifecycle[Suspend2[Nothing, ?], Res] {
       override def acquire: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
 
       override def release(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
@@ -115,7 +115,7 @@ object ResourceCases {
 
   }
 
-  class MutResource extends DIResource.Mutable[MutResource] {
+  class MutResource extends Lifecycle.Mutable[MutResource] {
     var init: Boolean = false
     override def acquire: Unit = { init = true }
     override def release: Unit = ()

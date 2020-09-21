@@ -60,7 +60,7 @@ trait Injector[F[_]] extends Planner with Producer {
   }
 
   /**
-    * Create an effectful [[izumi.distage.model.definition.DIResource]] value that encapsulates the
+    * Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
     * allocation and cleanup of an object graph described by the `input` module,
     * designate all arguments of the provided function as roots of the graph
     * and run the function.
@@ -103,12 +103,12 @@ trait Injector[F[_]] extends Planner with Producer {
     bindings: ModuleBase,
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
-  ): DIResourceBase[F, A] = {
+  ): Lifecycle[F, A] = {
     produceCustomF(plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).evalMap(_.run(function))
   }
 
   /**
-    * Create an effectful [[izumi.distage.model.definition.DIResource]] value that encapsulates the
+    * Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
     * allocation and cleanup of an object graph described by the `input` module,
     * designate `A` as the root of the graph and retrieve `A` from the result.
     *
@@ -149,7 +149,7 @@ trait Injector[F[_]] extends Planner with Producer {
   }
 
   /**
-    * Create an effectful [[izumi.distage.model.definition.DIResource]] value that encapsulates the
+    * Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
     * allocation and cleanup of an object graph described by `input`
     *
     * {{{

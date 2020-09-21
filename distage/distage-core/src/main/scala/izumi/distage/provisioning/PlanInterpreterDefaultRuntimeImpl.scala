@@ -48,8 +48,8 @@ class PlanInterpreterDefaultRuntimeImpl(
     parentContext: Locator,
     filterFinalizers: FinalizerFilter[F],
   )(implicit F: DIEffect[F]
-  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
-    DIResource.make(
+  ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
+    Lifecycle.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
       resource =>

@@ -5,7 +5,7 @@ import java.util.UUID
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
 import izumi.distage.docker.Docker.DockerReusePolicy
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.collections.nonempty.NonEmptyList
@@ -26,14 +26,14 @@ trait ContainerNetworkDef {
 
   def config: Config
 
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): Functoid[DIResource[F, Network]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): Functoid[Lifecycle[F, Network]] = {
     tag.discard()
     ContainerNetworkDef.resource[F](this, this.getClass.getSimpleName)
   }
 }
 
 object ContainerNetworkDef {
-  def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, conf.Network] = {
+  def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => Lifecycle[F, conf.Network] = {
     new NetworkResource(conf.config, _, prefix, _)(_, _)
   }
 
@@ -45,7 +45,7 @@ object ContainerNetworkDef {
   )(implicit
     F: DIEffect[F],
     P: DIEffectAsync[F],
-  ) extends DIResource[F, ContainerNetwork[T]] {
+  ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")

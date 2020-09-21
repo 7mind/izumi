@@ -2,7 +2,7 @@ package izumi.distage.impl
 
 import java.io.ByteArrayInputStream
 
-import distage.DIResource
+import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.modules.DefaultModule

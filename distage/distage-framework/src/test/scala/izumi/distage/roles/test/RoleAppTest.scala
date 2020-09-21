@@ -192,7 +192,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val definition = new ResourcesPluginBase {
         make[TestResource[IO]].fromResource {
           r: IntegrationResource1[IO] =>
-            DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
+            Lifecycle.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
         }
         many[TestResource[IO]]
           .ref[TestResource[IO]]

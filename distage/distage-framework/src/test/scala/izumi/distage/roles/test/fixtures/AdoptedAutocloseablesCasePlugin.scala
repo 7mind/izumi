@@ -1,7 +1,7 @@
 package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
-import distage.DIResource
+import distage.Lifecycle
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams

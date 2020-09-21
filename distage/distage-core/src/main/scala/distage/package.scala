@@ -40,10 +40,13 @@ package object distage extends Distage {
   override type TagK[T[_]] = izumi.reflect.TagK[T]
   override val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
-  override type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
-  override val DIResource: model.definition.DIResource.type = model.definition.DIResource
+  @deprecated("Use distage.Lifecycle.Basic", "0.11")
+  override type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
+  @deprecated("Use distage.Lifecycle", "0.11")
+  override val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  override type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
+  @deprecated("Use distage.Lifecycle", "0.11")
+  override type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
 
   override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis

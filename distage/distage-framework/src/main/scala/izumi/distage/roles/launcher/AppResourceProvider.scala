@@ -12,7 +12,7 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
-  def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]]
+  def makeAppResource(): Lifecycle[Identity, PreparedApp[F]]
 }
 
 object AppResourceProvider {
@@ -32,7 +32,7 @@ object AppResourceProvider {
     appPlan: AppStartupPlans,
     bootloader: Bootloader @Id("roleapp"),
   ) extends AppResourceProvider[F] {
-    def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]] = {
+    def makeAppResource(): Lifecycle[Identity, PreparedApp[F]] = {
       appPlan
         .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)

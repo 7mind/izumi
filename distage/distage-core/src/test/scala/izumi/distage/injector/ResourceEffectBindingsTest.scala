@@ -4,7 +4,7 @@ import distage.{Activation, DIKey, Id, LocatorRef, ModuleDef, PlannerInput}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
@@ -144,7 +144,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
           .flatMap {
             _ =>
@@ -158,7 +158,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops2 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
@@ -177,15 +177,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
           .flatMap {
             _ =>
-              DIResource
+              Lifecycle
                 .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
                 .flatMap {
                   _ =>
-                    DIResource.makeSimple(throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                    Lifecycle.makeSimple(throw new RuntimeException())((_: Unit) => ops1 += ZStop)
                 }
           }
           .use(_ => ())
@@ -196,15 +196,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops2 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
-              DIResource
+              Lifecycle
                 .make(Suspend2(ops2 += YStart))(_ => Suspend2(ops2 += YStop).void)
                 .flatMap {
                   _ =>
-                    DIResource.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
+                    Lifecycle.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
                 }
           }
           .use(_ => Suspend2(()))
@@ -298,7 +298,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
         make[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].fromResource(new DIResource[Option, TestInstanceBinding] {
+        make[TestInstanceBinding].fromResource(new Lifecycle[Option, TestInstanceBinding] {
           override def acquire: Option[TestInstanceBinding] = None
           override def release(resource: TestInstanceBinding): Option[Unit] = { resource.discard(); None }
         })
@@ -380,8 +380,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
     "can pass a block with inner method calls into DIResource.Of constructor (https://github.com/scala/bug/issues/11969)" in {
       final class XImpl
-        extends DIResource.Of({
-          def res = DIResource.make(Try(helper()))(_ => Try(()))
+        extends Lifecycle.Of({
+          def res = Lifecycle.make(Try(helper()))(_ => Try(()))
 
           def helper() = ()
 
