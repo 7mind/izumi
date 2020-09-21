@@ -18,8 +18,10 @@ class MonixBIODIEffectModule(
   implicit s: Scheduler = Scheduler.global,
   opts: IO.Options = IO.defaultOptions,
 ) extends ModuleDef {
+  // DIEffect & Cats typeclasses
   include(PolymorphicCatsDIEffectModule[Task])
-  include(PolymorphicCatsTypeclassesModule[Task])
+  // BIO typeclasses
+  include(PolymorphicBIOTypeclassesModule[IO])
 
   make[ConcurrentEffect[Task]].from(IO.catsEffect)
 
