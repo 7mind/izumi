@@ -51,7 +51,7 @@ trait PureconfigInstances {
             Left(
               ConfigReaderFailures(
                 objCur.failureFor(
-                  NoValidCoproductOptionFound(objCur.value, Seq("_invalid_format_" -> ConfigReaderFailures(ThrowableFailure(new RuntimeException(msg), None))))
+                  NoValidCoproductOptionFound(objCur.objValue, Seq("_invalid_format_" -> ConfigReaderFailures(ThrowableFailure(new RuntimeException(msg), None))))
                 )
               )
             )
@@ -75,10 +75,13 @@ trait PureconfigInstances {
   // use `Exported` so that if user imports their own instances, user instances will have higher priority
   implicit final lazy val memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
     cur: ConfigCursor =>
-      try Right(cur.value.atKey("m").getMemorySize("m"))
-      catch {
-        case NonFatal(ex) =>
-          Result.fail(error.ConvertFailure(CannotConvert(cur.value.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
+      cur.asConfigValue.flatMap {
+        cv =>
+          try Right(cv.atKey("m").getMemorySize("m"))
+          catch {
+            case NonFatal(ex) =>
+              Result.fail(error.ConvertFailure(CannotConvert(cv.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
+          }
       }
   }
 }

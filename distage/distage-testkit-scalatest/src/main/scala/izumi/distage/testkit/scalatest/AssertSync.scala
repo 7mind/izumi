@@ -2,7 +2,6 @@ package izumi.distage.testkit.scalatest
 
 import cats.effect.Sync
 import izumi.distage.testkit.scalatest.AssertSync.AssertSyncMacro
-import izumi.functional.bio.BIO
 import org.scalactic.{Prettifier, source}
 import org.scalatest.Assertion
 import org.scalatest.distage.DistageAssertionsMacro

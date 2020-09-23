@@ -2,8 +2,6 @@ package izumi.fundamentals.platform.resources
 
 import java.time.{Instant, LocalDateTime}
 
-import izumi.fundamentals.platform.language.SourceFilePosition
-import izumi.fundamentals.platform.language.SourceFilePositionMaterializer.SourcePositionMaterializerMacro
 import izumi.fundamentals.platform.time.IzTime
 import izumi.fundamentals.platform.time.IzTime._
 
@@ -72,10 +70,10 @@ object SourceFilePositionMaterializerImpl {
     import c.universe._
 
     c.Expr[IzArtifactMaterializer] {
-      q"""{          
+      q"""{
           import izumi.fundamentals.platform.build.BuildAttributes._
           import izumi.fundamentals.platform.build.MacroParameters._
-                    
+
           ${symbolOf[IzArtifactMaterializer].asClass.companion}(${symbolOf[IzArtifact].asClass.companion}(
             ${symbolOf[IzArtifactId].asClass.companion}(projectGroupId().getOrElse("???"), artifactName().getOrElse("???")),
             ${symbolOf[ArtifactVersion].asClass.companion}(artifactVersion().getOrElse("???")),

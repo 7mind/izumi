@@ -46,7 +46,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
       a.flatMap(_ => b)
-      a.guaranteeCase(_ => a.race(b).catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
+      a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
       F.unit
     }
 
@@ -62,7 +62,7 @@ class BIOSyntaxTest extends AnyWordSpec {
       a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
       a.flatMap(_ => b)
-      a.guaranteeCase(_ => a.race(b).catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
+      a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit orElse F.uninterruptible(F.race(a, b))).void)
       F.unit
     }
 
