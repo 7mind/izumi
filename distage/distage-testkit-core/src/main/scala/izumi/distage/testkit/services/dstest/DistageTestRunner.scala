@@ -30,6 +30,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
+import scala.collection.immutable
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
@@ -93,15 +94,55 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
 
         mergedEnvs.map {
-          case (EnvMergeCriteria(_, _, shared, runtimePlan, _), packedEnv) =>
+          case (EnvMergeCriteria(_, _, runtimePlan, _), packedEnv) =>
             val integrationLogger = packedEnv.head.anyIntegrationLogger
             val memoizationInjector = packedEnv.head.anyMemoizationInjector
             val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
             val allStrengthenedKeys = packedEnv.iterator.flatMap(_.strengthenedKeys).toSet
             val tests = packedEnv.iterator.flatMap(_.testPlans).toSeq
 
+            val maxLevel = packedEnv.map(_.leveledSharedPlan.size).max // there should be forever at least 1 level
+
+            case class LeveledTests(plan: TriSplittedPlan, tests: Seq[PreparedTest[F]], childs: List[LeveledTests])
+
+            def packTestTree(envs: Iterable[PackedEnv[F]], level: Int = 0, res: List[LeveledTests] = Nil): List[LeveledTests] = {
+              if (envs.map(_.leveledSharedPlan.size).max > level) {
+                envs.groupBy(_.leveledSharedPlan.lift(level)).map {
+                  case (Some(plan), groupedEnvs) =>
+                    val (completed, toBeDone) = groupedEnvs.partition(_.leveledSharedPlan.size <= level)
+                    res ++ packTestTree(groupedEnvs, level + 1, res ++ List(LeveledTests()))
+                  case (_, groupedEnvs) => res
+                }
+              } else {
+                res
+              }
+            }
+
+            val a: Seq[Map[List[TriSplittedPlan], immutable.Iterable[PackedEnv[F]]]] = (0 until maxLevel) map {
+              level =>
+                val groupingLevels = (0 to level).toList
+                packedEnv.groupBy {
+                  pe =>
+                    groupingLevels.flatMap(pe.leveledSharedPlan.lift(_))
+                }.map { case (value, value1) => }
+            }
+
             MemoizationEnvWithPlan(envExec, integrationLogger, shared, runtimePlan, memoizationInjector, highestDebugOutputInTests, allStrengthenedKeys) -> tests
         }
+    }
+  }
+  private[this] def prepareSharedPlan(
+    envKeys: Set[DIKey],
+    runtimeKeys: Set[DIKey],
+    memoizationRoots: Set[DIKey],
+    activation: Activation,
+    injector: Injector,
+    appModule: Module,
+  ) = {
+    val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
+    // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
+    injector.trisectByKeys(activation, appModule, sharedKeys) {
+      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
     }
   }
 
@@ -159,8 +200,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
-    val memoizationRoots = env.memoizationRoots.getActiveKeys(env.activation)
-    val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
 
     // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
     // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
@@ -172,12 +211,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         acc -> b
     }
 
-    // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
-    val shared = injector.trisectByKeys(env.activation, strengthenedAppModule, sharedKeys) {
-      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+    val orderedPlans = if (env.memoizationRoots.keys.nonEmpty) {
+      env
+        .memoizationRoots.keys.toList.sortBy(_._1)
+        .foldLeft(List.empty[Set[DIKey]]) {
+          case (acc, (_, v)) => acc ++ List(acc.lastOption.getOrElse(Set.empty) ++ v.getActiveKeys(env.activation))
+        }.map(prepareSharedPlan(envKeys, runtimeKeys, _, env.activation, injector, strengthenedAppModule))
+    } else {
+      List(prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule))
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, shared, runtimePlan, envExec)
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, runtimePlan, envExec)
 
     val memoEnvHashCode = envMergeCriteria.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
@@ -188,7 +232,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       )
     }
 
-    Option(PackedEnv(envMergeCriteria, testPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet))
+    Option(PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet))
   }
 
   def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnvWithPlan, Iterable[PreparedTest[F]])]): Unit = {
@@ -569,13 +613,13 @@ object DistageTestRunner {
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
-    sharedPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
     envExec: EnvExecutionParams,
   )
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     testPlans: Seq[PreparedTest[F]],
+    leveledSharedPlan: List[TriSplittedPlan],
     anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,

@@ -5,7 +5,7 @@ import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
+import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
 
@@ -86,7 +86,7 @@ final case class TestConfig(
   activation: Activation = StandardAxis.testProdActivation,
   moduleOverrides: Module = Module.empty,
   bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-  memoizationRoots: AxisDIKeys = AxisDIKeys.empty,
+  memoizationRoots: PriorAxisDIKeys = PriorAxisDIKeys.empty,
   forcedRoots: AxisDIKeys = AxisDIKeys.empty,
   // parallelism options
   parallelEnvs: ParallelLevel = ParallelLevel.Unlimited,
@@ -140,7 +140,6 @@ object TestConfig {
 
     @nowarn("msg=Unused import")
     def ++(that: AxisDIKeys): AxisDIKeys = {
-      import scala.collection.compat._
       val allKeys = ArraySeq.unsafeWrapArray((this.keyMap.iterator ++ that.keyMap.iterator).toArray)
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.flatMap(_._2).toSet }
       AxisDIKeys(updatedKeys)
@@ -160,6 +159,12 @@ object TestConfig {
 
     @inline implicit def fromSingleMap(map: Iterable[(AxisValue, DIKey)]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
+  }
+
+  final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys])
+  object PriorAxisDIKeys {
+    val empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
+    def apply(keys: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> keys))
   }
 
   sealed trait ParallelLevel
