@@ -589,8 +589,12 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional
+      "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "discipline-core" % V.discipline % Test,
+      "org.typelevel" %% "discipline-scalatest" % V.discipline_scalatest % Test
     )
   )
   .settings(
