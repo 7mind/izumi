@@ -12,7 +12,6 @@ import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
-import izumi.reflect.Tag
 
 import scala.concurrent.ExecutionContext
 
