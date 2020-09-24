@@ -161,10 +161,22 @@ object TestConfig {
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
   }
 
-  final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys])
+  final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys]) {
+    def ++(that: PriorAxisDIKeys): PriorAxisDIKeys = {
+      val allKeys = ArraySeq.unsafeWrapArray((this.keys.iterator ++ that.keys.iterator).toArray)
+      val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.map(_._2).reduce(_ ++ _) }
+      PriorAxisDIKeys(updatedKeys)
+    }
+  }
   object PriorAxisDIKeys {
     val empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
     def apply(keys: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> keys))
+    @inline implicit def fromAxisDIKeys(set: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> set))
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> AxisDIKeys.fromSet(set)))
+    @inline implicit def fromAxisMap[AD <: AxisDIKeys](map: Map[Int, AD]): PriorAxisDIKeys = PriorAxisDIKeys(map.asInstanceOf[Map[Int, AxisDIKeys]])
+    @inline implicit def fromMap[AD <: AxisDIKeys](map: Map[Int, Set[_ <: DIKey]]): PriorAxisDIKeys = {
+      PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
+    }
   }
 
   sealed trait ParallelLevel
