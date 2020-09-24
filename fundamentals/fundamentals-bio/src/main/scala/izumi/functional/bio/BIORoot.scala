@@ -9,6 +9,7 @@ import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
 import scala.language.implicitConversions
+import izumi.fundamentals.orphans.`monix.bio.IO`
 
 trait BIORoot extends DivergenceHelper with PredefinedHelper
 
@@ -93,12 +94,10 @@ sealed trait BIORootInstancesLowPriority8 extends BIORootInstancesLowPriority9 {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
-  @inline implicit final def BIOMonix[A](implicit @unused M: _BIOAsyncMonixBIO[A]): Predefined.Of[A] = BIOAsyncMonix.asInstanceOf[Predefined.Of[A]]
+  // seems like it's because of the type lambda in `BIOAsync` definition
+  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[BIOAsync[MonixBIO]] =
+    BIOAsyncMonix.asInstanceOf[Predefined.Of[BIOAsync[MonixBIO]]]
 
-  final abstract class _BIOAsyncMonixBIO[A]
-  object _BIOAsyncMonixBIO {
-    @inline implicit final def get: _BIOAsyncMonixBIO[BIOAsync[monix.bio.IO]] = null
-  }
 }
 
 sealed trait BIORootInstancesLowPriority9 {

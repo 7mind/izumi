@@ -8,8 +8,8 @@ import monix.execution.Scheduler
 
 /** `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[cats.effect]] typeclass instances for `monix`
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[cats.effect]] typeclass instances for `monix`
   *
   * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope
   */
@@ -17,19 +17,19 @@ class MonixDIEffectModule(
   implicit s: Scheduler = Scheduler.global,
   opts: Task.Options = Task.defaultOptions,
 ) extends ModuleDef {
+  // DIEffect & cats-effect instances
   include(PolymorphicCatsDIEffectModule[Task])
-  include(PolymorphicCatsTypeclassesModule[Task])
 
   make[ConcurrentEffect[Task]].from(Task.catsEffect)
+  addImplicit[Parallel[Task]]
 
   addImplicit[ContextShift[Task]]
-  addImplicit[Parallel[Task]]
   addImplicit[Timer[Task]]
 }
 
 object MonixDIEffectModule {
   /** @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope */
-  def apply(
+  @inline def apply(
     implicit s: Scheduler = Scheduler.global,
     opts: Task.Options = Task.defaultOptions,
   ): MonixDIEffectModule = new MonixDIEffectModule

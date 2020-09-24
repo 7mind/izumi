@@ -5,8 +5,8 @@ import java.util.concurrent.{Executors, ThreadFactory}
 
 import cats.Parallel
 import cats.effect.{Concurrent, Timer}
-import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Concurrent, _Parallel, _Timer}
 import izumi.functional.bio.{BIOAsync, BIOTemporal, F}
+import izumi.fundamentals.orphans.{`cats.Parallel`, `cats.effect.Concurrent`, `cats.effect.Timer`}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -125,7 +125,12 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], P[_[_]]: _Parallel, T[_[_]]: _Timer, C[_[_]]: _Concurrent](implicit P: P[F], T: T[F], C: C[F]): DIEffectAsync[F] = {
+  implicit final def fromCats[F[_], P[_[_]]: `cats.Parallel`, T[_[_]]: `cats.effect.Timer`, C[_[_]]: `cats.effect.Concurrent`](
+    implicit
+    P: P[F],
+    T: T[F],
+    C: C[F],
+  ): DIEffectAsync[F] = {
     new DIEffectAsync[F] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
         C.asInstanceOf[Concurrent[F]].async(effect)
@@ -146,22 +151,5 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
         C.asInstanceOf[Concurrent[F]].void(parTraverseN(n)(l)(f))
       }
     }
-  }
-}
-
-private object LowPriorityDIEffectAsyncInstances {
-  sealed trait _Parallel[K[_[_]]]
-  object _Parallel {
-    @inline implicit final def get: _Parallel[cats.Parallel] = null
-  }
-
-  sealed trait _Timer[K[_[_]]]
-  object _Timer {
-    @inline implicit final def get: _Timer[cats.effect.Timer] = null
-  }
-
-  sealed trait _Concurrent[K[_[_]]]
-  object _Concurrent {
-    @inline implicit final def get: _Concurrent[cats.effect.Concurrent] = null
   }
 }

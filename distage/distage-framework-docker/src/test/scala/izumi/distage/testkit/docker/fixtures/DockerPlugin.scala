@@ -4,7 +4,6 @@ import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
 import izumi.distage.docker.bundled._
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.effect.modules.{CatsDIEffectModule, MonixBIODIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Mode
@@ -28,12 +27,6 @@ class PgSvcExample(
     portCheck.checkPort(pg.hostV4, pg.port)
     portCheck.checkPort(pgfw.hostV4, pgfw.port)
   }
-}
-
-object MonadPlugin extends PluginDef {
-  include(CatsDIEffectModule)
-  include(MonixBIODIEffectModule())
-  include(ZIODIEffectModule)
 }
 
 object DockerPlugin extends PluginDef {

@@ -21,3 +21,7 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
   make[RoutingLogger].using[IzLogger]
   make[AbstractLogger].using[IzLogger]
 }
+
+object LogstageModule {
+  @inline def apply(router: LogRouter, setupStaticLogRouter: Boolean): LogstageModule = new LogstageModule(router, setupStaticLogRouter)
+}

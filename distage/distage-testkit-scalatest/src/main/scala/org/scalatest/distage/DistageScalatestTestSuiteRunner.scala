@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.TagK
 import io.github.classgraph.ClassGraph
+import izumi.distage.effect.DefaultModules
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
@@ -69,7 +70,11 @@ object ScalatestInitWorkaround {
 
 }
 
-abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMonoIO: TagK[F]) extends TestSuite with AbstractDistageSpec[F] {
+abstract class DistageScalatestTestSuiteRunner[F[_]](
+  implicit override val tagMonoIO: TagK[F],
+  override val defaultModulesIO: DefaultModules[F],
+) extends TestSuite
+  with AbstractDistageSpec[F] {
 
   /** Modify test discovery options for SBT test runner only.
     * Overriding this with [[withWhitelistJarsOnly]] will slightly boost test start-up speed,

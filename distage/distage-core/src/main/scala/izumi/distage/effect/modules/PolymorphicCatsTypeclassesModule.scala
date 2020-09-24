@@ -5,6 +5,11 @@ import cats.{Applicative, ApplicativeError, Apply, FlatMap, Functor, Invariant, 
 import distage.TagK
 import izumi.distage.model.definition.ModuleDef
 
+/**
+  * Adds [[cats.effect]] typeclass instances for any effect type `F[_]` with an available `make[ConcurrentEffect[F]]` binding
+  *
+  * Depends on `make[ConcurrentEffect[F]]`
+  */
 class PolymorphicCatsTypeclassesModule[F[_]: TagK] extends ModuleDef {
   make[Invariant[F]].using[ConcurrentEffect[F]]
   make[Semigroupal[F]].using[ConcurrentEffect[F]]
@@ -27,5 +32,5 @@ class PolymorphicCatsTypeclassesModule[F[_]: TagK] extends ModuleDef {
 }
 
 object PolymorphicCatsTypeclassesModule {
-  def apply[F[_]: TagK]: PolymorphicCatsTypeclassesModule[F] = new PolymorphicCatsTypeclassesModule[F]
+  @inline def apply[F[_]: TagK]: PolymorphicCatsTypeclassesModule[F] = new PolymorphicCatsTypeclassesModule[F]
 }

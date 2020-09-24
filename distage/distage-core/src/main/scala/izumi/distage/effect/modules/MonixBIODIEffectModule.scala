@@ -8,31 +8,34 @@ import monix.execution.Scheduler
 
 /** `monix.bio.IO` effect type support for `distage` resources, effects, roles & tests
   *
+  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `monix-bio` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `monix-bio`
   * - Adds [[cats.effect]] typeclass instances for `monix-bio`
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `monix-bio` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *
-  * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope
+  * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope - alternatively, you can override the defaults later in plugins or with `ModuleBase#overridenBy`
   */
 class MonixBIODIEffectModule(
   implicit s: Scheduler = Scheduler.global,
   opts: IO.Options = IO.defaultOptions,
 ) extends ModuleDef {
-  // DIEffect & Cats typeclasses
+  // DIEffect & cats-effect instances
   include(PolymorphicCatsDIEffectModule[Task])
-  // BIO typeclasses
+  // BIO instances
   include(PolymorphicBIOTypeclassesModule[IO])
 
-  make[ConcurrentEffect[Task]].from(IO.catsEffect)
+  make[Scheduler].fromValue(s)
+  make[IO.Options].fromValue(opts)
+
+  make[ConcurrentEffect[Task]].from(IO.catsEffect(_: Scheduler, _: IO.Options))
+  addImplicit[Parallel[Task]]
 
   addImplicit[ContextShift[Task]]
-  addImplicit[Parallel[Task]]
   addImplicit[Timer[Task]]
 }
 
 object MonixBIODIEffectModule {
-  /** @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope */
-  def apply(
+  /** @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope - alternatively, you can override the defaults later in plugins or with `ModuleBase#overridenBy` */
+  @inline def apply(
     implicit s: Scheduler = Scheduler.global,
     opts: IO.Options = IO.defaultOptions,
   ): MonixBIODIEffectModule = new MonixBIODIEffectModule

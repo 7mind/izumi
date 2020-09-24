@@ -5,6 +5,7 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import distage._
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.model.AppConfig
+import izumi.distage.effect.DefaultModules
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
@@ -30,7 +31,7 @@ import izumi.logstage.api.{IzLogger, Log}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class DistageTestRunner[F[_]: TagK](
+class DistageTestRunner[F[_]: TagK: DefaultModules](
   reporter: TestReporter,
   isTestSkipException: Throwable => Boolean,
 ) {

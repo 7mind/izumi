@@ -1,12 +1,14 @@
 package izumi.distage.roles
 
-import distage._
 import cats.effect._
-import izumi.functional.bio._
+import distage._
+import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.DefaultModules2
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppShutdownStrategy._
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
+import izumi.functional.bio._
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
@@ -15,7 +17,7 @@ import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK](implicit artifact: IzArtifactMaterializer) {
+abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModules[F], artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
@@ -59,13 +61,15 @@ abstract class RoleAppMain[F[_]: TagK](implicit artifact: IzArtifactMaterializer
 
 object RoleAppMain {
 
-  abstract class LauncherF[F[_]: TagK: LiftIO](executionContext: ExecutionContext = ExecutionContext.global)(implicit artifact: IzArtifactMaterializer)
-    extends RoleAppMain[F] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+  abstract class LauncherF[F[_]: TagK: LiftIO: DefaultModules](
+    shutdownExecutionContext: ExecutionContext = ExecutionContext.global
+  )(implicit artifact: IzArtifactMaterializer
+  ) extends RoleAppMain[F] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(shutdownExecutionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, *]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, *]] = new BIOShutdownStrategy[F]
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: DefaultModules2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 
   abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {

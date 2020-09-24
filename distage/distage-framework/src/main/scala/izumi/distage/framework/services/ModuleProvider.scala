@@ -3,6 +3,7 @@ package izumi.distage.framework.services
 import distage.{BootstrapModule, BootstrapModuleDef, Module}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
+import izumi.distage.effect.DefaultModules
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
@@ -21,13 +22,14 @@ trait ModuleProvider {
 
 object ModuleProvider {
 
-  class Impl(
+  class Impl[F[_]](
     logRouter: LogRouter,
     config: AppConfig,
     roles: RolesInfo,
     options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
+    defaultModules: DefaultModules[F],
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -60,9 +62,7 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      Seq(
-        IdentityDIEffectModule
-      )
+      IdentityDIEffectModule +: defaultModules.modules
     }
 
   }

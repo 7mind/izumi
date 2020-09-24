@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.62`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.62`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -272,10 +272,11 @@ object Izumi {
       final val language = ArtifactId("fundamentals-language")
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
+      final val orphans = ArtifactId("fundamentals-orphans")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
-      final val fundamentalsJsonCirce = ArtifactId("fundamentals-json-circe")
+      final val jsonCirce = ArtifactId("fundamentals-json-circe")
 
       final lazy val basics = Seq(
         platform,
@@ -392,16 +393,28 @@ object Izumi {
           monix_bio in Scope.Optional.all,
           scala_java_time in Scope.Test.js,
         ),
-        depends = Seq(Projects.fundamentals.language),
+        depends = Seq(
+          Projects.fundamentals.language,
+          Projects.fundamentals.orphans,
+        ),
         platforms = Targets.cross,
       ),
       Artifact(
-        name = Projects.fundamentals.fundamentalsJsonCirce,
+        name = Projects.fundamentals.jsonCirce,
         libs = circe ++ Seq(
           jawn in Scope.Compile.js,
           scala_reflect in Scope.Provided.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
+        platforms = Targets.cross,
+      ),
+      Artifact(
+        name = Projects.fundamentals.orphans,
+        libs = allMonadsOptional ++ Seq(
+          monix in Scope.Optional.all,
+          monix_bio in Scope.Optional.all,
+        ),
+        depends = Seq.empty,
         platforms = Targets.cross,
       ),
     ),
@@ -518,7 +531,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq.empty,
-        depends = Seq(Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,

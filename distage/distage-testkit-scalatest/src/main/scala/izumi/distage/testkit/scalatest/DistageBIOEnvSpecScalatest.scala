@@ -1,6 +1,7 @@
 package izumi.distage.testkit.scalatest
 
 import distage.{TagK3, TagKK}
+import izumi.distage.effect.DefaultModules3
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.{DSWordSpecStringWrapper, DSWordSpecStringWrapper3}
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
@@ -53,7 +54,7 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-abstract class DistageBIOEnvSpecScalatest[FR[-_, +_, +_]](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
+abstract class DistageBIOEnvSpecScalatest[FR[-_, +_, +_]: DefaultModules3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, ?]]
   with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
 

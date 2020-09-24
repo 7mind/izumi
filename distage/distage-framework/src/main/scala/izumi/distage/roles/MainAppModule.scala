@@ -2,6 +2,7 @@ package izumi.distage.roles
 
 import distage._
 import izumi.distage.config.model.AppConfig
+import izumi.distage.effect.DefaultModules
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services._
@@ -42,7 +43,7 @@ import izumi.logstage.api.{IzLogger, Log}
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-class MainAppModule[F[_]: TagK](
+class MainAppModule[F[_]: TagK: DefaultModules](
   args: ArgV,
   additionalRoles: AdditionalRoles,
   shutdownStrategy: AppShutdownStrategy[F],
@@ -188,7 +189,8 @@ class MainAppModule[F[_]: TagK](
     logger: IzLogger =>
       logger.router
   }
-  make[ModuleProvider].from[ModuleProvider.Impl]
+  addImplicit[DefaultModules[F]]
+  make[ModuleProvider].from[ModuleProvider.Impl[F]]
 
   make[BootstrapModule].named("roleapp").from {
     (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>

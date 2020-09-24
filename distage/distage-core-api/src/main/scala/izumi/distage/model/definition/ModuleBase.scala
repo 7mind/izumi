@@ -2,9 +2,10 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
-import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
+import izumi.distage.model.definition.ModuleBaseInstances.{CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.orphans.`cats.kernel.BoundedSemilattice`
 import izumi.fundamentals.platform.language.unused
 
 trait ModuleBase extends ModuleBaseInstances {
@@ -159,7 +160,7 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase: ModuleMake, K[_]: `cats.kernel.BoundedSemilattice`]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
@@ -179,15 +180,10 @@ object ModuleBaseInstances {
     def combine(x: T, y: T): T = x ++ y
   }
 
-  sealed abstract class CatsBoundedSemilattice[K[_]]
-  object CatsBoundedSemilattice {
-    @inline implicit final def get: CatsBoundedSemilattice[BoundedSemilattice] = null
-  }
-
   type PartialOrderHash[T] = PartialOrder[T] with Hash[T]
-  sealed abstract class CatsPartialOrderHash[K[_]]
+  final abstract class CatsPartialOrderHash[K[_]]
   object CatsPartialOrderHash {
-    @inline implicit final def get[K[_]](implicit @unused guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
+    @inline implicit final def get[K[_]](implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]): CatsPartialOrderHash[PartialOrderHash] = null
   }
 
 }

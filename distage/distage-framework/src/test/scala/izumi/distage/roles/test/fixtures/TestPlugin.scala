@@ -3,7 +3,6 @@ package izumi.distage.roles.test.fixtures
 import cats.effect.IO
 import distage.Id
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.{ConfigWriter, Help}
@@ -17,8 +16,6 @@ import izumi.reflect.TagK
 
 class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Mode.Prod)
-
-  include(CatsDIEffectModule)
 
   private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
     case Some(value) =>

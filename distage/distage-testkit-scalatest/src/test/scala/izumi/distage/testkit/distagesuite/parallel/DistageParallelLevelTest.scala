@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.{DIKey, TagK}
+import izumi.distage.effect.DefaultModules
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
@@ -21,7 +22,7 @@ object DistageParallelLevelTest {
   val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
+abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModules](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
   private[this] val maxSuites = 3
   private[this] val maxTests = 2
   private[this] val maxTestsOverSuites = maxTests * maxSuites

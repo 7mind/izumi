@@ -3,9 +3,10 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import distage.DIResource
+import izumi.distage.effect.DefaultModules
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOApplicativeError3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
+import izumi.distage.model.effect.DIEffect
+import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -43,6 +44,17 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     }
   }
 
+  "Using DefaultModules" in {
+    def getDefaultModules[F[_]: DefaultModules]: DefaultModules[F] = DefaultModules[F]
+    def getDefaultModulesOrEmpty[F[_]](implicit m: DefaultModules[F] = DefaultModules.empty[F]): DefaultModules[F] = m
+
+    val defaultModules = getDefaultModules
+    assert((defaultModules: DefaultModules[Identity]).getClass == DefaultModules.forIdentity.getClass)
+
+    val empty = getDefaultModulesOrEmpty[Option]
+    assert(empty.modules.isEmpty)
+  }
+
   "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
@@ -57,16 +69,29 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(x[Identity] == 1)
 
     trait SomeBIO[+E, +A]
-
     type SomeBIO3[-R, +E, +A] = R => SomeBIO[E, A]
-    implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
-    try threeTo2[SomeBIO3]
-    catch { case _: NullPointerException => }
 
     def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
       val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
       F.unit
     }
+
+    def optSearch[A](implicit a: A = null.asInstanceOf[A]) = a
+    final class optSearch1[C[_[_]]] { def find[F[_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+    final class optSearch2[C[_[_, _]]] { def find[F[_, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+    final class optSearch3[C[_[_, _, _]]] { def find[F[_, _, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+
+    locally {
+      implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
+      try threeTo2[SomeBIO3]
+      catch {
+        case _: NullPointerException =>
+      }
+    }
+
+    assert(new optSearch1[DIEffect].find == DIEffect.diEffectIdentity)
+    assert(new optSearch2[BIO].find == null)
+    assert(new optSearch3[BIO3].find == null)
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }
@@ -82,7 +107,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     DIResource.makePair(Some((1, Some(()))))
 
     And("Can search for all hierarchy classes")
-    def optSearch[A >: Null](implicit a: A = null) = a
     optSearch[BIOFunctor[SomeBIO]]
     optSearch[BIOApplicative[SomeBIO]]
     optSearch[BIOMonad[SomeBIO]]
@@ -96,6 +120,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     optSearch[BIO[SomeBIO]]
     optSearch[BIOAsync[SomeBIO]]
     optSearch[BIOTemporal[SomeBIO]]
+    optSearch[BIOConcurrent[SomeBIO]]
     optSearch[BIOAsk[SomeBIO3]]
     optSearch[BIOMonadAsk[SomeBIO3]]
     optSearch[BIOProfunctor[SomeBIO3]]
@@ -107,8 +132,33 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     optSearch[BIOPrimitives[SomeBIO]]
     optSearch[BlockingIO[SomeBIO]]
 
+    assert(new optSearch2[BIOFunctor].find == null)
+    assert(new optSearch2[BIOApplicative].find == null)
+    assert(new optSearch2[BIOMonad].find == null)
+    assert(new optSearch2[BIOBifunctor].find == null)
+    assert(new optSearch2[BIOGuarantee].find == null)
+    assert(new optSearch2[BIOApplicativeError].find == null)
+    assert(new optSearch2[BIOError].find == null)
+    assert(new optSearch2[BIOBracket].find == null)
+    assert(new optSearch2[BIOPanic].find == null)
+    assert(new optSearch2[BIOParallel].find == null)
+    assert(new optSearch2[BIO].find == null)
+    assert(new optSearch2[BIOAsync].find == null)
+    assert(new optSearch2[BIOTemporal].find == null)
+    assert(new optSearch2[BIOConcurrent].find == null)
+    assert(new optSearch3[BIOAsk].find == null)
+    assert(new optSearch3[BIOMonadAsk].find == null)
+    assert(new optSearch3[BIOProfunctor].find == null)
+    assert(new optSearch3[BIOArrow].find == null)
+    assert(new optSearch3[BIOArrowChoice].find == null)
+    assert(new optSearch3[BIOLocal].find == null)
+//
+//    assert(new optSearch2[BIOFork].find == null)
+//    assert(new optSearch2[BIOPrimitives].find == null)
+//    assert(new optSearch2[BlockingIO].find == null)
+
     And("`No More Orphans` type provider object is accessible")
-    LowPriorityDIEffectInstances._Sync.hashCode()
+    izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError("""
          def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
@@ -117,7 +167,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[NoClassDefFoundError] {
-      DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
+      DIEffect.fromCats[Option, DIResource[?[_], Int]](null, null)
     }
 
     And("Methods that mention cats types only in generics will error on call")

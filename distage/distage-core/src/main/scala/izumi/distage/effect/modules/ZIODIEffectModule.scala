@@ -7,21 +7,21 @@ import izumi.distage.model.definition.{DIResource, ModuleDef}
 import izumi.distage.model.effect._
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._
-//import izumi.logstage.api.IzLogger
 import zio.blocking.Blocking
 import zio.internal.Executor
 import zio.internal.tracing.TracingConfig
-import zio.{Has, IO, ZIO}
+import zio.{Has, IO, Runtime, ZIO}
 
 import scala.concurrent.ExecutionContext
 
 object ZIODIEffectModule extends ZIODIEffectModule
 
+trait ZIORuntimeModule extends ModuleDef {}
+
 /** `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.functional.bio]] typeclass instances for ZIO
-  * - Adds [[cats.effect]] typeclass instances for ZIO
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   */
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner2[IO]].from[DIEffectRunner.BIOImpl[IO]]
@@ -33,7 +33,7 @@ trait ZIODIEffectModule extends ModuleDef {
   make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
     () =>
-      val coresOr2 = Runtime.getRuntime.availableProcessors() max 2
+      val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
       DIResource.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
   }
   make[ThreadPoolExecutor].named("zio.io").fromResource {
@@ -100,8 +100,9 @@ trait ZIODIEffectModule extends ModuleDef {
   make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)
   make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
 
-  make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
   make[BIORunner[IO]].using[ZIORunner]
+  make[Runtime[Any]].from((_: ZIORunner).runtime)
+
   make[TracingConfig].fromValue(TracingConfig.enabled)
   // FIXME: depends on IzLogger ???
 //  make[FailureHandler].from {

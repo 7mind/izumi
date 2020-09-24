@@ -9,7 +9,7 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
-import izumi.distage.effect.modules.{CatsDIEffectModule, IdentityDIEffectModule}
+import izumi.distage.effect.DefaultModules
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
@@ -45,7 +45,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         locator0 = locatorRef
         XXX_LocatorLeak(locator0)
     }
-    include(CatsDIEffectModule)
   }
 
 //  val logLevel = "warn"
@@ -86,7 +85,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]
-                include(CatsDIEffectModule)
               },
             )
           )
@@ -162,13 +160,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         make[TestResource[IO]].from[IntegrationResource0[IO]]
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ CatsDIEffectModule ++ probe
+      } ++ probe ++ DefaultModules[IO].modules.merge
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        PlanningOptions(),
-        BootstrapModule.empty,
-        logger,
-        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
+        options = PlanningOptions(),
+        bsModule = BootstrapModule.empty,
+        logger = logger,
+        bootloader = Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
@@ -198,7 +196,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         }
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ probe
+      } ++ probe ++ DefaultModules[IO].modules.merge
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -237,7 +235,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           .ref[TestResource[Identity] with AutoCloseable]
         make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
-      } ++ CatsDIEffectModule ++ IdentityDIEffectModule
+      } ++ DefaultModules[Identity].modules.merge ++ DefaultModules[IO].modules.merge
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](

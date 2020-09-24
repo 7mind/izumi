@@ -1,9 +1,8 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.distage.model.effect.LowPriorityDIApplicativeInstances._Applicative
-import izumi.distage.model.effect.LowPriorityDIEffectInstances._Sync
 import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
+import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 
@@ -137,12 +136,12 @@ object DIEffect extends LowPriorityDIEffectInstances {
 private[effect] sealed trait LowPriorityDIEffectInstances {
 
   /**
-    * This instance uses the 'no more orphans' technique to provide an Optional instance IFF you have
-    * cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCatsEffect[F[_], R[_[_]]](implicit @unused l: _Sync[R], F0: R[F]): DIEffect[F] = {
+  implicit def fromCats[F[_], Sync[_[_]]](implicit @unused l: `cats.effect.Sync`[Sync], F0: Sync[F]): DIEffect[F] = {
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
     new DIEffect[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
@@ -174,19 +173,6 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
     }
   }
 
-}
-
-object LowPriorityDIEffectInstances {
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    */
-  sealed abstract class _Sync[R[_[_]]]
-  object _Sync {
-    @inline implicit final def catsEffectSync: _Sync[cats.effect.Sync] = null
-  }
 }
 
 trait DIApplicative[F[_]] {
@@ -221,25 +207,12 @@ trait LowPriorityDIApplicativeInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], R[_[_]]](implicit @unused R: _Applicative[R], F0: R[F]): DIApplicative[F] = {
+  implicit def fromCats[F[_], Applicative[_[_]]](implicit @unused R: `cats.Applicative`[Applicative], F0: Applicative[F]): DIApplicative[F] = {
     val F = F0.asInstanceOf[cats.Applicative[F]]
     new DIApplicative[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
     }
-  }
-}
-
-object LowPriorityDIApplicativeInstances {
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    */
-  sealed abstract class _Applicative[R[_[_]]]
-  object _Applicative {
-    @inline implicit final def catsApplicative: _Applicative[cats.Applicative] = null
   }
 }

@@ -112,7 +112,6 @@ for more information. For our demonstration the module will be provided using `m
 import com.typesafe.config.ConfigFactory
 import distage.config.AppConfigModule
 import distage.ModuleDef
-import izumi.distage.effect.modules.ZIODIEffectModule
 import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 
 abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
@@ -124,7 +123,6 @@ abstract class Test extends DistageBIOEnvSpecScalatest[ZIO] with AssertIO {
     .config.copy(
       moduleOverrides = new ModuleDef {
         include(AppConfigModule(ConfigFactory.defaultApplication))
-        include(ZIODIEffectModule)
         make[Config].from(defaultConfig)
         make[Console.Service].fromHas(Console.live)
       },

@@ -102,7 +102,6 @@ import com.typesafe.config.ConfigFactory
 import distage.Injector
 import izumi.distage.config.AppConfigModule
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.logstage.api.routing.StaticLogRouter
 import izumi.logstage.distage.LogIOModule
 
@@ -112,8 +111,7 @@ val distageFrameworkModules = new ModuleDef {
 
   // standard distage framework modules
   include(AppConfigModule(ConfigFactory.defaultApplication))
-  include(CatsDIEffectModule)
-  include(new LogIOModule[IO](StaticLogRouter.instance, false))
+  include(LogIOModule[IO](StaticLogRouter.instance, false))
 }
 ```
 

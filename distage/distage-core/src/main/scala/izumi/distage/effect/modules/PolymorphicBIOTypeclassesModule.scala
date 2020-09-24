@@ -7,7 +7,6 @@ import izumi.reflect.TagKK
 // FIXME: remove implicit
 class PolymorphicBIOTypeclassesModule[F[+_, +_]: TagKK: BIOAsync: BIOFork: BIOTemporal: BIOPrimitives] extends ModuleDef {
   addImplicit[BIOFork[F]]
-  addImplicit[SyncSafe2[F]]
   addImplicit[BIOPrimitives[F]]
 
   addImplicit[BIOFunctor[F]]
@@ -28,9 +27,11 @@ class PolymorphicBIOTypeclassesModule[F[+_, +_]: TagKK: BIOAsync: BIOFork: BIOTe
 //    implicit r: zio.clock.Clock =>
 //      implicitly[BIOTemporal[F]]
 //  }
+
+  addImplicit[SyncSafe2[F]]
 }
 
 object PolymorphicBIOTypeclassesModule {
   // FIXME: remove implicit
-  def apply[F[+_, +_]: TagKK: BIOAsync: BIOFork: BIOTemporal: BIOPrimitives]: PolymorphicBIOTypeclassesModule[F] = new PolymorphicBIOTypeclassesModule
+  @inline def apply[F[+_, +_]: TagKK: BIOAsync: BIOFork: BIOTemporal: BIOPrimitives]: PolymorphicBIOTypeclassesModule[F] = new PolymorphicBIOTypeclassesModule
 }

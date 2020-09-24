@@ -1,11 +1,11 @@
 package izumi.distage.model.plan.impl
 
 import cats.Applicative
-import cats.kernel.Monoid
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{CatsMonoid, ResolveImportFSemiPlanPartiallyApplied, resolveImportsImpl1}
+import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{ResolveImportFSemiPlanPartiallyApplied, resolveImportsImpl1}
 import izumi.distage.model.plan.impl.SemiPlanExtensions.SemiPlanExts
 import izumi.distage.model.plan.{Roots, SemiPlan}
+import izumi.fundamentals.orphans.`cats.kernel.Monoid`
 import izumi.reflect.Tag
 
 import scala.language.implicitConversions
@@ -17,12 +17,12 @@ private[plan] trait SemiPlanExtensions extends Any { this: SemiPlan.type =>
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def optionalCatsMonoidForSemiplan[K[_]: CatsMonoid]: K[SemiPlan] =
-    new Monoid[SemiPlan] {
+  implicit final def optionalCatsMonoidForSemiplan[Monoid[_]: `cats.kernel.Monoid`]: Monoid[SemiPlan] =
+    new cats.kernel.Monoid[SemiPlan] {
       override def empty: SemiPlan = SemiPlan(Vector.empty, Roots.Everything)
 
       override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
-    }.asInstanceOf[K[SemiPlan]]
+    }.asInstanceOf[Monoid[SemiPlan]]
 
   @inline implicit final def toSemiPlanExts(plan: SemiPlan): SemiPlanExts = new SemiPlanExts(plan)
 }

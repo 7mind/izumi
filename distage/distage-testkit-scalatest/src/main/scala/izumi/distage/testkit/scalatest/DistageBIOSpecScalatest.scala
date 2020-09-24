@@ -1,13 +1,14 @@
 package izumi.distage.testkit.scalatest
 
 import distage.TagKK
+import izumi.distage.effect.DefaultModules2
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.{DSWordSpecStringWrapper, DSWordSpecStringWrapper2}
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
 
-abstract class DistageBIOSpecScalatest[F[+_, +_]](implicit val tagBIO: TagKK[F])
+abstract class DistageBIOSpecScalatest[F[+_, +_]: DefaultModules2](implicit val tagBIO: TagKK[F])
   extends DistageScalatestTestSuiteRunner[F[Throwable, ?]]
   with DistageAbstractScalatestSpec[F[Throwable, ?]] {
 

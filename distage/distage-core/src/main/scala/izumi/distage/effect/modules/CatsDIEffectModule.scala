@@ -12,10 +12,10 @@ object CatsDIEffectModule extends CatsDIEffectModule
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `cats-effect` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   */
 trait CatsDIEffectModule extends ModuleDef {
+  // DIEffect & cats-effect instances
   include(PolymorphicCatsDIEffectModule[IO])
 
   make[ConcurrentEffect[IO]].from(IO.ioConcurrentEffect(_: ContextShift[IO]))
-
   make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
