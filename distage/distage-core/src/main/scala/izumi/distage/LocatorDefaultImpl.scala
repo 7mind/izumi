@@ -1,6 +1,7 @@
 package izumi.distage
 
-import izumi.distage.model.{Locator, LocatorMeta}
+import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.{PlanInterpreter, Provision}
 import izumi.distage.model.references.IdentifiedRef

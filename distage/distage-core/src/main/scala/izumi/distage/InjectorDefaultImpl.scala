@@ -31,10 +31,6 @@ class InjectorDefaultImpl(
     planner.rewrite(module)
   }
 
-  override private[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Locator] = {
-    produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
-  }
-
   override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](
     plan: OrderedPlan,
     filter: FinalizerFilter[F],

@@ -44,7 +44,6 @@ class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +
 object AnyBIO3SupportModule extends App with ModuleDef {
   @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]): AnyBIO3SupportModule[F] = new AnyBIO3SupportModule
 
-  println(ZIODIEffectModule)
   /**
     * Make [[AnyBIO3SupportModule]], binding the required dependencies in place to values from implicit scope
     *

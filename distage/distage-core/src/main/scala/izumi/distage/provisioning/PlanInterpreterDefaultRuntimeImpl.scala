@@ -4,20 +4,21 @@ import java.util.concurrent.atomic.AtomicReference
 
 import distage.Id
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.{Locator, LocatorMeta}
+import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.exceptions.IncompatibleEffectTypesException
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.exceptions.IncompatibleEffectTypesException
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
+import izumi.distage.model.reflection._
 import izumi.reflect.TagK
 
 import scala.annotation.nowarn

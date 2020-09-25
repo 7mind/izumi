@@ -1,6 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.AbstractLocator
+import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.Functoid
@@ -13,19 +14,13 @@ import scala.collection.immutable
 import scala.collection.immutable.Queue
 import scala.concurrent.duration.Duration
 
-case class LocatorMeta(timings: Map[DIKey, Duration])
-
-object LocatorMeta {
-  def empty: LocatorMeta = LocatorMeta(Map.empty)
-}
-
 /**
   * The object graph created by executing a `plan`.
   * Can be queried for contained objects.
   *
-  * @see [[Injector]]
-  * @see [[Planner]]
-  * @see [[Producer]]
+  * @see [[izumi.distage.model.Injector]]
+  * @see [[izumi.distage.model.Planner]]
+  * @see [[izumi.distage.model.Producer]]
   */
 trait Locator {
 
@@ -103,5 +98,10 @@ object Locator {
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
 
     override def meta: LocatorMeta = LocatorMeta.empty
+  }
+
+  final case class LocatorMeta(timings: Map[DIKey, Duration])
+  object LocatorMeta {
+    def empty: LocatorMeta = LocatorMeta(Map.empty)
   }
 }

@@ -202,7 +202,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           // producing and verifying runtime plan
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
           planChecker.verify(runtimePlan)
-          memoizationInjector.produceF[Identity](runtimePlan).use {
+          memoizationInjector.produce(runtimePlan).use {
             runtimeLocator =>
               val runner = runtimeLocator.get[DIEffectRunner[F]]
               implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
