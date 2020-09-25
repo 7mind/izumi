@@ -74,17 +74,15 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope - alternatively, you can override the defaults later in plugins or with `ModuleBase#overridenBy`
+    * Note: by default this module will implement
+    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
+    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
+    *   - [[monix.bio.IO.Options]] using [[monix.bio.IO.defaultOptions]]
+    *
+    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
     */
-  implicit final def forMonixBIO[BIO[_, _], S, Opts](
-    implicit
-    @unused l1: `monix.bio.IO`[BIO],
-    @unused l2: `monix.execution.Scheduler`[S],
-    @unused l3: `monix.bio.IO.Options`[Opts],
-    s: S = Scheduler.global,
-    opts: Opts = monix.bio.IO.defaultOptions,
-  ): DefaultModule2[BIO] = {
-    DefaultModule(MonixBIODIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.bio.IO.Options]))
+  implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
+    DefaultModule(MonixBIODIEffectModule)
   }
 
   /**
@@ -93,17 +91,15 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope - alternatively, you can override the defaults later in plugins or with `ModuleBase#overridenBy`
+    * Note: by default this module will implement
+    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
+    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
+    *   - [[monix.eval.Task.Options]] using [[monix.eval.Task.defaultOptions]]
+    *
+    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
     */
-  implicit final def forMonix[Task[_], S, Opts](
-    implicit
-    @unused l1: `monix.eval.Task`[Task],
-    @unused l2: `monix.execution.Scheduler`[S],
-    @unused l3: `monix.eval.Task.Options`[Opts],
-    s: S = Scheduler.global,
-    opts: Opts = monix.eval.Task.defaultOptions,
-  ): DefaultModule[Task] = {
-    DefaultModule(MonixDIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.eval.Task.Options]))
+  implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
+    DefaultModule(MonixDIEffectModule)
   }
 
   /**
@@ -116,8 +112,9 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     DefaultModule(CatsDIEffectModule)
   }
 
+  /** [[izumi.distage.effect.modules.IdentityDIEffectModule]] is always available, even for non-Identity effects */
   implicit final def forIdentity: DefaultModule[Identity] = {
-    DefaultModule(IdentityDIEffectModule)
+    DefaultModule.empty
   }
 
 }

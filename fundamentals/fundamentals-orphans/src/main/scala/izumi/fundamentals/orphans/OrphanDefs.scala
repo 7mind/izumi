@@ -119,13 +119,3 @@ final abstract class `monix.eval.Task`[K[_]]
 object `monix.eval.Task` {
   @inline implicit final def get: `monix.eval.Task`[monix.eval.Task] = null
 }
-
-final abstract class `monix.execution.Scheduler`[A]
-object `monix.execution.Scheduler` {
-  @inline implicit final def get: `monix.execution.Scheduler`[monix.execution.Scheduler] = null
-}
-
-final abstract class `monix.eval.Task.Options`[A]
-object `monix.eval.Task.Options` {
-  @inline implicit final def get: `monix.eval.Task.Options`[monix.eval.Task.Options] = null
-}
