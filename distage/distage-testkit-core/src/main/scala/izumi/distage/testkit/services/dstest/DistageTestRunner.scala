@@ -29,6 +29,7 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
+import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -85,7 +86,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         val memoizationEnvs = grouped.groupBy(_.environment).flatMap {
           case (env, tests) =>
             withRecoverFromFailedExecution(tests) {
-              prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests)
+              Option(prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests))
             }(None)
         }
         // merge environments together by equality of their shared & runtime plans
@@ -99,7 +100,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             val memoizationInjector = packedEnv.head.anyMemoizationInjector
             val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
             val allStrengthenedKeys = packedEnv.iterator.flatMap(_.strengthenedKeys).toSet
-            val memoizationTree = MemoizationTree[F](packedEnv.iterator)
+            val memoizationTree = MemoizationTree[F](packedEnv)
             MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests, allStrengthenedKeys) -> memoizationTree
         }
     }
@@ -125,7 +126,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     configLoadLogger: IzLogger,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
-  ): Option[PackedEnv[F]] = {
+  ): PackedEnv[F] = {
     // make a config loader for current env with logger
     val config = loadConfig(env, configLoadLogger)
     val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
@@ -214,7 +215,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       )
     }
 
-    Option(PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet))
+    PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
   }
 
   def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnv, MemoizationTree[F])]): Unit = {
@@ -654,12 +655,11 @@ object DistageTestRunner {
     private[this] val childs = TrieMap.empty[TriSplittedPlan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[PreparedTest[F]]
 
-    @inline def addTests(plans: Iterable[TriSplittedPlan], preparedTests: Iterable[PreparedTest[F]]): Unit = synchronized {
-      import scala.util.chaining._
+    @tailrec def addTests(plans: List[TriSplittedPlan], preparedTests: Iterable[PreparedTest[F]]): Unit = synchronized {
       // here we are filtering all empty plans to merge levels together
       plans.filter(_.nonEmpty) match {
         case plan :: tail =>
-          val childTree = childs.getOrElse(plan, new MemoizationTree[F].tap(childs.put(plan, _)))
+          val childTree = childs.getOrElse[MemoizationTree[F]](plan, childs.put(plan, new MemoizationTree[F]))
           childTree.addTests(tail, preparedTests)
         case Nil =>
           nodeTests.appendAll(preparedTests)
@@ -705,7 +705,7 @@ object DistageTestRunner {
     @inline override def toString: String = toString_()
   }
   object MemoizationTree {
-    def apply[F[_]](iterator: Iterator[PackedEnv[F]]): MemoizationTree[F] = {
+    def apply[F[_]](iterator: Iterable[PackedEnv[F]]): MemoizationTree[F] = {
       val tree = new MemoizationTree[F]
       iterator.foreach(env => tree.addTests(env.memoizationPlanTree, env.preparedTests))
       tree
