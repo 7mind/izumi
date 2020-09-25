@@ -3,7 +3,7 @@ package izumi.distage.effect
 import izumi.distage.effect.modules._
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
+import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -114,7 +114,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
 
   /** [[izumi.distage.effect.modules.IdentityDIEffectModule]] is always available, even for non-Identity effects */
   implicit final def forIdentity: DefaultModule[Identity] = {
-    DefaultModule.empty
+//    DefaultModule.empty
+    DefaultModule(IdentityDIEffectModule)
   }
 
 }
@@ -126,7 +127,9 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
-  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIORunner3: BIOFork3: BIOPrimitives3]: DefaultModule3[F] = {
+  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3](
+    implicit tagBIO: TagKK[F[Any, +?, +?]]
+  ): DefaultModule3[F] = {
     DefaultModule(PolymorphicBIO3DIEffectModule.withImplicits[F])
   }
 }

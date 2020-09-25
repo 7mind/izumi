@@ -96,7 +96,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
     *
     * Useful for prototyping.
     */
-  final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
     _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
   }
 }
