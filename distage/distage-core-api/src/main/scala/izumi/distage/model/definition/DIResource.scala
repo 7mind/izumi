@@ -191,9 +191,12 @@ object DIResource {
     makeSimple(acquire)(_.close)
   }
 
-  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
+
+  @deprecated("renamed to fromAutoCloseable", "0.11")
+  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = fromAutoCloseable(acquire)
 
   def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire) {
@@ -448,7 +451,7 @@ object DIResource {
   }
 
   /**
-    * Class-based variant of [[fromAutoCloseableF]]:
+    * Class-based variant of [[fromAutoCloseable]]:
     *
     * {{{
     *   class FileOutputRes extends DIResource.FromAutoCloseable(
@@ -464,7 +467,7 @@ object DIResource {
     *   }
     * }}}
     */
-  class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends DIResource.Of(DIResource.fromAutoCloseableF(acquire))
+  class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends DIResource.Of(DIResource.fromAutoCloseable(acquire))
 
   /**
     * Trait-based proxy over a [[DIResource]] value
