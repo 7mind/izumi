@@ -7,7 +7,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.model.exceptions.{ConflictResolutionException, ProvisioningException, UnconfiguredMutatorAxis}
+import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException, UnconfiguredMutatorAxis}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
 import org.scalatest.exceptions.TestFailedException
@@ -494,7 +494,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       Activation.empty,
     )
 
-    intercept[UnconfiguredMutatorAxis] {
+    intercept[BadMutatorAxis] {
       Injector.Standard().produce(definition).unsafeGet()
     }
   }
