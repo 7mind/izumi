@@ -15,8 +15,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
       .toSeq
       .flatMap(extract)
       .map(name => name.split('.').last -> name)
-      .toMutableMultimap
-      .view
+      .toMultimapView
       .mapValues(_.size)
       .toMap
   }
