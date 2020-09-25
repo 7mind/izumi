@@ -3,9 +3,9 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import distage.DIResource
-import izumi.distage.effect.DefaultModule
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.DIEffect
+import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen

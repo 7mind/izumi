@@ -5,9 +5,9 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import cats.effect.{IO => CIO}
 import distage._
 import distage.plugins.PluginDef
-import izumi.distage.effect.DefaultModule
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures._

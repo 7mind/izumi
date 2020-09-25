@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.TagK
 import io.github.classgraph.ClassGraph
-import izumi.distage.effect.DefaultModule
+import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}

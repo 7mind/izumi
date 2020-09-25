@@ -1,8 +1,9 @@
-package izumi.distage.effect
+package izumi.distage.modules
 
-import izumi.distage.effect.modules._
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.modules.support._
+import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
@@ -51,7 +52,7 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
     @unused ensureCatsEffectOnClasspath: `cats.effect.IO`[K],
     @unused l: `zio.ZIO`[ZIO],
   ): DefaultModule2[ZIO[R, ?, ?]] = {
-    DefaultModule(ZIODIEffectModule ++ ZIOCatsTypeclassesModule)
+    DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
   }
 
 }
@@ -65,7 +66,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
-    DefaultModule(ZIODIEffectModule)
+    DefaultModule(ZIOSupportModule)
   }
 
   /**
@@ -82,7 +83,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
     */
   implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
-    DefaultModule(MonixBIODIEffectModule)
+    DefaultModule(MonixBIOSupportModule)
   }
 
   /**
@@ -99,7 +100,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
     */
   implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
-    DefaultModule(MonixDIEffectModule)
+    DefaultModule(MonixSupportModule)
   }
 
   /**
@@ -109,20 +110,20 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
-    DefaultModule(CatsDIEffectModule)
+    DefaultModule(CatsIOSupportModule)
   }
 
-  /** [[izumi.distage.effect.modules.IdentityDIEffectModule]] is always available, even for non-Identity effects */
+  /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
   implicit final def forIdentity: DefaultModule[Identity] = {
 //    DefaultModule.empty
-    DefaultModule(IdentityDIEffectModule)
+    DefaultModule(IdentitySupportModule)
   }
 
 }
 
 sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
   implicit final def fromBIO[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: DefaultModule2[F] = {
-    DefaultModule(PolymorphicBIODIEffectModule.withImplicits[F])
+    DefaultModule(AnyBIOSupportModule.withImplicits[F])
   }
 }
 
@@ -130,7 +131,7 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
   implicit final def fromBIO3[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3](
     implicit tagBIO: TagKK[F[Any, +?, +?]]
   ): DefaultModule3[F] = {
-    DefaultModule(PolymorphicBIO3DIEffectModule.withImplicits[F])
+    DefaultModule(AnyBIO3SupportModule.withImplicits[F])
   }
 }
 
@@ -156,7 +157,7 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
     implicit val T: cats.effect.Timer[F] = T0.asInstanceOf[cats.effect.Timer[F]]
     implicit val P: cats.Parallel[F] = P0.asInstanceOf[cats.Parallel[F]]
     implicit val C: cats.effect.ContextShift[F] = C0.asInstanceOf[cats.effect.ContextShift[F]]
-    DefaultModule(PolymorphicCatsDIEffectModule.withImplicits[F])
+    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F])
   }
 }
 

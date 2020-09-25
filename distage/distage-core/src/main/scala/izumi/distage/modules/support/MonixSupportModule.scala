@@ -1,4 +1,4 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
 import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
@@ -6,7 +6,7 @@ import izumi.distage.model.definition.ModuleDef
 import monix.eval.Task
 import monix.execution.Scheduler
 
-object MonixDIEffectModule extends MonixDIEffectModule
+object MonixSupportModule extends MonixSupportModule
 
 /** `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
@@ -20,9 +20,9 @@ object MonixDIEffectModule extends MonixDIEffectModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait MonixDIEffectModule extends ModuleDef {
+trait MonixSupportModule extends ModuleDef {
   // DIEffect & cats-effect instances
-  include(PolymorphicCatsDIEffectModule[Task])
+  include(AnyCatsEffectSupportModule[Task])
 
   make[Scheduler].from(Scheduler.global)
   make[Task.Options].from(Task.defaultOptions)

@@ -3,12 +3,12 @@ package izumi.distage.framework.services
 import distage.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.effect.DefaultModule
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.planning.PlanningHook
+import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.BIOExit

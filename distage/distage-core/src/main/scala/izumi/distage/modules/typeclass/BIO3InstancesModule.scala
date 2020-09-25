@@ -1,4 +1,4 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.typeclass
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.bio._
@@ -9,9 +9,9 @@ import izumi.reflect.TagK3
   *
   * Depends on `make[BIOAsync3[F]]` & `make[BIOLocal[F]]`
   *
-  * Note: doesn't add bifunctor variants from [[PolymorphicBIOTypeclassesModule]]
+  * Note: doesn't add bifunctor variants from [[BIOInstancesModule]]
   */
-class PolymorphicBIO3TypeclassesModule[F[-_, +_, +_]: TagK3] extends ModuleDef {
+class BIO3InstancesModule[F[-_, +_, +_]: TagK3] extends ModuleDef {
   make[BIOFunctor3[F]].using[BIOAsync3[F]]
   make[BIOBifunctor3[F]].using[BIOAsync3[F]]
   make[BIOApplicative3[F]].using[BIOAsync3[F]]
@@ -31,17 +31,17 @@ class PolymorphicBIO3TypeclassesModule[F[-_, +_, +_]: TagK3] extends ModuleDef {
   make[BIOArrow[F]].using[BIOLocal[F]]
 }
 
-object PolymorphicBIO3TypeclassesModule {
-  @inline def apply[F[-_, +_, +_]: TagK3]: PolymorphicBIO3TypeclassesModule[F] = new PolymorphicBIO3TypeclassesModule
+object BIO3InstancesModule {
+  @inline def apply[F[-_, +_, +_]: TagK3]: BIO3InstancesModule[F] = new BIO3InstancesModule
 
   /**
-    * Make [[PolymorphicBIO3TypeclassesModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[BIO3InstancesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOTemporal3[F]]`, `make[BIORunner3[F]]` `make[BIOFork3[F]]` and `make[BIOPrimitives3[F]]` are not required by [[PolymorphicBIO3TypeclassesModule]]
+    * `make[BIOTemporal3[F]]`, `make[BIORunner3[F]]` `make[BIOFork3[F]]` and `make[BIOPrimitives3[F]]` are not required by [[BIO3InstancesModule]]
     * but are added for completeness
     */
   def withImplicits[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3]: ModuleDef = new ModuleDef {
-    include(PolymorphicBIO3TypeclassesModule[F])
+    include(BIO3InstancesModule[F])
 
     addImplicit[BIOAsync3[F]]
     addImplicit[BIOTemporal3[F]]

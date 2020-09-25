@@ -2,7 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.definition.Module
 
-package object effect {
+package object modules {
   type DefaultModule2[F[_, _]] = DefaultModule[F[Throwable, ?]]
   object DefaultModule2 {
     @inline def apply[F[_, _]](module: Module): DefaultModule2[F] = DefaultModule(module)

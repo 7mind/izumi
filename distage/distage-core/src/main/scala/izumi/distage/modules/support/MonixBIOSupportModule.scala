@@ -1,13 +1,14 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
 import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import izumi.distage.model.definition.{Id, ModuleDef}
+import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.{BIOAsync, BIOFork, BIOPrimitives, BIORunner, BIOTemporal, BlockingIO, BlockingIOInstances}
 import monix.bio.{IO, Task, UIO}
 import monix.execution.Scheduler
 
-object MonixBIODIEffectModule extends MonixBIODIEffectModule
+object MonixBIOSupportModule extends MonixBIOSupportModule
 
 /** `monix.bio.IO` effect type support for `distage` resources, effects, roles & tests
   *
@@ -22,11 +23,11 @@ object MonixBIODIEffectModule extends MonixBIODIEffectModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait MonixBIODIEffectModule extends ModuleDef {
+trait MonixBIOSupportModule extends ModuleDef {
   // DIEffect & cats-effect instances
-  include(PolymorphicCatsDIEffectModule[Task])
+  include(AnyCatsEffectSupportModule[Task])
   // BIO instances
-  include(PolymorphicBIOTypeclassesModule[IO])
+  include(BIOInstancesModule[IO])
 
   make[Scheduler].from(Scheduler.global)
   make[IO.Options].from(IO.defaultOptions)

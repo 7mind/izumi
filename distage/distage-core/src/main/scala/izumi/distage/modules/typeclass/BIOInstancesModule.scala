@@ -1,4 +1,4 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.typeclass
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.bio._
@@ -9,7 +9,7 @@ import izumi.reflect.TagKK
   *
   * Depends on `make[BIOAsync[F]]`
   */
-class PolymorphicBIOTypeclassesModule[F[+_, +_]: TagKK] extends ModuleDef {
+class BIOInstancesModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[BIOFunctor[F]].using[BIOAsync[F]]
   make[BIOBifunctor[F]].using[BIOAsync[F]]
   make[BIOApplicative[F]].using[BIOAsync[F]]
@@ -24,17 +24,17 @@ class PolymorphicBIOTypeclassesModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[BIOConcurrent[F]].using[BIOAsync[F]]
 }
 
-object PolymorphicBIOTypeclassesModule {
-  @inline def apply[F[+_, +_]: TagKK]: PolymorphicBIOTypeclassesModule[F] = new PolymorphicBIOTypeclassesModule
+object BIOInstancesModule {
+  @inline def apply[F[+_, +_]: TagKK]: BIOInstancesModule[F] = new BIOInstancesModule
 
   /**
-    * Make [[PolymorphicBIOTypeclassesModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[BIOInstancesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOTemporal[F]]`, `make[BIORunner[F]]` `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[PolymorphicBIOTypeclassesModule]]
+    * `make[BIOTemporal[F]]`, `make[BIORunner[F]]` `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[BIOInstancesModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {
-    include(PolymorphicBIOTypeclassesModule[F])
+    include(BIOInstancesModule[F])
 
     addImplicit[BIOAsync[F]]
     addImplicit[BIOFork[F]]

@@ -2,11 +2,11 @@ package izumi.distage.testkit.services.dstest
 
 import distage.TagK
 import distage.config.AppConfig
-import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
+import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger

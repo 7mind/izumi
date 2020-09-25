@@ -2,13 +2,13 @@ package izumi.distage.roles
 
 import distage._
 import izumi.distage.config.model.AppConfig
-import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services._
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}

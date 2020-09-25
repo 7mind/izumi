@@ -1,4 +1,4 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.typeclass
 
 import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, ContextShift, Effect, LiftIO, Sync, Timer}
 import cats.{Applicative, ApplicativeError, Apply, FlatMap, Functor, Invariant, InvariantSemigroupal, Monad, MonadError, Parallel, Semigroupal}
@@ -10,7 +10,7 @@ import izumi.distage.model.definition.ModuleDef
   *
   * Depends on `make[ConcurrentEffect[F]]`.
   */
-class PolymorphicCatsTypeclassesModule[F[_]: TagK] extends ModuleDef {
+class CatsEffectInstancesModule[F[_]: TagK] extends ModuleDef {
   make[Invariant[F]].using[ConcurrentEffect[F]]
   make[Semigroupal[F]].using[ConcurrentEffect[F]]
   make[InvariantSemigroupal[F]].using[ConcurrentEffect[F]]
@@ -31,13 +31,13 @@ class PolymorphicCatsTypeclassesModule[F[_]: TagK] extends ModuleDef {
   make[Concurrent[F]].using[ConcurrentEffect[F]]
 }
 
-object PolymorphicCatsTypeclassesModule {
-  @inline def apply[F[_]: TagK]: PolymorphicCatsTypeclassesModule[F] = new PolymorphicCatsTypeclassesModule[F]
+object CatsEffectInstancesModule {
+  @inline def apply[F[_]: TagK]: CatsEffectInstancesModule[F] = new CatsEffectInstancesModule[F]
 
   /**
-    * Make [[PolymorphicCatsTypeclassesModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[CatsEffectInstancesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[Parallel[F]]`, `make[Timer[F]]` and `make[ContextShift[F]]` are not required by [[PolymorphicCatsTypeclassesModule]]
+    * `make[Parallel[F]]`, `make[Timer[F]]` and `make[ContextShift[F]]` are not required by [[CatsEffectInstancesModule]]
     * but are added for completeness
     */
   def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Timer: ContextShift]: ModuleDef = new ModuleDef {
@@ -46,6 +46,6 @@ object PolymorphicCatsTypeclassesModule {
     addImplicit[Timer[F]]
     addImplicit[ContextShift[F]]
 
-    include(PolymorphicCatsTypeclassesModule[F])
+    include(CatsEffectInstancesModule[F])
   }
 }

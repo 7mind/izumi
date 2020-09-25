@@ -9,11 +9,11 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
-import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, DIResource}
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._

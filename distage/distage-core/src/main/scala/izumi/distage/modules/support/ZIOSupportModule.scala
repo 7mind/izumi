@@ -1,4 +1,4 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
@@ -13,7 +13,7 @@ import zio.{Has, IO, Runtime, ZIO}
 
 import scala.concurrent.ExecutionContext
 
-object ZIODIEffectModule extends ZIODIEffectModule
+object ZIOSupportModule extends ZIOSupportModule
 
 /** `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
@@ -28,8 +28,8 @@ object ZIODIEffectModule extends ZIODIEffectModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait ZIODIEffectModule extends ModuleDef {
-  include(PolymorphicBIO3DIEffectModule[ZIO])
+trait ZIOSupportModule extends ModuleDef {
+  include(AnyBIO3SupportModule[ZIO])
 
   addImplicit[BIOAsync3[ZIO]]
   make[BIOTemporal3[ZIO]].from {

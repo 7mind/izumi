@@ -1,7 +1,7 @@
 package izumi.distage.testkit.services.dstest
 
 import distage.TagK
-import izumi.distage.effect.DefaultModule
+import izumi.distage.modules.DefaultModule
 
 trait AbstractDistageSpec[F[_]] extends TestRegistration[F] {
   implicit def tagMonoIO: TagK[F]

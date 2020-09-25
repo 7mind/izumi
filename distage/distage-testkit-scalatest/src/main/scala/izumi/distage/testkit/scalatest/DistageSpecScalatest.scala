@@ -1,7 +1,7 @@
 package izumi.distage.testkit.scalatest
 
 import distage.TagK
-import izumi.distage.effect.DefaultModule
+import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 

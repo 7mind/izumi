@@ -5,7 +5,6 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import distage._
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.model.AppConfig
-import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
@@ -15,6 +14,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
+import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel

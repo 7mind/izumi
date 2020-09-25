@@ -1,7 +1,8 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
+import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.{BIO, BIOApplicative, BIOAsync, BIOFork, BIOPrimitives, BIORunner, BIOTemporal, SyncSafe2}
 import izumi.functional.mono.SyncSafe
 import izumi.reflect.TagKK
@@ -15,8 +16,8 @@ import izumi.reflect.TagKK
   *
   * Depends on `make[BIOAsync[F]]`, `make[BIOTemporal[F]]`, `make[BIORunner[F]]`
   */
-class PolymorphicBIODIEffectModule[F[+_, +_]: TagKK] extends ModuleDef {
-  include(PolymorphicBIOTypeclassesModule[F])
+class AnyBIOSupportModule[F[+_, +_]: TagKK] extends ModuleDef {
+  include(BIOInstancesModule[F])
 
   make[DIEffectRunner2[F]]
     .from[DIEffectRunner.BIOImpl[F]]
@@ -35,17 +36,17 @@ class PolymorphicBIODIEffectModule[F[+_, +_]: TagKK] extends ModuleDef {
   }
 }
 
-object PolymorphicBIODIEffectModule extends ModuleDef {
-  @inline def apply[F[+_, +_]: TagKK]: PolymorphicBIODIEffectModule[F] = new PolymorphicBIODIEffectModule
+object AnyBIOSupportModule extends ModuleDef {
+  @inline def apply[F[+_, +_]: TagKK]: AnyBIOSupportModule[F] = new AnyBIOSupportModule
 
   /**
-    * Make [[PolymorphicBIODIEffectModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[AnyBIOSupportModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[PolymorphicBIODIEffectModule]]
+    * `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[AnyBIOSupportModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {
-    include(PolymorphicBIODIEffectModule[F])
+    include(AnyBIOSupportModule[F])
 
     addImplicit[BIOAsync[F]]
     addImplicit[BIOFork[F]]

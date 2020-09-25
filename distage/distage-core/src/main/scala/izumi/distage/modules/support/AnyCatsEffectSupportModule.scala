@@ -1,9 +1,10 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, Sync, Timer}
 import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.mono.SyncSafe
 
 /** Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
@@ -15,8 +16,8 @@ import izumi.functional.mono.SyncSafe
   *
   * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
   */
-class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
-  include(PolymorphicCatsTypeclassesModule[F])
+class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
+  include(CatsEffectInstancesModule[F])
 
   make[DIEffectRunner[F]].from {
     implicit F: Effect[F] => DIEffectRunner.fromCats
@@ -39,13 +40,13 @@ class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
   }
 }
 
-object PolymorphicCatsDIEffectModule {
-  @inline def apply[F[_]: TagK]: PolymorphicCatsDIEffectModule[F] = new PolymorphicCatsDIEffectModule[F]
+object AnyCatsEffectSupportModule {
+  @inline def apply[F[_]: TagK]: AnyCatsEffectSupportModule[F] = new AnyCatsEffectSupportModule[F]
 
   /**
-    * Make [[PolymorphicCatsDIEffectModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[AnyCatsEffectSupportModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[ContextShift[F]]` is not required by [[PolymorphicCatsDIEffectModule]] but is added for completeness
+    * `make[ContextShift[F]]` is not required by [[AnyCatsEffectSupportModule]] but is added for completeness
     */
   def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Timer: ContextShift]: ModuleDef = new ModuleDef {
     addImplicit[ConcurrentEffect[F]]
@@ -53,6 +54,6 @@ object PolymorphicCatsDIEffectModule {
     addImplicit[Timer[F]]
     addImplicit[ContextShift[F]]
 
-    include(PolymorphicCatsDIEffectModule[F])
+    include(AnyCatsEffectSupportModule[F])
   }
 }

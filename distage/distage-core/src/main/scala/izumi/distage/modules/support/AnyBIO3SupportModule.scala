@@ -1,7 +1,9 @@
-package izumi.distage.effect.modules
+package izumi.distage.modules.support
 
+import izumi.distage.effect.modules.ZIODIEffectModule
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
+import izumi.distage.modules.typeclass.BIO3InstancesModule
 import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORoot, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.{TagK3, TagKK}
@@ -17,11 +19,11 @@ import scala.annotation.unchecked.{uncheckedVariance => v}
   *
   * Depends on `make[BIOAsync3[F]]`, `make[BIOTemporal3[F]]`, `make[BIOLocal[F]]`, `make[BIOFork3[F]]` & `make[BIORunner3[F]]`
   */
-class PolymorphicBIO3DIEffectModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]) extends ModuleDef {
+class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]) extends ModuleDef {
   // DIEffect & bifunctor bio instances
-  include(PolymorphicBIODIEffectModule[F[Any, +?, +?]])
+  include(AnyBIOSupportModule[F[Any, +?, +?]])
   // trifunctor bio instances
-  include(PolymorphicBIO3TypeclassesModule[F])
+  include(BIO3InstancesModule[F])
   addConverted3To2[F[Any, +?, +?]]
 
   // workaround for https://github.com/zio/izumi-reflect/issues/82 & https://github.com/zio/izumi-reflect/issues/83
@@ -39,19 +41,19 @@ class PolymorphicBIO3DIEffectModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK
   }
 }
 
-object PolymorphicBIO3DIEffectModule extends App with ModuleDef {
-  @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]): PolymorphicBIO3DIEffectModule[F] = new PolymorphicBIO3DIEffectModule
+object AnyBIO3SupportModule extends App with ModuleDef {
+  @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]): AnyBIO3SupportModule[F] = new AnyBIO3SupportModule
 
   println(ZIODIEffectModule)
   /**
-    * Make [[PolymorphicBIO3DIEffectModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[AnyBIO3SupportModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOFork3[F]]` and `make[BIOPrimitives3[F]]` are not required by [[PolymorphicBIO3DIEffectModule]]
+    * `make[BIOFork3[F]]` and `make[BIOPrimitives3[F]]` are not required by [[AnyBIO3SupportModule]]
     * but are added for completeness
     */
   def withImplicits[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3](implicit tagBIO: TagKK[F[Any, +?, +?]]): ModuleDef =
     new ModuleDef {
-      include(PolymorphicBIO3DIEffectModule[F])
+      include(AnyBIO3SupportModule[F])
 
       addImplicit[BIOAsync3[F]]
       addImplicit[BIOTemporal3[F]]

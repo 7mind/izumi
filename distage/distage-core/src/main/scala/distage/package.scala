@@ -1,6 +1,6 @@
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
-import izumi.distage.{constructors, effect, model, planning}
+import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
 
@@ -19,14 +19,14 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type LocatorRef = model.recursive.LocatorRef
 
-  override type DefaultModule[F[_]] = effect.DefaultModule[F]
-  override val DefaultModule: effect.DefaultModule.type = effect.DefaultModule
+  override type DefaultModule[F[_]] = modules.DefaultModule[F]
+  override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
-  override type DefaultModule2[F[_, _]] = effect.DefaultModule2[F]
-  override val DefaultModule2: effect.DefaultModule2.type = effect.DefaultModule2
+  override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
+  override val DefaultModule2: modules.DefaultModule2.type = modules.DefaultModule2
 
-  override type DefaultModule3[F[_, _, _]] = effect.DefaultModule3[F]
-  override val DefaultModule3: effect.DefaultModule3.type = effect.DefaultModule3
+  override type DefaultModule3[F[_, _, _]] = modules.DefaultModule3[F]
+  override val DefaultModule3: modules.DefaultModule3.type = modules.DefaultModule3
 
   override type LocatorDef = model.definition.LocatorDef
 
