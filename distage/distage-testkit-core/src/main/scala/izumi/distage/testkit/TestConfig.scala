@@ -109,7 +109,7 @@ object TestConfig {
     )
   }
 
-  final case class AxisDIKeys(keyMap: Map[Set[AxisValue], Set[DIKey]]) {
+  final case class AxisDIKeys(keyMap: Map[Set[AxisValue], Set[DIKey]]) extends AnyVal {
     /**
       * Consider a section to be activated if for each Axis, one of the Axis Choices in the section is present in the Activation
       *
@@ -147,11 +147,19 @@ object TestConfig {
     }
   }
   object AxisDIKeys {
-    val empty: AxisDIKeys = AxisDIKeys(Map.empty)
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): AxisDIKeys = AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
-    @inline implicit def fromMap[SA <: Set[_ <: AxisValue]](map: Map[SA, Set[_ <: DIKey]]): AxisDIKeys = AxisDIKeys(
-      map.asInstanceOf[Map[Set[AxisValue], Set[DIKey]]]
-    )
+    def empty: AxisDIKeys = AxisDIKeys(Map.empty)
+
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): AxisDIKeys =
+      AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
+
+    @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisValue], Set[_ <: DIKey])]): AxisDIKeys =
+      AxisDIKeys(map.toMap[Set[_ <: AxisValue], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisValue], Set[DIKey]]])
+
+    @inline implicit def fromSingleToSetMap(map: Iterable[(AxisValue, Set[_ <: DIKey])]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> v.toSet[DIKey] }.toMap)
+
+    @inline implicit def fromSingleMap(map: Iterable[(AxisValue, DIKey)]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
   }
 
   sealed trait ParallelLevel
