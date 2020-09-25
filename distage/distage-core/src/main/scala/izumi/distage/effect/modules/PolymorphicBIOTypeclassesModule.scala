@@ -30,7 +30,7 @@ object PolymorphicBIOTypeclassesModule {
   /**
     * Make [[PolymorphicBIOTypeclassesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOTemporal[F]]`, `make[BIORunner[F]]` `make[BIOFork[F]]` and `BIOPrimitives[F]` are not required by [[PolymorphicBIOTypeclassesModule]]
+    * `make[BIOTemporal[F]]`, `make[BIORunner[F]]` `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[PolymorphicBIOTypeclassesModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {

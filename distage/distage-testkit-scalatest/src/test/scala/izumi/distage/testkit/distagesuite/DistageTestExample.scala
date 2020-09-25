@@ -37,7 +37,7 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
   "distage test runner" should {
     "support bifunctor" in {
-      (service: MockUserRepository[Task], F: BIOApplicativeError[zio.IO]) =>
+      service: MockUserRepository[Task] =>
         for {
           _ <- Task(assert(service != null))
         } yield ()

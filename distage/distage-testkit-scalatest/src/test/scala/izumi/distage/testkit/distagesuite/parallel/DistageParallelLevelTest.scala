@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.{DIKey, TagK}
-import izumi.distage.effect.{DefaultModule, DefaultModule2}
+import izumi.distage.effect.DefaultModule
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel

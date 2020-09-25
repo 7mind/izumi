@@ -3,12 +3,11 @@ package izumi.distage.effect
 import izumi.distage.effect.modules._
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.functional.bio.{BIOAsync, BIOFork, BIOPrimitives, BIORunner, BIOTemporal}
+import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
-import izumi.reflect.{TagK, TagKK}
-import monix.execution.Scheduler
+import izumi.reflect.{TagK, TagK3, TagKK}
 
 /**
   * Implicitly available effect type support for `distage` resources, effects, roles & tests.
@@ -28,6 +27,7 @@ import monix.execution.Scheduler
   *   - `Identity`
   *   - Any `F[_]` with `cats-effect` instances
   *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
+  *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[_]` with [[izumi.distage.model.effect.DIEffect]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal
@@ -129,6 +129,12 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
+  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIORunner3: BIOFork3: BIOPrimitives3]: DefaultModule3[F] = {
+    DefaultModule(PolymorphicBIO3DIEffectModule.withImplicits[F])
+  }
+}
+
+sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -154,7 +160,7 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances4 {
+sealed trait LowPriorityDefaultModulesInstances5 {
   implicit final def fromDIEffect[F[_]: TagK: DIEffect: DIEffectAsync: DIEffectRunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[DIEffect[F]]

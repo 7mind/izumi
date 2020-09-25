@@ -154,39 +154,44 @@ package object bio extends BIO3Syntax with BIOSyntax {
 
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
   object BIOPrimitives3 {
-    def apply[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
+    @inline def apply[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
+  }
+
+  type BIORunner3[F[-_, +_, +_]] = BIORunner[F[Any, +?, +?]]
+  object BIORunner3 {
+    @inline def apply[F[-_, +_, +_]: BIORunner3]: BIORunner3[F] = implicitly
   }
 
   type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO {
-    def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
+    @inline def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
   }
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
-    def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
+    @inline def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
   type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, ?]]
   object SyncSafe3 {
-    def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
+    @inline def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
   }
 
   type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
   object Clock2 {
-    def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
+    @inline def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
   }
   type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, ?]]
   object Clock3 {
-    def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
+    @inline def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
   type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
   object Entropy2 {
-    def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
+    @inline def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
   type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
   object Entropy3 {
-    def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
+    @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }
 
   @inline private[bio] final def cast3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R](

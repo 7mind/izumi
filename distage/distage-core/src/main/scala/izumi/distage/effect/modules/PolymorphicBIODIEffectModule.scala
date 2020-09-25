@@ -8,7 +8,7 @@ import izumi.reflect.TagKK
 
 /** Any `BIO` effect type support for `distage` resources, effects, roles & tests.
   *
-  * For any `F[+_, +_]` with available `make[BIO[F]]`, `make[BIOApplicative[F]]`, `make[BIOAsync[F]]`, `make[BIOTemporal[F]]` and `make[BIORunner[F]]` bindings.
+  * For any `F[+_, +_]` with available `make[BIOAsync[F]]`, `make[BIOTemporal[F]]` and `make[BIORunner[F]]` bindings.
   *
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
@@ -41,7 +41,7 @@ object PolymorphicBIODIEffectModule extends ModuleDef {
   /**
     * Make [[PolymorphicBIODIEffectModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOFork[F]]` and `BIOPrimitives[F]` are not required by [[PolymorphicBIODIEffectModule]]
+    * `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[PolymorphicBIODIEffectModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {
