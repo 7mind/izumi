@@ -14,7 +14,16 @@ final case class TriSplittedPlan(
   shared: OrderedPlan,
   sideRoots1: Set[DIKey],
   sideRoots2: Set[DIKey],
-)
+) {
+  def isEmpty: Boolean = {
+    side.steps.isEmpty &&
+    primary.steps.isEmpty &&
+    shared.steps.isEmpty &&
+    sideRoots1.isEmpty &&
+    sideRoots2.isEmpty
+  }
+  def nonEmpty: Boolean = !isEmpty
+}
 
 object TriSplittedPlan {
   implicit final class TriPlanEx(private val split: TriSplittedPlan) extends AnyVal {

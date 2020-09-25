@@ -646,7 +646,8 @@ object DistageTestRunner {
 
     @inline def addTests(plans: Iterable[TriSplittedPlan], preparedTests: Iterable[PreparedTest[F]]): Unit = synchronized {
       import scala.util.chaining._
-      plans match {
+      // here we are filtering all empty plans to merge levels together
+      plans.filter(_.nonEmpty) match {
         case plan :: tail =>
           val childTree = childs.getOrElse(plan, new MemoizationTree[F].tap(childs.put(plan, _)))
           childTree.addTests(tail, preparedTests)
@@ -656,7 +657,7 @@ object DistageTestRunner {
       ()
     }
 
-    @inline private def stateTraverse_[State, A](
+    @inline private def stateTraverse_[State](
       initialState: State,
       thisPlan: TriSplittedPlan,
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
@@ -673,7 +674,7 @@ object DistageTestRunner {
     }
 
     /** Root node traverse. User should never call children node directly. */
-    @inline def stateTraverse[State, A](
+    @inline def stateTraverse[State](
       initialState: State
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[PreparedTest[F]]) => F[Unit]
