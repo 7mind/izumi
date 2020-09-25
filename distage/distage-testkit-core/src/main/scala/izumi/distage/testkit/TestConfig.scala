@@ -9,7 +9,6 @@ import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIK
 import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
 
-import scala.annotation.nowarn
 import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
 
@@ -138,7 +137,6 @@ object TestConfig {
         }.toSet
     }
 
-    @nowarn("msg=Unused import")
     def ++(that: AxisDIKeys): AxisDIKeys = {
       val allKeys = ArraySeq.unsafeWrapArray((this.keyMap.iterator ++ that.keyMap.iterator).toArray)
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.flatMap(_._2).toSet }

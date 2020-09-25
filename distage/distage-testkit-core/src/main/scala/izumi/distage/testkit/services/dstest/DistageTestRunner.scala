@@ -653,6 +653,7 @@ object DistageTestRunner {
         case Nil =>
           nodeTests.addAll(preparedTests)
       }
+      ()
     }
 
     @inline private def stateTraverse_[State, A](
