@@ -9,7 +9,7 @@ import monix.execution.Scheduler
 /** `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds [[cats.effect]] typeclass instances for `monix`
+  * - Adds `cats-effect` typeclass instances for `monix`
   *
   * @param s is a [[monix.execution.Scheduler Scheduler]] that needs to be available in scope
   */

@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.dstest
 
 import distage.TagK
 import distage.config.AppConfig
-import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
@@ -14,7 +14,7 @@ import izumi.logstage.api.logger.LogRouter
 
 trait BootstrapFactory {
   def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader
-  def makeModuleProvider[F[_]: TagK: DefaultModules](
+  def makeModuleProvider[F[_]: TagK: DefaultModule](
     options: PlanningOptions,
     config: AppConfig,
     logRouter: LogRouter,
@@ -30,7 +30,7 @@ object BootstrapFactory {
       new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configResourceName -> None), ConfigLoader.defaultBaseConfigs))
     }
 
-    def makeModuleProvider[F[_]: TagK: DefaultModules](
+    def makeModuleProvider[F[_]: TagK: DefaultModule](
       options: PlanningOptions,
       config: AppConfig,
       logRouter: LogRouter,
@@ -46,7 +46,7 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
-        defaultModules = DefaultModules[F],
+        defaultModules = implicitly[DefaultModule[F]],
       )
     }
   }

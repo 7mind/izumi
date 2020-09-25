@@ -3,15 +3,17 @@ package izumi.distage
 import izumi.distage.model.definition.Module
 
 package object effect {
-  type DefaultModules2[F[_, _]] = DefaultModules[F[Throwable, ?]]
-  object DefaultModules2 {
-    @inline def apply[F[_, _]: DefaultModules2](implicit d: DummyImplicit): DefaultModules2[F] = implicitly
-    @inline def apply[F[_, _]](modules: Seq[Module]): DefaultModules2[F] = DefaultModules(modules)
+  type DefaultModule2[F[_, _]] = DefaultModule[F[Throwable, ?]]
+  object DefaultModule2 {
+    @inline def apply[F[_, _]](module: Module): DefaultModule2[F] = DefaultModule(module)
+
+    @inline def apply[F[_, _]](implicit modules: DefaultModule2[F], d: DummyImplicit): Module = modules.module
   }
 
-  type DefaultModules3[F[_, _, _]] = DefaultModules[F[Any, Throwable, ?]]
-  object DefaultModules3 {
-    @inline def apply[F[_, _, _]: DefaultModules3](implicit d: DummyImplicit): DefaultModules3[F] = implicitly
-    @inline def apply[F[_, _, _]](modules: Seq[Module]): DefaultModules3[F] = DefaultModules(modules)
+  type DefaultModule3[F[_, _, _]] = DefaultModule[F[Any, Throwable, ?]]
+  object DefaultModule3 {
+    @inline def apply[F[_, _, _]](module: Module): DefaultModule3[F] = DefaultModule(module)
+
+    @inline def apply[F[_, _, _]](implicit modules: DefaultModule3[F], d: DummyImplicit): Module = modules.module
   }
 }

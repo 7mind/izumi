@@ -48,5 +48,5 @@ sealed trait BIOTemporalInstancesLowPriority1 {
     @unused l1: `monix.bio.IO`[MonixBIO],
     @unused l2: `cats.effect.Timer`[Timer],
     timer: Timer[MonixBIO[Nothing, ?]],
-  ): Predefined.Of[BIOTemporal[MonixBIO]] = Predefined(new BIOTemporalMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]])).asInstanceOf
+  ): Predefined.Of[BIOTemporal[MonixBIO]] = new BIOTemporalMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[Predefined.Of[BIOTemporal[MonixBIO]]]
 }

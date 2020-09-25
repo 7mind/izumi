@@ -8,8 +8,8 @@ object CatsDIEffectModule extends CatsDIEffectModule
 
 /** `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[cats.effect]] typeclass instances for `cats-effect`
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `cats-effect` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds `cats-effect` typeclass instances for `cats.effect.IO`
   */
 trait CatsDIEffectModule extends ModuleDef {
   // DIEffect & cats-effect instances

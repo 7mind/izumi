@@ -2,7 +2,7 @@ package distage
 
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
-import izumi.distage.{constructors, model, planning}
+import izumi.distage.{constructors, effect, model, planning}
 
 trait Distage {
 
@@ -20,6 +20,15 @@ trait Distage {
 
   type Locator = model.Locator
   type LocatorRef = model.recursive.LocatorRef
+
+  type DefaultModule[F[_]] = effect.DefaultModule[F]
+  val DefaultModule: effect.DefaultModule.type = effect.DefaultModule
+
+  type DefaultModule2[F[_, _]] = effect.DefaultModule2[F]
+  val DefaultModule2: effect.DefaultModule2.type = effect.DefaultModule2
+
+  type DefaultModule3[F[_, _, _]] = effect.DefaultModule3[F]
+  val DefaultModule3: effect.DefaultModule3.type = effect.DefaultModule3
 
   type LocatorDef = model.definition.LocatorDef
 

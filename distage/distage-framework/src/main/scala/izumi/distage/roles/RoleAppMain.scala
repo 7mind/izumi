@@ -2,8 +2,8 @@ package izumi.distage.roles
 
 import cats.effect._
 import distage._
-import izumi.distage.effect.DefaultModules
-import izumi.distage.effect.DefaultModules2
+import izumi.distage.effect.DefaultModule
+import izumi.distage.effect.DefaultModule2
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppShutdownStrategy._
@@ -17,7 +17,7 @@ import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModules[F], artifact: IzArtifactMaterializer) {
+abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModule[F], artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
@@ -61,14 +61,14 @@ abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModules[F
 
 object RoleAppMain {
 
-  abstract class LauncherF[F[_]: TagK: LiftIO: DefaultModules](
+  abstract class LauncherF[F[_]: TagK: LiftIO: DefaultModule](
     shutdownExecutionContext: ExecutionContext = ExecutionContext.global
   )(implicit artifact: IzArtifactMaterializer
   ) extends RoleAppMain[F] {
     override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(shutdownExecutionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: DefaultModules2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 

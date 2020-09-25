@@ -129,13 +129,14 @@ object ModuleBase {
     }
 
     private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding]): Set[Binding] = {
-      val existingIndex = existing.map(b => b.key -> b).toMultimap
-      val newIndex = overriding.map(b => b.key -> b).toMultimap
+      val existingIndex = existing.iterator.map(b => b.key -> b).toMutableMultimap
+      val newIndex = overriding.iterator.map(b => b.key -> b).toMutableMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
-      mergedKeys.flatMap {
-        k => newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
-      }
+      mergedKeys
+        .iterator.flatMap {
+          k => newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
+        }.toSet
     }
   }
 

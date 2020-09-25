@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.TagK
 import io.github.classgraph.ClassGraph
-import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
@@ -72,7 +72,7 @@ object ScalatestInitWorkaround {
 
 abstract class DistageScalatestTestSuiteRunner[F[_]](
   implicit override val tagMonoIO: TagK[F],
-  override val defaultModulesIO: DefaultModules[F],
+  override val defaultModulesIO: DefaultModule[F],
 ) extends TestSuite
   with AbstractDistageSpec[F] {
 

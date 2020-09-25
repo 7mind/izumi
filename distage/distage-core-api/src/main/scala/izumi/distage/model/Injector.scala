@@ -10,7 +10,7 @@ import izumi.reflect.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 
 /**
-  * Injector can create an object graph ([[Locator]]) from a [[ModuleBase]] or an [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector can create an object graph ([[Locator]]) from a [[izumi.distage.model.definition.ModuleDef]] or an [[izumi.distage.model.plan.OrderedPlan]]
   *
   * @see [[Planner]]
   * @see [[Producer]]

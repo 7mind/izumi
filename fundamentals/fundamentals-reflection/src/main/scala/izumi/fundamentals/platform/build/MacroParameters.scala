@@ -8,7 +8,7 @@ import scala.language.experimental.macros
   *
   * Add the following properties into your `build.sbt` to make this work:
   *
-  * <pre>
+  * {{{
   * scalacOptions ++= Seq(
   *   s"-Xmacro-settings:product-version=${version.value}",
   *   s"-Xmacro-settings:product-group=${organization.value}",
@@ -21,21 +21,21 @@ import scala.language.experimental.macros
   *   s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}",
   *   s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}",
   * )
-  * </pre>
+  * }}}
   *
   * Git snippets:
   *
-  * <pre>
+  * {{{
   *    gitDescribedVersion.value.map(v => s"-Xmacro-settings:git-described-version=$v"),
   *    gitHeadCommit.value.map(v => s"-Xmacro-settings:git-head-commit=$v"),
-  * </pre>
+  * }}}
   *
   * Or
   *
-  * <pre>
+  * {{{
   *   s"-Xmacro-settings:git-described-version=${gitDescribedVersion.value.getOrElse("")}",
   *   s"-Xmacro-settings:git-head-commit=${gitHeadCommit.value.getOrElse("")}",
-  * </pre>
+  * }}}
   */
 object MacroParameters {
   def scalaVersion(): Option[String] = macro MacroParametersImpl.scalaVersionMacro

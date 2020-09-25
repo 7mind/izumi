@@ -201,7 +201,7 @@ resources.toSeq.reverse.foreach(_.stop())
 ```
 
 Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies.
-Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined @ref[Sets](basics.md#set-bindings).
+Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindings).
 e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.
 When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 

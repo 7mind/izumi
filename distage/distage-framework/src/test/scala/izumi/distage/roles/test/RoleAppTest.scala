@@ -9,7 +9,7 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
-import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.DefaultModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
@@ -160,7 +160,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         make[TestResource[IO]].from[IntegrationResource0[IO]]
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ probe ++ DefaultModules[IO].modules.merge
+      } ++ probe ++ DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
@@ -196,7 +196,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         }
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ probe ++ DefaultModules[IO].modules.merge
+      } ++ probe ++ DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         PlanningOptions(),
@@ -235,7 +235,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           .ref[TestResource[Identity] with AutoCloseable]
         make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
-      } ++ DefaultModules[Identity].modules.merge ++ DefaultModules[IO].modules.merge
+      } ++ DefaultModule[Identity] ++ DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](

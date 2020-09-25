@@ -60,6 +60,7 @@ object TestEnvironment {
 
   final case class PreparedTest[F[_]](
     test: DistageTest[F],
+    appModule: Module,
     testPlan: OrderedPlan,
     activationInfo: ActivationInfo,
     activation: Activation,

@@ -316,7 +316,7 @@ class PlannerDefaultImpl(
         case (successor, node) =>
           (successor.key, node.meta)
       }
-      .toMultimap
+      .toMutableMultimap
 
     sets
       .collect {

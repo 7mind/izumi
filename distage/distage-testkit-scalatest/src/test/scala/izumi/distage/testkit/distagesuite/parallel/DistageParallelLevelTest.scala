@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.{DIKey, TagK}
-import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.{DefaultModule, DefaultModule2}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
@@ -22,7 +22,7 @@ object DistageParallelLevelTest {
   val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModules](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
+abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
   private[this] val maxSuites = 3
   private[this] val maxTests = 2
   private[this] val maxTestsOverSuites = maxTests * maxSuites
@@ -78,9 +78,7 @@ final class DistageParallelLevelTestZIO2 extends DistageParallelLevelTest[Task](
 final class DistageParallelLevelTestZIO3 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO4 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO5 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter) {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
-}
+final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 
 final class DistageParallelLevelTestMonixBIO1 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
 final class DistageParallelLevelTestMonixBIO2 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)

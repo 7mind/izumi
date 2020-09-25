@@ -72,7 +72,7 @@ object Docker {
 
   /**
     * Parameters that define the behavior of this docker container,
-    * Will be interpreted by [[ContainerResource]]
+    * Will be interpreted by [[izumi.distage.docker.ContainerResource]]
     *
     * @param image    Docker Image to use
     *
@@ -168,7 +168,7 @@ object Docker {
     implicit val diConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.deriveFromPureconfigConfigReader
 
     val defaultReusePolicy: DockerReusePolicy = {
-      DockerSupportProperties
+      DebugProperties
         .`izumi.distage.docker.reuse`.strValue()
         .fold[DockerReusePolicy](DockerReusePolicy.ReuseEnabled)(parseReusePolicy)
     }

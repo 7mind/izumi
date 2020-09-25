@@ -2,7 +2,8 @@ package izumi.distage.effect.modules
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
-import izumi.functional.bio.{BIO, BIOApplicative, BIOAsync, BIOTemporal}
+import izumi.functional.bio.{BIO, BIOApplicative, BIOAsync, BIOFork, BIOPrimitives, BIORunner, BIOTemporal, SyncSafe2}
+import izumi.functional.mono.SyncSafe
 import izumi.reflect.TagKK
 
 /** Any `BIO` effect type support for `distage` resources, effects, roles & tests.
@@ -12,10 +13,13 @@ import izumi.reflect.TagKK
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
   *
-  * Depends on `make[BIO[F]]`, `make[BIOApplicative[F]]`, `make[BIOAsync[F]]`, `make[BIOTemporal[F]]`, `make[BIORunner[F]]`
+  * Depends on `make[BIOAsync[F]]`, `make[BIOTemporal[F]]`, `make[BIORunner[F]]`
   */
 class PolymorphicBIODIEffectModule[F[+_, +_]: TagKK] extends ModuleDef {
-  make[DIEffectRunner2[F]].from[DIEffectRunner.BIOImpl[F]]
+  include(PolymorphicBIOTypeclassesModule[F])
+
+  make[DIEffectRunner2[F]]
+    .from[DIEffectRunner.BIOImpl[F]]
 
   make[DIEffect2[F]].from {
     DIEffect.fromBIO(_: BIO[F])
@@ -25,5 +29,28 @@ class PolymorphicBIODIEffectModule[F[+_, +_]: TagKK] extends ModuleDef {
   }
   make[DIEffectAsync2[F]].from {
     DIEffectAsync.fromBIOTemporal(_: BIOAsync[F], _: BIOTemporal[F])
+  }
+  make[SyncSafe2[F]].from {
+    SyncSafe.fromBIO(_: BIO[F])
+  }
+}
+
+object PolymorphicBIODIEffectModule extends ModuleDef {
+  @inline def apply[F[+_, +_]: TagKK]: PolymorphicBIODIEffectModule[F] = new PolymorphicBIODIEffectModule
+
+  /**
+    * Make [[PolymorphicBIODIEffectModule]], binding the required dependencies in place to values from implicit scope
+    *
+    * `make[BIOFork[F]]` and `BIOPrimitives[F]` are not required by [[PolymorphicBIODIEffectModule]]
+    * but are added for completeness
+    */
+  def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {
+    include(PolymorphicBIODIEffectModule[F])
+
+    addImplicit[BIOAsync[F]]
+    addImplicit[BIOFork[F]]
+    addImplicit[BIOTemporal[F]]
+    addImplicit[BIOPrimitives[F]]
+    addImplicit[BIORunner[F]]
   }
 }

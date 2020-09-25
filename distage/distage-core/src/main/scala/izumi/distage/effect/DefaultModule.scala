@@ -3,18 +3,39 @@ package izumi.distage.effect
 import izumi.distage.effect.modules._
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.functional.bio.{BIOAsync, BIOFork, BIOPrimitives, BIORunner, BIOTemporal}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.{TagK, TagKK}
 import monix.execution.Scheduler
 
-final case class DefaultModules[F[_]](modules: Seq[Module]) extends AnyVal
+/**
+  * Implicitly available effect type support for `distage` resources, effects, roles & tests.
+  *
+  * Automatically provides default runtime environments & typeclasses instances for effect types.
+  * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
+  *
+  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
+  * - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
+  *
+  * Currently provides instances for
+  *   - `zio`
+  *   - `monix-bio`
+  *   - `monix`
+  *   - `cats-effect` IO
+  *   - `Identity`
+  *   - Any `F[_]` with `cats-effect` instances
+  *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
+  *   - Any `F[_]` with [[izumi.distage.model.effect.DIEffect]] instances
+  */
+final case class DefaultModule[F[_]](module: Module) extends AnyVal
 
-object DefaultModules extends LowPriorityDefaultModulesInstances1 {
-  @inline def apply[F[_]: DefaultModules](implicit d: DummyImplicit): DefaultModules[F] = implicitly
+object DefaultModule extends LowPriorityDefaultModulesInstances1 {
+  @inline def apply[F[_]](implicit modules: DefaultModule[F], d: DummyImplicit): Module = modules.module
 
-  def empty[F[_]]: DefaultModules[F] = DefaultModules(Seq.empty)
+  def empty[F[_]]: DefaultModule[F] = DefaultModule(Module.empty)
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -29,8 +50,8 @@ object DefaultModules extends LowPriorityDefaultModulesInstances1 {
     implicit
     @unused ensureCatsEffectOnClasspath: `cats.effect.IO`[K],
     @unused l: `zio.ZIO`[ZIO],
-  ): DefaultModules2[ZIO[R, ?, ?]] = {
-    DefaultModules(Seq(ZIODIEffectModule, ZIOCatsTypeclassesModule))
+  ): DefaultModule2[ZIO[R, ?, ?]] = {
+    DefaultModule(ZIODIEffectModule ++ ZIOCatsTypeclassesModule)
   }
 
 }
@@ -43,8 +64,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModules2[ZIO[R, ?, ?]] = {
-    DefaultModules(Seq(ZIODIEffectModule))
+  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
+    DefaultModule(ZIODIEffectModule)
   }
 
   /**
@@ -62,8 +83,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     @unused l3: `monix.bio.IO.Options`[Opts],
     s: S = Scheduler.global,
     opts: Opts = monix.bio.IO.defaultOptions,
-  ): DefaultModules2[BIO] = {
-    DefaultModules(Seq(MonixBIODIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.bio.IO.Options])))
+  ): DefaultModule2[BIO] = {
+    DefaultModule(MonixBIODIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.bio.IO.Options]))
   }
 
   /**
@@ -81,8 +102,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     @unused l3: `monix.eval.Task.Options`[Opts],
     s: S = Scheduler.global,
     opts: Opts = monix.eval.Task.defaultOptions,
-  ): DefaultModules[monix.eval.Task] = {
-    DefaultModules(Seq(MonixDIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.eval.Task.Options])))
+  ): DefaultModule[Task] = {
+    DefaultModule(MonixDIEffectModule(s.asInstanceOf[Scheduler], opts.asInstanceOf[monix.eval.Task.Options]))
   }
 
   /**
@@ -91,19 +112,19 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModules[IO] = {
-    DefaultModules(Seq(CatsDIEffectModule))
+  implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
+    DefaultModule(CatsDIEffectModule)
   }
 
-  implicit final def forIdentity: DefaultModules[Identity] = {
-    DefaultModules(Seq(IdentityDIEffectModule))
+  implicit final def forIdentity: DefaultModule[Identity] = {
+    DefaultModule(IdentityDIEffectModule)
   }
 
 }
 
 sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
-  implicit final def fromBIO[F[+_, +_]: TagKK]: DefaultModules2[F] = {
-    DefaultModules(Seq(???))
+  implicit final def fromBIO[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: DefaultModule2[F] = {
+    DefaultModule(PolymorphicBIODIEffectModule.withImplicits[F])
   }
 }
 
@@ -124,22 +145,22 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
     T0: Timer[F],
     P0: Parallel[F],
     C0: ContextShift[F],
-  ): DefaultModules[F] = {
+  ): DefaultModule[F] = {
     implicit val F: cats.effect.ConcurrentEffect[F] = F0.asInstanceOf[cats.effect.ConcurrentEffect[F]]
     implicit val T: cats.effect.Timer[F] = T0.asInstanceOf[cats.effect.Timer[F]]
     implicit val P: cats.Parallel[F] = P0.asInstanceOf[cats.Parallel[F]]
     implicit val C: cats.effect.ContextShift[F] = C0.asInstanceOf[cats.effect.ContextShift[F]]
-    DefaultModules(Seq(PolymorphicCatsDIEffectModule.withImplicits[F]))
+    DefaultModule(PolymorphicCatsDIEffectModule.withImplicits[F])
   }
 }
 
 sealed trait LowPriorityDefaultModulesInstances4 {
-  implicit final def fromDIEffect[F[_]: TagK: DIEffect: DIEffectAsync: DIEffectRunner]: DefaultModules[F] = {
-    DefaultModules(Seq(new ModuleDef {
+  implicit final def fromDIEffect[F[_]: TagK: DIEffect: DIEffectAsync: DIEffectRunner]: DefaultModule[F] = {
+    DefaultModule(new ModuleDef {
       addImplicit[DIEffect[F]]
       addImplicit[DIEffectAsync[F]]
       addImplicit[DIApplicative[F]]
       addImplicit[DIEffectRunner[F]]
-    }))
+    })
   }
 }

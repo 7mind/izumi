@@ -45,7 +45,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
   }
 
   /**
-    * Same as [[unresolvedImports]], but throws an [[InvalidPlanException]] if there are unresolved imports
+    * Same as [[unresolvedImports]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
     *
     * @throws InvalidPlanException
     */

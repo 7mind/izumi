@@ -17,8 +17,6 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
 
 /**
   * An unordered plan.
-  *
-  * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(
   steps: Vector[SemiplanOp],

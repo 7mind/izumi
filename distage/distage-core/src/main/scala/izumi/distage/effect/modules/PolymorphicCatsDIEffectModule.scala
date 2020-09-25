@@ -11,9 +11,9 @@ import izumi.functional.mono.SyncSafe
   * For any `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
   *
   * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds [[cats.effect]] typeclass instances for `F[_]`
+  * - Adds `cats-effect` typeclass instances for `F[_]`
   *
-  * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]`
+  * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
   */
 class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
   include(PolymorphicCatsTypeclassesModule[F])
@@ -42,7 +42,11 @@ class PolymorphicCatsDIEffectModule[F[_]: TagK] extends ModuleDef {
 object PolymorphicCatsDIEffectModule {
   @inline def apply[F[_]: TagK]: PolymorphicCatsDIEffectModule[F] = new PolymorphicCatsDIEffectModule[F]
 
-  /** Make [[PolymorphicCatsDIEffectModule]], binding the required dependencies in place to values from implicit scope */
+  /**
+    * Make [[PolymorphicCatsDIEffectModule]], binding the required dependencies in place to values from implicit scope
+    *
+    * `make[ContextShift[F]]` is not required by [[PolymorphicCatsDIEffectModule]] but is added for completeness
+    */
   def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Timer: ContextShift]: ModuleDef = new ModuleDef {
     addImplicit[ConcurrentEffect[F]]
     addImplicit[Parallel[F]]

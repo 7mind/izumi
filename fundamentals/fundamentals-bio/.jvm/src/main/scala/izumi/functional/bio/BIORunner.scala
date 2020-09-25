@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 
 import izumi.functional.bio.BIOExit.ZIOExit
+import monix.bio
+import monix.execution.Scheduler
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, IO, Runtime, Supervisor}
@@ -38,6 +40,23 @@ object BIORunner {
 
   def newZioTimerPool(): ScheduledExecutorService = {
     Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
+  }
+
+  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): BIORunner[monix.bio.IO] = new MonixBIORunner(s, opts)
+
+  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends BIORunner[monix.bio.IO] {
+    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
+      io.leftMap(BIOBadBranch(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+    }
+    override def unsafeRunSync[E, A](io: => bio.IO[E, A]): BIOExit[E, A] = {
+      io.sandboxBIOExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+    }
+    override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
+      io.runAsyncOpt(exit => callback(BIOExit.MonixExit.toBIOExit(exit)))(s, opts); ()
+    }
+    override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[BIOExit[E, A]] = {
+      io.sandboxBIOExit.runToFutureOpt(s, opts, implicitly)
+    }
   }
 
   sealed trait FailureHandler

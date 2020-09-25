@@ -17,7 +17,7 @@ import scala.language.implicitConversions
   * General options:
   *
   * @param pluginConfig          Source of module definitions from which to build object graphs for each test.
-  *                              Changes to [[PluginConfig]] that alter implementations of components in [[memoizationRoots]]
+  *                              Changes to [[izumi.distage.plugins.PluginConfig]] that alter implementations of components in [[memoizationRoots]]
   *                              OR their dependencies will cause the test to execute in a new memoization environment,
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *                              Components specified in `memoizationRoots` will be memoized only for the tests in the same memoization environment.
@@ -64,8 +64,8 @@ import scala.language.implicitConversions
   *
   * Other options, Tests with different other options will run in distinct memoization environments:
   *
-  * @param configBaseName        Search for config in HOCON resource files with names `$configBaseName.conf`,
-  *                              `$configBaseName-reference.conf`, `$configBaseName-reference-dev.conf`
+  * @param configBaseName        Search for config in HOCON resource files with names `\$configBaseName.conf`,
+  *                              `\$configBaseName-reference.conf`, `\$configBaseName-reference-dev.conf`
   *                              (see [[izumi.distage.framework.services.ConfigLoader]]
   *
   * @param configOverrides       Overriding definitions on top of main loaded config, default `None`
@@ -120,7 +120,7 @@ object TestConfig {
       *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
       *  you cannot specify multiple axis values for _the same_ axis on bindings.
       *
-      *  @see [[MutationResolver.ActivationChoices#allValid]]
+      *  @see [[izumi.fundamentals.graphs.tools.mutations.ActivationChoices#allValid]]
       */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
       def activatedSection(axisValues: Set[AxisValue], activation: Activation): Boolean = {

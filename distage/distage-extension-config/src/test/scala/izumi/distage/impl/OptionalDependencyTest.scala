@@ -3,7 +3,7 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import distage.DIResource
-import izumi.distage.effect.DefaultModules
+import izumi.distage.effect.DefaultModule
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.DIEffect
 import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
@@ -45,14 +45,14 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "Using DefaultModules" in {
-    def getDefaultModules[F[_]: DefaultModules]: DefaultModules[F] = DefaultModules[F]
-    def getDefaultModulesOrEmpty[F[_]](implicit m: DefaultModules[F] = DefaultModules.empty[F]): DefaultModules[F] = m
+    def getDefaultModules[F[_]: DefaultModule]: DefaultModule[F] = implicitly
+    def getDefaultModulesOrEmpty[F[_]](implicit m: DefaultModule[F] = DefaultModule.empty[F]): DefaultModule[F] = m
 
     val defaultModules = getDefaultModules
-    assert((defaultModules: DefaultModules[Identity]).getClass == DefaultModules.forIdentity.getClass)
+    assert((defaultModules: DefaultModule[Identity]).getClass == DefaultModule.forIdentity.getClass)
 
     val empty = getDefaultModulesOrEmpty[Option]
-    assert(empty.modules.isEmpty)
+    assert(empty.module.bindings.isEmpty)
   }
 
   "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {

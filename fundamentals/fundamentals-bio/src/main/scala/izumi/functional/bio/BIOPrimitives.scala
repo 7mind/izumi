@@ -19,5 +19,5 @@ object BIOPrimitivesInstances extends BIOPrimitivesLowPriorityInstances {
 }
 
 sealed trait BIOPrimitivesLowPriorityInstances {
-  @inline implicit def BIOPrimitivesCats[F[+_, +_]: BIOAsync: BIOFork]: BIOPrimitives[F] = new BIOPrimitivesCats[F]
+  @inline implicit def BIOPrimitivesFromCatsPrimitives[F[+_, +_]: BIOAsync: BIOFork]: BIOPrimitives[F] = new BIOPrimitivesCats[F]
 }

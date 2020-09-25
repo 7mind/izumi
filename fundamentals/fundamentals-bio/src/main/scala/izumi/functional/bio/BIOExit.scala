@@ -129,6 +129,13 @@ object BIOExit {
       }
     }
 
+    @inline def toBIOExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): BIOExit[E, A] = {
+      exit match {
+        case Left(error) => fromMonixCause(error)
+        case Right(value) => Success(value)
+      }
+    }
+
     @inline def fromMonixCause[E](cause: bio.Cause[E]): BIOExit.Failure[E] = {
       cause match {
         case bio.Cause.Error(value) => BIOExit.Error(value, Trace.empty)

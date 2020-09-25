@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 object ZIOCatsTypeclassesModule extends ZIOCatsTypeclassesModule
 
 /**
-  * Adds [[cats.effect]] typeclass instances for ZIO
+  * Adds `cats-effect` typeclass instances for ZIO
   *
   * Depends on [[ZIODIEffectModule]]
   */

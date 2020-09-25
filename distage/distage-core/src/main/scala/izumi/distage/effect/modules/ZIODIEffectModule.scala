@@ -69,6 +69,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOPanic3[ZIO]]
   addImplicit[BIO3[ZIO]]
   addImplicit[BIOParallel3[ZIO]]
+  addImplicit[BIOConcurrent3[ZIO]]
   addImplicit[BIOAsync3[ZIO]]
   make[BIOTemporal3[ZIO]].from {
     implicit r: zio.clock.Clock =>
@@ -91,6 +92,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOPanic[IO]]
   addImplicit[BIO[IO]]
   addImplicit[BIOParallel[IO]]
+  addImplicit[BIOConcurrent[IO]]
   addImplicit[BIOAsync[IO]]
   make[BIOTemporal[IO]].from {
     implicit r: zio.clock.Clock =>
@@ -104,18 +106,6 @@ trait ZIODIEffectModule extends ModuleDef {
   make[Runtime[Any]].from((_: ZIORunner).runtime)
 
   make[TracingConfig].fromValue(TracingConfig.enabled)
-  // FIXME: depends on IzLogger ???
-//  make[FailureHandler].from {
-//    logger: IzLogger =>
-//      FailureHandler.Custom {
-//        case BIOExit.Error(error, trace) =>
-//          logger.warn(s"Fiber errored out due to unhandled $error $trace")
-//        case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
-//          logger.trace(s"Fiber interrupted with $interrupt $trace")
-//        case BIOExit.Termination(defect, _, trace) =>
-//          logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
-//      }
-//  }
   make[ZIORunner].from {
     (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
       BIORunner.createZIO(

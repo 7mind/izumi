@@ -69,7 +69,7 @@ trait Locator {
     *
     * Works similarly to provider bindings.
     *
-    * @see [[Functoid]]
+    * @see [[izumi.distage.model.providers.Functoid]]
     */
   final def run[T](function: Functoid[T]): T = {
     val fn = function.get

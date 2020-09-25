@@ -110,7 +110,7 @@ object `monix.bio.IO` {
 
 final abstract class `monix.bio.IO.Options`[A]
 object `monix.bio.IO.Options` {
-  @inline implicit final def get: `monix.eval.Task.Options`[monix.bio.IO.Options] = null
+  @inline implicit final def get: `monix.bio.IO.Options`[monix.bio.IO.Options] = null
 }
 
 // monix
