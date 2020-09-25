@@ -29,6 +29,7 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
+import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -185,10 +186,20 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     val orderedPlans = if (env.memoizationRoots.keys.nonEmpty) {
-      env.memoizationRoots.keys.toList.sortBy(_._1).map {
-        case (_, keys) =>
-          prepareSharedPlan(envKeys, runtimeKeys, keys.getActiveKeys(env.activation), env.activation, injector, strengthenedAppModule)
-      }
+      // we need to create plans for each level of memoization
+      // every duplicated key will be removed
+      // every empty memoization level (after keys filtering) will be removed
+      env
+        .memoizationRoots.keys.toList.sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
+          case ((acc, previousKeys), (_, keys)) =>
+            val filteredKeys = keys.getActiveKeys(env.activation) -- previousKeys
+            if (filteredKeys.nonEmpty) {
+              val plan = prepareSharedPlan(envKeys, runtimeKeys, filteredKeys, env.activation, injector, strengthenedAppModule)
+              (acc ++ List(plan), previousKeys ++ filteredKeys)
+            } else {
+              acc -> previousKeys
+            }
+        }._1
     } else {
       List(prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule))
     }
@@ -652,9 +663,9 @@ object DistageTestRunner {
           val childTree = childs.getOrElse(plan, new MemoizationTree[F].tap(childs.put(plan, _)))
           childTree.addTests(tail, preparedTests)
         case Nil =>
-          nodeTests.addAll(preparedTests)
+          nodeTests.appendAll(preparedTests)
+          ()
       }
-      ()
     }
 
     @inline private def stateTraverse_[State](
@@ -664,13 +675,7 @@ object DistageTestRunner {
     )(stateAction: (State, Iterable[PreparedTest[F]]) => F[Unit]
     )(implicit F: DIEffect[F]
     ): F[Unit] = {
-      stateAcquire(initialState, thisPlan, allTests) {
-        state =>
-          for {
-            _ <- stateAction(state, nodeTests.toSeq)
-            _ <- F.traverse_(childs) { case (plan, other) => other.stateTraverse_(state, plan)(stateAcquire)(stateAction) }
-          } yield ()
-      }
+      stateAcquire(initialState, thisPlan, allTests)(stateTraverse(_)(stateAcquire)(stateAction))
     }
 
     /** Root node traverse. User should never call children node directly. */
@@ -680,11 +685,10 @@ object DistageTestRunner {
     )(stateAction: (State, Iterable[PreparedTest[F]]) => F[Unit]
     )(implicit F: DIEffect[F]
     ): F[Unit] = {
-      // Here we suppose that the user has access only to the root node.
-      // And due to the fact that every test env has at least a runtime shared plan, we assume that there are no tests without a shared plan at all.
-      // So we can neglect the tests list from the root.
-      assert(nodeTests.isEmpty, "Impossible happened, we have tests without a shared plan at all. Or memoization tree gets broken.")
-      F.traverse_(childs) { case (plan, other) => other.stateTraverse_(initialState, plan)(stateAcquire)(stateAction) }
+      for {
+        _ <- stateAction(initialState, nodeTests.toSeq)
+        _ <- F.traverse_(childs) { case (plan, other) => other.stateTraverse_(initialState, plan)(stateAcquire)(stateAction) }
+      } yield ()
     }
 
     @inline def allTests: Iterable[PreparedTest[F]] = {
