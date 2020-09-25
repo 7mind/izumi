@@ -187,27 +187,28 @@ object DIResource {
     liftF(acquire).flatten
   }
 
+  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+    make(acquire)(a => F.maybeSuspend(a.close()))
+  }
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
 
-  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
-    make(acquire)(a => F.maybeSuspend(a.close()))
-  }
-
-  @deprecated("renamed to fromAutoCloseable", "0.11")
-  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = fromAutoCloseable(acquire)
-
-  def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
-    makeSimple(acquire) {
+  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+    make(acquire) {
       es =>
-        if (!(es.isShutdown || es.isTerminated)) {
-          es.shutdown()
-          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-            es.shutdownNow().discard()
+        F.maybeSuspend {
+          if (!(es.isShutdown || es.isTerminated)) {
+            es.shutdown()
+            if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+              es.shutdownNow().discard()
+            }
           }
         }
     }
+  }
+  def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
+    fromExecutorService[Identity, A](acquire)
   }
 
   def pure[F[_], A](a: A)(implicit F: DIApplicative[F]): DIResource[F, A] = {
@@ -918,4 +919,7 @@ object DIResource {
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }
   }
+
+  @deprecated("renamed to fromAutoCloseable", "0.11")
+  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = fromAutoCloseable(acquire)
 }
