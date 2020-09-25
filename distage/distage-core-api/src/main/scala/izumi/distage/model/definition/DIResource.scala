@@ -559,15 +559,15 @@ object DIResource {
       evalMap[G, OuterResource](a => DIEffect[G].map(f(a))(_ => a))
 
     /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-    final def wrapAcquire[G[x] >: F[x], I2 >: InnerResource](f: (=> G[InnerResource]) => G[I2]): DIResourceBase[G, OuterResource] =
-      wrapAcquireImpl[G, OuterResource](this: this.type)(f(_).asInstanceOf[G[InnerResource]])
+    final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] =
+      wrapAcquireImpl[G, OuterResource](this: this.type)(f)
 
     /** Wrap release action of this resource in another effect, e.g. for logging purposes */
     final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] =
       wrapReleaseImpl[G, OuterResource](this: this.type)(f)
 
     final def beforeAcquire[G[x] >: F[x]: DIApplicative](f: => G[Unit]): DIResourceBase[G, OuterResource] =
-      wrapAcquire[G, InnerResource](acquire => DIApplicative[G].map2(f, acquire)((_, res) => res))
+      wrapAcquire[G](acquire => DIApplicative[G].map2(f, acquire)((_, res) => res))
     final def beforeRelease[G[x] >: F[x]: DIApplicative](f: InnerResource => G[Unit]): DIResourceBase[G, OuterResource] =
       wrapRelease[G]((release, res) => DIApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
