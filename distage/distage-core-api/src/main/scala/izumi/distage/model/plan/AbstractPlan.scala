@@ -41,11 +41,6 @@ final case class OrderedPlan(
   with OrderedPlanOps {
   /** Print while omitting package names for unambiguous types */
   override def toString: String = "\n" + (this: OrderedPlan).render()
-
-  def --(remove: Set[DIKey]): OrderedPlan = {
-    OrderedPlan(steps.filterNot(s => remove(s.target)), declaredRoots -- remove, topology)
-  }
-
 }
 
 object OrderedPlan extends OrderedPlanExtensions

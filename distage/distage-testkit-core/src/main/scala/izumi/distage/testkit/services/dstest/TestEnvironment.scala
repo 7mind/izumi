@@ -53,7 +53,7 @@ object TestEnvironment {
     envExec: EnvExecutionParams,
     integrationLogger: IzLogger,
     runtimePlan: OrderedPlan,
-    memoizatonInjector: Injector[Identity],
+    memoizationInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
     allStrengthenedKeys: Set[DIKey],
   )
