@@ -14,6 +14,7 @@ import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.launcher.RoleAppActivationParser
 import izumi.distage.staticinjector.plugins.ModuleRequirements
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.IzLogger
@@ -167,7 +168,8 @@ object StaticPluginCheckerMacro {
     val logger = IzLogger.NullLogger
 
     val bootstrap = new BootstrapLocator(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Proxy))
-    val injector = Injector.inherit(bootstrap)
+    // FIXME: StaticPluginChecker cannot retrieve DefaultModule[F]. It must acquire plan from the existing RoleLauncher or "PluginHolder" instead of doing the scanning on its own anyway
+    val injector = Injector.inherit[Identity](bootstrap)
 
     val activation: Activation = {
       val activationInfo = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(module)

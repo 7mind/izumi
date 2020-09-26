@@ -1,16 +1,18 @@
 package izumi.distage.framework.services
 
-import distage.{BootstrapModule, BootstrapModuleDef, Module}
+import distage.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.functional.bio.BIOExit
+import izumi.functional.bio.BIORunner.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.LogstageModule
 
@@ -60,9 +62,19 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      Seq(
-        IdentityDIEffectModule
-      )
+      new ModuleDef {
+        make[FailureHandler].from {
+          logger: IzLogger =>
+            FailureHandler.Custom {
+              case BIOExit.Error(error, trace) =>
+                logger.warn(s"Fiber errored out due to unhandled $error $trace")
+              case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
+                logger.trace(s"Fiber interrupted with $interrupt $trace")
+              case BIOExit.Termination(defect, _, trace) =>
+                logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
+            }
+        }
+      } :: Nil
     }
 
   }

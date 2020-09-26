@@ -1,12 +1,12 @@
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
-import izumi.distage.{constructors, model, planning}
+import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
 
-  override type Injector = model.Injector
+  override type Injector[F[_]] = model.Injector[F]
   override type Planner = model.Planner
   override type Producer = model.Producer
 
@@ -18,6 +18,15 @@ package object distage extends Distage {
 
   override type Locator = model.Locator
   override type LocatorRef = model.recursive.LocatorRef
+
+  override type DefaultModule[F[_]] = modules.DefaultModule[F]
+  override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
+
+  override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
+  override val DefaultModule2: modules.DefaultModule2.type = modules.DefaultModule2
+
+  override type DefaultModule3[F[_, _, _]] = modules.DefaultModule3[F]
+  override val DefaultModule3: modules.DefaultModule3.type = modules.DefaultModule3
 
   override type LocatorDef = model.definition.LocatorDef
 

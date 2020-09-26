@@ -1,7 +1,7 @@
 package izumi.distage
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase, ModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapModule, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter
@@ -10,10 +10,14 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.reflect.TagK
 
-class InjectorDefaultImpl(
+class InjectorDefaultImpl[F[_]](
   parentContext: Locator,
   parentFactory: InjectorFactory,
-) extends Injector {
+  defaultModule: Module,
+)(implicit
+  override protected[this] val F: DIEffect[F],
+  override protected[this] val tagK: TagK[F],
+) extends Injector[F] {
 
   private[this] val planner: Planner = parentContext.get[Planner]
   private[this] val interpreter: PlanInterpreter = parentContext.get[PlanInterpreter]
@@ -31,15 +35,11 @@ class InjectorDefaultImpl(
     planner.rewrite(module)
   }
 
-  override private[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizerFilter[F]): DIResourceBase[F, Locator] = {
-    produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
-  }
-
-  override private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](
+  override private[distage] def produceDetailedFX[G[_]: TagK: DIEffect](
     plan: OrderedPlan,
-    filter: FinalizerFilter[F],
-  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
-    interpreter.instantiate[F](plan, parentContext, filter)
+    filter: FinalizerFilter[G],
+  ): DIResourceBase[G, Either[FailedProvision[G], Locator]] = {
+    interpreter.instantiate[G](plan, parentContext, filter)
   }
 
   private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
@@ -48,9 +48,21 @@ class InjectorDefaultImpl(
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)
       make[Activation].fromValue(input.activation)
+      make[Module].named("defaultModule").fromValue(defaultModule)
       make[Bootloader]
     }
 
-    input.copy(bindings = input.bindings overridenBy selfReflectionModule)
+    input.copy(bindings =
+      ModuleBase.make(
+        ModuleBase
+          .overrideImpl(
+            ModuleBase.overrideImpl(
+              defaultModule.iterator,
+              input.bindings.iterator,
+            ),
+            selfReflectionModule.iterator,
+          ).toSet
+      )
+    )
   }
 }

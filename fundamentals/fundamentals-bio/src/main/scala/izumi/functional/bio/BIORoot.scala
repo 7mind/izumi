@@ -9,6 +9,7 @@ import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
 import scala.language.implicitConversions
+import izumi.fundamentals.orphans.`monix.bio.IO`
 
 trait BIORoot extends DivergenceHelper with PredefinedHelper
 
@@ -26,9 +27,12 @@ object BIORoot extends BIORootInstancesLowPriority1 {
   @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BIOFork: BIOFork3[FR]): BIOFork.type = BIOFork
   @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: BIOFunctor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 
-  implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](@unused private val FR0: BIOFunctor3[FR]) extends AnyVal {
+  implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](private val FR0: BIOFunctor3[FR]) extends AnyVal {
     @inline def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, ?], R, A])(implicit FR: BIOMonadAsk[FR]): FR[R, E, A] = FR.fromKleisli(k)
-    @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: BIOLocal[FR]): Kleisli[FR[Any, E, ?], R, A] = FR.toKleisli(fr)
+    @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: BIOLocal[FR]): Kleisli[FR[Any, E, ?], R, A] = {
+      val _ = FR0
+      FR.toKleisli(fr)
+    }
   }
 }
 
@@ -93,12 +97,10 @@ sealed trait BIORootInstancesLowPriority8 extends BIORootInstancesLowPriority9 {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
-  @inline implicit final def BIOMonix[A](implicit @unused M: _BIOAsyncMonixBIO[A]): Predefined.Of[A] = BIOAsyncMonix.asInstanceOf[Predefined.Of[A]]
+  // seems like it's because of the type lambda in `BIOAsync` definition
+  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[BIOAsync[MonixBIO]] =
+    BIOAsyncMonix.asInstanceOf[Predefined.Of[BIOAsync[MonixBIO]]]
 
-  final abstract class _BIOAsyncMonixBIO[A]
-  object _BIOAsyncMonixBIO {
-    @inline implicit final def get: _BIOAsyncMonixBIO[BIOAsync[monix.bio.IO]] = null
-  }
 }
 
 sealed trait BIORootInstancesLowPriority9 {

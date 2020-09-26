@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.62`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.62`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -15,6 +15,7 @@ object Izumi {
     val cats_effect = Version.VExpr("V.cats_effect")
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
+    val monix = Version.VExpr("V.monix")
     val monix_bio = Version.VExpr("V.monix_bio")
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
@@ -91,6 +92,7 @@ object Izumi {
     final val zio_interop_cats =
       Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_all = Seq(zio_core, zio_interop_cats)
+    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
     final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
@@ -270,10 +272,11 @@ object Izumi {
       final val language = ArtifactId("fundamentals-language")
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
+      final val orphans = ArtifactId("fundamentals-orphans")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
-      final val fundamentalsJsonCirce = ArtifactId("fundamentals-json-circe")
+      final val jsonCirce = ArtifactId("fundamentals-json-circe")
 
       final lazy val basics = Seq(
         platform,
@@ -387,18 +390,31 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++ Seq(
-          scala_java_time in Scope.Test.js
+          monix_bio in Scope.Optional.all,
+          scala_java_time in Scope.Test.js,
         ),
-        depends = Seq(Projects.fundamentals.language),
+        depends = Seq(
+          Projects.fundamentals.language,
+          Projects.fundamentals.orphans,
+        ),
         platforms = Targets.cross,
       ),
       Artifact(
-        name = Projects.fundamentals.fundamentalsJsonCirce,
+        name = Projects.fundamentals.jsonCirce,
         libs = circe ++ Seq(
           jawn in Scope.Compile.js,
           scala_reflect in Scope.Provided.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
+        platforms = Targets.cross,
+      ),
+      Artifact(
+        name = Projects.fundamentals.orphans,
+        libs = allMonadsOptional ++ Seq(
+          monix in Scope.Optional.all,
+          monix_bio in Scope.Optional.all,
+        ),
+        depends = Seq.empty,
         platforms = Targets.cross,
       ),
     ),
@@ -407,7 +423,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core, monix_bio, izumi_reflect)).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
@@ -426,7 +442,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = allMonadsTest ++ Seq(
+        libs = allMonadsOptional ++ Seq(
+          monix in Scope.Optional.all,
+          monix_bio in Scope.Optional.all,
+          zio_interop_cats in Scope.Optional.all,
+        ) ++ Seq(
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),
@@ -438,6 +458,7 @@ object Izumi {
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -462,7 +483,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all) ++ Seq(zio_interop_cats in Scope.Optional.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -484,7 +505,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
-        libs = allMonadsOptional ++ Seq(
+        libs = allMonadsOptional ++ allMonadsTest ++ Seq(
           scalamock in Scope.Test.all,
           scalatest.dependency in Scope.Compile.all,
         ),
@@ -511,7 +532,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq.empty,
-        depends = Seq(Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,

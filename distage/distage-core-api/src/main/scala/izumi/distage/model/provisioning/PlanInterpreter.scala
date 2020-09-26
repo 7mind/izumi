@@ -67,7 +67,7 @@ object PlanInterpreter {
       import izumi.fundamentals.platform.strings.IzString._
 
       DIEffect[F].fail {
-        new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)
+        new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed:${repr.niceList()}", null)
           .addAllSuppressed(failures.map(_.failure))
       }
     }

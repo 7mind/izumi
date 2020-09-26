@@ -1,7 +1,6 @@
 package izumi.distage.model.plan.impl
 
 import cats.Applicative
-import cats.kernel.Monoid
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
@@ -25,16 +24,6 @@ private[plan] object PlanCatsSyntaxImpl {
       }
   }
 
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    */
-  sealed abstract class CatsMonoid[K[_]]
-  object CatsMonoid {
-    @inline implicit final def get: CatsMonoid[Monoid] = null
-  }
   import cats.instances.vector._
   import cats.syntax.functor._
   import cats.syntax.traverse._

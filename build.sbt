@@ -576,7 +576,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
 
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .dependsOn(
-    `fundamentals-language` % "test->compile;compile->compile"
+    `fundamentals-language` % "test->compile;compile->compile",
+    `fundamentals-orphans` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -588,8 +589,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional
     )
   )
   .settings(
@@ -789,6 +790,111 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .disablePlugins(AssemblyPlugin)
 
+lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orphans"))
+  .settings(
+    libraryDependencies ++= Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
+      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "io.monix" %% "monix" % V.monix % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional
+    )
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
+    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
+    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
+    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}"
+    ),
+    testOptions in Test += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.12") => Seq(
+        "-Xsource:2.13",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Ypartial-unification",
+        "-Yno-adapted-args",
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified"
+      )
+      case (_, "2.13.3") => Seq(
+        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wunused:_",
+        "-Wvalue-discard",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.12.12") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (false, "2.13.3") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalaVersion := crossScalaVersions.value.head,
+    crossScalaVersions := Seq(
+      "2.13.3",
+      "2.12.12"
+    )
+  )
+  .disablePlugins(AssemblyPlugin)
+
 lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-reflection` % "test->compile;compile->compile",
@@ -804,7 +910,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
@@ -1013,10 +1118,13 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "io.monix" %% "monix" % V.monix % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "javax.inject" % "javax.inject" % "1" % Test
     )
   )
@@ -1132,6 +1240,26 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+      dir =>
+       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
+       def scalaDir(s: String) = file(dir.getPath + s)
+       (partialVersion match {
+         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
+         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
+         case None         => Seq.empty
+       })
+    },
+    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+      dir =>
+       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
+       def scalaDir(s: String) = file(dir.getPath + s)
+       (partialVersion match {
+         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
+         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
+         case None         => Seq.empty
+       })
+    },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
@@ -1550,10 +1678,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1773,7 +1899,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
     )
   )
@@ -1882,8 +2007,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
     )
@@ -1993,7 +2121,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
     )
   )
@@ -2408,6 +2535,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
+    `fundamentals-orphans` % "test->compile;compile->compile",
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core-proxy-cglib` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
@@ -2711,7 +2839,8 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     `fundamentals-reflection`,
     `fundamentals-functional`,
     `fundamentals-bio`,
-    `fundamentals-json-circe`
+    `fundamentals-json-circe`,
+    `fundamentals-orphans`
   )
 
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
@@ -2731,7 +2860,8 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     `fundamentals-reflection`,
     `fundamentals-functional`,
     `fundamentals-bio`,
-    `fundamentals-json-circe`
+    `fundamentals-json-circe`,
+    `fundamentals-orphans`
   )
 
 lazy val `distage` = (project in file(".agg/distage-distage"))

@@ -10,6 +10,7 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
 
 final case class TestEnvironment(
@@ -53,13 +54,14 @@ object TestEnvironment {
     integrationLogger: IzLogger,
     memoizationPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
-    memoizatonInjector: Injector,
+    memoizatonInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
     allStrengthenedKeys: Set[DIKey],
   )
 
   final case class PreparedTest[F[_]](
     test: DistageTest[F],
+    appModule: Module,
     testPlan: OrderedPlan,
     activationInfo: ActivationInfo,
     activation: Activation,

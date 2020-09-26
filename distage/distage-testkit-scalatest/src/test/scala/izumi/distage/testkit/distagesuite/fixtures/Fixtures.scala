@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.TagK
-import izumi.distage.effect.modules.{CatsDIEffectModule, MonixDIEffectModule, ZIODIEffectModule}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.StandardAxis.Mode
@@ -15,8 +14,6 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.Task
 
 import scala.collection.mutable
-
-object MonadPlugin extends PluginDef with CatsDIEffectModule with MonixDIEffectModule with ZIODIEffectModule
 
 object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]

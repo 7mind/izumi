@@ -8,6 +8,7 @@ import izumi.distage.framework.services._
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
@@ -42,13 +43,16 @@ import izumi.logstage.api.{IzLogger, Log}
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-class MainAppModule[F[_]: TagK](
+class MainAppModule[F[_]: TagK: DefaultModule](
   args: ArgV,
   additionalRoles: AdditionalRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
   appArtifact: IzArtifact,
 ) extends ModuleDef {
+  addImplicit[TagK[F]]
+  addImplicit[DefaultModule[F]]
+
   make[ArgV].fromValue(args)
 
   make[AdditionalRoles].fromValue(additionalRoles)
@@ -71,8 +75,6 @@ class MainAppModule[F[_]: TagK](
 
   many[LibraryReference]
   make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
-
-  addImplicit[TagK[F]]
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
 
@@ -201,8 +203,8 @@ class MainAppModule[F[_]: TagK](
   }
 
   make[Bootloader].named("roleapp").from {
-    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots")) =>
-      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation)
+    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots"), defaultModule: DefaultModule[F]) =>
+      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation, BootstrapModule.empty, defaultModule)
   }
 
   make[RoleAppPlanner[F]].from[RoleAppPlanner.Impl[F]]

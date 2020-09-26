@@ -72,12 +72,23 @@ import scala.collection.immutable.ListSet
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
 
   override final def bindings: Set[Binding] = freeze
+  override final def iterator: Iterator[Binding] = freezeIterator
 
   private[this] final def freeze: Set[Binding] = {
     // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    ListSet(retaggedIncludes ++ frozenState: _*)
-      .map(_.addTags(frozenTags))
-      .++(asIsIncludes)
+    // FIXME: remove ListSet
+    ListSet
+      .newBuilder.++= {
+        freezeIterator
+      }.result()
+  }
+  private[this] final def freezeIterator: Iterator[Binding] = {
+    val frozenTags0 = frozenTags
+    retaggedIncludes
+      .iterator
+      .++(frozenState.iterator)
+      .map(_.addTags(frozenTags0))
+      .++(asIsIncludes.iterator)
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
@@ -89,7 +100,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
     *
     * Useful for prototyping.
     */
-  final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
     _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
   }
 }
@@ -243,7 +254,7 @@ object ModuleDefDSL {
       *
       * The resource will be released when the [[izumi.distage.model.Locator]]
       * holding it is released. Typically, after `.use` is called on the result of
-      * [[izumi.distage.model.Producer.produceF]]
+      * [[izumi.distage.model.Injector#produceF]]
       *
       * You can create resources with [[DIResource.make]], by inheriting from [[DIResource]]
       * or by converting an existing [[cats.effect.Resource]]

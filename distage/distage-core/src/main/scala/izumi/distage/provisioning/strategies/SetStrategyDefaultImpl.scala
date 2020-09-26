@@ -46,7 +46,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }
 
-    val asSet = new OrderedSetShim[Any](newSet)
+    val asSet = new OrderedSetShim[Any](newSet.distinct)
     Seq(NewObjectOp.NewInstance(op.target, asSet))
   }
 }

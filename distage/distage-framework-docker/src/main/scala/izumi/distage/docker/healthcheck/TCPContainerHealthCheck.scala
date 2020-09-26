@@ -44,25 +44,21 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
 
     val errored = UnavailablePorts(
       bad
+        .iterator
         .map { case FailedPort(a, b, c) => (a, (b.maybeAvailable, c)) }
-        .toMultimap
-        .toSeq
-        .map {
+        .toMultimapView.map {
           case (dp, ap) =>
             (dp: DockerPort, ap.toList)
-        }
-        .toMap
+        }.toMap
     )
 
     val succeded = good
+      .iterator
       .map { case GoodPort(a, b) => (a, b) }
-      .toMultimap
-      .toSeq
-      .map {
+      .toMultimapView.map {
         case (dp, ap) =>
           (dp: DockerPort, NonEmptyList(ap.head, ap.tail))
-      }
-      .toMap
+      }.toMap
 
     NonEmptyMap.from(succeded) match {
       case Some(value) =>

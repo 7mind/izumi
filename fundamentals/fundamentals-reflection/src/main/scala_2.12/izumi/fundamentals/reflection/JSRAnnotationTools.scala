@@ -19,7 +19,7 @@ object JSRAnnotationTools {
       .collect {
         case a: u.AnnotationApi =>
           a.tree.children match {
-            case (select: u.Select) :: (value: u.AssignOrNamedArgApi) :: Nil =>
+            case (select: u.SelectApi) :: (value: u.AssignOrNamedArgApi) :: Nil =>
               (select.children.headOption, value.lhs, value.rhs) match {
                 case (Some(n: u.NewApi), i: u.IdentApi, v: u.LiteralApi) if v.value.value.isInstanceOf[String] && i.name.toString == "value" =>
                   n.children match {

@@ -4,8 +4,9 @@ import java.io.ByteArrayInputStream
 
 import distage.DIResource
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOApplicativeError3, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, BlockingIO, F}
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.modules.DefaultModule
+import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, F}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -43,6 +44,17 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     }
   }
 
+  "Using DefaultModules" in {
+    def getDefaultModules[F[_]: DefaultModule]: DefaultModule[F] = implicitly
+    def getDefaultModulesOrEmpty[F[_]](implicit m: DefaultModule[F] = DefaultModule.empty[F]): DefaultModule[F] = m
+
+    val defaultModules = getDefaultModules
+    assert((defaultModules: DefaultModule[Identity]).getClass == DefaultModule.forIdentity.getClass)
+
+    val empty = getDefaultModulesOrEmpty[Option]
+    assert(empty.module.bindings.isEmpty)
+  }
+
   "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
@@ -57,16 +69,25 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(x[Identity] == 1)
 
     trait SomeBIO[+E, +A]
-
     type SomeBIO3[-R, +E, +A] = R => SomeBIO[E, A]
-    implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
-    try threeTo2[SomeBIO3]
-    catch { case _: NullPointerException => }
 
     def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
       val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
       F.unit
     }
+
+    def optSearch[A](implicit a: A = null.asInstanceOf[A]) = a
+    final class optSearch1[C[_[_]]] { def find[F[_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+
+    locally {
+      implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
+      try threeTo2[SomeBIO3]
+      catch {
+        case _: NullPointerException =>
+      }
+    }
+
+    assert(new optSearch1[DIEffect].find == DIEffect.diEffectIdentity)
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }
@@ -82,7 +103,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     DIResource.makePair(Some((1, Some(()))))
 
     And("Can search for all hierarchy classes")
-    def optSearch[A >: Null](implicit a: A = null) = a
     optSearch[BIOFunctor[SomeBIO]]
     optSearch[BIOApplicative[SomeBIO]]
     optSearch[BIOMonad[SomeBIO]]
@@ -96,6 +116,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     optSearch[BIO[SomeBIO]]
     optSearch[BIOAsync[SomeBIO]]
     optSearch[BIOTemporal[SomeBIO]]
+    optSearch[BIOConcurrent[SomeBIO]]
     optSearch[BIOAsk[SomeBIO3]]
     optSearch[BIOMonadAsk[SomeBIO3]]
     optSearch[BIOProfunctor[SomeBIO3]]
@@ -105,10 +126,10 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     optSearch[BIOFork[SomeBIO]]
     optSearch[BIOPrimitives[SomeBIO]]
-    optSearch[BlockingIO[SomeBIO]]
+//    optSearch[BlockingIO[SomeBIO]] // hard to make searching this not require zio currently (`type ZIOWithBlocking` creates issue)
 
     And("`No More Orphans` type provider object is accessible")
-    LowPriorityDIEffectInstances._Sync.hashCode()
+    izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError("""
          def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
@@ -117,7 +138,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[NoClassDefFoundError] {
-      DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
+      DIEffect.fromCats[Option, DIResource[?[_], Int]](null, null)
     }
 
     And("Methods that mention cats types only in generics will error on call")

@@ -20,7 +20,7 @@ trait IncludesDSL {
     *
     * WON'T add global tags from [[TagsDSL#tag]] to included bindings.
     */
-  final protected def include(that: ModuleBase): Unit = discard {
+  final protected[this] def include(that: ModuleBase): Unit = discard {
     mutableAsIsIncludes += Include(that.bindings)
   }
 
@@ -28,7 +28,7 @@ trait IncludesDSL {
     *
     * WILL add global tags from [[TagsDSL#tag]] to included bindings.
     */
-  final protected def includeApplyTags(that: ModuleBase): Unit = discard {
+  final protected[this] def includeApplyTags(that: ModuleBase): Unit = discard {
     mutableRetaggedIncludes += IncludeApplyTags(that.bindings)
   }
 }

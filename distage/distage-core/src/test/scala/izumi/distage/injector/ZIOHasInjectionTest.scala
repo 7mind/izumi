@@ -76,7 +76,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val injector = mkNoCyclesInjector()
       val plan = injector.plan(PlannerInput.noGC(definition))
 
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated1 = context.get[TestClass2[Dep]]
       assert(instantiated1.isInstanceOf[TestClass2[Dep]])
@@ -103,7 +103,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val injector = mkNoCyclesInjector()
       val plan = injector.plan(PlannerInput.noGC(definition))
 
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
       assert(instantiated.isInstanceOf[TestClass2[Dep]])
       assert(instantiated.inner != null)
@@ -130,7 +130,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated = context.get[TestClass2[Dep]]("A")
       assert(instantiated.inner.isInstanceOf[DepA])
@@ -183,7 +183,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
       val injector = mkNoCyclesInjector()
       val plan = injector.plan(definition)
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
 
@@ -242,7 +242,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
       val injector = mkNoCyclesInjector()
       val plan = injector.plan(definition[ZIO])
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
 
@@ -284,7 +284,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = unsafeRun(injector.produceF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       assert(context.get[TestTrait].anyValDep != null)
       // AnyVal reboxing happened

@@ -1,6 +1,8 @@
 package izumi.distage.model.definition
 
 import izumi.distage.AbstractLocator
+import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
@@ -18,7 +20,6 @@ import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection._
-import izumi.distage.model.{Locator, LocatorMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.{Tag, TagK}
 

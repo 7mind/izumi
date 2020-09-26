@@ -5,8 +5,8 @@ import distage._
 import izumi.distage.compat.CatsResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
-import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.model.plan.Roots
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
@@ -27,7 +27,7 @@ object CatsResourcesTest {
 final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
-    def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
+    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.Sync`]() = ()
     y()
   }
 
@@ -42,8 +42,8 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       make[MyApp]
     }
 
-    Injector()
-      .produceF[IO](module, Roots.Everything).use {
+    Injector[IO]()
+      .produce(module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       }.unsafeRunSync()
@@ -72,7 +72,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
         fail()
     }
 
-    val injector = Injector()
+    val injector = Injector[Identity]()
     val plan = injector.plan(PlannerInput.noGC(definition ++ new ModuleDef {
       addImplicit[Bracket[IO, Throwable]]
     }))
@@ -92,7 +92,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       IO(assert(!i1.initialized && !i2.initialized))
     }
 
-    def produceSync[F[_]: TagK: Sync] = injector.produceF[F](plan)
+    def produceSync[F[_]: TagK: Sync: DefaultModule] = Injector[F]().produce(plan)
 
     val ctxResource = produceSync[IO]
 

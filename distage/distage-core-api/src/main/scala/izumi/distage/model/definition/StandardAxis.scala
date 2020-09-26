@@ -9,7 +9,7 @@ object StandardAxis {
     case object Test extends AxisValueDef
   }
 
-  @deprecated("Use StandardAxis.Mode instead", "0.11.0")
+  @deprecated("Use `distage.StandardAxis.Mode` instead", "0.11.0")
   final val Env = Mode
 
   /**

@@ -21,14 +21,16 @@ object RoleAppPlanner {
   final case class AppStartupPlans(
     runtime: OrderedPlan,
     app: TriSplittedPlan,
-    injector: Injector,
+    injector: Injector[Identity],
   )
 
   class Impl[F[_]: TagK](
     options: PlanningOptions,
     bsModule: BootstrapModule @Id("roleapp"),
-    logger: IzLogger,
     bootloader: Bootloader @Id("roleapp"),
+    logger: IzLogger,
+  )(implicit
+    defaultModule: DefaultModule[F]
   ) extends RoleAppPlanner[F] { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
@@ -38,7 +40,7 @@ object RoleAppPlanner {
     )
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {
-      new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, logger, bootloader)
+      new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, bootloader, logger)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {

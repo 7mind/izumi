@@ -14,6 +14,8 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
+import izumi.distage.modules.DefaultModule
+import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
@@ -30,7 +32,7 @@ import izumi.logstage.api.{IzLogger, Log}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class DistageTestRunner[F[_]: TagK](
+class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
   isTestSkipException: Throwable => Boolean,
 ) {
@@ -115,13 +117,14 @@ class DistageTestRunner[F[_]: TagK](
     val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
 
     // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-    val options = envExec.planningOptions
-    val provider = env.bootstrapFactory.makeModuleProvider[F](options, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
+    val provider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
 
-    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
-    val finalBsModule = BootstrapLocator.defaultBootstrap overridenBy bsModule
+    val finalBsModule = {
+      val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+      BootstrapLocator.defaultBootstrap overridenBy bsModule
+    }
 
-    val appModule = provider.appModules().merge overridenBy env.appModule
+    val appModule = IdentitySupportModule ++ DefaultModule[F] overridenBy provider.appModules().merge overridenBy env.appModule
 
     val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
@@ -153,7 +156,7 @@ class DistageTestRunner[F[_]: TagK](
         val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
         val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
-        PreparedTest(distageTest, plan, env.activationInfo, env.activation, planner)
+        PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
     val memoizationRoots = env.memoizationRoots.getActiveKeys(env.activation)
@@ -200,7 +203,7 @@ class DistageTestRunner[F[_]: TagK](
           // producing and verifying runtime plan
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
           planChecker.verify(runtimePlan)
-          memoizationInjector.produceF[Identity](runtimePlan).use {
+          memoizationInjector.produceCustomF[Identity](runtimePlan).use {
             runtimeLocator =>
               val runner = runtimeLocator.get[DIEffectRunner[F]]
               implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
@@ -232,16 +235,16 @@ class DistageTestRunner[F[_]: TagK](
   ): F[Unit] = {
     // shared plan
     planCheck.verify(plan.shared)
-    Injector.inherit(runtimeLocator).produceF[F](plan.shared).use {
+    Injector.inherit(runtimeLocator).produceCustomF[F](plan.shared).use {
       sharedLocator =>
         // integration plan
         planCheck.verify(plan.side)
-        Injector.inherit(sharedLocator).produceF[F](plan.side).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
           integrationSharedLocator =>
             withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
               // main plan
               planCheck.verify(plan.primary)
-              Injector.inherit(integrationSharedLocator).produceF[F](plan.primary).use {
+              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
                 mainSharedLocator =>
                   use(mainSharedLocator)
               }
@@ -323,8 +326,8 @@ class DistageTestRunner[F[_]: TagK](
     P: DIEffectAsync[F],
   ): F[Unit] = {
     val testsBySuite = testPlans.groupBy {
-      case PreparedTest(test, _, _, _, _) =>
-        val testId = test.meta.id
+      preparedTest =>
+        val testId = preparedTest.test.meta.id
         SuiteData(testId.suiteName, testId.suiteId, testId.suiteClassName)
     }
     // now we are ready to run each individual test
@@ -352,7 +355,7 @@ class DistageTestRunner[F[_]: TagK](
   )(preparedTest: PreparedTest[F]
   )(implicit F: DIEffect[F]
   ): F[Unit] = {
-    val PreparedTest(test, testPlan, activationInfo, activation, planner) = preparedTest
+    val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
 
     val locatorWithOverridenActivation: LocatorDef = new LocatorDef {
       // we override ActivationInfo & Activation because the test can have _different_ activation from the memoized part
@@ -378,6 +381,7 @@ class DistageTestRunner[F[_]: TagK](
       override val parent: Option[Locator] = Some(mainSharedLocator)
     }
 
+    // FIXME: activation in boostrap locator doesn't change much now
     val testInjector = Injector.inherit(locatorWithOverridenActivation)
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
@@ -387,12 +391,12 @@ class DistageTestRunner[F[_]: TagK](
       (res1 -- allSharedKeys, res2 -- allSharedKeys)
     }
 
-    val newAppModule = test.environment.appModule.drop(allSharedKeys)
+    val newAppModule = appModule.drop(allSharedKeys)
     val moduleKeys = newAppModule.keys
     // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
 //    val newRoots = testPlan.keys -- allSharedKeys // ++ allStrengthenedKeys.intersect(moduleKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ allStrengthenedKeys.intersect(moduleKeys)
-    val newTestPlan = testInjector.trisectByRoots(test.environment.activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
+    val newTestPlan = testInjector.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
@@ -412,9 +416,9 @@ class DistageTestRunner[F[_]: TagK](
     planChecker.verify(newTestPlan.primary)
 
     // we are ready to run the test, finally
-    testInjector.produceF[F](newTestPlan.shared).use {
+    testInjector.produceCustomF[F](newTestPlan.shared).use {
       sharedLocator =>
-        Injector.inherit(sharedLocator).produceF[F](newTestPlan.side).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
           integrationLocator =>
             withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
               proceedIndividual(test, newTestPlan.primary, integrationLocator)
@@ -446,7 +450,7 @@ class DistageTestRunner[F[_]: TagK](
     }
 
     doRecover(None) {
-      Injector.inherit(parent).produceF[F](testPlan).use {
+      Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
             val before = System.nanoTime()
@@ -572,7 +576,7 @@ object DistageTestRunner {
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     testPlans: Seq[PreparedTest[F]],
-    anyMemoizationInjector: Injector,
+    anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],

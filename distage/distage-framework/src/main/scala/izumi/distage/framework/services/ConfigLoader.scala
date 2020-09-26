@@ -20,15 +20,15 @@ import scala.util.{Failure, Success, Try}
 
 /**
   * Default config resources:
-  *   - $roleName.conf
-  *   - $roleName-reference.conf
-  *   - $roleName-reference-dev.conf
-  *   - application.conf
-  *   - application-reference.conf
-  *   - application-reference-dev.conf
-  *   - common.conf
-  *   - common-reference.conf
-  *   - common-reference-dev.conf
+  *   - `\$roleName.conf``
+  *   - `\$roleName-reference.conf`
+  *   - `\$roleName-reference-dev.conf`
+  *   - `application.conf`
+  *   - `application-reference.conf`
+  *   - `application-reference-dev.conf`
+  *   - `common.conf`
+  *   - `common-reference.conf`
+  *   - `common-reference-dev.conf`
   *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
   * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).

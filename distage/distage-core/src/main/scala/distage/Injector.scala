@@ -2,7 +2,9 @@ package distage
 
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.model.definition.BootstrapContextModule
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.recursive.Bootloader
+import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
 
 object Injector extends InjectorFactory {
@@ -13,18 +15,18 @@ object Injector extends InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def apply(overrides: BootstrapModule*): Injector = {
+  override def apply[F[_]: DIEffect: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
     bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]]
+    * Create a new Injector from a custom [[izumi.distage.model.definition.BootstrapContextModule]]
     *
     * @param bootstrapBase See [[BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+  override def apply[F[_]: DIEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
     bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
@@ -37,12 +39,12 @@ object Injector extends InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector = {
+  override def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
     bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]].
+    * Create a new Injector from a custom [[izumi.distage.model.definition.BootstrapContextModule]].
     * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
     * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
     *
@@ -51,25 +53,38 @@ object Injector extends InjectorFactory {
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+  override def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](
+    activation: Activation,
+    bootstrapBase: BootstrapContextModule,
+    overrides: BootstrapModule*
+  ): Injector[F] = {
     bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from results of a previous Injector's run
     *
-    * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
+    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  override def inherit(parent: Locator): Injector = {
-    new InjectorDefaultImpl(parent, this)
+  override def inherit[F[_]: DIEffect: TagK](parent: Locator): Injector[F] = {
+    new InjectorDefaultImpl(parent, this, Module.empty)
   }
 
-  override def bootloader(input: PlannerInput, activation: Activation = Activation.empty, bootstrapModule: BootstrapModule = BootstrapModule.empty): Bootloader = {
-    super.bootloader(input, activation, bootstrapModule)
+  override def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
+    new InjectorDefaultImpl(parent, this, defaultModule ++ IdentitySupportModule) // Identity support always on
+  }
+
+  override def bootloader[F[_]](
+    input: PlannerInput,
+    activation: Activation,
+    bootstrapModule: BootstrapModule,
+    defaultModule: DefaultModule[F],
+  ): Bootloader = {
+    super.bootloader(input, activation, bootstrapModule, defaultModule)
   }
 
   /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */
-  object Standard extends InjectorBootstrap(Cycles.Proxy)
+  def Standard: Injector.type = this
 
   /** Disable cglib proxies, allow only by-name parameters to resolve cycles */
   object NoProxies extends InjectorBootstrap(Cycles.Byname)
@@ -78,32 +93,45 @@ object Injector extends InjectorFactory {
   object NoCycles extends InjectorBootstrap(Cycles.Disable)
 
   private[Injector] sealed abstract class InjectorBootstrap(cycleChoice: Cycles.AxisValueDef) extends InjectorFactory {
-    override final def apply(overrides: BootstrapModule*): Injector = {
+    override final def apply[F[_]: DIEffect: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
       bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation, overrides.merge)
     }
 
-    override final def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+    override final def apply[F[_]: DIEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
       bootstrap(bootstrapBase, cycleActivation, overrides.merge)
     }
 
-    override final def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector = {
+    override final def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
       bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation ++ activation, overrides.merge)
     }
 
-    override final def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+    override final def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](
+      activation: Activation,
+      bootstrapBase: BootstrapContextModule,
+      overrides: BootstrapModule*
+    ): Injector[F] = {
       bootstrap(bootstrapBase, cycleActivation ++ activation, overrides.merge)
     }
 
-    override final def inherit(parent: Locator): Injector = {
-      new InjectorDefaultImpl(parent, this)
+    override final def inherit[F[_]: DIEffect: TagK](parent: Locator): Injector[F] = {
+      new InjectorDefaultImpl(parent, this, Module.empty)
+    }
+
+    override final def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
+      new InjectorDefaultImpl(parent, this, defaultModule)
     }
 
     private[this] def cycleActivation: Activation = Activation(Cycles -> cycleChoice)
   }
 
-  private[this] def bootstrap(bootstrapBase: BootstrapContextModule, activation: Activation, overrides: BootstrapModule): Injector = {
+  private[this] def bootstrap[F[_]: DIEffect: TagK: DefaultModule](
+    bootstrapBase: BootstrapContextModule,
+    activation: Activation,
+    overrides: BootstrapModule,
+  ): Injector[F] = {
     val bootstrapLocator = new BootstrapLocator(bootstrapBase.overridenBy(overrides), activation)
-    inherit(bootstrapLocator)
+    val defaultModules = DefaultModule[F] ++ IdentitySupportModule // Identity support always on
+    new InjectorDefaultImpl(bootstrapLocator, this, defaultModules)
   }
 
 }

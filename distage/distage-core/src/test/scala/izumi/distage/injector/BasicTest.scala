@@ -17,15 +17,20 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "maintain correct operation order" in {
     import BasicCase1._
-    val definition = PlannerInput.noGC(new ModuleDef {
-      make[TestClass]
-      make[TestDependency3]
-      make[TestDependency0].from[TestImpl0]
-      make[TestDependency1]
-      make[TestCaseClass]
-      make[LocatorDependent]
-      make[TestInstanceBinding].from(TestInstanceBinding())
-    })
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[TestClass]
+        make[TestDependency3]
+        make[TestDependency0].from[TestImpl0]
+        make[TestDependency1]
+        make[TestCaseClass]
+        make[LocatorDependent]
+        make[TestInstanceBinding].from(TestInstanceBinding())
+      },
+      Activation.empty,
+      DIKey[TestDependency1],
+      DIKey[LocatorDependent],
+    )
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -35,7 +40,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       injector.produce(plan).unsafeGet()
     }
 
-    assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/14 operations failed"))
+    assert(exc.getMessage.linesIterator.toList.head == "Provisioner stopped after 1 instances, 1/4 operations failed:")
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}

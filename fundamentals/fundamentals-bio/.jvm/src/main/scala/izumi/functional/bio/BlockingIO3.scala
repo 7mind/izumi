@@ -2,9 +2,10 @@ package izumi.functional.bio
 
 import java.util.concurrent.ThreadPoolExecutor
 
+import monix.execution.Scheduler
 import zio.blocking.Blocking
 import zio.internal.Executor
-import zio.{Has, IO, ZIO}
+import zio.{IO, ZIO}
 
 trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
 
@@ -16,10 +17,10 @@ trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
 
   /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes
     *
-    * If canceled, the task will be killed via [[Thread#interrupt]]
+    * If canceled, the task _MAY_ be killed via [[java.lang.Thread#interrupt]], there is no guarantee that this method may promptly,
+    * or ever, interrupt the enclosed task, and it may be legally implemented as an alias to [[syncBlocking]]
     *
-    * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[InterruptedException]]
-    * *
+    * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[java.lang.InterruptedException]]
     */
   def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
 }
@@ -32,10 +33,22 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
   def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
     val executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
-    val blocking: Blocking.Service = new Blocking.Service {
+    val blocking: zio.blocking.Blocking.Service = new zio.blocking.Blocking.Service {
       override val blockingExecutor: Executor = executor
     }
-    blockingIOZIO3Blocking(Has(blocking))
+    BlockingZIO3FromBlocking(blocking)
+  }
+
+  def BlockingZIO3FromBlocking(b: zio.blocking.Blocking.Service): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = b.blocking(f)
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
+  }
+
+  @inline final def BlockingMonixBIOFromScheduler(ioScheduler: Scheduler): BlockingIO[monix.bio.IO] = new BlockingIO[monix.bio.IO] {
+    override def shiftBlocking[R, E, A](f: monix.bio.IO[E, A]): monix.bio.IO[E, A] = f.executeOn(ioScheduler, forceAsync = true)
+    override def syncBlocking[A](f: => A): monix.bio.IO[Throwable, A] = shiftBlocking(monix.bio.IO.eval(f))
+    override def syncInterruptibleBlocking[A](f: => A): monix.bio.IO[Throwable, A] = syncBlocking(f)
   }
 
   @inline implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {

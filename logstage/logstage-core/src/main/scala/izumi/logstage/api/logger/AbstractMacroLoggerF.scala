@@ -7,7 +7,7 @@ import scala.language.experimental.macros
 
 trait AbstractMacroLoggerF[F[_]] { this: AbstractLogIO[F] =>
 
-  /** Aliases for [[logstage.AbstractLogIO#log]] that look better in Intellij */
+  /** Aliases for [[logstage.AbstractLogIO#log(entry:*]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacro[F]
   final def debug(message: String): F[Unit] = macro scDebugMacro[F]
   final def info(message: String): F[Unit] = macro scInfoMacro[F]

@@ -18,7 +18,7 @@ import scala.reflect.macros.blackbox
   *   sbt -Dizumi.debug.macro.distage.providermagnet=true compile
   * }}}
   *
-  * @see [[DebugProperties]]
+  * @see [[izumi.distage.constructors.DebugProperties]]
   */
 class FunctoidMacro(val c: blackbox.Context) {
 
