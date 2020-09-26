@@ -117,7 +117,7 @@ object Injector extends InjectorFactory {
       new InjectorDefaultImpl(parent, this, Module.empty)
     }
 
-    override def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
+    override final def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
       new InjectorDefaultImpl(parent, this, defaultModule)
     }
 

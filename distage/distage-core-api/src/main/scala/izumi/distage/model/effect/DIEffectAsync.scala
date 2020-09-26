@@ -24,7 +24,7 @@ trait DIEffectAsync[F[_]] {
 object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   def apply[F[_]: DIEffectAsync]: DIEffectAsync[F] = implicitly
 
-  implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
+  implicit lazy val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
       final val DIEffectAsyncIdentityThreadFactory = new NamedThreadFactory("dieffect-cached-pool", daemon = true)
@@ -66,6 +66,12 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     }
   }
 
+  private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
+    implicit val ec: ExecutionContext = ec0
+    val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
+    Await.result(future, Duration.Inf).toList
+  }
+
   implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
@@ -87,12 +93,6 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
         F.parTraverseN_(n)(l)(f)
       }
     }
-  }
-
-  private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-    implicit val ec: ExecutionContext = ec0
-    val future = Future.sequence(l.map(a => Future(scala.concurrent.blocking(f(a)))))
-    Await.result(future, Duration.Inf).toList
   }
 
   private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {

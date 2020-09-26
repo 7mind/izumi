@@ -1,17 +1,9 @@
 package izumi.distage.modules.support
 
-import java.util.concurrent.{Executors, ThreadPoolExecutor}
-
-import distage.Id
-import izumi.distage.model.definition.{DIResource, ModuleDef}
-import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.modules.platform.ZIOPlatformSupportModule
 import izumi.functional.bio._
-import zio.blocking.Blocking
-import zio.internal.Executor
-import zio.internal.tracing.TracingConfig
-import zio.{Has, IO, Runtime, ZIO}
-
-import scala.concurrent.ExecutionContext
+import zio.{Has, IO, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule
 
@@ -30,6 +22,7 @@ object ZIOSupportModule extends ZIOSupportModule
   */
 trait ZIOSupportModule extends ModuleDef {
   include(AnyBIO3SupportModule[ZIO])
+  include(ZIOPlatformSupportModule)
 
   addImplicit[BIOAsync3[ZIO]]
   make[BIOTemporal3[ZIO]].from {
@@ -39,46 +32,9 @@ trait ZIOSupportModule extends ModuleDef {
   addImplicit[BIOLocal[ZIO]]
   addImplicit[BIOFork3[ZIO]]
   addImplicit[BIOPrimitives3[ZIO]]
-  make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
-  make[BlockingIO[IO]].from { implicit B: BlockingIO3[ZIO] => BlockingIO[IO] }
 
   addImplicit[BIOTransZio[IO]]
 
-  make[BIORunner3[ZIO]].using[ZIORunner]
-
-  make[zio.blocking.Blocking].from(Has(_: Blocking.Service))
   make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
-
-  make[zio.blocking.Blocking.Service].from {
-    blockingPool: ThreadPoolExecutor @Id("zio.io") =>
-      new Blocking.Service {
-        override val blockingExecutor: Executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
-      }
-  }
   make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)
-
-  make[ZIORunner].from {
-    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
-      BIORunner.createZIO(
-        cpuPool = cpuPool,
-        handler = handler,
-        tracingConfig = tracingConfig,
-      )
-  }
-  make[TracingConfig].fromValue(TracingConfig.enabled)
-  make[FailureHandler].fromValue(FailureHandler.Default)
-  make[Runtime[Any]].from((_: ZIORunner).runtime)
-
-  make[ThreadPoolExecutor].named("zio.cpu").fromResource {
-    () =>
-      val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
-      DIResource.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
-  }
-  make[ThreadPoolExecutor].named("zio.io").fromResource {
-    () =>
-      DIResource.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
-  }
-
-  make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
-  make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
 }

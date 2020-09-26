@@ -26,7 +26,6 @@ trait MonixSupportModule extends ModuleDef {
 
   make[Scheduler].from(Scheduler.global)
   make[Task.Options].from(Task.defaultOptions)
-  make[Scheduler].named("io").from(Scheduler.io())
 
   make[ConcurrentEffect[Task]].from(Task.catsEffect(_: Scheduler, _: Task.Options))
   addImplicit[Parallel[Task]]

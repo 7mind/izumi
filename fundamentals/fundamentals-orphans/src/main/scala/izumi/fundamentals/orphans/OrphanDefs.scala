@@ -101,16 +101,6 @@ object `zio.ZIO` {
   @inline implicit final def get: `zio.ZIO`[zio.ZIO] = null
 }
 
-final abstract class `zio.Has`[K[_]]
-object `zio.Has` {
-  @inline implicit final def get: `zio.Has`[zio.Has] = null
-}
-
-final abstract class `zio.blocking.Blocking.Service`[A]
-object `zio.blocking.Blocking.Service` {
-  @inline implicit final def get: `zio.blocking.Blocking.Service`[zio.blocking.Blocking.Service] = null
-}
-
 // monix-bio
 
 final abstract class `monix.bio.IO`[K[_, _]]
