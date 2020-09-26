@@ -458,6 +458,7 @@ object Izumi {
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.distage.plugins,

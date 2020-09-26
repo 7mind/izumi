@@ -3,7 +3,6 @@ package izumi.distage.framework.services
 import distage.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
@@ -65,7 +64,7 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      IdentityDIEffectModule :: (defaultModules.module overridenBy new ModuleDef {
+      (defaultModules.module overridenBy new ModuleDef {
         make[FailureHandler].from {
           logger: IzLogger =>
             FailureHandler.Custom {

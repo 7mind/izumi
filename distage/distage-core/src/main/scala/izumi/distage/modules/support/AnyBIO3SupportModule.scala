@@ -1,6 +1,5 @@
 package izumi.distage.modules.support
 
-import izumi.distage.effect.modules.ZIODIEffectModule
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO3InstancesModule

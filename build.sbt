@@ -1240,6 +1240,26 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+      dir =>
+       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
+       def scalaDir(s: String) = file(dir.getPath + s)
+       (partialVersion match {
+         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
+         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
+         case None         => Seq.empty
+       })
+    },
+    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+      dir =>
+       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
+       def scalaDir(s: String) = file(dir.getPath + s)
+       (partialVersion match {
+         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
+         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
+         case None         => Seq.empty
+       })
+    },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"

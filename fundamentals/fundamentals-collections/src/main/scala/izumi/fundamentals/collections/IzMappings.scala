@@ -1,10 +1,14 @@
 package izumi.fundamentals.collections
 
 import scala.annotation.nowarn
+import scala.collection.compat._
 import scala.collection.mutable
 
 @nowarn("msg=deprecated")
+@nowarn("msg=Unused import")
 final class IzMappings[A, B](private val list: IterableOnce[(A, B)]) extends AnyVal {
+  import scala.collection.compat._
+
   def toMultimapMut: MutableMultiMap[A, B] = {
     list.iterator.foldLeft(new mutable.HashMap[A, mutable.Set[B]] with mutable.MultiMap[A, B]) {
       (acc, pair) =>
@@ -12,15 +16,11 @@ final class IzMappings[A, B](private val list: IterableOnce[(A, B)]) extends Any
     }
   }
 
-  @nowarn("msg=Unused import")
   def toMultimapView = {
-    import scala.collection.compat._
     toMultimapMut.view.mapValues(_.view)
   }
 
-  @nowarn("msg=Unused import")
   def toMultimap: ImmutableMultiMap[A, B] = {
-    import scala.collection.compat._
     toMultimapMut.view.mapValues(_.toSet).toMap
   }
 }

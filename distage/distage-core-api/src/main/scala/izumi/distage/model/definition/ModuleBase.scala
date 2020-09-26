@@ -135,7 +135,7 @@ object ModuleBase {
 
       mergedKeys
         .iterator.flatMap {
-          k => newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
+          k => newIndex.getOrElse[collection.Set[Binding]](k, existingIndex.getOrElse(k, Set.empty))
         }.toSet
     }
   }

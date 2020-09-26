@@ -78,8 +78,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     def optSearch[A](implicit a: A = null.asInstanceOf[A]) = a
     final class optSearch1[C[_[_]]] { def find[F[_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
-    final class optSearch2[C[_[_, _]]] { def find[F[_, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
-    final class optSearch3[C[_[_, _, _]]] { def find[F[_, _, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
 
     locally {
       implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
@@ -90,8 +88,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     }
 
     assert(new optSearch1[DIEffect].find == DIEffect.diEffectIdentity)
-    assert(new optSearch2[BIO].find == null)
-    assert(new optSearch3[BIO3].find == null)
 
     try DIEffect.fromBIO(null)
     catch { case _: NullPointerException => }
@@ -131,31 +127,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     optSearch[BIOFork[SomeBIO]]
     optSearch[BIOPrimitives[SomeBIO]]
     optSearch[BlockingIO[SomeBIO]]
-
-    assert(new optSearch2[BIOFunctor].find == null)
-    assert(new optSearch2[BIOApplicative].find == null)
-    assert(new optSearch2[BIOMonad].find == null)
-    assert(new optSearch2[BIOBifunctor].find == null)
-    assert(new optSearch2[BIOGuarantee].find == null)
-    assert(new optSearch2[BIOApplicativeError].find == null)
-    assert(new optSearch2[BIOError].find == null)
-    assert(new optSearch2[BIOBracket].find == null)
-    assert(new optSearch2[BIOPanic].find == null)
-    assert(new optSearch2[BIOParallel].find == null)
-    assert(new optSearch2[BIO].find == null)
-    assert(new optSearch2[BIOAsync].find == null)
-    assert(new optSearch2[BIOTemporal].find == null)
-    assert(new optSearch2[BIOConcurrent].find == null)
-    assert(new optSearch3[BIOAsk].find == null)
-    assert(new optSearch3[BIOMonadAsk].find == null)
-    assert(new optSearch3[BIOProfunctor].find == null)
-    assert(new optSearch3[BIOArrow].find == null)
-    assert(new optSearch3[BIOArrowChoice].find == null)
-    assert(new optSearch3[BIOLocal].find == null)
-//
-//    assert(new optSearch2[BIOFork].find == null)
-//    assert(new optSearch2[BIOPrimitives].find == null)
-//    assert(new optSearch2[BlockingIO].find == null)
 
     And("`No More Orphans` type provider object is accessible")
     izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()
