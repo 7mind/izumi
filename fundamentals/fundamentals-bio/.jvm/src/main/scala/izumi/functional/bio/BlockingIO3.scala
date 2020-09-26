@@ -5,7 +5,7 @@ import java.util.concurrent.ThreadPoolExecutor
 import monix.execution.Scheduler
 import zio.blocking.Blocking
 import zio.internal.Executor
-import zio.{Has, IO, ZIO}
+import zio.{IO, ZIO}
 
 trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
 
@@ -33,10 +33,16 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
   def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
     val executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
-    val blocking: Blocking.Service = new Blocking.Service {
+    val blocking: zio.blocking.Blocking.Service = new zio.blocking.Blocking.Service {
       override val blockingExecutor: Executor = executor
     }
-    blockingIOZIO3Blocking(Has(blocking))
+    BlockingZIO3FromBlocking(blocking)
+  }
+
+  def BlockingZIO3FromBlocking(b: zio.blocking.Blocking.Service): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = b.blocking(f)
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
   }
 
   @inline final def BlockingMonixBIOFromScheduler(ioScheduler: Scheduler): BlockingIO[monix.bio.IO] = new BlockingIO[monix.bio.IO] {

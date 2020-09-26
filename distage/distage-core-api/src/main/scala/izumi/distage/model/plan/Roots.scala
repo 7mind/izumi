@@ -22,7 +22,15 @@ import izumi.reflect.Tag
   * @see distage Roles      https://izumi.7mind.io/distage/distage-framework.html#roles
   * @see distage-testkit    https://izumi.7mind.io/distage/distage-testkit.html
   */
-sealed trait Roots
+sealed trait Roots {
+  def ++(that: Roots): Roots = {
+    (this, that) match {
+      case (Roots.Of(a), Roots.Of(b)) => Roots.Of(a ++ b)
+      case (Roots.Everything, _) => Roots.Everything
+      case (_, Roots.Everything) => Roots.Everything
+    }
+  }
+}
 
 object Roots {
   def apply(root: DIKey, roots: DIKey*): Roots = {

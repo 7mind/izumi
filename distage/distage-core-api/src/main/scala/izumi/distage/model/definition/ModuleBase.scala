@@ -10,6 +10,7 @@ import izumi.fundamentals.platform.language.unused
 
 trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
+  def iterator: Iterator[Binding] = bindings.iterator
   final def keys: Set[DIKey] = bindings.map(_.key)
 
   override final def hashCode(): Int = bindings.hashCode()
@@ -113,7 +114,7 @@ object ModuleBase {
     }
 
     def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
-      T.make(mergePreserve[T](module.bindings, that.bindings))
+      T.make(overrideImpl(module.iterator, that.iterator).toSet)
     }
 
     def tagged[T <: ModuleBase](tags: BindingTag*)(implicit T: ModuleMake.Aux[S, T]): T = {
@@ -127,16 +128,15 @@ object ModuleBase {
     def untagged[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.map(_.withTags(Set.empty)))
     }
+  }
 
-    private[this] def mergePreserve[T <: ModuleBase](existing: Set[Binding], overriding: Set[Binding]): Set[Binding] = {
-      val existingIndex = existing.iterator.map(b => b.key -> b).toMultimapMut
-      val newIndex = overriding.iterator.map(b => b.key -> b).toMultimapMut
-      val mergedKeys = existingIndex.keySet ++ newIndex.keySet
+  private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {
+    val existingIndex = existingIterator.map(b => b.key -> b).toMultimapMut
+    val newIndex = overridingIterator.map(b => b.key -> b).toMultimapMut
+    val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
-      mergedKeys
-        .iterator.flatMap {
-          k => newIndex.getOrElse[collection.Set[Binding]](k, existingIndex.getOrElse(k, Set.empty))
-        }.toSet
+    mergedKeys.iterator.flatMap {
+      k => newIndex.getOrElse[collection.Set[Binding]](k, existingIndex.getOrElse(k, Set.empty))
     }
   }
 

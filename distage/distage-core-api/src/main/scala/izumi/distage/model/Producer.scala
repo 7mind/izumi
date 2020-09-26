@@ -14,15 +14,15 @@ trait Producer {
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  final def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
+  final def produceCustomF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
     produceFX[F](plan, FinalizerFilter.all[F])
   }
-  final def produceDetailedF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  final def produceDetailedCustomF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     produceDetailedFX[F](plan, FinalizerFilter.all[F])
   }
 
-  final def produce(plan: OrderedPlan): DIResourceBase[Identity, Locator] =
-    produceF[Identity](plan)
-  final def produceDetailed(plan: OrderedPlan): DIResourceBase[Identity, Either[FailedProvision[Identity], Locator]] =
-    produceDetailedF[Identity](plan)
+  final def produceCustomIdentity(plan: OrderedPlan): DIResourceBase[Identity, Locator] =
+    produceCustomF[Identity](plan)
+  final def produceDetailedIdentity(plan: OrderedPlan): DIResourceBase[Identity, Either[FailedProvision[Identity], Locator]] =
+    produceDetailedCustomF[Identity](plan)
 }

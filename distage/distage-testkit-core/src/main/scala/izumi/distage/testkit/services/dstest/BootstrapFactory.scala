@@ -6,7 +6,6 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
-import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
@@ -14,7 +13,7 @@ import izumi.logstage.api.logger.LogRouter
 
 trait BootstrapFactory {
   def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader
-  def makeModuleProvider[F[_]: TagK: DefaultModule](
+  def makeModuleProvider[F[_]: TagK](
     options: PlanningOptions,
     config: AppConfig,
     logRouter: LogRouter,
@@ -30,7 +29,7 @@ object BootstrapFactory {
       new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configResourceName -> None), ConfigLoader.defaultBaseConfigs))
     }
 
-    def makeModuleProvider[F[_]: TagK: DefaultModule](
+    def makeModuleProvider[F[_]: TagK](
       options: PlanningOptions,
       config: AppConfig,
       logRouter: LogRouter,
@@ -46,7 +45,6 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
-        defaultModules = implicitly[DefaultModule[F]],
       )
     }
   }

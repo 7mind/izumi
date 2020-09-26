@@ -6,7 +6,7 @@ package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
 
-  override type Injector = model.Injector
+  override type Injector[F[_]] = model.Injector[F]
   override type Planner = model.Planner
   override type Producer = model.Producer
 

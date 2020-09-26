@@ -7,7 +7,6 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.BIOExit
@@ -24,14 +23,13 @@ trait ModuleProvider {
 
 object ModuleProvider {
 
-  class Impl[F[_]](
+  class Impl(
     logRouter: LogRouter,
     config: AppConfig,
     roles: RolesInfo,
     options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
-    defaultModules: DefaultModule[F],
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -64,7 +62,7 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      (defaultModules.module overridenBy new ModuleDef {
+      new ModuleDef {
         make[FailureHandler].from {
           logger: IzLogger =>
             FailureHandler.Custom {
@@ -76,7 +74,7 @@ object ModuleProvider {
                 logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
             }
         }
-      }) :: Nil
+      } :: Nil
     }
 
   }

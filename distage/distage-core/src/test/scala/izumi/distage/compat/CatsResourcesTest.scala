@@ -41,8 +41,8 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       make[MyApp]
     }
 
-    Injector()
-      .produceF[IO](module, Roots.Everything).use {
+    Injector[IO]()
+      .produce(module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       }.unsafeRunSync()
@@ -91,7 +91,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       IO(assert(!i1.initialized && !i2.initialized))
     }
 
-    def produceSync[F[_]: TagK: Sync] = injector.produceF[F](plan)
+    def produceSync[F[_]: TagK: Sync] = injector.produceCustomF[F](plan)
 
     val ctxResource = produceSync[IO]
 

@@ -1,8 +1,11 @@
 package izumi.distage
 
-import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
+import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule, Module}
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.{Injector, Locator, PlannerInput}
+import izumi.distage.modules.DefaultModule
+import izumi.reflect.TagK
 
 trait InjectorFactory {
 
@@ -12,16 +15,16 @@ trait InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  def apply(overrides: BootstrapModule*): Injector
+  def apply[F[_]: DIEffect: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F]
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]]
+    * Create a new Injector from a custom [[izumi.distage.model.definition.BootstrapContextModule]]
     *
     * @param bootstrapBase See [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
+  def apply[F[_]: DIEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F]
 
   /**
     * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes for the bootstrap environment.
@@ -32,10 +35,10 @@ trait InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  def withBootstrapActivation(activation: Activation, overrides: BootstrapModule*): Injector
+  def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F]
 
   /**
-    * Create a new Injector from a custom [[BootstrapContextModule]].
+    * Create a new Injector from a custom [[izumi.distage.model.definition.BootstrapContextModule]].
     * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
     * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
     *
@@ -44,20 +47,27 @@ trait InjectorFactory {
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  def withBootstrapActivation(activation: Activation, bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector
+  def withBootstrapActivation[F[_]: DIEffect: TagK: DefaultModule](
+    activation: Activation,
+    bootstrapBase: BootstrapContextModule,
+    overrides: BootstrapModule*
+  ): Injector[F]
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from results of a previous Injector's run
     *
-    * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
+    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  def inherit(parent: Locator): Injector
+  def inherit[F[_]: DIEffect: TagK](parent: Locator): Injector[F]
 
-  def bootloader(
+  def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F]
+
+  def bootloader[F[_]](
     input: PlannerInput,
-    activation: Activation = Activation.empty,
-    bootstrapModule: BootstrapModule = BootstrapModule.empty,
+    activation: Activation,
+    bootstrapModule: BootstrapModule,
+    defaultModule: DefaultModule[F],
   ): Bootloader = {
-    new Bootloader(bootstrapModule, activation, input, this)
+    new Bootloader(bootstrapModule, activation, input, this, defaultModule.module)
   }
 }

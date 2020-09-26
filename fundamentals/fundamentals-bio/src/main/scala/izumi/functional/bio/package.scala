@@ -114,7 +114,7 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN
         (conversions implicit priority: from most specific InnerF to least specific)
  */
-package object bio extends BIO3Syntax with BIOSyntax {
+package object bio extends BIO3Syntax with BIOSyntax with __PlatformSpecific {
 
   /**
     * A convenient dependent summoner for BIO* hierarchy.
@@ -155,11 +155,6 @@ package object bio extends BIO3Syntax with BIOSyntax {
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
   object BIOPrimitives3 {
     @inline def apply[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
-  }
-
-  type BIORunner3[F[-_, +_, +_]] = BIORunner[F[Any, +?, +?]]
-  object BIORunner3 {
-    @inline def apply[F[-_, +_, +_]: BIORunner3]: BIORunner3[F] = implicitly
   }
 
   type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]

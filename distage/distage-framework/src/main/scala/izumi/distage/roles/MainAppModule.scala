@@ -50,6 +50,9 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   pluginConfig: PluginConfig,
   appArtifact: IzArtifact,
 ) extends ModuleDef {
+  addImplicit[TagK[F]]
+  addImplicit[DefaultModule[F]]
+
   make[ArgV].fromValue(args)
 
   make[AdditionalRoles].fromValue(additionalRoles)
@@ -72,8 +75,6 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   many[LibraryReference]
   make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
-
-  addImplicit[TagK[F]]
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
 
@@ -189,8 +190,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     logger: IzLogger =>
       logger.router
   }
-  addImplicit[DefaultModule[F]]
-  make[ModuleProvider].from[ModuleProvider.Impl[F]]
+  make[ModuleProvider].from[ModuleProvider.Impl]
 
   make[BootstrapModule].named("roleapp").from {
     (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>
@@ -203,8 +203,8 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   }
 
   make[Bootloader].named("roleapp").from {
-    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots")) =>
-      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation)
+    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots"), defaultModule: DefaultModule[F]) =>
+      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation, BootstrapModule.empty, defaultModule)
   }
 
   make[RoleAppPlanner[F]].from[RoleAppPlanner.Impl[F]]

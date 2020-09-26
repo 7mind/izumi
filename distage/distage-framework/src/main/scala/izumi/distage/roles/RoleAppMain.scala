@@ -15,7 +15,7 @@ import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModule[F], artifact: IzArtifactMaterializer) {
+abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
@@ -24,7 +24,7 @@ abstract class RoleAppMain[F[_]: TagK](implicit defaultModules: DefaultModule[F]
     try {
       val appModule = makeAppModule(argv)
       val overrideModule = makeAppModuleOverride(argv)
-      Injector.NoProxies().produceRun(appModule.overridenBy(overrideModule)) {
+      Injector.NoProxies[Identity]().produceRun(appModule.overridenBy(overrideModule)) {
         appResource: DIResourceBase[Identity, PreparedApp[F]] =>
           appResource.use(_.run())
       }

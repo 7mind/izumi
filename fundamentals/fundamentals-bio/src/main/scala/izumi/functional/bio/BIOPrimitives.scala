@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.impl.BIOPrimitivesCats
-import zio.IO
+import izumi.fundamentals.orphans.`zio.ZIO`
 
 trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {
   def mkRef[A](a: A): F[Nothing, BIORef[F, A]]
@@ -15,7 +15,7 @@ object BIOPrimitives {
 
 private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances extends BIOPrimitivesLowPriorityInstances {
-  @inline implicit def BIOPrimitivesZio: BIOPrimitives[IO] = impl.BIOPrimitivesZio
+  @inline implicit def BIOPrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: BIOPrimitives3[F] = impl.BIOPrimitivesZio.asInstanceOf[BIOPrimitives3[F]]
 }
 
 sealed trait BIOPrimitivesLowPriorityInstances {

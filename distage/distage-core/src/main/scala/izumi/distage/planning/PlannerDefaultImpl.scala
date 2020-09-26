@@ -441,7 +441,12 @@ class PlannerDefaultImpl(
         val bindingTags = op.fold(Set.empty, _.tags.collect { case AxisTag(t) => t })
 
         val originStr = op.fold("Unknown", _.origin.toString)
-        s"$originStr, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
+        val implTypeStr = op match {
+          case OperationOrigin.SyntheticBinding(b: Binding.ImplBinding) => b.implementation.implType.toString
+          case OperationOrigin.UserBinding(b: Binding.ImplBinding) => b.implementation.implType.toString
+          case _ => ""
+        }
+        s"$implTypeStr $originStr, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
     }
   }
 

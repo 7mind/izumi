@@ -5,8 +5,10 @@ import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
+import izumi.distage.model.recursive.Bootloader
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
@@ -28,6 +30,7 @@ object AppResourceProvider {
     entrypoint: RoleAppEntrypoint[F],
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
+    bootloader: Bootloader @Id("roleapp"),
   ) extends AppResourceProvider[F] {
     def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]] = {
       appPlan
@@ -36,14 +39,15 @@ object AppResourceProvider {
         .map {
           runtimeLocator =>
             val runner = runtimeLocator.get[DIEffectRunner[F]]
-            implicit val effect: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
+            implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
 
-            PreparedApp(prepareMainResource(runtimeLocator)(effect), runner, effect)
+            PreparedApp(prepareMainResource(runtimeLocator)(F), runner, F)
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit effect: DIEffect[F]): DIResourceBase[F, Locator] = {
-      Injector
+    private def prepareMainResource(runtimeLocator: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] = {
+      bootloader
+        .injectorFactory
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app.shared, filters.filterF)
         .flatMap {
@@ -60,7 +64,7 @@ object AppResourceProvider {
                   Injector
                     .inherit(sharedLocator)
                     .produceFX[F](appPlan.app.primary, filters.filterF)
-                    .evalTap(entrypoint.runTasksAndRoles(_, effect))
+                    .evalTap(entrypoint.runTasksAndRoles(_, F))
               }
         }
     }

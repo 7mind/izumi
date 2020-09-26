@@ -31,7 +31,9 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[_]` with [[izumi.distage.model.effect.DIEffect]] instances
   */
-final case class DefaultModule[F[_]](module: Module) extends AnyVal
+final case class DefaultModule[F[_]](module: Module) extends AnyVal {
+  @inline def of[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
+}
 
 object DefaultModule extends LowPriorityDefaultModulesInstances1 {
   @inline def apply[F[_]](implicit modules: DefaultModule[F], d: DummyImplicit): Module = modules.module
@@ -115,8 +117,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
 
   /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
   implicit final def forIdentity: DefaultModule[Identity] = {
-//    DefaultModule.empty
-    DefaultModule(IdentitySupportModule)
+    DefaultModule.empty
   }
 
 }

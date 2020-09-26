@@ -15,6 +15,7 @@ import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
 import izumi.distage.modules.DefaultModule
+import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
@@ -123,7 +124,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       BootstrapLocator.defaultBootstrap overridenBy bsModule
     }
 
-    val appModule = provider.appModules().merge overridenBy env.appModule
+    val appModule = IdentitySupportModule ++ DefaultModule[F] overridenBy provider.appModules().merge overridenBy env.appModule
 
     val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
@@ -202,7 +203,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           // producing and verifying runtime plan
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
           planChecker.verify(runtimePlan)
-          memoizationInjector.produce(runtimePlan).use {
+          memoizationInjector.produceCustomF[Identity](runtimePlan).use {
             runtimeLocator =>
               val runner = runtimeLocator.get[DIEffectRunner[F]]
               implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
@@ -234,16 +235,16 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ): F[Unit] = {
     // shared plan
     planCheck.verify(plan.shared)
-    Injector.inherit(runtimeLocator).produceF[F](plan.shared).use {
+    Injector.inherit(runtimeLocator).produceCustomF[F](plan.shared).use {
       sharedLocator =>
         // integration plan
         planCheck.verify(plan.side)
-        Injector.inherit(sharedLocator).produceF[F](plan.side).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
           integrationSharedLocator =>
             withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
               // main plan
               planCheck.verify(plan.primary)
-              Injector.inherit(integrationSharedLocator).produceF[F](plan.primary).use {
+              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
                 mainSharedLocator =>
                   use(mainSharedLocator)
               }
@@ -415,9 +416,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker.verify(newTestPlan.primary)
 
     // we are ready to run the test, finally
-    testInjector.produceF[F](newTestPlan.shared).use {
+    testInjector.produceCustomF[F](newTestPlan.shared).use {
       sharedLocator =>
-        Injector.inherit(sharedLocator).produceF[F](newTestPlan.side).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
           integrationLocator =>
             withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
               proceedIndividual(test, newTestPlan.primary, integrationLocator)
@@ -449,7 +450,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     doRecover(None) {
-      Injector.inherit(parent).produceF[F](testPlan).use {
+      Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
             val before = System.nanoTime()
@@ -575,7 +576,7 @@ object DistageTestRunner {
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     testPlans: Seq[PreparedTest[F]],
-    anyMemoizationInjector: Injector,
+    anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],

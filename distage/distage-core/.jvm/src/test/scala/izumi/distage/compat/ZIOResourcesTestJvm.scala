@@ -42,7 +42,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, Roots.Everything).use {
+      unsafeRun(Injector[Task]().produce(module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       })
@@ -91,7 +91,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceCustomF[F[Throwable, ?]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -147,7 +147,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector().produceF[Task](module, Roots.Everything).use {
+      unsafeRun(Injector[Task]().produce(module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
       })
@@ -196,7 +196,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceCustomF[F[Throwable, ?]](plan)
 
       val ctxResource = produceBIO[IO]
 

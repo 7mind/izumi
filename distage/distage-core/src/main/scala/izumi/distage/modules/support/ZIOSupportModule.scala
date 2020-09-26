@@ -39,7 +39,7 @@ trait ZIOSupportModule extends ModuleDef {
   addImplicit[BIOLocal[ZIO]]
   addImplicit[BIOFork3[ZIO]]
   addImplicit[BIOPrimitives3[ZIO]]
-  make[BlockingIO3[ZIO]].from(BlockingIOInstances.blockingIOZIO3Blocking(_: zio.blocking.Blocking))
+  make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
   make[BlockingIO[IO]].from { implicit B: BlockingIO3[ZIO] => BlockingIO[IO] }
 
   addImplicit[BIOTransZio[IO]]

@@ -8,7 +8,7 @@ trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
 
-  type Injector = model.Injector
+  type Injector[F[_]] = model.Injector[F]
   type Planner = model.Planner
   type Producer = model.Producer
 

@@ -165,8 +165,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
         bsModule = BootstrapModule.empty,
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
-        bootloader = Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
@@ -199,10 +199,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       } ++ probe ++ DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        PlanningOptions(),
-        BootstrapModule.empty,
-        logger,
-        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
+        options = PlanningOptions(),
+        bsModule = BootstrapModule.empty,
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
@@ -239,10 +239,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        PlanningOptions(),
-        BootstrapModule.empty,
-        logger,
-        Injector.bootloader(PlannerInput(definition, Activation.empty, roots)),
+        options = PlanningOptions(),
+        bsModule = BootstrapModule.empty,
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
