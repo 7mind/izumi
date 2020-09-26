@@ -4,7 +4,6 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
 import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORoot, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3, SyncSafe2, SyncSafe3}
-import izumi.fundamentals.platform.language.unused
 import izumi.reflect.{TagK3, TagKK}
 
 import scala.annotation.unchecked.{uncheckedVariance => v}
@@ -61,7 +60,8 @@ object AnyBIO3SupportModule extends App with ModuleDef {
       addImplicit[BIORunner3[F]]
 
       // no corresponding bifunctor (`F[Any, +?, +?]`) instances need to be added for these types because they already match
-      @unused private[this] def aliasingCheck(): Unit = {
+      private[this] def aliasingCheck(): Unit = {
+        lazy val _ = aliasingCheck()
         implicitly[BIORunner3[F] =:= BIORunner[F[Any, +?, +?]]]
         implicitly[BIOPrimitives3[F] =:= BIOPrimitives[F[Any, +?, +?]]]
         implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +?, +?]]]
