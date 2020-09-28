@@ -4,7 +4,6 @@ import distage._
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.StandardAxis.Scene
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
@@ -143,6 +142,9 @@ object TestConfig {
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.flatMap(_._2).toSet }
       AxisDIKeys(updatedKeys)
     }
+    def +[D <: DIKey](key: D): AxisDIKeys = {
+      this ++ Set(key)
+    }
   }
   object AxisDIKeys {
     def empty: AxisDIKeys = AxisDIKeys(Map.empty)
@@ -170,10 +172,14 @@ object TestConfig {
       this ++ PriorAxisDIKeys(Map(1 -> that))
     }
     def +(elem: (Int, AxisDIKeys)): PriorAxisDIKeys = {
-      this ++ PriorAxisDIKeys(Map(elem))
+      val (l, k) = elem
+      addToLevel(l, k)
+    }
+    def +(key: DIKey): PriorAxisDIKeys = {
+      addToLevel(1, Set(key))
     }
     def addToLevel(level: Int, keys: AxisDIKeys): PriorAxisDIKeys = {
-      this + (level, keys)
+      this ++ PriorAxisDIKeys(Map(level -> keys))
     }
   }
   object PriorAxisDIKeys {
