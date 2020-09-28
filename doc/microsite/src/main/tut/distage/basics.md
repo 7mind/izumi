@@ -270,7 +270,7 @@ Will produce the following output:
 ```scala mdoc:to-string
 import distage.DIKey
 
-val objectGraphResource = Injector().produceF[IO](module, Roots(root = DIKey[MyApp]))
+val objectGraphResource = Injector[IO]().produce(module, Roots(root = DIKey[MyApp]))
 
 objectGraphResource
   .use(_.get[MyApp].run)
@@ -400,7 +400,7 @@ def finalModule = Seq(
 ).merge
 
 // wire the graph
-val objects = Injector().produceF[IO](finalModule, Roots.Everything).unsafeGet().unsafeRunSync()
+val objects = Injector[IO]().produce(finalModule, Roots.Everything).unsafeGet().unsafeRunSync()
 
 val server = objects.get[Server[IO]]
 val client = objects.get[Client[IO]]
@@ -467,8 +467,8 @@ def kvStoreModule = new ModuleDef {
   make[KVStore[IO]].fromEffect(dummyKVStore[IO])
 }
 
-val io = Injector()
-  .produceRunF[Task, String](kvStoreModule) {
+val io = Injector[Task]()
+  .produceRun[String](kvStoreModule) {
     kv: KVStore[IO] =>
       for {
         _    <- kv.put("apple", "pie")
@@ -481,7 +481,7 @@ val io = Injector()
 zio.Runtime.default.unsafeRun(io)
 ```
 
-You need to use effect-aware `Injector.produceF` method to use effect bindings.
+You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
 
 ### ZIO Has Bindings
 
@@ -586,8 +586,8 @@ def module = new ModuleDef {
   make[Unit].fromHas(turboFunctionalHelloWorld)
 }
 
-val main = Injector()
-  .produceRunF[Task, Unit](module)((_: Unit) => Task.unit)
+val main = Injector[Task]()
+  .produceRun[Unit](module)((_: Unit) => Task.unit)
 
 zio.Runtime.default.unsafeRun(main)
 ```
@@ -648,7 +648,7 @@ def module = new ModuleDef {
 }
 
 Injector()
-  .produceRunF(module) {
+  .produceRun(module) {
     HasConstructor[DependeeR].map {
       (for {
         r <- dependee.x("zxc")
@@ -919,7 +919,7 @@ def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 
 // create object graph Resource
 
-val objectsResource = Injector().produceF[IO](SyncProgram[IO], Roots.Everything)
+val objectsResource = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
 
@@ -957,7 +957,9 @@ def chooseInterpreters(isDummy: Boolean) = {
   val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
                      else         RealInterpretersZIO
   val module = ProgramModule[RIO[Console, ?]] ++ interpreters
-  Injector().produceGetF[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
+  
+  Injector[RIO[Console, ?]]()
+    .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
 }
 
 // execute
@@ -1034,11 +1036,10 @@ object Main extends App {
            DBConnection.create[IO]
       }
 
-      // `produceF` specifies an Effect to run in.
       // Effects used in Resource and Effect Bindings 
-      // should match the effect in `produceF`
+      // should match the effect `F[_]` in `Injector[F]()`
 
-      _ <- Injector().produceF[IO](newPlan).use {
+      _ <- Injector[IO]().produce(newPlan).use {
         classes =>
           classes.get[AppEntrypoint].run
       }

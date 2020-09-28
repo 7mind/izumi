@@ -2,6 +2,12 @@ package izumi.distage.plugins
 
 import izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
 
+/**
+  * Non-abstract class or object inheritors of [[PluginBase]] will be found on the classpath by `distage-extension-plugins`
+  * scanning machinery. ([[izumi.distage.plugins.load.PluginLoader]])
+  *
+  * @see [[izumi.distage.plugins.PluginDef]]
+  */
 trait PluginBase extends ModuleBase
 
 object PluginBase {

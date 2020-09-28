@@ -105,7 +105,8 @@ import scala.reflect.macros.blackbox
   *     make[MyApp]
   *   }
   *
-  *   Injector().produceFGet[IO, MyApp](module)
+  *   Injector[IO]()
+  *     .produceGet[MyApp](module)
   *     .use(_.run())
   *     .unsafeRunSync()
   * }}}

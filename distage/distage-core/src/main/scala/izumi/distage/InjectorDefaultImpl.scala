@@ -10,13 +10,13 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.{Injector, Locator, Planner, PlannerInput}
 import izumi.reflect.TagK
 
-class InjectorDefaultImpl[F[_]](
-  parentContext: Locator,
-  parentFactory: InjectorFactory,
-  defaultModule: Module,
+final class InjectorDefaultImpl[F[_]](
+  val parentContext: Locator,
+  val parentFactory: InjectorFactory,
+  val defaultModule: Module,
 )(implicit
-  override protected[this] val F: DIEffect[F],
-  override protected[this] val tagK: TagK[F],
+  override val F: DIEffect[F],
+  override val tagK: TagK[F],
 ) extends Injector[F] {
 
   private[this] val planner: Planner = parentContext.get[Planner]

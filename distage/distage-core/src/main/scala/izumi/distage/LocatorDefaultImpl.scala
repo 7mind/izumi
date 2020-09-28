@@ -14,6 +14,7 @@ final class LocatorDefaultImpl[F[_]](
   val meta: LocatorMeta,
   private val dependencyMap: Provision[F],
 ) extends AbstractLocator {
+
   override protected def lookupLocalUnsafe(key: DIKey): Option[Any] =
     dependencyMap.get(key)
 

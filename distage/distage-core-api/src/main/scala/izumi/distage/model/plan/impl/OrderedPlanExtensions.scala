@@ -47,7 +47,6 @@ private[plan] object OrderedPlanExtensions {
       plan.toSemi.steps.traverse(f).map(s => SemiPlan(s.flatten, Roots(plan.declaredRoots)))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
-
     def resolveImportF[F[_]: Applicative, T: Tag](f: F[T]): F[OrderedPlan] = resolveImportF[T](f)
 
     def resolveImportsF[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[OrderedPlan] =

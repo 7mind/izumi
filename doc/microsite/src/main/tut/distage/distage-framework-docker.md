@@ -125,10 +125,13 @@ def minimalExample = {
     include(distageFrameworkModules)
   }
 
-  Injector().produceGetF[IO, PostgresDocker.Container](applicationModules).use { container =>
-    val port = container.availablePorts.first(PostgresDocker.primaryPort)
-    IO(println(s"postgres is available on port ${port}"))
-  }
+  Injector[IO]()
+    .produceGet[PostgresDocker.Container](applicationModules)
+    .use {
+      container =>
+        val port = container.availablePorts.first(PostgresDocker.primaryPort)
+        IO(println(s"postgres is available on port ${port}"))
+    }
 }
 
 minimalExample.unsafeRunSync()
@@ -365,8 +368,8 @@ def postgresDockerIntegrationExample = {
     make[PostgresExampleApp]
   }
 
-  Injector()
-    .produceGetF[IO, PostgresExampleApp](applicationModules)
+  Injector[IO]()
+    .produceGet[PostgresExampleApp](applicationModules)
     .use(app => app.run)
 }
 

@@ -254,7 +254,7 @@ object ModuleDefDSL {
       *
       * The resource will be released when the [[izumi.distage.model.Locator]]
       * holding it is released. Typically, after `.use` is called on the result of
-      * [[izumi.distage.model.Injector#produceF]]
+      * [[izumi.distage.model.Injector#produce]]
       *
       * You can create resources with [[DIResource.make]], by inheriting from [[DIResource]]
       * or by converting an existing [[cats.effect.Resource]]

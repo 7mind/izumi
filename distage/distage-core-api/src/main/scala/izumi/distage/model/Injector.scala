@@ -43,7 +43,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * {{{
     *   Injector[F]()
-    *     .produceF(moduleDef, Roots(fn.get.diKeys.toSet))
+    *     .produce(moduleDef, Roots(fn.get.diKeys.toSet))
     *     .use(_.run(fn)): F[A]
     * }}}
     *
@@ -131,7 +131,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * {{{
     *   Injector[F]()
-    *     .produceF(moduleDef, Roots(DIKey.get[A]))
+    *     .produce(moduleDef, Roots(DIKey.get[A]))
     *     .map(_.get[A]): DIResourceBase[F, A]
     * }}}
     *
