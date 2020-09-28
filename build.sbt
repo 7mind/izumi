@@ -3018,11 +3018,7 @@ lazy val `izumi` = (project in file("."))
             ),
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
     scalacOptions in ThisBuild ++= Seq(
-      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
-      s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}",
-      s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}",
-      s"-Xmacro-settings:git-described-version=${gitDescribedVersion.value.getOrElse("")}",
-      s"-Xmacro-settings:git-head-commit=${gitHeadCommit.value.getOrElse("")}"
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}"
     )
   )
   .disablePlugins(AssemblyPlugin)

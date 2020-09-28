@@ -229,11 +229,7 @@ object Izumi {
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
         "scalacOptions" in SettingScope.Build ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
-          """s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}"""".raw,
-          """s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}"""".raw,
-          """s"-Xmacro-settings:git-described-version=${gitDescribedVersion.value.getOrElse("")}"""".raw,
-          """s"-Xmacro-settings:git-head-commit=${gitHeadCommit.value.getOrElse("")}"""".raw,
+          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw
         ),
       )
 
