@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.62`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.63`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -238,9 +238,6 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
-        "scalacOptions" ++= Seq(
-          """s"-Xmacro-settings:product-name=${name.value}"""".raw
-        ),
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,

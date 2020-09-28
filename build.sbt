@@ -44,11 +44,9 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
        })
     },
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -148,11 +146,9 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -268,11 +264,9 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
        })
     },
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -393,11 +387,9 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
        })
     },
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -492,11 +484,9 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -600,11 +590,9 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -708,11 +696,9 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -813,11 +799,9 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -921,11 +905,9 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1024,11 +1006,9 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1135,11 +1115,9 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1261,11 +1239,9 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
        })
     },
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1368,11 +1344,9 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1473,11 +1447,9 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1576,11 +1548,9 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1689,11 +1659,9 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1800,11 +1768,9 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -1909,11 +1875,9 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2023,11 +1987,9 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2131,11 +2093,9 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2234,11 +2194,9 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2340,11 +2298,9 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     compileOrder in Test := CompileOrder.Mixed,
     classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2444,11 +2400,9 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2638,11 +2592,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                   }
                 },
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -2740,11 +2692,9 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     sbtPlugin := true,
     withBuildInfo("izumi.sbt.deps", "Izumi"),
     scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
@@ -3040,7 +2990,13 @@ lazy val `izumi` = (project in file("."))
     scalacOptions in ThisBuild ++= Seq(
       s"-Xmacro-settings:product-version=${version.value}",
       s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:sbt-version=${sbtVersion.value}"
+      s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
+      s"-Xmacro-settings:git-repo-clean=${com.typesafe.sbt.SbtGit.GitKeys.gitUncommittedChanges.value}",
+      s"-Xmacro-settings:git-branch=${com.typesafe.sbt.SbtGit.GitKeys.gitCurrentBranch.value}",
+      s"-Xmacro-settings:git-described-version=${com.typesafe.sbt.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
+      s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
     scalaVersion := "2.13.3",
