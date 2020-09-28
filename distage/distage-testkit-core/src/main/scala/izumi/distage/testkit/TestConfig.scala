@@ -168,7 +168,6 @@ object TestConfig {
   }
   object PriorAxisDIKeys {
     val empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
-    def apply(keys: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> keys))
     @inline implicit def fromAxisDIKeys(set: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> set))
     @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> AxisDIKeys.fromSet(set)))
     @inline implicit def fromAxisMap[AD <: AxisDIKeys](map: Map[Int, AD]): PriorAxisDIKeys = PriorAxisDIKeys(map.asInstanceOf[Map[Int, AxisDIKeys]])

@@ -29,7 +29,6 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
-import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -110,7 +109,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     runtimeKeys: Set[DIKey],
     memoizationRoots: Set[DIKey],
     activation: Activation,
-    injector: Injector,
+    injector: Injector[Identity],
     appModule: Module,
   ): TriSplittedPlan = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
