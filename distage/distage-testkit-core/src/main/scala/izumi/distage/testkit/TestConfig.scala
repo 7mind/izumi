@@ -4,6 +4,7 @@ import distage._
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.StandardAxis.Scene
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
@@ -165,15 +166,30 @@ object TestConfig {
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.map(_._2).reduce(_ ++ _) }
       PriorAxisDIKeys(updatedKeys)
     }
+    def ++(that: AxisDIKeys): PriorAxisDIKeys = {
+      this ++ PriorAxisDIKeys(Map(1 -> that))
+    }
+    def +(elem: (Int, AxisDIKeys)): PriorAxisDIKeys = {
+      this ++ PriorAxisDIKeys(Map(elem))
+    }
+    def addToLevel(level: Int, keys: AxisDIKeys): PriorAxisDIKeys = {
+      this + (level, keys)
+    }
   }
   object PriorAxisDIKeys {
     val empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
-    @inline implicit def fromAxisDIKeys(set: AxisDIKeys): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> set))
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys = PriorAxisDIKeys(Map(1 -> AxisDIKeys.fromSet(set)))
-    @inline implicit def fromAxisMap[AD <: AxisDIKeys](map: Map[Int, AD]): PriorAxisDIKeys = PriorAxisDIKeys(map.asInstanceOf[Map[Int, AxisDIKeys]])
-    @inline implicit def fromMap[AD <: AxisDIKeys](map: Map[Int, Set[_ <: DIKey]]): PriorAxisDIKeys = {
+
+    @inline implicit def fromAxisDIKeys(set: AxisDIKeys): PriorAxisDIKeys =
+      PriorAxisDIKeys(Map(1 -> set))
+
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys =
+      PriorAxisDIKeys(Map(1 -> AxisDIKeys.fromSet(set)))
+
+    @inline implicit def fromAxisMap[AD <: AxisDIKeys](map: Map[Int, AD]): PriorAxisDIKeys =
+      PriorAxisDIKeys(map.asInstanceOf[Map[Int, AxisDIKeys]])
+
+    @inline implicit def fromMapSet(map: Map[Int, Set[_ <: DIKey]]): PriorAxisDIKeys =
       PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
-    }
   }
 
   sealed trait ParallelLevel
