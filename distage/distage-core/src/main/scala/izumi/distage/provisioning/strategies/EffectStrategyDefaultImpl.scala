@@ -23,7 +23,7 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
 
     val isEffect = actionEffectType != SafeType.identityEffectType
     if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
-      throw new IncompatibleEffectTypesException(provisionerEffectType, actionEffectType)
+      throw new IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType)
     }
 
     val effectKey = op.effectKey

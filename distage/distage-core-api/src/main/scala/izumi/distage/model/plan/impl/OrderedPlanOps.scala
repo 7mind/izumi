@@ -2,7 +2,8 @@ package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{OrderedPlan, Roots, SemiPlan}
@@ -14,27 +15,12 @@ import izumi.reflect.{Tag, TagK}
 private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
 
   /**
-    * Same as [[unresolvedImports]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
+    * Check for any unresolved dependencies,
+    * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
+    * or for any other issue that would cause [[izumi.distage.model.Injector#produce(plan:OrderedPlan)* Injector.produce]] to fail
     *
-    * @throws izumi.distage.model.exceptions.InvalidPlanException if there are unresolved imports
-    */
-  final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = {
-    assertImportsResolved.fold(())(throw _)
-  }
-
-  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = {
-    import izumi.fundamentals.platform.strings.IzString._
-    unresolvedImports.map {
-      unresolved =>
-        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).toList.niceList(shift = ""))
-    }
-  }
-
-  /**
-    * Check for any unresolved dependencies, if this
-    * returns Right then the wiring is generally correct,
-    * modulo runtime exceptions in constructors,
+    * If this returns `F.unit` then the wiring is generally correct,
+    * modulo runtime exceptions in user code,
     * and `Injector.produce` should succeed.
     *
     * However, presence of imports does not *always* mean
@@ -42,7 +28,48 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     * `Locator`, by BootstrapContext, or they may be materialized by
     * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
     *
-    * @return this plan or a list of unresolved parameters
+    * An effect is compatible if it's a subtype of `F` or is a type equivalent to [[izumi.fundamentals.platform.functional.Identity]] (e.g. `cats.Id`)
+    *
+    * Will `F.fail` the effect with [[izumi.distage.model.exceptions.InvalidPlanException]] if there are issues.
+    *
+    * @tparam F effect type to check against
+    */
+  final def assertValid[F[_]: DIEffect: TagK](): F[Unit] = {
+    DIEffect[F].maybeSuspend(assertValidOrThrow[F]())
+  }
+
+  /**
+    * Same as [[assertValid]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
+    *
+    * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
+    */
+  final def assertValidOrThrow[F[_]: TagK](): Unit = {
+    isValid.fold(())(throw _)
+  }
+
+  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+  final def isValid[F[_]: TagK]: Option[InvalidPlanException] = {
+    import izumi.fundamentals.platform.strings.IzString._
+    val unresolved = unresolvedImports.fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
+    val effects = incompatibleEffectType[F].fromNonEmptyList.map(op => IncompatibleEffectTypesException.format(op, SafeType.getK[F], op.effectHKTypeCtor))
+    for {
+      allErrors <- NonEmptyList.from(unresolved ++ effects)
+    } yield new InvalidPlanException(allErrors.toList.niceList(shift = ""))
+  }
+
+  /**
+    * Check for any unresolved dependencies.
+    *
+    * If this returns `None` then the wiring is generally correct,
+    * modulo runtime exceptions in user code,
+    * and `Injector.produce` should succeed.
+    *
+    * However, presence of imports does not *always* mean
+    * that a plan is invalid, imports may be fulfilled by a parent
+    * `Locator`, by BootstrapContext, or they may be materialized by
+    * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+    *
+    * @return a non-empty list of unresolved imports if present
     */
   final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = {
     val locatorRefKey = DIKey[LocatorRef]
@@ -53,6 +80,14 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     NonEmptyList.from(nonMagicImports)
   }
 
+  /**
+    * Check for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`.
+    *
+    * An effect is compatible if it's a subtype of `F` or is a type equivalent to [[izumi.fundamentals.platform.functional.Identity]] (e.g. `cats.Id`)
+    *
+    * @tparam F effect type to check against
+    * @return a non-empty list of operations incompatible with `F` if present
+    */
   final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
     val effectType = SafeType.getK[F]
     val badSteps = steps
@@ -126,4 +161,12 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     }
     SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
+
+  @deprecated("Renamed to `assertValidPlanOrThrow`", "0.11")
+  final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = assertValidOrThrow[F]()
+
+  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+  @deprecated("Renamed to `isValidPlan`", "0.11")
+  final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = isValid[F]
+
 }

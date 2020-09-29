@@ -8,8 +8,9 @@ final case class SafeType private (
   tag: LightTypeTag,
   /*private[distage] val */ cls: Class[_],
 ) {
-  override def hashCode: Int = tag.hashCode()
   override def toString: String = tag.repr
+
+  override def hashCode: Int = tag.hashCode()
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: SafeType =>

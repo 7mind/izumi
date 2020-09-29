@@ -1,13 +1,21 @@
 package izumi.distage.model.exceptions
 
+import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.reflection.SafeType
 
-class IncompatibleEffectTypesException(val provisionerEffectType: SafeType, val actionEffectType: SafeType)
-  extends DIException(
-    s"""Incompatible effect types: Can't execute effect in `$actionEffectType` which is neither Identity, nor a subtype of the effect that Provisioner was launched in: `$provisionerEffectType`
+class IncompatibleEffectTypesException(val op: MonadicOp, val provisionerEffectType: SafeType, val actionEffectType: SafeType)
+  extends DIException(IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType))
+
+object IncompatibleEffectTypesException {
+  def format(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType): String = {
+    s"""Incompatible effect types when trying to execute operation:
        |
-       |Clarification:
-       |  - To execute `.fromEffect` and `.fromResource` bindings for effects other than `Identity` you need to create `Injector` method with the F type corresponding to the type of effects/resources you inject, as in `Injector[F]()`
-       |  - Subtype type constructors are allowed. e.g. when using ZIO you can execute actions with type IO[Nothing, ?] when running in `Injector[IO[Throwable, ?]]()`
-   """.stripMargin
-  )
+       |  - $op
+       |
+       |Can't execute an effect in `$actionEffectType` which is neither equivalent to `izumi.fundamentals.platform.Identity`, nor a subtype of the Injector's effect type: `$provisionerEffectType`
+       |
+       |  - To execute `make[_].fromEffect` and `make[_].fromResource` bindings for effects other than `Identity`, you must parameterize the `Injector` with the corresponding effect type when creating it, as in `Injector[F]()`.
+       |  - Subtype type constructors are allowed. e.g. when using ZIO you can execute effects in `IO[Nothing, ?]` when using an `Injector[IO[Throwable, ?]]()`.
+       """.stripMargin
+  }
+}
