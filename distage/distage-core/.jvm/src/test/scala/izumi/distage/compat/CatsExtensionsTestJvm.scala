@@ -9,7 +9,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.recursive.Bootloader
@@ -56,7 +56,7 @@ final class CatsExtensionsTestJvm extends AnyWordSpec with GivenWhenThen {
         case o => o
       }
 //      val plan2 = injector.finish(traversed)
-      val plan2: OrderedPlan = ???
+      val plan2: OrderedPlan = (??? : Id[SemiPlan] => OrderedPlan)(traversed)
 
       assert(filterDynamic(plan2.steps) === filterDynamic(testDependencyPlan.steps))
 

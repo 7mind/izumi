@@ -5,8 +5,7 @@ Debugging
 
 ### Testing Plans
 
-Use `OrderedPlan#assertImportsResolvedOrThrow` method to test whether all dependencies in a given plan are present and the
-plan will execute correctly when passed to `Injector#produce`.
+Use `OrderedPlan#assertValid` method to test whether the plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string
 import distage.{DIKey, Roots, ModuleDef, Injector, Activation}
@@ -16,24 +15,25 @@ class B
 
 val badModule = new ModuleDef {
   make[A]
+  make[Int].fromEffect(zio.Task { ??? })
 }
 
-val badPlan = Injector().plan(badModule, Activation.empty, Roots.Everything)
+val badPlan = Injector[cats.effect.IO]().plan(badModule, Activation.empty, Roots.Everything)
 ```
 
 ```scala mdoc:crash:to-string
-badPlan.assertImportsResolvedOrThrow()
+badPlan.assertValid[cats.effect.IO]().unsafeRunSync()
 ```
 
 ```scala mdoc:to-string
 val goodModule = new ModuleDef {
   make[A]
-  make[B]
+  make[B].fromEffect(cats.effect.IO(new B))
 }
 
-val plan = Injector().plan(goodModule, Activation.empty, Roots.Everything)
+val plan = Injector[cats.effect.IO]().plan(goodModule, Activation.empty, Roots.Everything)
 
-plan.assertImportsResolvedOrThrow()
+plan.assertValid[cats.effect.IO]().unsafeRunSync()
 ```
 
 ### Pretty-printing plans
@@ -66,7 +66,7 @@ To debug macros used by `distage` you may use the following Java Properties:
 ```bash
 sbt -Dizumi.debug.macro.rtti=true compile # fundamentals-reflection & LightTypeTag macros
 sbt -Dizumi.debug.macro.distage.constructors=true compile # izumi.distage.constructors.* macros
-sbt -Dizumi.debug.macro.distage.providermagnet=true compile # Functoid macro
+sbt -Dizumi.debug.macro.distage.functoid=true compile # Functoid macro
 ```
 
 ### Graphviz rendering

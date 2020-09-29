@@ -24,7 +24,9 @@ class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +
   include(BIO3InstancesModule[F])
   addConverted3To2[F[Any, +?, +?]]
 
-  // workaround for https://github.com/zio/izumi-reflect/issues/82 & https://github.com/zio/izumi-reflect/issues/83
+  // workaround for
+  // - https://github.com/zio/izumi-reflect/issues/82
+  // - https://github.com/zio/izumi-reflect/issues/83
   def addConverted3To2[G[+e, +a] >: F[Any, e @v, a @v] <: F[Any, e @v, a @v]: TagKK]: Unit = {
     make[BIOAsync[G]].from {
       implicit F: BIOAsync3[F] => BIORoot.BIOConvert3To2[BIOAsync3, F, Any]

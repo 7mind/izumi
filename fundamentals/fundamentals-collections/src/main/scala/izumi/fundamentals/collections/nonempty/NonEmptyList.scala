@@ -1469,10 +1469,16 @@ object NonEmptyList {
     */
   def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[Seq[T]] = Some(nonEmptyList.toList)
 
-  /*
-    // TODO: Figure out how to get case NonEmptyList() to not compile
-    def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[(T, Seq[T])] = Some(nonEmptyList.head, nonEmptyList.tail)
-   */
+  /**
+    * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>List</code>.
+    *
+    * @param list the <code>List</code> with which to construct a <code>NonEmptyList</code>
+    * @return a <code>NonEmptyList</code> containing the elements of the given <code>List</code>, if non-empty, wrapped in
+    *     a <code>Some</code>; else <code>None</code> if the <code>List</code> is empty
+    */
+  def from[T](list: List[T]): Option[NonEmptyList[T]] = {
+    if (list.isEmpty) None else Some(new NonEmptyList(list))
+  }
 
   /**
     * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>Seq</code>.
@@ -1481,9 +1487,15 @@ object NonEmptyList {
     * @return a <code>NonEmptyList</code> containing the elements of the given <code>Seq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>Seq</code> is empty
     */
-  def from[T](seq: Iterable[T]): Option[NonEmptyList[T]] =
-    seq.headOption match {
-      case None => None
-      case Some(first) => Some(new NonEmptyList(first :: seq.tail.toList))
-    }
+  def from[T](seq: Iterable[T]): Option[NonEmptyList[T]] = {
+    from(seq.toList)
+  }
+
+  def from[T](iterableOnce: IterableOnce[T]): Option[NonEmptyList[T]] = {
+    from(iterableOnce.iterator.toList)
+  }
+
+  implicit final class OptionOps[A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
+    def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
+  }
 }

@@ -18,14 +18,14 @@ object ClassConstructorMacro {
 
     targetType match {
       case t: SingletonTypeApi =>
-        val providerMagnet = symbolOf[Functoid.type].asClass.module
+        val functoid = symbolOf[Functoid.type].asClass.module
         val term = t match {
           case t: ThisTypeApi => This(t.sym)
           case t: ConstantTypeApi => q"${t.value}"
           case _ => q"${t.termSymbol}"
         }
         c.Expr[ClassConstructor[T]] {
-          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.singleton[$targetType]($term)) }"
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($functoid.singleton[$targetType]($term)) }"
         }
 
       case _ =>

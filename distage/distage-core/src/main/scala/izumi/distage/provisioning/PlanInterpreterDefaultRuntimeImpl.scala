@@ -136,7 +136,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     @nowarn("msg=Unused import")
-    def makeMeta() = {
+    def makeMeta(): LocatorMeta = {
       import scala.collection.compat._
       LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
     }
@@ -146,8 +146,11 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     for {
+      // do imports first before everything
       _ <- F.traverse_(imports)(processStep)
-      _ <- verifyEffectType[F](otherSteps, addFailure = f => F.maybeSuspend(mutFailures += f))
+      // verify effect type for everything else first before everything
+      _ <- verifyEffectType[F](otherSteps)(failure => F.maybeSuspend(mutFailures += failure))
+
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
       immutable = mutProvisioningContext.toImmutable
       res <-
@@ -236,7 +239,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
   }
 
-  private[this] def verifyEffectType[F[_]: TagK](ops: Vector[ExecutableOp], addFailure: ProvisioningFailure => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
+  private[this] def verifyEffectType[F[_]: TagK](ops: Vector[ExecutableOp])(addFailure: ProvisioningFailure => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
     val provisionerEffectType = SafeType.getK[F]
     val monadicOps = ops.collect { case m: MonadicOp => m }
     F.traverse_(monadicOps) {
@@ -245,7 +248,7 @@ class PlanInterpreterDefaultRuntimeImpl(
         val isEffect = actionEffectType != SafeType.identityEffectType
 
         if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
-          addFailure(ProvisioningFailure(op, new IncompatibleEffectTypesException(provisionerEffectType, actionEffectType)))
+          addFailure(ProvisioningFailure(op, new IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType)))
         } else {
           F.unit
         }

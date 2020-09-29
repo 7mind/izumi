@@ -12,10 +12,10 @@ import izumi.fundamentals.reflection.TrivialMacroLogger
 import scala.reflect.macros.blackbox
 
 /**
-  * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.providermagnet=true` java property!
+  * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.functoid=true` java property!
   *
   * {{{
-  *   sbt -Dizumi.debug.macro.distage.providermagnet=true compile
+  *   sbt -Dizumi.debug.macro.distage.functoid=true compile
   * }}}
   *
   * @see [[izumi.distage.constructors.DebugProperties]]
@@ -24,7 +24,7 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
 
-  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.providermagnet`.name)
+  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
   import c.universe._
