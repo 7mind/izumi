@@ -191,13 +191,14 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // every empty memoization level (after keys filtering) will be removed
       env
         .memoizationRoots.keys.toList.sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
-          case ((acc, previousKeys), (_, keys)) =>
-            val filteredKeys = keys.getActiveKeys(env.activation) -- previousKeys
-            if (filteredKeys.nonEmpty) {
-              val plan = prepareSharedPlan(envKeys, runtimeKeys, filteredKeys, env.activation, injector, strengthenedAppModule)
-              (acc ++ List(plan), previousKeys ++ filteredKeys)
+          case ((acc, allSharedKeys), (_, keys)) =>
+            val levelRoots = keys.getActiveKeys(env.activation) -- allSharedKeys
+            val levelModule = strengthenedAppModule.drop(allSharedKeys)
+            if (levelRoots.nonEmpty) {
+              val plan = prepareSharedPlan(envKeys, runtimeKeys, levelRoots, env.activation, injector, levelModule)
+              (acc ++ List(plan), allSharedKeys ++ plan.keys)
             } else {
-              acc -> previousKeys
+              acc -> allSharedKeys
             }
         }._1
     } else {
@@ -239,8 +240,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               runner.run {
                 testsTree.stateTraverse(runtimeLocator) {
                   (locator, plan, allTests) => stateAction =>
-                    withTestsRecoverCase(allTests.map(_.test)) {
-                      withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, allEnvTests)(stateAction)
+                    lazy val nodeTests = allTests.map(_.test)
+                    withTestsRecoverCase(nodeTests) {
+                      withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, nodeTests)(stateAction)
                     }
                 } {
                   (locator, tests) => proceedSuites(planChecker, locator, integrationLogger, allStrengthenedKeys)(tests)

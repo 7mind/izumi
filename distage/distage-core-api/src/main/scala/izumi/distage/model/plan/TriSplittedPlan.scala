@@ -15,6 +15,7 @@ final case class TriSplittedPlan(
   sideRoots1: Set[DIKey],
   sideRoots2: Set[DIKey],
 ) {
+  def keys: Set[DIKey] = side.keys ++ primary.keys ++ shared.keys
   def isEmpty: Boolean = {
     side.steps.isEmpty &&
     primary.steps.isEmpty &&
