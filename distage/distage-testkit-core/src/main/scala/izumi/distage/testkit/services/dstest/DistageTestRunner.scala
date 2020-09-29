@@ -659,7 +659,7 @@ object DistageTestRunner {
       // here we are filtering all empty plans to merge levels together
       plans.filter(_.nonEmpty) match {
         case plan :: tail =>
-          val childTree = childs.getOrElse[MemoizationTree[F]](plan, childs.put(plan, new MemoizationTree[F]))
+          val childTree = childs.getOrElseUpdate(plan, new MemoizationTree[F])
           childTree.addTests(tail, preparedTests)
         case Nil =>
           nodeTests.appendAll(preparedTests)
