@@ -99,9 +99,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             val integrationLogger = packedEnv.head.anyIntegrationLogger
             val memoizationInjector = packedEnv.head.anyMemoizationInjector
             val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-            val allStrengthenedKeys = packedEnv.iterator.flatMap(_.strengthenedKeys).toSet
             val memoizationTree = MemoizationTree[F](packedEnv)
-            MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests, allStrengthenedKeys) -> memoizationTree
+            MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests) -> memoizationTree
         }
     }
   }
@@ -192,7 +191,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       env
         .memoizationRoots.keys.toList.sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
-            val levelRoots = keys.getActiveKeys(env.activation) -- allSharedKeys
+            val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
             if (levelRoots.nonEmpty) {
               val plan = prepareSharedPlan(envKeys, runtimeKeys, levelRoots, env.activation, injector, levelModule)
@@ -221,7 +220,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnv, MemoizationTree[F])]): Unit = {
     configuredForeach(parallel)(envs) {
-      case (MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _, allStrengthenedKeys), testsTree) =>
+      case (MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _), testsTree) =>
         val allEnvTests = testsTree.allTests.map(_.test)
         integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
         withRecoverFromFailedExecution_(allEnvTests) {
@@ -245,7 +244,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                       withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, nodeTests)(stateAction)
                     }
                 } {
-                  (locator, tests) => proceedSuites(planChecker, locator, integrationLogger, allStrengthenedKeys)(tests)
+                  (locator, tests) => proceedSuites(planChecker, locator, integrationLogger)(tests)
                 }
               }
           }
@@ -349,7 +348,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
-    allStrengthenedKeys: Set[DIKey],
   )(testPlans: Iterable[PreparedTest[F]]
   )(implicit
     F: DIEffect[F],
@@ -371,7 +369,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) {
           _ =>
             groupedConfiguredTraverse_(preparedTests)(_.test.environment.parallelTests) {
-              proceedTest(planChecker, mainSharedLocator, testRunnerLogger, allStrengthenedKeys)
+              proceedTest(planChecker, mainSharedLocator, testRunnerLogger)
             }
         }
     }
@@ -381,7 +379,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
-    allStrengthenedKeys: Set[DIKey],
   )(preparedTest: PreparedTest[F]
   )(implicit F: DIEffect[F]
   ): F[Unit] = {
@@ -422,9 +419,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     val newAppModule = appModule.drop(allSharedKeys)
-    val moduleKeys = newAppModule.keys
-    // there may be strengthened keys which did not get into shared context, so we need to manually declare them as roots
-    val newRoots = testPlan.keys -- allSharedKeys ++ allStrengthenedKeys.intersect(moduleKeys)
+    val newRoots = testPlan.keys -- allSharedKeys
     val newTestPlan = testInjector.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
@@ -571,7 +566,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     envs.foreach {
-      case (MemoizationEnv(_, testEnvLogger, runtimePlan, _, debugOutput, _), testTree) =>
+      case (MemoizationEnv(_, testEnvLogger, runtimePlan, _, debugOutput), testTree) =>
         val suites = testTree.allTests.map(_.test.meta.id.suiteClassName).toList.distinct
         testEnvLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.allTests.size -> "tests"} ${testTree.toString -> "suitesMemoizationTree"}"
