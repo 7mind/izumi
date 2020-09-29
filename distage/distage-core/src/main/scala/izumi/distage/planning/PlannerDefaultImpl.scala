@@ -86,7 +86,7 @@ class PlannerDefaultImpl(
 
     val index = completedPlan.index
 
-    val maybeBrokenLoops = new Toposort().cycleBreaking(
+    val maybeBrokenLoops = Toposort.cycleBreaking(
       predcessors = IncidenceMatrix(topology.dependencies.graph),
       break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
     )

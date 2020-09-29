@@ -6,9 +6,9 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.annotation.{nowarn, tailrec}
 
-final class Toposort {
+object Toposort {
 
-  def cycleBreaking[T](predcessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  final def cycleBreaking[T](predcessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     cycleBreaking(predcessors.links, Seq.empty, break)
   }
 
@@ -16,7 +16,6 @@ final class Toposort {
   @tailrec
   private[this] def cycleBreaking[T](predcessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     import scala.collection.compat._
-
     val (noPreds, hasPreds) = predcessors.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {
@@ -48,11 +47,11 @@ final class Toposort {
     }
   }
 
-  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+  private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
     test(toPreds, Set.empty, key, key)
   }
 
-  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+  private[this] def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
     val deps = toPreds.getOrElse(toTest, Set.empty)
 
     if (deps.contains(needle)) {

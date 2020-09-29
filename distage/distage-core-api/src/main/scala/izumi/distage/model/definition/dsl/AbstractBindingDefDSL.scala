@@ -191,15 +191,15 @@ object AbstractBindingDefDSL {
           // after first `aliased` no more changes are possible
           val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
           refs = newRef :: refs
-        case Modify(providerMagnetModifier) =>
+        case Modify(functoidModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
-              val newProvider = providerMagnetModifier(Functoid(function)).get
+              val newProvider = functoidModifier(Functoid(function)).get
               if (newProvider.ret <:< implType) {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               } else {
                 throw new InvalidFunctoidModifier(
-                  s"Cannot apply invalid Functoid modifier $providerMagnetModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
                 )
               }
             case _ => ()
@@ -307,7 +307,7 @@ object AbstractBindingDefDSL {
     final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
-    final case class Modify[T](providerMagnetModifier: Functoid[T] => Functoid[T]) extends SingletonInstruction
+    final case class Modify[T](functoidModifier: Functoid[T] => Functoid[T]) extends SingletonInstruction
   }
 
   sealed trait SetInstruction

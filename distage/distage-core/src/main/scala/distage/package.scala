@@ -68,9 +68,9 @@ package object distage extends Distage {
   override type HasConstructor[T] = constructors.HasConstructor[T]
   override val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
 
-  @deprecated("Use `distage.Functoid` instead of ProviderMagnet", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
   override type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of ProviderMagnet", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
   override val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
 
   @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")

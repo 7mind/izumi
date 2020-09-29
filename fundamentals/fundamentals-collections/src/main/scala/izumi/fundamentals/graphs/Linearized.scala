@@ -19,7 +19,7 @@ final case class Linearized[N, +M](
 
 object Linearized {
   def fromDag[N, M](dag: DAG[N, M]): Linearized[N, M] = {
-    new Toposort().cycleBreaking(dag.predcessors, ToposortLoopBreaker.dontBreak) match {
+    Toposort.cycleBreaking(dag.predcessors, ToposortLoopBreaker.dontBreak) match {
       case Left(value) =>
         throw new IllegalStateException(s"Non-linerizable DAG, this can't be. Error: $value; $dag")
       case Right(value) =>
@@ -29,7 +29,7 @@ object Linearized {
 
   def from[N, M](dg: DG[N, M], breaker: ToposortLoopBreaker[N]): Either[ToposortError[N], Linearized[N, M]] = {
     for {
-      sorted <- new Toposort().cycleBreaking(dg.predcessors, breaker)
+      sorted <- Toposort.cycleBreaking(dg.predcessors, breaker)
     } yield {
       Linearized(sorted, dg.meta)
     }

@@ -62,8 +62,8 @@ private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any 
 object AnyConstructorOptionalMakeDSL {
   private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
 
-  @inline def apply[T](providerMagnet: Functoid[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
-    new AnyConstructorOptionalMakeDSL.Impl[T](providerMagnet)
+  @inline def apply[T](functoid: Functoid[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
+    new AnyConstructorOptionalMakeDSL.Impl[T](functoid)
   }
 
   def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL.Impl[T] = {

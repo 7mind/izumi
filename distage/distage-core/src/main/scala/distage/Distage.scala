@@ -70,9 +70,9 @@ trait Distage {
   type HasConstructor[T] = constructors.HasConstructor[T]
   val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
 
-  @deprecated("Use `distage.Functoid` instead of ProviderMagnet", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
   type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of ProviderMagnet", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
   val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
 
   @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
