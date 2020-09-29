@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.{BadSetAxis, UnconfiguredSetElementAxis}
+import izumi.distage.model.exceptions.BadSetAxis
 import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 

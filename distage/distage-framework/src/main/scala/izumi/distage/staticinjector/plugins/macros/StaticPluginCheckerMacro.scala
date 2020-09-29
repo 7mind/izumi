@@ -178,7 +178,7 @@ object StaticPluginCheckerMacro {
 
     val rootKeys = rootModule.fold(Set.empty[DIKey])(_.keys)
     val finalPlan = injector.plan(PlannerInput(module, activation, rootKeys)).locateImports(bootstrap)
-    val imports = finalPlan.unresolvedImports.left.toOption.getOrElse(Seq.empty).filter {
+    val imports = finalPlan.unresolvedImports.map(_.toList).getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true
     }

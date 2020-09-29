@@ -136,7 +136,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     @nowarn("msg=Unused import")
-    def makeMeta() = {
+    def makeMeta(): LocatorMeta = {
       import scala.collection.compat._
       LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
     }

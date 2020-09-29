@@ -17,8 +17,8 @@ sealed trait DIKey {
 }
 
 object DIKey {
-  def apply[T: Tag]: DIKey = TypeKey(SafeType.get[T])
-  def apply[T: Tag](id: Identifier): DIKey = DIKey.get[T].named(id)
+  def apply[T: Tag]: DIKey = DIKey.TypeKey(SafeType.get[T])
+  def apply[T: Tag](id: Identifier): DIKey = DIKey.IdKey(SafeType.get[T], id.id)(id.idContract)
 
   def get[T: Tag]: DIKey.TypeKey = DIKey.TypeKey(SafeType.get[T])
 

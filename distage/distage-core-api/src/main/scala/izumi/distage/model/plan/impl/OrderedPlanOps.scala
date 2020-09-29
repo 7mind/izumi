@@ -4,13 +4,32 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{OrderedPlan, Roots, SemiPlan}
-import izumi.distage.model.reflection._
 import izumi.distage.model.recursive.LocatorRef
-import izumi.reflect.Tag
+import izumi.distage.model.reflection.{DIKey, _}
+import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.reflect.{Tag, TagK}
 
 private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
+
+  /**
+    * Same as [[unresolvedImports]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
+    *
+    * @throws izumi.distage.model.exceptions.InvalidPlanException if there are unresolved imports
+    */
+  final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = {
+    assertImportsResolved.fold(())(throw _)
+  }
+
+  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+  final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = {
+    import izumi.fundamentals.platform.strings.IzString._
+    unresolvedImports.map {
+      unresolved =>
+        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).toList.niceList(shift = ""))
+    }
+  }
 
   /**
     * Check for any unresolved dependencies, if this
@@ -25,38 +44,31 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @return this plan or a list of unresolved parameters
     */
-  final def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
-    val nonMagicImports = getImports.filter {
-      case i if i.target == DIKey.get[LocatorRef] =>
-        false
-      case _ =>
-        true
-    }
-    if (nonMagicImports.isEmpty) Right(this) else Left(nonMagicImports)
+  final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = {
+    val locatorRefKey = DIKey[LocatorRef]
+    val nonMagicImports = steps
+      .iterator.collect {
+        case i: ImportDependency if i.target != locatorRefKey => i
+      }.toList
+    NonEmptyList.from(nonMagicImports)
   }
 
-  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  final def assertImportsResolved: Either[InvalidPlanException, OrderedPlan] = {
-    import izumi.fundamentals.platform.strings.IzString._
-    unresolvedImports.left.map {
-      unresolved =>
-        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).niceList(shift = ""))
-    }
-  }
-
-  /**
-    * Same as [[unresolvedImports]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
-    *
-    * @throws InvalidPlanException
-    */
-  final def assertImportsResolvedOrThrow(): Unit = {
-    assertImportsResolved.fold(throw _, _ => ())
+  final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
+    val effectType = SafeType.getK[F]
+    val badSteps = steps
+      .iterator.collect {
+        case op: MonadicOp if !(op.effectHKTypeCtor <:< effectType || op.effectHKTypeCtor <:< SafeType.identityEffectType) => op
+      }.toList
+    NonEmptyList.from(badSteps)
   }
 
   /**
     * Be careful, don't use this method blindly, it can disrupt graph connectivity when used improperly.
     *
     * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
+    *
+    * Note: this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
+    *       by deleting the `keys` from bindings: `module -- keys`
     */
   final def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
     val newSteps = steps.flatMap {
@@ -73,9 +85,9 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     }
 
     OrderedPlan(
-      newSteps,
-      declaredRoots,
-      topology.removeKeys(keys),
+      steps = newSteps,
+      declaredRoots = declaredRoots,
+      topology = topology.removeKeys(keys),
     )
   }
 

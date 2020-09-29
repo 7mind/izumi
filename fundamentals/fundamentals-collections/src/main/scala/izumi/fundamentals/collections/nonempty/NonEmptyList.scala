@@ -1469,10 +1469,15 @@ object NonEmptyList {
     */
   def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[Seq[T]] = Some(nonEmptyList.toList)
 
-  /*
-    // TODO: Figure out how to get case NonEmptyList() to not compile
-    def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[(T, Seq[T])] = Some(nonEmptyList.head, nonEmptyList.tail)
-   */
+  /**
+    * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>List</code>.
+    *
+    * @param list the <code>List</code> with which to construct a <code>NonEmptyList</code>
+    * @return a <code>NonEmptyList</code> containing the elements of the given <code>List</code>, if non-empty, wrapped in
+    *     a <code>Some</code>; else <code>None</code> if the <code>List</code> is empty
+    */
+  def from[T](list: List[T]): Option[NonEmptyList[T]] =
+    if (list.isEmpty) None else Some(new NonEmptyList(list))
 
   /**
     * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>Seq</code>.
