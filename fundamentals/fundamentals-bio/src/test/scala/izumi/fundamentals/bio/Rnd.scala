@@ -5,7 +5,7 @@ import izumi.functional.bio.BIO
 import izumi.functional.bio.impl.MiniBIO
 import org.scalacheck.Arbitrary
 
-trait Rnd {
+trait Rnd  {
   implicit def arbMiniBIO[A](implicit arb: Arbitrary[A]): Arbitrary[MiniBIO[Throwable, A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_)
@@ -24,14 +24,15 @@ trait Rnd {
     }
   }
 
-  implicit def arbZIO[A](implicit arb: Arbitrary[A]): Arbitrary[zio.Task[A]] = Arbitrary {
-    Arbitrary.arbBool.arbitrary.flatMap {
-      if (_)
-        arb.arbitrary.map(BIO[zio.IO].pure(_))
-      else
-        Arbitrary.arbThrowable.arbitrary.map(BIO[zio.IO].fail(_))
-    }
-  }
+//  implicit def arbZIO[A](implicit arb: Arbitrary[A]): Arbitrary[zio.Task[A]] = Arbitrary {
+//    Arbitrary.arbBool.arbitrary.flatMap {
+//      if (_)
+//        arb.arbitrary.map(BIO[zio.IO].pure(_))
+//      else
+//        Arbitrary.arbThrowable.arbitrary.map(BIO[zio.IO].fail(_))
+//    }
+//  }
+
 
   implicit def eqMiniBIO[A](implicit eq: Eq[A]): Eq[MiniBIO[Throwable, A]] = Eq.instance {
     (l, r) => l.run() == r.run()
@@ -43,9 +44,10 @@ trait Rnd {
   }
 
 
-  implicit def eqZIO[A](implicit  eq: Eq[A]): Eq[zio.Task[A]] = Eq.instance {
-    (l, r) =>
-      val runtime = zio.Runtime.default
-      runtime.unsafeRun(l) == runtime.unsafeRun(r)
-  }
+//  implicit def eqZIO[A](implicit  eq: Eq[A]): Eq[zio.Task[A]] = Eq.instance {
+//    (l, r) =>
+//      val runtime = zio.Runtime.default
+//      runtime.unsafeRun(l) == runtime.unsafeRun(r)
+//  }
+
 }
