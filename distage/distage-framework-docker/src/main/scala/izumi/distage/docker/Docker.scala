@@ -20,7 +20,9 @@ object Docker {
 
   final case class ServicePort(listenOnV4: String, port: Int)
 
-  final case class ContainerId(name: String) extends AnyVal
+  final case class ContainerId(name: String) extends AnyVal {
+    override def toString: String = name
+  }
 
   trait DockerPort {
     def protocol: String
