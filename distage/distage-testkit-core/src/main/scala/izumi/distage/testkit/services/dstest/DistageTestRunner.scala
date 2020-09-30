@@ -479,6 +479,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     doRecover(None) {
+      // if (test.environment.debugOutput && testPlan.keys.nonEmpty) reporter.info(test.meta, s"Test plan info: $testPlan")
       Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
@@ -638,6 +639,7 @@ object DistageTestRunner {
     def beginSuite(id: SuiteData): Unit
     def endSuite(id: SuiteData): Unit
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
+    def info(test: TestMeta, message: String): Unit
   }
 
   object ProvisioningIntegrationException {
@@ -699,12 +701,13 @@ object DistageTestRunner {
       nodeTests.toList.flatMap(_.preparedTests) ++ childs.flatMap(_._2.allTests)
     }
 
-    @inline private def toString_(level: Int = 0): String = {
-      val currentLevel = List.fill(level)("|  ").mkString
-      val currentLevelPad = s"\n${List.fill(level)("|__ ").mkString}Level=$level"
-      val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$currentLevel|__$t")
+    @inline private def toString_(level: Int = 0, plan: Option[TriSplittedPlan] = None): String = {
+      val currentLevel = List.fill(level)("║    ").mkString
+      val levelTitlePad = List.fill(level-1)("║    ").mkString("","", if (level == 0) "" else  "╠════")
+      val currentLevelPad = s"\n$levelTitlePad╦╕ LEVEL = $level;\n$currentLevel╠╛ PLAN KEYS: ${plan.map(_.keys.map(_.tpe)).getOrElse(Set.empty)}"
+      val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$currentLevel╠══* $t")
       val str = if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
-      childs.toList.foldLeft(str) { case (acc, (_, next)) => s"$acc${next.toString_(level + 1)}" }
+      childs.toList.foldLeft(str) { case (acc, (p, next)) => s"$acc${next.toString_(level + 1, Some(p))}" }
     }
 
     @inline override def toString: String = toString_()

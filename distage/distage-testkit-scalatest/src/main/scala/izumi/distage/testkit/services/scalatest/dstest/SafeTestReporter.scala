@@ -24,6 +24,8 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def endSuite(@unused id: SuiteData): Unit = {}
 
+  override def info(test: TestMeta, message: String): Unit = underlying.info(test, message)
+
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     testStatus match {
       case TestStatus.Running =>

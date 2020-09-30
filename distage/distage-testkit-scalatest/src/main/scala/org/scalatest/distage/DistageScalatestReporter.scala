@@ -17,22 +17,44 @@ class DistageScalatestReporter extends TestReporter {
   override def endAll(): Unit = {}
 
   override def beginSuite(id: SuiteData): Unit = {
-//    doReport(id.suiteId)(TestStarting(
-//      _,
-//      id.suiteName, id.suiteId, Some(id.suiteClassName),
-//      id.suiteName,
-//      id.suiteName,
-//    ))
+    doReport(id.suiteId)(
+      SuiteStarting(
+        _,
+        id.suiteName,
+        id.suiteId,
+        Some(id.suiteClassName),
+        formatter = Some(MotionToSuppress),
+      )
+    )
   }
 
   override def endSuite(id: SuiteData): Unit = {
-//    doReport(id.suiteId)(TestSucceeded(
-//      _,
-//      id.suiteName, id.suiteId, Some(id.suiteClassName),
-//      id.suiteName,
-//      id.suiteName,
-//      Vector.empty,
-//    ))
+    doReport(id.suiteId)(
+      SuiteCompleted(
+        _,
+        id.suiteName,
+        id.suiteId,
+        Some(id.suiteClassName),
+        formatter = Some(MotionToSuppress),
+        duration = Some(1)
+      )
+    )
+  }
+
+  override def info(test: TestMeta, message: String): Unit = {
+    val suiteName1 = test.id.suiteName
+    val suiteId1 = test.id.suiteId
+    val suiteClassName1 = test.id.suiteId
+    val testName = test.id.name
+    doReport(suiteId1)(
+      InfoProvided(
+        _,
+        s"$test \n$message",
+        Some(NameInfo(suiteName1, suiteId1, Some(suiteClassName1), Some(testName))),
+        location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+        formatter = Some(MotionToSuppress),
+      )
+    )
   }
 
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
