@@ -92,10 +92,10 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         // merge environments together by equality of their shared & runtime plans
         // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
         // so this saves a lot of realloaction of memoized resources
-        val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
+        val mergedEnvs = memoizationEnvs.groupBy(_.runtimePlan)
 
         mergedEnvs.map {
-          case (EnvMergeCriteria(_, _, runtimePlan, _), packedEnv) =>
+          case (runtimePlan, packedEnv) =>
             val integrationLogger = packedEnv.head.anyIntegrationLogger
             val memoizationInjector = packedEnv.head.anyMemoizationInjector
             val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
@@ -204,9 +204,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       List(prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule))
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, runtimePlan, envExec)
-
-    val memoEnvHashCode = envMergeCriteria.hashCode()
+    val memoEnvHashCode = runtimePlan.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
     val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
     if (strengthenedKeys.nonEmpty) {
@@ -215,7 +213,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       )
     }
 
-    PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
+    PackedEnv(runtimePlan, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
   }
 
   def proceedEnvs(parallel: ParallelLevel)(envs: Iterable[(MemoizationEnv, MemoizationTree[F])]): Unit = {
@@ -594,14 +592,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 }
 
 object DistageTestRunner {
-  final case class EnvMergeCriteria(
-    bsPlanMinusActivations: Vector[ExecutableOp],
-    bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: OrderedPlan,
-    envExec: EnvExecutionParams,
-  )
   final case class PackedEnv[F[_]](
-    envMergeCriteria: EnvMergeCriteria,
+    runtimePlan: OrderedPlan,
     preparedTests: Seq[PreparedTest[F]],
     memoizationPlanTree: List[TriSplittedPlan],
     anyMemoizationInjector: Injector[Identity],
