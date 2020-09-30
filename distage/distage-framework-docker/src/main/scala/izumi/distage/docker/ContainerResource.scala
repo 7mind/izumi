@@ -159,7 +159,7 @@ case class ContainerResource[F[_], T](
   private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
     FileLockMutex.withLocalMutex(logger)(
-      s"${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
+      s"distage-container-resource-${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
       waitFor = 200.millis,
       maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
     ) {
@@ -183,8 +183,8 @@ case class ContainerResource[F[_], T](
               .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(statusFilter.asJava)
-              .exec()
-              .asScala.toList.sortBy(_.getId)
+              .exec().asScala.toList
+              .sortBy(_.getId)
           } catch {
             case c: Throwable =>
               throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
@@ -194,18 +194,20 @@ case class ContainerResource[F[_], T](
           val portSet = ports.map(_.port).toSet
           val candidates = containers.flatMap {
             c =>
-              val inspection = rawClient.inspectContainerCmd(c.getId).exec()
-              val networks = inspection.getNetworkSettings.getNetworks.asScala.keys.toList
-              val missedNetworks = config.networks.filterNot(n => networks.contains(n.name))
-              mapContainerPorts(inspection) match {
+              val id = c.getId
+              val cInspection = rawClient.inspectContainerCmd(id).exec()
+              val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
+              val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
+              val name = cInspection.getName
+              mapContainerPorts(cInspection) match {
                 case Left(value) =>
-                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                  logger.info(s"Container $name:$id is missing required ports $value so will not be reused")
                   Seq.empty
-                case _ if missedNetworks.nonEmpty =>
-                  logger.info(s"Container ${c.getId} missing networks $missedNetworks so will not be reused")
+                case _ if missingNetworks.nonEmpty =>
+                  logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
                   Seq.empty
                 case Right(value) =>
-                  Seq((c, inspection, value))
+                  Seq((c, cInspection, value))
               }
           }
           if (portSet.nonEmpty) {
@@ -224,30 +226,22 @@ case class ContainerResource[F[_], T](
           }
         }
         existing <- candidate match {
-          case Some((c, inspection, existingPorts)) =>
+          case Some((c, cInspection, existingPorts)) =>
             val unverified = DockerContainer[T](
               id = ContainerId(c.getId),
-              name = inspection.getName,
+              name = cInspection.getName,
               connectivity = existingPorts,
               containerConfig = config,
               clientConfig = client.clientConfig,
               availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
-              hostName = inspection.getConfig.getHostName,
-              labels = inspection.getConfig.getLabels.asScala.toMap,
+              hostName = cInspection.getConfig.getHostName,
+              labels = cInspection.getConfig.getLabels.asScala.toMap,
             )
-            logger.debug(s"Matching container found: ${config.image}->${unverified.name}, will try to reuse...")
+            logger.info(s"Matching container found: ${config.image}->${unverified.name}:${unverified.id}, will try to reuse...")
             await(unverified, 0)
-//            F.definitelyRecover() {
-//              t =>
-////                if (singleshot) {
-////                  nothing
-////                } else {
-//                doRun(ports)
-////                }
-//            }
 
           case None =>
-            logger.debug(s"No existring container found for ${config.image}, will run...")
+            logger.info(s"No existing container found for ${config.image}, will run new...")
             doRun(ports)
         }
       } yield existing

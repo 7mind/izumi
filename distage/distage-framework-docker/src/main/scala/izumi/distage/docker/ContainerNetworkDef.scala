@@ -46,7 +46,8 @@ object ContainerNetworkDef {
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ) extends DIResource[F, ContainerNetwork[T]] {
-    private[this] val rawClient = client.rawClient
+    import client.rawClient
+
     private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
     private[this] val networkLabels: Map[String, String] = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
@@ -57,16 +58,30 @@ object ContainerNetworkDef {
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
         if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-          FileLockMutex.withLocalMutex(logger)(prefix, waitFor = 1.second, maxAttempts = 10) {
+          val maxAttempts = 50
+          logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
+          FileLockMutex.withLocalMutex(logger)(s"distage-container-network-def-$prefix", waitFor = 200.millis, maxAttempts = maxAttempts) {
             val labelsSet = networkLabels.toSet
-            val existedNetworks = rawClient.listNetworksCmd().exec().asScala.toList
-            existedNetworks.find(_.labels.asScala.toSet == labelsSet).fold(createNew()) {
-              network =>
-                F.pure(ContainerNetwork(network.getName, network.getId))
-            }
+            val existingNetworks = rawClient
+              .listNetworksCmd().exec().asScala.toList
+              .sortBy(_.getId)
+            existingNetworks
+              .find(_.labels.asScala.toSet == labelsSet)
+              .fold {
+                logger.info(s"No existing network found for ${prefix -> "network"}, will create new...")
+                createNewRandomizedNetwork()
+              } {
+                network =>
+                  F.maybeSuspend {
+                    val id = network.getId
+                    val name = network.getName
+                    logger.info(s"Matching network found: ${prefix -> "network"}->$name:$id, will try to reuse...")
+                    ContainerNetwork(name, id)
+                  }
+              }
           }
         } else {
-          createNew()
+          createNewRandomizedNetwork()
         }
       }
     }
@@ -74,7 +89,7 @@ object ContainerNetworkDef {
     override def release(resource: ContainerNetwork[T]): F[Unit] = {
       if (Docker.shouldKill(config.reuse, client.clientConfig.globalReuse)) {
         F.maybeSuspend {
-          logger.info(s"Going to delete ${resource.name -> "network"}")
+          logger.info(s"Going to delete ${prefix -> "network"}->${resource.name}:${resource.id}")
           rawClient.removeNetworkCmd(resource.id).exec()
           ()
         }
@@ -83,10 +98,10 @@ object ContainerNetworkDef {
       }
     }
 
-    private[this] def createNew(): F[ContainerNetwork[T]] = {
+    private[this] def createNewRandomizedNetwork(): F[ContainerNetwork[T]] = {
       F.maybeSuspend {
         val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
-        logger.info(s"Going to create ${name -> "network"}")
+        logger.info(s"Going to create new ${prefix -> "network"}->$name")
         val network = rawClient
           .createNetworkCmd()
           .withName(name)

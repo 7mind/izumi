@@ -32,7 +32,8 @@ object FileLockMutex {
             logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
             F.pure(None)
           }
-        case err => F.fail(err)
+        case err =>
+          F.fail(err)
       }
     }
 
@@ -44,14 +45,16 @@ object FileLockMutex {
       AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)
     }
 
-    def acquireLock(channel: AsynchronousFileChannel): F[Option[FileLock]] = retryOnFileLock {
-      P.async[FileLock] {
-        cb =>
-          val handler = new CompletionHandler[FileLock, Unit] {
-            override def completed(result: FileLock, attachment: Unit): Unit = cb(Right(result))
-            override def failed(exc: Throwable, attachment: Unit): Unit = cb(Left(exc))
-          }
-          channel.lock((), handler)
+    def acquireLock(channel: AsynchronousFileChannel): F[Option[FileLock]] = {
+      retryOnFileLock {
+        P.async[FileLock] {
+          cb =>
+            val handler = new CompletionHandler[FileLock, Unit] {
+              override def completed(result: FileLock, attachment: Unit): Unit = cb(Right(result))
+              override def failed(exc: Throwable, attachment: Unit): Unit = cb(Left(exc))
+            }
+            channel.lock((), handler)
+        }
       }
     }
 
