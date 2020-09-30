@@ -118,7 +118,7 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 <br/>
 
 <a href="https://tele2.ru/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.png?sanitize=true" alt="Tele2 Russia"/>
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.svg?sanitize=true" alt="Tele2 Russia"/>
 </a>
 <br/>
 
