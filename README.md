@@ -117,6 +117,11 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 </a>
 <br/>
 
+<a href="https://tele2.ru/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.png?sanitize=true" alt="Tele2 Russia"/>
+</a>
+<br/>
+
 Projects powered by Izumi
 ==========================
 - [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely functional way.
