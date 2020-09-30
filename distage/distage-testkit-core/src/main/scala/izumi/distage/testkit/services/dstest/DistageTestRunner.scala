@@ -19,6 +19,7 @@ import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
@@ -95,7 +96,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
 
         mergedEnvs.map {
-          case (EnvMergeCriteria(_, _, runtimePlan, _), packedEnv) =>
+          case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
             val integrationLogger = packedEnv.head.anyIntegrationLogger
             val memoizationInjector = packedEnv.head.anyMemoizationInjector
             val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
@@ -204,7 +205,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       List(prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule))
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, runtimePlan, envExec)
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, runtimePlan)
 
     val memoEnvHashCode = envMergeCriteria.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
@@ -244,7 +245,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                       withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, nodeTests)(stateAction)
                     }
                 } {
-                  (locator, tests) => proceedSuites(planChecker, locator, integrationLogger)(tests)
+                  (locator, levelGroups) => proceedMemoizationLevel(planChecker, locator, integrationLogger)(levelGroups)
                 }
               }
           }
@@ -344,32 +345,35 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedSuites(
+  protected def proceedMemoizationLevel(
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
-  )(testPlans: Iterable[PreparedTest[F]]
+  )(levelGroups: Iterable[MemoizationLevelGroup[F]]
   )(implicit
     F: DIEffect[F],
     P: DIEffectAsync[F],
   ): F[Unit] = {
-    val testsBySuite = testPlans.groupBy {
-      preparedTest =>
-        val testId = preparedTest.test.meta.id
-        SuiteData(testId.suiteName, testId.suiteId, testId.suiteClassName)
+    val testsBySuite = levelGroups.flatMap {
+      case MemoizationLevelGroup(preparedTests, strengthenedKeys) =>
+        preparedTests.groupBy {
+          preparedTest =>
+            val testId = preparedTest.test.meta.id
+            SuiteData(testId.suiteName, testId.suiteId, testId.suiteClassName) -> strengthenedKeys
+        }
     }
     // now we are ready to run each individual test
     // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
     // we assume that individual tests within a suite can't have different values of `parallelSuites`
     // (because of structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
     groupedConfiguredTraverse_(testsBySuite)(_._2.head.test.environment.parallelSuites) {
-      case (suiteData, preparedTests) =>
+      case ((suiteData, strengthenedKeys), preparedTests) =>
         F.bracket(
           acquire = F.maybeSuspend(reporter.beginSuite(suiteData))
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) {
           _ =>
             groupedConfiguredTraverse_(preparedTests)(_.test.environment.parallelTests) {
-              proceedTest(planChecker, mainSharedLocator, testRunnerLogger)
+              proceedTest(planChecker, mainSharedLocator, testRunnerLogger, strengthenedKeys)
             }
         }
     }
@@ -379,6 +383,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
+    groupStrengthenedKeys: Set[DIKey],
   )(preparedTest: PreparedTest[F]
   )(implicit F: DIEffect[F]
   ): F[Unit] = {
@@ -419,7 +424,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     val newAppModule = appModule.drop(allSharedKeys)
-    val newRoots = testPlan.keys -- allSharedKeys
+    val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
     val newTestPlan = testInjector.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
@@ -598,7 +603,6 @@ object DistageTestRunner {
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
     runtimePlan: OrderedPlan,
-    envExec: EnvExecutionParams,
   )
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
@@ -650,25 +654,29 @@ object DistageTestRunner {
     */
   final class MemoizationTree[F[_]] {
     private[this] val childs = TrieMap.empty[TriSplittedPlan, MemoizationTree[F]]
-    private[this] val nodeTests = ArrayBuffer.empty[PreparedTest[F]]
+    private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
-    @tailrec def addTests(plans: List[TriSplittedPlan], preparedTests: Iterable[PreparedTest[F]]): Unit = synchronized {
+    @tailrec private def addEnv_(plans: List[TriSplittedPlan], levelTests: MemoizationLevelGroup[F]): Unit = synchronized {
       // here we are filtering all empty plans to merge levels together
       plans.filter(_.nonEmpty) match {
         case plan :: tail =>
           val childTree = childs.getOrElseUpdate(plan, new MemoizationTree[F])
-          childTree.addTests(tail, preparedTests)
+          childTree.addEnv_(tail, levelTests)
         case Nil =>
-          nodeTests.appendAll(preparedTests)
+          nodeTests.append(levelTests)
           ()
       }
+    }
+
+    def addEnv(packedEnv: PackedEnv[F]): Unit = synchronized {
+      addEnv_(packedEnv.memoizationPlanTree, MemoizationLevelGroup(packedEnv.preparedTests, packedEnv.strengthenedKeys))
     }
 
     @inline private def stateTraverse_[State](
       initialState: State,
       thisPlan: TriSplittedPlan,
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
-    )(stateAction: (State, Iterable[PreparedTest[F]]) => F[Unit]
+    )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: DIEffect[F]
     ): F[Unit] = {
       stateAcquire(initialState, thisPlan, allTests)(stateTraverse(_)(stateAcquire)(stateAction))
@@ -678,7 +686,7 @@ object DistageTestRunner {
     @inline def stateTraverse[State](
       initialState: State
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
-    )(stateAction: (State, Iterable[PreparedTest[F]]) => F[Unit]
+    )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: DIEffect[F]
     ): F[Unit] = {
       for {
@@ -688,13 +696,13 @@ object DistageTestRunner {
     }
 
     @inline def allTests: Iterable[PreparedTest[F]] = {
-      nodeTests.toList ++ childs.flatMap(_._2.allTests)
+      nodeTests.toList.flatMap(_.preparedTests) ++ childs.flatMap(_._2.allTests)
     }
 
     @inline private def toString_(level: Int = 0): String = {
       val currentLevel = List.fill(level)("|  ").mkString
-      val currentLevelPad = s"\n${List.fill(level)("|__").mkString}Level=$level"
-      val testIds = nodeTests.toList.map(_.test.meta.id.suiteName).distinct.sorted.map(t => s"$currentLevel|__$t")
+      val currentLevelPad = s"\n${List.fill(level)("|__ ").mkString}Level=$level"
+      val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$currentLevel|__$t")
       val str = if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
       childs.toList.foldLeft(str) { case (acc, (_, next)) => s"$acc${next.toString_(level + 1)}" }
     }
@@ -702,9 +710,10 @@ object DistageTestRunner {
     @inline override def toString: String = toString_()
   }
   object MemoizationTree {
+    final case class MemoizationLevelGroup[F[_]](preparedTests: Iterable[PreparedTest[F]], strengthenedKeys: Set[DIKey])
     def apply[F[_]](iterator: Iterable[PackedEnv[F]]): MemoizationTree[F] = {
       val tree = new MemoizationTree[F]
-      iterator.foreach(env => tree.addTests(env.memoizationPlanTree, env.preparedTests))
+      iterator.foreach(tree.addEnv)
       tree
     }
   }
