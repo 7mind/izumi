@@ -45,6 +45,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -52,10 +54,10 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -147,6 +149,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -154,10 +158,10 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -265,6 +269,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -272,10 +278,10 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -388,6 +394,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -395,10 +403,10 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -485,6 +493,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -492,10 +502,10 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -591,6 +601,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -598,10 +610,10 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -697,6 +709,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -704,10 +718,10 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -800,6 +814,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -807,10 +823,10 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -906,6 +922,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -913,10 +931,10 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1007,6 +1025,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1014,10 +1034,10 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1116,6 +1136,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1123,10 +1145,10 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1240,6 +1262,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1247,10 +1271,10 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1345,6 +1369,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1352,10 +1378,10 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1448,6 +1474,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1455,10 +1483,10 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1549,6 +1577,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1556,10 +1586,10 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1660,6 +1690,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1667,10 +1699,10 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1769,6 +1801,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1776,10 +1810,10 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1876,6 +1910,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1883,10 +1919,10 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -1988,6 +2024,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -1995,10 +2033,10 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2094,6 +2132,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2101,10 +2141,10 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2195,6 +2235,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2202,10 +2244,10 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2299,6 +2341,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2306,10 +2350,10 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2401,6 +2445,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2408,10 +2454,10 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2593,6 +2639,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2600,10 +2648,10 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2693,6 +2741,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     withBuildInfo("izumi.sbt.deps", "Izumi"),
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
@@ -2700,10 +2750,10 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Ypartial-unification",
         "-Yno-adapted-args",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
         "-Xlint:by-name-right-associative",
         "-Xlint:constant",
@@ -2988,11 +3038,7 @@ lazy val `izumi` = (project in file("."))
       "-XDignore.symbol.file"
     ),
     scalacOptions in ThisBuild ++= Seq(
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
       s"-Xmacro-settings:git-repo-clean=${com.typesafe.sbt.SbtGit.GitKeys.gitUncommittedChanges.value}",
       s"-Xmacro-settings:git-branch=${com.typesafe.sbt.SbtGit.GitKeys.gitCurrentBranch.value}",
       s"-Xmacro-settings:git-described-version=${com.typesafe.sbt.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
