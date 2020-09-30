@@ -5,6 +5,7 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 class AutoSetTest extends AnyWordSpec with MkInjector {
@@ -19,7 +20,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       make[ServiceD]
     }
 
-    val injector = Injector(new BootstrapModuleDef {
+    val injector = Injector[Identity](new BootstrapModuleDef {
       many[PlanningHook]
         .add(new AutoSetHook[Ordered, Ordered])
     })

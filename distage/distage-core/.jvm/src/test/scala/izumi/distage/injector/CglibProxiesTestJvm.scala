@@ -8,6 +8,7 @@ import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
+import izumi.fundamentals.platform.functional.Identity
 import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -272,7 +273,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
         many[DynamoDDLGroup]
       })
 
-      val injector = Injector(
+      val injector = Injector[Identity](
         AutoSetModule()
           .register[RoleComponent]
           .register[RoleService]

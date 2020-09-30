@@ -5,6 +5,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.modules.DefaultModule
+import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
 trait InjectorFactory {
@@ -25,6 +26,16 @@ trait InjectorFactory {
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
   def apply[F[_]: DIEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F]
+
+  /**
+    * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
+    *
+    * Use [[apply[F[_]*]] variants to specify a different effect type
+    */
+  // Note: this function exists only because of Scala 2.12's sub-par implicit handling,
+  // 2.12 fails to default to `DIEffect.dieffectIdentity` when writing `Injector()`
+  // if cats-effect is on classpath, because of recursive (on 2.12: diverging) instances in `cats.effect.Sync`
+  def apply(): Injector[Identity]
 
   /**
     * Create a new Injector with chosen [[izumi.distage.model.definition.Activation]] axes for the bootstrap environment.

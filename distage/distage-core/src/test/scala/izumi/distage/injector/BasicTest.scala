@@ -10,6 +10,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.graphs.ConflictResolutionError
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -160,7 +161,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val sub = Injector.inherit(context)
+    val sub = Injector.inherit[Identity](context)
     val subplan = sub.plan(definition)
     val subcontext = injector.produce(subplan).unsafeGet()
 
@@ -332,7 +333,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
@@ -355,7 +356,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       }
     })
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
     assert(context.get[Set[Int]].toList.sorted == List(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
@@ -366,7 +367,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[TestImpl1]
     })
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestImpl1].justASet == Set.empty)
   }
@@ -398,7 +399,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[ServerConfig].from(ServerConfig)
     })
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[ServerConfig].port == context.get[Int]("port"))
     assert(context.get[ServerConfig].address == context.get[String]("address"))
@@ -418,7 +419,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       }
     })
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[Mutable].b.contains(SomethingUseful("x")))
   }
@@ -458,7 +459,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       Activation(Repo -> Repo.Prod),
     )
 
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[Mutable].b.contains(SomethingUseful("x")))
     assert(context.get[Mutable].a == 11)
@@ -500,7 +501,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     )
 
     intercept[BadMutatorAxis] {
-      Injector.Standard().produce(definition).unsafeGet()
+      mkInjector().produce(definition).unsafeGet()
     }
   }
 

@@ -4,6 +4,7 @@ import distage._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Activation
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
@@ -29,7 +30,7 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
       val debug = false
 
       val injector = if (debug) {
-        Injector(GraphDumpBootstrapModule())
+        Injector[Identity](GraphDumpBootstrapModule())
       } else {
         Injector()
       }
