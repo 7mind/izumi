@@ -8,7 +8,6 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
@@ -298,9 +297,9 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
         make[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].fromResource(new Lifecycle[Option, TestInstanceBinding] {
+        make[TestInstanceBinding].fromResource(new Lifecycle.Basic[Option, TestInstanceBinding] {
           override def acquire: Option[TestInstanceBinding] = None
-          override def release(resource: TestInstanceBinding): Option[Unit] = { resource.discard(); None }
+          override def release(resource: TestInstanceBinding): Option[Unit] = None
         })
       })
 
@@ -348,7 +347,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
           case Left(failure) =>
             Suspend2 {
               val ops = failure.failed.instances(DIKey.get[mutable.Queue[Ops]]).asInstanceOf[mutable.Queue[Ops]]
-              assert(ops == Seq(XStart, YStart))
+              assert(ops.toSeq == Seq(XStart, YStart))
               ops
             }
 
@@ -358,9 +357,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
       val ops = resource.use(ops => Suspend2(ops)).run().toOption.get
 
-      assert(ops == Seq(XStart, YStart, YStop, XStop))
-//      def y[F[_]] = Tag[DIResource[F, Any]]
-
+      assert(ops.toSeq == Seq(XStart, YStart, YStop, XStop))
     }
 
     "Display tag macro stack trace when ResourceTag is not found" in {
@@ -368,7 +365,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[DIResource[F, Any]](() => ???)
+            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
           }; ""
           """
         }
@@ -378,7 +375,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       assert(t.message.get contains "could not find implicit value for TagK[F]")
     }
 
-    "can pass a block with inner method calls into DIResource.Of constructor (https://github.com/scala/bug/issues/11969)" in {
+    "can pass a block with inner method calls into Lifecycle.Of constructor (https://github.com/scala/bug/issues/11969)" in {
       final class XImpl
         extends Lifecycle.Of({
           def res = Lifecycle.make(Try(helper()))(_ => Try(()))

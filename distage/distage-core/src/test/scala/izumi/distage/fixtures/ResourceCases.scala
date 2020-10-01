@@ -27,7 +27,7 @@ object ResourceCases {
 
     val queueEffect = Suspend2(mutable.Queue.empty[Ops])
 
-    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle[Suspend2[Nothing, ?], X] {
+    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], X] {
       override def acquire: Suspend2[Nothing, X] = Suspend2 {
         queue += XStart
         new X
@@ -40,7 +40,7 @@ object ResourceCases {
       }.void
     }
 
-    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle[Suspend2[Nothing, ?], Y] {
+    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], Y] {
       x.discard()
 
       override def acquire: Suspend2[Nothing, Y] = Suspend2 {
@@ -55,7 +55,7 @@ object ResourceCases {
       }.void
     }
 
-    class ZFaultyResource(y: Y) extends Lifecycle[Suspend2[Throwable, ?], Z] {
+    class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, ?], Z] {
       y.discard()
 
       override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
@@ -107,7 +107,7 @@ object ResourceCases {
       }
     }
 
-    class SuspendResource extends Lifecycle[Suspend2[Nothing, ?], Res] {
+    class SuspendResource extends Lifecycle.Basic[Suspend2[Nothing, ?], Res] {
       override def acquire: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
 
       override def release(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)

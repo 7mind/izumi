@@ -55,7 +55,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(empty.module.bindings.isEmpty)
   }
 
-  "Using DIResource & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
+  "Using Lifecycle & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
     assertDoesNotCompile("import cats._")
@@ -96,11 +96,11 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
-//    assertDoesNotCompile("DIResource.fromCats(null)")
-//    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
+//    assertDoesNotCompile("Lifecycle.fromCats(null)")
+//    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
     BIOAsync[SomeBIO](null)
 
-    DIResource.makePair(Some((1, Some(()))))
+    Lifecycle.makePair(Some((1, Some(()))))
 
     And("Can search for all hierarchy classes")
     optSearch[BIOFunctor[SomeBIO]]
@@ -138,15 +138,15 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[NoClassDefFoundError] {
-      DIEffect.fromCats[Option, DIResource[?[_], Int]](null, null)
+      DIEffect.fromCats[Option, Lifecycle[?[_], Int]](null, null)
     }
 
     And("Methods that mention cats types only in generics will error on call")
-//    assertDoesNotCompile("DIResource.providerFromCatsProvider[Identity, Int](() => null)")
+//    assertDoesNotCompile("Lifecycle.providerFromCatsProvider[Identity, Int](() => null)")
 
-    Then("DIResource.use syntax works")
+    Then("Lifecycle.use syntax works")
     var open = false
-    val resource = DIResource.makeSimple {
+    val resource = Lifecycle.makeSimple {
       open = true
       new ByteArrayInputStream(Array())
     } {
@@ -167,7 +167,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       make[Int].from(0)
     }
 
-//    Then("DIResource.toCats doesn't work")
+//    Then("Lifecycle.toCats doesn't work")
 //    assertDoesNotCompile("resource.toCats")
   }
 

@@ -4,8 +4,7 @@ import distage.{Injector, TagK}
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.Id
+import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.recursive.Bootloader
@@ -45,7 +44,7 @@ object AppResourceProvider {
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit F: DIEffect[F]): Lifecycle[F, Locator] = {
       bootloader
         .injectorFactory
         .inherit(runtimeLocator)

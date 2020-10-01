@@ -6,8 +6,7 @@ import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
-import izumi.distage.model.definition.DIResource
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException

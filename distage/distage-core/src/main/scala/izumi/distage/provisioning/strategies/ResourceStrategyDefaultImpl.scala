@@ -43,7 +43,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
             Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => F.maybeSuspend(resource.release(innerResource))))
         }
       case None =>
-        throw new MissingRefException(s"Failed to fetch DIResource instance element $resourceKey", Set(resourceKey), None)
+        throw new MissingRefException(s"Failed to fetch Lifecycle instance element $resourceKey", Set(resourceKey), None)
     }
   }
 

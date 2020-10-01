@@ -1,7 +1,7 @@
 package izumi.distage.roles
 
 import cats.effect.LiftIO
-import distage.{DIResourceBase, DefaultModule, DefaultModule2, Injector, Module, TagK, TagKK}
+import distage.{DefaultModule, DefaultModule2, Injector, Lifecycle, Module, TagK, TagKK}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppShutdownStrategy._

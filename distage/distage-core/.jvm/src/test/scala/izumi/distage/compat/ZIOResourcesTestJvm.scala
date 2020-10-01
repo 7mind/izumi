@@ -48,7 +48,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       })
     }
 
-    "DIResource API should be compatible with provider and instance bindings of type ZManaged" in {
+    "Lifecycle API should be compatible with provider and instance bindings of type ZManaged" in {
       val resResource: ZManaged[Any, Throwable, Res1] = ZManaged.make(
         acquire = IO {
           val res = new Res1; res.initialized = true; res
@@ -127,7 +127,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
+      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
     }
 
   }
@@ -153,7 +153,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       })
     }
 
-    "DIResource API should be compatible with provider and instance bindings of type ZLayer" in {
+    "Lifecycle API should be compatible with provider and instance bindings of type ZLayer" in {
       val resResource: ZLayer[Any, Throwable, Has[Res1]] = ZLayer.fromAcquireRelease(
         acquire = IO {
           val res = new Res1; res.initialized = true; res
@@ -232,7 +232,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
+      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
     }
   }
 

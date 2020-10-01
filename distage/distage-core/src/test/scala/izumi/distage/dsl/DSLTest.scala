@@ -7,7 +7,7 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Module}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -383,7 +383,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       import BasicCase6._
 
       val implXYZ: Identity[ImplXYZ] = new ImplXYZ
-      val implXYZResource = DIResource.make(implXYZ)(_ => ())
+      val implXYZResource = Lifecycle.make(implXYZ)(_ => ())
 
       val definition = new ModuleDef {
         make[ImplXYZ]
@@ -427,7 +427,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         )
       )
 
-      class X extends DIResource.Simple[ImplXYZ] {
+      class X extends Lifecycle.Simple[ImplXYZ] {
         override def acquire: ImplXYZ = new ImplXYZ
         override def release(resource: ImplXYZ): Unit = ()
       }
@@ -471,7 +471,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
           Set(
             SingletonBinding(
               DIKey.get[ImplXYZ],
-              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource)),
+              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[Lifecycle[Identity, ImplXYZ]], implXYZResource)),
               Set.empty,
               SourceFilePosition.unknown,
             ),
@@ -623,7 +623,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         assertCompiles(
           """
           def definition[F[_]] = new ModuleDef {
-            make[Int].fromResource[DIResource[F, Int]]
+            make[Int].fromResource[Lifecycle[F, Int]]
           }
         """
         )
@@ -631,7 +631,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
       assert(res2.getMessage contains "trying to create an implementation")
       assert(res2.getMessage contains "`method release`")
-      assert(res2.getMessage contains "`trait DIResource`")
+      assert(res2.getMessage contains "`trait Lifecycle`")
     }
 
     "define multiple bindings with different axis but the same implementation" in {

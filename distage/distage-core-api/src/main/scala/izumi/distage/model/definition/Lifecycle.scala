@@ -22,78 +22,84 @@ import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
 
 /**
-  * `DIResource` is a class that captures the effectful allocation of a resource, along with its finalizer.
-  * This can be used to wrap expensive resources.
+  * `Lifecycle` is a class that describes the effectful allocation of a resource and its finalizer.
+  * This can be used to represent expensive resources.
   *
   * Resources can be created using [[Lifecycle.make]]:
   *
   * {{{
-  *   def open(file: File): DIResource[IO, BufferedReader] =
-  *     DIResource.make(IO { new BufferedReader(new FileReader(file)) })(in => IO { in.close() })
+  *   def open(file: File): Lifecycle[IO, BufferedReader] =
+  *     Lifecycle.make(
+  *       acquire = IO { new BufferedReader(new FileReader(file)) }
+  *     )(release = reader => IO { reader.close() })
   * }}}
   *
   * Using inheritance from [[Lifecycle]]:
   *
   * {{{
-  *   final class BufferedReaderResource(file: File)
-  *     extends DIResource[IO, BufferedReader] {
-  *       val acquire = IO { new BufferedReader(new FileReader(file)) }
-  *       def release(in: BufferedReader) = IO { in.close() }
-  *     }
+  *   final class BufferedReaderResource(
+  *     file: File
+  *   ) extends Lifecycle.Basic[IO, BufferedReader] {
+  *     def acquire: IO[BufferedReader] = IO { new BufferedReader(new FileReader(file)) }
+  *     def release(reader: BufferedReader): IO[BufferedReader] = IO { reader.close() }
+  *   }
   * }}}
   *
   * Using constructor-based inheritance from [[Lifecycle.Make]], [[Lifecycle.LiftF]], etc:
   *
   * {{{
-  *   final class BufferedReaderResource(file: File)
-  *     extends DIResource.Make[IO, BufferedReader](
-  *       acquire = IO { new BufferedReader(new FileReader(file)) },
-  *       release = in => IO { in.close() },
-  *     }
+  *   final class BufferedReaderResource(
+  *     file: File
+  *   ) extends Lifecycle.Make[IO, BufferedReader](
+  *     acquire = IO { new BufferedReader(new FileReader(file)) },
+  *     release = reader => IO { reader.close() },
+  *   )
   * }}}
   *
-  * Or by converting an existing [[cats.effect.Resource]] or a [[zio.ZManaged]].
-  * Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] and
-  * [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert back and forth.
+  * Or by converting from an existing [[cats.effect.Resource]] or a [[zio.ZManaged]]:
+  *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
+  *   - And [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a [[zio.ZManaged]]
   *
   * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
   *
   * {{{
-  *   open(file1).use { in1 =>
-  *     open(file2).use { in2 =>
-  *       readFiles(in1, in2)
-  *     }
+  *   open(file1).use {
+  *     reader1 =>
+  *       open(file2).use {
+  *         reader2 =>
+  *           readFiles(reader1, reader2)
+  *       }
   *   }
   * }}}
   *
-  * DIResources can be combined into a larger resource via [[Lifecycle#flatMap]]:
+  * Lifecycles can be combined into larger Lifecycles via [[Lifecycle#flatMap]] (and the associated for-comprehension syntax):
   *
   * {{{
-  *  val res: DIResource[IO, (BufferedReader, BufferedReader)] =
-  *    open(file1).flatMap { in1 =>
-  *     open(file2).flatMap { in2 =>
-  *       IO.pure(in1 -> in2)
-  *     }
-  *   }
+  *  val res: Lifecycle[IO, (BufferedReader, BufferedReader)] = {
+  *    for {
+  *      reader1 <- open(file1)
+  *      reader2 <- open(file2)
+  *    } yield (reader1, reader2)
+  *  }
   * }}}
   *
   * Nested resources are released in reverse order of acquisition. Outer resources are
   * released even if an inner use or release fails.
   *
-  * `DIResource` can be used in non-FP context with [[Lifecycle.Simple]]
+  * `Lifecycle` can be used without an effect-type with [[Lifecycle.Simple]]
   * it can also mimic Java's initialization-after-construction with [[Lifecycle.Mutable]]
   *
-  * Use DIResource's to specify lifecycles of objects injected into the object graph.
+  * Use Lifecycle's to specify lifecycles of objects injected into the object graph.
   *
   *  {{{
-  *   import distage.{DIResource, ModuleDef, Injector}
+  *   import distage.{Lifecycle, ModuleDef, Injector}
   *   import cats.effect.IO
   *
   *   class DBConnection
   *   class MessageQueueConnection
   *
-  *   val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-  *   val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+  *   val dbResource = Lifecycle.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+  *   val mqResource = Lifecycle.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
   *
   *   class MyApp(db: DBConnection, mq: MessageQueueConnection) {
   *     val run = IO(println("Hello World!"))
@@ -121,7 +127,7 @@ import scala.reflect.macros.blackbox
   *   Disconnecting DB
   * }}}
   *
-  * The lifecycle of the entire object graph is itself expressed with `DIResource`,
+  * The lifecycle of the entire object graph is itself expressed with `Lifecycle`,
   * you can control it by controlling the scope of `.use` or by manually invoking
   * [[Lifecycle#acquire]] and [[Lifecycle#release]].
   *
@@ -159,6 +165,19 @@ trait Lifecycle[+F[_], +OuterResource] {
 
 object Lifecycle {
 
+  /**
+    * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
+    * that do not require overriding [[izumi.distage.model.definition.Lifecycle#InnerResource]].
+    *
+    * {{{
+    *   final class BufferedReaderResource(
+    *     file: File
+    *   ) extends Lifecycle.Basic[IO, BufferedReader] {
+    *     def acquire: IO[BufferedReader] = IO { new BufferedReader(new FileReader(file)) }
+    *     def release(reader: BufferedReader): IO[BufferedReader] = IO { reader.close() }
+    *   }
+    * }}}
+    */
   trait Basic[+F[_], Resource] extends Lifecycle[F, Resource] {
     def acquire: F[Resource]
     def release(resource: Resource): F[Unit]
@@ -217,14 +236,14 @@ object Lifecycle {
     liftF(acquire).flatten
   }
 
-  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
-  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
+  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): Lifecycle[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
 
-  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = {
     make(acquire) {
       es =>
         F.maybeSuspend {
@@ -237,7 +256,7 @@ object Lifecycle {
         }
     }
   }
-  def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
+  def fromExecutorService[A <: ExecutorService](acquire: => A): Lifecycle[Identity, A] = {
     fromExecutorService[Identity, A](acquire)
   }
 
@@ -306,7 +325,7 @@ object Lifecycle {
                 _ =>
                   resource.release(r).orDieWith {
                     case e: Throwable => e
-                    case any: Any => new RuntimeException(s"DIResource finalizer: $any")
+                    case any: Any => new RuntimeException(s"Lifecycle finalizer: $any")
                   },
               )
           )
@@ -343,7 +362,7 @@ object Lifecycle {
     * Class-based proxy over a [[Lifecycle]] value
     *
     * {{{
-    *   class IntRes extends DIResource.Of(DIResource.pure(1000))
+    *   class IntRes extends Lifecycle.Of(Lifecycle.pure(1000))
     * }}}
     *
     * For binding resource values using class syntax in [[ModuleDef]]:
@@ -361,14 +380,14 @@ object Lifecycle {
   @open class Of[+F[_], +A] private[this] (inner0: () => Lifecycle[F, A], @unused dummy: Boolean = false) extends Lifecycle.OfInner[F, A] {
     def this(inner: => Lifecycle[F, A]) = this(() => inner)
 
-    override val inner: Lifecycle[F, A] = inner0()
+    override val lifecycle: Lifecycle[F, A] = inner0()
   }
 
   /**
     * Class-based proxy over a [[cats.effect.Resource]] value
     *
     * {{{
-    *   class IntRes extends DIResource.OfCats(Resource.pure(1000))
+    *   class IntRes extends Lifecycle.OfCats(Resource.pure(1000))
     * }}}
     *
     * For binding resource values using class syntax in [[ModuleDef]]:
@@ -385,7 +404,7 @@ object Lifecycle {
     * Class-based proxy over a [[zio.ZManaged]] value
     *
     * {{{
-    *   class IntRes extends DIResource.OfZIO(Managed.succeed(1000))
+    *   class IntRes extends Lifecycle.OfZIO(Managed.succeed(1000))
     * }}}
     *
     * For binding resource values using class syntax in [[ModuleDef]]:
@@ -402,7 +421,7 @@ object Lifecycle {
     * Class-based variant of [[make]]:
     *
     * {{{
-    *   class IntRes extends DIResource.Make(
+    *   class IntRes extends Lifecycle.Make(
     *     acquire = IO(1000)
     *   )(release = _ => IO.unit)
     * }}}
@@ -426,7 +445,7 @@ object Lifecycle {
     * Class-based variant of [[make_]]:
     *
     * {{{
-    *   class IntRes extends DIResource.Make_(IO(1000))(IO.unit)
+    *   class IntRes extends Lifecycle.Make_(IO(1000))(IO.unit)
     * }}}
     *
     * For binding resources using class syntax in [[ModuleDef]]:
@@ -443,7 +462,7 @@ object Lifecycle {
     * Class-based variant of [[makePair]]:
     *
     * {{{
-    *   class IntRes extends DIResource.MakePair(IO(1000 -> IO.unit))
+    *   class IntRes extends Lifecycle.MakePair(IO(1000 -> IO.unit))
     * }}}
     *
     * For binding resources using class syntax in [[ModuleDef]]:
@@ -464,7 +483,7 @@ object Lifecycle {
     * Class-based variant of [[liftF]]:
     *
     * {{{
-    *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
+    *   class IntRes extends Lifecycle.LiftF(acquire = IO(1000))
     * }}}
     *
     * For binding resources using class syntax in [[ModuleDef]]:
@@ -485,7 +504,7 @@ object Lifecycle {
     * Class-based variant of [[fromAutoCloseable]]:
     *
     * {{{
-    *   class FileOutputRes extends DIResource.FromAutoCloseable(
+    *   class FileOutputRes extends Lifecycle.FromAutoCloseable(
     *     acquire = IO(new FileOutputStream("abc"))
     *   )
     * }}}
@@ -504,8 +523,8 @@ object Lifecycle {
     * Trait-based proxy over a [[Lifecycle]] value
     *
     * {{{
-    *   class IntRes extends DIResource.OfInner {
-    *
+    *   class IntRes extends Lifecycle.OfInner[IO, Int] {
+    *     override val lifecycle: Lifecycle[IO, Int] = Lifecycle.pure(1000)
     *   }
     * }}}
     *
@@ -522,12 +541,12 @@ object Lifecycle {
     * when defining local methods
     */
   trait OfInner[+F[_], +A] extends Lifecycle[F, A] {
-    val inner: Lifecycle[F, A]
+    val lifecycle: Lifecycle[F, A]
 
-    override final type InnerResource = inner.InnerResource
-    override final def acquire: F[inner.InnerResource] = inner.acquire
-    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
-    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
+    override final type InnerResource = lifecycle.InnerResource
+    override final def acquire: F[lifecycle.InnerResource] = lifecycle.acquire
+    override final def release(resource: lifecycle.InnerResource): F[Unit] = lifecycle.release(resource)
+    override final def extract(resource: lifecycle.InnerResource): A = lifecycle.extract(resource)
   }
 
   trait Simple[A] extends Lifecycle.Basic[Identity, A]
@@ -927,5 +946,5 @@ object Lifecycle {
   }
 
   @deprecated("renamed to fromAutoCloseable", "0.11")
-  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = fromAutoCloseable(acquire)
+  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 }

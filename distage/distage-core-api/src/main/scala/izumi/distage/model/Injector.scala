@@ -1,7 +1,6 @@
 package izumi.distage.model
 
-import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.{Activation, Identifier, ModuleBase}
+import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
@@ -92,7 +91,7 @@ trait Injector[F[_]] extends Planner with Producer {
     * {{{
     *   Injector[F]()
     *     .produce(moduleDef, Roots(fn.get.diKeys.toSet))
-    *     .evalMap(_.run(fn)): DIResourceBase[F, A]
+    *     .evalMap(_.run(fn)): Lifecycle[F, A]
     * }}}
     *
     * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
@@ -132,19 +131,19 @@ trait Injector[F[_]] extends Planner with Producer {
     * {{{
     *   Injector[F]()
     *     .produce(moduleDef, Roots(DIKey.get[A]))
-    *     .map(_.get[A]): DIResourceBase[F, A]
+    *     .map(_.get[A]): Lifecycle[F, A]
     * }}}
     *
     * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
     * @param activation A map of axes of configuration to choices along these axes
     */
-  final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] = {
+  final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] = {
     produceCustomF(plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
   }
-  final def produceGet[A: Tag](bindings: ModuleBase): DIResourceBase[F, A] = {
+  final def produceGet[A: Tag](bindings: ModuleBase): Lifecycle[F, A] = {
     produceGet[A](bindings, Activation.empty)
   }
-  final def produceGet[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[F, A] = {
+  final def produceGet[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] = {
     produceCustomF(plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
   }
 
@@ -178,14 +177,14 @@ trait Injector[F[_]] extends Planner with Producer {
     *              designating all DIKeys as roots.
     * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
-  final def produce(input: PlannerInput): DIResourceBase[F, Locator] = {
+  final def produce(input: PlannerInput): Lifecycle[F, Locator] = {
     produceCustomF[F](plan(input))
   }
-  final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): DIResourceBase[F, Locator] = {
+  final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] = {
     produceCustomF[F](plan(PlannerInput(bindings, activation, roots)))
   }
 
-  final def produce(plan: OrderedPlan): DIResourceBase[F, Locator] = {
+  final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceCustomF(plan)
   }
 
@@ -193,28 +192,28 @@ trait Injector[F[_]] extends Planner with Producer {
   final def produceRunF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] =
     produceRun[A](bindings, activation)(function)
   @deprecated("Use .produceEval. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceEvalF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): DIResourceBase[F, A] =
+  final def produceEvalF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): Lifecycle[F, A] =
     produceEval[A](bindings, activation)(function)
 
   @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceGetF[A: Tag](bindings: ModuleBase, activation: Activation): DIResourceBase[F, A] =
+  final def produceGetF[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] =
     produceGet[A](bindings, activation)
   @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceGetF[A: Tag](bindings: ModuleBase): DIResourceBase[F, A] =
+  final def produceGetF[A: Tag](bindings: ModuleBase): Lifecycle[F, A] =
     produceGet[A](bindings)
   @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceGetF[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): DIResourceBase[F, A] =
+  final def produceGetF[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] =
     produceGet[A](name)(bindings, activation)
 
   @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceF(input: PlannerInput): DIResourceBase[F, Locator] =
+  final def produceF(input: PlannerInput): Lifecycle[F, Locator] =
     produce(input)
   @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceF(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): DIResourceBase[F, Locator] =
+  final def produceF(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] =
     produce(bindings, roots, activation)
 
   @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "0.11")
-  final def produceF(plan: OrderedPlan): DIResourceBase[F, Locator] = {
+  final def produceF(plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceCustomF(plan)
   }
 
