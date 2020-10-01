@@ -390,9 +390,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = allMonadsOptional ++ Seq(cats_effect_laws, scalatest, discipline, discipline_scaltest) ++ Seq(scala_java_time in Scope.Test.js) ++ Seq(
-          zio_interop_cats in Scope.Test.all
-        ),
+        libs = allMonadsOptional ++ Seq(cats_effect_laws, scalatest, discipline, discipline_scaltest) ++
+          Seq(
+            monix_bio in Scope.Optional.all,
+            scala_java_time in Scope.Test.js
+          ) ++ Seq(zio_interop_cats in Scope.Test.all),
         depends = Seq(
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,

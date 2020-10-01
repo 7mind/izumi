@@ -1,20 +1,10 @@
 package izumi.fundamentals.bio
 
-import cats.Eq
-import cats.effect.{Concurrent, ContextShift}
 import cats.effect.laws.ConcurrentLaws
 import cats.effect.laws.discipline.ConcurrentTests
-import cats.effect.laws.util.TestContext
-import izumi.functional.bio.BIO
-import org.scalacheck.{Arbitrary, Cogen, Gen}
-import zio.{Runtime, ZIO}
-import zio.internal.{Executor, Platform, Tracing}
+import cats.effect.{Concurrent, ContextShift}
 import izumi.functional.bio.catz._
 import izumi.fundamentals.bio.env.ZIOTestEnv
-
-import scala.util.Try
-
-import scala.concurrent.ExecutionContext
 
 class BioZioLawsTest extends CatsLawsTestBase with ZIOTestEnv {
   val concurrentTestZio = new ConcurrentTests[zio.Task] {
