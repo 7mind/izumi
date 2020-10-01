@@ -1,10 +1,10 @@
-package izumi.fundamentals.bio
+package izumi.functional.bio.test
 
 import cats.effect.laws.ConcurrentLaws
 import cats.effect.laws.discipline.ConcurrentTests
 import cats.effect.{Concurrent, ContextShift}
 import izumi.functional.bio.catz._
-import izumi.fundamentals.bio.env.ZIOTestEnv
+import izumi.functional.bio.env.ZIOTestEnv
 
 class BioZioLawsTest extends CatsLawsTestBase with ZIOTestEnv {
   val concurrentTestZio = new ConcurrentTests[zio.Task] {

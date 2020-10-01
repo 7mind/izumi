@@ -1,4 +1,4 @@
-package izumi.fundamentals.bio
+package izumi.functional.bio.test
 
 import cats.Eq
 import cats.effect.laws.util.TestInstances

@@ -1,10 +1,10 @@
-package izumi.fundamentals.bio
+package izumi.functional.bio.test
 
 import cats.effect.laws.ConcurrentLaws
 import cats.effect.laws.discipline.ConcurrentTests
 import cats.effect.{Concurrent, ContextShift}
 import izumi.functional.bio.catz._
-import izumi.fundamentals.bio.env.MonixEnv
+import izumi.functional.bio.env.MonixEnv
 
 class BIOMonixLawsTest extends CatsLawsTestBase with MonixEnv {
     val concurrentTestsMonix = new ConcurrentTests[monix.bio.Task] {

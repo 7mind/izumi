@@ -1,9 +1,9 @@
-package izumi.fundamentals.bio.env
+package izumi.functional.bio.env
 
 import cats.Eq
 import cats.effect.ContextShift
 import izumi.functional.bio.BIO
-import izumi.fundamentals.bio.CatsLawsTestBase
+import izumi.functional.bio.test.CatsLawsTestBase
 import monix.execution.{Scheduler, UncaughtExceptionReporter}
 import org.scalacheck.Arbitrary
 

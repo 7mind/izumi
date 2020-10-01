@@ -1,9 +1,9 @@
-package izumi.fundamentals.bio.env
+package izumi.functional.bio.env
 
 import cats.Eq
 import izumi.functional.bio.BIO
 import izumi.functional.bio.impl.MiniBIO
-import izumi.fundamentals.bio.CatsLawsTestBase
+import izumi.functional.bio.test.CatsLawsTestBase
 import org.scalacheck.Arbitrary
 
 import scala.util.Try
