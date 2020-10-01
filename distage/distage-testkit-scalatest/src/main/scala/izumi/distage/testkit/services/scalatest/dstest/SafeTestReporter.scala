@@ -1,14 +1,22 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.{Done, Running}
+import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.Done
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
+import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
 import izumi.fundamentals.platform.language.unused
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
-  private val delayedReports = new mutable.LinkedHashMap[TestMeta, TestStatus]()
+  private val delayedReports = new mutable.LinkedHashMap[TestMeta, ArrayBuffer[WrappedTestReport]]()
   private val runningTests = new mutable.HashMap[String, TestMeta]()
+
+  private[this] def putDelayedReport(meta: TestMeta, report: WrappedTestReport): Unit = synchronized {
+    val buffer = delayedReports.getOrElseUpdate(meta, mutable.ArrayBuffer.empty)
+    buffer.append(report)
+    ()
+  }
 
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()
@@ -24,63 +32,71 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def endSuite(@unused id: SuiteData): Unit = {}
 
-  override def info(test: TestMeta, message: String): Unit = underlying.info(test, message)
-
-  override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
-    testStatus match {
-      case TestStatus.Running =>
-        runningTests.get(test.id.suiteId) match {
-          case Some(_) =>
-            // a test is running in this suite, delay new test
-            delayedReports.put(test, testStatus)
-          case None =>
-            // no test is running in this suite, report this one and set it as running
-            reportStatus(test, testStatus)
-            runningTests(test.id.suiteId) = test
-        }
-      case _: Done =>
-        runningTests.get(test.id.suiteId) match {
-          case Some(value) if value == test =>
-            // finished current running test in suite,
-            // report delayed reports in suite &
-            // switch to another currently running test in suite if exists
-            runningTests.remove(test.id.suiteId)
-            reportStatus(test, testStatus)
-            finish(_.id.suiteId == test.id.suiteId)
-          case Some(_) =>
-            // another test is running in this suite, delay finish report
-            delayedReports.put(test, testStatus)
-          case None =>
-            // no other test is running in this suite, report directly
-            reportStatus(test, TestStatus.Running)
-            reportStatus(test, testStatus)
-        }
-    }
-    ()
+  override def info(test: TestMeta, message: String): Unit = synchronized {
+    delayReport(test, WrappedTestReport.Info(message))
   }
 
-  private def reportStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
-    underlying.testStatus(test, testStatus)
+  override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
+    delayReport(test, WrappedTestReport.Status(testStatus))
+  }
+
+  private[this] def delayReport(test: TestMeta, testReport: WrappedTestReport): Unit = synchronized {
+    (runningTests.get(test.id.suiteId), testReport) match {
+      // if some test is running but execution of this one is done then we will finish current test
+      case (Some(_), WrappedTestReport.Status(_: Done)) =>
+        runningTests.remove(test.id.suiteId)
+        putDelayedReport(test, testReport)
+        finish(_ == test)
+      case (Some(_), _) =>
+        putDelayedReport(test, testReport)
+      case (None, _) =>
+        runningTests.put(test.id.suiteId, test)
+        putDelayedReport(test, testReport)
+    }
+  }
+
+  private def reportStatus(test: TestMeta, reportType: WrappedTestReport): Unit = synchronized {
+    reportType match {
+      case WrappedTestReport.Info(message) => underlying.info(test, message)
+      case WrappedTestReport.Status(status) => underlying.testStatus(test, status)
+    }
   }
 
   private def finish(predicate: TestMeta => Boolean): Unit = synchronized {
-    val finishedTests = delayedReports.collect { case (t, s: Done) if predicate(t) => (t, s) }
+    val toReport = delayedReports.toList.collect {
+      case (t, delayed) if predicate(t) && delayed.exists {
+            case WrappedTestReport.Status(_: Done) => true
+            case _ => false
+          } =>
+        (t, delayed)
+    }
+    toReport.foreach { case (t, delayed) => reportDelayed(t, delayed.toList) }
 
-    // report all finished tests
-    finishedTests
-      .foreach {
-        case (t, s) =>
-          reportStatus(t, TestStatus.Running)
-          reportStatus(t, s)
-          delayedReports.remove(t)
-      }
     // switch to another test if it's already running
     delayedReports.toList.foreach {
-      case (t, Running) if predicate(t) && !runningTests.contains(t.id.suiteId) =>
+      case (t, delayed) if predicate(t) && !runningTests.contains(t.id.suiteId) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
         runningTests(t.id.suiteId) = t
-        reportStatus(t, TestStatus.Running)
-        delayedReports.remove(t)
+        reportDelayed(t, delayed.toList)
       case _ =>
     }
+  }
+
+  private def reportDelayed(testMeta: TestMeta, delayed: List[WrappedTestReport]): Option[ArrayBuffer[WrappedTestReport]] = synchronized {
+    val t = (WrappedTestReport.Status(TestStatus.Running) :: delayed)
+      .distinct.sortBy {
+        case WrappedTestReport.Status(TestStatus.Running) => 1
+        case WrappedTestReport.Info(_) => 2
+        case WrappedTestReport.Status(_: TestStatus.Done) => 3
+      }
+    t.foreach(reportStatus(testMeta, _))
+    delayedReports.remove(testMeta)
+  }
+}
+
+object SafeWrappedTestReporter {
+  sealed trait WrappedTestReport
+  object WrappedTestReport {
+    case class Info(message: String) extends WrappedTestReport
+    case class Status(status: TestStatus) extends WrappedTestReport
   }
 }

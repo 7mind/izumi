@@ -479,7 +479,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     doRecover(None) {
-      // if (test.environment.debugOutput && testPlan.keys.nonEmpty) reporter.info(test.meta, s"Test plan info: $testPlan")
+      if (testPlan.keys.nonEmpty) reporter.info(test.meta, s"Test plan info: $testPlan")
       Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
@@ -709,11 +709,14 @@ object DistageTestRunner {
         case (acc, ((p, next), i)) =>
           val isLastChild = childs.size == i + 1
           val nextSuitePad = suitePad + (if (isLastChild) "     " else "║    ")
-          val nextLevelPad = if (level > 0 && isLastChild) {
-            val replace = if (levelPad.takeRight(5) == "╠════") "║    " else "     "
-            levelPad.dropRight(5) ++ s"$replace╚════"
-          } else {
-            levelPad ++ "╠════"
+          val nextLevelPad = level match {
+            case 0 if isLastChild =>
+              levelPad ++ "╚════"
+            case _ if isLastChild =>
+              val replace = if (levelPad.takeRight(5) == "╠════") "║    " else "     "
+              levelPad.dropRight(5) ++ s"$replace╚════"
+            case _ =>
+              levelPad ++ "╠════"
           }
           val nextChildStr = next.toString_(level + 1, Some(p), nextSuitePad, nextLevelPad)
           s"$acc$nextChildStr"

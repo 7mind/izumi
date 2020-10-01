@@ -113,7 +113,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(function, env, pos, id)
     }
@@ -152,7 +152,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }
@@ -191,7 +191,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }

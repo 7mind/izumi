@@ -4,7 +4,7 @@ import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.strings.IzString._
-import org.scalatest.Suite.getIndentedTextForTest
+import org.scalatest.Suite.{formatterForSuiteCompleted, formatterForSuiteStarting, getEscapedIndentedTextForTest, getIndentedTextForInfo, getIndentedTextForTest}
 import org.scalatest.events._
 
 class DistageScalatestReporter extends TestReporter {
@@ -17,13 +17,14 @@ class DistageScalatestReporter extends TestReporter {
   override def endAll(): Unit = {}
 
   override def beginSuite(id: SuiteData): Unit = {
+    val formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0))
     doReport(id.suiteId)(
       SuiteStarting(
         _,
         id.suiteName,
         id.suiteId,
         Some(id.suiteClassName),
-        formatter = Some(MotionToSuppress),
+        formatter = formatter,
       )
     )
   }
@@ -35,8 +36,8 @@ class DistageScalatestReporter extends TestReporter {
         id.suiteName,
         id.suiteId,
         Some(id.suiteClassName),
-        formatter = Some(MotionToSuppress),
-        duration = Some(1)
+        formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0)),
+        duration = None,
       )
     )
   }
@@ -44,15 +45,16 @@ class DistageScalatestReporter extends TestReporter {
   override def info(test: TestMeta, message: String): Unit = {
     val suiteName1 = test.id.suiteName
     val suiteId1 = test.id.suiteId
-    val suiteClassName1 = test.id.suiteId
+    val suiteClassName1 = test.id.suiteClassName
     val testName = test.id.name
+    val formatter = Some(getEscapedIndentedTextForTest(s"- $testName", 1, includeIcon = false))
     doReport(suiteId1)(
       InfoProvided(
         _,
         s"$test \n$message",
         Some(NameInfo(suiteName1, suiteId1, Some(suiteClassName1), Some(testName))),
         location = Some(LineInFile(test.pos.line, test.pos.file, None)),
-        formatter = Some(MotionToSuppress),
+        formatter = formatter,
       )
     )
   }
@@ -60,10 +62,10 @@ class DistageScalatestReporter extends TestReporter {
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
     val suiteName1 = test.id.suiteName
     val suiteId1 = test.id.suiteId
-    val suiteClassName1 = test.id.suiteId
+    val suiteClassName1 = test.id.suiteClassName
     val testName = test.id.name
 
-    val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
+    val formatter = Some(getEscapedIndentedTextForTest(s"- $testName", 1, includeIcon = false))
 
     testStatus match {
       case TestStatus.Running =>
