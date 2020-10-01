@@ -623,7 +623,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         assertCompiles(
           """
           def definition[F[_]] = new ModuleDef {
-            make[Int].fromResource[Lifecycle[F, Int]]
+            make[Int].fromResource[Lifecycle.Basic[F, Int]]
           }
         """
         )
@@ -631,7 +631,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
       assert(res2.getMessage contains "trying to create an implementation")
       assert(res2.getMessage contains "`method release`")
-      assert(res2.getMessage contains "`trait Lifecycle`")
+      assert(res2.getMessage contains "`trait Basic`")
     }
 
     "define multiple bindings with different axis but the same implementation" in {

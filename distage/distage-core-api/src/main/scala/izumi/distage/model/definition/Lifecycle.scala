@@ -206,7 +206,7 @@ object Lifecycle {
       resource.use(_.run(function))
   }
 
-  def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle.Basic[F, A] = {
+  def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
     @inline def a = acquire; @inline def r = release
     new Lifecycle.Basic[F, A] {
       override def acquire: F[A] = a
@@ -214,21 +214,21 @@ object Lifecycle {
     }
   }
 
-  def make_[F[_], A](acquire: => F[A])(release: => F[Unit]): Lifecycle.Basic[F, A] = {
+  def make_[F[_], A](acquire: => F[A])(release: => F[Unit]): Lifecycle[F, A] = {
     make(acquire)(_ => release)
   }
 
-  def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle.Basic[Identity, A] = {
+  def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle[Identity, A] = {
     make[Identity, A](acquire)(release)
   }
 
-  def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle.FromCats[F, A] = {
+  def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {
     new Lifecycle.FromCats[F, A] {
       override def acquire: F[(A, F[Unit])] = allocate
     }
   }
 
-  def liftF[F[_], A](acquire: => F[A])(implicit F: DIApplicative[F]): Lifecycle.Basic[F, A] = {
+  def liftF[F[_], A](acquire: => F[A])(implicit F: DIApplicative[F]): Lifecycle[F, A] = {
     make(acquire)(_ => F.unit)
   }
 
@@ -260,11 +260,11 @@ object Lifecycle {
     fromExecutorService[Identity, A](acquire)
   }
 
-  def pure[F[_], A](a: A)(implicit F: DIApplicative[F]): Lifecycle.Basic[F, A] = {
+  def pure[F[_], A](a: A)(implicit F: DIApplicative[F]): Lifecycle[F, A] = {
     Lifecycle.liftF(F.pure(a))
   }
 
-  def unit[F[_]](implicit F: DIApplicative[F]): Lifecycle.Basic[F, Unit] = {
+  def unit[F[_]](implicit F: DIApplicative[F]): Lifecycle[F, Unit] = {
     Lifecycle.liftF(F.unit)
   }
 
@@ -728,11 +728,11 @@ object Lifecycle {
     /**
       * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZIOProvider[R, E, A]: AdaptProvider.Aux[ZManaged[R, E, A], FromZIO[R, E, A]] = {
+    implicit final def providerFromZIOProvider[R, E, A]: AdaptProvider.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptProvider[ZManaged[R, E, A]] {
         type Out = Lifecycle.FromZIO[R, E, A]
 
-        override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
           a.map(fromZIO)
         }
@@ -742,11 +742,11 @@ object Lifecycle {
     /**
       * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], FromZIO[R, E, A]] = {
+    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptProvider[ZLayer[R, E, Has[A]]] {
         type Out = Lifecycle.FromZIO[R, E, A]
 
-        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
           a.map(layer => fromZIO(layer.map(_.get).build))
         }

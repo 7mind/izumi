@@ -184,7 +184,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
                 .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
                 .flatMap {
                   _ =>
-                    Lifecycle.makeSimple(throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                    Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
                 }
           }
           .use(_ => ())

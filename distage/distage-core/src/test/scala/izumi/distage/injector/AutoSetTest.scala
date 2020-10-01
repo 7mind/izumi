@@ -41,7 +41,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
         .addValue(5)
     }
 
-    val injector = Injector(new BootstrapModuleDef {
+    val injector = Injector[Identity](new BootstrapModuleDef {
       many[PlanningHook]
         .add(new AutoSetHook[Int, Int])
     })
