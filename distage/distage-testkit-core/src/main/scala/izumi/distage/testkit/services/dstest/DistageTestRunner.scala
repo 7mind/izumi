@@ -658,7 +658,7 @@ object DistageTestRunner {
     private[this] val childs = TrieMap.empty[TriSplittedPlan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
-    @tailrec private def addEnv_(plans: List[TriSplittedPlan], levelTests: MemoizationLevelGroup[F]): Unit = synchronized {
+    private def addEnv_(plans: List[TriSplittedPlan], levelTests: MemoizationLevelGroup[F]): Unit = synchronized {
       // here we are filtering all empty plans to merge levels together
       plans.filter(_.nonEmpty) match {
         case plan :: tail =>
