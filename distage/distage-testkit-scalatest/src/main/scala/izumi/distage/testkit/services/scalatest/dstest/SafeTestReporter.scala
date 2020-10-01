@@ -37,7 +37,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   private[this] def putDelayedReport(meta: TestMeta, report: WrappedTestReport): Unit = synchronized {
     val buffer = delayedReports.getOrElseUpdate(meta, mutable.Queue.empty)
-    buffer.append(report)
+    buffer.enqueue(report)
     ()
   }
 
