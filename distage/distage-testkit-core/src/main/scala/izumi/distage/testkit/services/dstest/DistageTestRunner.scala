@@ -706,7 +706,8 @@ object DistageTestRunner {
     }
 
     @inline private def toString_(level: Int = 0, plan: Option[TriSplittedPlan] = None, suitePad: String = "", levelPad: String = ""): String = {
-      val currentLevelPad = s"\n$levelPad╦╕ LEVEL = $level;\n$suitePad╠╛ PLAN KEYS: ${plan.map(_.keys.map(_.tpe)).getOrElse(Set.empty)}"
+      val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
+      val currentLevelPad = s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ PLAN KEYS: ${plan.map(_.keys.map(_.tpe)).getOrElse(Set.empty)}"
       val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
       val str = if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
       childs.toList.zipWithIndex.foldLeft(str) {
