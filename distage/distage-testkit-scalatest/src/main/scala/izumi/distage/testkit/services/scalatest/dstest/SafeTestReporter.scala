@@ -86,7 +86,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   private def reportDelayed(testMeta: TestMeta, delayed: List[WrappedTestReport]): Unit = synchronized {
     // support sequential report by sorting reports
-    delayed
+    (WrappedTestReport.Status(TestStatus.Running) :: delayed)
       .distinct.sortBy {
         case WrappedTestReport.Status(TestStatus.Running) => 1
         case WrappedTestReport.Info(_) => 2
