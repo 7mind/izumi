@@ -6,17 +6,10 @@ import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.W
 import izumi.fundamentals.platform.language.unused
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
-  private val delayedReports = new mutable.LinkedHashMap[TestMeta, ArrayBuffer[WrappedTestReport]]()
-  private val runningTests = new mutable.HashMap[String, TestMeta]()
-
-  private[this] def putDelayedReport(meta: TestMeta, report: WrappedTestReport): Unit = synchronized {
-    val buffer = delayedReports.getOrElseUpdate(meta, mutable.ArrayBuffer.empty)
-    buffer.append(report)
-    ()
-  }
+  private val delayedReports = new mutable.LinkedHashMap[TestMeta, mutable.Queue[WrappedTestReport]]()
+  private val runningSuites = new mutable.HashMap[String, TestMeta]()
 
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()
@@ -30,9 +23,11 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def beginSuite(@unused id: SuiteData): Unit = {}
 
-  override def endSuite(@unused id: SuiteData): Unit = {}
+  override def endSuite(@unused id: SuiteData): Unit = {
+    finish(_.id.suiteId == id.suiteId)
+  }
 
-  override def info(test: TestMeta, message: String): Unit = synchronized {
+  override def testInfo(test: TestMeta, message: String): Unit = synchronized {
     delayReport(test, WrappedTestReport.Info(message))
   }
 
@@ -40,29 +35,38 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     delayReport(test, WrappedTestReport.Status(testStatus))
   }
 
+  private[this] def putDelayedReport(meta: TestMeta, report: WrappedTestReport): Unit = synchronized {
+    val buffer = delayedReports.getOrElseUpdate(meta, mutable.Queue.empty)
+    buffer.append(report)
+    ()
+  }
+
   private[this] def delayReport(test: TestMeta, testReport: WrappedTestReport): Unit = synchronized {
-    (runningTests.get(test.id.suiteId), testReport) match {
-      // if some test is running but execution of this one is done then we will finish current test
-      case (Some(_), WrappedTestReport.Status(_: Done)) =>
-        runningTests.remove(test.id.suiteId)
+    (runningSuites.get(test.id.suiteId), testReport) match {
+      // if the current test locked this suite, and its execution is done
+      // then we will report all tests that were finished at this point for this suite
+      case (Some(t), WrappedTestReport.Status(_: Done)) if t == test =>
+        runningSuites.remove(test.id.suiteId)
         putDelayedReport(test, testReport)
-        finish(_ == test)
-      case (Some(_), _) =>
-        putDelayedReport(test, testReport)
+        finish(_.id.suiteId == test.id.suiteId)
+      // if suite lock was not acquired then we should lock this suite with the current test meta
       case (None, _) =>
-        runningTests.put(test.id.suiteId, test)
+        runningSuites.put(test.id.suiteId, test)
+        putDelayedReport(test, testReport)
+      case _ =>
         putDelayedReport(test, testReport)
     }
   }
 
   private def reportStatus(test: TestMeta, reportType: WrappedTestReport): Unit = synchronized {
     reportType match {
-      case WrappedTestReport.Info(message) => underlying.info(test, message)
+      case WrappedTestReport.Info(message) => underlying.testInfo(test, message)
       case WrappedTestReport.Status(status) => underlying.testStatus(test, status)
     }
   }
 
   private def finish(predicate: TestMeta => Boolean): Unit = synchronized {
+    // report all tests by predicate if they were finished
     val toReport = delayedReports.toList.collect {
       case (t, delayed) if predicate(t) && delayed.exists {
             case WrappedTestReport.Status(_: Done) => true
@@ -72,24 +76,24 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     }
     toReport.foreach { case (t, delayed) => reportDelayed(t, delayed.toList) }
 
-    // switch to another test if it's already running
+    // lock suite with another test if it's already running
     delayedReports.toList.foreach {
-      case (t, delayed) if predicate(t) && !runningTests.contains(t.id.suiteId) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
-        runningTests(t.id.suiteId) = t
-        reportDelayed(t, delayed.toList)
+      case (t, delayed) if predicate(t) && !runningSuites.contains(t.id.suiteId) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
+        runningSuites(t.id.suiteId) = t
       case _ =>
     }
   }
 
-  private def reportDelayed(testMeta: TestMeta, delayed: List[WrappedTestReport]): Option[ArrayBuffer[WrappedTestReport]] = synchronized {
-    val t = (WrappedTestReport.Status(TestStatus.Running) :: delayed)
+  private def reportDelayed(testMeta: TestMeta, delayed: List[WrappedTestReport]): Unit = synchronized {
+    // support sequential report by sorting reports
+    delayed
       .distinct.sortBy {
         case WrappedTestReport.Status(TestStatus.Running) => 1
         case WrappedTestReport.Info(_) => 2
         case WrappedTestReport.Status(_: TestStatus.Done) => 3
-      }
-    t.foreach(reportStatus(testMeta, _))
+      }.foreach(reportStatus(testMeta, _))
     delayedReports.remove(testMeta)
+    ()
   }
 }
 
