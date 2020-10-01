@@ -5,7 +5,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services._
-import izumi.distage.model.definition.{Activation, ModuleBase}
+import izumi.distage.model.definition.{Activation, Lifecycle, ModuleBase}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -221,7 +221,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
   make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
-  make[DIResourceBase[Identity, PreparedApp[F]]].from {
+  make[Lifecycle[Identity, PreparedApp[F]]].from {
     transformer: AppResourceProvider[F] =>
       transformer.makeAppResource()
   }

@@ -1,7 +1,7 @@
 package izumi.distage.testkit.docker
 
 import distage.DIKey
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
@@ -17,7 +17,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
 
     "distage test runner should start only one container for reusable" should {
       "support docker resources" in {
-        (service: PgSvcExample, verifier: DIResourceBase[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
           for {
             _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
             _ <- verifier.use(_ => IO.unit)
@@ -25,7 +25,7 @@ abstract class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       }
 
       "support memoization" in {
-        (service: PgSvcExample, verifier: DIResourceBase[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
           for {
             _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
             _ <- verifier.use(_ => IO.unit)

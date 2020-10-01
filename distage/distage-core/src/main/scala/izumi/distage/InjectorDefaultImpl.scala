@@ -1,6 +1,6 @@
 package izumi.distage
 
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.{Activation, BootstrapModule, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.OrderedPlan
@@ -38,7 +38,7 @@ final class InjectorDefaultImpl[F[_]](
   override private[distage] def produceDetailedFX[G[_]: TagK: DIEffect](
     plan: OrderedPlan,
     filter: FinalizerFilter[G],
-  ): DIResourceBase[G, Either[FailedProvision[G], Locator]] = {
+  ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
     interpreter.instantiate[G](plan, parentContext, filter)
   }
 

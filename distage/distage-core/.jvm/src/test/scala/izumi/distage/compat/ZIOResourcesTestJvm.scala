@@ -4,7 +4,7 @@ import cats.effect.Bracket
 import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{Activation, DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.BIO
 import izumi.fundamentals.platform.language.unused
@@ -48,7 +48,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       })
     }
 
-    "DIResource API should be compatible with provider and instance bindings of type ZManaged" in {
+    "Lifecycle API should be compatible with provider and instance bindings of type ZManaged" in {
       val resResource: ZManaged[Any, Throwable, Res1] = ZManaged.make(
         acquire = IO {
           val res = new Res1; res.initialized = true; res
@@ -67,7 +67,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       definition.bindings.foreach {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
+          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
         case _ =>
           fail()
@@ -127,7 +127,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
+      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
     }
 
   }
@@ -153,7 +153,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       })
     }
 
-    "DIResource API should be compatible with provider and instance bindings of type ZLayer" in {
+    "Lifecycle API should be compatible with provider and instance bindings of type ZLayer" in {
       val resResource: ZLayer[Any, Throwable, Has[Res1]] = ZLayer.fromAcquireRelease(
         acquire = IO {
           val res = new Res1; res.initialized = true; res
@@ -172,7 +172,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       definition.bindings.foreach {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[DIResource.FromZIO[Any, Throwable, Res1]])
+          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
           assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
         case _ =>
           fail()
@@ -232,7 +232,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
+      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
     }
   }
 

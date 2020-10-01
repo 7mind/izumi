@@ -1,7 +1,7 @@
 package izumi.distage.docker
 
 import distage.TagK
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 
@@ -33,7 +33,7 @@ trait ContainerDef { self =>
     *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
     * }}}
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): Functoid[ContainerResource[F, Tag] with DIResourceBase[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }

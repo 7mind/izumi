@@ -1,7 +1,7 @@
 package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
-import distage.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
@@ -34,8 +34,8 @@ class AdoptedAutocloseablesCase(
   val sinks: Set[LogSink]
 ) extends RoleService[IO] {
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[IO, Unit] = {
-    DIResource.liftF(IO.unit)
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[IO, Unit] = {
+    Lifecycle.liftF(IO.unit)
   }
 }
 

@@ -4,15 +4,14 @@ import distage.{Injector, TagK}
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.definition.Id
+import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.recursive.Bootloader
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
-  def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]]
+  def makeAppResource(): Lifecycle[Identity, PreparedApp[F]]
 }
 
 object AppResourceProvider {
@@ -32,7 +31,7 @@ object AppResourceProvider {
     appPlan: AppStartupPlans,
     bootloader: Bootloader @Id("roleapp"),
   ) extends AppResourceProvider[F] {
-    def makeAppResource(): DIResourceBase[Identity, PreparedApp[F]] = {
+    def makeAppResource(): Lifecycle[Identity, PreparedApp[F]] = {
       appPlan
         .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
@@ -45,7 +44,7 @@ object AppResourceProvider {
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit F: DIEffect[F]): Lifecycle[F, Locator] = {
       bootloader
         .injectorFactory
         .inherit(runtimeLocator)

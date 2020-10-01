@@ -4,7 +4,7 @@ import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
 import izumi.distage.compat.CatsResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
+import izumi.distage.model.definition.{ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -49,7 +49,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       }.unsafeRunSync()
   }
 
-  "DIResource API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
+  "Lifecycle API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
     val resResource: Resource[IO, Res1] = Resource.make(
       acquire = IO { val res = new Res1; res.initialized = true; res }
     )(release = res => IO(res.initialized = false))
@@ -66,7 +66,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     definition.bindings.foreach {
       case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
         assert(implDef.implType == SafeType.get[Res1])
-        assert(providerImplType == SafeType.get[DIResource.FromCats[IO, Res1]])
+        assert(providerImplType == SafeType.get[Lifecycle.FromCats[IO, Res1]])
         assert(fn.diKeys contains DIKey.get[Bracket[IO, Throwable]])
       case _ =>
         fail()
@@ -125,7 +125,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       """
       )
     )
-    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.DIResource.AdaptProvider.Aux")
+    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
   }
 
 }

@@ -4,11 +4,10 @@ import distage.{Activation, DIKey, Id, LocatorRef, ModuleDef, PlannerInput}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
 
@@ -144,7 +143,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
           .flatMap {
             _ =>
@@ -158,7 +157,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops2 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
@@ -177,15 +176,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
           .flatMap {
             _ =>
-              DIResource
+              Lifecycle
                 .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
                 .flatMap {
                   _ =>
-                    DIResource.makeSimple(throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                    Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
                 }
           }
           .use(_ => ())
@@ -196,15 +195,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       val ops2 = mutable.Queue.empty[Ops]
 
       Try {
-        DIResource
+        Lifecycle
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
-              DIResource
+              Lifecycle
                 .make(Suspend2(ops2 += YStart))(_ => Suspend2(ops2 += YStop).void)
                 .flatMap {
                   _ =>
-                    DIResource.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
+                    Lifecycle.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
                 }
           }
           .use(_ => Suspend2(()))
@@ -298,9 +297,9 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
         make[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].fromResource(new DIResource[Option, TestInstanceBinding] {
+        make[TestInstanceBinding].fromResource(new Lifecycle.Basic[Option, TestInstanceBinding] {
           override def acquire: Option[TestInstanceBinding] = None
-          override def release(resource: TestInstanceBinding): Option[Unit] = { resource.discard(); None }
+          override def release(resource: TestInstanceBinding): Option[Unit] = None
         })
       })
 
@@ -348,7 +347,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
           case Left(failure) =>
             Suspend2 {
               val ops = failure.failed.instances(DIKey.get[mutable.Queue[Ops]]).asInstanceOf[mutable.Queue[Ops]]
-              assert(ops == Seq(XStart, YStart))
+              assert(ops.toSeq == Seq(XStart, YStart))
               ops
             }
 
@@ -358,9 +357,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
       val ops = resource.use(ops => Suspend2(ops)).run().toOption.get
 
-      assert(ops == Seq(XStart, YStart, YStop, XStop))
-//      def y[F[_]] = Tag[DIResource[F, Any]]
-
+      assert(ops.toSeq == Seq(XStart, YStart, YStop, XStop))
     }
 
     "Display tag macro stack trace when ResourceTag is not found" in {
@@ -368,7 +365,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[DIResource[F, Any]](() => ???)
+            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
           }; ""
           """
         }
@@ -378,10 +375,10 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
       assert(t.message.get contains "could not find implicit value for TagK[F]")
     }
 
-    "can pass a block with inner method calls into DIResource.Of constructor (https://github.com/scala/bug/issues/11969)" in {
+    "can pass a block with inner method calls into Lifecycle.Of constructor (https://github.com/scala/bug/issues/11969)" in {
       final class XImpl
-        extends DIResource.Of({
-          def res = DIResource.make(Try(helper()))(_ => Try(()))
+        extends Lifecycle.Of({
+          def res = Lifecycle.make(Try(helper()))(_ => Try(()))
 
           def helper() = ()
 

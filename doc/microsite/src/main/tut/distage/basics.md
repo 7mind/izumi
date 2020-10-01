@@ -70,7 +70,7 @@ val plan = Injector().plan(HelloByeModule, Activation.empty, Roots.Everything)
 The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
 
 ```scala mdoc:to-string
-// Interpret into DIResource
+// Interpret into Lifecycle
 
 val resource = Injector().produce(plan)
 
@@ -225,11 +225,11 @@ runWith(Activation(Style -> Style.AllCaps, Env -> Env.Test))
 ### Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
-[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.DIResource](izumi.distage.model.definition.DIResource)
+[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle)
 values that specify the allocation and finalization actions for an object.
 
-Injector itself only returns a DIResource value that can be used to create and finalize the object graph, this value is
-pure and can be reused multiple times. A DIResource is consumed using its `.use` method, the function passed to `use` will
+Injector itself only returns a `Lifecycle` value that can be used to create and finalize the object graph, this value is
+pure and can be reused multiple times. A `Lifecycle` is consumed using its `.use` method, the function passed to `use` will
 receive an allocated resource and when the function exits the resource will be deallocated. 
 
 Example with `cats.effect.Resource`:
@@ -277,16 +277,16 @@ objectGraphResource
   .unsafeRunSync()
 ```
 
-Lifecycle management with `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
+Lifecycle management with `Lifecycle` is also available without an effect type, via `Lifecycle.Simple` and `Lifecycle.Mutable`:
 
 ```scala mdoc:reset:to-string
-import distage.{DIResource, Roots, ModuleDef, Injector}
+import distage.{Lifecycle, Roots, ModuleDef, Injector}
 
 class Init {
   var initialized = false
 }
 
-class InitResource extends DIResource.Simple[Init] {
+class InitResource extends Lifecycle.Simple[Init] {
   override def acquire = {
     val init = new Init
     init.initialized = true
@@ -312,10 +312,10 @@ val closedInit = Injector()
 println(closedInit.initialized)
 ```
 
-`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
+`Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
-You can convert between `DIResource` and `cats.effect.Resource` via `.toCats`/`.fromCats` methods, and between
-`zio.ZManaged` via `.toZIO`/`.fromZIO`.
+You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods, 
+and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Set Bindings
 
