@@ -1,5 +1,6 @@
 package izumi.distage.model.definition
 
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Bracket
@@ -165,6 +166,24 @@ trait Lifecycle[+F[_], +OuterResource] {
 
 object Lifecycle {
 
+  sealed trait Reservation[+F[+_], +A] extends Lifecycle[F, A] {
+    def reservation: F[(F[InnerResource], Option[Throwable] => F[Unit])]
+  }
+
+  sealed trait Reserve[+F[+_], +A] extends Lifecycle[F, A] {
+    def reserve: F[F[InnerResource]]
+
+//    override def acquire: F[InnerResource] = reserve.flatten
+  }
+
+  sealed trait Interruptible[+F[+_], +A] extends Lifecycle[F, A] {}
+
+  sealed trait Suspend[+F[+_], +A] extends Lifecycle[F, A] {
+    def suspend: F[Lifecycle[F, A]]
+
+//    override def release = F.unit
+  }
+
   /**
     * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
     * that do not require overriding [[izumi.distage.model.definition.Lifecycle#InnerResource]].
@@ -190,9 +209,37 @@ object Lifecycle {
 
   implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
     def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
-      )
+      resource match {
+        case resource: Lifecycle.Interruptible[F, A] =>
+          F.flatMap(resource.acquire) {
+            a => F.guarantee(use(resource.extract(a)))(resource.release(a))
+          }
+        case resource: Lifecycle.Reserve[F, A] =>
+          F.suspendF {
+            val maybeFinalizer = new AtomicReference[Option[F[Unit]]](None)
+            F.flatMap {
+              F.bracket(
+                acquire = resource.reserve
+              )(release = _ => F.suspendF(maybeFinalizer.get().fold(F.unit)(identity))) {
+                fa => fa
+              }
+            }(a => F.suspendF(use(resource.extract(a))))
+          }
+        case resource: Lifecycle.Suspend[F, A] =>
+          F.flatMap(F.suspendF(resource.suspend))(_.use(use))
+        case resource: Lifecycle.Reservation[F, A] =>
+          F.bracket(resource.reservation)(_._2(None))(
+            fa =>
+              F.flatMap(fa._1) {
+                a =>
+                  F.suspendF(use(resource.extract(a)))
+              }
+          )
+        case _ =>
+          F.bracket(acquire = resource.acquire)(release = resource.release)(
+            use = a => F.suspendF(use(resource.extract(a)))
+          )
+      }
     }
   }
 
@@ -280,7 +327,9 @@ object Lifecycle {
     new FromZIO[R, E, A] {
       override def acquire: ZIO[R, E, (A, ZIO[R, Nothing, Unit])] = {
         ZManaged
-          .ReleaseMap.make.bracketExit(
+          .ReleaseMap
+          .make
+          .bracketExit(
             release = (releaseMap: ReleaseMap, exit: Exit[E, _]) =>
               exit match {
                 case Exit.Success(_) => UIO.unit
@@ -288,10 +337,9 @@ object Lifecycle {
               }
           ) {
             releaseMap =>
-              managed
-                .zio
-                .provideSome[R](_ -> releaseMap)
-                .map { case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit) }
+              managed.zio.provideSome[R](_ -> releaseMap).map {
+                case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit)
+              }
           }
       }
     }
@@ -768,9 +816,9 @@ object Lifecycle {
   @inline
   private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: DIEffect[F]): Lifecycle[F, B] = {
 
-    def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
-      F.bracketCase(acquire = acquire)(release = {
-        case (a, Some(_)) => releaseOnError(a)
+    def bracketOnError[a, b](lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+      F.bracketCase(acquire = lifecycle.acquire)(release = {
+        case (a, Some(_)) => lifecycle.release(a)
         case _ => F.unit
       })(use = use)
     }
@@ -783,11 +831,11 @@ object Lifecycle {
         def deallocate: F[Unit]
       }
       override def acquire: F[InnerResource] = {
-        bracketOnError(self.acquire)(self.release) {
-          inner1 =>
+        bracketOnError(self) {
+          inner1: self.InnerResource =>
             val res2 = f(self.extract(inner1))
-            bracketOnError(res2.acquire)(res2.release) {
-              inner2 =>
+            bracketOnError(res2) {
+              inner2: res2.InnerResource =>
                 F.pure(new InnerResource0 {
                   def extract: B = res2.extract(inner2)
                   def deallocate: F[Unit] = {

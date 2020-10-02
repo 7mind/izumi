@@ -11,6 +11,8 @@ import scala.util.{Failure, Success, Try}
 
 trait DIEffect[F[_]] extends DIApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+
+  def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
   def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
   def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B]
   final def bracketAuto[A <: AutoCloseable, B](acquire: => F[A])(use: A => F[B]): F[B] = bracket(acquire)(a => maybeSuspend(a.close()))(use)
@@ -35,8 +37,8 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
 
   def fail[A](t: => Throwable): F[A]
 
+  def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
-  final def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
     // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
     // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
@@ -72,11 +74,10 @@ object DIEffect extends LowPriorityDIEffectInstances {
     override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
+    override def suspendF[A](effAction: => A): Identity[A] = effAction
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
-      try fa
-      catch {
-        case t: Throwable => recover(t)
-      }
+      try { fa }
+      catch { case t: Throwable => recover(t) }
     }
     override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, (() => Throwable)) => Identity[A]): Identity[A] = {
       definitelyRecover(action)(e => recoverCause(e, () => e))
@@ -97,6 +98,10 @@ object DIEffect extends LowPriorityDIEffectInstances {
           value
       }
     }
+    override def guarantee[A](fa: => Identity[A])(`finally`: => Identity[Unit]): Identity[A] = {
+      try fa
+      finally `finally`
+    }
     override def fail[A](t: => Throwable): Identity[A] = throw t
   }
 
@@ -109,25 +114,29 @@ object DIEffect extends LowPriorityDIEffectInstances {
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
+      override def suspendF[A](effAction: => F[Throwable, A]): F[Throwable, A] = F.suspend(effAction)
       override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
-        suspendF(action).sandbox.catchAll(recover apply _.toThrowable)
+        F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
       }
       override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: (Throwable, () => Throwable) => F[Throwable, A]): F[Throwable, A] = {
-        suspendF(action).sandbox.catchAll(e => recover(e.toThrowable, () => e.trace.unsafeAttachTrace(identity)))
+        F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, () => e.trace.unsafeAttachTrace(identity)))
       }
 
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
       override def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracket(acquire = suspendF(acquire))(release = release(_).orTerminate)(use = use)
+        F.bracket(acquire = F.suspend(acquire))(release = release(_).orTerminate)(use = use)
       }
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracketCase[Any, Throwable, A, B](acquire = suspendF(acquire))(release = {
+        F.bracketCase[Any, Throwable, A, B](acquire = F.suspend(acquire))(release = {
           case (a, exit) =>
             exit match {
               case BIOExit.Success(_) => release(a, None).orTerminate
               case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
             }
         })(use = use)
+      }
+      override def guarantee[A](fa: => F[Throwable, A])(`finally`: => F[Throwable, Unit]): F[Throwable, A] = {
+        F.guarantee(F.suspend(fa), F.suspend(`finally`).orTerminate)
       }
     }
   }
@@ -150,6 +159,7 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
+      override def suspendF[A](effAction: => F[A]): F[A] = F.suspend(effAction)
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.suspend(action))(recover)
       }
@@ -169,6 +179,9 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
               case ExitCase.Canceled => release(a, Some(new InterruptedException))
             }
         })
+      }
+      override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
+        F.guarantee(F.suspend(fa))(F.suspend(`finally`))
       }
     }
   }

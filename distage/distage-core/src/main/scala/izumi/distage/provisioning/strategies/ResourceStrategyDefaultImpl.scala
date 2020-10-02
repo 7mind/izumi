@@ -32,15 +32,17 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
     context.fetchKey(resourceKey, makeByName = false) match {
       case Some(resource0) if isEffect =>
         val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
+        // FIXME: make uninterruptible / safe register finalizer sooner than now
         resource.acquire.map {
           innerResource =>
             Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => resource.release(innerResource)))
         }
-      case Some(resourceSimple) =>
-        val resource = resourceSimple.asInstanceOf[Lifecycle[Identity, Any]]
-        F.maybeSuspend(resource.acquire).map {
-          innerResource =>
-            Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => F.maybeSuspend(resource.release(innerResource))))
+      case Some(resourceIdentity0) =>
+        val resourceIdentity: Lifecycle[Identity, Any] = resourceIdentity0.asInstanceOf[Lifecycle[Identity, Any]]
+        // FIXME: make uninterruptible / safe register finalizer sooner than now
+        F.maybeSuspend {
+          val innerResource = resourceIdentity.acquire
+          Seq(NewObjectOp.NewResource[F](op.target, resourceIdentity.extract(innerResource), () => F.maybeSuspend(resourceIdentity.release(innerResource))))
         }
       case None =>
         throw new MissingRefException(s"Failed to fetch Lifecycle instance element $resourceKey", Set(resourceKey), None)

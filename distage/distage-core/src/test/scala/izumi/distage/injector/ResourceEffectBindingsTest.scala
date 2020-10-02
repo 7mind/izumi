@@ -384,7 +384,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
           res
         })
-      new XImpl().acquire.get
+      new XImpl().unsafeGet().get
     }
 
   }

@@ -46,7 +46,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 
   private[this] val bootstrappedContext: Locator = {
     val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
-    resource.extract(resource.acquire).throwOnFailure()
+    resource.unsafeGet().throwOnFailure()
   }
 
   private[this] val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
