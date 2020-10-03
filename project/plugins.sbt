@@ -19,3 +19,5 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % PV.sbt_paradox_m
 
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % PV.sbt_mdoc)
 
+addSbtPlugin("com.github.tkawachi" % "sbt-doctest" % PV.sbt_doctest)
+
