@@ -37,11 +37,11 @@ object ModuleBase {
 
   implicit final class ModuleDefSeqExt[S <: ModuleBase](private val defs: Iterable[S]) extends AnyVal {
     def merge[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
-      defs.foldLeft[T](T.empty)(_ ++ _)
+      defs.foldLeft[T](T.empty)(_.++[T](_))
     }
 
     def overrideLeft[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
-      defs.foldLeft[T](T.empty)(_ overridenBy _)
+      defs.foldLeft[T](T.empty)(_.overriddenBy[T](_))
     }
   }
 
@@ -113,7 +113,7 @@ object ModuleBase {
       T.make(module.bindings.filterNot(ignored contains _.key))
     }
 
-    def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
+    def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(overrideImpl(module.iterator, that.iterator).toSet)
     }
 
@@ -128,6 +128,9 @@ object ModuleBase {
     def untagged[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.map(_.withTags(Set.empty)))
     }
+
+    @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+    def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = overriddenBy(that)
   }
 
   private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {

@@ -194,12 +194,12 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[BootstrapModule].named("roleapp").from {
     (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>
-      provider.bootstrapModules().merge overridenBy bsModule
+      provider.bootstrapModules().merge overriddenBy bsModule
   }
 
   make[Module].named("roleapp").from {
     (provider: ModuleProvider, appModule: ModuleBase @Id("main")) =>
-      provider.appModules().merge overridenBy appModule
+      provider.appModules().merge overriddenBy appModule
   }
 
   make[Bootloader].named("roleapp").from {

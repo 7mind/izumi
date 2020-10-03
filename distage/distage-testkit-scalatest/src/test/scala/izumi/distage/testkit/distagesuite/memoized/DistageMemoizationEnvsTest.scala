@@ -135,7 +135,7 @@ class SameLevel_1_WithModuleOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super
       .config.copy(
-        pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
+        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
           make[TestInstance].from(MemoizationEnv.anotherTestInstance)
         }
       )
@@ -158,7 +158,7 @@ class DifferentLevelsWithLevel1InstanceOverride extends DistageMemoizationEnvsTe
   override protected def config: TestConfig = {
     super
       .config.copy(
-        pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
+        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
           make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
           make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
         },
