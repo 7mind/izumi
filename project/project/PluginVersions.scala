@@ -1,5 +1,6 @@
 object PV {
   val sbt_mdoc = "2.2.9"
+  val sbt_doctest = "0.9.7"
   val sbt_paradox_material_theme = "0.6.0"
   val sbt_ghpages = "0.6.3"
   val sbt_site = "1.3.3"

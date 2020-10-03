@@ -36,6 +36,7 @@ object Izumi {
 
   object PV {
     val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
+    val sbt_doctest = Version.VExpr("PV.sbt_doctest")
     val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
     val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
     val sbt_site = Version.VExpr("PV.sbt_site")
@@ -231,6 +232,8 @@ object Izumi {
         "scalacOptions" in SettingScope.Build ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw
         ),
+        "doctestOnlyCodeBlocksMode" in SettingScope.Build := true,
+        "doctestTestFramework" in SettingScope.Build := """DoctestTestFramework.ScalaTest""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ Seq(
@@ -705,6 +708,7 @@ object Izumi {
       SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
+      SbtPlugin("com.github.tkawachi", "sbt-doctest", PV.sbt_doctest),
     ),
   )
 }
