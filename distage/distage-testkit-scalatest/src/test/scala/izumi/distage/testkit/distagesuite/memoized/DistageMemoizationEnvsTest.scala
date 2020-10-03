@@ -99,7 +99,7 @@ class SameLevel_1_WithoutLastMemoizationLevel extends DistageMemoizationEnvsTest
         memoizationRoots = Map(
           1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1])
         ),
-        pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
+        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
           make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
         },
         activation = distage.Activation(Repo -> Repo.Prod),
@@ -161,7 +161,7 @@ class DifferentLevelsWithLevel1InstanceOverride extends DistageMemoizationEnvsTe
         pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
           make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
           make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
-        },
+        }
       )
   }
   "should have different memoized instance" in {
@@ -174,7 +174,7 @@ class SameLevel_1_WithLevel2InstanceOverride extends DistageMemoizationEnvsTest 
   override protected def config: TestConfig = {
     super
       .config.copy(
-        pluginConfig = super.config.pluginConfig overridenBy new PluginDef {
+        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
           make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
         }
       )
