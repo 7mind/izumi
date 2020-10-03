@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
@@ -31,19 +31,27 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
     val resourceKey = op.effectKey
     context.fetchKey(resourceKey, makeByName = false) match {
       case Some(resource0) if isEffect =>
-        val resource = resource0.asInstanceOf[DIResourceBase[F, Any]]
-        resource.acquire.map {
+        val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
+        // FIXME: make uninterruptible / safe register finalizer sooner than now
+        resource.acquire.flatMap {
           innerResource =>
-            Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => resource.release(innerResource)))
+            F.suspendF {
+              resource.extract(innerResource).fold(identity, F.pure).map {
+                instance =>
+                  Seq(NewObjectOp.NewResource[F](op.target, instance, () => resource.release(innerResource)))
+              }
+            }
         }
-      case Some(resourceSimple) =>
-        val resource = resourceSimple.asInstanceOf[DIResourceBase[Identity, Any]]
-        F.maybeSuspend(resource.acquire).map {
-          innerResource =>
-            Seq(NewObjectOp.NewResource[F](op.target, resource.extract(innerResource), () => F.maybeSuspend(resource.release(innerResource))))
+      case Some(resourceIdentity0) =>
+        val resourceIdentity: Lifecycle[Identity, Any] = resourceIdentity0.asInstanceOf[Lifecycle[Identity, Any]]
+        // FIXME: make uninterruptible / safe register finalizer sooner than now
+        F.maybeSuspend {
+          val innerResource = resourceIdentity.acquire
+          val instance: Any = resourceIdentity.extract(innerResource).merge
+          Seq(NewObjectOp.NewResource[F](op.target, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource))))
         }
       case None =>
-        throw new MissingRefException(s"Failed to fetch DIResource instance element $resourceKey", Set(resourceKey), None)
+        throw new MissingRefException(s"Failed to fetch Lifecycle instance element $resourceKey", Set(resourceKey), None)
     }
   }
 

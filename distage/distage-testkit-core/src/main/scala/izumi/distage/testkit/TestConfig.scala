@@ -34,14 +34,14 @@ import scala.language.implicitConversions
   *                              the same memoization environment (i.e. with the same [[TestConfig]])
   *                              Every distinct set of `memoizationRoots` will create a distinct memoization environment
   *
-  * @param forcedRoots           Specifies components that will be treated as if they are a dependency of every test within
-  *                              this memoization environment. Components designated as forced roots will not be garbage
-  *                              collected even if there are no components or tests that depend on them.
-  *                              When combined with `memoizationRoots`, a [[distage.DIResource]] binding can be used to
-  *                              implement a global start/stop action (beforeAll/afterAll) for all tests within this memoization environment.
-  *                              Changes to `forcedRoots` that alter implementations of components in [[memoizationRoots]]
-  *                              OR their dependencies will cause the test to execute in a new memoization environment,
-  *                              check the initial log output in tests for information about the memoization environments in your tests.
+  * @param forcedRoots Specifies components that will be treated as if they are a dependency of every test within
+  *                    this memoization environment. Components designated as forced roots will not be garbage
+  *                    collected even if there are no components or tests that depend on them.
+  *                    When combined with `memoizationRoots`, a [[distage.Lifecycle]] binding can be used to
+  *                    implement a global start/stop action (beforeAll/afterAll) for all tests within this memoization environment.
+  *                    Changes to `forcedRoots` that alter implementations of components in [[memoizationRoots]]
+  *                    OR their dependencies will cause the test to execute in a new memoization environment,
+  *                    check the initial log output in tests for information about the memoization environments in your tests.
   *
   * @param moduleOverrides       Override loaded plugins with a given [[Module]]. As long as overriden bindings are not memoized,
   *                              or dependencies of memoized components, using overrides will NOT create a new memoization environment.

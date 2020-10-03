@@ -55,7 +55,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     * You can summon a created Set by type `Set[T]`:
     *
     * {{{
-    * import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
+    * import cats.implicits._, org.http4s.server.blaze._, org.http4s.implicits._
     *
     * object BlogRouteModule extends ModuleDef {
     *   many[HttpRoutes[IO]].add {

@@ -1,7 +1,7 @@
 package izumi.distage.model.definition.dsl
 
 import izumi.distage.constructors.{AnyConstructor, HasConstructor}
-import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag, TrifunctorHasResourceTag}
+import izumi.distage.model.definition.Lifecycle.{ResourceTag, TrifunctorHasResourceTag}
 import izumi.distage.model.definition._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
@@ -42,7 +42,7 @@ import scala.collection.immutable.ListSet
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
   *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Provider]] function
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
-  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a [[DIResource]] specifying its creation and destruction lifecycle
+  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a [[Lifecycle]] specifying its creation and destruction lifecycle
   *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
   *   - `make[X].using[X]` = bind X to refer to another already bound instance of `X`
   *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
@@ -256,7 +256,7 @@ object ModuleDefDSL {
       * holding it is released. Typically, after `.use` is called on the result of
       * [[izumi.distage.model.Injector#produce]]
       *
-      * You can create resources with [[DIResource.make]], by inheriting from [[DIResource]]
+      * You can create resources with [[Lifecycle.make]], by inheriting from [[Lifecycle]]
       * or by converting an existing [[cats.effect.Resource]]
       *
       * You can bind a [[cats.effect.Resource]] directly:
@@ -270,25 +270,25 @@ object ModuleDefDSL {
       * }}}
       *
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
-      *      - [[DIResource]]
+      *      - [[Lifecycle]]
       */
-    final def fromResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R <: Lifecycle[Any, T]: AnyConstructor](implicit tag: ResourceTag[R]): AfterBind = {
       fromResource(AnyConstructor[R])
     }
 
-    final def fromResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R](instance: R with Lifecycle[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R](function: Functoid[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R](function: Functoid[R with Lifecycle[Any, T]])(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
-    final def fromResource[R0, R <: DIResourceBase[Any, T]](
+    final def fromResource[R0, R <: Lifecycle[Any, T]](
       function: Functoid[R0]
-    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
+    )(implicit adapt: Lifecycle.AdaptProvider.Aux[R0, R],
       tag: ResourceTag[R],
     ): AfterBind = {
       import tag._
@@ -300,12 +300,12 @@ object ModuleDefDSL {
       *
       * This will acquire a NEW resource again for every `refResource` binding
       */
-    final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
+    final def refResource[R <: Lifecycle[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
-    final def refResource[R <: DIResourceBase[Any, T]](name: Identifier)(implicit tag: ResourceTag[R]): AfterBind = {
+    final def refResource[R <: Lifecycle[Any, T]](name: Identifier)(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
@@ -373,22 +373,22 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
+    final def addResource[R <: Lifecycle[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
       addResource[R](AnyConstructor[R])
 
-    final def addResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[R](instance: R with Lifecycle[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
-    final def addResource[R](function: Functoid[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[R](function: Functoid[R with Lifecycle[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
-    final def addResource[R0, R <: DIResourceBase[Any, T]](
+    final def addResource[R0, R <: Lifecycle[Any, T]](
       function: Functoid[R0]
-    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
+    )(implicit adapt: Lifecycle.AdaptProvider.Aux[R0, R],
       tag: ResourceTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {
@@ -396,12 +396,12 @@ object ModuleDefDSL {
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
 
-    final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def refResource[R <: Lifecycle[Any, T]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
-    final def refResource[R <: DIResourceBase[Any, T]](name: Identifier)(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def refResource[R <: Lifecycle[Any, T]](name: Identifier)(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
@@ -437,51 +437,6 @@ object ModuleDefDSL {
     final def weakSet[I <: Set[_ <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
-//    final def addEffect[F[_]: TagK, I <: T: Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
-//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)), pos)
-//
-//    final def addEffect[F[_]: TagK, I <: T: Tag](function: Functoid[F[I]])(implicit pos: CodePositionMaterializer): AfterAdd =
-//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(function.get.ret, function.get)), pos)
-//
-//    final def refEffect[F[_]: TagK, I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)), pos)
-//
-//    final def refEffect[F[_]: TagK, I <: T: Tag](name: ContractedId[_])(implicit pos: CodePositionMaterializer): AfterAdd =
-//      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
-//
-//    final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd =
-//      addResource[R](AnyConstructor[R])
-//
-//    final def addResource[R](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
-//      import tag._
-//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
-//    }
-//
-//    final def addResource[R](function: Functoid[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
-//      import tag._
-//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
-//    }
-//
-//    final def addResource[R0, R <: DIResourceBase[Any, T]](
-//      function: Functoid[R0]
-//    )(implicit adapt: DIResource.AdaptProvider.Aux[R0, R],
-//      tag: ResourceTag[R],
-//      pos: CodePositionMaterializer,
-//    ): AfterAdd = {
-//      import tag._
-//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
-//    }
-//
-//    final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
-//      import tag._
-//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
-//    }
-//
-//    final def refResource[R <: DIResourceBase[Any, T]](name: ContractedId[_])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
-//      import tag._
-//      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
-//    }
-
     protected[this] def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
     protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
   }
@@ -512,14 +467,14 @@ object ModuleDefDSL {
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def fromHas[R1 <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T]): AfterBind = {
+      def fromHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T]): AfterBind = {
         import tag._
-        val provider: Functoid[DIResourceBase[F[Any, E, ?], A]] =
+        val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
           AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]](tagBIOLocal)) {
-            case ((resource, r), f) => provideDIResource(f)(resource, r)
+            case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
         dsl.fromResource(provider)
       }
@@ -544,27 +499,27 @@ object ModuleDefDSL {
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: DIResourceBase[F[R, E, ?], I]): AfterBind = {
-        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r: R, F: BIOLocal[F]) => provideDIResource(F)(resource, r)
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, ?], I]): AfterBind = {
+        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
+          (r: R, F: BIOLocal[F]) => provideLifecycle(F)(resource, r)
         })
       }
 
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[DIResourceBase[F[R, E, ?], I]]
+        function: Functoid[Lifecycle[F[R, E, ?], I]]
       )(implicit d1: DummyImplicit
       ): AfterBind = {
-        dsl.fromResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
-          case ((resource, r), f) => provideDIResource(f)(resource, r)
+        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+          case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
     }
@@ -605,14 +560,14 @@ object ModuleDefDSL {
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def addHas[R1 <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
+      final def addHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasResourceTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
         import tag._
-        val provider: Functoid[DIResourceBase[F[Any, E, ?], A]] =
+        val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
           AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]](tagBIOLocal)) {
-            case ((resource, r), f) => provideDIResource(f)(resource, r)
+            case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
         dsl.addResource(provider)
       }
@@ -640,43 +595,43 @@ object ModuleDefDSL {
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        resource: DIResourceBase[F[R, E, ?], I]
+        resource: Lifecycle[F[R, E, ?], I]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addResource[DIResourceBase[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r: R, F: BIOLocal[F]) => provideDIResource(F)(resource, r)
+        dsl.addResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
+          (r: R, F: BIOLocal[F]) => provideLifecycle(F)(resource, r)
         })
       }
 
       /**
         * Adds a dependency on `BIOLocal[F]`
         *
-        * Warning: removes the precise subtype of DIResource because of `DIResource.map`:
-        * Integration checks on DIResource will be lost
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[DIResourceBase[F[R, E, ?], I]]
+        function: Functoid[Lifecycle[F[R, E, ?], I]]
       )(implicit pos: CodePositionMaterializer,
         d1: DummyImplicit,
       ): AfterAdd = {
-        dsl.addResource[DIResourceBase[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
-          case ((resource, r), f) => provideDIResource(f)(resource, r)
+        dsl.addResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+          case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
 
     }
   }
 
-  @inline private[this] def provideDIResource[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: DIResourceBase[F[R, E, ?], A], r: R): DIResourceBase[F[Any, E, ?], A] = {
-    new DIResourceBase[F[Any, E, ?], A] {
+  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: Lifecycle[F[R, E, ?], A], r: R): Lifecycle[F[Any, E, ?], A] = {
+    new Lifecycle[F[Any, E, ?], A] {
       override type InnerResource = resource.InnerResource
       override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
       override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
-      override def extract(rr: InnerResource): A = resource.extract(rr)
+      override def extract[B >: A](rr: InnerResource): Either[F[Any, E, A], A] = resource.extract(rr).left.map(F.provide(_)(r))
     }
   }
 

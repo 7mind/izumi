@@ -6,7 +6,7 @@ import izumi.distage.fixtures.TraitCases.TraitCase2.{Dependency1, Dependency2, T
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.{DIResource, ModuleDef}
+import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.model.reflection.TypedRef
 import izumi.functional.bio.{BIOApplicative, BIOAsk, BIOLocal, F}
 import org.scalatest.exceptions.TestFailedException
@@ -28,14 +28,14 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     F.askWith((_: Has[Dependency2]).get)
 
   final class ResourceHasImpl[F[-_, +_, +_]: BIOLocal](
-  ) extends DIResource.LiftF(for {
+  ) extends Lifecycle.LiftF(for {
       d1 <- getDep1
       d2 <- getDep2
     } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
   final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
     d1: Dependency1
-  ) extends DIResource.LiftF[F[Throwable, ?], Trait1](
+  ) extends Lifecycle.LiftF[F[Throwable, ?], Trait1](
       F.pure(trait1(d1))
     )
 

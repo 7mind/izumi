@@ -3,7 +3,7 @@ package izumi.distage.roles.test.fixtures
 import java.util.concurrent.ExecutorService
 
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture._
@@ -45,7 +45,7 @@ object roles {
   ) extends RoleService[F] {
     notCloseable.discard()
 
-    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
       logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
       assert(conf.overridenInt == 111)
     }) {
@@ -80,7 +80,7 @@ object roles {
 }
 
 class TestRole01[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole01] started: $roleParameters, $freeArgs")
   }) {
     _ =>
@@ -96,7 +96,7 @@ object TestRole01 extends RoleDescriptor {
 }
 
 class TestRole02[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole02] started: $roleParameters, $freeArgs")
   }) {
     _ =>
@@ -113,7 +113,7 @@ class TestRole03[F[_]: DIEffect](
   logger: IzLogger,
   axisComponent: AxisComponent,
 ) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole03] started: $roleParameters, $freeArgs")
     assert(axisComponent == AxisComponentCorrect, TestRole03.expectedError)
   }) {
@@ -132,7 +132,7 @@ class TestRole04[F[_]: DIEffect](
   logger: IzLogger,
   listconf: ListConf,
 ) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole04] started: $roleParameters, $freeArgs")
     assert(listconf.ints == List(3, 2, 1), listconf.ints)
   }) {

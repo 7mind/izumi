@@ -3,13 +3,13 @@ package izumi.distage.modules.platform
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
 import distage.Id
-import izumi.distage.model.definition.{DIResource, ModuleDef}
-import izumi.functional.bio.{BIORunner, BIORunner3, BlockingIO, BlockingIO3, BlockingIOInstances}
+import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
-import zio.{Has, IO, Runtime, ZIO}
+import izumi.functional.bio.{BIORunner, BIORunner3, BlockingIO, BlockingIO3, BlockingIOInstances}
 import zio.blocking.Blocking
 import zio.internal.Executor
 import zio.internal.tracing.TracingConfig
+import zio.{Has, IO, Runtime, ZIO}
 
 import scala.concurrent.ExecutionContext
 
@@ -44,11 +44,11 @@ object ZIOPlatformSupportModule extends ModuleDef {
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
     () =>
       val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
-      DIResource.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
+      Lifecycle.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
   }
   make[ThreadPoolExecutor].named("zio.io").fromResource {
     () =>
-      DIResource.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
+      Lifecycle.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
   }
 
   make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))

@@ -10,7 +10,7 @@ import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.functional.Value
@@ -32,7 +32,7 @@ case class ContainerResource[F[_], T](
 )(implicit
   val F: DIEffect[F],
   val P: DIEffectAsync[F],
-) extends DIResource[F, DockerContainer[T]] {
+) extends Lifecycle.Basic[F, DockerContainer[T]] {
 
   private[this] val rawClient = client.rawClient
 

@@ -9,7 +9,7 @@ import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilde
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.functional.Value
@@ -74,7 +74,7 @@ object DockerClientWrapper {
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
-  ) extends DIResource[F, DockerClientWrapper[F]]
+  ) extends Lifecycle.Basic[F, DockerClientWrapper[F]]
     with IntegrationCheck[F] {
 
     private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
