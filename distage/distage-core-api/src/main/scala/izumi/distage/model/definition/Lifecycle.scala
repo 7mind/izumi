@@ -754,7 +754,7 @@ object Lifecycle {
       *
       *     make[HikariTransactor[IO]].fromResource {
       *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
-      *         implicit val 7C: ContextShift[IO] = IO.contextShift(ec)
+      *         implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
       *
       *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
       *     }
