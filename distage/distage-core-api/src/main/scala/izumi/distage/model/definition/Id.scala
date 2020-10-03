@@ -11,7 +11,7 @@ package izumi.distage.model.definition
   *   }
   *
   *   Injector().produce(module).run {
-  *     (five: Int @Id("five"), three: Int @Id("three") =>
+  *     (five: Int @Id("five"), three: Int @Id("three")) =>
   *       assert(5 == five)
   *       assert(3 == three)
   *   }
