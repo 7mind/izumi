@@ -3065,7 +3065,9 @@ lazy val `izumi` = (project in file("."))
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
     scalacOptions in ThisBuild ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}"
-    )
+    ),
+    doctestOnlyCodeBlocksMode in ThisBuild := true,
+    doctestTestFramework in ThisBuild := DoctestTestFramework.ScalaTest
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

@@ -232,6 +232,8 @@ object Izumi {
         "scalacOptions" in SettingScope.Build ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw
         ),
+        "doctestOnlyCodeBlocksMode" in SettingScope.Build := true,
+        "doctestTestFramework" in SettingScope.Build := """DoctestTestFramework.ScalaTest""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ Seq(
