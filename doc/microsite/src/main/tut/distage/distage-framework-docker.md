@@ -488,7 +488,7 @@ docker {
 }
 ```
 
-2. Override the `DockerSupportModule` using `overridenBy`:
+2. Override the `DockerSupportModule` using `overriddenBy`:
 
 ```scala mdoc:to-string
 import izumi.distage.docker.Docker
