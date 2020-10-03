@@ -14,6 +14,7 @@ import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
@@ -664,7 +665,7 @@ object DistageTestRunner {
       nodeTests.toList.flatMap(_.preparedTests) ++ children.flatMap(_._2.allTests)
     }
 
-    @inline override def toString: String = toString_(0, None, "", "")
+    @inline override def toString: String = toString_(0, Set.empty, "", "")
 
     /** Root node traverse. User should never call children node directly. */
     def stateTraverse[State](
@@ -705,13 +706,28 @@ object DistageTestRunner {
       }
     }
 
-    private def toString_(level: Int, plan: Option[TriSplittedPlan], suitePad: String, levelPad: String): String = {
-      val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
-      val currentLevelPad = s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ PLAN KEYS: ${plan.map(_.keys.map(_.tpe)).getOrElse(Set.empty)}"
-      val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
-      val str = if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
+    private def toString_(level: Int, memoizationRoots: Set[DIKey], suitePad: String, levelPad: String): String = {
+      val currentLevelPad = {
+        val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
+
+        val memoizationRootsRendered = if (memoizationRoots.nonEmpty) {
+          val minimizer = KeyMinimizer(memoizationRoots)
+          memoizationRoots.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
+        } else {
+          "ø"
+        }
+
+        s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ MEMOIZATION ROOTS: $memoizationRootsRendered"
+      }
+
+      val str = {
+        val testIds = nodeTests.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
+
+        if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
+      }
+
       children.toList.zipWithIndex.foldLeft(str) {
-        case (acc, ((p, next), i)) =>
+        case (acc, ((nextPlan, nextTree), i)) =>
           val isLastChild = children.size == i + 1
           val nextSuitePad = suitePad + (if (isLastChild) "     " else "║    ")
           val nextLevelPad = level match {
@@ -723,7 +739,7 @@ object DistageTestRunner {
             case _ =>
               levelPad ++ "╠════"
           }
-          val nextChildStr = next.toString_(level + 1, Some(p), nextSuitePad, nextLevelPad)
+          val nextChildStr = nextTree.toString_(level + 1, nextPlan.keys, nextSuitePad, nextLevelPad)
           s"$acc$nextChildStr"
       }
     }
