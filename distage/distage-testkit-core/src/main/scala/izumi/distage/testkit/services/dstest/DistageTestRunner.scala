@@ -395,7 +395,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ): F[Unit] = {
     val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
 
-    val locatorWithOverriddenActivation: LocatorDef = new LocatorDef {
+    val locatorWithOverriddenPlannerAndActivationInfo: LocatorDef = new LocatorDef {
       // we override ActivationInfo <s>(& Activation)</s> because the test can have _different_ activation from the memoized part
       // FIXME: Activation will be part of PlannerInput in 0.11.0 & perhaps ActivationInfo should be derived from Bootloader/PlannerInput as well instead of injected externally
       make[Planner].fromValue(planner)
@@ -415,7 +415,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       override val parent: Option[Locator] = Some(mainSharedLocator)
     }
 
-    val testInjector = Injector.inherit(locatorWithOverriddenActivation)
+    val testInjector = Injector.inherit(locatorWithOverriddenPlannerAndActivationInfo)
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
