@@ -495,7 +495,7 @@ import izumi.distage.docker.Docker
 import izumi.distage.docker.Docker.DockerReusePolicy
 
 class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
-  include(DockerSupportModule[F] overridenBy new ModuleDef {
+  include(DockerSupportModule[F] overriddenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
         readTimeoutMs    = 10000,

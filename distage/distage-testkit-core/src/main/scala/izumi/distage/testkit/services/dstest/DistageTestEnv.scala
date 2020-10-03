@@ -34,11 +34,11 @@ trait DistageTestEnv {
   ): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
-    val appModule = mergeStrategy.merge(appPlugins) overridenBy testConfig.moduleOverrides
-    val bootstrapModule = mergeStrategy.merge(bsPlugins) overridenBy testConfig.bootstrapOverrides
+    val appModule = mergeStrategy.merge(appPlugins) overriddenBy testConfig.moduleOverrides
+    val bootstrapModule = mergeStrategy.merge(bsPlugins) overriddenBy testConfig.bootstrapOverrides
     val availableActivations = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(appModule)
 
-    val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
+    val bsModule = bootstrapModule overriddenBy new BootstrapModuleDef {
       make[ActivationInfo].fromValue(availableActivations)
     }
 
