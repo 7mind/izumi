@@ -7,6 +7,4 @@ trait LogstageDI {
   type LogIOModule[F[_]] = distage.LogIOModule[F]
   type LogBIOModule[F[_, _]] = distage.LogBIOModule[F]
   type LogBIO3Module[F[_, _, _]] = distage.LogBIO3Module[F]
-
-  type PlanningObserverLoggingImpl = distage.PlanningObserverLoggingImpl
 }

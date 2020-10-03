@@ -4,7 +4,7 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{BadMutatorAxis, BadSetAxis, ConflictResolutionException, DIBugException, InconsistentSetElementAxis, SanityCheckFailedException, UnconfiguredMutatorAxis, UnconfiguredSetElementAxis}
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, SemiplanOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
@@ -62,16 +62,17 @@ class PlannerDefaultImpl(
             ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
         }
 
-        val mappedMatrix = mappedGraph.map(_._1).toMap
-        val mappedOps = mappedGraph.flatMap(_._2).toMap
+        val mappedOps = mappedGraph.view.flatMap(_._2).toMap
 
-        val remappedKeysGraph = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
+        val mappedMatrix = mappedGraph.view.map(_._1).filter({ case (k, _) => mappedOps.contains(k) }).toMap
 
-        // TODO: migrate semiplan to DG
-        val steps = remappedKeysGraph.meta.nodes.values.toVector
-
-        Value(SemiPlan(steps, input.roots))
-          .map(addImports)
+        Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
+          .map(addImports(_, input.roots))
+          .map {
+            dg =>
+              val steps = dg.meta.nodes.values.toVector
+              SemiPlan(steps, input.roots)
+          }
           .eff(planningObserver.onPhase10PostGC)
           .map(makeOrdered)
           .map(forwardingRefResolver.resolve)
@@ -382,35 +383,77 @@ class PlannerDefaultImpl(
   }
 
   @nowarn("msg=Unused import")
-  protected[this] def addImports(plan: SemiPlan): SemiPlan = {
+  protected[this] def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
     import scala.collection.compat._
 
-    val topology = analyzer.topology(plan.steps)
-    val imports = topology
-      .dependees
-      .graph
-      .view
-      .filterKeys(k => !plan.index.contains(k))
+    val imports = plan
+      .predcessors.links.view
+      .filterKeys(k => !plan.meta.nodes.contains(k))
       .map {
         case (missing, refs) =>
-          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.value.toSynthetic)
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.meta.nodes.get(key)).map(_.origin.value.toSynthetic)
           val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
           (missing, ImportDependency(missing, refs, origin))
       }
       .toMap
 
-    val allOps = (imports.values ++ plan.steps).toVector
-    val missingRoots = plan.roots match {
+    val missingRoots = roots match {
       case Roots.Of(roots) =>
         roots
-          .toSet.diff(allOps.map(_.target).toSet).map {
+          .toSet
+          .diff(plan.meta.nodes.keySet)
+          .diff(imports.keySet)
+          .map {
             root =>
-              ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-          }.toVector
-      case Roots.Everything => Vector.empty
+              (root, ImportDependency(root, Set.empty, OperationOrigin.Unknown))
+          }
+          .toVector
+      case Roots.Everything =>
+        Vector.empty
     }
-    SemiPlan(missingRoots ++ allOps, plan.roots)
+
+    val missingRootsImports = missingRoots.toMap
+
+    val allImports = (imports.keySet ++ missingRootsImports.keySet).map {
+      i =>
+        (i, Set.empty[DIKey])
+    }
+
+    val fullMeta = GraphMeta(plan.meta.nodes ++ imports ++ missingRootsImports)
+
+    DG.fromPred(IncidenceMatrix(plan.predcessors.links ++ allImports), fullMeta)
   }
+
+//  @nowarn("msg=Unused import")
+//  protected[this] def addImports(plan: SemiPlan): SemiPlan = {
+//    import scala.collection.compat._
+//
+//    val topology = analyzer.topology(plan.steps)
+//    val imports = topology
+//      .dependees
+//      .graph
+//      .view
+//      .filterKeys(k => !plan.index.contains(k))
+//      .map {
+//        case (missing, refs) =>
+//          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.value.toSynthetic)
+//          val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+//          (missing, ImportDependency(missing, refs, origin))
+//      }
+//      .toMap
+//
+//    val allOps = (imports.values ++ plan.steps).toVector
+//    val missingRoots = plan.roots match {
+//      case Roots.Of(roots) =>
+//        roots
+//          .toSet.diff(allOps.map(_.target).toSet).map {
+//            root =>
+//              ImportDependency(root, Set.empty, OperationOrigin.Unknown)
+//          }.toVector
+//      case Roots.Everything => Vector.empty
+//    }
+//    SemiPlan(missingRoots ++ allOps, plan.roots)
+//  }
 
   protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
     val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")

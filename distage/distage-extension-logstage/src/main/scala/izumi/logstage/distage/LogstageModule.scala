@@ -12,14 +12,12 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
     StaticLogRouter.instance.setup(router)
   }
 
-  make[LogRouter].from(router)
-
-  make[CustomContext].from(CustomContext.empty)
-  many[PlanningObserver].add[PlanningObserverLoggingImpl]
-
   make[IzLogger]
-  make[RoutingLogger].using[IzLogger]
-  make[AbstractLogger].using[IzLogger]
+    .aliased[RoutingLogger]
+    .aliased[AbstractLogger]
+
+  make[LogRouter].fromValue(router)
+  make[CustomContext].fromValue(CustomContext.empty)
 }
 
 object LogstageModule {
