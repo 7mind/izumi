@@ -14,9 +14,9 @@ import scala.reflect.macros.blackbox
 /**
   * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.functoid=true` java property!
   *
-  * {{{
+  * {{{"""
   *   sbt -Dizumi.debug.macro.distage.functoid=true compile
-  * }}}
+  * """}}}
   *
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
