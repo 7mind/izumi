@@ -45,9 +45,9 @@ final class InjectorDefaultImpl[F[_]](
   private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = new ModuleDef {
       make[PlannerInput].fromValue(input)
+      make[Activation].fromValue(input.activation)
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)
-      make[Activation].fromValue(input.activation)
       make[Module].named("defaultModule").fromValue(defaultModule)
       make[Bootloader]
     }

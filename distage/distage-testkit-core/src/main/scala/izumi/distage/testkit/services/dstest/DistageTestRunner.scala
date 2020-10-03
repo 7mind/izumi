@@ -71,8 +71,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val unstableKeys = {
       val activationKeys = Set(DIKey[Activation], DIKey[ActivationInfo])
       val recursiveKeys = Set(DIKey[BootstrapModule])
-      // FIXME: remove PlanningObserverLoggingImpl and stop inserting LogstageModule in bootstrap
-      val hackyKeys = Set(DIKey[LogRouter], DIKey[Activation]("initial"))
+      // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
+      val hackyKeys = Set(DIKey[LogRouter])
       activationKeys ++ recursiveKeys ++ hackyKeys
     }
 
@@ -358,30 +358,25 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
 
     val locatorWithOverridenActivation: LocatorDef = new LocatorDef {
-      // we override ActivationInfo & Activation because the test can have _different_ activation from the memoized part
+      // we override ActivationInfo <s>(& Activation)</s> because the test can have _different_ activation from the memoized part
       // FIXME: Activation will be part of PlannerInput in 0.11.0 & perhaps ActivationInfo should be derived from Bootloader/PlannerInput as well instead of injected externally
-      make[ActivationInfo].fromValue(activationInfo)
-      make[Activation].fromValue(activation)
-      make[Activation].named("initial").fromValue(activation)
       make[Planner].fromValue(planner)
-      make[BootstrapModule].fromValue(new BootstrapModuleDef {
-        include(mainSharedLocator.get[BootstrapModule].drop {
-          Set(
-            DIKey[BootstrapModule],
-            DIKey[ActivationInfo],
-            DIKey[Activation],
-            DIKey[Activation]("initial"),
-          )
-        })
-        make[BootstrapModule].from(() => this)
-        make[ActivationInfo].fromValue(activationInfo)
-        make[Activation].fromValue(activation)
-        make[Activation].named("initial").fromValue(activation)
-      })
+      make[ActivationInfo].fromValue(activationInfo)
+      make[BootstrapModule].fromValue {
+        new BootstrapModuleDef {
+          include(mainSharedLocator.get[BootstrapModule].drop {
+            Set(
+              DIKey[BootstrapModule],
+              DIKey[ActivationInfo],
+            )
+          })
+          make[BootstrapModule].from(() => this)
+          make[ActivationInfo].fromValue(activationInfo)
+        }
+      }
       override val parent: Option[Locator] = Some(mainSharedLocator)
     }
 
-    // FIXME: activation in boostrap locator doesn't change much now
     val testInjector = Injector.inherit(locatorWithOverridenActivation)
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
