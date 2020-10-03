@@ -74,7 +74,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
     val injector = Injector[Identity]()
     val plan = injector.plan(PlannerInput.noGC(definition ++ new ModuleDef {
-      addImplicit[Bracket[IO, Throwable]]
+      addImplicit[Sync[IO]]
     }))
 
     def assert1(ctx: Locator) = {
