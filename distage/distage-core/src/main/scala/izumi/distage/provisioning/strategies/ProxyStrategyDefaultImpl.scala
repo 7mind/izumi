@@ -58,8 +58,8 @@ class ProxyStrategyDefaultImpl(
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
         executor
-          .execute(context, initProxy.proxy.op).flatMap(_.toList match {
-
+          .execute(context, initProxy.proxy.op)
+          .flatMap(_.toList match {
             case NewObjectOp.NewInstance(_, instance) :: Nil =>
               F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
                 .map(_ => Seq.empty)

@@ -631,7 +631,7 @@ object ModuleDefDSL {
       override type InnerResource = resource.InnerResource
       override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
       override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
-      override def extract(rr: InnerResource): A = resource.extract(rr)
+      override def extract[B >: A](rr: InnerResource): Either[F[Any, E, A], A] = resource.extract(rr).left.map(F.provide(_)(r))
     }
   }
 

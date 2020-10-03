@@ -234,6 +234,43 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       )
       assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
     }
+
+    "Lifecycle.fromZIO(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
+      When("ZManaged is interruptible")
+      unsafeRun(
+        ZManaged
+          .fromEffect(ZIO.never)
+          .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+          .fork.use(
+            (_: Fiber[Nothing, Unit]).interrupt.unit
+          )
+      )
+
+      When("Lifecycle is also interruptible")
+      unsafeRun(
+        Lifecycle
+          .fromZIO {
+            ZManaged
+              .fromEffect(ZIO.never)
+              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("Lifecycle interrupted")))
+              .fork
+          }.use((_: Fiber[Nothing, Unit]).interrupt.unit)
+      )
+
+      When("Even `ZManaged -> Resource -> Lifecycle` chain is still interruptible")
+      unsafeRun {
+        import zio.interop.catz._
+        Lifecycle
+          .fromCats[Task, Fiber[Nothing, Unit]](
+            ZManaged
+              .fromEffect(ZIO.never)
+              .onExit((_: zio.Exit[Throwable, Unit]) => ZIO.effectTotal(Then("Resource interrupted")))
+              .fork
+              .toResourceZIO
+          ).use((_: Fiber[Nothing, Unit]).interrupt.unit)
+      }
+    }
+
   }
 
 }

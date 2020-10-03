@@ -100,8 +100,9 @@ class PlanInterpreterDefaultRuntimeImpl(
                   F.maybeSuspend {
                     newObjectOps.foreach {
                       newObject =>
-                        val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
-                          .recoverWith(failureHandler.onBadResult(failureContext))
+                        val maybeSuccess = Try {
+                          interpretResult(mutProvisioningContext, newObject)
+                        }.recoverWith(failureHandler.onBadResult(failureContext))
 
                         maybeSuccess match {
                           case Success(_) =>
@@ -110,7 +111,6 @@ class PlanInterpreterDefaultRuntimeImpl(
                             mutFailures += ProvisioningFailure(step, failure)
                         }
                     }
-                    ()
                   }
 
                 case Failure(failure) =>

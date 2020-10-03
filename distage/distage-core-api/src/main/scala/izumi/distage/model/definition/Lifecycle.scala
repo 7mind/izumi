@@ -2,7 +2,8 @@ package izumi.distage.model.definition
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
-import cats.effect.Bracket
+import cats.effect.Resource.{Allocate, Bind, Suspend}
+import cats.effect.{ExitCase, Sync, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
@@ -15,8 +16,9 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{open, unused}
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.ZManaged.ReleaseMap
-import zio._
+import zio.{Has, Reservation, ZIO, ZLayer, ZManaged}
 
+import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
@@ -139,9 +141,9 @@ trait Lifecycle[+F[_], +OuterResource] {
   type InnerResource
   def acquire: F[InnerResource]
   def release(resource: InnerResource): F[Unit]
-  def extract(resource: InnerResource): OuterResource
+  def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
 
-  final def map[B](f: OuterResource => B): Lifecycle[F, B] = mapImpl(this)(f)
+  final def map[G[x] >: F[x]: DIApplicative, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
   final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
   final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
   final def evalTap[G[x] >: F[x]: DIEffect](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
@@ -160,7 +162,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   final def beforeRelease[G[x] >: F[x]: DIApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
     wrapRelease[G]((release, res) => DIApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
-  final def void: Lifecycle[F, Unit] = map(_ => ())
+  final def void[G[x] >: F[x]: DIApplicative]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 }
 
 object Lifecycle {
@@ -178,12 +180,12 @@ object Lifecycle {
     *   }
     * }}}
     */
-  trait Basic[+F[_], Resource] extends Lifecycle[F, Resource] {
-    def acquire: F[Resource]
-    def release(resource: Resource): F[Unit]
+  trait Basic[+F[_], A] extends Lifecycle[F, A] {
+    def acquire: F[A]
+    def release(resource: A): F[Unit]
 
-    override final def extract(resource: Resource): Resource = resource
-    override final type InnerResource = Resource
+    override final def extract[B >: A](resource: A): Right[Nothing, A] = Right(resource)
+    override final type InnerResource = A
   }
 
   import cats.effect.Resource
@@ -191,7 +193,11 @@ object Lifecycle {
   implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
     def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
+        use = a =>
+          F.suspendF(resource.extract(a) match {
+            case Left(effect) => F.flatMap(effect)(use)
+            case Right(value) => use(value)
+          })
       )
     }
   }
@@ -223,7 +229,7 @@ object Lifecycle {
   }
 
   def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {
-    new Lifecycle.FromCats[F, A] {
+    new Lifecycle.FromPair[F, A] {
       override def acquire: F[(A, F[Unit])] = allocate
     }
   }
@@ -269,38 +275,80 @@ object Lifecycle {
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
-  def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): Lifecycle.FromCats[F, A] = {
+  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
-      override val acquire: F[(A, F[Unit])] = resource.allocated
+      override def acquire: F[concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]] = {
+        concurrent.Ref.of[F, List[ExitCase[Throwable] => F[Unit]]](Nil)(F)
+      }
+
+      override def release(finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): F[Unit] = {
+        releaseExit(finalizersRef, ExitCase.Completed)
+      }
+
+      override def extract[B >: A](finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): Left[F[B], Nothing] = {
+        Left(F.widen(allocatedTo(finalizersRef)))
+      }
+
+      // FIXME: `Lifecycle.release` should have an `exit` parameter
+      private[this] def releaseExit(finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]], exitCase: ExitCase[Throwable]): F[Unit] = {
+        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.traverse_(_)(_.apply(exitCase)))
+      }
+
+      // Copy of [[cats.effect.Resource#allocated]] but inserts finalizers mutably into a list as soon as they're available.
+      // This is required to _preserve interruptible sections_ in `Resource` that `allocated` does not preserve naturally,
+      // or rather, that it doesn't preserve in absence of a `.continual` operation.
+      // That is, because code like `resource.allocated.flatMap(_ => ...)` is unsafe because `.flatMap` may be interrupted,
+      // dropping the finalizers on the floor and leaking all the resources.
+      private[this] def allocatedTo(
+        finalizers: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
+      ): F[A] = {
+
+        // Indirection for calling `loop` needed because `loop` must be @tailrec
+        def continue(current: Resource[F, Any], stack: List[Any => Resource[F, Any]]): F[Any] =
+          loop(current, stack)
+
+        // Interpreter that knows how to evaluate a Resource data structure;
+        // Maintains its own stack for dealing with Bind chains
+        @tailrec def loop(current: Resource[F, Any], stack: List[Any => Resource[F, Any]]): F[Any] =
+          current match {
+            case a: Allocate[F, Any] =>
+              F.bracketCase(a.resource) {
+                case (a, rel) =>
+                  stack match {
+                    case Nil => F.as(finalizers.update(rel :: _), a)
+                    case l => F.flatMap(finalizers.update(rel :: _))(_ => continue(l.head(a), l.tail))
+                  }
+              } {
+                case (_, ExitCase.Completed) =>
+                  F.unit
+                case (_, exitCase) =>
+                  releaseExit(finalizers, exitCase)
+              }
+            case b: Bind[F, _, Any] =>
+              loop(b.source, b.fs.asInstanceOf[Any => Resource[F, Any]] :: stack)
+            case s: Suspend[F, Any] =>
+              F.flatMap(s.resource)(continue(_, stack))
+          }
+
+        F.map(loop(resource, Nil))(_.asInstanceOf[A])
+      }
     }
   }
 
   /** Convert [[zio.ZManaged]] to [[Lifecycle]] */
   def fromZIO[R, E, A](managed: ZManaged[R, E, A]): Lifecycle.FromZIO[R, E, A] = {
     new FromZIO[R, E, A] {
-      override def acquire: ZIO[R, E, (A, ZIO[R, Nothing, Unit])] = {
-        ZManaged
-          .ReleaseMap.make.bracketExit(
-            release = (releaseMap: ReleaseMap, exit: Exit[E, _]) =>
-              exit match {
-                case Exit.Success(_) => UIO.unit
-                case Exit.Failure(_) => releaseMap.releaseAll(exit, ExecutionStrategy.Sequential)
-              }
-          ) {
-            releaseMap =>
-              managed
-                .zio
-                .provideSome[R](_ -> releaseMap)
-                .map { case (_, a) => (a, releaseMap.releaseAll(Exit.succeed(a), ExecutionStrategy.Sequential).unit) }
-          }
-      }
+      override def extract[B >: A](releaseMap: ReleaseMap): Left[ZIO[R, E, A], Nothing] =
+        Left(managed.zio.provideSome[R](_ -> releaseMap).map(_._2))
     }
   }
 
   implicit final class SyntaxLifecycleCats[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
-      Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
+      Resource
+        .make[G, resource.InnerResource](resource.acquire)(resource.release)
+        .evalMap[G, A](resource.extract(_).fold(identity, Applicative[G].pure))
     }
 
     def mapK[G[x] >: F[x], H[_]](f: G ~> H): Lifecycle[H, A] = {
@@ -308,7 +356,9 @@ object Lifecycle {
         override type InnerResource = resource.InnerResource
         override def acquire: H[InnerResource] = f(resource.acquire)
         override def release(res: InnerResource): H[Unit] = f(resource.release(res))
-        override def extract(res: InnerResource): A = resource.extract(res)
+        override def extract[B >: A](res: InnerResource): Either[H[B], B] = resource.extract(res).left.map {
+          fa: F[A] => f(fa.asInstanceOf[G[B]])
+        }
       }
     }
   }
@@ -321,7 +371,7 @@ object Lifecycle {
           .acquire.map(
             r =>
               Reservation(
-                ZIO.effectTotal(resource.extract(r)),
+                ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
                 _ =>
                   resource.release(r).orDieWith {
                     case e: Throwable => e
@@ -339,7 +389,7 @@ object Lifecycle {
         override type InnerResource = resource.InnerResource
         override def acquire: F[InnerResource] = DIEffect[F].maybeSuspend(resource.acquire)
         override def release(res: InnerResource): F[Unit] = DIEffect[F].maybeSuspend(resource.release(res))
-        override def extract(res: InnerResource): A = resource.extract(res)
+        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
       }
     }
   }
@@ -355,7 +405,9 @@ object Lifecycle {
       * This function only makes sense in code examples or at top-level,
       * please use [[SyntaxUse#use]] instead!
       */
-    def unsafeGet()(implicit F: DIApplicative[F]): F[A] = F.map(resource.acquire)(resource.extract)
+    def unsafeGet()(implicit F: DIEffect[F]): F[A] = {
+      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    }
   }
 
   /**
@@ -398,7 +450,7 @@ object Lifecycle {
     *   }
     * }}}
     */
-  @open class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
+  @open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
 
   /**
     * Class-based proxy over a [[zio.ZManaged]] value
@@ -473,7 +525,7 @@ object Lifecycle {
     *   }
     * }}}
     */
-  @open class MakePair[F[_], A] private[this] (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromCats[F, A] {
+  @open class MakePair[F[_], A] private[this] (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromPair[F, A] {
     def this(acquire: => F[(A, F[Unit])]) = this(() => acquire)
 
     override final def acquire: F[(A, F[Unit])] = acquire0()
@@ -546,7 +598,7 @@ object Lifecycle {
     override final type InnerResource = lifecycle.InnerResource
     override final def acquire: F[lifecycle.InnerResource] = lifecycle.acquire
     override final def release(resource: lifecycle.InnerResource): F[Unit] = lifecycle.release(resource)
-    override final def extract(resource: lifecycle.InnerResource): A = lifecycle.extract(resource)
+    override final def extract[B >: A](resource: lifecycle.InnerResource): Either[F[B], B] = lifecycle.extract(resource)
   }
 
   trait Simple[A] extends Lifecycle.Basic[Identity, A]
@@ -558,7 +610,7 @@ object Lifecycle {
 
     override final type InnerResource = Unit
     override final def release(resource: Unit): F[Unit] = release
-    override final def extract(resource: Unit): A = this
+    override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
   trait MutableOf[+A] extends Lifecycle.SelfOf[Identity, A] { this: A => }
@@ -569,28 +621,32 @@ object Lifecycle {
     override final type InnerResource = inner.InnerResource
     override final def acquire: F[inner.InnerResource] = inner.acquire
     override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
-    override final def extract(resource: inner.InnerResource): A = this
+    override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
   trait MutableNoClose[+A] extends Lifecycle.SelfNoClose[Identity, A] { this: A => }
 
   abstract class SelfNoClose[+F[_]: DIApplicative, +A] extends Lifecycle.NoCloseBase[F, A] { this: A =>
     override type InnerResource = Unit
-    override final def extract(resource: Unit): A = this
+    override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
   abstract class NoClose[+F[_]: DIApplicative, A] extends Lifecycle.NoCloseBase[F, A] with Lifecycle.Basic[F, A]
 
-  trait FromCats[F[_], A] extends Lifecycle[F, A] {
+  trait FromPair[F[_], A] extends Lifecycle[F, A] {
     override final type InnerResource = (A, F[Unit])
     override final def release(resource: (A, F[Unit])): F[Unit] = resource._2
-    override final def extract(resource: (A, F[Unit])): A = resource._1
+    override final def extract[B >: A](resource: (A, F[Unit])): Right[Nothing, A] = Right(resource._1)
+  }
+
+  trait FromCats[F[_], A] extends Lifecycle[F, A] {
+    override final type InnerResource = concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
   }
 
   trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, ?], A] {
-    override final type InnerResource = (A, ZIO[R, Nothing, Unit])
-    override final def release(resource: (A, ZIO[R, Nothing, Unit])): ZIO[R, Nothing, Unit] = resource._2
-    override final def extract(resource: (A, ZIO[R, Nothing, Unit])): A = resource._1
+    override final type InnerResource = ReleaseMap
+    override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make
+    override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
   }
 
   abstract class NoCloseBase[+F[_]: DIApplicative, +A] extends Lifecycle[F, A] {
@@ -610,20 +666,20 @@ object Lifecycle {
     *
     *     make[Int].fromResource(catsResource)
     *
-    *     addImplicit[Bracket[IO, Throwable]]
+    *     addImplicit[Sync[IO]]
     *   }
     * }}}
     *
     * NOTE: binding a cats Resource[F, A] will add a
-    *       dependency on `Bracket[F, Throwable]` for
+    *       dependency on `Sync[F]` for
     *       your corresponding `F` type
     */
   implicit final def providerFromCats[F[_]: TagK, A](
     resource: => Resource[F, A]
   )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
   ): Functoid[Lifecycle.FromCats[F, A]] = {
-    Functoid.identity[Bracket[F, Throwable]].map {
-      implicit bracket: Bracket[F, Throwable] =>
+    Functoid.identity[Sync[F]].map {
+      implicit bracket: Sync[F] =>
         fromCats(resource)
     }
   }
@@ -698,17 +754,17 @@ object Lifecycle {
       *
       *     make[HikariTransactor[IO]].fromResource {
       *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
-      *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
+      *         implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
       *
       *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
       *     }
       *
-      *     addImplicit[Bracket[IO, Throwable]]
+      *     addImplicit[Sync[IO]]
       *   }
       * }}}
       *
       * NOTE: binding a cats Resource[F, A] will add a
-      * dependency on `Bracket[F, Throwable]` for
+      * dependency on `Sync[F]` for
       * your corresponding `F` type
       */
     implicit final def providerFromCatsProvider[F[_], A]: AdaptProvider.Aux[Resource[F, A], Lifecycle.FromCats[F, A]] = {
@@ -719,8 +775,8 @@ object Lifecycle {
           import tag.tagFull
           implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
 
-          a.zip(Functoid.identity[Bracket[F, Throwable]])
-            .map { case (resource, bracket) => fromCats(resource)(bracket) }
+          a.zip(Functoid.identity[Sync[F]])
+            .map { case (resource, sync) => fromCats(resource)(sync) }
         }
       }
     }
@@ -756,21 +812,25 @@ object Lifecycle {
   }
 
   @inline
-  private final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = {
+  private final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: DIApplicative[F]): Lifecycle[F, B] = {
     new Lifecycle[F, B] {
       type InnerResource = self.InnerResource
-      def acquire: F[InnerResource] = self.acquire
-      def release(resource: InnerResource): F[Unit] = self.release(resource)
-      def extract(resource: InnerResource): B = f(self.extract(resource))
+      override def acquire: F[InnerResource] = self.acquire
+      override def release(resource: InnerResource): F[Unit] = self.release(resource)
+      override def extract[C >: B](resource: InnerResource): Either[F[C], C] =
+        self.extract(resource) match {
+          case Left(effect) => Left(F.map(effect)(f))
+          case Right(value) => Right(f(value))
+        }
     }
   }
 
   @inline
   private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: DIEffect[F]): Lifecycle[F, B] = {
 
-    def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
-      F.bracketCase(acquire = acquire)(release = {
-        case (a, Some(_)) => releaseOnError(a)
+    def bracketOnError[a, b](lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+      F.bracketCase(acquire = lifecycle.acquire)(release = {
+        case (a, Some(_)) => lifecycle.release(a)
         case _ => F.unit
       })(use = use)
     }
@@ -779,28 +839,32 @@ object Lifecycle {
     new Lifecycle[F, B] {
       override type InnerResource = InnerResource0
       sealed trait InnerResource0 {
-        def extract: B
+        def extract[C >: B]: Either[F[C], C]
         def deallocate: F[Unit]
       }
       override def acquire: F[InnerResource] = {
-        bracketOnError(self.acquire)(self.release) {
-          inner1 =>
-            val res2 = f(self.extract(inner1))
-            bracketOnError(res2.acquire)(res2.release) {
-              inner2 =>
-                F.pure(new InnerResource0 {
-                  def extract: B = res2.extract(inner2)
-                  def deallocate: F[Unit] = {
-                    F.unit
-                      .guarantee(res2.release(inner2))
-                      .guarantee(self.release(inner1))
+        bracketOnError(self) {
+          inner1: self.InnerResource =>
+            F.suspendF {
+              self.extract(inner1).fold(_.map(f), F pure f(_)).flatMap {
+                res2: Lifecycle[F, B] =>
+                  bracketOnError(res2) {
+                    inner2: res2.InnerResource =>
+                      F.pure(new InnerResource0 {
+                        def extract[C >: B]: Either[F[C], C] = res2.extract(inner2)
+                        def deallocate: F[Unit] = {
+                          F.unit
+                            .guarantee(res2.release(inner2))
+                            .guarantee(self.release(inner1))
+                        }
+                      })
                   }
-                })
+              }
             }
         }
       }
       override def release(resource: InnerResource): F[Unit] = resource.deallocate
-      override def extract(resource: InnerResource): B = resource.extract
+      override def extract[C >: B](resource: InnerResource): Either[F[C], C] = resource.extract
     }
   }
 
@@ -815,7 +879,7 @@ object Lifecycle {
       override final type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = f(self.acquire)
       override def release(resource: InnerResource): F[Unit] = self.release(resource)
-      override def extract(resource: InnerResource): A = self.extract(resource)
+      override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
     }
   }
 
@@ -828,7 +892,7 @@ object Lifecycle {
       override final type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = self.acquire
       override def release(resource: InnerResource): F[Unit] = f(self.release, resource)
-      override def extract(resource: InnerResource): A = self.extract(resource)
+      override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
     }
   }
 

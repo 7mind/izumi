@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.{Activation, DIKey, Id, LocatorRef, ModuleDef, PlannerInput}
+import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
@@ -8,8 +8,9 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.mutable
 import scala.util.Try
@@ -19,7 +20,7 @@ object ResourceEffectBindingsTest {
   final type Ft[+A] = Suspend2[Throwable, A]
 }
 
-class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
+class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenWhenThen {
 
   "Effect bindings" should {
 

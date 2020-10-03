@@ -13,21 +13,21 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 object CatsResourcesTest {
-  class Res { var initialized = false }
+  class Res { var initialized: Boolean = false }
   class Res1 extends Res
 
   class DBConnection
   class MessageQueueConnection
 
   class MyApp(@unused db: DBConnection, @unused mq: MessageQueueConnection) {
-    val run = IO(println("Hello World!"))
+    val run: IO[Unit] = IO(println("Hello World!"))
   }
 }
 
 final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
-    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.Sync`]() = ()
+    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.Sync`](): Unit = ()
     y()
   }
 
@@ -67,14 +67,14 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
         assert(implDef.implType == SafeType.get[Res1])
         assert(providerImplType == SafeType.get[Lifecycle.FromCats[IO, Res1]])
-        assert(fn.diKeys contains DIKey.get[Bracket[IO, Throwable]])
+        assert(fn.diKeys contains DIKey.get[Sync[IO]])
       case _ =>
         fail()
     }
 
     val injector = Injector[Identity]()
     val plan = injector.plan(PlannerInput.noGC(definition ++ new ModuleDef {
-      addImplicit[Bracket[IO, Throwable]]
+      addImplicit[Sync[IO]]
     }))
 
     def assert1(ctx: Locator) = {
