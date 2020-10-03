@@ -2,18 +2,19 @@ package izumi.distage.modules.platform
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
+import cats.effect.Blocker
 import distage.Id
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio.{BIORunner, BIORunner3, BlockingIO, BlockingIO3, BlockingIOInstances}
 import zio.blocking.Blocking
-import zio.internal.Executor
+import zio.internal.{Executor, Platform}
 import zio.internal.tracing.TracingConfig
 import zio.{Has, IO, Runtime, ZIO}
 
 import scala.concurrent.ExecutionContext
 
-object ZIOPlatformSupportModule extends ModuleDef {
+private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
   make[BIORunner3[ZIO]].using[ZIORunner]
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
@@ -40,6 +41,7 @@ object ZIOPlatformSupportModule extends ModuleDef {
   make[TracingConfig].fromValue(TracingConfig.enabled)
   make[FailureHandler].fromValue(FailureHandler.Default)
   make[Runtime[Any]].from((_: ZIORunner).runtime)
+  make[Platform].from((_: ZIORunner).platform)
 
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
     () =>

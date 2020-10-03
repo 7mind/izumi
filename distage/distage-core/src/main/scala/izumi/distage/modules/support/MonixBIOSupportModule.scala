@@ -3,7 +3,7 @@ package izumi.distage.modules.support
 import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.modules.platform.{MonixBIOPlatformSupportModule, MonixPlatformSupportModule}
+import izumi.distage.modules.platform.MonixBIOPlatformDependentSupportModule
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.{BIOAsync, BIOFork, BIOPrimitives, BIOTemporal}
 import monix.bio.{IO, Task, UIO}
@@ -24,13 +24,11 @@ object MonixBIOSupportModule extends MonixBIOSupportModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait MonixBIOSupportModule extends ModuleDef {
+trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupportModule {
   // DIEffect & cats-effect instances
   include(AnyCatsEffectSupportModule[Task])
   // BIO instances
   include(BIOInstancesModule[IO])
-  include(MonixPlatformSupportModule)
-  include(MonixBIOPlatformSupportModule)
 
   make[Scheduler].from(Scheduler.global)
   make[IO.Options].from(IO.defaultOptions)
