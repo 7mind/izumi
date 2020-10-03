@@ -17,6 +17,8 @@ trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
 
   /** Check if this class/package is allowed to log messages at or above `logLevel` */
   def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean]
+
+  override def widen[G[_]](implicit @unused ev: F[_] <:< G[_]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
 }
 
 object UnsafeLogIO {
@@ -47,6 +49,6 @@ object UnsafeLogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: UnsafeLogBIO[F]): UnsafeLogIO[F[E, ?]] = log.asInstanceOf[UnsafeLogIO[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit @unused ev: F[_] <:< G[_]): UnsafeLogIO[G] = log.asInstanceOf[UnsafeLogIO[G]]
+  implicit def limitedCovariance[F[+_, _], E](implicit log: UnsafeLogBIO[F]): UnsafeLogIO[F[E, ?]] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit @unused ev: F[_] <:< G[_]): UnsafeLogIO[G] = log.widen
 }

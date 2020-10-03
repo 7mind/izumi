@@ -13,6 +13,8 @@ trait LogIO[F[_]] extends EncodingAwareAbstractLogIO[F, AnyEncoded] with Abstrac
   override type Self[f[_]] = LogIO[f]
 
   final def raw: LogIORaw[F, AnyEncoded] = new LogIORaw(this)
+
+  override def widen[G[_]](implicit @unused ev: F[_] <:< G[_]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
 object LogIO {
@@ -56,6 +58,6 @@ object LogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.asInstanceOf[LogIO[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit @unused ev: F[_] <:< G[_]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit @unused ev: F[_] <:< G[_]): LogIO[G] = log.widen
 }
