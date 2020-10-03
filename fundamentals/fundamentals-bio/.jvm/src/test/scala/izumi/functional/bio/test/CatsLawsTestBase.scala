@@ -14,11 +14,9 @@ trait CatsLawsTestBase extends AnyFunSuite with FunSuiteDiscipline with TestInst
 object CatsLawsTestBase {
   implicit def equalityTry[A: Eq]: Eq[Try[A]] =
     new Eq[Try[A]] {
-      import TestInstances.eqThrowable
-      val optA = implicitly[Eq[Option[A]]]
-      val optT = implicitly[Eq[Option[Throwable]]]
+      val optA: Eq[Option[A]] = implicitly[Eq[Option[A]]]
 
-      def eqv(x: Try[A], y: Try[A]): Boolean =
+      override def eqv(x: Try[A], y: Try[A]): Boolean =
         if (x.isSuccess) optA.eqv(x.toOption, y.toOption)
         else y.isFailure
     }

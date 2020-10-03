@@ -144,7 +144,7 @@ object Injector extends InjectorFactory {
     activation: Activation,
     overrides: BootstrapModule,
   ): Injector[F] = {
-    val bootstrapLocator = new BootstrapLocator(bootstrapBase.overridenBy(overrides), activation)
+    val bootstrapLocator = new BootstrapLocator(bootstrapBase overriddenBy overrides, activation)
     val defaultModules = DefaultModule[F] ++ IdentitySupportModule // Identity support always on
     new InjectorDefaultImpl(bootstrapLocator, this, defaultModules)
   }

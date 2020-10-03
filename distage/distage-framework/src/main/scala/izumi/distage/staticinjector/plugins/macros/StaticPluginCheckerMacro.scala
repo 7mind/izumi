@@ -163,7 +163,7 @@ object StaticPluginCheckerMacro {
       make[AppConfig].from(AppConfig(ConfigFactory.empty()))
     })
 
-    val module = config overridenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ rootModule.toList.merge.morph[PluginBase])
+    val module = config overriddenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ rootModule.toList.merge.morph[PluginBase])
 
     val logger = IzLogger.NullLogger
 

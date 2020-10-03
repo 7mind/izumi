@@ -40,7 +40,7 @@ object RoleAppPlanner {
     )
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {
-      new RoleAppPlanner.Impl[F](options, bsModule overridenBy bsOverride, bootloader, logger)
+      new RoleAppPlanner.Impl[F](options, bsModule overriddenBy bsOverride, bootloader, logger)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
@@ -51,7 +51,7 @@ object RoleAppPlanner {
       val bootstrappedApp = bootloader.boot(
         BootConfig(
           bootstrap = _ => bsModule,
-          appModule = _ overridenBy selfReflectionModule,
+          appModule = _ overriddenBy selfReflectionModule,
           roots = _ => Roots(runtimeGcRoots),
         )
       )

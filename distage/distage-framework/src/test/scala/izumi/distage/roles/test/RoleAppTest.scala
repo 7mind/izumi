@@ -55,7 +55,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val probe = new XXX_TestWhiteboxProbe()
 
       new TestEntrypointBase {
-        override protected def pluginConfig: PluginConfig = super.pluginConfig overridenBy probe
+        override protected def pluginConfig: PluginConfig = super.pluginConfig overriddenBy probe
       }.main(
         Array(
           "-ll",

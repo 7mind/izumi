@@ -145,7 +145,7 @@ val TwoImplsModule = new ModuleDef {
 // Combine previous `HelloByeModule` with our new module
 // While overriding `make[Greeter]` bindings from the first module 
 
-val CombinedModule = HelloByeModule overridenBy TwoImplsModule
+val CombinedModule = HelloByeModule overriddenBy TwoImplsModule
 
 // Choose component configuration when making an Injector:
 Injector()
@@ -948,7 +948,7 @@ object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
 }
 
 val RealInterpretersZIO = {
-  SyncInterpreters[RIO[Console, ?]] overridenBy new ModuleDef {
+  SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
     make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
   }
 }

@@ -332,7 +332,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         make[TestDependency0].tagged("x").tagged("y")
       }
 
-      val definition = def1 overridenBy def2
+      val definition = def1 overriddenBy def2
 
       assert(definition.bindings.count(_.tags.strings == Set("a", "b", "1", "2")) == 0)
       assert(definition.bindings.count(_.tags.strings == Set("x", "y", "2", "3")) == 1)
@@ -351,7 +351,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         make[TestDependency1]
       }
 
-      assert((def1 overridenBy Module.empty) == def1)
+      assert((def1 overriddenBy Module.empty) == def1)
       assert(def1 == def2)
       assert(def1 != def3)
     }
@@ -642,7 +642,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         make[X].tagged(Repo.Dummy, Mode.Prod)
         make[X].tagged(Mode.Test)
       }
-      val bindings = (module ++ module).overridenBy(module).bindings
+      val bindings = (module ++ module).overriddenBy(module).bindings
       assert(bindings.size == 3)
       assert(bindings.map(_.tags) == Set(Set[BindingTag](Repo.Prod, Mode.Prod), Set[BindingTag](Repo.Dummy, Mode.Prod), Set[BindingTag](Mode.Test)))
     }

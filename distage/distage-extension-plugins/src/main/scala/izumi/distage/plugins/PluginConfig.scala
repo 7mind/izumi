@@ -21,11 +21,16 @@ final case class PluginConfig(
   def ++(plugins: Seq[PluginBase]): PluginConfig = copy(merges = merges ++ plugins)
   def ++(plugin: PluginBase): PluginConfig = copy(merges = merges ++ Seq(plugin))
 
-  def overridenBy(plugins: Seq[PluginBase]): PluginConfig = copy(overrides = overrides ++ plugins)
-  def overridenBy(plugin: PluginBase): PluginConfig = copy(overrides = overrides ++ Seq(plugin))
+  def overriddenBy(plugins: Seq[PluginBase]): PluginConfig = copy(overrides = overrides ++ plugins)
+  def overriddenBy(plugin: PluginBase): PluginConfig = copy(overrides = overrides ++ Seq(plugin))
 
   def cachePackages(cachePackages: Boolean): PluginConfig = copy(cachePackages = cachePackages)
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)
+
+  @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+  def overridenBy(plugins: Seq[PluginBase]): PluginConfig = overriddenBy(plugins)
+  @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+  def overridenBy(plugin: PluginBase): PluginConfig = overriddenBy(plugin)
 }
 
 object PluginConfig {
