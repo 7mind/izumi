@@ -4,7 +4,7 @@ import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.reflect.{TagK, TagK3, TagKK}
-import logstage.{LogIO, LogRouter}
+import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
 
 class LogIOModule[F[_]: SyncSafe: TagK](
   router: LogRouter,
@@ -12,7 +12,10 @@ class LogIOModule[F[_]: SyncSafe: TagK](
 ) extends BootstrapModuleDef {
   include(LogstageModule(router, setupStaticLogRouter))
 
-  make[LogIO[F]].from(LogIO.fromLogger[F](_))
+  make[LogIO[F]]
+    .from(LogIO.fromLogger[F](_))
+    .aliased[UnsafeLogIO[F]]
+    .aliased[LogCreateIO[F]]
 }
 
 class LogBIOModule[F[_, _]: SyncSafe2: TagKK](router: LogRouter, setupStaticLogRouter: Boolean) extends LogIOModule[F[Nothing, ?]](router, setupStaticLogRouter)
