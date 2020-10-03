@@ -13,7 +13,7 @@ import zio.{Has, IO, Runtime, ZIO}
 
 import scala.concurrent.ExecutionContext
 
-object ZIOPlatformSupportModule extends ModuleDef {
+private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
   make[BIORunner3[ZIO]].using[ZIORunner]
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))

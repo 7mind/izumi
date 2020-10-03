@@ -2,4 +2,4 @@ package izumi.distage.modules.platform
 
 import izumi.distage.model.definition.ModuleDef
 
-object ZIOPlatformSupportModule extends ModuleDef
+private[modules] trait MonixPlatformDependentSupportModule extends ModuleDef
