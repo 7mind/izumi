@@ -1,18 +1,16 @@
 package izumi.distage.injector
 
-import distage.{Activation, DIKey, DefaultModule, Id, Injector, LocatorRef, ModuleDef, PlannerInput}
+import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffectRunner
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.exceptions.TestFailedException
-import zio.{Fiber, Task, ZIO, ZManaged}
+import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.mutable
 import scala.util.Try
@@ -388,48 +386,6 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
           res
         })
       new XImpl().acquire.get
-    }
-
-    "Lifecycle.fromZIO(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
-      def runZIO(fa: Task[Unit]): Unit = {
-        Injector().produceRun(DefaultModule[Task]) {
-          (_: DIEffectRunner[Task]).run(fa)
-        }
-      }
-
-      When("ZManaged is interruptible")
-      runZIO(
-        ZManaged
-          .fromEffect(ZIO.never)
-          .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
-          .fork.use(
-            (_: Fiber[Nothing, Unit]).interrupt.unit
-          )
-      )
-
-      When("Lifecycle is also interruptible")
-      runZIO(
-        Lifecycle
-          .fromZIO {
-            ZManaged
-              .fromEffect(ZIO.never)
-              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("Lifecycle interrupted")))
-              .fork
-          }.use((_: Fiber[Nothing, Unit]).interrupt.unit)
-      )
-
-      When("Even `ZManaged -> Resource -> Lifecycle` chain is still interruptible")
-      runZIO {
-        import zio.interop.catz._
-        Lifecycle
-          .fromCats[Task, Fiber[Nothing, Unit]](
-            ZManaged
-              .fromEffect(ZIO.never)
-              .onExit((_: zio.Exit[Throwable, Unit]) => ZIO.effectTotal(Then("Resource interrupted")))
-              .fork
-              .toResourceZIO
-          ).use((_: Fiber[Nothing, Unit]).interrupt.unit)
-      }
     }
 
   }
