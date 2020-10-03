@@ -19,7 +19,6 @@ object Izumi {
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
     val monix = Version.VExpr("V.monix")
     val monix_bio = Version.VExpr("V.monix_bio")
-    val monix_cats = Version.VExpr("V.monix_cats")
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
