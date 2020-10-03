@@ -39,7 +39,7 @@ class LoggerInjectionTest extends AnyWordSpec {
       assert(context.get[ExampleApp].test == 265)
 
       val messages = testSink.fetch()
-      assert(messages.size > 2)
+      assert(messages.size >= 2)
       val last = messages.takeRight(2)
       assert(last.head.message.template.toString.contains("-App-"))
       assert(last.last.message.template.toString.contains("-Service-"))

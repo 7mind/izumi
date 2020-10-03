@@ -15,7 +15,7 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
   make[LogRouter].from(router)
 
   make[CustomContext].from(CustomContext.empty)
-  many[PlanningObserver].add[PlanningObserverLoggingImpl]
+  many[PlanningObserver]
 
   make[IzLogger]
   make[RoutingLogger].using[IzLogger]
