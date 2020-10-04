@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext
 
 abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtifactMaterializer) {
   protected def pluginConfig: PluginConfig
+  protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   def main(args: Array[String]): Unit = {
@@ -48,6 +49,7 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
       additionalRoles = AdditionalRoles(requiredRoles(args)),
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
+      bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
     )
   }

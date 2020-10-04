@@ -48,16 +48,20 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   additionalRoles: AdditionalRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
+  bootstrapPluginConfig: PluginConfig,
   appArtifact: IzArtifact,
 ) extends ModuleDef {
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
 
   make[ArgV].fromValue(args)
-
   make[AdditionalRoles].fromValue(additionalRoles)
+
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
+  make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
+
+  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[CLIParser].from[CLIParserImpl]
   make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
@@ -74,10 +78,8 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   }
 
   many[LibraryReference]
-  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
-
   make[IzLogger].named("early").from {
     (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early"), banner: StartupBanner) =>
       val logger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
@@ -85,7 +87,6 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       logger
   }
 
-  make[PluginConfig].named("bootstrap").fromValue(PluginConfig.empty)
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
