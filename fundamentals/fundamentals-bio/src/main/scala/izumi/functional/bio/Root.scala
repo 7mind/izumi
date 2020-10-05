@@ -18,13 +18,13 @@ trait RootBifunctor[F[-_, +_, +_]] extends Root
 trait RootTrifunctor[F[-_, +_, +_]] extends Root
 
 object Root extends RootInstancesLowPriority1 {
-  @inline implicit final def BIOConvertFromBIOConcurrent[FR[-_, +_, +_]](implicit BIOTemporal: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] with S1 =
-    S1(BIOTemporal.InnerF)
+  @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] with S1 =
+    S1(Concurrent.InnerF)
 
-  @inline implicit final def AttachBIOLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOLocal: Local3[FR]): BIOLocal.type = BIOLocal
-  @inline implicit final def AttachBIOPrimitives3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BIOPrimitives: BIOPrimitives3[FR]): BIOPrimitives.type =
-    BIOPrimitives
-  @inline implicit final def AttachBIOFork3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BIOFork: Fork3[FR]): BIOFork.type = BIOFork
+  @inline implicit final def AttachLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Local: Local3[FR]): Local.type = Local
+  @inline implicit final def AttachPrimitives3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Primitives: Primitives3[FR]): Primitives.type =
+    Primitives
+  @inline implicit final def AttachFork3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Fork: Fork3[FR]): Fork.type = Fork
   @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 
   implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](private val FR0: Functor3[FR]) extends AnyVal {
@@ -37,55 +37,55 @@ object Root extends RootInstancesLowPriority1 {
 }
 
 sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
-  @inline implicit final def BIOConvertFromBIOTemporal[FR[-_, +_, +_]](implicit BIOTemporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] with S2 =
-    S2(BIOTemporal.InnerF)
+  @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] with S2 =
+    S2(Temporal.InnerF)
 
-  @inline implicit final def AttachBIOArrowChoice[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BIOArrowChoice: ArrowChoice3[FR]): BIOArrowChoice.type =
-    BIOArrowChoice
-  @inline implicit final def AttachBIOMonadAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOMonadAsk: MonadAsk3[FR]): BIOMonadAsk.type = BIOMonadAsk
-  @inline implicit final def AttachBIOConcurrent[FR[-_, +_, +_], R](@unused self: Concurrent3[FR])(implicit BIOConcurrent: Concurrent3[FR]): BIOConcurrent.type =
-    BIOConcurrent
+  @inline implicit final def AttachArrowChoice[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit ArrowChoice: ArrowChoice3[FR]): ArrowChoice.type =
+    ArrowChoice
+  @inline implicit final def AttachMonadAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit MonadAsk: MonadAsk3[FR]): MonadAsk.type = MonadAsk
+  @inline implicit final def AttachConcurrent[FR[-_, +_, +_], R](@unused self: Concurrent3[FR])(implicit Concurrent: Concurrent3[FR]): Concurrent.type =
+    Concurrent
 }
 
 sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
-  @inline implicit final def BIOConvertFromBIOParallel[FR[-_, +_, +_]](implicit BIOParallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] with S3 =
-    S3(BIOParallel.InnerF)
+  @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] with S3 =
+    S3(Parallel.InnerF)
 
-  @inline implicit final def AttachBIOArrow[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BIOArrow: BIOArrow[FR]): BIOArrow.type = BIOArrow
-  @inline implicit final def AttachBIOBifunctor[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOBifunctor: Bifunctor3[FR]): BIOBifunctor.type =
-    BIOBifunctor
-  @inline implicit final def AttachBIOConcurrent[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOConcurrent: Concurrent3[FR]): BIOConcurrent.type =
-    BIOConcurrent
+  @inline implicit final def AttachArrow[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Arrow: Arrow3[FR]): Arrow.type = Arrow
+  @inline implicit final def AttachBifunctor[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Bifunctor: Bifunctor3[FR]): Bifunctor.type =
+    Bifunctor
+  @inline implicit final def AttachConcurrent[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Concurrent: Concurrent3[FR]): Concurrent.type =
+    Concurrent
 }
 
 sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
-  @inline implicit final def BIOConvertFromBIOMonadAsk[FR[-_, +_, +_]](implicit BIOMonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] with S4 =
-    S4(BIOMonadAsk.InnerF)
+  @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] with S4 =
+    S4(MonadAsk.InnerF)
 
-  @inline implicit final def AttachBIOAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOAsk: Ask3[FR]): BIOAsk.type = BIOAsk
-  @inline implicit final def AttachBIOProfunctor[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BIOProfunctor: Profunctor3[FR]): BIOProfunctor.type =
-    BIOProfunctor
-  @inline implicit final def AttachBIOParallel[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOParallel: Parallel3[FR]): BIOParallel.type = BIOParallel
+  @inline implicit final def AttachAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Ask: Ask3[FR]): Ask.type = Ask
+  @inline implicit final def AttachProfunctor[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Profunctor: Profunctor3[FR]): Profunctor.type =
+    Profunctor
+  @inline implicit final def AttachParallel[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Parallel: Parallel3[FR]): Parallel.type = Parallel
 }
 
 sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
-  @inline implicit final def BIOConvertFromBIOAsk[FR[-_, +_, +_]](implicit BIOAsk: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] with S5 = S5(BIOAsk.InnerF)
+  @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] with S5 = S5(Ask.InnerF)
 
-  @inline implicit final def AttachBIOTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit BIOTemporal: Temporal3[FR]): BIOTemporal.type = BIOTemporal
+  @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal.type = Temporal
 }
 
 sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
-  @inline implicit final def BIOConvertFromBIOProfunctor[FR[-_, +_, +_]](implicit BIOProfunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] with S6 =
-    S6(BIOProfunctor.InnerF)
+  @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] with S6 =
+    S6(Profunctor.InnerF)
 }
 
 sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
-  @inline implicit final def BIOConvertFromBIOBifunctor[FR[-_, +_, +_]](implicit BIOBifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] with S7 =
-    S7(BIOBifunctor.InnerF)
+  @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] with S7 =
+    S7(Bifunctor.InnerF)
 }
 
 sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {
-  @inline implicit final def BIOLocalZIO: Predefined.Of[Local3[ZIO]] = Predefined(AsyncZio)
+  @inline implicit final def Local3ZIO: Predefined.Of[Local3[ZIO]] = Predefined(AsyncZio)
   @inline implicit final def BIOZIO: Predefined.Of[Async3[ZIO]] = Predefined(AsyncZio)
 }
 
@@ -97,15 +97,15 @@ sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
-  // seems like it's because of the type lambda in `BIOAsync` definition
-  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[BIOAsync[MonixBIO]] =
-    AsyncMonix.asInstanceOf[Predefined.Of[BIOAsync[MonixBIO]]]
+  // seems like it's because of the type lambda in `Async2` definition
+  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[Async2[MonixBIO]] =
+    AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
 
 }
 
 sealed trait RootInstancesLowPriority9 {
-  @inline implicit final def BIOConvert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
-    implicit BIOFunctor3: C[FR] { type Divergence = Nondivergent }
+  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
+    implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
-    Divergent(cast3To2[C, FR, R0](BIOFunctor3))
+    Divergent(cast3To2[C, FR, R0](BifunctorPlus))
 }

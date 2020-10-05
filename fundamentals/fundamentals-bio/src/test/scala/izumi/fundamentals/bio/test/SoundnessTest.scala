@@ -3,14 +3,13 @@ package izumi.fundamentals.bio.test
 import izumi.functional.bio._
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
-import zio.{IO, Task, ZIO}
 
-class BIOSoundnessTest extends AnyWordSpec {
+class SoundnessTest extends AnyWordSpec {
   /*
-    There's a `<: BIORootBifunctor[f]` constraint now in BIOConvert3To2
+    There's a `<: RootBifunctor[f]` constraint now in Convert3To2
     to prevent trifunctorial classes from being converted to bifunctorial,
-    but it's still circumventable by inheriting from BIOFunctor + Trifunctor
-    hierarchies in one implicit instance, like `BIOAsync[F] with BIOLocal[F]`.
+    but it's still circumventable by inheriting from Functor + Trifunctor
+    hierarchies in one implicit instance, like `Async3[F] with Local3[F]`.
 
     A solution may be to add a marker type member inside instances:
 
@@ -36,7 +35,7 @@ class BIOSoundnessTest extends AnyWordSpec {
         val FA: BIOArrow2[FR[F, Int]#l] = implicitly[BIOArrow2[FR[F, Int]#l]]
         FA.andThen(F.unit, F.access((i: Int) => F.sync(println(i))))
       }
-      zio.Runtime.default.unsafeRun(valueF[ZIO].provide(1))
+      zio.Runtime.default.unsafeRun(valueF[zio.ZIO].provide(1))
       """))
     assert(res.getMessage contains "could not find implicit value for parameter")
     assert(res.getMessage contains "BIOArrow2")
@@ -45,8 +44,8 @@ class BIOSoundnessTest extends AnyWordSpec {
   "Cannot convert ZIO BIOArrow instance into a bifunctor typeclass (normally)" in {
     val res = intercept[TestFailedException](assertCompiles("""
     def valueZIO = {
-      val F: BIOArrow2[FR[ZIO, Int]#l] = implicitly[BIOArrow2[FR[ZIO, Int]#l]]
-      F.andThen(IO.unit, ZIO.accessM[Int](i => Task(println(i))))
+      val F: BIOArrow2[FR[zio.ZIO, Int]#l] = implicitly[BIOArrow2[FR[zio.ZIO, Int]#l]]
+      F.andThen(IO.unit, zio.ZIO.accessM[Int](i => zio.Task(println(i))))
     }
     zio.Runtime.default.unsafeRun(valueZIO.provide(1))
     """))

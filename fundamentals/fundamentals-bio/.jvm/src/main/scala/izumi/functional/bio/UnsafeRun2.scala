@@ -49,13 +49,13 @@ object UnsafeRun2 {
       io.leftMap(BIOBadBranch(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
     }
     override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
-      io.sandboxBIOExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+      io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
     }
     override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
       io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
     }
     override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
-      io.sandboxBIOExit.runToFutureOpt(s, opts, implicitly)
+      io.sandboxExit.runToFutureOpt(s, opts, implicitly)
     }
   }
 

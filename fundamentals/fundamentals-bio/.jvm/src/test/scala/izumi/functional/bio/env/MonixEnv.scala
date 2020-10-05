@@ -2,7 +2,7 @@ package izumi.functional.bio.env
 
 import cats.Eq
 import cats.effect.ContextShift
-import izumi.functional.bio.BIO
+import izumi.functional.bio.IO2
 import izumi.functional.bio.test.CatsLawsTestBase
 import monix.execution.{Scheduler, UncaughtExceptionReporter}
 import org.scalacheck.Arbitrary
@@ -26,9 +26,9 @@ trait MonixEnv {
   implicit def arbMonixBIO[A](implicit arb: Arbitrary[A]): Arbitrary[monix.bio.Task[A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_)
-        arb.arbitrary.map(BIO[monix.bio.IO].pure(_))
+        arb.arbitrary.map(IO2[monix.bio.IO].pure(_))
       else
-        Arbitrary.arbThrowable.arbitrary.map(BIO[monix.bio.IO].fail(_))
+        Arbitrary.arbThrowable.arbitrary.map(IO2[monix.bio.IO].fail(_))
     }
   }
 }

@@ -1,6 +1,6 @@
 package izumi.functional
 
-import izumi.functional.bio.syntax.{BIO3Syntax, BIOSyntax}
+import izumi.functional.bio.syntax.{Syntax2, Syntax3}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
 /**
@@ -114,7 +114,7 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN
         (conversions implicit priority: from most specific InnerF to least specific)
  */
-package object bio extends BIO3Syntax with BIOSyntax with DeprecatedAliases {
+package object bio extends Syntax3 with Syntax2 with DeprecatedAliases {
 
   /**
     * A convenient dependent summoner for BIO* hierarchy.

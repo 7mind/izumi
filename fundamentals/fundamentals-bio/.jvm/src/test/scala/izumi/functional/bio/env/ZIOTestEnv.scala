@@ -2,7 +2,7 @@ package izumi.functional.bio.env
 
 import cats.Eq
 import cats.effect.laws.util.TestContext
-import izumi.functional.bio.BIO
+import izumi.functional.bio.IO2
 import izumi.functional.bio.test.CatsLawsTestBase
 import org.scalacheck.Arbitrary
 import zio.Runtime
@@ -14,9 +14,9 @@ trait ZIOTestEnv {
   implicit def arb[A](implicit arb: Arbitrary[A]): Arbitrary[zio.Task[A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_)
-        arb.arbitrary.map(BIO[zio.IO].pure(_))
+        arb.arbitrary.map(IO2[zio.IO].pure(_))
       else
-        Arbitrary.arbThrowable.arbitrary.map(BIO[zio.IO].fail(_))
+        Arbitrary.arbThrowable.arbitrary.map(IO2[zio.IO].fail(_))
     }
   }
 

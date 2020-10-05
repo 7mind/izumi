@@ -2,7 +2,7 @@ package izumi.functional.bio.impl
 
 import cats.effect.Concurrent
 import cats.effect.concurrent.{Deferred, Ref, Semaphore}
-import izumi.functional.bio.{Async2, BIOAsync, Fork2, Primitives2, Promise2, Ref2, Semaphore2, catz}
+import izumi.functional.bio.{Async2, Fork2, Primitives2, Promise2, Ref2, Semaphore2, catz}
 
 class PrimitivesFromBIOAndCats[F[+_, +_]: Async2: Fork2] extends Primitives2[F] {
   private val Concurrent: Concurrent[F[Throwable, ?]] = catz.BIOAsyncForkToConcurrent

@@ -8,19 +8,7 @@ import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unu
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
-trait BIO3Syntax extends BIO3ImplicitPuns {
-  /**
-    * A convenient dependent summoner for BIO* hierarchy.
-    * Auto-narrows to the most powerful available class:
-    *
-    * {{{
-    *   def y[F[+_, +_]: BIOTemporal] = {
-    *     F.timeout(5.seconds)(F.forever(F.unit))
-    *   }
-    * }}}
-    */
-  def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
-}
+trait BIO3Syntax extends BIO3ImplicitPuns
 
 object BIO3Syntax {
 
@@ -144,7 +132,9 @@ object BIO3Syntax {
   class BIOPanic3Ops[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR])
     extends BIOBracket3Ops(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
-    @inline final def sandboxBIOExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @deprecated("renamed to sandboxExit", "0.11")
+    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable

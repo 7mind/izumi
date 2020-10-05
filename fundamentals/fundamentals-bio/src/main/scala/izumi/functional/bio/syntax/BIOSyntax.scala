@@ -122,7 +122,9 @@ object BIOSyntax {
 
   class BIOPanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOPanic[F]) extends BIOBracketOps(r) {
     @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
-    @inline final def sandboxBIOExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @deprecated("renamed to sandboxExit", "0.11")
+    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable

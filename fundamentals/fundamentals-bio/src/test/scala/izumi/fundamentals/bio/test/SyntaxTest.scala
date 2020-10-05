@@ -5,14 +5,14 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration._
 
-class BIOSyntaxTest extends AnyWordSpec {
+class SyntaxTest extends AnyWordSpec {
 
   implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
 
   "BIOParallel.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
-    import izumi.functional.bio.BIOParallel
+    import izumi.functional.bio.Parallel2
 
-    def x[F[+_, +_]: BIOParallel](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+    def x[F[+_, +_]: Parallel2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
       a.zipPar(b)
       a.zipParLeft(b)
       a.zipParRight(b)
@@ -24,7 +24,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOParallel3.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
-    import izumi.functional.bio.{BIOParallel3, Parallel3}
+    import izumi.functional.bio.Parallel3
 
     def x[F[-_, +_, +_]: Parallel3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
       a.zipPar(b)
@@ -38,9 +38,9 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOConcurrent syntax / attachment / conversion works" in {
-    import izumi.functional.bio.{BIOConcurrent, F}
+    import izumi.functional.bio.{Concurrent2, F}
 
-    def x[F[+_, +_]: BIOConcurrent](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+    def x[F[+_, +_]: Concurrent2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
       a.zipPar(b)
       a.zipParLeft(b)
       a.zipParRight(b)
@@ -54,7 +54,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOConcurrent3 syntax / attachment / conversion works" in {
-    import izumi.functional.bio.{BIOConcurrent3, Concurrent3, F}
+    import izumi.functional.bio.{Concurrent3, F}
 
     def x[F[-_, +_, +_]: Concurrent3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
       a.zipPar(b)
@@ -70,9 +70,9 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOAsync.race is callable along with all BIOParallel syntax" in {
-    import izumi.functional.bio.BIOAsync
+    import izumi.functional.bio.Async2
 
-    def x[F[+_, +_]: BIOAsync](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+    def x[F[+_, +_]: Async2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
       a zipPar b
       a zipParLeft b
       a zipParRight b
@@ -86,7 +86,7 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIOAsync3.race is callable along with all BIOParallel syntax" in {
-    import izumi.functional.bio.{Async3, BIOAsync3}
+    import izumi.functional.bio.Async3
 
     def x[F[-_, +_, +_]: Async3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
       a.zipPar(b)
@@ -100,21 +100,21 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
   }
 
-  "BIO.apply is callable" in {
-    import izumi.functional.bio.BIO
+  "IO2.apply is callable" in {
+    import izumi.functional.bio.IO2
 
-    class X[F[+_, +_]: BIO] {
-      def hello = BIO(println("hello world!"))
+    class X[F[+_, +_]: IO2] {
+      def hello = IO2(println("hello world!"))
     }
 
     assert(new X[zio.IO].hello != null)
     assert(new X[bio.IO].hello != null)
   }
 
-  "BIO.widen/widenError is callable" in {
-    import izumi.functional.bio.{BIO, F}
+  ".widen/widenError is callable" in {
+    import izumi.functional.bio.{F, IO2}
 
-    def x[F[+_, +_]: BIO]: F[Throwable, AnyVal] = {
+    def x[F[+_, +_]: IO2]: F[Throwable, AnyVal] = {
       identity[F[Throwable, AnyVal]] {
         F.pure(None: Option[Int]).flatMap {
           _.fold(
@@ -127,27 +127,27 @@ class BIOSyntaxTest extends AnyWordSpec {
     x[zio.IO]
   }
 
-  "BIOBracket.bracketCase & guaranteeCase are callable" in {
-    import izumi.functional.bio.{BIOBracket, Exit, F}
+  "Bracket2.bracketCase & guaranteeCase are callable" in {
+    import izumi.functional.bio.{Bracket2, Exit, F}
 
-    def x[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+    def x[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
       F.pure(None).bracketCase(release = {
           (_, _: Exit[Throwable, Int]) => F.unit
         })(_ => F.pure(1))
     }
-    def y[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+    def y[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
       F.pure(None).bracketCase[Throwable, Int] {
           case (_, Exit.Success(x)) => F.pure(x).as(())
           case (_, _) => F.unit
         }(_ => F.pure(1))
     }
-    def z[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+    def z[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
       F.pure(1).guaranteeCase {
         case Exit.Success(x) => F.pure(x).as(())
         case _ => F.unit
       }
     }
-    def zz[F[+_, +_]: BIOBracket]: F[Throwable, Int] = {
+    def zz[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
       F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeCase {
           case Exit.Success(x) => F.pure(x).as(())
           case _ => F.unit
@@ -166,9 +166,9 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
-    import izumi.functional.bio.{BIOMonad, F}
+    import izumi.functional.bio.{F, Monad2}
 
-    def x[F[+_, +_]: BIOMonad] = {
+    def x[F[+_, +_]: Monad2] = {
       F.ifThenElse(F.pure(false): F[RuntimeException, Boolean])(F.pure(()), F.pure(()): F[Throwable, Any]) *>
       F.when(F.pure(false): F[RuntimeException, Boolean])(F.pure(()): F[Throwable, Unit])
     }
@@ -177,9 +177,9 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "withFilter test" in {
-    import izumi.functional.bio.{BIOError, F}
+    import izumi.functional.bio.{Error2, F}
 
-    def x[F[+_, +_]: BIOError]: F[NoSuchElementException, Unit] = {
+    def x[F[+_, +_]: Error2]: F[NoSuchElementException, Unit] = {
       assertDoesNotCompile(
         """
         for {
@@ -191,22 +191,22 @@ class BIOSyntaxTest extends AnyWordSpec {
         (1, 2) <- F.pure((2, 1))
       } yield ()
     }
-    def y[F[+_, +_]: BIOError]: F[Any, Unit] = {
+    def y[F[+_, +_]: Error2]: F[Any, Unit] = {
       for {
         (1, 2) <- F.pure((2, 1))
       } yield ()
     }
-    def z[F[+_, +_]: BIOError]: F[String, Unit] = {
+    def z[F[+_, +_]: Error2]: F[String, Unit] = {
       for {
         (1, 2) <- F.pure((2, 1)).widenError[String]
       } yield ()
     }
-    def xx[F[+_, +_]: BIOError]: F[Unit, Unit] = {
+    def xx[F[+_, +_]: Error2]: F[Unit, Unit] = {
       for {
         (1, 2) <- F.pure((2, 1)).widenError[Unit]
       } yield ()
     }
-    def yy[F[+_, +_]: BIOError]: F[Option[Throwable], Unit] = {
+    def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
       for {
         (1, 2) <- F.pure((2, 1)).widenError[Option[Throwable]]
       } yield ()
@@ -219,25 +219,25 @@ class BIOSyntaxTest extends AnyWordSpec {
   }
 
   "F summoner examples" in {
-    import izumi.functional.bio.{BIOFork, BIOFunctor, BIOMonad, BIOPrimitives3, BIOTemporal, F, Fork3, Monad3, Primitives2}
+    import izumi.functional.bio.{F, Fork2, Fork3, Functor2, Monad2, Monad3, Primitives2, Primitives3, Temporal2}
 
-    def x[F[+_, +_]: BIOMonad] = {
+    def x[F[+_, +_]: Monad2] = {
       F.when(false)(F.unit)
     }
-    def y[F[+_, +_]: BIOTemporal: BIOFork] = {
+    def y[F[+_, +_]: Temporal2: Fork2] = {
       F.timeout(5.seconds)(F.forever(F.unit)) *>
       F.map(z[F])(_ => ())
     }
-    def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
+    def z[F[+_, +_]: Functor2]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
     }
-    def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: Primitives2: BIOFork]: F[Nothing, Int] = {
+    def `attach BIOPrimitives & Fork2 methods even when they aren't imported`[F[+_, +_]: Monad2: Primitives2: Fork2]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
         F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
       }.flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
-    def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: Monad3: BIOPrimitives3: Fork3]: FR[Nothing, Nothing, Int] = {
+    def `attach BIOPrimitives & Fork23 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: Monad3: Primitives3: Fork3]: FR[Nothing, Nothing, Int] = {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
@@ -246,8 +246,8 @@ class BIOSyntaxTest extends AnyWordSpec {
         x[zio.IO],
         y[zio.IO],
         z[zio.IO],
-        `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
-        `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+        `attach BIOPrimitives & Fork2 methods even when they aren't imported`[zio.IO],
+        `attach BIOPrimitives & Fork23 methods to a trifunctor BIO even when not imported`[zio.ZIO],
       )
     }
 
@@ -266,13 +266,11 @@ class BIOSyntaxTest extends AnyWordSpec {
       F.traverse(_)(_ => zio.IO.unit)
     } *> F.unit
     implicitly[Bifunctor3[zio.ZIO]]
-    implicitly[BIOBifunctor[zio.IO]]
+    implicitly[Bifunctor2[zio.IO]]
   }
 
   "FR: Local/Ask summoners examples" in {
     import izumi.functional.bio.{Arrow3, Ask3, Bifunctor3, F, Local3, Monad3, MonadAsk3, Profunctor3, Temporal3}
-    //
-    import izumi.functional.bio.{BIOAsk, BIOBifunctor3, BIOLocal, BIOMonadAsk, BIOProfunctor, BIOTemporal3}
 
     def x[FR[-_, +_, +_]: Monad3: Ask3] = {
       F.unit *> F.ask[Int].map {
@@ -375,8 +373,8 @@ class BIOSyntaxTest extends AnyWordSpec {
 
   "doc examples" in {
     locally {
-      import izumi.functional.bio.{BIOMonad, F, Primitives2}
-      def adder[F[+_, +_]: BIOMonad: Primitives2](i: Int): F[Nothing, Int] =
+      import izumi.functional.bio.{F, Monad2, Primitives2}
+      def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
         F.mkRef(0)
           .flatMap(ref => ref.update(_ + i) *> ref.get)
 
@@ -385,7 +383,6 @@ class BIOSyntaxTest extends AnyWordSpec {
 
     locally {
       import izumi.functional.bio.{F, MonadAsk3, Ref3}
-      import izumi.functional.bio.BIOMonadAsk
       // update ref from the environment and return result
       def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] =
         F.access {
@@ -400,9 +397,9 @@ class BIOSyntaxTest extends AnyWordSpec {
     }
 
     locally {
-      import izumi.functional.bio.{BIOTemporal, F}
+      import izumi.functional.bio.{F, Temporal2}
 
-      def y[F[+_, +_]: BIOTemporal] = {
+      def y[F[+_, +_]: Temporal2] = {
         F.timeout(5.seconds)(F.forever(F.unit))
       }
 

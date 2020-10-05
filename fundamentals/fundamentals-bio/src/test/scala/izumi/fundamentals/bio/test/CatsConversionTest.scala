@@ -2,18 +2,17 @@ package izumi.fundamentals.bio.test
 
 import cats.effect.concurrent.Ref
 import cats.effect.{Async, Concurrent, Sync}
-import izumi.functional.bio.{BIO, F}
+import izumi.functional.bio.{F, IO2}
 import izumi.functional.bio.catz._
 import org.scalatest.wordspec.AnyWordSpec
-import izumi.functional.bio.BIOAsync
 import cats.Parallel
 
 class CatsConversionTest extends AnyWordSpec {
 
-  class X[F[+_, +_]: BIO](val ref: Ref[F[Throwable, ?], Int])
+  class X[F[+_, +_]: IO2](val ref: Ref[F[Throwable, ?], Int])
 
   "pickup conversion to Sync" in {
-    def conv[F[+_, +_]: BIO]: F[Throwable, Int] = {
+    def conv[F[+_, +_]: IO2]: F[Throwable, Int] = {
       Ref
         .of(0)
         .flatMap(_.get)
@@ -26,13 +25,13 @@ class CatsConversionTest extends AnyWordSpec {
   }
 
   "pickup conversion to Monad" in {
-    def c1[F[+_, +_]: BIO]: F[Nothing, Unit] = {
+    def c1[F[+_, +_]: IO2]: F[Nothing, Unit] = {
       import cats.syntax.applicative._
       import cats.syntax.monad._
 
       ().iterateWhileM(_ => ().pure)(_ => true)
     }
-    def c2[F[+_, +_]: BIO]: F[Nothing, List[Unit]] = {
+    def c2[F[+_, +_]: IO2]: F[Nothing, List[Unit]] = {
       import cats.syntax.all._
 
       List(1, 2, 3).traverseFilter {
