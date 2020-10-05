@@ -154,21 +154,41 @@ class SameLevel_1_WithActivationsOverride extends DistageMemoizationEnvsTest {
   "should have the same memoized instance even if activation was overriden" in assertion
 }
 
-class DifferentLevelsWithLevel1InstanceOverride extends DistageMemoizationEnvsTest {
+trait DifferentLevelsWithLevel1  extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super
       .config.copy(
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
-          make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
-        }
-      )
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
+        make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      }
+    )
   }
+}
+
+class DifferentLevelsWithLevel1InstanceOverride1 extends DifferentLevelsWithLevel1 {
   "should have different memoized instance" in {
-    memoized: MemoizedInstance =>
+    (memoized: MemoizedInstance, _: MemoizedLevel2) =>
       assertIO(MemoizationEnv.memoizedInstance.toSet != Set(memoized))
   }
 }
+
+class DifferentLevelsWithLevel1InstanceOverride2 extends DifferentLevelsWithLevel1 {
+  override protected def config: TestConfig = {
+    super
+      .config.copy(
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      }
+    )
+  }
+  "should have different memoized instance" in {
+    (memoized: MemoizedInstance, _: MemoizedLevel2) =>
+      assertIO(MemoizationEnv.memoizedInstance.toSet != Set(memoized))
+  }
+}
+
 
 class SameLevel_1_WithLevel2InstanceOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {

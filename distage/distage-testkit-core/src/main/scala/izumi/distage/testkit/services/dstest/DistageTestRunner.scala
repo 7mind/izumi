@@ -721,18 +721,16 @@ object DistageTestRunner {
         if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
       }
 
+      val updatedLevelPad: String = levelPad.replaceAll("╠════$", "║    ").replaceAll("╚════$", "     ")
+
       children.toList.zipWithIndex.foldLeft(str) {
         case (acc, ((nextPlan, nextTree), i)) =>
           val isLastChild = children.size == i + 1
           val nextSuitePad = suitePad + (if (isLastChild) "     " else "║    ")
           val nextLevelPad = level match {
-            case 0 if isLastChild =>
-              levelPad ++ "╚════"
-            case _ if isLastChild =>
-              val replace = if (levelPad.endsWith("╠════")) "║    " else "     "
-              levelPad.dropRight(5) ++ s"$replace╚════"
-            case _ =>
-              levelPad ++ "╠════"
+            case 0 if isLastChild => "╚════"
+            case _ if isLastChild => s"$updatedLevelPad╚════"
+            case _ => s"$updatedLevelPad╠════"
           }
           val nextChildStr = nextTree.toString_(level + 1, nextPlan.keys, nextSuitePad, nextLevelPad)
           s"$acc$nextChildStr"
