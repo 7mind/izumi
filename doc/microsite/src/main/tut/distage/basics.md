@@ -321,15 +321,15 @@ and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fr
 
 The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
 
-- @scaladoc[Lifecycle.Of](izumi.distage.model.definition.Lifecycle.Of)
-- @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle.OfInner)
-- @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle.OfCats)
-- @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle.OfZIO)
-- @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle.LiftF)
-- @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle.Make)
-- @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle.Make_)
-- @scaladoc[Lifecycle.MakePair](izumi.distage.model.definition.Lifecycle.MakePair)
-- @scaladoc[Lifecycle.FromAutoCloseable](izumi.distage.model.definition.Lifecycle.FromAutoCloseable)
+- @scaladoc[Lifecycle.Of](izumi.distage.model.definition.Lifecycle$$Of)
+- @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle$$OfInner)
+- @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle$$OfCats)
+- @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle$$OfZIO)
+- @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle$$LiftF)
+- @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle$$Make)
+- @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle$$Make_)
+- @scaladoc[Lifecycle.MakePair](izumi.distage.model.definition.Lifecycle$$MakePair)
+- @scaladoc[Lifecycle.FromAutoCloseable](izumi.distage.model.definition.Lifecycle$$FromAutoCloseable)
 
 The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
 Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
@@ -367,11 +367,11 @@ And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of @s
 
 The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
 
-- @scaladoc[Lifecycle.Basic](izumi.distage.model.definition.Lifecycle.Basic)
-- @scaladoc[Lifecycle.Simple](izumi.distage.model.definition.Lifecycle.Simple)
-- @scaladoc[Lifecycle.Mutable](izumi.distage.model.definition.Lifecycle.Mutable)
-- @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle.Self)
-- @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle.SelfNoClose)
+- @scaladoc[Lifecycle.Basic](izumi.distage.model.definition.Lifecycle$$Basic)
+- @scaladoc[Lifecycle.Simple](izumi.distage.model.definition.Lifecycle$$Simple)
+- @scaladoc[Lifecycle.Mutable](izumi.distage.model.definition.Lifecycle$$Mutable)
+- @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle$$Self)
+- @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
 
 ### Set Bindings
 
