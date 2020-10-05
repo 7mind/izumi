@@ -51,11 +51,15 @@ We'll start with the following model and service interface for the game score sy
 import zio._
 import zio.console.{Console, putStrLn}
 
-case class Score(value: Int)
+final case class Score(
+  value: Int
+)
 
-case class Config(starValue: Int,
-                  mangoValue: Int,
-                  defaultBonus: Int)
+final case class Config(
+  starValue: Int,
+  mangoValue: Int,
+  defaultBonus: Int,
+)
 
 trait BonusService {
   def queryCurrentBonus: Task[Int]

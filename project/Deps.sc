@@ -25,7 +25,6 @@ object Izumi {
     val pureconfig = Version.VExpr("V.pureconfig")
     val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
-    val http4s = Version.VExpr("V.http4s")
     val doobie = Version.VExpr("V.doobie")
     val classgraph = Version.VExpr("V.classgraph")
     val slf4j = Version.VExpr("V.slf4j")
@@ -124,18 +123,6 @@ object Izumi {
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
-
-    final val http4s_client = Seq(
-      Library("org.http4s", "http4s-blaze-client", V.http4s, LibraryType.Auto)
-    )
-
-    val http4s_server = Seq(
-      Library("org.http4s", "http4s-dsl", V.http4s, LibraryType.Auto),
-      Library("org.http4s", "http4s-circe", V.http4s, LibraryType.Auto),
-      Library("org.http4s", "http4s-blaze-server", V.http4s, LibraryType.Auto),
-    )
-
-    val http4s_all = http4s_server ++ http4s_client
 
     val doobie = Seq(
       Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
@@ -392,7 +379,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(cats_effect_laws, scalatest, discipline, discipline_scaltest) ++
           Seq(
             monix_bio in Scope.Optional.all,
-            scala_java_time in Scope.Test.js
+            scala_java_time in Scope.Test.js,
           ) ++ Seq(zio_interop_cats in Scope.Test.all),
         depends = Seq(
           Projects.fundamentals.language,
@@ -565,7 +552,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ http4s_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "coverageEnabled" := false,

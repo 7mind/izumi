@@ -2568,10 +2568,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.typelevel" %% "cats-effect" % V.cats_effect,
       "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
-      "org.http4s" %% "http4s-dsl" % V.http4s,
-      "org.http4s" %% "http4s-circe" % V.http4s,
-      "org.http4s" %% "http4s-blaze-server" % V.http4s,
-      "org.http4s" %% "http4s-blaze-client" % V.http4s,
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect
