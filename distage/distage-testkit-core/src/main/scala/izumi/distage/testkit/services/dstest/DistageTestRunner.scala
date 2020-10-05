@@ -70,8 +70,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     *  Performs tests grouping by it's memoization environment.
     *  [[TestEnvironment.EnvExecutionParams]] - contains only parts of environment that will not affect plan.
     *  Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
-    *  By result you'll got [[MemoizationEnv]] mapped to tests with it's plans.
-    *  [[MemoizationEnv]] represents memoization environment, with shared [[TriSplittedPlan]], [[Injector]], and runtime plan.
+    *  By result you'll got [[MemoizationEnv]] mapped to [[MemoizationTree]] - tree-represented memoization plan with tests.
+    *  [[MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): Map[MemoizationEnv, MemoizationTree[F]] = {
 
