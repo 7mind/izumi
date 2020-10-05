@@ -16,8 +16,10 @@ object BindingFormatter {
 
     override def formatBinding(binding: Binding): String = {
       binding match {
-        case Binding.SingletonBinding(key, implementation, tags, origin, _) =>
+        case Binding.SingletonBinding(key, implementation, tags, origin, false) =>
           s"make[${formatKey(key)}].from(${formatImplDef(implementation)})${formatTags(tags)} ($origin)"
+        case Binding.SingletonBinding(key, implementation, tags, origin, true) =>
+          s"modify[${formatKey(key)}].by(${formatImplDef(implementation)})${formatTags(tags)} ($origin)"
         case Binding.SetElementBinding(SetElementKey(set, key, _), implementation, tags, origin) =>
           s"many[${formatKey(set)}].add[${formatKey(key)}].from(${formatImplDef(implementation)})${formatTags(tags)} ($origin)"
         case Binding.EmptySetBinding(key, tags, origin) =>

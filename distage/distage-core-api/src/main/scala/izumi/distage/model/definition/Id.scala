@@ -16,5 +16,7 @@ package izumi.distage.model.definition
   *       assert(3 == three)
   *   }
   * }}}
+  *
+  * Note: `javax.inject.Named` annotation is also supported
   */
 final class Id(val name: String) extends DIStageAnnotation

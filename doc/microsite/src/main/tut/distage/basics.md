@@ -85,7 +85,7 @@ resource.use {
 ```
 
 `distage` always creates components exactly once, even if multiple other objects depend on them. Coming from other DI frameworks, you may think it's as if there is only a "Singleton" scope. It's impossible to create non-singletons in `distage`.
-If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them using `@Id` annotation. 
+If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them using `@Id` annotation. (`javax.inject.Named` is also supported)
 
 ```scala mdoc:to-string
 import distage.Id
