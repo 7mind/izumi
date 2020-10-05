@@ -317,6 +317,61 @@ println(closedInit.initialized)
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods, 
 and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
+### Inheritance helpers
+
+The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax, the main reason to employ
+them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
+Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
+this limitation makes it harder to inject implicits using `distage`.
+However, if instead of eta-expanding manually as in `make[A].fromResource(A.resource[F] _)`,
+you use `distage`'s type-based constructor syntax: `make[A].fromResource[A.Resource[F]]`,
+this limitation is lifted, injecting the implicit parameters of class `A.Resource` from
+the object graph instead of summoning them in-place.
+Therefore you can convert an expression based resource-constructor such as:
+
+```scala mdoc:reset:to-string
+import distage.Lifecycle, cats.Monad
+
+class A
+object A {
+  def resource[F[_]](implicit F: Monad[F]): Lifecycle[F, A] = Lifecycle.pure[F, A](new A)
+}
+```
+
+Into class-based form:
+
+```scala mdoc:reset:to-string
+import distage.Lifecycle, cats.Monad
+
+class A
+object A {
+final class Resource[F[_]](implicit F: Monad[F])
+  extends Lifecycle.Of(
+    Lifecycle.pure[F, A](new A)
+  )
+}
+```
+
+And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of @scaladoc[ModuleDefDSL](izumi.distage.model.definition.dsl.ModuleDefDSL).
+
+- @scaladoc[Lifecycle.Of](izumi.distage.model.definition.Lifecycle.Of)
+- @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle.OfInner)
+- @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle.OfCats)
+- @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle.OfZIO)
+- @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle.LiftF)
+- @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle.Make)
+- @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle.Make_)
+- @scaladoc[Lifecycle.MakePair](izumi.distage.model.definition.Lifecycle.MakePair)
+- @scaladoc[Lifecycle.FromAutoCloseable](izumi.distage.model.definition.Lifecycle.FromAutoCloseable)
+
+The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
+
+- @scaladoc[Lifecycle.Basic](izumi.distage.model.definition.Lifecycle.Basic)
+- @scaladoc[Lifecycle.Simple](izumi.distage.model.definition.Lifecycle.Simple)
+- @scaladoc[Lifecycle.Mutable](izumi.distage.model.definition.Lifecycle.Mutable)
+- @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle.Self)
+- @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle.SelfNoClose)
+
 ### Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.

@@ -36,7 +36,7 @@ import scala.reflect.macros.blackbox
   *     )(release = reader => IO { reader.close() })
   * }}}
   *
-  * Using inheritance from [[Lifecycle]]:
+  * Using inheritance from [[Lifecycle.Basic]]:
   *
   * {{{
   *   final class BufferedReaderResource(
@@ -133,14 +133,97 @@ import scala.reflect.macros.blackbox
   * you can control it by controlling the scope of `.use` or by manually invoking
   * [[Lifecycle#acquire]] and [[Lifecycle#release]].
   *
+  * == Inheritance helpers ==
+  *
+  * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax, the main reason to employ
+  * them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
+  * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
+  * this limitation makes it harder to inject implicits using `distage`.
+  *
+  * However, if instead of eta-expanding manually as in `make[A].fromResource(A.resource[F] _)`,
+  * you use `distage`'s type-based constructor syntax: `make[A].fromResource[A.Resource[F]]`,
+  * this limitation is lifted, injecting the implicit parameters of class `A.Resource` from
+  * the object graph instead of summoning them in-place.
+  *
+  * Therefore you can convert an expression based resource-constructor such as:
+  *
+  * {{{
+  *   class A
+  *   object A {
+  *     def resource[F[_]](implicit F: Monad[F]): Lifecycle[F, A] = Lifecycle.pure(new A)
+  *   }
+  * }}}
+  *
+  * Into class-based form:
+  *
+  * {{{
+  *   class A
+  *   object A {
+  *     final class Resource[F[_]](implicit F: Monad[F])
+  *       extends Lifecycle.Of(
+  *         Lifecycle.pure(new A)
+  *       )
+  *   }
+  * }}}
+  *
+  * And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of [[izumi.distage.model.definition.dsl.ModuleDefDSL]].
+  *
+  * - [[Lifecycle.Of]]
+  * - [[Lifecycle.OfInner]]
+  * - [[Lifecycle.OfCats]]
+  * - [[Lifecycle.OfZIO]]
+  * - [[Lifecycle.LiftF]]
+  * - [[Lifecycle.Make]]
+  * - [[Lifecycle.Make_]]
+  * - [[Lifecycle.MakePair]]
+  * - [[Lifecycle.FromAutoCloseable]]
+  *
+  * The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
+  *
+  * - [[Lifecycle.Basic]]
+  * - [[Lifecycle.Simple]]
+  * - [[Lifecycle.Mutable]]
+  * - [[Lifecycle.Self]]
+  * - [[Lifecycle.SelfNoClose]]
+  *
   * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
   *      [[zio.ZManaged]]: https://zio.dev/docs/datatypes/datatypes_managed
   */
 trait Lifecycle[+F[_], +OuterResource] {
   type InnerResource
+
+  /**
+    * The action in `F` used to acquire the resource.
+    *
+    * Note: the `acquire` action is performed *uninterruptibly*,
+    * when `F` is an effect type that supports interruption/cancellation.
+    */
   def acquire: F[InnerResource]
+
+  /**
+    * The action in `F` used to release, close or deallocate the resource
+    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
+    *
+    * Note: the `release` action is performed *uninterruptibly*,
+    * when `F` is an effect type that supports interruption/cancellation.
+    */
   def release(resource: InnerResource): F[Unit]
+
+  /**
+    * Either an action in `F` or a pure function used to
+    * extract the `OuterResource` from the `InnerResource`
+    *
+    * The effect in the `Left` branch will be performed *interruptibly*,
+    * it is not afforded the same kind of safety as `acquire` and `release` actions
+    * when `F` is an effect type that supports interruption/cancellation.
+    *
+    * When `F` is `Identity`, it doesn't matter whether the output is a `Left` or `Right` branch.
+    *
+    * When consuming the output of `extract` you can use `_.fold(identity, F.pure)` to convert the `Either` to `F[B]`
+    *
+    * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
+    */
   def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
 
   final def map[G[x] >: F[x]: DIApplicative, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
@@ -163,6 +246,9 @@ trait Lifecycle[+F[_], +OuterResource] {
     wrapRelease[G]((release, res) => DIApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
   final def void[G[x] >: F[x]: DIApplicative]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+
+  @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
+  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
 
 object Lifecycle {
