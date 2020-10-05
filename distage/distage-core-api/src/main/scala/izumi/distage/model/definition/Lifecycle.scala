@@ -135,8 +135,27 @@ import scala.reflect.macros.blackbox
   *
   * == Inheritance helpers ==
   *
-  * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax, the main reason to employ
-  * them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
+  * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
+  *
+  * - [[Lifecycle.Of]]
+  *
+  * - [[Lifecycle.OfInner]]
+  *
+  * - [[Lifecycle.OfCats]]
+  *
+  * - [[Lifecycle.OfZIO]]
+  *
+  * - [[Lifecycle.LiftF]]
+  *
+  * - [[Lifecycle.Make]]
+  *
+  * - [[Lifecycle.Make_]]
+  *
+  * - [[Lifecycle.MakePair]]
+  *
+  * - [[Lifecycle.FromAutoCloseable]]
+  *
+  * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
   * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
   * this limitation makes it harder to inject implicits using `distage`.
   *
@@ -168,27 +187,21 @@ import scala.reflect.macros.blackbox
   *
   * And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of [[izumi.distage.model.definition.dsl.ModuleDefDSL]].
   *
-  * - [[Lifecycle.Of]]
-  * - [[Lifecycle.OfInner]]
-  * - [[Lifecycle.OfCats]]
-  * - [[Lifecycle.OfZIO]]
-  * - [[Lifecycle.LiftF]]
-  * - [[Lifecycle.Make]]
-  * - [[Lifecycle.Make_]]
-  * - [[Lifecycle.MakePair]]
-  * - [[Lifecycle.FromAutoCloseable]]
-  *
   * The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
   *
   * - [[Lifecycle.Basic]]
+  *
   * - [[Lifecycle.Simple]]
+  *
   * - [[Lifecycle.Mutable]]
+  *
   * - [[Lifecycle.Self]]
+  *
   * - [[Lifecycle.SelfNoClose]]
   *
-  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource]]
-  *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
-  *      [[zio.ZManaged]]: https://zio.dev/docs/datatypes/datatypes_managed
+  * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
+  * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
+  * @see [[https://zio.dev/docs/datatypes/datatypes_managed zio.ZManaged]]
   */
 trait Lifecycle[+F[_], +OuterResource] {
   type InnerResource
