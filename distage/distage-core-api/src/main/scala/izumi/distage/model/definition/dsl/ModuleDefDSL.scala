@@ -16,7 +16,7 @@ import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.HashSet
 
 /**
   * DSL for defining module Bindings.
@@ -71,18 +71,16 @@ import scala.collection.immutable.ListSet
   */
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
 
-  override final def bindings: Set[Binding] = freeze
-  override final def iterator: Iterator[Binding] = freezeIterator
+  override final def bindings: Set[Binding] = freeze()
+  override final def iterator: Iterator[Binding] = freezeIterator()
 
-  private[this] final def freeze: Set[Binding] = {
-    // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    // FIXME: remove ListSet
-    ListSet
+  private[this] final def freeze(): Set[Binding] = {
+    HashSet
       .newBuilder.++= {
-        freezeIterator
+        freezeIterator()
       }.result()
   }
-  private[this] final def freezeIterator: Iterator[Binding] = {
+  private[this] final def freezeIterator(): Iterator[Binding] = {
     val frozenTags0 = frozenTags
     retaggedIncludes
       .iterator
