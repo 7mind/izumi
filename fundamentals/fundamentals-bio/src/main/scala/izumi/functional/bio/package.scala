@@ -114,7 +114,7 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN
         (conversions implicit priority: from most specific InnerF to least specific)
  */
-package object bio extends BIO3Syntax with BIOSyntax {
+package object bio extends BIO3Syntax with BIOSyntax with DeprecatedAliases {
 
   /**
     * A convenient dependent summoner for BIO* hierarchy.
@@ -126,40 +126,45 @@ package object bio extends BIO3Syntax with BIOSyntax {
     *   }
     * }}}
     */
-  @inline override final def F[FR[-_, +_, +_]](implicit FR: BIOFunctor3[FR]): FR.type = FR
+  @inline override final def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
 
-  type BIOFunctor[F[+_, +_]] = BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOBifunctor[F[+_, +_]] = BIOBifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOApplicative[F[+_, +_]] = BIOApplicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOGuarantee[F[+_, +_]] = BIOGuarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOApplicativeError[F[+_, +_]] = BIOApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOMonad[F[+_, +_]] = BIOMonad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOError[F[+_, +_]] = BIOError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOBracket[F[+_, +_]] = BIOBracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOPanic[F[+_, +_]] = BIOPanic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIO[F[+_, +_]] = BIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOParallel[F[+_, +_]] = BIOParallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOConcurrent[F[+_, +_]] = BIOConcurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOAsync[F[+_, +_]] = BIOAsync3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOTemporal[F[+_, +_]] = BIOTemporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Functor2[F[+_, +_]] = Functor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Bifunctor2[F[+_, +_]] = Bifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Applicative2[F[+_, +_]] = Applicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Guarantee2[F[+_, +_]] = Guarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type ApplicativeError2[F[+_, +_]] = ApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Monad2[F[+_, +_]] = Monad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Error2[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Bracket2[F[+_, +_]] = Bracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Panic2[F[+_, +_]] = Panic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type IO2[F[+_, +_]] = IO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Parallel2[F[+_, +_]] = Parallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Concurrent2[F[+_, +_]] = Concurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Async2[F[+_, +_]] = Async3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Temporal2[F[+_, +_]] = Temporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type BIOFiber[F[+_, +_], +E, +A] = BIOFiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
+  type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type BIORef3[F[-_, +_, +_], A] = BIORef[F[Any, +?, +?], A]
-  type BIOPromise3[F[-_, +_, +_], E, A] = BIOPromise[F[Any, +?, +?], E, A]
-  type BIOSemaphore3[F[-_, +_, +_]] = BIOSemaphore[F[Any, +?, +?]]
-  type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
-  type BIOLatch3[F[-_, +_, +_]] = BIOPromise3[F, Nothing, Unit]
+  type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
+  lazy val Fiber2 = Fiber3
 
-  type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
-  object BIOPrimitives3 {
-    @inline def apply[F[-_, +_, +_]: BIOPrimitives3]: BIOPrimitives3[F] = implicitly
+  type Ref3[+F[-_, +_, +_], A] = Ref2[F[Any, +?, +?], A]
+
+  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +?, +?], E, A]
+
+  type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
+  type Latch3[+F[-_, +_, +_]] = Promise3[F, Nothing, Unit]
+
+  type Semaphore3[+F[-_, +_, +_]] = Semaphore2[F[Any, +?, +?]]
+
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
+  object Primitives3 {
+    @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
   }
 
-  type BIORunner3[F[-_, +_, +_]] = BIORunner[F[Any, +?, +?]]
-  object BIORunner3 {
-    @inline def apply[F[-_, +_, +_]: BIORunner3]: BIORunner3[F] = implicitly
+  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, ?, ?]]
+  object UnsafeRun3 {
+    @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
   type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
@@ -200,9 +205,4 @@ package object bio extends BIO3Syntax with BIOSyntax {
     instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
 
-  @deprecated("Use BIOError", "0.11")
-  type BIOMonadError[F[+_, +_]] = BIOError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-
-  @deprecated("Use BIOError3", "0.11")
-  type BIOMonadError3[FR[-_, +_, +_]] = BIOError3[FR]
 }
