@@ -2,7 +2,6 @@ package izumi.distage.modules.platform
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
-import cats.effect.Blocker
 import distage.Id
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
