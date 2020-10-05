@@ -647,6 +647,18 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(bindings.map(_.tags) == Set(Set[BindingTag](Repo.Prod, Mode.Prod), Set[BindingTag](Repo.Dummy, Mode.Prod), Set[BindingTag](Mode.Test)))
     }
 
+    "mutators do not override bindings or each other" in {
+      val module = new ModuleDef {
+        make[Int].from(1)
+      } overriddenBy new ModuleDef {
+        modify[Int](_ + 1)
+      } overriddenBy new ModuleDef {
+        modify[Int](_ + 1)
+      }
+      val bindings = module.bindings
+      assert(bindings.size == 3)
+    }
+
   }
 
 }

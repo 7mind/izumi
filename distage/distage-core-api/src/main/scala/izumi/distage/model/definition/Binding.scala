@@ -18,6 +18,8 @@ sealed trait Binding {
   def addTags(tags: Set[BindingTag]): Binding
   def withTags(tags: Set[BindingTag]): Binding
 
+  def isMutator: Boolean
+
   override final def toString: String = BindingFormatter(KeyFormatter.Full).formatBinding(this)
   override final def hashCode(): Int = group.hashCode
   override final def equals(obj: Any): Boolean = obj match {
@@ -69,6 +71,7 @@ object Binding {
     def withTarget(key: DIKey.SetElementKey): SetElementBinding = copy(key = key)
     override def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
+    override def isMutator: Boolean = false
   }
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding with WithTarget {
@@ -76,6 +79,7 @@ object Binding {
     override def withTarget[T <: DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
+    override def isMutator: Boolean = false
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {

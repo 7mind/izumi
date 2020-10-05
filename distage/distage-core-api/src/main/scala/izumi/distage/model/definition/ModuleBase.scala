@@ -134,12 +134,13 @@ object ModuleBase {
   }
 
   private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {
-    val existingIndex = existingIterator.map(b => b.key -> b).toMultimapMut
-    val newIndex = overridingIterator.map(b => b.key -> b).toMultimapMut
+    val existingIndex = existingIterator.map(b => (b.key, b.isMutator) -> b).toMultimapMut
+    val newIndex = overridingIterator.map(b => (b.key, b.isMutator) -> b).toMultimapMut
     val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
     mergedKeys.iterator.flatMap {
-      k => newIndex.getOrElse[collection.Set[Binding]](k, existingIndex.getOrElse(k, Set.empty))
+      case k @ (_, false) => newIndex.getOrElse(k, existingIndex.getOrElse(k, Set.empty))
+      case k @ (_, true) => newIndex.getOrElse(k, Set.empty).iterator ++ existingIndex.getOrElse(k, Set.empty).iterator
     }
   }
 

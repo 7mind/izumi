@@ -24,11 +24,13 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *   - `make[X]` = create X using its constructor
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
-  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Provider]] function
+  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]]
   *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
   *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
-  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a Resource specifying its creation and destruction lifecycle
+  *   - `make[X].fromResource(X.resource[F]: Lifecycle[F, X])` = create X using a `Lifecycle` value specifying its creation and destruction lifecycle
+  *   - `make[X].from[XImpl].modify(fun(_))` = Create X using XImpl's constructor and apply `fun` to the result
+  *   - `make[X].from[XImpl].modifyBy(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = Create X using XImpl's constructor and modify its `Functoid` using the provided lambda - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
   *
   * Set bindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
@@ -38,6 +40,10 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
+  *
+  * Mutators:
+  *   - `modify[X](fun(_))` = add a modifier applying `fun` to the value bound at `X` (mutator application order is unspecified)
+  *   - `modify[X].by(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = add a modifier, applying the provided lambda to a `Functoid` retrieving `X` - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
   *
   * Tags:
   *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding.
