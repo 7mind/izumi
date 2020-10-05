@@ -167,6 +167,8 @@ import scala.reflect.macros.blackbox
   * Therefore you can convert an expression based resource-constructor such as:
   *
   * {{{
+  *   import distage.Lifecycle, cats.Monad
+  *
   *   class A
   *   object A {
   *     def resource[F[_]](implicit F: Monad[F]): Lifecycle[F, A] = Lifecycle.pure(new A)
@@ -176,6 +178,8 @@ import scala.reflect.macros.blackbox
   * Into class-based form:
   *
   * {{{
+  *   import distage.Lifecycle, cats.Monad
+  *
   *   class A
   *   object A {
   *     final class Resource[F[_]](implicit F: Monad[F])
