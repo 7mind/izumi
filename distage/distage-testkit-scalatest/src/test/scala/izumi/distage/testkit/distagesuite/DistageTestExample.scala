@@ -24,12 +24,11 @@ trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
     super
       .config.copy(
-        memoizationRoots = Set(
-          DIKey.get[MockCache[F]],
-          DIKey.get[Set[SetElement]],
-          DIKey.get[SetCounter],
+        memoizationRoots = Map(
+          1 -> Set(DIKey.get[MockCache[F]]),
+          2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter])
         )
-      )
+    )
   }
 }
 

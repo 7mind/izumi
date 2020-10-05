@@ -58,12 +58,18 @@ object FileLockMutex {
       }
     }
 
-    F.bracket(createChannel)(channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
-      channel =>
-        F.bracket(acquireLock(channel)) {
-          case Some(lock) => F.maybeSuspend(lock.close())
-          case None => F.unit
-        }(_ => effect)
-    }
+    F.bracket(
+      acquire = createChannel
+    )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit))(
+      use = {
+        channel =>
+          F.bracket(
+            acquire = acquireLock(channel)
+          )(release = {
+            case Some(lock) => F.maybeSuspend(lock.close())
+            case None => F.unit
+          })(use = _ => effect)
+      }
+    )
   }
 }

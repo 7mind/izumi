@@ -39,7 +39,15 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
 
   def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
-  final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
+  final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = {
+    // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
+    // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
+    l.foldLeft(pure(List.empty[B])) {
+      (acc, a) =>
+        flatMap(acc)(list => map(f(a))(r => list ++ List(r)))
+    }
+  }
+  final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = { 
     // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
     // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
     l.foldLeft(unit) {
