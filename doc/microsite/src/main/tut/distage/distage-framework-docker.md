@@ -169,7 +169,7 @@ added to the PostgreSQL container's mounts by adding to the additional dependenc
 magnet:
 
 ```scala mdoc:silent
-case class HostPostgresData(path: String)
+final case class HostPostgresData(path: String)
 
 class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
   make[PostgresDocker.Container].fromResource {
@@ -193,7 +193,6 @@ For example, suppose a system under test requires both PostgreSQL and Elasticsea
 use `dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
 
 ```scala mdoc:silent
-
 object ElasticSearchDocker extends ContainerDef {
   val ports = Seq(9200, 9300)
 
@@ -253,6 +252,7 @@ Consider the example application below. This application is written to depend on
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
+import cats.effect.ContextShift
 import doobie.Transactor
 import doobie.syntax.connectionio._
 import doobie.syntax.string._
@@ -271,7 +271,7 @@ class PostgresExampleApp(xa: Transactor[IO]) {
 }
 
 // the postgres configuration used to construct the Transactor
-case class PostgresServerConfig(
+final case class PostgresServerConfig(
   host: String,
   port: Int,
   database: String,
@@ -280,21 +280,18 @@ case class PostgresServerConfig(
 )
 
 class TransactorFromConfigModule extends ModuleDef {
-  make[Transactor[IO]].from { config: PostgresServerConfig =>
-    import scala.concurrent.ExecutionContext.global
+  make[Transactor[IO]].from {
+    (config: PostgresServerConfig, contextShift: ContextShift[IO]) =>
+      implicit val CS = contextShift
 
-    implicit val contextShift = IO.contextShift(global)
-    implicit val timer = IO.timer(global)
-
-    Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver",
-      s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
-      config.username,
-      config.password,
-    )
+      Transactor.fromDriverManager[IO](
+        driver = "org.postgresql.Driver",
+        url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
+        user   = config.username,
+        pass   = config.password,
+      )
   }
 }
-
 ```
 
 Note that the above code is agnostic of environment. Provided a `PostgresServerConfig`, the

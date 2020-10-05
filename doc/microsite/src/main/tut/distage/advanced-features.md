@@ -359,7 +359,7 @@ class Path {
 ```
 
 ```scala mdoc:to-string
-import distage.{ClassConstructor, Roots, ModuleDef, Injector, Tag}
+import distage.{ClassConstructor, ModuleDef, Injector, Tag}
 
 object Path {
   type Aux[A0] = Path { type A = A0 }
