@@ -18,6 +18,7 @@ build/project
 .metals
 project/metals.sbt
 .bloop
+.bsp
 .java-version
 
 # Created by .ignore support plugin (hsz.mobi)
