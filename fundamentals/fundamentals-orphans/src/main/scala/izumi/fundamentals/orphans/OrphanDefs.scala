@@ -40,11 +40,6 @@ object `cats.Applicative` {
   @inline implicit final def catsApplicative: `cats.Applicative`[cats.Applicative] = null
 }
 
-final abstract class `cats.Monoid`[M[_]]
-object `cats.Monoid` {
-  @inline implicit final def catsMonoid: `cats.Monoid`[cats.Monoid] = null
-}
-
 final abstract class `cats.Semigroup`[S[_]]
 object `cats.Semigroup` {
   @inline implicit final def catsSemigroup: `cats.Semigroup`[cats.Semigroup] = null

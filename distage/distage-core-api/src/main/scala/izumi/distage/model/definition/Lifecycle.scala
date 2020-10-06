@@ -3,20 +3,21 @@ package izumi.distage.model.definition
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Resource.{Allocate, Bind, Suspend}
-import cats.effect.{ExitCase, Resource, Sync, concurrent}
+import cats.effect.{ExitCase, Sync, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
-import izumi.distage.model.{Locator, definition}
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.BIOLocal
+import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{open, unused}
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.ZManaged.ReleaseMap
-import zio.{Has, Reservation, ZIO, ZLayer, ZManaged}
+import zio._
 
 import scala.annotation.tailrec
 import scala.language.experimental.macros
@@ -1115,7 +1116,6 @@ object Lifecycle {
   @deprecated("renamed to fromAutoCloseable", "0.11")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 
-
   /**
     * This type encoding was copy-pasted from cats.effect.Resource
     * It's needed to declare a new type with cats.Applicative
@@ -1134,38 +1134,41 @@ object Lifecycle {
     def unwrap[F[_], A](fa: Type[F, A]): Lifecycle[F, A] =
       fa.asInstanceOf[Lifecycle[F, A]]
   }
+
+  def tailRecM[F[_], A, B](init: A)(f: A => Lifecycle[F, Either[A, B]])(implicit DF: DIEffect[F]): Lifecycle[F, B] = {
+    f(init).flatMap {
+      case Right(b) => Lifecycle.pure[F, B](b)
+      case Left(a) => tailRecM(a)(f)
+    }
+  }
 }
 
 abstract private[definition] class LifecycleCatsInstances0 {
-  import izumi.fundamentals.orphans._
-
-  implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, SG[_]: `cats.Semigroup`, A](
+  implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, A](
     implicit
-    Monoid: Monoid[F[_]],
+    Monoid: Monoid[F[A]],
     S: S[F],
     Ap: Ap[F],
-    SG: SG[A],
   ): Monoid[Lifecycle[F, A]] = new cats.Monoid[Lifecycle[F, A]] {
-    val M = Monoid.asInstanceOf[cats.Monoid[Lifecycle[F, A]]]
-    val SemiG = SG.asInstanceOf[cats.Semigroup[A]]
+    val M = Monoid.asInstanceOf[cats.Monoid[A]]
 
-    override def empty: Lifecycle[F, A] = M.empty
+    override def empty: Lifecycle[F, A] = Lifecycle.pure[F, A](M.empty)
     override def combine(x: Lifecycle[F, A], y: Lifecycle[F, A]): Lifecycle[F, A] = {
       for {
         rx <- x
         ry <- y
-      } yield SemiG.combine(rx, ry)
+      } yield M.combine(rx, ry)
     }
   }.asInstanceOf[Monoid[Lifecycle[F, A]]]
 
-  implicit def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]: Monad]: Monad[Lifecycle[F, ?]] = new cats.Monad[Lifecycle[F, ?]] {
-    val M = implicitly[Monad[F]].asInstanceOf[cats.Monad[Lifecycle[F, ?]]]
-    override def pure[A](x: A): Lifecycle[F, A] = M.pure(x)
-    override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = M.flatMap(fa)(f)
-    override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = M.tailRecM(a)(f)
-  }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+  implicit def catsMonadForLifecycle[Monad[_[_]], S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, F[_]: S: Ap]: Monad[Lifecycle[F, ?]] =
+    new cats.Monad[Lifecycle[F, ?]] {
+      override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
+      override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
+      override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = Lifecycle.tailRecM(a)(f)
+    }.asInstanceOf[Monad[Lifecycle[F, ?]]]
 
-  implicit def catsEffectParallelForLifecycle[Monad[_[_]]: `cats.Monad`, Parallel[_[_]]: `cats.Parallel`, Applicative[_[_]]: `cats.Applicative`,F0[_]](
+  implicit def catsEffectParallelForLifecycle[Monad[_[_]]: `cats.Monad`, Parallel[_[_]]: `cats.Parallel`, Applicative[_[_]]: `cats.Applicative`, F0[_]](
     implicit
     Monad: Monad[F0],
     parallel: Parallel[F0],
@@ -1174,7 +1177,7 @@ abstract private[definition] class LifecycleCatsInstances0 {
     protected def Ap = Applicative.asInstanceOf[cats.Applicative[Lifecycle.Par[F0, ?]]]
     protected def M = Monad.asInstanceOf[cats.Monad[Lifecycle[F0, ?]]]
 
-    type F[x] =  Lifecycle.Par[F0, x]
+    type F[x] = Lifecycle.Par[F0, x]
     override def applicative: cats.Applicative[Lifecycle.Par[F0, ?]] = Ap
 
     override def monad: cats.Monad[Lifecycle[F0, ?]] = M
