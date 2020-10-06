@@ -39,10 +39,10 @@ trait Temporal3[F[-_, +_, +_]] extends RootBifunctor[F] with TemporalInstances {
 }
 
 private[bio] sealed trait TemporalInstances
-object TemporalInstances extends BIOTemporalInstancesLowPriority1 {
+object TemporalInstances extends TemporalInstancesLowPriority1 {
   @inline implicit final def Temporal3Zio(implicit clockService: zio.clock.Clock): Predefined.Of[Temporal3[ZIO]] = Predefined(new TemporalZio(clockService))
 }
-sealed trait BIOTemporalInstancesLowPriority1 {
+sealed trait TemporalInstancesLowPriority1 {
   @inline implicit final def TemporalMonix[MonixBIO[+_, +_], Timer[_[_]]](
     implicit
     @unused l1: `monix.bio.IO`[MonixBIO],

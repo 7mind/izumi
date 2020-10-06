@@ -46,7 +46,7 @@ object UnsafeRun2 {
 
   class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
     override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
-      io.leftMap(BIOBadBranch(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+      io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
     }
     override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
       io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
@@ -77,7 +77,7 @@ object UnsafeRun2 {
           value
 
         case failure: Exit.Failure[_] =>
-          throw failure.trace.unsafeAttachTrace(BIOBadBranch(_))
+          throw failure.trace.unsafeAttachTrace(TypedError(_))
       }
     }
 
@@ -150,10 +150,9 @@ object UnsafeRun2 {
 
   }
 
-  final case class BIOBadBranch[A](prefixMessage: String, error: A)
-    extends RuntimeException(s"${prefixMessage}Typed error of class=${error.getClass.getName}: $error", null, true, false)
-  object BIOBadBranch {
-    def apply[A](error: A): BIOBadBranch[A] = new BIOBadBranch("", error)
-  }
+  @deprecated("renamed to TypedError", "0.11")
+  type BIOBadBranch[+A] = TypedError[A]
+  @deprecated("renamed to TypedError", "0.11")
+  lazy val BIOBadBranch: TypedError.type = TypedError
 
 }
