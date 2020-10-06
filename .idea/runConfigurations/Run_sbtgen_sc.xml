@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run sbtgen.sc" type="ScalaAmmoniteRunConfigurationType" factoryName="Ammonite">
+    <setting name="execName" value="amm" />
+    <setting name="fileName" value="$PROJECT_DIR$/sbtgen.sc" />
+    <setting name="scriptParameters" value="" />
+    <method v="2" />
+  </configuration>
+</component>
