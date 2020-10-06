@@ -255,7 +255,7 @@ object Syntax2 {
     @inline implicit final def Bifunctor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Bifunctor2[F[+_, +_]: Bifunctor2]: Bifunctor2[F] = implicitly
   }
-  trait ImplicitPuns13 {
+  trait ImplicitPuns13 extends BIOImplicitPuns {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }

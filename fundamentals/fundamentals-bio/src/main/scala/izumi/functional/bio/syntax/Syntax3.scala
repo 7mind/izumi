@@ -304,11 +304,11 @@ object Syntax3 {
     @inline implicit final def Bifunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Bifunctor3[FR[-_, +_, +_]: Bifunctor3]: Bifunctor3[FR] = implicitly
   }
-  trait ImplicitPuns13 extends BIOImplicitPuns14 {
+  trait ImplicitPuns13 extends ImplicitPuns14 {
     @inline implicit final def Functor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Functor3[FR[-_, +_, +_]: Functor3]: Functor3[FR] = implicitly
   }
-  trait BIOImplicitPuns14 extends BIOImplicitPuns15 {
+  trait ImplicitPuns14 extends ImplicitPuns15 {
     // Note, as long as these auxilary conversions to BIOMonad/Applicative/Functor syntaxes etc.
     // have the same output type as BIOMonad3/etc conversions above, they will avoid the specificity rule
     // and _will not_ clash (because the outputs are equal, not <:<).
@@ -320,25 +320,25 @@ object Syntax3 {
       new LocalOpsKleisliSyntax[FR, R, E, A](self)
     @inline final def Local3[FR[-_, +_, +_]: Local3]: Local3[FR] = implicitly
   }
-  trait BIOImplicitPuns15 extends BIOImplicitPuns16 {
+  trait ImplicitPuns15 extends ImplicitPuns16 {
     @inline implicit final def MonadAsk3[FR[-_, +_, +_]: Monad3, R, E, A](self: FR[R, E, A]): MonadOps[FR, R, E, A] = new MonadOps[FR, R, E, A](self)
     @inline final def MonadAsk3[FR[-_, +_, +_]: MonadAsk3]: MonadAsk3[FR] = implicitly
   }
-  trait BIOImplicitPuns16 extends BIOImplicitPuns17 {
+  trait ImplicitPuns16 extends ImplicitPuns17 {
     @inline implicit final def Ask3[FR[-_, +_, +_]: Applicative3, R, E, A](self: FR[R, E, A]): ApplicativeOps[FR, R, E, A] = new ApplicativeOps[FR, R, E, A](self)
     @inline final def Ask3[FR[-_, +_, +_]: Ask3]: Ask3[FR] = implicitly
   }
-  trait BIOImplicitPuns17 extends BIOImplicitPuns18 {
+  trait ImplicitPuns17 extends ImplicitPuns18 {
     @inline implicit final def ArrowChoice3[FR[-_, +_, +_]: ArrowChoice3, R, E, A](self: FR[R, E, A]): ArrowChoiceOps[FR, R, E, A] = new ArrowChoiceOps[FR, R, E, A](self)
     @inline implicit final def ArrowChoice3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def ArrowChoice3[FR[-_, +_, +_]: ArrowChoice3]: ArrowChoice3[FR] = implicitly
   }
-  trait BIOImplicitPuns18 extends BIOImplicitPuns19 {
+  trait ImplicitPuns18 extends ImplicitPuns19 {
     @inline implicit final def Arrow3[FR[-_, +_, +_]: Arrow3, R, E, A](self: FR[R, E, A]): ArrowOps[FR, R, E, A] = new ArrowOps[FR, R, E, A](self)
     @inline implicit final def Arrow3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Arrow3[FR[-_, +_, +_]: Arrow3]: Arrow3[FR] = implicitly
   }
-  trait BIOImplicitPuns19 extends BIO3ImplicitPuns {
+  trait ImplicitPuns19 extends BIO3ImplicitPuns {
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Profunctor3, R, E, A](self: FR[R, E, A]): ProfunctorOps[FR, R, E, A] = new ProfunctorOps[FR, R, E, A](self)
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Profunctor3[FR[-_, +_, +_]: Profunctor3]: Profunctor3[FR] = implicitly
