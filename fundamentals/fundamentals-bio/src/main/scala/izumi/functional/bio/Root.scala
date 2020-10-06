@@ -100,7 +100,6 @@ sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
   // seems like it's because of the type lambda in `Async2` definition
   @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[Async2[MonixBIO]] =
     AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
-
 }
 
 sealed trait RootInstancesLowPriority9 {

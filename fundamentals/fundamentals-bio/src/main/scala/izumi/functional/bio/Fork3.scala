@@ -13,5 +13,5 @@ object ForkInstances extends LowPriorityForkInstances {
   @inline implicit def ForkZio: Predefined.Of[Fork3[ZIO]] = Predefined(impl.ForkZio)
 }
 sealed trait LowPriorityForkInstances {
-  @inline implicit def ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[BIOFork[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[BIOFork[MonixBIO]]]
+  @inline implicit def ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[Fork2[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[Fork2[MonixBIO]]]
 }
