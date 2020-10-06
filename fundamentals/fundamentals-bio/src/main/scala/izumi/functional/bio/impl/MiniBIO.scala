@@ -2,20 +2,20 @@ package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.Trace
 import izumi.functional.bio.impl.MiniBIO.Fail
-import izumi.functional.bio.{BIO, BlockingIO, Exit}
+import izumi.functional.bio.{BlockingIO, Exit, IO2}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 /**
-  * A lightweight dependency-less implementation of the [[BIO]] interface,
+  * A lightweight dependency-less implementation of the [[izumi.functional.bio.IO2]] interface,
   * analogous in purpose with [[cats.effect.SyncIO]]
   *
   * Sync-only, not interruptible, not async.
   * For internal use. Prefer ZIO or cats-bio in production.
   *
   * This is safe to run in a synchronous environment,
-  * Use MiniBIO.autoRun to gain access to components polymorphic over [[BIO]]
+  * Use MiniBIO.autoRun to gain access to components polymorphic over [[izumi.functional.bio.IO2]]
   * in a synchronous environment.
   *
   * {{{
@@ -103,7 +103,7 @@ object MiniBIO {
         throw failure.toThrowable
     }
 
-    implicit def BIOMiniBIOHighPriority: BIO[MiniBIO] = BIOMiniBIO
+    implicit def BIOMiniBIOHighPriority: IO2[MiniBIO] = BIOMiniBIO
   }
 
   final case class Fail[+E](e: () => Exit.Failure[E]) extends MiniBIO[E, Nothing]
@@ -115,7 +115,7 @@ object MiniBIO {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val BIOMiniBIO: BIO[MiniBIO] with BlockingIO[MiniBIO] = new BIO[MiniBIO] with BlockingIO[MiniBIO] {
+  implicit val BIOMiniBIO: IO2[MiniBIO] with BlockingIO[MiniBIO] = new IO2[MiniBIO] with BlockingIO[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
     override def flatMap[R, E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.empty))
