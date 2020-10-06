@@ -12,7 +12,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
       case Right(res) => pure(res)
     }
 
-  def tap[R, E, A](r: F[R, E, A])(f: A => F[R, E, Unit]): F[R, E, A] = flatMap(r)(a => as(f(a))(a))
+  def tap[R, E, A](r: F[R, E, A], f: A => F[R, E, Unit]): F[R, E, A] = flatMap(r)(a => as(f(a))(a))
   @inline final def when[R, E, E1](cond: F[R, E, Boolean])(ifTrue: F[R, E1, Unit])(implicit ev: E <:< E1): F[R, E1, Unit] = {
     ifThenElse(cond)(ifTrue, unit)
   }

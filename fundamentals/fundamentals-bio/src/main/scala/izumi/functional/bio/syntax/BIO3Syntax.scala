@@ -1,14 +1,11 @@
 package izumi.functional.bio.syntax
 
 import cats.data.Kleisli
-import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
 import izumi.functional.bio.{Applicative3, ApplicativeError3, ArrowChoice3, Ask3, Async3, BIOArrow, Bifunctor3, Bracket3, Concurrent3, Error3, Exit, Fiber3, Fork3, Functor3, Guarantee3, IO3, Local3, Monad3, Panic3, Parallel3, Profunctor3, Temporal3, WithFilter}
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
-
-trait BIO3Syntax extends BIO3ImplicitPuns
 
 object BIO3Syntax {
 

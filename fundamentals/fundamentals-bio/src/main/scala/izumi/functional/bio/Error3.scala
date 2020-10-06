@@ -24,7 +24,7 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
     redeem(r)(e => flatMap(f(e))(fail(_)), pure)
   }
   def tapBoth[R, E, A, E1 >: E](r: F[R, E, A])(err: E => F[R, E1, Unit], succ: A => F[R, E1, Unit]): F[R, E1, A] = {
-    tap(tapError[R, E, A, E1](r)(err))(succ)
+    tap(tapError[R, E, A, E1](r)(err), succ)
   }
 
   /** for-comprehensions sugar:

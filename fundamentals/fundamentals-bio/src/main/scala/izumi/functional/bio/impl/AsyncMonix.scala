@@ -38,7 +38,7 @@ class AsyncMonix extends Async2[IO] {
   override final def bimap[R, E, A, E2, B](r: IO[E, A])(f: E => E2, g: A => B): IO[E2, B] = r.bimap(f, g)
 
   override final def flatMap[R, E, A, B](r: IO[E, A])(f: A => IO[E, B]): IO[E, B] = r.flatMap(f)
-  override final def tap[R, E, A](r: IO[E, A])(f: A => IO[E, Unit]): IO[E, A] = r.flatMap(a => f(a).map(_ => a))
+  override final def tap[R, E, A](r: IO[E, A], f: A => IO[E, Unit]): IO[E, A] = r.flatMap(a => f(a).map(_ => a))
 
   override final def tapBoth[R, E, A, E1 >: E](r: IO[E, A])(err: E => IO[E1, Unit], succ: A => IO[E1, Unit]): IO[E1, A] =
     r.tapError(err).flatMap(a => succ(a).map(_ => a))

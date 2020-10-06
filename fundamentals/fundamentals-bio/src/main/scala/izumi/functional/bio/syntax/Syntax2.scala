@@ -1,6 +1,7 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
+import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
@@ -62,14 +63,14 @@ object Syntax2 {
 
   final class MonadOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Monad2[F]) extends ApplicativeOps(r) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E1, A, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
   }
 
   class ErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Error2[F]) extends ApplicativeErrorOps(r) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[Any, E1, A, A](r)(a => F.map(f0(a))(_ => a))
+    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
@@ -254,7 +255,7 @@ object Syntax2 {
     @inline implicit final def Bifunctor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Bifunctor2[F[+_, +_]: Bifunctor2]: Bifunctor2[F] = implicitly
   }
-  trait ImplicitPuns13 extends BIOSyntax {
+  trait ImplicitPuns13 {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }

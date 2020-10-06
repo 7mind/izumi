@@ -1,13 +1,10 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
-import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
-
-trait BIOSyntax extends BIOImplicitPuns
 
 object BIOSyntax {
 
