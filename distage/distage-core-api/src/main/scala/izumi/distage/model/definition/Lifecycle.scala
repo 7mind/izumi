@@ -3,10 +3,10 @@ package izumi.distage.model.definition
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Resource.{Allocate, Bind, Suspend}
-import cats.effect.{ExitCase, Sync, concurrent}
+import cats.effect.{ExitCase, Resource, Sync, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
-import izumi.distage.model.Locator
+import izumi.distage.model.{Locator, definition}
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
@@ -1114,4 +1114,76 @@ object Lifecycle {
 
   @deprecated("renamed to fromAutoCloseable", "0.11")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
+
+
+  /**
+    * This type encoding was copy-pasted from cats.effect.Resource
+    * It's needed to declare a new type with cats.Applicative
+    * capabilities of doing parallel processing in `ap` and `map2`, needed
+    * for implementing `cats.Parallel`.
+    */
+  type Par[+F[_], +A] = Par.Type[F, A]
+  object Par {
+    type Base
+    trait Tag extends Any
+    type Type[+F[_], +A] <: Base with Tag
+
+    def apply[F[_], A](fa: Lifecycle[F, A]): Type[F, A] =
+      fa.asInstanceOf[Type[F, A]]
+
+    def unwrap[F[_], A](fa: Type[F, A]): Lifecycle[F, A] =
+      fa.asInstanceOf[Lifecycle[F, A]]
+  }
+}
+
+abstract private[definition] class LifecycleCatsInstances0 {
+  import izumi.fundamentals.orphans._
+
+  implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, SG[_]: `cats.Semigroup`, A](
+    implicit
+    Monoid: Monoid[F[_]],
+    S: S[F],
+    Ap: Ap[F],
+    SG: SG[A],
+  ): Monoid[Lifecycle[F, A]] = new cats.Monoid[Lifecycle[F, A]] {
+    val M = Monoid.asInstanceOf[cats.Monoid[Lifecycle[F, A]]]
+    val SemiG = SG.asInstanceOf[cats.Semigroup[A]]
+
+    override def empty: Lifecycle[F, A] = M.empty
+    override def combine(x: Lifecycle[F, A], y: Lifecycle[F, A]): Lifecycle[F, A] = {
+      for {
+        rx <- x
+        ry <- y
+      } yield SemiG.combine(rx, ry)
+    }
+  }.asInstanceOf[Monoid[Lifecycle[F, A]]]
+
+  implicit def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]: Monad]: Monad[Lifecycle[F, ?]] = new cats.Monad[Lifecycle[F, ?]] {
+    val M = implicitly[Monad[F]].asInstanceOf[cats.Monad[Lifecycle[F, ?]]]
+    override def pure[A](x: A): Lifecycle[F, A] = M.pure(x)
+    override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = M.flatMap(fa)(f)
+    override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = M.tailRecM(a)(f)
+  }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+
+  implicit def catsEffectParallelForLifecycle[Monad[_[_]]: `cats.Monad`, Parallel[_[_]]: `cats.Parallel`, Applicative[_[_]]: `cats.Applicative`,F0[_]](
+    implicit
+    Monad: Monad[F0],
+    parallel: Parallel[F0],
+    Applicative: Applicative[F0],
+  ): Parallel[Lifecycle[F0, ?]] = new cats.Parallel[Lifecycle[F0, ?]] {
+    protected def Ap = Applicative.asInstanceOf[cats.Applicative[Lifecycle.Par[F0, ?]]]
+    protected def M = Monad.asInstanceOf[cats.Monad[Lifecycle[F0, ?]]]
+
+    type F[x] =  Lifecycle.Par[F0, x]
+    override def applicative: cats.Applicative[Lifecycle.Par[F0, ?]] = Ap
+
+    override def monad: cats.Monad[Lifecycle[F0, ?]] = M
+
+    override def sequential: Lifecycle.Par[F0, ?] ~> Lifecycle[F0, ?] =
+      λ[Lifecycle.Par[F0, ?] ~> Lifecycle[F0, ?]](Lifecycle.Par.unwrap(_))
+
+    override def parallel: Lifecycle[F0, ?] ~> Lifecycle.Par[F0, ?] =
+      λ[Lifecycle[F0, ?] ~> Lifecycle.Par[F0, ?]](Lifecycle.Par(_))
+
+  }.asInstanceOf[Parallel[Lifecycle[F0, ?]]]
 }

@@ -40,6 +40,21 @@ object `cats.Applicative` {
   @inline implicit final def catsApplicative: `cats.Applicative`[cats.Applicative] = null
 }
 
+final abstract class `cats.Monoid`[M[_]]
+object `cats.Monoid` {
+  @inline implicit final def catsMonoid: `cats.Monoid`[cats.Monoid] = null
+}
+
+final abstract class `cats.Semigroup`[S[_]]
+object `cats.Semigroup` {
+  @inline implicit final def catsSemigroup: `cats.Semigroup`[cats.Semigroup] = null
+}
+
+final abstract class `cats.Monad`[M[_[_]]]
+object `cats.Monad` {
+  @inline implicit final def catsMonad: `cats.Monad`[cats.Monad] = null
+}
+
 final abstract class `cats.Parallel`[K[_[_]]]
 object `cats.Parallel` {
   @inline implicit final def get: `cats.Parallel`[cats.Parallel] = null
