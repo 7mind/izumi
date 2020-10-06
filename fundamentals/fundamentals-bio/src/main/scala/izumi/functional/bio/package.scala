@@ -42,23 +42,19 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
   *  {{{
   *  [cats.effect.*]<:--[CatsConversions]
   *
-  *  [Fiber2]<:--[Fork3]
-  *  [Fork3]<:--[Fork2]
+  *  [Fork3]<:--[Fiber3]
   *
-  *  [BlockingIO3]<:--[BlockingIO]
+  *  [BlockingIO3]<:--[BlockingIO2]
   *
-  *  [Promise2]<:--[Primitives3]
-  *  [Semaphore2]<:--[Primitives3]
-  *  [Ref2]<:--[Primitives3]
-  *  [Primitives3]<:--[Primitives2]
+  *  [Primitives2]<:--[Primitives3]
+  *  [Primitives3]<:--[Ref3]
   *
-  *  [Entropy3]<:--[Entropy2]
-  *  [Entropy2]<:--[Entropy]
+  *  [Primitives3]<:--[Semaphore3]
+  *  [Primitives3]<:--[Promise3]
   *
-  *  [Clock3]<:--[Clock2]
-  *  [Clock2]<:--[Clock]
+  *  [Entropy]<:--[Entropy2]
   *
-  *  [UnsafeRun2]
+  *  [Entropy2]<:--[Entropy3]
   *  }}}
   *
   *  inheritance hierarchy:
@@ -167,9 +163,9 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
-  type BlockingIO[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  object BlockingIO {
-    @inline def apply[F[+_, +_]: BlockingIO]: BlockingIO[F] = implicitly
+  type BlockingIO2[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  object BlockingIO2 {
+    @inline def apply[F[+_, +_]: BlockingIO2]: BlockingIO2[F] = implicitly
   }
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
@@ -289,6 +285,11 @@ package object bio extends Syntax3 with Syntax2 {
   type BIOFiber3[F[-_, +_, +_], +E, +A] = Fiber3[F, E, A]
   @deprecated("renamed to Fiber3", "0.11")
   lazy val BIOFiber3: Fiber3.type = Fiber3
+
+  @deprecated("renamed to BlockingIO2", "0.11")
+  type BlockingIO[F[+_, +_]] = BlockingIO2[F]
+  @deprecated("renamed to BlockingIO2", "0.11")
+  lazy val BlockingIO: BlockingIO2.type = BlockingIO2
 
   @deprecated("renamed to Ref2", "0.11")
   type BIORef[F[+_, +_], A] = Ref2[F, A]

@@ -1,116 +1,116 @@
-<svg version="1.1" baseProfile="full" width="813.25" height="625" viewbox="0 0 813.25 625" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font:bold normal 12pt Helvetica, Helvetica, sans-serif;;stroke-linejoin:round;stroke-linecap:round">
+<svg version="1.1" baseProfile="full" width="696.25" height="625" viewbox="0 0 696.25 625" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font:bold normal 12pt Helvetica, Helvetica, sans-serif;;stroke-linejoin:round;stroke-linecap:round">
   <title >nomnoml</title>
-  <desc >[BIOFunctor3]&lt;--[BIOBifunctor3]
-[BIOBifunctor3]&lt;--[BIOApplicativeError3]
-[BIOFunctor3]&lt;--[BIOApplicative3]
-[BIOApplicative3]&lt;--[BIOGuarantee3]
-[BIOApplicative3]&lt;--[BIOMonad3]
-[BIOGuarantee3]&lt;--[BIOApplicativeError3]
-[BIOApplicativeError3]&lt;--[BIOError3]
-[BIOMonad3]&lt;--[BIOError3]
-[BIOError3]&lt;--[BIOBracket3]
-[BIOBracket3]&lt;--[BIOPanic3]
-[BIOPanic3]&lt;--[BIO3]
-[BIO3]&lt;--[BIOAsync3]
-[BIOMonad3]&lt;--[BIOParallel3]
-[BIOParallel3]&lt;--[BIOConcurrent3]
-[BIOConcurrent3]&lt;--[BIOAsync3]
-[BIOError3]&lt;--[BIOTemporal3]
-[BIOFunctor3]&lt;--[BIOProfunctor]
-[BIOProfunctor]&lt;--[BIOArrow]
-[BIOArrow]&lt;--[BIOArrowChoice]
-[BIOArrowChoice]&lt;--[BIOLocal]
-[BIOApplicative3]&lt;--[BIOAsk]
-[BIOMonad3]&lt;--[BIOMonadAsk]
-[BIOAsk]&lt;--[BIOMonadAsk]
-[BIOMonadAsk]&lt;--[BIOLocal]</desc>
-  <rect x="0" y="0" height="625" width="813.25" style="stroke:none; fill:transparent;"></rect>
-  <path d="M381.8 34.5 L75.5 64.5 L75.5 100 L75.5 100 L75.5 135.5 L75.5 135.5 L75.5 155.5 L75.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M369 41.1 L375.1 35.2 L368 30.5 L381.8 34.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M75.5 186.5 L75.5 206.5 L111.6 226.5 L111.6 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M80.8 199.8 L75.5 193.2 L70.2 199.8 L75.5 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M438.3 44.5 L438.3 64.5 L438.3 84.5 L438.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M443.6 57.8 L438.3 51.2 L432.9 57.8 L438.3 44.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M368.8 112.7 L243.5 135.5 L243.5 155.5 L243.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M356.6 120.3 L362.2 113.9 L354.7 109.8 L368.8 112.7 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M438.3 115.5 L438.3 135.5 L438.3 155.5 L438.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M443.6 128.8 L438.3 122.2 L432.9 128.8 L438.3 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M243.5 186.5 L243.5 206.5 L184.9 226.5 L184.9 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M248.8 199.8 L243.5 193.2 L238.2 199.8 L243.5 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M139.5 257.5 L139.5 277.5 L175.8 297.5 L175.8 297.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M144.8 270.8 L139.5 264.2 L134.2 270.8 L139.5 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M407.3 186.5 L367.3 206.5 L367.3 242 L367.3 242 L367.3 277.5 L367.3 277.5 L250 303 L250 303 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M397.7 197.2 L401.3 189.5 L392.9 187.7 L407.3 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M169.6 328.5 L125.3 348.5 L125.3 368.5 L125.3 368.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M159.7 338.8 L163.5 331.2 L155.3 329.1 L169.6 328.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M125.3 399.5 L125.3 419.5 L125.3 439.5 L125.3 439.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M130.6 412.8 L125.3 406.2 L119.9 412.8 L125.3 399.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M125.3 470.5 L125.3 490.5 L125.3 510.5 L125.3 510.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M130.6 483.8 L125.3 477.2 L119.9 483.8 L125.3 470.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M125.3 541.5 L125.3 561.5 L204.5 583.2 L204.5 583.2 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M130.6 554.8 L125.3 548.2 L119.9 554.8 L125.3 541.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M438.3 186.5 L438.3 206.5 L438.3 242 L438.3 242 L438.3 277.5 L438.3 277.5 L438.3 313 L438.3 313 L438.3 348.5 L438.3 348.5 L438.3 384 L438.3 384 L438.3 419.5 L438.3 419.5 L438.3 439.5 L438.3 439.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M443.6 199.8 L438.3 193.2 L432.9 199.8 L438.3 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M438.3 470.5 L438.3 490.5 L438.3 510.5 L438.3 510.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M443.6 483.8 L438.3 477.2 L432.9 483.8 L438.3 470.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M438.3 541.5 L438.3 561.5 L305.5 587.2 L305.5 587.2 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M443.6 554.8 L438.3 548.2 L432.9 554.8 L438.3 541.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M250 325.3 L336.3 348.5 L336.3 368.5 L336.3 368.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M264.3 323.7 L256.4 327.1 L261.5 334 L250 325.3 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M494.8 35.9 L728.8 64.5 L728.8 84.5 L728.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M508.6 32.2 L501.4 36.7 L507.3 42.8 L494.8 35.9 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M728.8 115.5 L728.8 135.5 L728.8 155.5 L728.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M734.1 128.8 L728.8 122.2 L723.4 128.8 L728.8 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M728.8 186.5 L728.8 206.5 L728.8 226.5 L728.8 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M734.1 199.8 L728.8 193.2 L723.4 199.8 L728.8 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M728.8 257.5 L728.8 277.5 L690.9 297.5 L690.9 297.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M734.1 270.8 L728.8 264.2 L723.4 270.8 L728.8 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M500.3 115.5 L580.3 135.5 L580.3 155.5 L580.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M514.5 113.6 L506.7 117.1 L511.9 123.9 L500.3 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M469.4 186.5 L509.5 206.5 L534.7 226.5 L534.7 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M483.7 187.7 L475.3 189.5 L478.9 197.2 L469.4 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M580.3 186.5 L580.3 206.5 L565.6 226.5 L565.6 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M585.6 199.8 L580.3 193.2 L574.9 199.8 L580.3 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M554.3 257.5 L554.3 277.5 L618.5 298.8 L618.5 298.8 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M559.6 270.8 L554.3 264.2 L548.9 270.8 L554.3 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
-  <rect x="381.5" y="13.5" height="31" width="113" data-name="BIOFunctor3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOFunctor3">BIOFunctor3</text>
-  <rect x="13.5" y="155.5" height="31" width="124" data-name="BIOBifunctor3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="75.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOBifunctor3">BIOBifunctor3</text>
-  <rect x="50.5" y="226.5" height="31" width="178" data-name="BIOApplicativeError3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="139.5" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOApplicativeError3">BIOApplicativeError3</text>
-  <rect x="368.5" y="84.5" height="31" width="139" data-name="BIOApplicative3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOApplicative3">BIOApplicative3</text>
-  <rect x="177.5" y="155.5" height="31" width="132" data-name="BIOGuarantee3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="243.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOGuarantee3">BIOGuarantee3</text>
-  <rect x="385.5" y="155.5" height="31" width="105" data-name="BIOMonad3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOMonad3">BIOMonad3</text>
-  <rect x="158.5" y="297.5" height="31" width="92" data-name="BIOError3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="204.5" y="319" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOError3">BIOError3</text>
-  <rect x="69.5" y="368.5" height="31" width="112" data-name="BIOBracket3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="125.5" y="390" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOBracket3">BIOBracket3</text>
-  <rect x="77.5" y="439.5" height="31" width="96" data-name="BIOPanic3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="125.5" y="461" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOPanic3">BIOPanic3</text>
-  <rect x="98.5" y="510.5" height="31" width="53" data-name="BIO3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="125" y="532" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIO3">BIO3</text>
-  <rect x="204.5" y="581.5" height="31" width="101" data-name="BIOAsync3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="255" y="603" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOAsync3">BIOAsync3</text>
-  <rect x="383.5" y="439.5" height="31" width="110" data-name="BIOParallel3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438.5" y="461" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOParallel3">BIOParallel3</text>
-  <rect x="368.5" y="510.5" height="31" width="140" data-name="BIOConcurrent3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438.5" y="532" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOConcurrent3">BIOConcurrent3</text>
-  <rect x="274.5" y="368.5" height="31" width="124" data-name="BIOTemporal3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="336.5" y="390" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOTemporal3">BIOTemporal3</text>
-  <rect x="665.5" y="84.5" height="31" width="126" data-name="BIOProfunctor" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="728.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOProfunctor">BIOProfunctor</text>
-  <rect x="683.5" y="155.5" height="31" width="91" data-name="BIOArrow" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="729" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOArrow">BIOArrow</text>
-  <rect x="656.5" y="226.5" height="31" width="144" data-name="BIOArrowChoice" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="728.5" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOArrowChoice">BIOArrowChoice</text>
-  <rect x="618.5" y="297.5" height="31" width="86" data-name="BIOLocal" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="661.5" y="319" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOLocal">BIOLocal</text>
-  <rect x="543.5" y="155.5" height="31" width="74" data-name="BIOAsk" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="580.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOAsk">BIOAsk</text>
-  <rect x="491.5" y="226.5" height="31" width="125" data-name="BIOMonadAsk" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="554" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BIOMonadAsk">BIOMonadAsk</text>
+  <desc >[Functor3]&lt;--[Bifunctor3]
+[Bifunctor3]&lt;--[ApplicativeError3]
+[Functor3]&lt;--[Applicative3]
+[Applicative3]&lt;--[Guarantee3]
+[Applicative3]&lt;--[Monad3]
+[Guarantee3]&lt;--[ApplicativeError3]
+[ApplicativeError3]&lt;--[Error3]
+[Monad3]&lt;--[Error3]
+[Error3]&lt;--[Bracket3]
+[Bracket3]&lt;--[Panic3]
+[Panic3]&lt;--[IO3]
+[IO3]&lt;--[Async3]
+[Monad3]&lt;--[Parallel3]
+[Parallel3]&lt;--[Concurrent3]
+[Concurrent3]&lt;--[Async3]
+[Error3]&lt;--[Temporal3]
+[Functor3]&lt;--[Profunctor3]
+[Profunctor3]&lt;--[Arrow3]
+[Arrow3]&lt;--[ArrowChoice3]
+[ArrowChoice3]&lt;--[Local3]
+[Applicative3]&lt;--[Ask3]
+[Monad3]&lt;--[MonadAsk3]
+[Ask3]&lt;--[MonadAsk3]
+[MonadAsk3]&lt;--[Local3]</desc>
+  <rect x="0" y="0" height="625" width="696.25" style="stroke:none; fill:transparent;"></rect>
+  <path d="M325.8 33.9 L61.5 64.5 L61.5 100 L61.5 100 L61.5 135.5 L61.5 135.5 L61.5 155.5 L61.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M313.1 40.7 L319.1 34.6 L311.9 30.1 L325.8 33.9 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M61.5 186.5 L61.5 206.5 L89.7 226.5 L89.7 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M66.8 199.8 L61.5 193.2 L56.2 199.8 L61.5 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M367.8 44.5 L367.8 64.5 L367.8 84.5 L367.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M373.1 57.8 L367.8 51.2 L362.4 57.8 L367.8 44.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M312.8 111.7 L201.5 135.5 L201.5 155.5 L201.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M300.8 119.7 L306.2 113.1 L298.6 109.3 L312.8 111.7 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M367.8 115.5 L367.8 135.5 L367.8 155.5 L367.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M373.1 128.8 L367.8 122.2 L362.4 128.8 L367.8 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M201.5 186.5 L201.5 206.5 L150.8 226.5 L150.8 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M206.8 199.8 L201.5 193.2 L196.2 199.8 L201.5 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M111.5 257.5 L111.5 277.5 L143.8 297.5 L143.8 297.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M116.8 270.8 L111.5 264.2 L106.2 270.8 L111.5 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M339.8 186.5 L303.8 206.5 L303.8 242 L303.8 242 L303.8 277.5 L303.8 277.5 L200.8 304.6 L200.8 304.6 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M330.7 197.6 L334 189.7 L325.6 188.3 L339.8 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M140.4 328.5 L103.8 348.5 L103.8 368.5 L103.8 368.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M131.2 339.6 L134.5 331.7 L126.1 330.2 L140.4 328.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M103.8 399.5 L103.8 419.5 L103.8 439.5 L103.8 439.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M109.1 412.8 L103.8 406.2 L98.4 412.8 L103.8 399.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M103.8 470.5 L103.8 490.5 L103.8 510.5 L103.8 510.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M109.1 483.8 L103.8 477.2 L98.4 483.8 L103.8 470.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M103.8 541.5 L103.8 561.5 L176.3 585.1 L176.3 585.1 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M109.1 554.8 L103.8 548.2 L98.4 554.8 L103.8 541.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M367.8 186.5 L367.8 206.5 L367.8 242 L367.8 242 L367.8 277.5 L367.8 277.5 L367.8 313 L367.8 313 L367.8 348.5 L367.8 348.5 L367.8 384 L367.8 384 L367.8 419.5 L367.8 419.5 L367.8 439.5 L367.8 439.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M373.1 199.8 L367.8 193.2 L362.4 199.8 L367.8 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M367.8 470.5 L367.8 490.5 L367.8 510.5 L367.8 510.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M373.1 483.8 L367.8 477.2 L362.4 483.8 L367.8 470.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M367.8 541.5 L367.8 561.5 L249.3 588.6 L249.3 588.6 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M373.1 554.8 L367.8 548.2 L362.4 554.8 L367.8 541.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M200.8 323.2 L279.8 348.5 L279.8 368.5 L279.8 368.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M215.1 322.2 L207.1 325.3 L211.8 332.4 L200.8 323.2 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M409.8 34.9 L621.8 64.5 L621.8 84.5 L621.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M423.7 31.4 L416.4 35.8 L422.2 42 L409.8 34.9 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M621.8 115.5 L621.8 135.5 L621.8 155.5 L621.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M627.1 128.8 L621.8 122.2 L616.4 128.8 L621.8 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M621.8 186.5 L621.8 206.5 L621.8 226.5 L621.8 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M627.1 199.8 L621.8 193.2 L616.4 199.8 L621.8 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M621.8 257.5 L621.8 277.5 L589.4 297.5 L589.4 297.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M627.1 270.8 L621.8 264.2 L616.4 270.8 L621.8 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M422.4 115.5 L493 135.5 L493 155.5 L493 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M436.7 114 L428.9 117.3 L433.8 124.3 L422.4 115.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M396.8 186.5 L434.3 206.5 L452.6 226.5 L452.6 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M411.1 188.1 L402.7 189.6 L406 197.5 L396.8 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M493 186.5 L493 206.5 L478.2 226.5 L478.2 226.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M498.3 199.8 L493 193.2 L487.7 199.8 L493 186.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M466.8 257.5 L466.8 277.5 L530.8 300.8 L530.8 300.8 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M472.1 270.8 L466.8 264.2 L461.4 270.8 L466.8 257.5 Z" style="stroke:#33322E;fill:#33322E;stroke-dasharray:none;stroke-width:3;"></path>
+  <rect x="325.5" y="13.5" height="31" width="84" data-name="Functor3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="367.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Functor3">Functor3</text>
+  <rect x="13.5" y="155.5" height="31" width="96" data-name="Bifunctor3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="61.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Bifunctor3">Bifunctor3</text>
+  <rect x="37.5" y="226.5" height="31" width="149" data-name="ApplicativeError3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="112" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="ApplicativeError3">ApplicativeError3</text>
+  <rect x="312.5" y="84.5" height="31" width="110" data-name="Applicative3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="367.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Applicative3">Applicative3</text>
+  <rect x="149.5" y="155.5" height="31" width="104" data-name="Guarantee3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="201.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Guarantee3">Guarantee3</text>
+  <rect x="329.5" y="155.5" height="31" width="76" data-name="Monad3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="367.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Monad3">Monad3</text>
+  <rect x="136.5" y="297.5" height="31" width="64" data-name="Error3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="168.5" y="319" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Error3">Error3</text>
+  <rect x="61.5" y="368.5" height="31" width="84" data-name="Bracket3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="103.5" y="390" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Bracket3">Bracket3</text>
+  <rect x="69.5" y="439.5" height="31" width="68" data-name="Panic3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="103.5" y="461" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Panic3">Panic3</text>
+  <rect x="82.5" y="510.5" height="31" width="42" data-name="IO3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="103.5" y="532" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="IO3">IO3</text>
+  <rect x="176.5" y="581.5" height="31" width="73" data-name="Async3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="213" y="603" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Async3">Async3</text>
+  <rect x="326.5" y="439.5" height="31" width="82" data-name="Parallel3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="367.5" y="461" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Parallel3">Parallel3</text>
+  <rect x="312.5" y="510.5" height="31" width="111" data-name="Concurrent3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="368" y="532" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Concurrent3">Concurrent3</text>
+  <rect x="231.5" y="368.5" height="31" width="96" data-name="Temporal3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="279.5" y="390" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Temporal3">Temporal3</text>
+  <rect x="568.5" y="84.5" height="31" width="107" data-name="Profunctor3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="622" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Profunctor3">Profunctor3</text>
+  <rect x="586.5" y="155.5" height="31" width="71" data-name="Arrow3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="622" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Arrow3">Arrow3</text>
+  <rect x="559.5" y="226.5" height="31" width="124" data-name="ArrowChoice3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="621.5" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="ArrowChoice3">ArrowChoice3</text>
+  <rect x="530.5" y="297.5" height="31" width="67" data-name="Local3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="564" y="319" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Local3">Local3</text>
+  <rect x="466.5" y="155.5" height="31" width="54" data-name="Ask3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="493.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Ask3">Ask3</text>
+  <rect x="413.5" y="226.5" height="31" width="106" data-name="MonadAsk3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="466.5" y="248" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="MonadAsk3">MonadAsk3</text>
 </svg>
