@@ -18,7 +18,6 @@ trait MiniBIOEnv {
     }
   }
 
-
   implicit def eqMiniBIO[A](implicit eq: Eq[A]): Eq[MiniBIO[Throwable, A]] = Eq.instance {
     (l, r) =>
       val tl = Try(MiniBIO.autoRun.autoRunAlways(l))

@@ -23,7 +23,6 @@ trait MonixEnv {
         CatsLawsTestBase.equalityTry[A].eqv(ta, tb)
     }
 
-
   implicit def arbMonixBIO[A](implicit arb: Arbitrary[A]): Arbitrary[monix.bio.Task[A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_)

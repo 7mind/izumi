@@ -47,7 +47,7 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
         flatMap(acc)(list => map(f(a))(r => list ++ List(r)))
     }
   }
-  final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = { 
+  final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
     // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
     // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
     l.foldLeft(unit) {

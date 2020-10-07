@@ -26,9 +26,9 @@ trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
       .config.copy(
         memoizationRoots = Map(
           1 -> Set(DIKey.get[MockCache[F]]),
-          2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter])
+          2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
         )
-    )
+      )
   }
 }
 
