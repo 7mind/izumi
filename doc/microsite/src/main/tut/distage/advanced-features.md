@@ -279,31 +279,30 @@ class A extends PrintResource("A")
 class B(val a: A) extends PrintResource("B")
 class C(val b: B) extends PrintResource("C")
 
-val bootstrapModule = new BootstrapModuleDef {
+def bootstrapModule = new BootstrapModuleDef {
   many[PlanningHook]
     .add(new AutoSetHook[PrintResource, PrintResource])
 }
 
-val appModule = new ModuleDef {
+def appModule = new ModuleDef {
   make[A]
   make[B]
   make[C]
 }
 
 val resources = Injector(bootstrapModule)
-  .produce(appModule, Roots.Everything)
-  .use(_.get[Set[PrintResource]])
+  .produceGet[Set[PrintResource]](appModule)
+  .use(set => set)
 
 resources.foreach(_.start())
 resources.toSeq.reverse.foreach(_.stop())
 ```
 
-Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies.
-Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindings).
-e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.
-When you use auto-sets for finalization, you **must** `.reverse` the autoset.
+Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies - Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindings)
 
-Note: Auto-Sets are NOT subject to @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
+e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.  When using an auto-set for finalization, you must `.reverse` the autoset.
+
+Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
 as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
 
 Further reading:
@@ -395,7 +394,7 @@ in `produceRun`
 Objects can depend on the outer object graph that contains them (@scaladoc[Locator](izumi.distage.model.Locator)), by including a @scaladoc[LocatorRef](izumi.distage.model.recursive.LocatorRef) parameter:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, LocatorRef, Injector, Roots}
+import distage.{DIKey, ModuleDef, LocatorRef, Injector, Roots}
 
 class A(
   objects: LocatorRef
@@ -411,7 +410,7 @@ def module = new ModuleDef {
   make[C]
 }
 
-val objects = Injector().produce(module, Roots.Everything).unsafeGet()
+val objects = Injector().produce(module, Roots(DIKey[A], DIKey[B], DIKey[C])).unsafeGet()
 
 // A took C from the object graph
 
