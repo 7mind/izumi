@@ -114,10 +114,10 @@ By default, tests and roles will try to read the configurations from resources w
 
 ```scala mdoc:reset:invisible
 type _ref = izumi.distage.testkit.TestConfig
-def _ref = (_: izumi.distage.testkit.TestConfig).testBaseName
+def _ref = (_: izumi.distage.testkit.TestConfig).configBaseName
 ```
 
-Where `distage-testkit` uses @scaladoc[`TestConfig#testBaseName`](izumi.distage.testkit.TestConfig#testBaseName) instead of `roleName`.
+Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.TestConfig#configBaseName) instead of `roleName`.
 
 Explicit config files passed to the role launcher `-c file.conf` the command-line flag have a higher priority than resource configs.
 
