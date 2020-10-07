@@ -108,6 +108,14 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .unsafeRunSync()
   }
 
+  "cats instances for Lifecycle" in {
+    import izumi.fundamentals.orphans._
+//    def t[L[_[_]]: `cats.Monad`](): Unit = {}
+//    def t2[A](implicit ev: `cats.Monad`[Lifecycle[IO, A]]): Unit = {}
+//    t2
+//    t[Lifecycle[IO, Int]]
+  }
+
   "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
     assertCompiles(
       """

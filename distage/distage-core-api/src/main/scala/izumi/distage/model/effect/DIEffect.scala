@@ -1,8 +1,9 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
-import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
+import izumi.functional.bio.BIORunner.BIOBadBranch
+import izumi.functional.bio.{BIO, BIOApplicative, BIOBracket, BIOExit}
+import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Bracket`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 
@@ -226,6 +227,73 @@ trait LowPriorityDIApplicativeInstances {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+    }
+  }
+}
+
+trait DIBracket[F[_], E] extends DIApplicative[F] {
+  def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+  def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
+  def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
+  def bracketCase[A, B](acquire: => F[A])(release: (A, Option[E]) => F[Unit])(use: A => F[B]): F[B]
+}
+
+object DIBracket extends LowPriorityDIBracketInstances {
+  @inline def apply[F[_], E](implicit ev: DIBracket[F, E]): DIBracket[F, E] = implicitly
+
+  implicit def fromBIO[F[+_, +_], E](implicit F: BIO[F]): DIBracket[F[Throwable, ?], E] = {
+    new DIBracket[F[Throwable, ?], E] {
+      override def flatMap[A, B](fa: F[Throwable, A])(f: A => F[Throwable, B]): F[Throwable, B] = F.flatMap(fa)(f)
+
+      override def bracket[A, B](acquire: => F[Throwable, A])(release: A => F[Throwable, Unit])(use: A => F[Throwable, B]): F[Throwable, B] =
+        F.bracket(acquire = F.suspend(acquire))(release = release(_).leftMap {
+          case t: Throwable => t
+          case e => BIOBadBranch(e)
+        }.orTerminate)(use = use)
+
+      override def bracketCase[A, B](acquire: => F[Throwable, A])(release: (A, Option[E]) => F[Throwable, Unit])(use: A => F[Throwable, B]): F[Throwable, B] = {
+        F.bracketCase(acquire = F.suspend(acquire))(release = {
+          case (a, exit) =>
+            exit match {
+              case BIOExit.Success(_) => release(a, None).orTerminate
+              case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+            }
+        })(use = use)
+      }
+
+      override def pure[A](a: A): F[Throwable, A] = F.pure(a)
+
+      override def map[A, B](fa: F[Throwable, A])(f: A => B): F[Throwable, B] = F.map(fa)(f)
+
+      override def map2[A, B, C](fa: F[Throwable, A], fb: => F[Throwable, B])(f: (A, B) => C): F[Throwable, C] = F.map2(fa, fb)(f)
+    }
+  }
+}
+
+trait LowPriorityDIBracketInstances {
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  implicit def fromCats[F[_], Bracket[_[_], _]](implicit @unused l: `cats.effect.Bracket`[Bracket], F0: Bracket[F, Throwable]): DIBracket[F, Throwable] = {
+    val F = F0.asInstanceOf[cats.effect.Bracket[F, Throwable]]
+    new DIBracket[F, Throwable] {
+      override def pure[A](a: A): F[A] = F.pure(a)
+      override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
+      override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+      override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
+      override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = F.bracket(acquire)(use)(release)
+      override def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B] =
+        F.bracketCase[A, B](acquire)(use)(release = {
+          case (a, exitCase) =>
+            exitCase match {
+              case ExitCase.Completed => release(a, None)
+              case ExitCase.Error(e) => release(a, Some(e))
+              case ExitCase.Canceled => release(a, Some(new InterruptedException))
+            }
+        })
     }
   }
 }

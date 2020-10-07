@@ -10,7 +10,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOLocal, BIOMonad, BIOMonad3}
+import izumi.functional.bio.{BIO, BIO3, BIOLocal, BIOMonad, BIOMonad3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -1127,7 +1127,7 @@ object Lifecycle extends LifecycleIzumiTypeclassesInstances with LifecycleCatsIn
 private[definition] trait LifecycleCatsInstances {
   implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, A](
     implicit
-    Monoid: Monoid[F[A]],
+    Monoid: Monoid[A],
     S: S[F],
     Ap: Ap[F],
   ): Monoid[Lifecycle[F, A]] = new cats.Monoid[Lifecycle[F, A]] {

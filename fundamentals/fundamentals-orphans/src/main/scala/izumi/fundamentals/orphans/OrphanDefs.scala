@@ -68,6 +68,11 @@ object `cats.effect.Sync` {
   @inline implicit final def catsEffectSync: `cats.effect.Sync`[cats.effect.Sync] = null
 }
 
+final abstract class `cats.effect.Bracket`[R[_[_], E]]
+object `cats.effect.Bracket` {
+  @inline implicit final def catsEffectSync: `cats.effect.Bracket`[cats.effect.Bracket] = null
+}
+
 final abstract class `cats.effect.Concurrent`[K[_[_]]]
 object `cats.effect.Concurrent` {
   @inline implicit final def get: `cats.effect.Concurrent`[cats.effect.Concurrent] = null
