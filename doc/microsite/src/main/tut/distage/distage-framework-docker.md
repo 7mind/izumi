@@ -13,14 +13,11 @@ distage-framework-docker
 
 Add the `distage-framework-docker` library:
 
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-framework-docker" % "$izumi.version$"
-```
-
-@@@
-
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework-docker_2.13"
+  version="$izumi.version$"
+}
 
 ### Overview
 

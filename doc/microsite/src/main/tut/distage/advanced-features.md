@@ -306,7 +306,9 @@ When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 Note: Auto-Sets are NOT subject to @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
 as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
 
-See also: a similar concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
+Further reading:
+
+- MacWire calls the same concept ["Multi Wiring"](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
 ### Inner Classes and Path-Dependent Types
 

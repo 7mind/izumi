@@ -414,8 +414,12 @@ Therefore, you can convert an expression based resource-constructor such as:
 import distage.Lifecycle, cats.Monad
 
 class A
+
 object A {
-  def resource[F[_]](implicit F: Monad[F]): Lifecycle[F, A] = Lifecycle.pure[F, A](new A)
+
+  def resource[F[_]: Monad]: Lifecycle[F, A] =
+    Lifecycle.pure[F, A](new A)
+    
 }
 ```
 
@@ -425,11 +429,14 @@ Into class-based form:
 import distage.Lifecycle, cats.Monad
 
 class A
+
 object A {
-final class Resource[F[_]](implicit F: Monad[F])
-  extends Lifecycle.Of(
-    Lifecycle.pure[F, A](new A)
-  )
+
+  final class Resource[F[_]: Monad]
+    extends Lifecycle.Of(
+      Lifecycle.pure[F, A](new A)
+    )
+    
 }
 ```
 
@@ -450,7 +457,7 @@ Everywhere where a collection of components is required, a Set Binding is approp
 
 To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL.
 
-As an example, we may declare multiple command handlers and use them to interpret user input in a REPLL
+As an example, we may declare multiple command handlers and use them to interpret user input in a REPL
 
 
 ```scala mdoc:reset:to-string
@@ -471,7 +478,9 @@ object AdditionModule extends ModuleDef {
 ```
 
 We've used `many` method to declare an open `Set` of command handlers and then added one handler to it.
+
 When module definitions are combined, elements for the same type of `Set` will be merged together into a larger set.
+
 You can summon a Set binding by summoning a scala `Set`, as in `Set[CommandHandler]`.
 
 Let's define a new module with another handler:
@@ -487,8 +496,7 @@ object SubtractionModule extends ModuleDef {
 }
 ```
 
-Now it's the time to define our main flow that exposes all the different command handlers as a command-line application:
-
+Let's create a command-line application using our command handlers:
 
 ```scala mdoc:invisible:to-string
 implicit final class InjRun_NO_IDENTITY_TYPE_IN_OUTPUT(inj: distage.Injector[izumi.fundamentals.platform.functional.Identity]) {
@@ -547,7 +555,7 @@ app.interpret("1 / 3")
 app.interpret("help")
 ```
 
-If we wire the app while excluding `SubtractionModule` our app will expectedly lose the ability to subtract:
+If we rewire the app without `SubtractionModule`, it will expectedly lose the ability to subtract:
 
 ```scala mdoc:override:to-string
 Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
@@ -556,7 +564,9 @@ Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
 }
 ```
 
-Further reading: the same concept is called [Multibindings](https://github.com/google/guice/wiki/Multibindings) in Guice.
+Further reading:
+
+- Guice calls the same concept ["Multibindings"](https://github.com/google/guice/wiki/Multibindings).
 
 ### Effect Bindings
 

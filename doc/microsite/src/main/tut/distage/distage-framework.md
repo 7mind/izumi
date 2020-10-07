@@ -27,16 +27,13 @@ Further reading: [Roles: a viable alternative to Microservices](https://github.c
 
 `distage-extension-config` library allows summoning case classes and sealed traits from `typesafe-config` configuration
 
-To use it, add `distage-extension-config` library:
+To use it, add the `distage-extension-config` library:
 
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
-```
-
-@@@
-
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-extension-config_2.13"
+  version="$izumi.version$"
+}
 
 Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance bound to `AppConfig` into case classes:
 
@@ -124,13 +121,11 @@ as they're defined in a separate module.
 
 To use plugins, first add the `distage-extension-plugins` library:
 
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi.version$"
-```
-
-@@@
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-extension-plugins_2.13"
+  version="$izumi.version$"
+}
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -181,13 +176,11 @@ An experimental compile-time verification API is available in the `distage-frame
 
 To use it add `distage-framework` library:
 
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version$"
-```
-
-@@@
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework_2.13"
+  version="$izumi.version$"
+}
 
 Only plugins defined in a different module can be checked at compile-time.
 
