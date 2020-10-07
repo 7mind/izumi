@@ -13,4 +13,7 @@ trait Planner extends PlanSplittingOps {
 
   final def plan(bindings: ModuleBase, activation: Activation, roots: Roots): OrderedPlan =
     plan(PlannerInput(bindings, activation, roots))
+
+  final def plan(bindings: ModuleBase, roots: Roots): OrderedPlan =
+    plan(bindings, Activation.empty, roots)
 }

@@ -5,17 +5,37 @@ out: index.html
 distage: Staged Dependency Injection
 ====================================
 
-`distage` is a pragmatic module system for FP Scala & Scala.js. It combines simplicity and expressiveness of pure FP
+`distage` is a pragmatic module system for pure-FP Scala & Scala.js. It combines simplicity and expressiveness of pure FP
 with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
 
 `distage` is suitable for wiring @ref[Tagless Final Style](basics.md#tagless-final-style),
-@ref[ZIO Environment style and ZLayer-based applications](basics.md#zio-has-bindings), and imperative Scala style applications.
+@ref[ZIO ZLayer-based applications](basics.md#zio-has-bindings), and ordinary FP, actor-based or imperative Scala applications.
+
+#### Real-world example
+
+Check out [`distage-example` project](https://github.com/7mind/distage-example) for a complete example built using `distage`, tagless final, `http4s`, `doobie` and `zio` libraries.
+
+It shows how to write an idiomatic `distage`-style from scratch and how to:
+
+- write tests using @ref[`distage-testkit`](distage-testkit.md)
+- setup portable, zero-setup test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
+- create @ref[role-based applications](distage-framework.md#roles)
+- enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
+
+```scala mdoc:invisible
+/**
+add to distage-example
+
+- how to setup graalvm native image with distage
+- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there???]
+*/
+```
 
 Why distage?
 ------------
 
 1. **Faster applications and tests**:
-    `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup.
+    `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup. `distage` itself is very fast, in part due to not relying on any sort of runtime reflection.
 2. **Quick failure detection**:
     `distage` performs all the integration checks for your application and tests even before any instantiations happened.    
 3. **Simple tests**:
@@ -35,8 +55,7 @@ Why distage?
 8. **High Correctness**:
     `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
 9. **No reflection**:
-    `distage` generates constructors and [type information](https://blog.7mind.io/lightweight-reflection.html) at compile-time and does not use Scala reflection.
-    As such, it's compatible with Graal Native Image and Scala.js.
+    `distage` generates constructors and [type information](https://blog.7mind.io/lightweight-reflection.html) at compile-time and does not use Scala reflection. As such, it's compatible with GraalVM Native Image and Scala.js.
 10. **Non-invasive**:
     `distage` is designed to not impact the way your Scala code is written, it just removes all the initialization boilerplate.
     You don't need to learn magic tricks to write components in a distage application.
@@ -68,8 +87,8 @@ a few experimental @ref[macros](distage-framework.md#compile-time-checks) for ab
 Documentation
 -------------
 
-- @ref[Basics](basics.md)
-- @ref[Advanced features](advanced-features.md)
+- @ref[Introduction](basics.md)
+- @ref[Advanced Features](advanced-features.md)
 - @ref[Debugging](debugging.md)
 - @ref[distage-framework](distage-framework.md)
 - @ref[distage-framework-docker](distage-framework-docker.md)
@@ -104,8 +123,8 @@ Videos:
 
 @@@ index
 
-* [Basics](basics.md)
-* [Advanced features](advanced-features.md)
+* [Introduction](basics.md)
+* [Advanced Features](advanced-features.md)
 * [Debugging](debugging.md)
 * [distage-framework](distage-framework.md)
 * [distage-framework-docker](distage-framework-docker.md)

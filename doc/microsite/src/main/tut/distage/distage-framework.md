@@ -8,20 +8,18 @@ distage-framework
 A "Role" is an entrypoint for a specific application hosted in a larger software suite.
 Bundling multiple roles in a single `.jar` file can simplify deployment and operations.
 
-`distage-framework` module contains the distage Role API:
+Add `distage-framework` library for Roles API:
 
-@@@vars
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework_2.13"
+  version="$izumi.version$"
+}
 
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version$"
-```
+With default @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), roles to launch are specified on the command-line: `./launcher role1 role2 role3`.
+Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[Dependency Pruning](advanced-features.md#dependency-pruning))
 
-@@@
-
-With default @scaladoc[RoleAppLauncherImpl](izumi.distage.roles.RoleAppLauncherImpl), roles to launch are specified on the command-line: `./launcher role1 role2 role3`.
-Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
-
-Two roles are bundled by default: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
+Two roles are bundled by default: @scaladoc[Help](izumi.distage.roles.bundled.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter).
 
 Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
@@ -43,7 +41,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.
 Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance bound to `AppConfig` into case classes:
 
 ```scala mdoc:reset-object:to-string
-import distage.{DIKey, Roots, ModuleDef, Id, Injector}
+import distage.{Id, Injector}
 import distage.config.{AppConfig, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory
 
@@ -191,14 +189,19 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 
 @@@
 
-Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
+Only plugins defined in a different module can be checked at compile-time.
+
+`test` scope counts as a separate module.
 
 Example:
 
 In main scope:
 
-```scala mdoc:reset:to-string
-// package com.example
+```scala mdoc:reset:invisible:to-string
+```
+
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example": Unit
 
 import distage.DIKey
 import distage.StandardAxis.Env
@@ -240,8 +243,11 @@ config {
 
 In test scope:
 
-```scala mdoc:reset-object:to-string
-// package com.example.test
+```scala mdoc:reset-object:invisible:to-string
+```
+
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example.test": Unit
 
 import com.example._
 import org.scalatest.wordspec.AnyWordSpec

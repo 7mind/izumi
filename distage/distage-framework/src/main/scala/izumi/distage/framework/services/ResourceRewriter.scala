@@ -14,6 +14,24 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
 import izumi.logstage.api.IzLogger
 
+/**
+  * Rewrites bindings implemented with `_ <: AutoCloseable` into resource bindings that automatically close the implementation closeable.
+  *
+  * {{{
+  *   class XImpl extends AutoCloseable
+  *   make[X].from[XImpl]
+  * }}}
+  *
+  * becomes:
+  *
+  * {{{
+  *   make[X].fromResource {
+  *    ClassConstructor[XImpl].map(distage.Lifecycle.fromAutoCloseable(_))
+  *   }
+  * }}}
+  *
+  * Will produce warnings for all rewritten bindings, so better explicitly use `.fromResource`!
+  */
 class ResourceRewriter(
   logger: IzLogger,
   rules: RewriteRules,

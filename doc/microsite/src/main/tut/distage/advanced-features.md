@@ -3,20 +3,22 @@ Advanced Features
 
 @@toc { depth=2 }
 
-### Garbage Collection
+### Dependency Pruning
 
-A garbage collector is included in `distage` by default. Given a set of `GC root` keys, GC will remove all bindings that
-are neither direct nor transitive dependencies of the supplied roots – these bindings will be thrown out and never instantiated.
+`distage` performs pruning of all unused bindings by default.
+When you configure a set of "root" keys - 
+either explicitly by passing @scaladoc[Roots](izumi.distage.model.plan.Roots)
+or implicitly by using @scaladoc[Injector#produceRun](izumi.distage.model.Injector#produceRun) or @scaladoc[Injector#produceGet](izumi.distage.model.Injector#produceGet) methods, `distage` will remove all bindings that aren't required to create the supplied roots – these bindings will be thrown out and not even considered, much less executed.
 
-GC serves two important purposes:
+Pruning serves two important purposes:
 
-* It enables faster @ref[tests](distage-testkit.md) by omitting unrequired instantiations and initialization of potentially heavy resources,
-* It enables multiple independent applications, aka "@ref[Roles](distage-framework.md#roles)" to be hosted within a single `.jar` file.
+* It enables faster @ref[tests](distage-testkit.md) by omitting unused instantiations and allocations of potentially heavy resources,
+* It enables multiple independent applications, aka "@ref[Roles](distage-framework.md#roles)" to be hosted within a single binary.
 
-To use garbage collector, pass GC roots as an argument to `Injector.produce*` methods:
+Example:
 
 ```scala mdoc:reset:to-string
-import distage._
+import distage.{Roots, ModuleDef, Injector}
 
 class A(b: B) {
   println("A!")
@@ -28,20 +30,16 @@ class C() {
   println("C!")
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[A]
   make[B]
   make[C]
 }
 
-// declare `A` as a GC root
-
-val gc = Roots(root = DIKey[A])
-
 // create an object graph from description in `module`
-// with `A` as a GC root
+// with `A` as the GC root
 
-val objects = Injector().produce(module, gc).unsafeGet()
+val objects = Injector().produce(module, Roots.target[A]).unsafeGet()
 
 // A and B are in the object graph
 
@@ -54,8 +52,10 @@ objects.find[B]
 objects.find[C]
 ```
 
-Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message has never been printed.
-If class `B` had a `C` parameter, like `class B(c: C)`; `C` would have been retained, because `A` - the GC root, would depend on `B`, and `B` would depend on `C`.
+Class `C` was removed because neither `B` nor `A` depended on it. It's neither present in the `Locator` nor the `"C!"` message from it's constructor was ever printed.
+
+If you add `c: C` parameter to `class B` , like `class B(c: C)` - then `C` _will_ be instantiated,
+because `A` - the "root", will now depend on `B`, and `B` will depend on `C`.
 
 ```scala mdoc:reset-object:invisible:to-string
 import distage._
@@ -67,7 +67,7 @@ class C() {
   println("C!")
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[A]
   make[B]
   make[C]
@@ -79,7 +79,7 @@ class B(c: C) {
   println("B!")
 }
 
-val objects = Injector().produce(module, Roots(DIKey[A])).unsafeGet()
+val objects = Injector().produce(module, Roots.target[A]).unsafeGet()
 
 objects.find[C]
 ```
@@ -89,26 +89,30 @@ objects.find[C]
 `distage` automatically resolves arbitrary circular dependencies, including self-references:
 
 ```scala mdoc:reset-object:to-string
-import distage.{Roots, ModuleDef, Injector}
+import distage.{DIKey, Roots, ModuleDef, Injector}
 
 class A(val b: B)
 class B(val a: A) 
 class C(val c: C)
 
-val objects = Injector().produce(new ModuleDef {
+def module = new ModuleDef {
   make[A]
   make[B]
   make[C]
-}, Roots.Everything).unsafeGet()
+}
+
+val objects = Injector().produce(module, Roots(DIKey[A], DIKey[C])).unsafeGet()
 
 objects.get[A] eq objects.get[B].a
+
 objects.get[B] eq objects.get[A].b
+
 objects.get[C] eq objects.get[C].c
 ```
 
 #### Automatic Resolution with generated proxies
 
-The above strategy depends on `distage-core-proxy-cglib` module which is a default dependency of `distage-core`.
+The above strategy depends on `distage-core-proxy-cglib` module and is enabled by default.
 
 If you want to disable it, use `NoProxies` bootstrap configuration:
 
@@ -123,7 +127,7 @@ Proxies are not supported on Scala.js.
 Most cycles can be resolved without proxies, using By-Name parameters:
 
 ```scala mdoc:reset:to-string
-import distage.{Roots, ModuleDef, Injector}
+import distage.{DIKey, Roots, ModuleDef, Injector}
 
 class A(b0: => B) {
   def b: B = b0
@@ -137,7 +141,7 @@ class C(self: => C) {
   def c: C = self
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[A]
   make[B]
   make[C]
@@ -146,11 +150,13 @@ val module = new ModuleDef {
 // disable proxies and execute the module
 
 val locator = Injector.NoProxies()
-  .produce(module, Roots.Everything)
+  .produce(module, Roots(DIKey[A], DIKey[C]))
   .unsafeGet()
 
 locator.get[A].b eq locator.get[B]
+
 locator.get[B].a eq locator.get[A]
+
 locator.get[C].c eq locator.get[C]
 ```
 
@@ -159,6 +165,98 @@ out of control of the origin module.
 
 Note: Currently a limitation applies to by-names - ALL dependencies of a class engaged in a by-name circular dependency must
 be by-name, otherwise `distage` will revert to generating proxies.
+
+### Weak Sets
+
+@ref[Set bindings](basics.md#set-bindings) can contain *weak* references. References designated as weak will
+be retained *only* if there are *other* dependencies on the referred bindings, *NOT* if there's a dependency only on the entire Set.
+
+Example:
+
+```scala mdoc:reset-object:to-string
+import distage.{Roots, ModuleDef, Injector}
+
+sealed trait Elem
+
+final case class Strong() extends Elem {
+  println("Strong constructed")
+}
+
+final case class Weak() extends Elem {
+  println("Weak constructed")
+}
+
+def module = new ModuleDef {
+  make[Strong]
+  make[Weak]
+  
+  many[Elem]
+    .ref[Strong]
+    .weak[Weak]
+}
+
+// Designate Set[Elem] as the garbage collection root,
+// everything that Set[Elem] does not strongly depend on will be garbage collected
+// and will not be constructed. 
+
+val roots = Roots.target[Set[Elem]]
+
+val objects = Injector().produce(module, roots).unsafeGet()
+
+// Strong is around
+
+objects.find[Strong]
+
+// Weak is not
+
+objects.find[Strong]
+
+// There's only Strong in the Set
+
+objects.get[Set[Elem]]
+```
+
+The `Weak` class was not required by any dependency of `Set[Elem]`, so it was pruned.
+The `Strong` class remained, because the reference to it was **strong**, so it was counted as a dependency of `Set[Elem]`.
+
+If we change `Strong` to depend on the `Weak`, then `Weak` will be retained:
+
+```scala mdoc:reset-object:invisible:to-string
+import distage.{Roots, ModuleDef, Injector}
+
+sealed trait Elem
+
+final class Weak extends Elem {
+  println("Weak constructed")
+}
+
+def module = new ModuleDef {
+  make[Strong]
+  make[Weak]
+  
+  many[Elem]
+    .ref[Strong]
+    .weak[Weak]
+}
+
+val roots = Roots.target[Set[Elem]]
+```
+
+```scala mdoc:to-string
+final class Strong(weak: Weak) extends Elem {
+  println("Strong constructed")
+}
+
+val objects = Injector().produce(module, roots).unsafeGet()
+
+// Weak is around
+
+objects.find[Weak]
+
+// both Strong and Weak are in the Set
+
+objects.get[Set[Elem]]
+```
 
 ### Auto-Sets
 
@@ -205,102 +303,10 @@ Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindin
 e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.
 When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 
-Note: Auto-Sets are NOT subject to @ref[Garbage Collection](advanced-features.md#garbage-collection), they are assembled *after* garbage collection is done,
+Note: Auto-Sets are NOT subject to @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
 as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
 
-See also: same concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
-
-### Weak Sets
-
-@ref[Set bindings](basics.md#set-bindings) can contain *weak* references. References designated as weak will
-be retained *only* if there are *other* dependencies on the referred bindings, *NOT* if there's a dependency only on the entire Set.
-
-Example:
-
-```scala mdoc:reset-object:to-string
-import distage._
-
-sealed trait Elem
-
-final case class Strong() extends Elem {
-  println("Strong constructed")
-}
-
-final case class Weak() extends Elem {
-  println("Weak constructed")
-}
-
-val module = new ModuleDef {
-  make[Strong]
-  make[Weak]
-  
-  many[Elem]
-    .ref[Strong]
-    .weak[Weak]
-}
-
-// Designate Set[Elem] as the garbage collection root,
-// everything that Set[Elem] does not strongly depend on will be garbage collected
-// and will not be constructed. 
-
-val roots = Set[DIKey](DIKey[Set[Elem]])
-
-val objects = Injector().produce(PlannerInput(module, Activation.empty, roots)).unsafeGet()
-
-// Strong is around
-
-objects.find[Strong]
-
-// Weak is not
-
-objects.find[Strong]
-
-// There's only Strong in the Set
-
-objects.get[Set[Elem]]
-```
-
-The `Weak` class was not required by any dependency of `Set[Elem]`, so it was pruned.
-The `Strong` class remained, because the reference to it was **strong**, so it was counted as a dependency of `Set[Elem]`.
-
-If we change `Strong` to depend on the `Weak`, then `Weak` will be retained:
-
-```scala mdoc:reset-object:invisible:to-string
-import distage._
-
-sealed trait Elem
-
-final class Weak extends Elem {
-  println("Weak constructed")
-}
-
-def module = new ModuleDef {
-  make[Strong]
-  make[Weak]
-  
-  many[Elem]
-    .ref[Strong]
-    .weak[Weak]
-}
-
-val roots = Set[DIKey](DIKey[Set[Elem]])
-```
-
-```scala mdoc:to-string
-final class Strong(weak: Weak) extends Elem {
-  println("Strong constructed")
-}
-
-val objects = Injector().produce(PlannerInput(module, Activation.empty, roots)).unsafeGet()
-
-// Weak is around
-
-objects.find[Weak]
-
-// both Strong and Weak are in the Set
-
-objects.get[Set[Elem]]
-```
+See also: a similar concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
 ### Inner Classes and Path-Dependent Types
 
@@ -412,6 +418,7 @@ objects.get[A].c
 // this C is the same C as in this `objects` value
 
 val thisC = objects.get[C]
+
 val thatC = objects.get[A].c
 
 assert(thisC == thatC)
@@ -431,19 +438,38 @@ val plan: OrderedPlan = objects.plan
 val bindings: ModuleBase = plan.definition
 ```
 
-The plan and bindings in Locator are saved in the state they were AFTER @ref[Garbage Collection](#garbage-collection) has been performed.
+#### Injector inheritance
+
+You may run a new planning cycle, inheriting the instances from an existing `Locator` into your new object subgraph:
+
+```scala mdoc:to-string
+val childInjector = Injector.inherit(objects)
+
+class Printer(a: A, b: B, c: C) {
+  def printEm() = 
+    println(s"I've got A=$a, B=$b, C=$c, all here!")
+}
+
+childInjector.produceRun(new ModuleDef { make[Printer] }) {
+  (_: Printer).printEm()
+}
+```
+
+#### Bootloader
+
+The plan and bindings in Locator are saved in the state they were AFTER @ref[Garbage Collection](#dependency-pruning) has been performed.
 Objects can request the original input via a `PlannerInput` parameter:
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, Roots, ModuleDef, PlannerInput, Injector, Activation}
+import distage.{Roots, ModuleDef, PlannerInput, Injector, Activation}
 
 class InjectionInfo(val plannerInput: PlannerInput)
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[InjectionInfo]
 }
 
-val input = PlannerInput(module, Activation.empty, Roots(root = DIKey[InjectionInfo]))
+val input = PlannerInput(module, Activation.empty, Roots.target[InjectionInfo])
 
 val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 
@@ -452,5 +478,4 @@ val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 assert(injectionInfo.plannerInput == input)
 ```
 
-@scaladoc[Bootloader](izumi.distage.model.recursive.Bootloader) is another summonable parameter that contains the above information in aggregate
-and lets you create another object graph from the same inputs as the current or with alterations.
+@scaladoc[Bootloader](izumi.distage.model.recursive.Bootloader) is another summonable parameter that contains the above information in aggregate and lets you create another object graph from the same inputs as the current or with alterations.

@@ -2,6 +2,7 @@ package izumi.distage.model.definition
 
 object StandardAxis {
 
+  /** Describes a generic choice between production and test implementations of a component */
   object Mode extends Axis {
     override def name: String = "mode"
 
@@ -9,12 +10,12 @@ object StandardAxis {
     case object Test extends AxisValueDef
   }
 
-  @deprecated("Use `distage.StandardAxis.Mode` instead", "0.11.0")
-  final val Env = Mode
-
   /**
     * Any entities which may store and persist state or "repositories".
     * e.g. databases, message queues, KV storages, file systems, etc.
+    *
+    * Those may typically have both in-memory `Dummy` implementations
+    * and heavyweight `Prod` implementations using external databases.
     */
   object Repo extends Axis {
     override def name: String = "repo"
@@ -26,6 +27,8 @@ object StandardAxis {
   /**
     * Third-party integrations which are not controlled by the application and provided "as is".
     * e.g. Facebook API, Google API, etc.
+    *
+    * Those may contact a `Real` external integration or a `Mock` one with predefined responses.
     */
   object World extends Axis {
     override def name: String = "world"
@@ -34,17 +37,16 @@ object StandardAxis {
     case object Mock extends AxisValueDef
   }
 
-  @deprecated("Use StandardAxis.World instead", "0.11.0")
-  final val ExternalApi = World
-
   /**
-    * Choice axis controlling whether third-party services that the application requires
-    * should be provided by `distage-framework-docker` or another orchestrator when the application starts (`Scene.Managed`),
-    * or whether it should try to connect to these services as if they already exist in the environment (`Scene.Provided`)
+    * Describes whether external services required by the application
+    * should be set-up on the fly by an orchestrator library such as `distage-framework-docker` (`Scene.Managed`),
+    * or whether the application should try to connect to external services
+    * as if they already exist in the environment (`Scene.Provided`).
     *
-    * The set of third-party services required by the application is called a `Scene`, etymology being that the running
-    * third-party services that the application depends on are like a scene that is prepared for for the actor (the application)
-    * to enter.
+    * We call a set of external services required by the application a `Scene`,
+    * etymology being that the running external services required by the application
+    * are like a "scene" that the "theatre staff" (the orchestrator) must prepare
+    * for the "actor" (the application) to enter.
     */
   object Scene extends Axis {
     override def name: String = "scene"
@@ -79,5 +81,11 @@ object StandardAxis {
       Scene -> Scene.Managed,
     )
   }
+
+  @deprecated("Use `distage.StandardAxis.Mode` instead", "0.11")
+  lazy val Env: Mode.type = Mode
+
+  @deprecated("Use `distage.StandardAxis.World` instead", "0.11")
+  lazy val ExternalApi: World.type = World
 
 }
