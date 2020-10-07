@@ -191,7 +191,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     logger: IzLogger =>
       logger.router
   }
-  make[ModuleProvider].from[ModuleProvider.Impl]
+  make[ModuleProvider].from[ModuleProvider.Impl[F]]
 
   make[BootstrapModule].named("roleapp").from {
     (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>

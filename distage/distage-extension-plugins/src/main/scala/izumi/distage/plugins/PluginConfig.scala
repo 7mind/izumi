@@ -34,19 +34,19 @@ final case class PluginConfig(
 }
 
 object PluginConfig {
-  /** Scan the specified packages for modules that inherit [[PluginBase]] */
+  /** Scan the specified packages at runtime for classes and objects that inherit [[PluginBase]] */
   def cached(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = cacheEnabled, debug = false, Nil, Nil)
   def cached(pluginsPackage: String): PluginConfig = PluginConfig(pluginsPackage :: Nil, Nil, cachePackages = cacheEnabled, debug = false, Nil, Nil)
   def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = false, debug = false, Nil, Nil)
   def packages(pluginsPackage: String): PluginConfig = PluginConfig(pluginsPackage :: Nil, Nil, cachePackages = false, debug = false, Nil, Nil)
 
-  /** Create a [[PluginConfig]] that returns a list of plugins scanned at compile-time.
+  /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
     *
     * WARN: may interact badly with incremental compilation
-    * WARN: will _not_ find plugins defined in current module, only those defined in dependency modules (similarly to
-    *       how you cannot call Scala macros defined in the current module)
+    * WARN: will _not_ find plugins defined in the current module,only those defined in dependency modules
+    *       (similarly to how you cannot call Scala macros defined in the current module)
     */
-  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
+  def static(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
 
   /** Create a [[PluginConfig]] that simply returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false, plugins, Nil)
@@ -56,4 +56,13 @@ object PluginConfig {
   lazy val empty: PluginConfig = const(Nil)
 
   private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)
+
+  /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]] and put them into a list.
+    *
+    * WARN: may interact badly with incremental compilation
+    * WARN: will _not_ find plugins defined in the current module,only those defined in dependency modules
+    *       (similarly to how you cannot call Scala macros defined in the current module)
+    */
+  @deprecated("renamed to `.static`", "1.0.0")
+  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
 }

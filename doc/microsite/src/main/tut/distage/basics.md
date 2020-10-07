@@ -1162,7 +1162,7 @@ class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
 class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends ModuleDef
 ```
 
-consult @scaladoc[HKTag](izumi.fundamentals.reflection.WithTags#HKTag) docs for more details.
+consult [izumi.reflect.HKTag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/latest/izumi/reflect/HKTag.html) docs for more details.
 
 ### Cats & ZIO Integration
 

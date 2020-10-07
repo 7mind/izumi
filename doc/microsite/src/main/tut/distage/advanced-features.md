@@ -309,85 +309,6 @@ Further reading:
 
 - MacWire calls the same concept ["Multi Wiring"](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
-### Inner Classes and Path-Dependent Types
-
-Path-dependent types with a value prefix will be instantiated normally:
-
-```scala mdoc:reset:to-string
-import distage.{Roots, ModuleDef, Injector}
-
-class Path {
-  class A
-}
-val path = new Path
-
-def module = new ModuleDef {
-  make[path.A]
-}
-
-Injector()
-  .produce(module, Roots.Everything)
-  .use(_.get[path.A])
-```
-
-Since version `0.10`, support for path-dependent types with a non-value (type) prefix hasn't reimplemented after a rewrite of the internals, see issue: https://github.com/7mind/izumi/issues/764
-
-However, there's a gotcha with value prefixes, when seen by distage they're based on the **literal variable name** of the prefix,
-not the full type information available to the compiler, therefore the following usage will fail:
-
-```scala mdoc:to-string
-def pathModule(p: Path) = new ModuleDef {
-  make[p.A]
-}
-
-val path1 = new Path
-val path2 = new Path
-```
-
-```scala mdoc:to-string:crash
-Injector()
-  .produceRun(pathModule(path1) ++ pathModule(path2)) {
-    (p1a: path1.A, p2a: path2.A) =>
-      println((p1a, p2a))
-  }
-```
-
-This will fail because while `path1.A` and `p.A` inside `new ModuleDef` are the same type, the varialbes
-`path1` & `p` are spelled differently and this causes a mismatch.
-
-There's one way to workaround this - turn the type member `A` into a type parameter using the [Aux Pattern](http://gigiigig.github.io/posts/2015/09/13/aux-pattern.html),
-and then for that type parameter in turn, summon the type information using `Tag` implicit (as described in @ref[Tagless Final Style chapter](basics.md#tagless-final-style))
-and summon the constructor using the `ClassConstructor` implicit, example:
-
-```scala mdoc:to-string:reset:invisible
-class Path {
-  class A
-}
-```
-
-```scala mdoc:to-string
-import distage.{ClassConstructor, ModuleDef, Injector, Tag}
-
-object Path {
-  type Aux[A0] = Path { type A = A0 }
-}
-
-def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
-  make[A]
-}
-
-val path1 = new Path
-val path2 = new Path
-
-Injector()
-  .produceRun(pathModule(path1) ++ pathModule(path2)) {
-    (p1a: path1.A, p2a: path2.A) =>
-      println((p1a, p2a))
-  }
-```
-
-Now the example works, because the `A` inside `pathModule` is `path1.A` & `path2.A` respectively, the same as it is later
-in `produceRun`
 
 ### Depending on Locator
 
@@ -480,3 +401,85 @@ assert(injectionInfo.plannerInput == input)
 ```
 
 @scaladoc[Bootloader](izumi.distage.model.recursive.Bootloader) is another summonable parameter that contains the above information in aggregate and lets you create another object graph from the same inputs as the current or with alterations.
+
+
+### Inner Classes and Path-Dependent Types
+
+Path-dependent types with a value prefix will be instantiated normally:
+
+```scala mdoc:reset:to-string
+import distage.{Roots, ModuleDef, Injector}
+
+class Path {
+  class A
+}
+val path = new Path
+
+def module = new ModuleDef {
+  make[path.A]
+}
+
+Injector()
+  .produce(module, Roots.Everything)
+  .use(_.get[path.A])
+```
+
+Since version `0.10`, support for types with a non-value prefix (type projections) [has been dropped](https://github.com/7mind/izumi/issues/764).
+
+However, there's a gotcha with value prefixes, when seen by distage they're based on the **literal variable name** of the prefix,
+not the full type information available to the compiler, therefore the following usage, a simple rename, will fail:
+
+```scala mdoc:to-string
+def pathModule(p: Path) = new ModuleDef {
+  make[p.A]
+}
+
+val path1 = new Path
+val path2 = new Path
+```
+
+```scala mdoc:invisible:to-string
+import scala.util.Try
+```
+
+```scala mdoc:to-string
+Try {
+  Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
+    (p1a: path1.A, p2a: path2.A) =>
+      println((p1a, p2a))
+  }
+}.isFailure
+```
+
+This will fail because while `path1.A` and `p.A` inside `new ModuleDef` are the same type as far as *Scala* is concerned, the variables
+`path1` & `p` are spelled differently and this causes a mismatch in `distage`.
+
+There's one way to workaround this - turn the type member `A` into a type parameter using the [Aux Pattern](http://gigiigig.github.io/posts/2015/09/13/aux-pattern.html), and then for that type parameter in turn, summon the type information using `Tag` implicit (as described in @ref[Tagless Final Style chapter](basics.md#tagless-final-style)) and summon the constructor using the `ClassConstructor` implicit, example:
+
+```scala mdoc:to-string:reset:invisible
+class Path {
+  class A
+}
+```
+
+```scala mdoc:to-string
+import distage.{ClassConstructor, ModuleDef, Injector, Tag}
+
+object Path {
+  type Aux[A0] = Path { type A = A0 }
+}
+
+def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
+  make[A]
+}
+
+val path1 = new Path
+val path2 = new Path
+
+Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
+  (p1a: path1.A, p2a: path2.A) =>
+    println((p1a, p2a))
+}
+```
+
+Now the example works, because the `A` type inside `pathModule(path1)` is `path1.A` and for `pathModule(path2)` it's `path2.A`, which matches their subsequent spelling in `(p1a: path1.A, p2a: path2.A) =>` in `produceRun`

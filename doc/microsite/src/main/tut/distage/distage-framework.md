@@ -24,7 +24,7 @@ With default @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), roles to l
 
 Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[Dependency Pruning](advanced-features.md#dependency-pruning))
 
-@scaladoc[izumi.distage.roles.bundled.BundledRolesModule] contains two example roles: 
+@scaladoc[BundledRolesModule](izumi.distage.roles.bundled.BundledRolesModule) contains two example roles: 
 
 - @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help` 
 - @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by roles (includes only parts of the config used by the application)
@@ -155,11 +155,11 @@ Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 import com.example.petstore._
 ```
 
-```scala mdoc:to-string
-// package com.example.petstore
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example.petstore": Unit
 
-import distage._
-import distage.plugins._
+import distage.Injector
+import distage.plugins.{PluginConfig, PluginDef, PluginLoader}
 
 object PetStorePlugin extends PluginDef {
   make[PetRepository]
@@ -168,17 +168,18 @@ object PetStorePlugin extends PluginDef {
 }
 ```
 
-Collect all `PluginDefs` in a package:
+Collect all the `PluginDef` classes and objects in a package:
 
 ```scala mdoc:to-string
 val pluginConfig = PluginConfig.cached(
-  packagesEnabled = Seq("com.example.petstore") // packages to scan
+  // packages to scan
+  packagesEnabled = Seq("com.example.petstore")
 )
 
 val appModules = PluginLoader().load(pluginConfig)
 ```
 
-Execute collected modules as usual:
+Wire the collected modules as usual:
 
 ```scala mdoc:to-string
 // combine all modules into one
