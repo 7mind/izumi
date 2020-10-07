@@ -10,7 +10,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.BIOLocal
+import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOLocal, BIOMonad, BIOMonad3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -269,7 +269,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
 
-object Lifecycle {
+object Lifecycle extends LifecycleIzumiTypeclassesInstances with LifecycleCatsInstances {
 
   /**
     * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
@@ -972,6 +972,13 @@ object Lifecycle {
     }
   }
 
+  def tailRecM[F[_], A, B](init: A)(f: A => Lifecycle[F, Either[A, B]])(implicit DF: DIEffect[F]): Lifecycle[F, B] = {
+    f(init).flatMap {
+      case Right(b) => Lifecycle.pure[F, B](b)
+      case Left(a) => tailRecM(a)(f)
+    }
+  }
+
   @inline
   private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: DIEffect[F]): Lifecycle[F, B] = {
     flatMapImpl(self)(a => Lifecycle.make(f(a))(_ => F.unit))
@@ -1115,35 +1122,9 @@ object Lifecycle {
 
   @deprecated("renamed to fromAutoCloseable", "0.11")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
-
-  /**
-    * This type encoding was copy-pasted from cats.effect.Resource
-    * It's needed to declare a new type with cats.Applicative
-    * capabilities of doing parallel processing in `ap` and `map2`, needed
-    * for implementing `cats.Parallel`.
-    */
-  type Par[+F[_], +A] = Par.Type[F, A]
-  object Par {
-    type Base
-    trait Tag extends Any
-    type Type[+F[_], +A] <: Base with Tag
-
-    def apply[F[_], A](fa: Lifecycle[F, A]): Type[F, A] =
-      fa.asInstanceOf[Type[F, A]]
-
-    def unwrap[F[_], A](fa: Type[F, A]): Lifecycle[F, A] =
-      fa.asInstanceOf[Lifecycle[F, A]]
-  }
-
-  def tailRecM[F[_], A, B](init: A)(f: A => Lifecycle[F, Either[A, B]])(implicit DF: DIEffect[F]): Lifecycle[F, B] = {
-    f(init).flatMap {
-      case Right(b) => Lifecycle.pure[F, B](b)
-      case Left(a) => tailRecM(a)(f)
-    }
-  }
 }
 
-abstract private[definition] class LifecycleCatsInstances0 {
+private[definition] trait LifecycleCatsInstances {
   implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, A](
     implicit
     Monoid: Monoid[F[A]],
@@ -1167,26 +1148,23 @@ abstract private[definition] class LifecycleCatsInstances0 {
       override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
       override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = Lifecycle.tailRecM(a)(f)
     }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+}
 
-  implicit def catsEffectParallelForLifecycle[Monad[_[_]]: `cats.Monad`, Parallel[_[_]]: `cats.Parallel`, Applicative[_[_]]: `cats.Applicative`, F0[_]](
-    implicit
-    Monad: Monad[F0],
-    parallel: Parallel[F0],
-    Applicative: Applicative[F0],
-  ): Parallel[Lifecycle[F0, ?]] = new cats.Parallel[Lifecycle[F0, ?]] {
-    protected def Ap = Applicative.asInstanceOf[cats.Applicative[Lifecycle.Par[F0, ?]]]
-    protected def M = Monad.asInstanceOf[cats.Monad[Lifecycle[F0, ?]]]
+private[definition] trait LifecycleIzumiTypeclassesInstances {
+  type LifecycleMonad2[F[+_, +_]] = BIOMonad[Lambda[(`+E`, `+A`) => Lifecycle[F[E, ?], A]]]
+  type LifecycleMonad3[F[-_, +_, +_]] = BIOMonad3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, ?], A]]]
 
-    type F[x] = Lifecycle.Par[F0, x]
-    override def applicative: cats.Applicative[Lifecycle.Par[F0, ?]] = Ap
+  implicit def monad2ForLifecycle[F[+_, +_]: BIO]: LifecycleMonad2[F] =
+    new LifecycleMonad2[F] {
+      implicit val diEff = DIEffect.fromBIO[F]
+      override def flatMap[R, E, A, B](r: Lifecycle[F[E, ?], A])(f: A => Lifecycle[F[E, ?], B]): Lifecycle[F[E, ?], B] = r.flatMap(f)(diEff.asInstanceOf[DIEffect[F[E, ?]]])
+      override def pure[A](a: A): Lifecycle[F[Nothing, ?], A] = Lifecycle.pure[F[Nothing, ?], A](a)
+    }
 
-    override def monad: cats.Monad[Lifecycle[F0, ?]] = M
-
-    override def sequential: Lifecycle.Par[F0, ?] ~> Lifecycle[F0, ?] =
-      λ[Lifecycle.Par[F0, ?] ~> Lifecycle[F0, ?]](Lifecycle.Par.unwrap(_))
-
-    override def parallel: Lifecycle[F0, ?] ~> Lifecycle.Par[F0, ?] =
-      λ[Lifecycle[F0, ?] ~> Lifecycle.Par[F0, ?]](Lifecycle.Par(_))
-
-  }.asInstanceOf[Parallel[Lifecycle[F0, ?]]]
+  implicit def monad3ForLifecycle[F[-_, +_, +_]: BIO3]: LifecycleMonad3[F] =
+    new LifecycleMonad3[F] {
+      implicit val diEff = DIEffect.fromBIO[F[Any, +?, +?]]
+      override def flatMap[R, E, A, B](r: Lifecycle[F[R, E, ?], A])(f: A => Lifecycle[F[R, E, *], B]): Lifecycle[F[R, E, ?], B] = r.flatMap(f)(diEff.asInstanceOf[DIEffect[F[R, E, ?]]])
+      override def pure[A](a: A): Lifecycle[F[Any, Nothing, ?], A] = Lifecycle.pure[F[Any, Nothing, ?], A](a)
+    }
 }
