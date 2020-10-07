@@ -2,6 +2,8 @@ package izumi.functional.bio.data
 
 import izumi.functional.bio.{BIOExit, BIOPanic}
 
+import scala.language.existentials
+
 sealed trait Free[S[_, _], +E, +A] {
   @inline final def flatMap[B, E1 >: E](fun: A => Free[S, E1, B]): Free[S, E1, B] = Free.FlatMap[S, E, E1, A, B](this, fun)
   @inline final def *>[B, E1 >: E](sc: Free[S, E1, B]): Free[S, E1, B] = flatMap(_ => sc)
@@ -15,12 +17,11 @@ sealed trait Free[S[_, _], +E, +A] {
 
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
-  def foldMap[G[+_, +_]](transform: S ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
+  @inline def foldMap[G[+_, +_]](transform: S ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
     this match {
       case Free.Pure(a) => G.pure(a)
       case Free.Suspend(a) => transform(a)
-      case Free.Guarantee(sub, g) =>
-        sub.foldMap(transform).guarantee(g.foldMap(transform))
+      case Free.Guarantee(sub, g) => sub.foldMap(transform).guarantee(g.foldMap(transform))
       case Free.Redeem(sub, err, suc) =>
         sub
           .foldMap(transform).redeem(
@@ -30,7 +31,7 @@ sealed trait Free[S[_, _], +E, +A] {
       case s: Free.Sandbox[S, _, _] =>
         s.sub.foldMap(transform).sandboxBIOExit.map(_.asInstanceOf[A])
       case Free.Bracket(acquire, release, use) =>
-        acquire.flatMap(a => use(a).guarantee(release(a))).foldMap(transform)
+        acquire.foldMap(transform).bracket(a => release(a).foldMap(transform))(a => use(a).foldMap(transform))
       case Free.FlatMap(sub, cont) =>
         sub match {
           case Free.FlatMap(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
