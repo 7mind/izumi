@@ -1,7 +1,7 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.functional.bio.data.{Free, FreeApplicative}
+import izumi.functional.bio.data.Free
 import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
@@ -260,10 +260,10 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
     }
   }
 
-  implicit def fromFree[F[+_, +_], S[_[+_, +_], _, _]: FreeApplicative, E]: DIApplicative[Free[F, S, E, ?]] = new DIApplicative[Free[F, S, E, ?]] {
-    override def pure[A](a: A): Free[F, S, E, A] = Free.lift(FreeApplicative[S].pure(a))
-    override def map[A, B](fa: Free[F, S, E, A])(f: A => B): Free[F, S, E, B] = fa.map(f)
-    override def map2[A, B, C](fa: Free[F, S, E, A], fb: => Free[F, S, E, B])(f: (A, B) => C): Free[F, S, E, C] = {
+  implicit def fromFree[S[_, _], E]: DIApplicative[Free[S, E, ?]] = new DIApplicative[Free[S, E, ?]] {
+    override def pure[A](a: A): Free[S, E, A] = Free.pure(a)
+    override def map[A, B](fa: Free[S, E, A])(f: A => B): Free[S, E, B] = fa.map(f)
+    override def map2[A, B, C](fa: Free[S, E, A], fb: => Free[S, E, B])(f: (A, B) => C): Free[S, E, C] = {
       for {
         a <- fa
         b <- fb

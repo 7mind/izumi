@@ -1,87 +1,70 @@
 package izumi.functional.bio.data
 
-import izumi.functional.bio.{BIOError, F}
+import izumi.functional.bio.{BIOExit, BIOPanic}
 
-sealed trait Free[F[+_, +_], S[_[+_, +_], _, _], +E, +A] {
-  @inline final def flatMap[B, E1 >: E](fun: A => Free[F, S, E1, B]): Free[F, S, E1, B] = Free.FlatMap[F, S, E, E1, A, B](this, fun)
-  @inline final def *>[B, E1 >: E](sc: Free[F, S, E1, B]): Free[F, S, E1, B] = flatMap(_ => sc)
-  @inline final def map[B](fun: A => B)(implicit ap: FreeApplicative[S]): Free[F, S, E, B] = flatMap(a => Free.lift(ap.pure(fun(a))))
+sealed trait Free[S[_, _], +E, +A] {
+  @inline final def flatMap[B, E1 >: E](fun: A => Free[S, E1, B]): Free[S, E1, B] = Free.FlatMap[S, E, E1, A, B](this, fun)
+  @inline final def *>[B, E1 >: E](sc: Free[S, E1, B]): Free[S, E1, B] = flatMap(_ => sc)
+  @inline final def map[B](fun: A => B): Free[S, E, B] = flatMap(a => Free.pure[S, B](fun(a)))
 
-  @inline final def redeem[B, E1 >: E](err: E => Free[F, S, E1, B], succ: A => Free[F, S, E1, B]): Free[F, S, E1, B] = Free.Redeem(this, err, succ)
-  @inline final def sandbox: Free[F, S, Nothing, Either[Throwable, Either[E, A]]] = Free.Sandbox(this)
-  @inline final def catchAll[A1 >: A, E1 >: E](err: E => Free[F, S, E1, A1])(implicit ap: FreeApplicative[S]): Free[F, S, E1, A1] =
-    Free.Redeem(this, err, (a: A) => Free.lift(ap.pure(a)))
-  @inline final def guarantee(g: Free[F, S, Nothing, Unit]): Free[F, S, E, A] = Free.Guarantee[F, S, E, A](this, g)
+  @inline final def redeem[B, E1](err: E => Free[S, E1, B], succ: A => Free[S, E1, B]): Free[S, E1, B] = Free.Redeem(this, err, succ)
+  @inline final def sandbox: Free[S, Nothing, BIOExit[E, A]] = Free.Sandbox(this)
+  @inline final def catchAll[A1 >: A, E1](err: E => Free[S, E1, A1]): Free[S, E1, A1] = Free.Redeem(this, err, (a: A) => Free.pure(a))
+  @inline final def guarantee(g: Free[S, Nothing, Unit]): Free[S, E, A] = Free.Guarantee[S, E, A](this, g)
+  @inline final def bracket[B, E1 >: E](release: A => Free[S, Nothing, Unit])(use: A => Free[S, E1, B]): Free[S, E1, B] = Free.Bracket(this, release, use)
 
-  @inline final def void(implicit ap: FreeApplicative[S]): Free[F, S, E, Unit] = map(_ => ())
+  @inline final def void: Free[S, E, Unit] = map(_ => ())
 
-  /**
-    * Execute free via interpreter. Tailrec works only on [[Free.FlatMap]] due to wrapped effect.
-    * Anyway if you will use IO with trampoline optimization this function is stacksafe and will throw [[StackOverflowError]] only in case of using of [[cats.Id]].
-    */
-  @inline final def execute[Scope](
-    scope: Scope,
-    interpreter: FreeInterpreter[F, S, Scope],
-  )(implicit
-    M: BIOError[F]
-  ): F[Nothing, FreeInterpreter.Result[F, S, Scope]] = {
+  def foldMap[G[+_, +_]](transform: S ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
     this match {
-      case Free.Pure(a) =>
-        interpreter.interpret(scope, a)
+      case Free.Pure(a) => G.pure(a)
+      case Free.Suspend(a) => transform(a)
       case Free.Guarantee(sub, g) =>
-        sub.execute(scope, interpreter).flatMap(r => g.execute(r.scope, interpreter).flatMap(_ => F.pure(r)))
+        sub.foldMap(transform).guarantee(g.foldMap(transform))
       case Free.Redeem(sub, err, suc) =>
-        sub.execute(scope, interpreter).flatMap {
-          case FreeInterpreter.Result.Success(sc, v) => suc(v).execute(sc, interpreter)
-          case FreeInterpreter.Result.Error(sc, e, _) => err(e.asInstanceOf[E]).execute(sc, interpreter)
-          case f => F.pure(f)
-        }
-      case s: Free.Sandbox[F, S, _, _] =>
-        s.sub.execute(scope, interpreter).map {
-          case FreeInterpreter.Result.Success(sc, v) => FreeInterpreter.Result.Success(sc, Right(Right(v)))
-          case FreeInterpreter.Result.Error(sc, e, _) => FreeInterpreter.Result.Success(sc, Right(Left(e)))
-          case FreeInterpreter.Result.Termination(sc, e, _, _) => FreeInterpreter.Result.Success(sc, Left(e))
-        }
+        sub
+          .foldMap(transform).redeem(
+            err(_).foldMap(transform),
+            suc(_).foldMap(transform),
+          )
+      case s: Free.Sandbox[S, _, _] =>
+        s.sub.foldMap(transform).sandboxBIOExit.map(_.asInstanceOf[A])
       case Free.Bracket(acquire, release, use) =>
-        acquire.flatMap(a => use(a).guarantee(release(a))).execute(scope, interpreter)
+        acquire.flatMap(a => use(a).guarantee(release(a))).foldMap(transform)
       case Free.FlatMap(sub, cont) =>
         sub match {
-          case Free.FlatMap(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).execute(scope, interpreter)
-          case Free.Bracket(acquire, release, use) => acquire.flatMap(a => use(a).guarantee(release(a))).flatMap(cont).execute(scope, interpreter)
-          case another =>
-            another.execute(scope, interpreter).flatMap {
-              case FreeInterpreter.Result.Success(sc, v) => cont(v).execute(sc, interpreter)
-              case f => F.pure(f)
-            }
+          case Free.FlatMap(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
+          case another => another.foldMap(transform).flatMap(cont(_).foldMap(transform))
         }
     }
   }
 }
 
 object Free {
-  @inline def lift[F[+_, +_], S[_[+_, +_], _, _], E, A](s: S[F, E, A]): Free[F, S, E, A] = Pure(s)
-  @inline def bracket[F[+_, +_], S[_[+_, +_], _, _], E, A0, A](
-    acquire: Free[F, S, E, A0]
-  )(release: A0 => Free[F, S, Nothing, Unit]
-  )(use: A0 => Free[F, S, E, A]
-  ): Free[F, S, E, A] = {
+  @inline def pure[S[_, _], A](a: A): Free[S, Nothing, A] = Pure(a)
+  @inline def lift[S[_, _], E, A](s: S[E, A]): Free[S, E, A] = Suspend(s)
+  @inline def bracket[F[+_, +_], S[_, _], E, A0, A](
+    acquire: Free[S, E, A0]
+  )(release: A0 => Free[S, Nothing, Unit]
+  )(use: A0 => Free[S, E, A]
+  ): Free[S, E, A] = {
     Bracket(acquire, release, use)
   }
 
-  private[data] final case class Pure[F[+_, +_], S[_[+_, +_], _, _], E, A](a: S[F, E, A]) extends Free[F, S, E, A]
-  private[data] final case class FlatMap[F[+_, +_], S[_[+_, +_], _, _], E, E1 >: E, A, B](sub: Free[F, S, E, A], cont: A => Free[F, S, E1, B]) extends Free[F, S, E1, B] {
+  private[data] final case class Pure[S[_, _], A](a: A) extends Free[S, Nothing, A]
+  private[data] final case class Suspend[S[_, _], E, A](a: S[E, A]) extends Free[S, E, A]
+  private[data] final case class FlatMap[S[_, _], E, E1 >: E, A, B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
     override def toString: String = s"${this.getClass.getName}[cont=${cont.getClass.getSimpleName}]"
   }
-  private[data] final case class Guarantee[F[+_, +_], S[_[+_, +_], _, _], E, A](sub: Free[F, S, E, A], guarantee: Free[F, S, Nothing, Unit]) extends Free[F, S, E, A]
-  private[data] final case class Sandbox[F[+_, +_], S[_[+_, +_], _, _], E, A](sub: Free[F, S, E, A]) extends Free[F, S, Nothing, Either[Throwable, Either[E, A]]]
-  private[data] final case class Redeem[F[+_, +_], S[_[+_, +_], _, _], E, E1 >: E, A, B](sub: Free[F, S, E, A], err: E => Free[F, S, E1, B], suc: A => Free[F, S, E1, B])
-    extends Free[F, S, E1, B]
+  private[data] final case class Guarantee[S[_, _], E, A](sub: Free[S, E, A], guarantee: Free[S, Nothing, Unit]) extends Free[S, E, A]
+  private[data] final case class Sandbox[S[_, _], E, A](sub: Free[S, E, A]) extends Free[S, Nothing, BIOExit[E, A]]
+  private[data] final case class Redeem[S[_, _], E, E1, A, B](sub: Free[S, E, A], err: E => Free[S, E1, B], suc: A => Free[S, E1, B]) extends Free[S, E1, B]
 
-  private[data] final case class Bracket[F[+_, +_], S[_[+_, +_], _, _], E, A0, A](
-    acquire: Free[F, S, E, A0],
-    release: A0 => Free[F, S, Nothing, Unit],
-    use: A0 => Free[F, S, E, A],
-  ) extends Free[F, S, E, A] {
+  private[data] final case class Bracket[S[_, _], E, A0, A](
+    acquire: Free[S, E, A0],
+    release: A0 => Free[S, Nothing, Unit],
+    use: A0 => Free[S, E, A],
+  ) extends Free[S, E, A] {
     override def toString: String = s"${this.getClass.getName}[bracket=${use.getClass.getSimpleName}]"
   }
 }
