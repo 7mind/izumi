@@ -1,5 +1,6 @@
 package izumi.distage.model.definition
 
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Resource.{Allocate, Bind, Suspend}
@@ -425,11 +426,15 @@ object Lifecycle {
         @tailrec def loop(current: Resource[F, Any], stack: List[Any => Resource[F, Any]]): F[Any] =
           current match {
             case a: Allocate[F, Any] =>
-              F.bracketCase(a.resource) {
-                case (a, rel) =>
+              F.bracketCase(F.flatMap(a.resource) {
+                case (a, rel) => F.as(finalizers.update(rel :: _), a)
+              }) {
+                a =>
                   stack match {
-                    case Nil => F.as(finalizers.update(rel :: _), a)
-                    case l => F.flatMap(finalizers.update(rel :: _))(_ => continue(l.head(a), l.tail))
+                    case Nil =>
+                      F.pure(a)
+                    case head :: tail =>
+                      continue(head(a), tail)
                   }
               } {
                 case (_, ExitCase.Completed) =>
@@ -944,44 +949,44 @@ object Lifecycle {
 
   @inline
   private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: DIEffect[F]): Lifecycle[F, B] = {
-
-    def bracketOnError[a, b](lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
-      F.bracketCase(acquire = lifecycle.acquire)(release = {
-        case (a, Some(_)) => lifecycle.release(a)
-        case _ => F.unit
-      })(use = use)
-    }
     import DIEffect.syntax._
-
     new Lifecycle[F, B] {
-      override type InnerResource = InnerResource0
-      sealed trait InnerResource0 {
-        def extract[C >: B]: Either[F[C], C]
-        def deallocate: F[Unit]
+      override type InnerResource = AtomicReference[List[() => F[Unit]]]
+
+      private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+        F.bracket(
+          acquire = lifecycle.acquire.flatMap {
+            a =>
+              F.maybeSuspend {
+                finalizers.updateAndGet((() => lifecycle.release(a)) :: _)
+                a
+              }
+          }
+        )(release = _ => F.unit)(
+          use = use
+        )
       }
+
       override def acquire: F[InnerResource] = {
-        bracketOnError(self) {
+        F.maybeSuspend(new AtomicReference(Nil))
+      }
+      override def release(finalizers: InnerResource): F[Unit] = {
+        F.suspendF(F.traverse_(finalizers.get())(_.apply()))
+      }
+      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
+        bracketAppendFinalizer(finalizers)(self) {
           inner1: self.InnerResource =>
             F.suspendF {
               self.extract(inner1).fold(_.map(f), F pure f(_)).flatMap {
-                res2: Lifecycle[F, B] =>
-                  bracketOnError(res2) {
-                    inner2: res2.InnerResource =>
-                      F.pure(new InnerResource0 {
-                        def extract[C >: B]: Either[F[C], C] = res2.extract(inner2)
-                        def deallocate: F[Unit] = {
-                          F.unit
-                            .guarantee(res2.release(inner2))
-                            .guarantee(self.release(inner1))
-                        }
-                      })
+                that: Lifecycle[F, B] =>
+                  bracketAppendFinalizer(finalizers)(that) {
+                    inner2: that.InnerResource =>
+                      that.extract[C](inner2).fold(identity, F.pure)
                   }
               }
             }
         }
       }
-      override def release(resource: InnerResource): F[Unit] = resource.deallocate
-      override def extract[C >: B](resource: InnerResource): Either[F[C], C] = resource.extract
     }
   }
 
