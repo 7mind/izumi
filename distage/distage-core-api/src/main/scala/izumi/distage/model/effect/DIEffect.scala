@@ -37,19 +37,20 @@ trait DIEffect[F[_]] extends DIApplicative[F] {
 
   def fail[A](t: => Throwable): F[A]
 
-  def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
-  final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
-  final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = {
-    // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
-    // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
+  def suspendF[A](effAction: => F[A]): F[A] = {
+    flatMap(maybeSuspend(effAction))(identity)
+  }
+  def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = {
+    // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative flatMaps so foldLeft is ok here.
+    // note: overriden in all default impls
     l.foldLeft(pure(List.empty[B])) {
       (acc, a) =>
         flatMap(acc)(list => map(f(a))(r => list ++ List(r)))
     }
   }
-  final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
-    // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
-    // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
+  def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
+    // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative flatMaps so foldLeft is ok here.
+    // note: overriden in all default impls
     l.foldLeft(unit) {
       (acc, a) =>
         flatMap(acc)(_ => f(a))
@@ -111,6 +112,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
       finally `finally`
     }
     override def fail[A](t: => Throwable): Identity[A] = throw t
+    override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
+    override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
   implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): DIEffect[F[Throwable, ?]] = {
@@ -146,6 +149,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
       override def guarantee[A](fa: => F[Throwable, A])(`finally`: => F[Throwable, Unit]): F[Throwable, A] = {
         F.guarantee(F.suspend(fa), F.suspend(`finally`).orTerminate)
       }
+      override def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
+      override def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
     }
   }
 }
@@ -191,6 +196,8 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
         F.guarantee(F.suspend(fa))(F.suspend(`finally`))
       }
+      override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
+      override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
     }
   }
 
@@ -198,8 +205,14 @@ private[effect] sealed trait LowPriorityDIEffectInstances {
 
 trait DIApplicative[F[_]] {
   def pure[A](a: A): F[A]
+
   def map[A, B](fa: F[A])(f: A => B): F[B]
   def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C]
+
+  def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
+  def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
+
+  final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
   final val unit: F[Unit] = pure(())
 }
 
@@ -210,6 +223,8 @@ object DIApplicative extends LowPriorityDIApplicativeInstances {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
+    override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
+    override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
   implicit def fromBIO[F[+_, +_], E](implicit F: BIOApplicative[F]): DIApplicative[F[E, ?]] = {
@@ -217,6 +232,8 @@ object DIApplicative extends LowPriorityDIApplicativeInstances {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
+      override def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
+      override def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
     }
   }
 }
@@ -234,6 +251,8 @@ trait LowPriorityDIApplicativeInstances {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
+      override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
+      override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
     }
   }
 }
