@@ -172,7 +172,7 @@ object StaticPluginCheckerMacro {
     val injector = Injector.inherit[Identity](bootstrap)
 
     val activation: Activation = {
-      val activationInfo = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(module)
+      val activationInfo = new ActivationChoicesExtractor.Impl().findAvailableChoices(module)
       new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
 

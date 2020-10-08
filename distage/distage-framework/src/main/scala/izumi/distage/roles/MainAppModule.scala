@@ -1,11 +1,13 @@
 package izumi.distage.roles
 
-import distage._
+import izumi.distage.InjectorFactory
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.framework.services._
-import izumi.distage.model.definition.{Activation, Lifecycle, ModuleBase}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition._
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -14,7 +16,7 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
-import izumi.distage.roles.launcher.ModuleValidator.{ModulePair, ValidatedModulePair}
+import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.launcher._
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -23,6 +25,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
+import izumi.reflect.TagK
 
 /**
   * Application flow:
@@ -80,6 +83,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   many[LibraryReference]
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
+  make[StartupBanner].from[StartupBanner.Impl]
   make[IzLogger].named("early").from {
     (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early"), banner: StartupBanner) =>
       val logger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
@@ -108,17 +112,15 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[Seq[PluginBase]]
     .named("main").from {
-      (_: PluginLoader @Id("main")).load(_: PluginConfig @Id("main"))
+      (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
+        loader.load(config)
     }
-    .annotateParameter[PluginLoader]("main")
-    .annotateParameter[PluginConfig]("main")
 
   make[Activation].named("main").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
   make[Boolean].named("distage.roles.reflection").fromValue(true)
   make[Boolean].named("distage.roles.logs.json").fromValue(false)
-  make[RoleProvider[F]].from[RoleProvider.Impl[F]]
 
   make[IzLogger].from {
     (
@@ -130,51 +132,44 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     ) =>
       EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
   }
+  make[LogRouter].from((_: IzLogger).router)
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
 
-  make[RolesInfo].from {
-    provider: RoleProvider[F] =>
-      provider.loadRoles()
-  }
+  make[ModuleValidator].from[ModuleValidator.ModuleValidatorImpl]
 
-  make[ModulePair].from {
+  make[ValidatedModulePair].from {
     (
+      validator: ModuleValidator,
       strategy: PluginMergeStrategy @Id("main"),
       plugins: Seq[PluginBase] @Id("main"),
       bsStrategy: PluginMergeStrategy @Id("bootstrap"),
       bsPlugins: Seq[PluginBase] @Id("bootstrap"),
     ) =>
-      ModulePair(bsStrategy.merge(bsPlugins), strategy.merge(plugins))
+      validator.validate(strategy, plugins, bsStrategy, bsPlugins)
   }
 
-  make[ModuleValidator].from[ModuleValidator.ModuleValidatorImpl]
+  make[ModuleBase].named("main").from((_: ValidatedModulePair).appModule)
+  make[ModuleBase].named("bootstrap").from((_: ValidatedModulePair).bootstrapAutoModule)
 
-  make[ValidatedModulePair].from {
-    (validator: ModuleValidator, modules: ModulePair) =>
-      validator.validate(modules)
+  make[RoleProvider].from[RoleProvider.Impl]
+  make[RolesInfo].from {
+    (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagK: TagK[F]) =>
+      provider.loadRoles(appModule)(tagK)
   }
-
-  make[ModuleBase].named("main").from {
-    modules: ValidatedModulePair => modules.appModule
-  }
-  make[ModuleBase].named("bootstrap").from {
-    modules: ValidatedModulePair => modules.bootstrapAutoModule
-  }
-
-  make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.ActivationChoicesExtractorImpl]
-  make[ActivationInfo].from {
-    (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
-      activationExtractor.findAvailableChoices(appModule)
-  }
-
   make[Set[DIKey]].named("distage.roles.roots").from {
     rolesInfo: RolesInfo =>
       rolesInfo.requiredComponents
   }
 
-  make[ActivationParser].from[ActivationParser.ActivationParserImpl]
+  make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
+  make[ActivationInfo].from {
+    (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
+      activationExtractor.findAvailableChoices(appModule)
+  }
+
+  make[ActivationParser].from[ActivationParser.Impl]
   make[Activation].named("primary").from {
     parser: ActivationParser =>
       parser.parseActivation()
@@ -187,38 +182,41 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       )
   }
 
-  make[LogRouter].from {
-    logger: IzLogger =>
-      logger.router
-  }
   make[ModuleProvider].from[ModuleProvider.Impl[F]]
-
-  make[BootstrapModule].named("roleapp").from {
-    (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>
-      provider.bootstrapModules().merge overriddenBy bsModule
-  }
 
   make[Module].named("roleapp").from {
     (provider: ModuleProvider, appModule: ModuleBase @Id("main")) =>
       provider.appModules().merge overriddenBy appModule
   }
 
+  make[BootstrapModule].named("roleapp").from {
+    (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>
+      provider.bootstrapModules().merge overriddenBy bsModule
+  }
+
   make[Bootloader].named("roleapp").from {
-    (activation: Activation @Id("primary"), finalAppModule: Module @Id("roleapp"), roots: Set[DIKey] @Id("distage.roles.roots"), defaultModule: DefaultModule[F]) =>
-      Injector.bootloader(PlannerInput(finalAppModule, activation, roots), activation, BootstrapModule.empty, defaultModule)
+    (
+      injectorFactory: InjectorFactory,
+      activation: Activation @Id("primary"),
+      finalAppModule: Module @Id("roleapp"),
+      finalBsModule: BootstrapModule @Id("roleapp"),
+      roots: Set[DIKey] @Id("distage.roles.roots"),
+      defaultModule: DefaultModule[F],
+    ) =>
+      // // `bsModule` is set to empty because it's always overridden to `BootstrapModule @Id("roleapp")` by `RoleAppPlanner#makePlan`
+      // // Same for `roots`
+      injectorFactory.bootloader(PlannerInput(finalAppModule, activation, roots), activation, finalBsModule, defaultModule)
   }
 
   make[RoleAppPlanner[F]].from[RoleAppPlanner.Impl[F]]
 
-  make[RoleAppPlanner.AppStartupPlans].from {
+  make[AppStartupPlans].from {
     (planner: RoleAppPlanner[F], roots: Set[DIKey] @Id("distage.roles.roots")) =>
       planner.makePlan(roots)
   }
 
   make[IntegrationChecker[F]].from[IntegrationChecker.Impl[F]]
   make[RoleAppEntrypoint[F]].from[RoleAppEntrypoint.Impl[F]]
-
-  make[StartupBanner].from[StartupBanner.StartupBannerImpl]
 
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
   make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]

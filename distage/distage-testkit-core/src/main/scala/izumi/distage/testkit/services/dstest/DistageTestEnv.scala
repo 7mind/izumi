@@ -36,7 +36,7 @@ trait DistageTestEnv {
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
     val appModule = mergeStrategy.merge(appPlugins) overriddenBy testConfig.moduleOverrides
     val bootstrapModule = mergeStrategy.merge(bsPlugins) overriddenBy testConfig.bootstrapOverrides
-    val availableActivations = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(appModule)
+    val availableActivations = new ActivationChoicesExtractor.Impl().findAvailableChoices(appModule)
 
     val bsModule = bootstrapModule overriddenBy new BootstrapModuleDef {
       make[ActivationInfo].fromValue(availableActivations)
@@ -65,7 +65,7 @@ trait DistageTestEnv {
 
   protected def loadRoles(): RolesInfo = {
     // For all normal scenarios we don't need roles to setup a test
-    RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
+    RolesInfo(Set.empty, Seq.empty, Set.empty, Seq.empty, Set.empty)
   }
 
   protected def makeMergeStrategy(): PluginMergeStrategy = {

@@ -9,15 +9,16 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichString
 import logstage.IzLogger
 
-/** Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
-  * and adding a binding for `make[Activation]`
+/**
+  * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
+  * and adding an override for `make[Activation].named("primary")` to [[izumi.distage.roles.RoleAppMain#makeAppModuleOverride]]
   */
 trait ActivationParser {
   def parseActivation(): Activation
 }
 
 object ActivationParser {
-  class ActivationParserImpl(
+  class Impl(
     lateLogger: IzLogger,
     parameters: RawAppArgs,
     config: AppConfig,
@@ -25,7 +26,6 @@ object ActivationParser {
     defaultActivations: Activation @Id("main"),
     requiredActivations: Activation @Id("additional"),
   ) extends ActivationParser {
-    protected def configActivationSection: String = "activation"
 
     def parseActivation(): Activation = {
       val parser = new RoleAppActivationParser.Impl(lateLogger)
@@ -34,11 +34,14 @@ object ActivationParser {
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       val configChoices = if (config.config.hasPath(configActivationSection)) {
-        ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).choices
+        ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).activation
       } else Map.empty
       val configActivations = parser.parseActivation(configChoices, activationInfo)
 
       defaultActivations ++ requiredActivations ++ configActivations ++ cmdActivations // commandline choices override values in config
     }
+
+    protected def configActivationSection: String = "activation"
+
   }
 }

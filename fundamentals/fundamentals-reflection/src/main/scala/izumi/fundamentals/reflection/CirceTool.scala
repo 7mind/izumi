@@ -40,7 +40,7 @@ class CirceToolMacro(val c: blackbox.Context) {
       .map {
         t =>
           if (t.typeSymbol.asClass.isTrait) {
-            val bad = t.typeSymbol.asClass.baseClasses.filter(b => b != t.typeSymbol && allSymbols.contains(b))
+            val bad = t.typeSymbol.asClass.baseClasses.filter(b => (b ne t.typeSymbol) && allSymbols.contains(b))
             val isSealedSubHier = bad.nonEmpty
             if (isSealedSubHier) {
               s"implicit def `codec:$t`: Codec.AsObject[$t] = io.circe.generic.semiauto.deriveCodec"

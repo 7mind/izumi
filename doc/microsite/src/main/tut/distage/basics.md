@@ -841,7 +841,7 @@ If a suitable trait is specified as an implementation class for a binding, `Trai
 
 Example:
 
-```scala mdoc:reset:to-string
+```scala mdoc:reset-object:to-string
 import distage.{ModuleDef, Id, Injector}
 
 trait Trait1 {
@@ -899,16 +899,17 @@ object PlusedInt {
 
 }
 
-Injector()
-  .produceRun(new ModuleDef {
-    make[Int].named("a").from(1)
-    make[Int].named("b").from(2)
-    make[Pluser]
-    make[PlusedInt].from[PlusedInt.Impl]
-  }) {
-    plusedInt: PlusedInt => 
-      plusedInt.result
-  }
+def module = new ModuleDef {
+  make[Int].named("a").from(1)
+  make[Int].named("b").from(2)
+  make[Pluser]
+  make[PlusedInt].from[PlusedInt.Impl]
+}
+
+Injector().produceRun(module) {
+  plusedInt: PlusedInt => 
+    plusedInt.result()
+}
 ```
 
 #### @impl annotation
@@ -926,6 +927,40 @@ import distage.impl
   override def result(): Int = {
     pluser.plus(a, b)
   }
+}
+```
+
+#### Avoiding constructors even further
+
+When overriding behavior of a class, you may avoid writing a repeat of its constructor in your sub-class by inheriting
+it with a trait instead. Example:
+
+```scala mdoc:to-string
+/**
+  * Note how we avoid writing a call to the super-constructor 
+  * of `PlusedInt.Impl`, such as:
+  *
+  * {{{
+  *   abstract class OverridenPlusedIntImpl(
+  *     pluser: Pluser
+  *   ) extends PlusedInt.Impl(pluser)
+  * }}}
+  *
+  * Which would be unavoidable with class-to-class inheritance.
+  * Using trait-to-class inheritance we avoid writing any boilerplate
+  * besides the overrides we want to apply to the class. 
+  */
+@impl trait OverridenPlusedIntImpl extends PlusedInt.Impl {
+ override def result(): Int = {
+   super.result() * 10
+ }
+}
+
+Injector().produceRun(module overriddenBy new ModuleDef {
+  make[PlusedInt].from[OverridenPlusedIntImpl]
+}) {
+  plusedInt: PlusedInt => 
+    plusedInt.result()
 }
 ```
 

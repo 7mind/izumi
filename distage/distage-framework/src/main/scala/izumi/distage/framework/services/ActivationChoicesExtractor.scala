@@ -12,7 +12,7 @@ trait ActivationChoicesExtractor {
 
 object ActivationChoicesExtractor {
 
-  class ActivationChoicesExtractorImpl extends ActivationChoicesExtractor {
+  class Impl extends ActivationChoicesExtractor {
     def findAvailableChoices(module: ModuleBase): ActivationInfo = {
       findAvailableChoicesDetailed(module) match {
         case Left(badAxis) =>

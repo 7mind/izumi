@@ -261,7 +261,7 @@ abstract class ConstructorMacrosBase {
   ): Tree = {
     val parents = ReflectionUtil.deepIntersectionTypeMembers[u.u.type](targetType)
     parents match {
-      case parent :: Nil =>
+      case parent :: Nil if parent.typeSymbol.isClass && !parent.typeSymbol.asClass.isTrait =>
         if (methodImpls.isEmpty) {
           q"new $parent(...$constructorParameters) {}"
         } else {
@@ -269,12 +269,34 @@ abstract class ConstructorMacrosBase {
         }
       case _ =>
         if (constructorParameters.nonEmpty) {
-          c.abort(
-            c.enclosingPosition,
-            s"""Unsupported case: intersection type containing an abstract class.
-               |Please manually create an abstract class with the added traits.
-               |When trying to create a TraitConstructor for $targetType""".stripMargin,
-          )
+          val (classes, traits) = parents.partition(t => t.typeSymbol.isClass && !t.typeSymbol.asClass.isTrait)
+          classes match {
+            case singlePrimaryClass :: Nil =>
+              q"new $singlePrimaryClass(...$constructorParameters) with ..$traits { ..$methodImpls }"
+            case Nil =>
+              val primaryClassFromBaseClasses = parents.collectFirst(scala.Function.unlift {
+                p => p.baseClasses.find(b => (b ne p.typeSymbol) && b.isClass && !b.asClass.isTrait)
+              })
+              primaryClassFromBaseClasses match {
+                case Some(firstFoundCtorClass) =>
+                  q"new $firstFoundCtorClass(...$constructorParameters) with ..$traits { ..$methodImpls }"
+                case None =>
+                  c.abort(
+                    c.enclosingPosition,
+                    s"""Unsupported case: an odd type containing constructor parameters but couldn't find a class ancestor to apply the parameters to?..
+                       |Please manually create the provided abstract class with the added traits.
+                       |When trying to create a TraitConstructor for $targetType""".stripMargin,
+                  )
+              }
+            case classes =>
+              c.abort(
+                c.enclosingPosition,
+                s"""Unsupported case: intersection type containing multiple abstract class ancestors.
+                   |classes=$classes
+                   |Please manually create the provided abstract class with the added traits.
+                   |When trying to create a TraitConstructor for $targetType""".stripMargin,
+              )
+          }
         } else {
           if (methodImpls.isEmpty) {
             q"new ..$parents {}"

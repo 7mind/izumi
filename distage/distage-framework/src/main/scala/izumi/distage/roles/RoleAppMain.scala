@@ -23,9 +23,7 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
-      val appModule = makeAppModule(argv)
-      val overrideModule = makeAppModuleOverride(argv)
-      Injector.NoProxies[Identity]().produceRun(appModule overriddenBy overrideModule) {
+      Injector.NoProxies[Identity]().produceRun(finalAppModule(argv)) {
         appResource: Lifecycle[Identity, PreparedApp[F]] =>
           appResource.use(_.run())
       }
@@ -35,18 +33,24 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
     }
   }
 
-  protected def requiredRoles(@unused args: ArgV): Vector[RawRoleParams] = {
+  def finalAppModule(argv: ArgV): Module = {
+    val appModule = makeAppModule(argv, AdditionalRoles(requiredRoles(argv)))
+    val overrideModule = makeAppModuleOverride(argv)
+    appModule overriddenBy overrideModule
+  }
+
+  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = {
     Vector.empty
   }
 
-  protected def makeAppModuleOverride(@unused args: ArgV): Module = {
+  protected def makeAppModuleOverride(@unused argv: ArgV): Module = {
     Module.empty
   }
 
-  protected def makeAppModule(args: ArgV): Module = {
+  protected def makeAppModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
     new MainAppModule[F](
-      args = args,
-      additionalRoles = AdditionalRoles(requiredRoles(args)),
+      args = argv,
+      additionalRoles = additionalRoles,
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,

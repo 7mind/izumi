@@ -10,12 +10,11 @@ trait StartupBanner {
 }
 
 object StartupBanner {
-  class StartupBannerImpl(
+  class Impl(
     referenceLibraries: Set[LibraryReference],
     appArtifact: Option[IzArtifact] @Id("app.artifact"),
   ) extends StartupBanner {
     def showBanner(logger: IzLogger): Unit = {
-
       showDepData(logger, "Application is about to start", appArtifact)
 
       val withIzumi = LibraryReference("izumi", Some(IzArtifactMaterializer.currentArtifact)) +: referenceLibraries.toSeq.sortBy(_.libraryName)
@@ -25,7 +24,7 @@ object StartupBanner {
       }
     }
 
-    private def showDepData(logger: IzLogger, msg: String, clazz: Option[IzArtifact]): Unit = {
+    private[this] def showDepData(logger: IzLogger, msg: String, clazz: Option[IzArtifact]): Unit = {
       val details = clazz.map(_.toString).getOrElse("{No version data}")
       logger.info(s"$msg : $details")
     }
