@@ -23,7 +23,7 @@ import izumi.reflect.Tag
   * @see distage-testkit    https://izumi.7mind.io/distage/distage-testkit.html
   */
 sealed trait Roots {
-  def ++(that: Roots): Roots = {
+  final def ++(that: Roots): Roots = {
     (this, that) match {
       case (Roots.Of(a), Roots.Of(b)) => Roots.Of(a ++ b)
       case (Roots.Everything, _) => Roots.Everything

@@ -14,7 +14,8 @@ import izumi.functional.bio.BIORunner.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
-import izumi.logstage.distage.LogstageModule
+import izumi.logstage.distage.{LogIOModule, LogstageModule}
+import izumi.reflect.TagK
 
 trait ModuleProvider {
   def bootstrapModules(): Seq[BootstrapModule]
@@ -23,7 +24,7 @@ trait ModuleProvider {
 
 object ModuleProvider {
 
-  class Impl(
+  class Impl[F[_]: TagK](
     logRouter: LogRouter,
     config: AppConfig,
     roles: RolesInfo,
@@ -62,21 +63,26 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      new ModuleDef {
-        make[FailureHandler].from {
-          logger: IzLogger =>
-            FailureHandler.Custom {
-              case BIOExit.Error(error, trace) =>
-                logger.warn(s"Fiber errored out due to unhandled $error $trace")
-              case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
-                logger.trace(s"Fiber interrupted with $interrupt $trace")
-              case BIOExit.Termination(defect, _, trace) =>
-                logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
-            }
-        }
-      } :: Nil
+      Seq(
+        LogIOModule[F](),
+        LogstageFailureHandlerModule,
+      )
     }
 
+  }
+
+  object LogstageFailureHandlerModule extends ModuleDef {
+    make[FailureHandler].from {
+      logger: IzLogger =>
+        FailureHandler.Custom {
+          case BIOExit.Error(error, trace) =>
+            logger.warn(s"Fiber errored out due to unhandled $error $trace")
+          case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
+            logger.trace(s"Fiber interrupted with $interrupt $trace")
+          case BIOExit.Termination(defect, _, trace) =>
+            logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
+        }
+    }
   }
 
 }

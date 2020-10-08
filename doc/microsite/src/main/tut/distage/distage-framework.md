@@ -8,50 +8,62 @@ distage-framework
 A "Role" is an entrypoint for a specific application hosted in a larger software suite.
 Bundling multiple roles in a single `.jar` file can simplify deployment and operations.
 
-`distage-framework` module contains the distage Role API:
+Add `distage-framework` library for Roles API:
 
-@@@vars
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework_2.13"
+  version="$izumi.version$"
+}
 
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version$"
+With default @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), roles to launch are specified on the command-line:
+
+```
+./launcher :rolename1 :rolename2`
 ```
 
-@@@
+Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[Dependency Pruning](advanced-features.md#dependency-pruning))
 
-With default @scaladoc[RoleAppLauncherImpl](izumi.distage.roles.RoleAppLauncherImpl), roles to launch are specified on the command-line: `./launcher role1 role2 role3`.
-Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
+@scaladoc[BundledRolesModule](izumi.distage.roles.bundled.BundledRolesModule) contains two example roles: 
 
-Two roles are bundled by default: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
+- @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help` 
+- @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by roles (includes only parts of the config used by the application)
 
-Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
+Further reading: 
+- [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
 ### Typesafe Config
 
-`distage-extension-config` library allows summoning case classes and sealed traits from `typesafe-config` configuration
+`distage-extension-config` library allows parsing case classes and sealed traits from `typesafe-config` configuration files.
 
-To use it, add `distage-extension-config` library:
+To use it, add the `distage-extension-config` library:
 
-@@@vars
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-extension-config_2.13"
+  version="$izumi.version$"
+}
 
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
-```
-
-@@@
-
-
-Use helper functions in `ConfigModuleDef` to parse the Typesafe Config instance bound to `AppConfig` into case classes:
+Use helper functions in `ConfigModuleDef`, `makeConfig` and `make[_].fromConfig` to parse the bound `AppConfig` instance into case classes, sealed traits or literals:
 
 ```scala mdoc:reset-object:to-string
-import distage.{DIKey, Roots, ModuleDef, Id, Injector}
+import distage.{Id, Injector}
 import distage.config.{AppConfig, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory
 
-final case class Conf(name: String, age: Int)
+final case class Conf(
+  name: String,
+  age: Int,
+)
 
-final case class OtherConf(other: Boolean)
+final case class OtherConf(
+  other: Boolean
+)
 
-final class ConfigPrinter(conf: Conf, otherConf: OtherConf @Id("other")) {
+final class ConfigPrinter(
+  conf: Conf,
+  otherConf: OtherConf @Id("other"),
+) {
   def print() = {
     println(s"name: ${conf.name}, age: ${conf.age}, other: ${otherConf.other}")
   }
@@ -65,13 +77,15 @@ val module = new ConfigModuleDef {
   makeConfig[OtherConf]("conf").named("other")
 
   // add config instance
-  make[AppConfig].from(AppConfig(ConfigFactory.parseString(
-    """conf {
-      |  name = "John"
-      |  age = 33
-      |  other = true
-      |}""".stripMargin
-  )))
+  make[AppConfig].from(AppConfig(
+    ConfigFactory.parseString(
+      """conf {
+        |  name = "John"
+        |  age = 33
+        |  other = true
+        |}""".stripMargin
+    )
+  ))
 }
 
 Injector().produceRun(module) {
@@ -81,30 +95,33 @@ Injector().produceRun(module) {
 ```
 
 Automatic derivation of config codecs is based on [pureconfig-magnolia](https://github.com/pureconfig/pureconfig).
-Pureconfig codecs for a type will be used if they exist.
 
-You don't have to explicitly `make[AppConfig]` in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles, unless you want to override default behavior. By default, tests and roles will try to read the configurations from resources with the following names, in order:
+When a given type already has custom `pureconfig.ConfigReader` instances in implicit scope, they will be used, otherwise they will be derived automatically.
 
-```
-- $roleName.conf
-- $roleName-reference.conf
-- $roleName-reference-dev.conf
-- application.conf
-- application-reference.conf
-- application-reference-dev.conf
-- common.conf
-- common-reference.conf
-- common-reference-dev.conf
-```
+You don't have to explicitly `make[AppConfig]` in @ref[distage-testkit](distage-testkit.md)'s tests and in @ref[distage-framework](distage-framework.md)'s Roles, unless you want to override default behavior.
+
+By default, tests and roles will try to read the configurations from resources with the following names, in order:
+
+- `${roleName}.conf`
+- `${roleName}-reference.conf`
+- `${roleName}-reference-dev.conf`
+- `application.conf`
+- `application-reference.conf`
+- `application-reference-dev.conf`
+- `common.conf`
+- `common-reference.conf`
+- `common-reference-dev.conf`
 
 ```scala mdoc:reset:invisible
 type _ref = izumi.distage.testkit.TestConfig
+def _ref = (_: izumi.distage.testkit.TestConfig).configBaseName
 ```
 
-Where `distage-testkit` uses @scaladoc[`TestConfig#testBaseName`](izumi.distage.testkit.TestConfig#testBaseName) instead of `roleName`.
+Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.TestConfig#configBaseName) instead of `roleName`.
 
-When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
-Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
+Explicit config files passed to the role launcher `-c file.conf` the command-line flag have a higher priority than resource configs.
+
+Role-specific configs on the command-line, passed via `-c file.conf` option *after* a `:roleName` argument, in turn have a higher priority than the explicit config files passed *before* the first `:role` argument.
 
 Example:
 
@@ -112,7 +129,7 @@ Example:
   ./launcher -c global.conf :role1 -c role1.conf :role2 -c role2.conf
 ```
 
-Here configs will be loaded in the following order, with higher priority earlier:
+Here configs will be loaded in the following order, with higher priority earlier and earlier configs overriding the values in later configs:
 
   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
@@ -126,13 +143,11 @@ as they're defined in a separate module.
 
 To use plugins, first add the `distage-extension-plugins` library:
 
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi.version$"
-```
-
-@@@
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-extension-plugins_2.13"
+  version="$izumi.version$"
+}
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -140,11 +155,11 @@ Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 import com.example.petstore._
 ```
 
-```scala mdoc:to-string
-// package com.example.petstore
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example.petstore": Unit
 
-import distage._
-import distage.plugins._
+import distage.Injector
+import distage.plugins.{PluginConfig, PluginDef, PluginLoader}
 
 object PetStorePlugin extends PluginDef {
   make[PetRepository]
@@ -153,17 +168,18 @@ object PetStorePlugin extends PluginDef {
 }
 ```
 
-Collect all `PluginDefs` in a package:
+Collect all the `PluginDef` classes and objects in a package:
 
 ```scala mdoc:to-string
 val pluginConfig = PluginConfig.cached(
-  packagesEnabled = Seq("com.example.petstore") // packages to scan
+  // packages to scan
+  packagesEnabled = Seq("com.example.petstore")
 )
 
 val appModules = PluginLoader().load(pluginConfig)
 ```
 
-Execute collected modules as usual:
+Wire the collected modules as usual:
 
 ```scala mdoc:to-string
 // combine all modules into one
@@ -183,22 +199,25 @@ An experimental compile-time verification API is available in the `distage-frame
 
 To use it add `distage-framework` library:
 
-@@@vars
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework_2.13"
+  version="$izumi.version$"
+}
 
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version$"
-```
+Only plugins defined in a different module can be checked at compile-time.
 
-@@@
-
-Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
+`test` scope counts as a separate module.
 
 Example:
 
 In main scope:
 
-```scala mdoc:reset:to-string
-// package com.example
+```scala mdoc:reset:invisible:to-string
+```
+
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example": Unit
 
 import distage.DIKey
 import distage.StandardAxis.Env
@@ -240,8 +259,11 @@ config {
 
 In test scope:
 
-```scala mdoc:reset-object:to-string
-// package com.example.test
+```scala mdoc:reset-object:invisible:to-string
+```
+
+```scala mdoc:fakepackage:to-string
+"fakepackage com.example.test": Unit
 
 import com.example._
 import org.scalatest.wordspec.AnyWordSpec

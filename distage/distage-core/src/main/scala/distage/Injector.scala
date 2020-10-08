@@ -1,11 +1,12 @@
 package distage
 
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
+import izumi.distage.model.definition
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.modules.support.IdentitySupportModule
-import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
+import izumi.distage.{InjectorDefaultImpl, InjectorFactory, modules}
 import izumi.fundamentals.platform.functional.Identity
 
 object Injector extends InjectorFactory {
@@ -80,7 +81,7 @@ object Injector extends InjectorFactory {
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
   override def inherit[F[_]: DIEffect: TagK](parent: Locator): Injector[F] = {
-    new InjectorDefaultImpl(parent, this, defaultModule = Module.empty)
+    new InjectorDefaultImpl(parent, this, defaultModule = definition.Module.empty)
   }
 
   override def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
@@ -129,14 +130,14 @@ object Injector extends InjectorFactory {
     }
 
     override final def inherit[F[_]: DIEffect: TagK](parent: Locator): Injector[F] = {
-      new InjectorDefaultImpl(parent, this, Module.empty)
+      new InjectorDefaultImpl(parent, this, definition.Module.empty)
     }
 
     override final def inheritWithDefaultModule[F[_]: DIEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
       new InjectorDefaultImpl(parent, this, defaultModule)
     }
 
-    private[this] def cycleActivation: Activation = Activation(Cycles -> cycleChoice)
+    private[this] def cycleActivation: Activation = definition.Activation(Cycles -> cycleChoice)
   }
 
   private[this] def bootstrap[F[_]: DIEffect: TagK: DefaultModule](
@@ -145,7 +146,7 @@ object Injector extends InjectorFactory {
     overrides: BootstrapModule,
   ): Injector[F] = {
     val bootstrapLocator = new BootstrapLocator(bootstrapBase overriddenBy overrides, activation)
-    val defaultModules = DefaultModule[F] ++ IdentitySupportModule // Identity support always on
+    val defaultModules = modules.DefaultModule[F] ++ IdentitySupportModule // Identity support always on
     new InjectorDefaultImpl(bootstrapLocator, this, defaultModules)
   }
 

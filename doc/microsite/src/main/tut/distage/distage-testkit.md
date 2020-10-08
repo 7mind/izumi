@@ -801,7 +801,7 @@ dependencies. Integration checks are executed only in `distage-testkit` tests an
 - Slides for [Scala, Functional Programming and Team Productivity
   ](https://www.slideshare.net/7mind/scala-functional-programming-and-team-productivity)
 - [distage Example Project](https://github.com/7mind/distage-example) project shows how to use
-  `distage-testkit`
+  `distage`, `distage-testkit` & `distage-framework-docker`
 - The [Hyper-pragmatic Pure FP Testing with
   distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs) talk is an overview of the concepts,
   design and usage.

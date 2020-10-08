@@ -4,7 +4,6 @@ import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.rendering.AnyEncoded
 
 trait EncodingAwareAbstractLogger[E <: AnyEncoded] extends AbstractLogger {
-
   override type Self <: EncodingAwareAbstractLogger[E]
 
   final def withCustomContext(context: (String, E)*): Self = withCustomContextMap(context.toMap)

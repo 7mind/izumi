@@ -1,6 +1,5 @@
 package izumi.distage.testkit.services.dstest
 
-import distage.TagK
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
@@ -10,6 +9,7 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
+import izumi.reflect.TagK
 
 trait BootstrapFactory {
   def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader
@@ -38,7 +38,7 @@ object BootstrapFactory {
       activation: Activation,
     ): ModuleProvider = {
       // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-      new ModuleProvider.Impl(
+      new ModuleProvider.Impl[F](
         logRouter = logRouter,
         config = config,
         roles = roles,

@@ -47,6 +47,10 @@ package object distage extends Distage {
   override val Axis: model.definition.Axis.type = model.definition.Axis
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
+  override val Mode: model.definition.StandardAxis.Mode.type = model.definition.StandardAxis.Mode
+  override val Repo: model.definition.StandardAxis.Repo.type = model.definition.StandardAxis.Repo
+  override val World: model.definition.StandardAxis.World.type = model.definition.StandardAxis.World
+  override val Scene: model.definition.StandardAxis.Scene.type = model.definition.StandardAxis.Scene
 
   override type DIKey = model.reflection.DIKey
   override val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
