@@ -433,8 +433,8 @@ object Lifecycle {
                   stack match {
                     case Nil =>
                       F.pure(a)
-                    case head :: tail =>
-                      continue(head(a), tail)
+                    case l =>
+                      continue(l.head(a), l.tail)
                   }
               } {
                 case (_, ExitCase.Completed) =>
