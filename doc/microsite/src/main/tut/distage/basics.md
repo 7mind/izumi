@@ -113,22 +113,38 @@ unsafeRun(effect)
 
 If you need multiple singleton instances of the same type, you may create "named" instances and disambiguate between them using @scaladoc[`@distage.Id`](izumi.distage.model.definition.Id) annotation. (`javax.inject.Named` is also supported)
 
-```scala mdoc:to-string
+```scala mdoc:silent
 import distage.Id
+
+def negateByer(otherByer: Byer): Byer = {
+  new Byer {
+    def bye(name: String) =   
+     otherByer.bye(s"NOT-$name")
+  }
+}
 
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
   make[Byer].named("byer-2").from {
     otherByer: Byer @Id("byer-1") =>
-      new Byer {
-        def bye(name: String) =  
-          otherByer.bye(s"NOT-$name")
-      }
+      negateByer(otherByer)
   }
 }
 ```
 
-You can abstract over annotations using type aliases or string constants:
+
+You can use `make[_].annotateParameter` method instead of an annotation, to attach a name component to an existing constructor:
+
+```scala mdoc:silent
+new ModuleDef {
+  // same binding as above
+  make[Byer].named("byer-2")
+    .from(negateByer(_))
+    .annotateParameter[Byer]("byer-1")
+}
+```
+
+You can also abstract over annotations using type aliases or string constants:
 
 ```scala mdoc:to-string
 object Ids {

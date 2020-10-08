@@ -24,6 +24,11 @@ private[plan] trait OrderedPlanExtensions extends Any { this: OrderedPlan.type =
 private[plan] object OrderedPlanExtensions {
 
   final class OrderedPlanRenderOps(private val plan: OrderedPlan) extends AnyVal {
+    /**
+      * Render with compact type names
+      *
+      * @see [[OrderedPlanExtensions#defaultFormatter]]
+      */
     def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
     def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan).render()
 

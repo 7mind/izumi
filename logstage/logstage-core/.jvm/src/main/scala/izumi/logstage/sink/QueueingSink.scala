@@ -8,7 +8,7 @@ import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
-import izumi.logstage.api.logger.{LogRouter, LogSink}
+import izumi.logstage.api.logger.LogSink
 
 import scala.concurrent.duration._
 
