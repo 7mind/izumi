@@ -10,7 +10,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.{BIO, BIO3, BIOLocal, BIOMonad, BIOMonad3}
+import izumi.functional.bio.{BIOApplicative, BIOApplicative3, BIOFunctor, BIOFunctor3, BIOLocal}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -1125,6 +1125,11 @@ object Lifecycle extends LifecycleIzumiTypeclassesInstances with LifecycleCatsIn
 }
 
 private[definition] trait LifecycleCatsInstances {
+  implicit def catsFunctorForLifecycle[F[_], Functor[_[_]], Ap[_[_]]: `cats.Applicative`](implicit Ap: Ap[F]): Functor[Lifecycle[F, ?]] =
+    new cats.Functor[Lifecycle[F, ?]] {
+      override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
+    }.asInstanceOf[Functor[Lifecycle[F, ?]]]
+
   implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, A](
     implicit
     Monoid: Monoid[A],
@@ -1151,20 +1156,14 @@ private[definition] trait LifecycleCatsInstances {
 }
 
 private[definition] trait LifecycleIzumiTypeclassesInstances {
-  type LifecycleMonad2[F[+_, +_]] = BIOMonad[Lambda[(`+E`, `+A`) => Lifecycle[F[E, ?], A]]]
-  type LifecycleMonad3[F[-_, +_, +_]] = BIOMonad3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, ?], A]]]
+  type LifecycleFunctor2[F[+_, +_]] = BIOFunctor[Lambda[(`+E`, `+A`) => Lifecycle[F[E, ?], A]]]
+  type LifecycleFunctor3[F[-_, +_, +_]] = BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, ?], A]]]
 
-  implicit def monad2ForLifecycle[F[+_, +_]: BIO]: LifecycleMonad2[F] =
-    new LifecycleMonad2[F] {
-      implicit val diEff = DIEffect.fromBIO[F]
-      override def flatMap[R, E, A, B](r: Lifecycle[F[E, ?], A])(f: A => Lifecycle[F[E, ?], B]): Lifecycle[F[E, ?], B] = r.flatMap(f)(diEff.asInstanceOf[DIEffect[F[E, ?]]])
-      override def pure[A](a: A): Lifecycle[F[Nothing, ?], A] = Lifecycle.pure[F[Nothing, ?], A](a)
-    }
+  implicit def functor2ForLifecycle[F[+_, +_]: BIOApplicative]: LifecycleFunctor2[F] = new LifecycleFunctor2[F] {
+    override def map[R, E, A, B](r: Lifecycle[F[E, ?], A])(f: A => B): Lifecycle[F[E, ?], B] = r.map(f)
+  }
 
-  implicit def monad3ForLifecycle[F[-_, +_, +_]: BIO3]: LifecycleMonad3[F] =
-    new LifecycleMonad3[F] {
-      implicit val diEff = DIEffect.fromBIO[F[Any, +?, +?]]
-      override def flatMap[R, E, A, B](r: Lifecycle[F[R, E, ?], A])(f: A => Lifecycle[F[R, E, *], B]): Lifecycle[F[R, E, ?], B] = r.flatMap(f)(diEff.asInstanceOf[DIEffect[F[R, E, ?]]])
-      override def pure[A](a: A): Lifecycle[F[Any, Nothing, ?], A] = Lifecycle.pure[F[Any, Nothing, ?], A](a)
-    }
+  implicit def functor3ForLifecycle[F[-_, +_, +_]: BIOApplicative3]: LifecycleFunctor3[F] = new LifecycleFunctor3[F] {
+    override def map[R, E, A, B](r: Lifecycle[F[R, E, ?], A])(f: A => B): Lifecycle[F[R, E, ?], B] = r.map(f)
+  }
 }
