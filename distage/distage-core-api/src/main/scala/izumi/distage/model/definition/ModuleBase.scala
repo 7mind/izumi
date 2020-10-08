@@ -37,7 +37,7 @@ object ModuleBase {
 
   implicit final class ModuleDefSeqExt[S <: ModuleBase](private val defs: Iterable[S]) extends AnyVal {
     def merge[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
-      T.make(defs.foldLeft(Iterator.empty[Binding])(_.iterator ++ _.iterator).toSet)
+      T.make(defs.foldLeft(Iterator.empty: Iterator[Binding])(_ ++ _.iterator).toSet)
     }
 
     def overrideLeft[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
