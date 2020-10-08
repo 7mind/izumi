@@ -109,11 +109,13 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "cats instances for Lifecycle" in {
-    import izumi.fundamentals.orphans._
-//    def t[L[_[_]]: `cats.Monad`](): Unit = {}
-//    def t2[A](implicit ev: `cats.Monad`[Lifecycle[IO, A]]): Unit = {}
-//    t2
-//    t[Lifecycle[IO, Int]]
+    def tt[F[_]: cats.effect.Sync] = {
+      val F = cats.Functor[Lifecycle[F, ?]]
+      val M = cats.Monad[Lifecycle[F, ?]]
+      val m = cats.Monoid[Lifecycle[F, Int]]
+      (F, m, M)
+    }
+    tt[IO]
   }
 
   "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {

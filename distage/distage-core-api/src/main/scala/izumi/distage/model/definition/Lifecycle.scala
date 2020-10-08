@@ -8,6 +8,7 @@ import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
+import izumi.distage.model.effect.DIEffect.fromCats
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.{BIOApplicative, BIOApplicative3, BIOFunctor, BIOFunctor3, BIOLocal}
@@ -269,7 +270,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
 
-object Lifecycle extends LifecycleIzumiTypeclassesInstances with LifecycleCatsInstances {
+object Lifecycle extends LifecycleIzumiInstances with LifecycleCatsInstances {
 
   /**
     * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
@@ -1124,17 +1125,28 @@ object Lifecycle extends LifecycleIzumiTypeclassesInstances with LifecycleCatsIn
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 }
 
-private[definition] trait LifecycleCatsInstances {
+
+
+
+private[definition] trait LifecycleCatsInstances extends LifecycleCatsInstances0 {
+  implicit def catsMonadForLifecycle[Monad[_[_]], S[_[_]]: `cats.effect.Sync`, F[_]: S]: Monad[Lifecycle[F, ?]] =
+    new cats.Monad[Lifecycle[F, ?]] {
+      override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
+      override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
+      override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = Lifecycle.tailRecM(a)(f)
+    }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+}
+
+private[definition] trait LifecycleCatsInstances0 {
   implicit def catsFunctorForLifecycle[F[_], Functor[_[_]], Ap[_[_]]: `cats.Applicative`](implicit Ap: Ap[F]): Functor[Lifecycle[F, ?]] =
     new cats.Functor[Lifecycle[F, ?]] {
       override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
     }.asInstanceOf[Functor[Lifecycle[F, ?]]]
 
-  implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, A](
+  implicit def catsMonoidForLifecycle[F[_], Monoid[_]: `cats.kernel.Monoid`, S[_[_]]: `cats.effect.Sync`, A](
     implicit
     Monoid: Monoid[A],
     S: S[F],
-    Ap: Ap[F],
   ): Monoid[Lifecycle[F, A]] = new cats.Monoid[Lifecycle[F, A]] {
     val M = Monoid.asInstanceOf[cats.Monoid[A]]
 
@@ -1146,16 +1158,9 @@ private[definition] trait LifecycleCatsInstances {
       } yield M.combine(rx, ry)
     }
   }.asInstanceOf[Monoid[Lifecycle[F, A]]]
-
-  implicit def catsMonadForLifecycle[Monad[_[_]], S[_[_]]: `cats.effect.Sync`, Ap[_[_]]: `cats.Applicative`, F[_]: S: Ap]: Monad[Lifecycle[F, ?]] =
-    new cats.Monad[Lifecycle[F, ?]] {
-      override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
-      override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
-      override def tailRecM[A, B](a: A)(f: A => Lifecycle[F, Either[A, B]]): Lifecycle[F, B] = Lifecycle.tailRecM(a)(f)
-    }.asInstanceOf[Monad[Lifecycle[F, ?]]]
 }
 
-private[definition] trait LifecycleIzumiTypeclassesInstances {
+private[definition] trait LifecycleIzumiInstances {
   type LifecycleFunctor2[F[+_, +_]] = BIOFunctor[Lambda[(`+E`, `+A`) => Lifecycle[F[E, ?], A]]]
   type LifecycleFunctor3[F[-_, +_, +_]] = BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, ?], A]]]
 
