@@ -334,6 +334,8 @@ The following helpers allow defining `Lifecycle` sub-classes using expression-li
 - @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle$$Make_)
 - @scaladoc[Lifecycle.MakePair](izumi.distage.model.definition.Lifecycle$$MakePair)
 - @scaladoc[Lifecycle.FromAutoCloseable](izumi.distage.model.definition.Lifecycle$$FromAutoCloseable)
+- @scaladoc[Lifecycle.SelfOf](izumi.distage.model.definition.Lifecycle$$SelfOf)
+- @scaladoc[Lifecycle.MutableOf](izumi.distage.model.definition.Lifecycle$$MutableOf)
 
 The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
 Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
@@ -374,8 +376,10 @@ The following helpers ease defining `Lifecycle` sub-classes using traditional in
 - @scaladoc[Lifecycle.Basic](izumi.distage.model.definition.Lifecycle$$Basic)
 - @scaladoc[Lifecycle.Simple](izumi.distage.model.definition.Lifecycle$$Simple)
 - @scaladoc[Lifecycle.Mutable](izumi.distage.model.definition.Lifecycle$$Mutable)
+- @scaladoc[Lifecycle.MutableNoClose](izumi.distage.model.definition.Lifecycle$$MutableNoClose)
 - @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle$$Self)
 - @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
+- @scaladoc[Lifecycle.NoClose](izumi.distage.model.definition.Lifecycle$$NoClose)
 
 ### Set Bindings
 

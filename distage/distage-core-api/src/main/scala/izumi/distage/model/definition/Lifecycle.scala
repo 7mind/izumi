@@ -155,6 +155,10 @@ import scala.reflect.macros.blackbox
   *
   * - [[Lifecycle.FromAutoCloseable]]
   *
+  * - [[Lifecycle.SelfOf]]
+  *
+  * - [[Lifecycle.MutableOf]]
+  *
   * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
   * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
   * this limitation makes it harder to inject implicits using `distage`.
@@ -199,9 +203,13 @@ import scala.reflect.macros.blackbox
   *
   * - [[Lifecycle.Mutable]]
   *
+  * - [[Lifecycle.MutableNoClose]]
+  *
   * - [[Lifecycle.Self]]
   *
   * - [[Lifecycle.SelfNoClose]]
+  *
+  * - [[Lifecycle.NoClose]]
   *
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
@@ -337,12 +345,14 @@ object Lifecycle {
     }
   }
 
-  def liftF[F[_], A](acquire: => F[A])(implicit F: DIApplicative[F]): Lifecycle[F, A] = {
-    make(acquire)(_ => F.unit)
+  /** @param effect is performed interruptibly, unlike in [[make]] */
+  def liftF[F[_], A](effect: => F[A])(implicit F: DIApplicative[F]): Lifecycle[F, A] = {
+    new Lifecycle.LiftF(effect)
   }
 
-  def suspend[F[_]: DIEffect, A](acquire: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
-    liftF(acquire).flatten
+  /** @param effect is performed interruptibly, unlike in [[make]] */
+  def suspend[F[_]: DIEffect, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
+    liftF(effect).flatten
   }
 
   def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): Lifecycle[F, A] = {
@@ -648,11 +658,15 @@ object Lifecycle {
     *     make[Int].fromResource[IntRes]
     *   }
     * }}}
+    *
+    * Note: `acquire` is performed interruptibly, unlike in [[Make]]
     */
-  @open class LiftF[+F[_]: DIApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
+  @open class LiftF[+F[_]: DIApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
-    override final def acquire: F[A] = acquire0()
+    override final type InnerResource = Unit
+    override final def acquire: F[Unit] = DIApplicative[F].unit
+    override final def extract[B >: A](resource: Unit): Left[F[B], Nothing] = Left(DIApplicative[F].widen(acquire0()))
   }
 
   /**
@@ -973,7 +987,7 @@ object Lifecycle {
 
   @inline
   private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: DIEffect[F]): Lifecycle[F, B] = {
-    flatMapImpl(self)(a => Lifecycle.make(f(a))(_ => F.unit))
+    flatMapImpl(self)(a => Lifecycle.liftF(f(a)))
   }
 
   @inline
