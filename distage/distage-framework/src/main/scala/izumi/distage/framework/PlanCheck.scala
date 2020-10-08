@@ -1,9 +1,11 @@
 package izumi.distage.framework
 
-import distage.{Injector, Mode, impl}
+import distage.Injector
 import izumi.distage.config.model.AppConfig
+import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.definition._
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.RoleAppMain.ArgV
@@ -37,7 +39,7 @@ object PlanCheck {
           },
         )
       }
-    }) {
+    })(Functoid {
       (bootloader: Bootloader @Id("roleapp"), bsModule: BootstrapModule @Id("roleapp"), locatorRef: LocatorRef) =>
         val app = bootloader.boot(
           BootConfig(
@@ -57,7 +59,7 @@ object PlanCheck {
             case ImportDependency(target, _, _) if allKeys(target) || target.tpe.tag.shortName.contains("XXX_LocatorLeak") => null
           }
           .assertValidOrThrow[F]()
-    }
+    })
   }
 
 }

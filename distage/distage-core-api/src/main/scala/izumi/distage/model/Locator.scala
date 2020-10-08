@@ -92,7 +92,7 @@ trait Locator {
 object Locator {
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
-    override def instances: Seq[IdentifiedRef] = Nil
+    override def instances: immutable.Seq[IdentifiedRef] = Nil
     override def plan: OrderedPlan = OrderedPlan.empty
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil

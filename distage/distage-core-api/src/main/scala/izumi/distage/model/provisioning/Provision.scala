@@ -56,7 +56,7 @@ object Provision {
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
     override def instances: Map[DIKey, Any] = instancesImpl
-    override lazy val enumerate: scala.Seq[IdentifiedRef] = super.enumerate
+    override lazy val enumerate: immutable.Seq[IdentifiedRef] = super.enumerate
     override lazy val index: immutable.Map[DIKey, Any] = super.index
 
     @nowarn("msg=Unused import")
