@@ -58,16 +58,17 @@ object FreeMonadTest {
     def scopeAccess[A](execution: Int => A): Free[TestFreeChoice, Nothing, A] = Free.lift(TestFreeChoice.ScopeAccess(execution))
   }
 
-  def compiler[F[+_, +_]: BIO]: TestFreeChoice ~>> F = new (TestFreeChoice ~>> F) {
+  def compiler[F[+_, +_]: BIO]: TestFreeChoice ~>> F = {
     val scope = new AtomicReference[Int](0)
-    override def apply[E, A](fa: TestFreeChoice[E, A]): F[E, A] = {
-      fa match {
-        case TestFreeChoice.Pure(execution) => F.pure(execution)
-        case TestFreeChoice.Fail(err) => F.fail(err)
-        case sync: TestFreeChoice.Sync[_] => F.sync(sync.execution)
-        case TestFreeChoice.ScopeUpdate(update) => F.sync(scope.updateAndGet(update(_))).void
-        case TestFreeChoice.ScopeAccess(execution) => F.sync(execution(scope.get))
-      }
+
+    def interp[E, A]: TestFreeChoice[E, A] => F[E, A] = {
+      case TestFreeChoice.Pure(execution) => F.pure(execution)
+      case TestFreeChoice.Fail(err) => F.fail(err)
+      case sync: TestFreeChoice.Sync[a] => F.sync(sync.execution)
+      case TestFreeChoice.ScopeUpdate(update) => F.sync(scope.updateAndGet(update(_))).void
+      case TestFreeChoice.ScopeAccess(execution) => F.sync(execution(scope.get))
     }
+
+    FunctionKK(interp)
   }
 }
