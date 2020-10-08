@@ -15,13 +15,12 @@ import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
-import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
+import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.launcher._
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
@@ -169,6 +168,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       activationExtractor.findAvailableChoices(appModule)
   }
 
+  make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
   make[ActivationParser].from[ActivationParser.Impl]
   make[Activation].named("primary").from {
     parser: ActivationParser =>
@@ -208,10 +208,10 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       injectorFactory.bootloader(PlannerInput(finalAppModule, activation, roots), activation, finalBsModule, defaultModule)
   }
 
-  make[RoleAppPlanner[F]].from[RoleAppPlanner.Impl[F]]
+  make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]
 
   make[AppStartupPlans].from {
-    (planner: RoleAppPlanner[F], roots: Set[DIKey] @Id("distage.roles.roots")) =>
+    (planner: RoleAppPlanner, roots: Set[DIKey] @Id("distage.roles.roots")) =>
       planner.makePlan(roots)
   }
 
@@ -220,8 +220,8 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
   make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
-  make[Lifecycle[Identity, PreparedApp[F]]].from {
+  make[AppResource[F]].from {
     transformer: AppResourceProvider[F] =>
-      transformer.makeAppResource()
+      transformer.makeAppResource
   }
 }

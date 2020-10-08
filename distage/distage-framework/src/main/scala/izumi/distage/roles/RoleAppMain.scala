@@ -1,11 +1,12 @@
 package izumi.distage.roles
 
 import cats.effect.LiftIO
-import distage.{DefaultModule, DefaultModule2, Injector, Lifecycle, Module, TagK, TagKK}
+import distage.{DefaultModule, DefaultModule2, Injector, Module, TagK, TagKK}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy._
-import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.BIOAsync
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
@@ -15,7 +16,12 @@ import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtifactMaterializer) {
+abstract class RoleAppMain[F[_]](
+  implicit
+  val tagK: TagK[F],
+  val defaultModule: DefaultModule[F],
+  val artifact: IzArtifactMaterializer,
+) {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
@@ -24,8 +30,8 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
     val argv = ArgV(args)
     try {
       Injector.NoProxies[Identity]().produceRun(finalAppModule(argv)) {
-        appResource: Lifecycle[Identity, PreparedApp[F]] =>
-          appResource.use(_.run())
+        appResource: AppResource[F] =>
+          appResource.runApp()
       }
     } catch {
       case t: Throwable =>

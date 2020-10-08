@@ -43,7 +43,8 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
     frozenMap.get(key)
   }
 
-  override def instances: immutable.Seq[IdentifiedRef] = frozenInstances.toList
+  override def instances: immutable.Seq[IdentifiedRef] = frozenInstances
+  override def index: Map[DIKey, Any] = frozenMap
 
   override lazy val plan: OrderedPlan = {
     val topology = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Required), DependencyGraph(Map.empty, DependencyKind.Depends))
@@ -54,12 +55,12 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         UseInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
-    OrderedPlan(ops, ops.map(_.target).toSet, topology)
+    OrderedPlan(ops, ops.iterator.map(_.target).toSet, topology)
   }
 
   override def parent: Option[Locator] = None
 
-  private[this] final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], Seq[IdentifiedRef]) = {
+  private[this] final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], immutable.Seq[IdentifiedRef]) = {
     val map = new mutable.LinkedHashMap[DIKey, Any]
 
     frozenState.foreach {
@@ -78,7 +79,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         )
     }
 
-    map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
+    map.toMap -> map.iterator.map(IdentifiedRef.tupled).toList
   }
 }
 

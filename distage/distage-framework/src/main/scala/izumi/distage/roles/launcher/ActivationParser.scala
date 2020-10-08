@@ -7,7 +7,6 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichString
-import logstage.IzLogger
 
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
@@ -19,7 +18,7 @@ trait ActivationParser {
 
 object ActivationParser {
   class Impl(
-    lateLogger: IzLogger,
+    parser: RoleAppActivationParser,
     parameters: RawAppArgs,
     config: AppConfig,
     activationInfo: ActivationInfo,
@@ -28,8 +27,6 @@ object ActivationParser {
   ) extends ActivationParser {
 
     def parseActivation(): Activation = {
-      val parser = new RoleAppActivationParser.Impl(lateLogger)
-
       val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(_.value.split2(':'))
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 

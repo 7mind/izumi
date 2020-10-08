@@ -35,7 +35,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     * @tparam F effect type to check against
     */
   final def assertValid[F[_]: QuasiIO: TagK](): F[Unit] = {
-    QuasiIO[F].maybeSuspend(assertValidOrThrow[F]())
+    isValid.fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
   }
 
   /**

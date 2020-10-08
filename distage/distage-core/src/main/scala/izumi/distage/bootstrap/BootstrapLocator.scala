@@ -25,6 +25,8 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
+import scala.collection.immutable
+
 final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None
   override val plan: OrderedPlan = {
@@ -40,20 +42,21 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
       .bootstrapPlanner
       .plan(PlannerInput.noGC(bindings, bootstrapActivation))
   }
-  override lazy val index: Map[DIKey, Any] = super.index
+
+  override lazy val index: Map[DIKey, Any] = instances.map(i => i.key -> i.value).toMap
 
   private[this] val bootstrappedContext: Locator = {
     val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.unsafeGet().throwOnFailure()
   }
 
-  private[this] val _instances: collection.Seq[IdentifiedRef] = bootstrappedContext.instances
+  private[this] val _instances: immutable.Seq[IdentifiedRef] = bootstrappedContext.instances
 
   override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override def meta: LocatorMeta = LocatorMeta.empty
 
-  override def instances: collection.Seq[IdentifiedRef] = {
+  override def instances: immutable.Seq[IdentifiedRef] = {
     val instances = _instances
     if (instances ne null) {
       instances

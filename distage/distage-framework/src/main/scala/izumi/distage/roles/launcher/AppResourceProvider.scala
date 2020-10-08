@@ -8,13 +8,18 @@ import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.recursive.Bootloader
+import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
-  def makeAppResource(): Lifecycle[Identity, PreparedApp[F]]
+  def makeAppResource: AppResource[F]
 }
 
 object AppResourceProvider {
+
+  final case class AppResource[F[_]](resource: Lifecycle[Identity, PreparedApp[F]]) extends AnyVal {
+    def runApp(): Unit = resource.use(_.run())
+  }
 
   final case class FinalizerFilters[F[_]](
     filterF: FinalizerFilter[F],
@@ -31,7 +36,7 @@ object AppResourceProvider {
     appPlan: AppStartupPlans,
     bootloader: Bootloader @Id("roleapp"),
   ) extends AppResourceProvider[F] {
-    def makeAppResource(): Lifecycle[Identity, PreparedApp[F]] = {
+    def makeAppResource: AppResource[F] = AppResource {
       appPlan
         .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)

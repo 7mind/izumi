@@ -30,7 +30,7 @@ final class ConfigWriter[F[_]](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
-  roleAppPlanner: RoleAppPlanner[F],
+  roleAppPlanner: RoleAppPlanner,
   F: QuasiIO[F],
 ) extends RoleTask[F] {
 
