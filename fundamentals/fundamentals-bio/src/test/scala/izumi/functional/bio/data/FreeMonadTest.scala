@@ -25,28 +25,38 @@ class FreeMonadTest extends AnyWordSpec {
     } yield ()
   }
   // tailrec test, just in case
-  val nested: Free[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1,f2) => f1.flatMap(_ => f2))
+  val nested: Free[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
 
   "Interpret Free and run it via bio" in {
     val runner = BIORunner.createZIO(Platform.default)
-    runner.unsafeRun(simpleExecution.foldMap(FreeMonadTest.compiler[IO]))
-    runner.unsafeRun(nested.foldMap(FreeMonadTest.compiler[IO]))
+    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_)))
+    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_)))
   }
 }
 
 object FreeMonadTest {
-  sealed trait TestFreeChoice[E, A]
+  sealed trait TestFreeChoice[+E, +A] {
+    def interpret[F[+_, +_]: BIO](scope: AtomicReference[Int]): F[E, A] = TestFreeChoice.interpret[F, E, A](scope)(this)
+  }
   object TestFreeChoice {
-    final case class Pure[A](execution: A) extends TestFreeChoice[Nothing, A]
-    final case class Fail[E](error: E) extends TestFreeChoice[E, Nothing]
-    sealed trait Sync[A] extends TestFreeChoice[Nothing, A] { def execution: A }
+    final case class Pure[+A](execution: A) extends TestFreeChoice[Nothing, A]
+    final case class Fail[+E](error: E) extends TestFreeChoice[E, Nothing]
+    sealed trait Sync[+A] extends TestFreeChoice[Nothing, A] { def execution: A }
     object Sync {
       def apply[F[+_, +_], A](exec: => A): Sync[A] = new Sync[A] {
         override def execution: A = exec
       }
     }
-    final case class ScopeUpdate[A](update: Int => Int) extends TestFreeChoice[Nothing, A]
-    final case class ScopeAccess[A](execution: Int => A) extends TestFreeChoice[Nothing, A]
+    final case class ScopeUpdate(update: Int => Int) extends TestFreeChoice[Nothing, Unit]
+    final case class ScopeAccess[+A](execution: Int => A) extends TestFreeChoice[Nothing, A]
+
+    private def interpret[F[+_, +_]: BIO, E, A](scope: AtomicReference[Int])(op: TestFreeChoice[E, A]): F[E, A] = op match {
+      case TestFreeChoice.Pure(execution) => F.pure(execution)
+      case TestFreeChoice.Fail(err) => F.fail(err)
+      case sync: TestFreeChoice.Sync[a] => F.sync(sync.execution)
+      case TestFreeChoice.ScopeUpdate(update) => F.sync(scope.updateAndGet(update(_))).void
+      case TestFreeChoice.ScopeAccess(execution) => F.sync(execution(scope.get))
+    }
   }
 
   final class TestFreeSyntax[F[+_, +_]] {
@@ -58,17 +68,10 @@ object FreeMonadTest {
     def scopeAccess[A](execution: Int => A): Free[TestFreeChoice, Nothing, A] = Free.lift(TestFreeChoice.ScopeAccess(execution))
   }
 
-  def compiler[F[+_, +_]: BIO]: TestFreeChoice ~>> F = {
-    val scope = new AtomicReference[Int](0)
-
-    def interp[E, A]: TestFreeChoice[E, A] => F[E, A] = {
-      case TestFreeChoice.Pure(execution) => F.pure(execution)
-      case TestFreeChoice.Fail(err) => F.fail(err)
-      case sync: TestFreeChoice.Sync[a] => F.sync(sync.execution)
-      case TestFreeChoice.ScopeUpdate(update) => F.sync(scope.updateAndGet(update(_))).void
-      case TestFreeChoice.ScopeAccess(execution) => F.sync(execution(scope.get))
+  def compiler[F[+_, +_]: BIO]: F[Nothing, TestFreeChoice ~>> F] = {
+    F.sync {
+      val scope = new AtomicReference[Int](0)
+      FunctionKK(_.interpret(scope))
     }
-
-    FunctionKK(interp)
   }
 }

@@ -15,7 +15,7 @@ object FunctionKK {
 
   private[FunctionKK] type UnknownE
   private[FunctionKK] type UnknownA
-  def apply[F[_, _], G[_, _]](transform: (F[UnknownE, UnknownA] => G[UnknownE, UnknownA])): FunctionKK[F, G] = {
+  def apply[F[_, _], G[_, _]](transform: F[UnknownE, UnknownA] => G[UnknownE, UnknownA]): FunctionKK[F, G] = {
     new ~>>[F, G] { override def apply[E, A](fa: F[E, A]): G[E, A] = transform.asInstanceOf[F[E, A] => G[E, A]](fa) }
   }
 }
