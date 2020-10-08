@@ -1,7 +1,7 @@
 package logstage.strict
 
 import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLoggerF}
 import izumi.logstage.api.rendering.StrictEncoded
@@ -14,6 +14,8 @@ trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] wit
   override type Self[f[_]] = LogIOStrict[f]
 
   final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
+
+  override def widen[G[_]](implicit ev: F[_] <:< G[_]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
 object LogIOStrict {
@@ -58,5 +60,5 @@ object LogIOStrict {
     * @see https://github.com/scala/bug/issues/11427
     */
   implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIOStrict[F]): LogIOStrict[F[E, ?]] = log.asInstanceOf[LogIOStrict[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit @unused ev: F[_] <:< G[_]): LogIOStrict[G] = log.asInstanceOf[LogIOStrict[G]]
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[_] <:< G[_]): LogIOStrict[G] = log.widen
 }

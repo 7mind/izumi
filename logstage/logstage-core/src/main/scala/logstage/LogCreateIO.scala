@@ -38,5 +38,5 @@ object LogCreateIO {
     * @see https://github.com/scala/bug/issues/11427
     */
   implicit def limitedCovariance[F[+_, _], E](implicit log: LogCreateBIO[F]): LogCreateIO[F[E, ?]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit @unused ev: F[_] <:< G[_]): LogCreateIO[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[_] <:< G[_]): LogCreateIO[G] = log.widen
 }
