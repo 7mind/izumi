@@ -104,7 +104,7 @@ final case class Functoid[+A](get: Provider) {
   /** Add `B` as an unused dependency of this Provider */
   def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey.get[B])
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
-  def addDependencies(keys: Seq[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
+  def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
@@ -202,6 +202,10 @@ object Functoid {
         providerType = ProviderType.Function,
       )
     )
+  }
+
+  implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
+    def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
   }
 
   @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
