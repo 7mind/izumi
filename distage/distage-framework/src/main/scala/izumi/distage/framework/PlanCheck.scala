@@ -6,6 +6,7 @@ import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.definition._
+import izumi.distage.model.effect.DIEffectAsync
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
@@ -17,6 +18,8 @@ import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.RoleBinding
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+
+import scala.util.Try
 
 object PlanCheck {
 
@@ -47,27 +50,28 @@ object PlanCheck {
           case None => allActivations(new ActivationChoicesExtractor.Impl, bootloader.input.bindings)
           case Some(_) => ???
         }
-        allChoices.foreach {
+        DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
           activation =>
-            val app = bootloader.boot(
-              BootConfig(
-                bootstrap = _ => bsModule,
-                activation = _ => activation,
+            println(Try {
+              val app = bootloader.boot(
+                BootConfig(
+                  bootstrap = _ => bsModule,
+                  activation = _ => activation,
+                )
               )
-            )
-            val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
-            val futureKeys = roleAppBootstrapModule.keys
-            val allKeys = keysUsedInBootstrap ++ futureKeys
+              val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
+              val futureKeys = roleAppBootstrapModule.keys
+              val allKeys = keysUsedInBootstrap ++ futureKeys
 
-            println(allKeys.map(_.toString).niceList())
-            println(app.plan.render())
-
-            app
-              .plan
-              .resolveImports {
-                case ImportDependency(target, _, _) if allKeys(target) || _test_ignore(target) => null
-              }
-              .assertValidOrThrow[F]()
+              println(allKeys.map(_.toString).niceList())
+              println(app.plan.render())
+              app
+                .plan
+                .resolveImports {
+                  case ImportDependency(target, _, _) if allKeys(target) || _test_ignore(target) => null
+                }
+                .assertValidOrThrow[F]()
+            })
         }
     })
   }
