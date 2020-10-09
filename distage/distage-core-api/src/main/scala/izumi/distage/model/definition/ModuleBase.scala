@@ -86,7 +86,7 @@ object ModuleBase {
     }
 
     def +:[T <: ModuleBase](binding: Binding)(implicit T: ModuleMake.Aux[S, T]): T = {
-      T.make(Set(binding) ++ module.bindings)
+      T.make(module.bindings + binding)
     }
 
     def --[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
@@ -94,6 +94,10 @@ object ModuleBase {
     }
 
     def --[T <: ModuleBase](ignored: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
+      drop(ignored)
+    }
+
+    def -[T <: ModuleBase](ignored: DIKey)(implicit T: ModuleMake.Aux[S, T]): T = {
       drop(ignored)
     }
 
@@ -111,6 +115,10 @@ object ModuleBase {
 
     def drop[T <: ModuleBase](ignored: Set[DIKey])(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.filterNot(ignored contains _.key))
+    }
+
+    def drop[T <: ModuleBase](ignored: DIKey)(implicit T: ModuleMake.Aux[S, T]): T = {
+      T.make(module.bindings.filterNot(_.key == ignored))
     }
 
     def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {

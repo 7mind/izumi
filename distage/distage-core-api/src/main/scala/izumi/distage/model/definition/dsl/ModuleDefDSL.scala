@@ -659,6 +659,9 @@ object ModuleDefDSL {
     "aliased",
     "annotateParameter",
     "modify",
+    "modifyBy",
+    "addDependency",
+    "addDependencies",
   )
 
   final class MakeDSL[T](
@@ -745,6 +748,18 @@ object ModuleDefDSL {
 
     final def modifyBy(f: Functoid[T] => Functoid[T]): Self = {
       addOp(Modify(f))(toSame)
+    }
+
+    final def addDependency[B: Tag]: Self = {
+      modifyBy(_.addDependency(DIKey.get[B]))
+    }
+
+    final def addDependency(key: DIKey): Self = {
+      modifyBy(_.addDependency(key))
+    }
+
+    final def addDependencies(keys: Iterable[DIKey]): Self = {
+      modifyBy(_.addDependencies(keys))
     }
 
     final def annotateParameter[P: Tag](name: Identifier): Self = {
