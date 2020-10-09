@@ -26,6 +26,7 @@ object RoleAppPlanner {
 
   class Impl[F[_]: TagK](
     options: PlanningOptions,
+    activation: Activation @Id("roleapp"),
     bsModule: BootstrapModule @Id("roleapp"),
     bootloader: Bootloader @Id("roleapp"),
     logger: IzLogger,
@@ -40,7 +41,7 @@ object RoleAppPlanner {
     )
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner = {
-      new RoleAppPlanner.Impl[F](options, bsModule overriddenBy bsOverride, bootloader, logger)
+      new RoleAppPlanner.Impl[F](options, activation, bsModule overriddenBy bsOverride, bootloader, logger)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
@@ -52,12 +53,13 @@ object RoleAppPlanner {
         BootConfig(
           bootstrap = _ => bsModule,
           appModule = _ overriddenBy selfReflectionModule,
+          activation = _ => activation,
           roots = _ => Roots(runtimeGcRoots),
         )
       )
       val runtimeKeys = bootstrappedApp.plan.keys
 
-      val appPlan = bootstrappedApp.injector.trisectByKeys(bootloader.activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
+      val appPlan = bootstrappedApp.injector.trisectByKeys(activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
       }
 

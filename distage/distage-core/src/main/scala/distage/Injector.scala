@@ -90,11 +90,10 @@ object Injector extends InjectorFactory {
 
   override def bootloader[F[_]](
     input: PlannerInput,
-    activation: Activation,
     bootstrapModule: BootstrapModule,
     defaultModule: DefaultModule[F],
   ): Bootloader = {
-    super.bootloader(input, activation, bootstrapModule, defaultModule)
+    super.bootloader(input, bootstrapModule, defaultModule)
   }
 
   /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */

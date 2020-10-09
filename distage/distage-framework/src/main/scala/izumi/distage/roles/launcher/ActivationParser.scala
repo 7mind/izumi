@@ -10,7 +10,7 @@ import izumi.fundamentals.platform.strings.IzString.toRichString
 
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
-  * and adding an override for `make[Activation].named("primary")` to [[izumi.distage.roles.RoleAppMain#makeAppModuleOverride]]
+  * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#makeAppModuleOverride]]
   */
 trait ActivationParser {
   def parseActivation(): Activation
@@ -22,12 +22,12 @@ object ActivationParser {
     parameters: RawAppArgs,
     config: AppConfig,
     activationInfo: ActivationInfo,
-    defaultActivations: Activation @Id("main"),
+    defaultActivations: Activation @Id("default"),
     requiredActivations: Activation @Id("additional"),
   ) extends ActivationParser {
 
     def parseActivation(): Activation = {
-      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(_.value.split2(':'))
+      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(arg => activationKV(arg.value))
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       val configChoices = if (config.config.hasPath(configActivationSection)) {
@@ -39,6 +39,9 @@ object ActivationParser {
     }
 
     protected def configActivationSection: String = "activation"
+  }
 
+  def activationKV(s: String): (String, String) = {
+    s.split2(':')
   }
 }

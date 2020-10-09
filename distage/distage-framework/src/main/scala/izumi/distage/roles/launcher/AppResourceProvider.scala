@@ -1,6 +1,7 @@
 package izumi.distage.roles.launcher
 
 import distage.{Injector, TagK}
+import izumi.distage.InjectorFactory
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
@@ -34,7 +35,7 @@ object AppResourceProvider {
     entrypoint: RoleAppEntrypoint[F],
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
-    bootloader: Bootloader @Id("roleapp"),
+    injectorFactory: InjectorFactory,
   ) extends AppResourceProvider[F] {
     def makeAppResource: AppResource[F] = AppResource {
       appPlan
@@ -50,8 +51,7 @@ object AppResourceProvider {
     }
 
     private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
-      bootloader
-        .injectorFactory
+      injectorFactory
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app.shared, filters.filterF)
         .flatMap {

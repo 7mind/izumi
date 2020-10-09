@@ -75,10 +75,9 @@ trait InjectorFactory {
 
   def bootloader[F[_]](
     input: PlannerInput,
-    activation: Activation,
     bootstrapModule: BootstrapModule,
     defaultModule: DefaultModule[F],
   ): Bootloader = {
-    new Bootloader(bootstrapModule, activation, input, this, defaultModule.module)
+    new Bootloader(bootstrapModule, input, this, defaultModule.module)
   }
 }

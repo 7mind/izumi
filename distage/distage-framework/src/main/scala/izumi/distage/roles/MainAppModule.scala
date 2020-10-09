@@ -8,6 +8,7 @@ import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.framework.services._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition._
+import izumi.distage.model.plan.Roots
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -102,20 +103,17 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       configLoader.loadConfig()
   }
 
-  make[Seq[PluginBase]]
-    .named("bootstrap")
-    .from {
-      (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
-        loader.load(config)
-    }
+  make[Seq[PluginBase]].named("bootstrap").from {
+    (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
+      loader.load(config)
+  }
 
-  make[Seq[PluginBase]]
-    .named("main").from {
-      (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
-        loader.load(config)
-    }
+  make[Seq[PluginBase]].named("main").from {
+    (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
+      loader.load(config)
+  }
 
-  make[Activation].named("main").fromValue(StandardAxis.prodActivation)
+  make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
   make[Boolean].named("distage.roles.reflection").fromValue(true)
@@ -171,7 +169,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
   make[ActivationParser].from[ActivationParser.Impl]
-  make[Activation].named("primary").from {
+  make[Activation].named("roleapp").from {
     parser: ActivationParser =>
       parser.parseActivation()
   }
@@ -198,15 +196,15 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   make[Bootloader].named("roleapp").from {
     (
       injectorFactory: InjectorFactory,
-      activation: Activation @Id("primary"),
+//      activation: Activation @Id("roleapp"),
       finalAppModule: Module @Id("roleapp"),
       finalBsModule: BootstrapModule @Id("roleapp"),
-      roots: Set[DIKey] @Id("distage.roles.roots"),
+//      roots: Set[DIKey] @Id("distage.roles.roots"),
       defaultModule: DefaultModule[F],
     ) =>
       // // `bsModule` is set to empty because it's always overridden to `BootstrapModule @Id("roleapp")` by `RoleAppPlanner#makePlan`
-      // // Same for `roots`
-      injectorFactory.bootloader(PlannerInput(finalAppModule, activation, roots), activation, finalBsModule, defaultModule)
+      // // Same for `activation`
+      injectorFactory.bootloader(PlannerInput(finalAppModule, Activation.empty, Roots.Everything), finalBsModule, defaultModule)
   }
 
   make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]

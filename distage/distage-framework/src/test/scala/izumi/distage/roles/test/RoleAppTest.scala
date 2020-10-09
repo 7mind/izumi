@@ -168,8 +168,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -204,8 +205,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -244,8 +246,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
