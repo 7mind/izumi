@@ -68,7 +68,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[CLIParser].from[CLIParserImpl]
   make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
-  make[AppArgsInterceptor].from[AppArgsInterceptor.AppArgsInterceptorImpl]
+  make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]
 
   make[RawAppArgs].from {
     (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: AdditionalRoles) =>
@@ -199,12 +199,11 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 //      activation: Activation @Id("roleapp"),
       finalAppModule: Module @Id("roleapp"),
       finalBsModule: BootstrapModule @Id("roleapp"),
-//      roots: Set[DIKey] @Id("distage.roles.roots"),
+      roots: Set[DIKey] @Id("distage.roles.roots"),
       defaultModule: DefaultModule[F],
     ) =>
-      // // `bsModule` is set to empty because it's always overridden to `BootstrapModule @Id("roleapp")` by `RoleAppPlanner#makePlan`
-      // // Same for `activation`
-      injectorFactory.bootloader(PlannerInput(finalAppModule, Activation.empty, Roots.Everything), finalBsModule, defaultModule)
+      // // `activation` is set to empty because it's always overridden to `BootstrapModule @Id("roleapp")` by `RoleAppPlanner#makePlan`
+      injectorFactory.bootloader(PlannerInput(finalAppModule, Activation.empty, roots), finalBsModule, defaultModule)
   }
 
   make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]

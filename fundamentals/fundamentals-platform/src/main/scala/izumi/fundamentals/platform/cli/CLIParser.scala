@@ -8,17 +8,10 @@ trait CLIParser {
 }
 
 object CLIParser {
-
   sealed trait ParserError
-
   object ParserError {
-
     final case class DanglingArgument(processed: Vector[String], arg: String) extends ParserError
-
     final case class DanglingSplitter(processed: Vector[String]) extends ParserError
-
     final case class DuplicatedRoles(bad: Set[String]) extends ParserError
-
   }
-
 }

@@ -5,7 +5,7 @@ import distage.Id
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.bundled.{ConfigWriter, Help}
+import izumi.distage.roles.bundled.{BundledRolesModule, ConfigWriter, Help}
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
@@ -17,6 +17,8 @@ import izumi.reflect.TagK
 class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Mode.Prod)
 
+  include(BundledRolesModule[F](version))
+
   private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
     case Some(value) =>
       value
@@ -24,7 +26,6 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
       s"0.0.0-${System.currentTimeMillis()}"
   }
 
-  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]
 
   many[SetElement]

@@ -1,17 +1,18 @@
 package izumi.distage.framework.services
 
-import distage.{DIKey, TagK}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
+import izumi.reflect.TagK
 
 import scala.annotation.nowarn
 import scala.util.control.NonFatal

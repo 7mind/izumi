@@ -1,15 +1,18 @@
 package izumi.distage.framework.services
 
-import distage.{BootstrapModule, DIKey, Injector, TagK, _}
+import distage.Injector
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleDef}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.{OrderedPlan, Roots, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
+import izumi.reflect.TagK
 
 trait RoleAppPlanner {
   def reboot(bsModule: BootstrapModule): RoleAppPlanner

@@ -1,77 +1,168 @@
 package izumi.distage.framework
 
-import distage.{Injector, TraitConstructor}
+import distage.Injector
 import izumi.distage.config.model.AppConfig
+import izumi.distage.constructors.TraitConstructor
+import izumi.distage.framework.PlanCheck.checkRoleApp
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.definition._
-import izumi.distage.model.effect.DIEffectAsync
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
-import izumi.distage.model.reflection.DIKey
-import izumi.distage.roles.RoleAppMain
+import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.roles.{PlanHolder, RoleAppMain}
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.ActivationParser.activationKV
-import izumi.distage.roles.launcher.RoleProvider
-import izumi.distage.roles.model.meta.RoleBinding
+import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
+import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.logstage.api.IzLogger
 
-import scala.util.Try
+import scala.language.experimental.macros
+import scala.language.implicitConversions
+import scala.reflect.macros.blackbox
+
+final class PlanCheck[T <: PlanHolder, Roles <: String, Activations <: String](
+  roleAppMain: T,
+  roles: Roles,
+  activations: Activations,
+) {
+  def run(): Unit = checkRoleApp(roleAppMain, roles, activations)
+}
 
 object PlanCheck {
 
-  def checkRoleApp[F[_]](roleAppMain: RoleAppMain[F], roles: String = "*", activations: String = "*"): Unit = {
+//  implicit def materialize213[T <: PlanHolder: ValueOf, Roles <: String: ValueOf, Activations <: String: ValueOf]: PlanCheck[T, Roles, Activations] =
+//    new PlanCheck[T, Roles, Activations](valueOf[T], valueOf[Roles], valueOf[Activations])
+
+  implicit def materialize212[T <: PlanHolder, Roles <: String, Activations <: String]: PlanCheck[T, Roles, Activations] =
+    macro Materialize212.impl[T, Roles, Activations]
+
+  object Materialize212 {
+    def impl[T <: PlanHolder: c.WeakTypeTag, Roles <: String: c.WeakTypeTag, Activations <: String: c.WeakTypeTag](
+      c: blackbox.Context
+    ): c.Expr[PlanCheck[T, Roles, Activations]] = {
+      import c.universe._
+
+      def getConstantType[S: c.WeakTypeTag]: String = {
+        weakTypeOf[S].dealias match {
+          case ConstantType(Constant(s: String)) => s
+          case tpe =>
+            c.abort(
+              c.enclosingPosition,
+              s"""When materializing PlanCheck[${weakTypeOf[T]}, ${weakTypeOf[Roles]}, ${weakTypeOf[Activations]}],
+                 |Bad String constant type: $tpe - Not a constant! Only constant string literal types are supported!
+               """.stripMargin,
+            )
+        }
+      }
+
+      val t = c.Expr[T](q"${weakTypeOf[T].asInstanceOf[SingleTypeApi].sym.asTerm}")
+      val roles = c.Expr[Roles](Liftable.liftString(getConstantType[Roles]))
+      val activations = c.Expr[Activations](Liftable.liftString(getConstantType[Activations]))
+
+      // err, do in place?
+      reify {
+        new PlanCheck[T, Roles, Activations](t.splice, roles.splice, activations.splice)
+      }
+    }
+  }
+
+  // 2.12 requires `Witness`
+  class Impl[T <: PlanHolder, Roles <: Witness, Activations <: Witness](
+    roleAppMain: T,
+    roles: Roles with Witness,
+    activations: Activations with Witness,
+  )(implicit
+    val planCheck: PlanCheck[T, Roles#T, Activations#T]
+  )
+  private[PlanCheck] final abstract class Witness { type T <: String }
+  object Witness {
+    implicit def fromString(s: String): Witness { type T = s.type } = null
+  }
+
+  // 2.13+
+//  class Impl[T <: PlanHolder, Roles <: String with Singleton, Activations <: String with Singleton](
+//    roleAppMain: T,
+//    roles: Roles,
+//    activations: Activations,
+//  )(implicit
+//    val planCheck: PlanCheck[T, Roles#T, Activations#T]
+//  )
+
+  def checkRoleApp(roleAppMain: PlanHolder, roles: String = "*", activations: String = "*"): Unit = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
     checkRoleApp(roleAppMain, chosenRoles, chosenActivations)
   }
 
-  def checkRoleApp[F[_]](roleAppMain: RoleAppMain[F], chosenRoles: Option[Set[String]], chosenActivations: Option[Array[Iterable[(String, String)]]]): Unit = {
-    import roleAppMain.tagK
+  def checkRoleApp(roleAppMain: PlanHolder, chosenRoles: Option[Set[String]], chosenActivations: Option[Array[Iterable[(String, String)]]]): Unit = {
+    import roleAppMain.{AppEffectType, tagK}
 
     val roleAppBootstrapModule = roleAppMain.finalAppModule(ArgV(Array.empty))
     Injector[Identity]().produceRun(roleAppBootstrapModule overriddenBy new ModuleDef {
-      make[RoleProvider].from {
-        @impl trait ConfiguredRoleProvider extends RoleProvider.Impl {
-          override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
-            chosenRoles.fold(true)(_ contains b.descriptor.id)
-          }
-        }
-        TraitConstructor[ConfiguredRoleProvider]
-      }
+      make[IzLogger].fromValue(IzLogger.NullLogger)
       make[AppConfig].fromValue(AppConfig.empty)
-      make[Activation].named("roleapp").fromValue(Activation.empty)
-    })(Functoid {
-      (bootloader: Bootloader @Id("roleapp"), bsModule: BootstrapModule @Id("roleapp"), locatorRef: LocatorRef) =>
-        val allChoices = chosenActivations match {
-          case None => allActivations(new ActivationChoicesExtractor.Impl, bootloader.input.bindings)
-          case Some(_) => ???
+      make[RawAppArgs].fromValue(RawAppArgs.empty)
+      make[Activation].named("roleapp").todo
+      make[RoleProvider].from {
+        chosenRoles match {
+          case None =>
+            @impl trait AllRolesProvider extends RoleProvider.Impl {
+              override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = true
+            }
+            TraitConstructor[AllRolesProvider]
+          case Some(chosenRoles) =>
+            @impl trait ConfiguredRoleProvider extends RoleProvider.Impl {
+              override protected def getInfo(bindings: Set[Binding], @unused requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
+                super.getInfo(bindings, chosenRoles, roleType)
+              }
+            }
+            TraitConstructor[ConfiguredRoleProvider]
         }
-        DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
+      }
+    })(Functoid {
+      (
+        bootloader: Bootloader @Id("roleapp"),
+        bsModule: BootstrapModule @Id("roleapp"),
+        activationChoicesExtractor: ActivationChoicesExtractor,
+        roleAppActivationParser: RoleAppActivationParser,
+//        roots: Set[DIKey] @Id("distage.roles.roots"),
+        activationInfo: ActivationInfo,
+        locatorRef: LocatorRef,
+      ) =>
+        val allChoices = chosenActivations match {
+          case None => allActivations(activationChoicesExtractor, bootloader.input.bindings)
+          case Some(choiceSets) => choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
+        }
+        println(locatorRef.get.plan)
+//        DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
+        allChoices.foreach {
           activation =>
-            println(Try {
-              val app = bootloader.boot(
-                BootConfig(
-                  bootstrap = _ => bsModule,
-                  activation = _ => activation,
-                )
+            val app = bootloader.boot(
+              BootConfig(
+                bootstrap = _ => bsModule,
+                activation = _ => activation,
               )
-              val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
-              val futureKeys = roleAppBootstrapModule.keys
-              val allKeys = keysUsedInBootstrap ++ futureKeys
+            )
+            val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
+            val futureKeys = roleAppBootstrapModule.keys
+            val allKeys = keysUsedInBootstrap ++ futureKeys
 
-              println(allKeys.map(_.toString).niceList())
-              println(app.plan.render())
-              app
-                .plan
-                .resolveImports {
-                  case ImportDependency(target, _, _) if allKeys(target) || _test_ignore(target) => null
-                }
-                .assertValidOrThrow[F]()
-            })
+            println(s"\n\n\n$activation\n\n\n")
+            println(allKeys.map(_.toString).niceList())
+            println(app.plan)
+            app
+              .plan
+              .resolveImports {
+                case ImportDependency(target, _, _) if allKeys(target) || _test_ignore(target) => null
+              }
+              .assertValidOrThrow[AppEffectType]()
         }
     })
   }
@@ -81,11 +172,11 @@ object PlanCheck {
   }
 
   private[this] def parseRoles(s: String): Set[String] = {
-    s.split(" ").toSet
+    s.split(" ").iterator.filter(_.nonEmpty).map(_.stripPrefix(":")).toSet
   }
 
   private[this] def parseActivations(s: String): Array[Iterable[(String, String)]] = {
-    s.split(" *\\| *").map(_.split(" ").map(activationKV).toIterable)
+    s.split(" *\\| *").map(_.split(" ").iterator.filter(_.nonEmpty).map(activationKV).toSeq)
   }
 
   private[this] def allActivations(activationChoicesExtractor: ActivationChoicesExtractor, bindings: ModuleBase): Set[Activation] = {

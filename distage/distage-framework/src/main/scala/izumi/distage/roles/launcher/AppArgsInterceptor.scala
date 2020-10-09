@@ -8,11 +8,10 @@ trait AppArgsInterceptor {
 }
 
 object AppArgsInterceptor {
-  class AppArgsInterceptorImpl() extends AppArgsInterceptor {
+  class Impl extends AppArgsInterceptor {
     def rolesToLaunch(parsedArgs: RawAppArgs, additionalRoles: AdditionalRoles): RawAppArgs = {
       val requestedRoleSet = parsedArgs.roles.map(_.role).toSet
       parsedArgs.copy(roles = parsedArgs.roles ++ additionalRoles.knownRequiredRoles.filterNot(requestedRoleSet contains _.role))
-
     }
   }
 }

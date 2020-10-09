@@ -103,7 +103,6 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   }
 
   private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
-
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
 

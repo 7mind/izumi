@@ -3,9 +3,9 @@ package izumi.distage.framework.services
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
-import distage.Id
-import distage.config.AppConfig
+import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
+import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

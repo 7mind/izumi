@@ -28,27 +28,16 @@ object RoleProvider {
   ) extends RoleProvider {
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
-      val roleType = SafeType.get[AbstractRole[F]]
-      val bindings = appModule.bindings
-      val roles = {
+      val rolesInfo = {
+        val bindings = appModule.bindings
         val activeRoleNames = parameters.roles.map(_.role).toSet
+        val roleType = SafeType.get[AbstractRole[F]]
         getInfo(bindings, activeRoleNames, roleType)
       }
 
-      logger.info(s"Available ${roles.render() -> "roles"}")
+      logger.info(s"Available ${rolesInfo.render() -> "roles"}")
 
-      val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
-      if (missing.nonEmpty) {
-        logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-        throw new DIAppBootstrapException(s"Unknown roles: $missing")
-      }
-      if (roles.requiredRoleBindings.isEmpty) {
-        throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
-                                             |
-                                             |Available roles: ${roles.render()}""".stripMargin)
-      }
-
-      roles
+      rolesInfo
     }
 
     protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
@@ -56,13 +45,26 @@ object RoleProvider {
       val enabledRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
       val roleNames = availableRoleBindings.map(_.descriptor.id).toSet
 
-      RolesInfo(
+      val rolesInfo = RolesInfo(
         requiredComponents = enabledRoleBindings.iterator.map(_.binding.key).toSet,
         requiredRoleBindings = enabledRoleBindings,
         availableRoleNames = roleNames,
         availableRoleBindings = availableRoleBindings,
-        unrequiredRoleNames = roleNames.toSet.diff(enabledRoleBindings.iterator.map(_.descriptor.id).toSet),
+        unrequiredRoleNames = roleNames.diff(enabledRoleBindings.iterator.map(_.descriptor.id).toSet),
       )
+
+      val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id).toSet)
+      if (missing.nonEmpty) {
+        logger.crit(s"Missing ${missing.niceList() -> "roles"}")
+        throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
+      }
+      if (enabledRoleBindings.isEmpty) {
+        throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
+                                             |
+                                             |Available roles:${rolesInfo.render()}""".stripMargin)
+      }
+
+      rolesInfo
     }
 
     protected def instantiateRoleBindings(bb: Set[Binding], roleType: SafeType): Seq[RoleBinding] = {

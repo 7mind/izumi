@@ -49,11 +49,13 @@ class ResourceRewriter(
   }
 
   private def rewrite[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
+    val tgt = SafeType.get[TGT]
+    val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
     b match {
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -62,7 +64,7 @@ class ResourceRewriter(
             }
 
           case binding: Binding.SetElementBinding =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -76,20 +78,25 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
+  private def rewriteImpl[TGT: Tag](
+    convert: TGT => Lifecycle[Identity, TGT],
+    key: DIKey,
+    origin: SourceFilePosition,
+    implementation: ImplDef,
+    tgt: SafeType,
+    resourceType: SafeType,
+  ): RewriteResult = {
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
-        if (implType <:< SafeType.get[TGT]) {
-          val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
-
+        if (implType <:< tgt) {
           implDef match {
             case _: ImplDef.ReferenceImpl =>
               DontChange
 
             case _: ImplDef.InstanceImpl =>
               logger.warn(
-                s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit Lifecycle (define as function binding to force conversion)"
+                s"Instance binding for $key defined at $origin is <:< ${tgt -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit Lifecycle (define as function binding to force conversion)"
               )
               DontChange
 
@@ -103,9 +110,9 @@ class ResourceRewriter(
       case implDef: ImplDef.RecursiveImplDef =>
         implDef match {
           case _: ImplDef.EffectImpl =>
-            if (implDef.implType <:< SafeType.get[TGT]) {
+            if (implDef.implType <:< tgt) {
               logger.error(
-                s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using Lifecycle.fromAutoCloseable/fromExecutorService"
+                s"Effect entity $key defined at $origin is ${tgt -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using Lifecycle.fromAutoCloseable/fromExecutorService"
               )
             }
             DontChange
@@ -117,12 +124,12 @@ class ResourceRewriter(
   }
 
   private def finish(original: SingletonBinding[DIKey], newImpl: DirectImplDef): Binding = {
-    val res = ImplDef.ResourceImpl(original.implementation.implType, SafeType.getK[Identity], newImpl)
+    val res = ImplDef.ResourceImpl(original.implementation.implType, SafeType.identityEffectType, newImpl)
     original.copy(implementation = res)
   }
 
   private def finish(original: SetElementBinding, newImpl: DirectImplDef): Binding = {
-    val res = ImplDef.ResourceImpl(original.implementation.implType, SafeType.getK[Identity], newImpl)
+    val res = ImplDef.ResourceImpl(original.implementation.implType, SafeType.identityEffectType, newImpl)
     original.copy(implementation = res)
   }
 

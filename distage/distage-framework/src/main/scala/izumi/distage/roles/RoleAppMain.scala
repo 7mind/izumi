@@ -1,7 +1,9 @@
 package izumi.distage.roles
 
+import distage.Injector
 import cats.effect.LiftIO
-import distage.{DefaultModule, DefaultModule2, Injector, Module, TagK, TagKK}
+import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import izumi.distage.model.definition.Module
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
@@ -13,18 +15,27 @@ import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
+import izumi.reflect.{TagK, TagKK}
 
 import scala.concurrent.ExecutionContext
+
+trait PlanHolder {
+  type AppEffectType[_]
+  implicit def tagK: TagK[AppEffectType]
+  def finalAppModule(argv: ArgV): Module
+}
 
 abstract class RoleAppMain[F[_]](
   implicit
   val tagK: TagK[F],
   val defaultModule: DefaultModule[F],
   val artifact: IzArtifactMaterializer,
-) {
+) extends PlanHolder {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
+
+  override final type AppEffectType[A] = F[A]
 
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
