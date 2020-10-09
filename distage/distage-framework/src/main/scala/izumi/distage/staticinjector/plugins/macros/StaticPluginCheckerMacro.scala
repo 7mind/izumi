@@ -173,7 +173,7 @@ object StaticPluginCheckerMacro {
 
     val activation: Activation = {
       val activationInfo = new ActivationChoicesExtractor.Impl().findAvailableChoices(module)
-      new RoleAppActivationParser.Impl(logger).parseActivation(activations.map(_.split2(':')), activationInfo)
+      new RoleAppActivationParser.Impl(logger, true).parseActivation(activations.map(_.split2(':')), activationInfo)
     }
 
     val rootKeys = rootModule.fold(Set.empty[DIKey])(_.keys)

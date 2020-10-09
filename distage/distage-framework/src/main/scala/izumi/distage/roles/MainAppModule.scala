@@ -120,6 +120,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
 
   make[Boolean].named("distage.roles.reflection").fromValue(true)
   make[Boolean].named("distage.roles.logs.json").fromValue(false)
+  make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
 
   make[IzLogger].from {
     (

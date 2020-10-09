@@ -1,7 +1,8 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.{Activation, Axis}
+import izumi.distage.model.definition.{Activation, Axis, Id}
+import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -11,13 +12,15 @@ trait RoleAppActivationParser {
 }
 
 object RoleAppActivationParser {
+  private[this] final val sysPropIgnoreUnknownActivations = DebugProperties.`distage.roles.activation.ignore-unknown`.boolValue(false)
 
   class Impl(
-    logger: IzLogger
+    logger: IzLogger,
+    ignoreUnknownActivations: Boolean @Id("distage.roles.activation.ignore-unknown"),
   ) extends RoleAppActivationParser {
 
     override def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation = {
-      val usedChoices = rawActivations.map {
+      val usedChoices = rawActivations.flatMap {
         case (axisName, choiceName) =>
           validateAxisChoice(activationInfo)(axisName, choiceName)
       }
@@ -26,7 +29,7 @@ object RoleAppActivationParser {
       Activation(usedChoices.toMap)
     }
 
-    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): (Axis, Axis.AxisValue) = {
+    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisValue)] = {
       def options: String = {
         activationInfo
           .availableChoices.map {
@@ -39,17 +42,25 @@ object RoleAppActivationParser {
         case Some((base, members)) =>
           members.find(_.id == choiceName) match {
             case Some(member) =>
-              base -> member
+              Some(base -> member)
             case None =>
               logger.crit(s"Unknown choice: $choiceName")
               logger.crit(s"Available $options")
-              throw new DIAppBootstrapException(s"Unknown choice: $choiceName")
+              if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+                None
+              } else {
+                throw new DIAppBootstrapException(s"Unknown choice: $choiceName")
+              }
           }
 
         case None =>
           logger.crit(s"Unknown axis: $axisName")
           logger.crit(s"Available $options")
-          throw new DIAppBootstrapException(s"Unknown axis: $axisName")
+          if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+            None
+          } else {
+            throw new DIAppBootstrapException(s"Unknown axis: $axisName")
+          }
       }
     }
 

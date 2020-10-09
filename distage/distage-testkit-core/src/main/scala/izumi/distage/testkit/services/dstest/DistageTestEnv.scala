@@ -19,7 +19,7 @@ trait DistageTestEnv {
       makeEnv(testConfig, pluginLoader, roles, mergeStrategy)
     }
 
-    if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
+    if (DistageTestEnv.cache ne null) {
       DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
     } else {
       doMake()
@@ -79,7 +79,13 @@ trait DistageTestEnv {
 }
 
 object DistageTestEnv {
-  private[distage] val cache = new SyncCache[EnvCacheKey, TestEnvironment]
+  private[distage] val cache: SyncCache[EnvCacheKey, TestEnvironment] = {
+    if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
+      new SyncCache[EnvCacheKey, TestEnvironment]
+    } else {
+      null
+    }
+  }
 
-  final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
+  private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
 }
