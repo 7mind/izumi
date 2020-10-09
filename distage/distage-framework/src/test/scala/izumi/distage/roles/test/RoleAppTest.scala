@@ -339,17 +339,23 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "check role app module" in {
-      PlanCheck.checkRoleApp(TestEntrypoint, "configwriter help")
-      PlanCheck.checkRoleApp(
-        TestEntrypoint,
-        "testtask00 testrole01 testrole02 testrole03 testrole04",
-        "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      )
+//      PlanCheck.checkRoleApp(TestEntrypoint, "configwriter help")
+//      PlanCheck.checkRoleApp(
+//        TestEntrypoint,
+//        "testtask00 testrole01 testrole02 testrole03 testrole04",
+//        "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+//      )
+
       new PlanCheck.Impl(
         TestEntrypoint,
-        "testtask00 testrole01 testrole02 testrole03 testrole04",
-        "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
       ).planCheck.run()
+
+//      new PlanCheck.Impl(
+//        TestEntrypoint,
+//        "testtask00 testrole01 testrole02 testrole03 testrole04",
+//      ).planCheck.run()
+
 //      PlanCheck.checkRoleApp(
 //        TestEntrypoint,
 //        "testtask00 testrole01 testrole02 testrole03 testrole04",

@@ -11,14 +11,15 @@ with the flexibility and extreme late-binding, traditionally associated with obj
 `distage` is suitable for wiring @ref[Tagless Final Style](basics.md#tagless-final-style),
 @ref[ZIO ZLayer-based applications](basics.md#zio-has-bindings), and ordinary FP, actor-based or imperative Scala applications.
 
-#### Real-world example
+Getting started
+---------------
 
-Check out [`distage-example` project](https://github.com/7mind/distage-example) for a complete example built using `distage`, tagless final, `http4s`, `doobie` and `zio` libraries.
+The best way get started is to clone [`distage-example`](https://github.com/7mind/distage-example) sample project and play around with it.
 
-It shows how to write an idiomatic `distage`-style from scratch and how to:
+It shows how to write an idiomatic `distage` application from scratch and how to:
 
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
-- setup portable, zero-setup test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
+- setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
 - enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
 

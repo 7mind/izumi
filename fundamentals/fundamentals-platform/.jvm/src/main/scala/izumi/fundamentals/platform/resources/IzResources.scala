@@ -9,19 +9,14 @@ import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
 import izumi.fundamentals.platform.files.IzFiles
-import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, RecursiveCopyOutput}
+import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
 
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success}
 
-sealed trait ResourceLocation
-
-// TODO: all this class is a piece of shit
 class IzResources(clazz: Class[_]) {
-
-  import IzResources._
 
   private def classLocationUrl[C: ClassTag](): Option[URL] = {
     val clazz = classTag[C].runtimeClass
@@ -145,7 +140,7 @@ object IzResourcesDirty extends IzResources(classOf[ResourceLocation]) {
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
-  case class ContentIterator(files: Iterable[FileContent])
+  final case class ContentIterator(files: Iterable[FileContent])
 
   def enumerateClasspath(sourcePath: String): ContentIterator = {
     val pathReference = getPath(sourcePath)
@@ -180,33 +175,28 @@ object IzResourcesDirty extends IzResources(classOf[ResourceLocation]) {
 
 object IzResources extends IzResources(classOf[ResourceLocation]) {
 
-  case class FileContent(path: Path, content: Array[Byte])
+  implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
+
+  final case class FileContent(path: Path, content: Array[Byte])
 
   sealed trait PathReference
-
-  case class UnloadablePathReference(uri: URI) extends PathReference
-  case class LoadablePathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable with PathReference {
+  final case class UnloadablePathReference(uri: URI) extends PathReference
+  final case class LoadablePathReference(path: Path, fileSystem: FileSystem) extends AutoCloseable with PathReference {
     override def close(): Unit = {
       if (this.fileSystem != null) this.fileSystem.close()
     }
   }
 
-  case class RecursiveCopyOutput(files: Seq[Path])
-
+  final case class RecursiveCopyOutput(files: Seq[Path])
   object RecursiveCopyOutput {
     def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
   }
 
-  implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
-
+  sealed trait ResourceLocation
   object ResourceLocation {
-
     final case class Filesystem(file: File) extends ResourceLocation
-
     final case class Jar(jarPath: File, jar: JarFile, entry: ZipEntry) extends ResourceLocation
-
     case object NotFound extends ResourceLocation
-
   }
 
 }

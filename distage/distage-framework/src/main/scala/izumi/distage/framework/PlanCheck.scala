@@ -3,7 +3,7 @@ package izumi.distage.framework
 import distage.Injector
 import izumi.distage.config.model.AppConfig
 import izumi.distage.constructors.TraitConstructor
-import izumi.distage.framework.PlanCheck.checkRoleApp
+import izumi.distage.framework.PlanCheck.{checkRoleApp, checkRoleAppParsed}
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.definition.Axis.AxisValue
@@ -12,7 +12,7 @@ import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.distage.roles.{PlanHolder, RoleAppMain}
+import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.ActivationParser.activationKV
 import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
@@ -20,7 +20,7 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
-import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
 import izumi.logstage.api.IzLogger
 
 import scala.language.experimental.macros
@@ -37,10 +37,7 @@ final class PlanCheck[T <: PlanHolder, Roles <: String, Activations <: String](
 
 object PlanCheck {
 
-//  implicit def materialize213[T <: PlanHolder: ValueOf, Roles <: String: ValueOf, Activations <: String: ValueOf]: PlanCheck[T, Roles, Activations] =
-//    new PlanCheck[T, Roles, Activations](valueOf[T], valueOf[Roles], valueOf[Activations])
-
-  implicit def materialize212[T <: PlanHolder, Roles <: String, Activations <: String]: PlanCheck[T, Roles, Activations] =
+  implicit def performCompileTimeCheck[T <: PlanHolder, Roles <: String, Activations <: String]: PlanCheck[T, Roles, Activations] =
     macro Materialize212.impl[T, Roles, Activations]
 
   object Materialize212 {
@@ -76,8 +73,8 @@ object PlanCheck {
   // 2.12 requires `Witness`
   class Impl[T <: PlanHolder, Roles <: Witness, Activations <: Witness](
     roleAppMain: T,
-    roles: Roles with Witness,
-    activations: Activations with Witness,
+    roles: Roles with Witness = Witness.fromString("*"),
+    activations: Activations with Witness = Witness.fromString("*"),
   )(implicit
     val planCheck: PlanCheck[T, Roles#T, Activations#T]
   )
@@ -95,13 +92,18 @@ object PlanCheck {
 //    val planCheck: PlanCheck[T, Roles#T, Activations#T]
 //  )
 
-  def checkRoleApp(roleAppMain: PlanHolder, roles: String = "*", activations: String = "*"): Unit = {
+  def checkRoleApp(roleAppMain: PlanHolder, roles: String = "*", activations: String = "*", limit: Int = defaultActivationsLimit): Unit = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
-    checkRoleApp(roleAppMain, chosenRoles, chosenActivations)
+    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, limit)
   }
 
-  def checkRoleApp(roleAppMain: PlanHolder, chosenRoles: Option[Set[String]], chosenActivations: Option[Array[Iterable[(String, String)]]]): Unit = {
+  def checkRoleAppParsed(
+    roleAppMain: PlanHolder,
+    chosenRoles: Option[Set[String]],
+    chosenActivations: Option[Array[Iterable[(String, String)]]],
+    limit: Int,
+  ): Unit = {
     import roleAppMain.{AppEffectType, tagK}
 
     val roleAppBootstrapModule = roleAppMain.finalAppModule(ArgV(Array.empty))
@@ -137,9 +139,10 @@ object PlanCheck {
         locatorRef: LocatorRef,
       ) =>
         val allChoices = chosenActivations match {
-          case None => allActivations(activationChoicesExtractor, bootloader.input.bindings)
+          case None => allActivations(activationChoicesExtractor, bootloader.input.bindings, limit)
           case Some(choiceSets) => choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
         }
+        println(allChoices.niceList())
         println(locatorRef.get.plan)
 //        DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
         allChoices.foreach {
@@ -179,20 +182,33 @@ object PlanCheck {
     s.split(" *\\| *").map(_.split(" ").iterator.filter(_.nonEmpty).map(activationKV).toSeq)
   }
 
-  private[this] def allActivations(activationChoicesExtractor: ActivationChoicesExtractor, bindings: ModuleBase): Set[Activation] = {
+  private[this] def allActivations(activationChoicesExtractor: ActivationChoicesExtractor, bindings: ModuleBase, limit: Int): Set[Activation] = {
+    var counter = 0
+    var printed = false
     def go(accum: Activation, axisValues: Map[Axis, Set[AxisValue]]): Set[Activation] = {
-      axisValues.headOption match {
-        case Some((axis, allChoices)) =>
-          allChoices.flatMap {
-            choice =>
-              go(accum ++ Activation(axis -> choice), axisValues.tail)
-          }
-        case None =>
-          Set(accum)
+      if (counter >= limit) {
+        if (!printed) {
+          printed = true
+          System.err.println(s"WARN: too many possible activations, over $limit, will not consider further possibilities (check back soon for a non-bruteforce checker)")
+        }
+        Set.empty
+      } else {
+        axisValues.headOption match {
+          case Some((axis, allChoices)) =>
+            allChoices.flatMap {
+              choice =>
+                go(accum ++ Activation(axis -> choice), axisValues.tail)
+            }
+          case None =>
+            counter += 1
+            Set(accum)
+        }
       }
     }
     val allPossibleChoices = activationChoicesExtractor.findAvailableChoices(bindings).availableChoices
     go(Activation.empty, allPossibleChoices)
   }
+
+  private[this] final val defaultActivationsLimit = DebugProperties.`distage.plancheck.max-activations`.strValue().fold(9000)(_.asInt(9000))
 
 }

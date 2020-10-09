@@ -28,7 +28,8 @@ final case class BooleanProperty(name: String) extends AnyVal {
 
 final case class StrProperty(name: String) extends AnyVal {
   def strValue(default: String): String = {
-    Option(System.getProperty(name)).getOrElse(default)
+    val str = System.getProperty(name)
+    if (str ne null) str else default
   }
 
   def strValue(): Option[String] = {

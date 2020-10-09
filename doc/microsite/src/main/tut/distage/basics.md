@@ -5,6 +5,17 @@ Overview
 
 ### Quick Start
 
+#### Dependencies
+
+Add the `distage-core` library:
+
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework-docker_2.13"
+  version="$izumi.version$"
+}
+
+
 #### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
@@ -164,12 +175,12 @@ You may use `Injector.inherit` to obtain access to your outer object graph in yo
 
 #### Real-world example
 
-Check out [`distage-example` project](https://github.com/7mind/distage-example) for a complete example built using `distage`, tagless final, `http4s`, `doobie` and `zio` libraries.
+Check out [`distage-example`](https://github.com/7mind/distage-example) sample project for a complete example built using `distage`, @ref[bifunctor tagless final](../bio/00_bio.md), `http4s`, `doobie` and `zio` libraries.
 
 It shows how to write an idiomatic `distage`-style from scratch and how to:
 
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
-- setup portable, zero-setup test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
+- setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
 - enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
 

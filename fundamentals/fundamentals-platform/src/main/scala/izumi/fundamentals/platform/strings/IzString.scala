@@ -3,23 +3,29 @@ package izumi.fundamentals.platform.strings
 import java.nio.charset.StandardCharsets
 
 import scala.language.implicitConversions
-import scala.util.Try
+import scala.util.control.NonFatal
 
 final class IzString(private val s: String) extends AnyVal {
   @inline final def utf8: Array[Byte] = {
     s.getBytes(StandardCharsets.UTF_8)
   }
 
-  @inline final def asBoolean(defValue: Boolean): Boolean = {
-    asBoolean().getOrElse(defValue)
-  }
-
   @inline final def asBoolean(): Option[Boolean] = {
-    Try(s.toBoolean).toOption
+    try Some(s.toBoolean)
+    catch { case e if NonFatal(e) => None }
+  }
+  @inline final def asBoolean(defValue: Boolean): Boolean = {
+    try s.toBoolean
+    catch { case e if NonFatal(e) => defValue }
   }
 
   @inline final def asInt(): Option[Int] = {
-    Try(s.toInt).toOption
+    try Some(s.toInt)
+    catch { case e if NonFatal(e) => None }
+  }
+  @inline final def asInt(defValue: Int): Int = {
+    try s.toInt
+    catch { case e if NonFatal(e) => defValue }
   }
 
   @inline final def shift(delta: Int, fill: String = " "): String = {
