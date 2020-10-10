@@ -10,7 +10,7 @@ import zio.internal.Platform
 class FreeMonadTest extends AnyWordSpec {
   import FreeMonadTest._
   val syntax = new TestFreeSyntax[IO]
-  val simpleExecution: Free[TestFreeChoice, Nothing, Unit] = {
+  val simpleExecution: FreeBracket[TestFreeChoice, Nothing, Unit] = {
     for {
       res <- syntax.pure(1)
       _ <- syntax.sync(assert(res == 1))
@@ -25,7 +25,7 @@ class FreeMonadTest extends AnyWordSpec {
     } yield ()
   }
   // tailrec test, just in case
-  val nested: Free[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
+  val nested: FreeBracket[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
 
   "Interpret Free and run it via bio" in {
     val runner = BIORunner.createZIO(Platform.default)
@@ -60,12 +60,12 @@ object FreeMonadTest {
   }
 
   final class TestFreeSyntax[F[+_, +_]] {
-    def pure[A](a: A): Free[TestFreeChoice, Nothing, A] = Free.lift(TestFreeChoice.Pure(a))
-    def unit: Free[TestFreeChoice, Nothing, Unit] = Free.lift(TestFreeChoice.Pure(()))
-    def fail[E](a: E): Free[TestFreeChoice, E, Nothing] = Free.lift(TestFreeChoice.Fail(a))
-    def sync[A](execution: => A): Free[TestFreeChoice, Nothing, A] = Free.lift(TestFreeChoice.Sync(execution))
-    def scopeUpdate(update: Int => Int): Free[TestFreeChoice, Nothing, Unit] = Free.lift(TestFreeChoice.ScopeUpdate(update))
-    def scopeAccess[A](execution: Int => A): Free[TestFreeChoice, Nothing, A] = Free.lift(TestFreeChoice.ScopeAccess(execution))
+    def pure[A](a: A): FreeBracket[TestFreeChoice, Nothing, A] = FreeBracket.lift(TestFreeChoice.Pure(a))
+    def unit: FreeBracket[TestFreeChoice, Nothing, Unit] = FreeBracket.lift(TestFreeChoice.Pure(()))
+    def fail[E](a: E): FreeBracket[TestFreeChoice, E, Nothing] = FreeBracket.lift(TestFreeChoice.Fail(a))
+    def sync[A](execution: => A): FreeBracket[TestFreeChoice, Nothing, A] = FreeBracket.lift(TestFreeChoice.Sync(execution))
+    def scopeUpdate(update: Int => Int): FreeBracket[TestFreeChoice, Nothing, Unit] = FreeBracket.lift(TestFreeChoice.ScopeUpdate(update))
+    def scopeAccess[A](execution: Int => A): FreeBracket[TestFreeChoice, Nothing, A] = FreeBracket.lift(TestFreeChoice.ScopeAccess(execution))
   }
 
   def compiler[F[+_, +_]: BIO]: F[Nothing, TestFreeChoice ~>> F] = {
