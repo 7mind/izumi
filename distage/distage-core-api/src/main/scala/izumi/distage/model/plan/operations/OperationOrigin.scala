@@ -11,7 +11,6 @@ sealed trait OperationOrigin {
     case defined: OperationOrigin.Defined => onDefined(defined.binding)
     case OperationOrigin.Unknown => onUnknown
   }
-
 }
 
 object OperationOrigin {

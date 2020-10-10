@@ -34,8 +34,8 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @tparam F effect type to check against
     */
-  final def assertValid[F[_]: QuasiIO: TagK](): F[Unit] = {
-    isValid.fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
+  final def assertValid[F[_]: QuasiIO: TagK](ignoredImports: DIKey => Boolean = Set.empty): F[Unit] = {
+    isValid(ignoredImports).fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
   }
 
   /**
@@ -43,14 +43,14 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
     */
-  final def assertValidOrThrow[F[_]: TagK](): Unit = {
-    isValid.fold(())(throw _)
+  final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
+    isValid(ignoredImports).fold(())(throw _)
   }
 
   /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  final def isValid[F[_]: TagK]: Option[InvalidPlanException] = {
+  final def isValid[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Option[InvalidPlanException] = {
     import izumi.fundamentals.platform.strings.IzString._
-    val unresolved = unresolvedImports.fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
+    val unresolved = unresolvedImports(ignoredImports).fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
     val effects = incompatibleEffectType[F].fromNonEmptyList.map(op => IncompatibleEffectTypesException.format(op, SafeType.getK[F], op.effectHKTypeCtor))
     for {
       allErrors <- NonEmptyList.from(unresolved ++ effects)
@@ -71,14 +71,15 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @return a non-empty list of unresolved imports if present
     */
-  final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = {
+  final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
     val locatorRefKey = DIKey[LocatorRef]
     val nonMagicImports = steps
       .iterator.collect {
-        case i: ImportDependency if i.target != locatorRefKey => i
+        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
       }.toList
     NonEmptyList.from(nonMagicImports)
   }
+  final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
 
   /**
     * Check for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`.
@@ -162,11 +163,11 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
 
-  @deprecated("Renamed to `assertValidPlanOrThrow`", "0.11")
+  @deprecated("Renamed to `assertValidOrThrow`", "0.11")
   final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = assertValidOrThrow[F]()
 
   /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  @deprecated("Renamed to `isValidPlan`", "0.11")
-  final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = isValid[F]
+  @deprecated("Renamed to `isValid`", "0.11")
+  final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = isValid[F]()
 
 }

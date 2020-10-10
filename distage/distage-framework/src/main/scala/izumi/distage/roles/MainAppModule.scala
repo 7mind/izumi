@@ -97,7 +97,8 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     .from[PluginLoaderDefaultImpl]
 
   make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
-  make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderParameters _)
+  make[ConfigLoader.ConfigLocation].from[ConfigLoader.ConfigLocation.Impl]
+  make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderArgs _)
   make[AppConfig].from {
     configLoader: ConfigLoader =>
       configLoader.loadConfig()

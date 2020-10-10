@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.RoleAppPlanner
-import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin

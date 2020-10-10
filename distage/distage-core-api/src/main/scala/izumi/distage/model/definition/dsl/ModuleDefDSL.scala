@@ -76,7 +76,6 @@ import scala.collection.immutable.HashSet
   * @see [[ModuleDefDSL]]
   */
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
-
   override final def bindings: Set[Binding] = freeze()
   override final def iterator: Iterator[Binding] = freezeIterator()
 
@@ -314,6 +313,11 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
+    /**
+      * Create a dummy binding that throws an exception with an error message when it's created.
+      *
+      * Useful for prototyping.
+      */
     def todo(implicit pos: CodePositionMaterializer): AfterBind = {
       val provider = Functoid.todoProvider(key)(pos).get
       bind(ImplDef.ProviderImpl(provider.ret, provider))

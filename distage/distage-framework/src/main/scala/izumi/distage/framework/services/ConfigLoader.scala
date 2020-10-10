@@ -30,6 +30,9 @@ import scala.util.{Failure, Success, Try}
   *   - `common-reference.conf`
   *   - `common-reference-dev.conf`
   *
+  * NOTE: You can change default config locations by overriding `make[ConfigLocation]`
+  * binding in [[izumi.distage.roles.RoleAppMain#moduleOverrides]] (defaults defined in [[izumi.distage.roles.MainAppModule]])
+  *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
   * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
   *
@@ -43,6 +46,8 @@ import scala.util.{Failure, Success, Try}
   *
   *   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
   *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
+  *
+  * @see [[ConfigLoader.ConfigLocation]]
   */
 trait ConfigLoader {
   def loadConfig(): AppConfig
@@ -51,34 +56,60 @@ trait ConfigLoader {
 }
 
 object ConfigLoader {
-  val defaultBaseConfigs = Seq("application", "common")
 
-  final case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
+  trait ConfigLocation {
+    def forRole(roleName: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(roleName)
+    def forBase(filename: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(filename)
+    def defaultBaseConfigs: Seq[String] = ConfigLocation.defaultBaseConfigs
+  }
+  object ConfigLocation {
+    final class Impl extends ConfigLocation
+
+    def defaultBaseConfigs: Seq[String] = Seq("application", "common")
+
+    def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+      Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
+      )
+    }
+  }
+
+  final case class Args(
+    global: Option[File],
+    role: Map[String, Option[File]],
+  )
   object Args {
-    def makeConfigLoaderParameters(parameters: RawAppArgs): ConfigLoader.Args = {
+    def forEnabledRoles(roleNames: IterableOnce[String]): ConfigLoader.Args = {
+      Args(None, roleNames.iterator.map(_ -> None).toMap)
+    }
+
+    def makeConfigLoaderArgs(parameters: RawAppArgs): ConfigLoader.Args = {
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
       val roleConfigs = parameters.roles.map {
         roleParams =>
           roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile
       }
-      ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap, ConfigLoader.defaultBaseConfigs)
+      ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap)
     }
   }
 
   class LocalFSImpl(
     logger: IzLogger @Id("early"),
     args: Args,
+    configLocation: ConfigLocation,
   ) extends ConfigLoader {
 
     @nowarn("msg=Unused import")
     def loadConfig(): AppConfig = {
       import scala.collection.compat._
 
-      val commonReferenceConfigs = defaultBaseConfigs.flatMap(defaultConfigReferences)
+      val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
       val commonExplicitConfigs = args.global.map(ConfigSource.File).toList
 
       val (roleReferenceConfigs, roleExplicitConfigs) = (args.role: Iterable[(String, Option[File])]).partitionMap {
-        case (role, None) => Left(defaultConfigReferences(role))
+        case (role, None) => Left(configLocation.forRole(role))
         case (_, Some(file)) => Right(ConfigSource.File(file))
       }
 
@@ -171,13 +202,6 @@ object ConfigLoader {
       }
     }
 
-    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-      Seq(
-        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
-      )
-    }
   }
 
   object LocalFSImpl {

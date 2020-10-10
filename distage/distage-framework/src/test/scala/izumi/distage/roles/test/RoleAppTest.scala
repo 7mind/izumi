@@ -351,6 +351,26 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
       ).planCheck.run()
 
+      new PlanCheck.Impl(
+        TestEntrypoint,
+        "testtask00 testrole01 testrole02 testrole03 testrole04",
+        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+      ).planCheck.run()
+
+      assertThrows[Throwable] {
+        new PlanCheck.Impl(
+          TestEntrypoint,
+          config = "testrole04-reference.conf",
+          activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+        ).planCheck.run()
+      }
+
+      new PlanCheck.Impl(
+        TestEntrypoint,
+        config = "checker-test-good.conf",
+        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+      ).planCheck.run()
+
 //      new PlanCheck.Impl(
 //        TestEntrypoint,
 //        "testtask00 testrole01 testrole02 testrole03 testrole04",
