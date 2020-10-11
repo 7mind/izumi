@@ -505,4 +505,13 @@ class BasicTest extends AnyWordSpec with MkInjector {
     }
   }
 
+  "regression test: imports correctly specify which binding they are required by when missing" in {
+    val definition = new ModuleDef {
+      make[String].from((_: Int).toString)
+    }
+
+    val error = intercept[Throwable](mkInjector().produceGet[String](definition).unsafeGet())
+    assert(error.getMessage.contains("String"))
+  }
+
 }
