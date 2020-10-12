@@ -14,6 +14,72 @@ import izumi.distage.planning.mutations.{ActivationChoices, SemigraphSolver}
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
+import scala.collection.MapView
+
+class GraphPreparations(bindingTranslator: BindingTranslator) {
+  def computeOperationsUnsafe(input: PlannerInput): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
+    input
+      .bindings.bindings.iterator
+      // this is a minor optimization but it makes some conflict resolution strategies impossible
+      //.filter(b => activationChoices.allValid(toAxis(b)))
+      .flatMap {
+        b =>
+          val next = bindingTranslator.computeProvisioning(b)
+          (next.provisions ++ next.sets.values).map((b, _))
+      }
+      .zipWithIndex
+      .map {
+        case ((b, n), idx) =>
+          val mutIndex = b match {
+            case Binding.SingletonBinding(_, _, _, _, true) =>
+              Some(idx)
+            case _ =>
+              None
+          }
+
+          val axis = n match {
+            case _: CreateSet =>
+              Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
+            case _ =>
+              toAxis(b)
+          }
+
+          (Annotated(n.target, mutIndex, axis), n, b)
+      }
+  }
+
+  def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): MapView[DIKey, (CreateSet, Set[DIKey])] = {
+    val allSetOps = allOps
+      .collect { case (target, op: CreateSet) => (target, op) }
+
+    allSetOps
+      .groupBy {
+        case (a, _) =>
+          assert(a.mut.isEmpty)
+          assert(a.axis.isEmpty, a.toString)
+          a.key
+      }
+      .view
+      .mapValues(_.map(_._2))
+      .mapValues {
+        ops =>
+          val firstOp = ops.head
+          val potentialMembers = ops
+            .tail.foldLeft(ops.head.members) {
+              case (acc, op) =>
+                acc ++ op.members
+            }
+          (firstOp, potentialMembers)
+      }
+  }
+
+  protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
+    b.tags.collect {
+      case AxisTag(axisValue) =>
+        axisValue.toAxisPoint
+    }
+  }
+}
 
 trait PlanSolver {
   def resolveConflicts(
@@ -31,8 +97,8 @@ object PlanSolver {
 
   @nowarn("msg=Unused import")
   class Impl(
-    bindingTranslator: BindingTranslator,
     resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
+    preps: GraphPreparations,
   ) extends PlanSolver {
 
     import izumi.functional.IzEither._
@@ -76,9 +142,9 @@ object PlanSolver {
       val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
       val ac = ActivationChoices(activations)
 
-      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
+      val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
 
-      val ops: Vector[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
+      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
         case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
         case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
       }
@@ -99,10 +165,39 @@ object PlanSolver {
       Right(Problem(activations, matrix, roots, weakSetMembers))
     }
 
-    private def computeSets(ac: ActivationChoices, allOps: Vector[(Annotated[DIKey], InstantiationOp)]): Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
-      val allSetOps = allOps
-        .collect { case (target, op: CreateSet) => (target, op) }
+    private def computeOperations(ac: ActivationChoices, input: PlannerInput): Seq[(Annotated[DIKey], InstantiationOp)] = {
+      val allOpsMaybe = preps
+        .computeOperationsUnsafe(input)
+        .map {
+          case aob @ (Annotated(key, Some(_), axis), _, b) =>
+            isProperlyActivatedSetElement(ac, axis) {
+              unconfigured =>
+                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+            }.map(out => (aob, out))
+          case aob =>
+            Right((aob, true))
+        }
 
+      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = allOpsMaybe.biAggregate match {
+        case Left(value) =>
+          val message = value
+            .map {
+              e =>
+                s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
+            }.niceList()
+          throw new BadMutatorAxis(s"Mutators with unconfigured axis: $message", value)
+        case Right(value) =>
+          val goodMutators = value.filter(_._2).map(_._1)
+          goodMutators.map {
+            case (a, o, _) =>
+              (a, o)
+          }.toVector
+      }
+      allOps
+    }
+
+    private def computeSets(ac: ActivationChoices, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
+      val setMembersUnsafe = preps.computeSetsUnsafe(allOps)
       val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps
         .view
         .filter(_._1.mut.isEmpty)
@@ -116,81 +211,53 @@ object PlanSolver {
         .toMap
 
       val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] =
-        allSetOps
-          .groupBy {
-            case (a, _) =>
-              assert(a.mut.isEmpty)
-              assert(a.axis.isEmpty, a.toString)
-              a.key
-          }
-          .view
-          .mapValues(_.map(_._2))
-          .map {
-            case (setKey, ops) =>
-              val firstOp = ops.head
-
-              val members = ops
-                .tail.foldLeft(ops.head.members) {
-                  case (acc, op) =>
-                    acc ++ op.members
-                }
-                .map {
-                  memberKey =>
-                    reverseOpIndex.get(memberKey) match {
-                      case Some(value :: Nil) =>
-                        isProperlyActivatedSetElement(ac, value) {
-                          unconfigured =>
-                            Left(
-                              List(
-                                UnconfiguredSetElementAxis(
-                                  firstOp.target,
-                                  memberKey,
-                                  firstOp.origin.value,
-                                  unconfigured,
-                                )
+        setMembersUnsafe.map {
+          case (setKey, (firstOp, membersUnsafe)) =>
+            val members = membersUnsafe
+              .map {
+                memberKey =>
+                  reverseOpIndex.get(memberKey) match {
+                    case Some(value :: Nil) =>
+                      isProperlyActivatedSetElement(ac, value) {
+                        unconfigured =>
+                          Left(
+                            List(
+                              UnconfiguredSetElementAxis(
+                                firstOp.target,
+                                memberKey,
+                                firstOp.origin.value,
+                                unconfigured,
                               )
                             )
-                        }.map(out => (memberKey, out))
-                      case Some(other) =>
-                        Left(List(InconsistentSetElementAxis(firstOp.target, memberKey, other)))
-                      case None =>
-                        Right((memberKey, true))
-                    }
-                }
-
-              members.biAggregate match {
-                case Left(value) =>
-                  val message = value
-                    .map {
-                      case u: UnconfiguredSetElementAxis =>
-                        s"Set ${u.set} has element ${u.element} with unconfigured axis: ${u.unconfigured.mkString(",")}"
-                      case i: InconsistentSetElementAxis =>
-                        s"BUG, please report at https://github.com/7mind/izumi/issues: Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}"
-
-                    }.niceList()
-
-                  throw new BadSetAxis(message, value)
-                case Right(value) =>
-                  val goodMembers = value.filter(_._2).map(_._1)
-                  val result = firstOp.copy(members = goodMembers)
-                  (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
+                          )
+                      }.map(out => (memberKey, out))
+                    case Some(other) =>
+                      Left(List(InconsistentSetElementAxis(firstOp.target, memberKey, other)))
+                    case None =>
+                      Right((memberKey, true))
+                  }
               }
 
-          }
-          .toMap
-      sets
-    }
+            members.biAggregate match {
+              case Left(value) =>
+                val message = value
+                  .map {
+                    case u: UnconfiguredSetElementAxis =>
+                      s"Set ${u.set} has element ${u.element} with unconfigured axis: ${u.unconfigured.mkString(",")}"
+                    case i: InconsistentSetElementAxis =>
+                      s"BUG, please report at https://github.com/7mind/izumi/issues: Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}"
 
-    private def isProperlyActivatedSetElement[T](ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Either[T, Boolean]): Either[T, Boolean] = {
-      if (ac.allValid(value)) {
-        if (ac.allConfigured(value)) {
-          Right(true)
-        } else {
-          onError(ac.findUnconfigured(value))
-        }
-      } else {
-        Right(false)
-      }
+                  }.niceList()
+
+                throw new BadSetAxis(message, value)
+              case Right(value) =>
+                val goodMembers = value.filter(_._2).map(_._1)
+                val result = firstOp.copy(members = goodMembers)
+                (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
+            }
+
+        }.toMap
+      sets
     }
 
     protected[this] def findWeakSetMembers(
@@ -227,69 +294,18 @@ object PlanSolver {
         .toSet
     }
 
-    protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
-      b.tags.collect {
-        case AxisTag(axisValue) =>
-          axisValue.toAxisPoint
+    private def isProperlyActivatedSetElement[T](ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Either[T, Boolean]): Either[T, Boolean] = {
+      if (ac.allValid(value)) {
+        if (ac.allConfigured(value)) {
+          Right(true)
+        } else {
+          onError(ac.findUnconfigured(value))
+        }
+      } else {
+        Right(false)
       }
     }
 
-    private def computeOperations(ac: ActivationChoices, input: PlannerInput) = {
-      val allOpsMaybe = input
-        .bindings.bindings.iterator
-        // this is a minor optimization but it makes some conflict resolution strategies impossible
-        //.filter(b => activationChoices.allValid(toAxis(b)))
-        .flatMap {
-          b =>
-            val next = bindingTranslator.computeProvisioning(b)
-            (next.provisions ++ next.sets.values).map((b, _))
-        }
-        .zipWithIndex
-        .map {
-          case ((b, n), idx) =>
-            val mutIndex = b match {
-              case Binding.SingletonBinding(_, _, _, _, true) =>
-                Some(idx)
-              case _ =>
-                None
-            }
-
-            val axis = n match {
-              case _: CreateSet =>
-                Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
-              case _ =>
-                toAxis(b)
-            }
-
-            (Annotated(n.target, mutIndex, axis), n, b)
-        }
-        .map {
-          case aob @ (Annotated(key, Some(_), axis), _, b) =>
-            isProperlyActivatedSetElement(ac, axis) {
-              unconfigured =>
-                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
-            }.map(out => (aob, out))
-          case aob =>
-            Right((aob, true))
-        }
-
-      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = allOpsMaybe.biAggregate match {
-        case Left(value) =>
-          val message = value
-            .map {
-              e =>
-                s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
-            }.niceList()
-          throw new BadMutatorAxis(s"Mutators with unconfigured axis: $message", value)
-        case Right(value) =>
-          val goodMutators = value.filter(_._2).map(_._1)
-          goodMutators.map {
-            case (a, o, _) =>
-              (a, o)
-          }.toVector
-      }
-      allOps
-    }
   }
 
 }

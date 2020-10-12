@@ -46,17 +46,19 @@ Why distage?
 5. **Simple development workflow**:
     @ref[distage-framework](distage-framework.md) allows you to develop Role-Based Applications, a fusion of Microservices and Monoliths,
      letting you run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
-6. **Fast compile times and low mental overhead**:
+6. **Easier deployments**:
+   Role-based applications allow you to deploy and orchestrate less components and achieve higher computational density.
+7. **Fast compile times and low mental overhead**:
     Unlike fully compile-time DIs, `distage` does not impose a compile time penalty.
     `distage` extensions are simple to write and do not require type-level programming.
-7. **Simple debugging**:
+8. **Simple debugging**:
     `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
     before any instantiations happen.
-8. **High Correctness**:
+9. **High Correctness**:
     `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
-9. **No reflection**:
+10. **No reflection**:
     `distage` generates constructors and [type information](https://blog.7mind.io/lightweight-reflection.html) at compile-time and does not use Scala reflection. As such, it's compatible with GraalVM Native Image and Scala.js.
-10. **Non-invasive**:
+11. **Non-invasive**:
     `distage` is designed to not impact the way your Scala code is written, it just removes all the initialization boilerplate.
     You don't need to learn magic tricks to write components in a distage application.
 
@@ -64,7 +66,7 @@ Why distage?
 
 > Given its native support for type classes and higher-kinded types -- both features indispensable to functional programming -- distage is one of the leading dependency injection libraries out there. Bonus points for being built by a wicked-smart team that contributes to ZIO! 
 > 
-> -– *John A. De Goes*
+> — *John A. De Goes*
 
 FAQ
 ---
