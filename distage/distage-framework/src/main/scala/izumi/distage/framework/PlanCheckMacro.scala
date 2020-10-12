@@ -2,9 +2,10 @@ package izumi.distage.framework
 
 import izumi.distage.framework.PlanCheck.checkRoleApp
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
+import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-import izumi.fundamentals.platform.language.LiteralCompat
+import izumi.fundamentals.platform.language.{LiteralCompat, unused}
 import izumi.fundamentals.reflection.TypeUtil
 
 import scala.language.experimental.macros
@@ -14,14 +15,14 @@ import scala.reflect.macros.{blackbox, whitebox}
 
 object PlanCheckMacro {
 
-  final class PerformPlanCheck[T <: PlanHolder, Roles <: String, Activations <: String, Config <: String, CheckConfig <: Boolean](
-    roleAppMain: T,
+  final class PerformPlanCheck[RoleAppMain <: PlanHolder, Roles <: String, Activations <: String, Config <: String, CheckConfig <: Boolean](
+    roleAppMain: RoleAppMain,
     roles: Roles,
     activations: Activations,
     config: Config,
     checkConfig: CheckConfig,
   ) {
-    def run(): Unit = checkRoleApp(roleAppMain, roles, activations, config, checkConfig)
+    def run(): LoadedPlugins = checkRoleApp(roleAppMain, roles, activations, config, checkConfig)
   }
   object PerformPlanCheck {
     implicit def performCompileTimeCheck[
@@ -105,14 +106,16 @@ object PlanCheckMacro {
 
   // 2.12 requires `Witness`
   class Impl[RoleAppMain <: PlanHolder, Roles <: LiteralString, Activations <: LiteralString, Config <: LiteralString, CheckConfig <: LiteralBoolean](
-    roleAppMain: RoleAppMain,
-    roles: Roles with LiteralString = LiteralString("*"),
-    activations: Activations with LiteralString = LiteralString("*"),
-    config: Config with LiteralString = LiteralString("*"),
-    checkConfig: CheckConfig with LiteralBoolean = LiteralBoolean.True,
+    @unused roleAppMain: RoleAppMain,
+    @unused roles: Roles with LiteralString = LiteralString("*"),
+    @unused activations: Activations with LiteralString = LiteralString("*"),
+    @unused config: Config with LiteralString = LiteralString("*"),
+    @unused checkConfig: CheckConfig with LiteralBoolean = LiteralBoolean.True,
   )(implicit
     val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T]
-  )
+  ) {
+    def rerunAtRuntime(): LoadedPlugins = planCheck.run()
+  }
   private[PlanCheckMacro] final abstract class LiteralString { type T <: String }
   object LiteralString {
     @inline implicit final def apply(s: String): LiteralString { type T = s.type } = null

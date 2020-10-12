@@ -13,7 +13,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import izumi.distage.plugins.{PluginBase, PluginConfig}
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair

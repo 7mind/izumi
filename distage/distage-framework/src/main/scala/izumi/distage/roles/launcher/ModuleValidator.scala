@@ -1,7 +1,6 @@
 package izumi.distage.roles.launcher
 
 import distage.ModuleBase
-import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair

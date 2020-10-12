@@ -4,6 +4,8 @@ import izumi.distage.framework.{PlanCheck, PlanCheckMacro}
 import izumi.distage.roles.test.TestEntrypoint
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.util.Try
+
 final class CompTimePlanCheckerTest extends AnyWordSpec {
 
   "check role app module" in {
@@ -15,17 +17,17 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
 //      "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
 //    )
 
-    new PlanCheckMacro.Impl(
-      TestEntrypoint,
-      "testtask00 testrole01 testrole02 testrole03 testrole04",
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-    ).planCheck.run()
+//    new PlanCheckMacro.Impl(
+//      TestEntrypoint,
+//      "testtask00 testrole01 testrole02 testrole03 testrole04",
+//      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+//    ).planCheck.rerunAtRuntime()
 
-    new PlanCheckMacro.Impl(
-      TestEntrypoint,
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      checkConfig = false,
-    ).planCheck.run()
+//    new PlanCheckMacro.Impl(
+//      TestEntrypoint,
+//      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+//      checkConfig = false,
+//    ).planCheck.rerunAtRuntime()
 //
 //
 //    assertThrows[Throwable] {
@@ -36,11 +38,17 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
 //      ).planCheck.run()
 //    }
 
-//    new PlanCheckMacro.Impl(
+    new PlanCheckMacro.Impl(
+      TestEntrypoint,
+      config = "checker-test-good.conf",
+      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+    ).rerunAtRuntime()
+
+//    PlanCheck.checkRoleApp(
 //      TestEntrypoint,
 //      config = "checker-test-good.conf",
 //      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//    ).planCheck.run()
+//    )
 
 //      new PlanCheckMacro.Impl(
 //        TestEntrypoint,

@@ -14,7 +14,6 @@ import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference,
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 import scala.collection.compat._

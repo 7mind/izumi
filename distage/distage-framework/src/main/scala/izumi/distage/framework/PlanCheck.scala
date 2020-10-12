@@ -22,10 +22,12 @@ import izumi.distage.roles.launcher.ActivationParser.activationKV
 import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
+import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 object PlanCheck {
@@ -63,11 +65,28 @@ object PlanCheck {
     checkConfig: Boolean,
     limit: Int,
   ): LoadedPlugins = {
+    var effectiveRoles = "* (effective: unknown, failed too early)"
+    var effectiveConfig = "*"
 
-    val roleAppBootstrapModule = roleAppMain.finalAppModule(ArgV(Array.empty))
-    Injector[Identity]().produceRun(roleAppBootstrapModule overriddenBy new ModuleDef {
-//      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-//      make[IzLogger].fromValue(IzLogger.NullLogger)
+    def message(t: Throwable): String = {
+      val trace = t.getStackTrace
+      val cutoffIdx = trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")
+      t.setStackTrace(trace.take(cutoffIdx))
+
+      s"""Found a problem with your DI wiring, when checking wiring of application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
+         |
+         |  roles       = ${chosenRoles.fold(effectiveRoles)(_.toSeq.sorted.mkString(" "))}
+         |  activations = ${chosenActivations.fold("*")(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}
+         |  config      = ${chosenConfig.fold(effectiveConfig)("resource:" + _)}
+         |  checkConfig = $checkConfig
+         |
+         |${t.stackTrace}
+         |""".stripMargin
+    }
+
+    try Injector[Identity]().produceRun(roleAppMain.finalAppModule(ArgV(Array.empty)) overriddenBy new ModuleDef {
+      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
+      make[IzLogger].fromValue(IzLogger.NullLogger)
       make[AppConfig].fromValue(AppConfig.empty)
       make[RawAppArgs].fromValue(RawAppArgs.empty)
       make[Activation].named("roleapp").todo // TODO
@@ -117,12 +136,14 @@ object PlanCheck {
         activationChoicesExtractor: ActivationChoicesExtractor,
         roleAppActivationParser: RoleAppActivationParser,
         configLoader: ConfigLoader,
-        //        roots: Set[DIKey] @Id("distage.roles.roots"),
+        rolesInfo: RolesInfo,
         activationInfo: ActivationInfo,
         locatorRef: LocatorRef,
         appPlugins: LoadedPlugins @Id("main"),
         bsPlugins: LoadedPlugins @Id("bootstrap"),
       ) =>
+        effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
+
         val allChoices = chosenActivations match {
           case None =>
             allActivations(activationChoicesExtractor, bootloader.input.bindings, limit)
@@ -134,7 +155,7 @@ object PlanCheck {
 
         val allKeysFromRoleAppMainModule = {
           val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
-          val keysThatCouldveBeenInBootstrap = roleAppBootstrapModule.keys
+          val keysThatCouldveBeenInBootstrap = roleAppMain.finalAppModule(ArgV(Array.empty)).keys
           keysUsedInBootstrap ++ keysThatCouldveBeenInBootstrap
         }
 
@@ -148,11 +169,16 @@ object PlanCheck {
         maybeConcurrentConfigParsersMap.foreach {
           chm =>
             val realAppConfig = configLoader.loadConfig()
+            effectiveConfig = s"* (effective: ${realAppConfig.config.origin()})"
             chm.forEach(_.apply(realAppConfig).discard())
         }
 
         appPlugins ++ bsPlugins
     })
+    catch {
+      case t: Throwable =>
+        throw new InvalidPlanException(message(t), omitClassName = true, captureStackTrace = false)
+    }
   }
 
   private[this] def checkPlanJob[F[_]: TagK](
