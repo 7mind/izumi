@@ -88,18 +88,16 @@ object BootstrapLocator {
     )
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
-    val resolver = new MutationResolverImpl[DIKey, Int, InstantiationOp]()
+    val resolver = new ConflictResolver.Impl(new BindingTranslator.Impl(), new MutationResolverImpl[DIKey, Int, InstantiationOp]())
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
       planningObserver = bootstrapObserver,
       hook = hook,
-      bindingTranslator = translator,
       analyzer = analyzer,
       mirrorProvider = mp,
       resolver = resolver,
@@ -131,6 +129,8 @@ object BootstrapLocator {
     make[MirrorProvider].fromValue(mirrorProvider)
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
+
+    make[ConflictResolver].from[ConflictResolver.Impl]
 
     make[MutationResolver[DIKey, Int, InstantiationOp]].from[MutationResolverImpl[DIKey, Int, InstantiationOp]]
 

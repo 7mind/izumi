@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs.tools
+package izumi.fundamentals.graphs.tools.cycles
 
 import izumi.fundamentals.graphs.DAGError
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -6,6 +6,7 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import scala.annotation.nowarn
 import scala.collection.mutable
 
+// TODO: this class is not required for distage
 @nowarn("msg=Unused import")
 final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
   import scala.collection.compat._

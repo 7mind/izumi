@@ -1,4 +1,4 @@
-package izumi.fundamentals.graphs.tools
+package izumi.fundamentals.graphs.tools.cycles
 
 import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
 import izumi.fundamentals.graphs.struct.IncidenceMatrix

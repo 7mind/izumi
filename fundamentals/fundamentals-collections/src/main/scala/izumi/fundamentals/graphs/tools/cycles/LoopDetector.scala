@@ -1,11 +1,12 @@
-package izumi.fundamentals.graphs.tools
+package izumi.fundamentals.graphs.tools.cycles
 
-import LoopDetector.Cycles
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector.Cycles
 
 import scala.annotation.nowarn
 import scala.collection.mutable
 
+// TODO: this class is not required for distage
 trait LoopDetector {
   def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]]
   def findLoopMember[T](graph: IncidenceMatrix[T]): Option[T]

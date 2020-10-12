@@ -2,11 +2,10 @@ package izumi.fundamentals.graphs
 
 import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.GC.WeakEdge
-import izumi.fundamentals.graphs.tools.LoopDetector.{Cycles, Impl, Loop}
+import izumi.fundamentals.graphs.tools.cycles.{LoopBreaker, LoopDetector}
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector.{Cycles, Impl, Loop}
 import izumi.fundamentals.graphs.tools.mutations.MutationResolver
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.AxisPoint
-import izumi.fundamentals.graphs.tools.{LoopBreaker, LoopDetector}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{AxisPoint, WeakEdge}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GraphsTest extends AnyWordSpec {

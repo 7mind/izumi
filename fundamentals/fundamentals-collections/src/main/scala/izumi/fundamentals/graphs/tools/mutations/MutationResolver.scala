@@ -6,8 +6,7 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.GC.WeakEdge
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, Resolution, SemiEdgeSeq}
+import izumi.fundamentals.graphs.tools.mutations.MutationResolver._
 import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
 
 import scala.annotation.{nowarn, tailrec}
@@ -30,6 +29,7 @@ object MutationResolver {
   final case class RemappedValue[V, N](meta: V, remapped: Map[N, MutSel[N]])
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
+  final case class WeakEdge[N](predcessor: N, successor: N)
 
   final case class Annotated[N](key: N, mut: Option[Int], axis: Set[AxisPoint]) {
     def withoutAxis: MutSel[N] = MutSel(key, mut)

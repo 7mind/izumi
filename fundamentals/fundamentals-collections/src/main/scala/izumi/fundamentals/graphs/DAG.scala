@@ -3,7 +3,7 @@ package izumi.fundamentals.graphs
 import izumi.fundamentals.graphs.GraphImpl.{DirectedGraphPred, DirectedGraphSucc}
 import izumi.fundamentals.graphs.GraphProperty.DirectedAcyclicGraph
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.{CycleEraser, LoopBreaker}
+import izumi.fundamentals.graphs.tools.cycles.{CycleEraser, LoopBreaker}
 
 final case class DAG[N, M] private (
   successors: IncidenceMatrix[N],
