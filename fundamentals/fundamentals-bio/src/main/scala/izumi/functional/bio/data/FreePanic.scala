@@ -66,6 +66,7 @@ sealed trait FreePanic[S[_, _], +E, +A] {
 }
 
 object FreePanic {
+  @inline def unit[S[_, _]]: FreePanic[S, Nothing, Unit] = Pure(())
   @inline def pure[S[_, _], A](a: A): FreePanic[S, Nothing, A] = Pure(a)
   @inline def lift[S[_, _], E, A](s: S[E, A]): FreePanic[S, E, A] = Suspend(s)
   @inline def fail[S[_, _], E](e: => E): FreePanic[S, E, Nothing] = Fail(() => e)
@@ -127,15 +128,15 @@ object FreePanic {
     @inline override def fail[E](v: => E): FreePanic[S, E, Nothing] = FreePanic.fail(v)
     @inline override def terminate(v: => Throwable): FreePanic[S, Nothing, Nothing] = FreePanic.terminate(v)
 
-    @inline override def fromEither[E, V](effect: => Either[E, V]): FreePanic[S, E, V] = FreePanic.pure(() => effect).flatMap {
-      _() match {
+    @inline override def fromEither[E, V](effect: => Either[E, V]): FreePanic[S, E, V] = FreePanic.unit *> {
+      effect match {
         case Left(value) => fail(value)
         case Right(value) => pure(value)
       }
     }
 
-    @inline override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): FreePanic[S, E, A] = FreePanic.pure(() => effect).flatMap {
-      _() match {
+    @inline override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): FreePanic[S, E, A] = FreePanic.unit *> {
+      effect match {
         case None => fail(errorOnNone)
         case Some(value) => pure(value)
       }
