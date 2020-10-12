@@ -1,8 +1,8 @@
 package izumi.functional.bio.impl
 
-import cats.effect.concurrent.Semaphore
-import izumi.functional.bio.{Primitives2, Promise2, Ref2, Semaphore2, catz}
+import izumi.functional.bio.{Primitives2, Promise2, Ref2, Semaphore2}
 import zio._
+import zio.stm.TSemaphore
 
 object PrimitivesZio extends PrimitivesZio
 
@@ -14,15 +14,6 @@ class PrimitivesZio extends Primitives2[IO] {
     Promise.make[E, A].map(Promise2.fromZIO)
   }
   override def mkSemaphore(permits: Long): IO[Nothing, Semaphore2[IO]] = {
-    PrimitivesZIOCatsSemaphore.mkSemaphore(permits)
-  }
-}
-
-// zio.Semaphore is currently incompatible with `BIOSemaphore` interface
-private[impl] object PrimitivesZIOCatsSemaphore {
-  def mkSemaphore(permits: Long): UIO[Semaphore2[IO]] = {
-    Semaphore[Task](permits)(catz.BIOAsyncForkToConcurrent[IO])
-      .map(Semaphore2.fromCats[IO])
-      .orTerminate
+    TSemaphore.make(permits).map(Semaphore2.fromZIO).commit
   }
 }

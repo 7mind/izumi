@@ -141,31 +141,40 @@ package object bio extends Syntax3 with Syntax2 {
 
   type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
-  lazy val Fiber2: Fiber3.type = Fiber3
-
-  type Ref3[+F[-_, +_, +_], A] = Ref2[F[Any, +?, +?], A]
-
-  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +?, +?], E, A]
-
-  type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
-  type Latch3[+F[-_, +_, +_]] = Promise3[F, Nothing, Unit]
-
-  type Semaphore3[+F[-_, +_, +_]] = Semaphore2[F[Any, +?, +?]]
-
-  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, ?, ?]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
-  }
-
-  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, ?, ?]]
-  object UnsafeRun3 {
-    @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
   type BlockingIO2[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO2 {
     @inline def apply[F[+_, +_]: BlockingIO2]: BlockingIO2[F] = implicitly
+  }
+
+  type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]
+  lazy val Fiber2: Fiber3.type = Fiber3
+
+  type Ref2[+F[_, _], A] = Ref1[F[Nothing, ?], A]
+  lazy val Ref2: Ref1.type = Ref1
+  type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, ?], A]
+  lazy val Ref3: Ref1.type = Ref1
+
+  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +?, +?], E, A]
+  lazy val Promise3: Promise2.type = Promise2
+
+  type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
+  lazy val Latch2: Promise2.type = Promise2
+  type Latch3[+F[-_, +_, +_]] = Promise3[F, Nothing, Unit]
+  lazy val Latch3: Promise2.type = Promise2
+
+  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, ?]]
+  lazy val Semaphore2: Semaphore1.type = Semaphore1
+  type Semaphore3[+F[_, _, _]] = Semaphore1[F[Any, Nothing, ?]]
+  lazy val Semaphore3: Semaphore1.type = Semaphore1
+
+  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, ?, ?]]
+  object UnsafeRun3 {
+    @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]

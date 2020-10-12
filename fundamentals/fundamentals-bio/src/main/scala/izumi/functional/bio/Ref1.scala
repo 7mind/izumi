@@ -2,16 +2,16 @@ package izumi.functional.bio
 
 import zio.{IO, Ref}
 
-trait Ref2[+F[_, _], A] {
-  def get: F[Nothing, A]
-  def set(a: A): F[Nothing, Unit]
+trait Ref1[+F[_], A] {
+  def get: F[A]
+  def set(a: A): F[Unit]
 
-  def modify[B](f: A => (B, A)): F[Nothing, B]
-  def update(f: A => A): F[Nothing, A]
-  def update_(f: A => A): F[Nothing, Unit]
+  def modify[B](f: A => (B, A)): F[B]
+  def update(f: A => A): F[A]
+  def update_(f: A => A): F[Unit]
 }
 
-object Ref2 {
+object Ref1 {
   def fromZIO[A](ref: Ref[A]): Ref2[IO, A] =
     new Ref2[IO, A] {
       override def get: IO[Nothing, A] = ref.get
