@@ -46,11 +46,10 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
       }
   }
 
-  def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(DIKey, (CreateSet, Set[DIKey]))] = {
-    val allSetOps = allOps
+  def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Iterator[(DIKey, (CreateSet, Set[DIKey]))] = {
+    allOps
+      .view
       .collect { case (target, op: CreateSet) => (target, op) }
-
-    allSetOps
       .groupBy {
         case (a, _) =>
           assert(a.mut.isEmpty)
@@ -69,7 +68,7 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
             }
           (firstOp, potentialMembers)
       }
-      .toSeq
+      .iterator
   }
 
   protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
