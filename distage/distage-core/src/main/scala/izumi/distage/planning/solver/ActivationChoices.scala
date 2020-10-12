@@ -1,4 +1,4 @@
-package izumi.distage.planning.mutations
+package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.Axis.AxisPoint
 

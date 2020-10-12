@@ -1,9 +1,9 @@
-package izumi.distage.planning.mutations
+package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts._
-import izumi.distage.planning.mutations.SemigraphSolver._
+import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._

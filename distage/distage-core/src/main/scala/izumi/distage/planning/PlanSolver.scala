@@ -2,84 +2,16 @@ package izumi.distage.planning
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.model.definition.Binding
-import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.mutations.SemigraphSolver._
-import izumi.distage.planning.mutations.{ActivationChoices, SemigraphSolver}
+import izumi.distage.planning.solver.SemigraphSolver._
+import izumi.distage.planning.solver.{ActivationChoices, GraphPreparations, SemigraphSolver}
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
-import scala.collection.MapView
-
-class GraphPreparations(bindingTranslator: BindingTranslator) {
-  def computeOperationsUnsafe(input: PlannerInput): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    input
-      .bindings.bindings.iterator
-      // this is a minor optimization but it makes some conflict resolution strategies impossible
-      //.filter(b => activationChoices.allValid(toAxis(b)))
-      .flatMap {
-        b =>
-          val next = bindingTranslator.computeProvisioning(b)
-          (next.provisions ++ next.sets.values).map((b, _))
-      }
-      .zipWithIndex
-      .map {
-        case ((b, n), idx) =>
-          val mutIndex = b match {
-            case Binding.SingletonBinding(_, _, _, _, true) =>
-              Some(idx)
-            case _ =>
-              None
-          }
-
-          val axis = n match {
-            case _: CreateSet =>
-              Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
-            case _ =>
-              toAxis(b)
-          }
-
-          (Annotated(n.target, mutIndex, axis), n, b)
-      }
-  }
-
-  def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): MapView[DIKey, (CreateSet, Set[DIKey])] = {
-    val allSetOps = allOps
-      .collect { case (target, op: CreateSet) => (target, op) }
-
-    allSetOps
-      .groupBy {
-        case (a, _) =>
-          assert(a.mut.isEmpty)
-          assert(a.axis.isEmpty, a.toString)
-          a.key
-      }
-      .view
-      .mapValues(_.map(_._2))
-      .mapValues {
-        ops =>
-          val firstOp = ops.head
-          val potentialMembers = ops
-            .tail.foldLeft(ops.head.members) {
-              case (acc, op) =>
-                acc ++ op.members
-            }
-          (firstOp, potentialMembers)
-      }
-  }
-
-  protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
-    b.tags.collect {
-      case AxisTag(axisValue) =>
-        axisValue.toAxisPoint
-    }
-  }
-}
 
 trait PlanSolver {
   def resolveConflicts(
@@ -103,6 +35,7 @@ object PlanSolver {
 
     import izumi.functional.IzEither._
     import izumi.fundamentals.platform.strings.IzString._
+
     import scala.collection.compat._
 
     def resolveConflicts(
