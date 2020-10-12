@@ -54,7 +54,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     val effects = incompatibleEffectType[F].fromNonEmptyList.map(op => IncompatibleEffectTypesException.format(op, SafeType.getK[F], op.effectHKTypeCtor))
     for {
       allErrors <- NonEmptyList.from(unresolved ++ effects)
-    } yield new InvalidPlanException(allErrors.toList.niceList(shift = ""))
+    } yield new InvalidPlanException(allErrors.toList.niceList(shift = ""), Some(this))
   }
 
   /**

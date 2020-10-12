@@ -1,12 +1,13 @@
 package izumi.distage.framework
 
 import izumi.distage.framework.PlanCheck.checkRoleApp
+import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.language.{LiteralCompat, unused}
-import izumi.fundamentals.reflection.TypeUtil
+import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -15,14 +16,24 @@ import scala.reflect.macros.{blackbox, whitebox}
 
 object PlanCheckMacro {
 
-  final class PerformPlanCheck[RoleAppMain <: PlanHolder, Roles <: String, Activations <: String, Config <: String, CheckConfig <: Boolean](
+  final case class PerformPlanCheck[RoleAppMain <: PlanHolder, Roles <: String, Activations <: String, Config <: String, CheckConfig <: Boolean, PrintPlan <: Boolean](
     roleAppMain: RoleAppMain,
     roles: Roles,
     activations: Activations,
     config: Config,
-    checkConfig: CheckConfig,
+    checkConfig: Option[CheckConfig],
+    printPlan: Option[PrintPlan],
+    checkedPlugins: Seq[PluginBase],
   ) {
-    def run(): LoadedPlugins = checkRoleApp(roleAppMain, roles, activations, config, checkConfig)
+    def run(): LoadedPlugins =
+      checkRoleApp(
+        roleAppMain = roleAppMain,
+        roles = roles,
+        activations = activations,
+        config = config,
+        checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
+        printPlan = printPlan.getOrElse(PlanCheck.defaultPrintPlan),
+      )
   }
   object PerformPlanCheck {
     implicit def performCompileTimeCheck[
@@ -31,8 +42,9 @@ object PlanCheckMacro {
       Activations <: String,
       Config <: String,
       CheckConfig <: Boolean,
-    ]: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig] =
-      macro Materialize.impl[RoleAppMain, Roles, Activations, Config, CheckConfig]
+      PrintPlan <: Boolean,
+    ]: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan] =
+      macro Materialize.impl[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan]
   }
 
   object Materialize {
@@ -42,8 +54,9 @@ object PlanCheckMacro {
       Activations <: String: c.WeakTypeTag,
       Config <: String: c.WeakTypeTag,
       CheckConfig <: Boolean: c.WeakTypeTag,
+      PrintPlan <: Boolean: c.WeakTypeTag,
     ](c: blackbox.Context
-    ): c.Expr[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig]] = {
+    ): c.Expr[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan]] = {
       import c.universe._
 
       def getConstantType[S: c.WeakTypeTag]: S = {
@@ -52,24 +65,35 @@ object PlanCheckMacro {
           case tpe =>
             c.abort(
               c.enclosingPosition,
-              s"""When materializing ${weakTypeOf[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig]]},
-                 |Bad String constant type: $tpe - Not a constant! Only constant string literal types are supported!
+              s"""When materializing ${weakTypeOf[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan]]},
+                 |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
                """.stripMargin,
             )
         }
       }
+      def noneIfNothing[S: c.WeakTypeTag](action: => S): Option[S] = if (weakTypeOf[S] ne definitions.NothingTpe) Some(action) else None
 
       val roleAppMain = c.Expr[RoleAppMain](q"${weakTypeOf[RoleAppMain].asInstanceOf[SingleTypeApi].sym.asTerm}")
       val roles = getConstantType[Roles]
       val activations = getConstantType[Activations]
       val config = getConstantType[Config]
-      val checkConfig = getConstantType[CheckConfig]
+      val checkConfig = noneIfNothing(getConstantType[CheckConfig])
+      val printPlan = noneIfNothing(getConstantType[PrintPlan])
 
       val maybeMain = instantiateObject[RoleAppMain](c.universe)
 
+      val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`distage.plancheck.debug`.name)
       val checkedLoadedPlugins =
         try {
-          PlanCheck.checkRoleApp(maybeMain, roles, activations, config)
+          PlanCheck.checkRoleApp(
+            maybeMain,
+            roles,
+            activations,
+            config,
+            checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
+            printPlan.getOrElse(PlanCheck.defaultPrintPlan),
+            logger = logger,
+          )
         } catch {
           case t: Throwable =>
             c.abort(c.enclosingPosition, t.stackTrace)
@@ -86,40 +110,57 @@ object PlanCheckMacro {
       // We _have_ to call `new` to cause Intellij's incremental compiler to recompile users,
       // we can't just splice a type reference or create an expression referencing the type for it to pickup,
       // Zinc does recompile in these cases, but for Intellij `new` is required
-      val pluginsList: List[c.Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(referencablePlugins)
-      val referenceStmt = c.Expr[Unit](q"{ lazy val _ = $pluginsList ; () }")
+      val pluginsList: List[Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(referencablePlugins)
+      val referenceStmt = c.Expr[List[PluginBase]](Liftable.liftList[Tree].apply(pluginsList))
 
       def lit[T: c.WeakTypeTag](s: T): c.Expr[T] = c.Expr[T](Literal(Constant(s)))
+      def opt[T: c.WeakTypeTag](s: Option[T]): c.Expr[Option[T]] = {
+        s match {
+          case Some(value) => reify(Some[T](lit[T](value).splice))
+          case None => reify(None)
+        }
+      }
 
       reify {
-        referenceStmt.splice
-        new PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig](
+        val plugins = referenceStmt.splice
+        new PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan](
           roleAppMain.splice,
           lit[Roles](roles).splice,
           lit[Activations](activations).splice,
           lit[Config](config).splice,
-          lit[CheckConfig](checkConfig).splice,
+          opt[CheckConfig](checkConfig).splice,
+          opt[PrintPlan](printPlan).splice,
+          plugins,
         )
       }
     }
   }
 
-  // 2.12 requires `Witness`
-  class Impl[RoleAppMain <: PlanHolder, Roles <: LiteralString, Activations <: LiteralString, Config <: LiteralString, CheckConfig <: LiteralBoolean](
-    @unused roleAppMain: RoleAppMain,
+  // 2.12 requires `Witness`-like mechanism
+  class Impl[
+    RoleAppMain <: PlanHolder,
+    Roles <: LiteralString,
+    Activations <: LiteralString,
+    Config <: LiteralString,
+    CheckConfig <: LiteralBoolean,
+    PrintPlan <: LiteralBoolean,
+  ](@unused roleAppMain: RoleAppMain,
     @unused roles: Roles with LiteralString = LiteralString("*"),
     @unused activations: Activations with LiteralString = LiteralString("*"),
     @unused config: Config with LiteralString = LiteralString("*"),
     @unused checkConfig: CheckConfig with LiteralBoolean = LiteralBoolean.True,
+    @unused printPlan: PrintPlan with LiteralBoolean = LiteralBoolean.False,
   )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T]
+    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T, PrintPlan#T]
   ) {
     def rerunAtRuntime(): LoadedPlugins = planCheck.run()
   }
+
   private[PlanCheckMacro] final abstract class LiteralString { type T <: String }
   object LiteralString {
     @inline implicit final def apply(s: String): LiteralString { type T = s.type } = null
   }
+
   private[PlanCheckMacro] sealed abstract class LiteralBoolean { type T <: Boolean }
   object LiteralBoolean {
     @inline implicit final def apply(b: Boolean): LiteralBoolean = macro LiteralBooleanMacro.createBool

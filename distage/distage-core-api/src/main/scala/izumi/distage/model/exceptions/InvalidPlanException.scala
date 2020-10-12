@@ -1,6 +1,9 @@
 package izumi.distage.model.exceptions
 
-class InvalidPlanException(message: String, val omitClassName: Boolean, captureStackTrace: Boolean) extends DIException(message, null, captureStackTrace) {
-  def this(message: String) = this(message, false, true)
+import izumi.distage.model.plan.OrderedPlan
+
+class InvalidPlanException(message: String, val plan: Option[OrderedPlan], val omitClassName: Boolean, captureStackTrace: Boolean)
+  extends DIException(message, null, captureStackTrace) {
+  def this(message: String, plan: Option[OrderedPlan] = None) = this(message, plan, false, true)
   override def toString: String = if (omitClassName) getMessage else super.toString
 }

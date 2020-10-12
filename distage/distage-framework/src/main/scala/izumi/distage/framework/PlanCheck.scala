@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.ConfigFactory
 import distage.Injector
+import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
 import izumi.distage.framework.model.ActivationInfo
@@ -12,6 +13,7 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition._
 import izumi.distage.model.effect.DIEffectAsync
 import izumi.distage.model.exceptions.InvalidPlanException
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
@@ -22,6 +24,7 @@ import izumi.distage.roles.launcher.ActivationParser.activationKV
 import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
@@ -31,8 +34,9 @@ import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 object PlanCheck {
-  private[this] final val defaultActivationsLimit = DebugProperties.`distage.plancheck.max-activations`.strValue().fold(9000)(_.asInt(9000))
-  private[this] final val defaultCheckConfig = DebugProperties.`distage.plancheck.check-config`.boolValue(true)
+  final val defaultActivationsLimit = DebugProperties.`distage.plancheck.max-activations`.strValue().fold(9000)(_.asInt(9000))
+  final val defaultCheckConfig = DebugProperties.`distage.plancheck.check-config`.boolValue(true)
+  final val defaultPrintPlan = DebugProperties.`distage.plancheck.print-plan`.boolValue(false)
 
   /**
     * @param roleAppMain ...
@@ -48,13 +52,15 @@ object PlanCheck {
     activations: String = "*",
     config: String = "*",
     checkConfig: Boolean = defaultCheckConfig,
+    printPlan: Boolean = defaultPrintPlan,
     limit: Int = defaultActivationsLimit,
+    logger: TrivialLogger = defaultLogger,
   ): LoadedPlugins = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
     val chosenConfig = if (config == "*") None else Some(config)
 
-    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, limit)
+    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, printPlan, limit, logger)
   }
 
   def checkRoleAppParsed(
@@ -63,24 +69,30 @@ object PlanCheck {
     chosenActivations: Option[Array[Iterable[(String, String)]]],
     chosenConfig: Option[String],
     checkConfig: Boolean,
+    printPlan: Boolean,
     limit: Int,
+    logger: TrivialLogger = defaultLogger,
   ): LoadedPlugins = {
-    var effectiveRoles = "* (effective: unknown, failed too early)"
-    var effectiveConfig = "*"
 
-    def message(t: Throwable): String = {
+    var effectiveRoles = "* (effective: unknown, failed too early)"
+    var effectiveActivations = "* (effective: unknown, failed too early)"
+    var effectiveConfig = "*"
+    def message(t: Throwable, plan: Option[OrderedPlan]): String = {
       val trace = t.getStackTrace
-      val cutoffIdx = trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")
-      t.setStackTrace(trace.take(cutoffIdx))
+      val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
+      t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
+
+      val printedPlan = plan.filter(_ => printPlan).fold("")("Plan was:\n" + _.render() + "\n\n")
 
       s"""Found a problem with your DI wiring, when checking wiring of application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
          |
          |  roles       = ${chosenRoles.fold(effectiveRoles)(_.toSeq.sorted.mkString(" "))}
-         |  activations = ${chosenActivations.fold("*")(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}
+         |  activations = ${chosenActivations.fold(effectiveActivations)(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}
          |  config      = ${chosenConfig.fold(effectiveConfig)("resource:" + _)}
          |  checkConfig = $checkConfig
+         |  printPlan   = $printPlan${if (!printPlan) ", set to `true` for plan printout" else ""}
          |
-         |${t.stackTrace}
+         |$printedPlan${t.stackTrace}
          |""".stripMargin
     }
 
@@ -122,7 +134,7 @@ object PlanCheck {
               AppConfig {
                 val cfg = ConfigFactory.parseResources(roleAppMain.getClass.getClassLoader, resourceName).resolve()
                 if (cfg.origin().resource() eq null) {
-                  throw new InvalidPlanException(s"Couldn't find a config resource with name `$resourceName` - file not found")
+                  throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
                 }
                 cfg
               }
@@ -146,12 +158,14 @@ object PlanCheck {
 
         val allChoices = chosenActivations match {
           case None =>
-            allActivations(activationChoicesExtractor, bootloader.input.bindings, limit)
+            val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
+            effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
+            allActivations(choices, limit)
           case Some(choiceSets) =>
             choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
         }
-        println(allChoices.niceList())
-        println(locatorRef.get.plan)
+        logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
+        logger.log(s"Checking with allChoices=${allChoices.niceList()}")
 
         val allKeysFromRoleAppMainModule = {
           val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
@@ -163,7 +177,7 @@ object PlanCheck {
 
         //allChoices.foreach {
         DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
-          checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, maybeConcurrentConfigParsersMap)
+          checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger, maybeConcurrentConfigParsersMap)
         }
 
         maybeConcurrentConfigParsersMap.foreach {
@@ -176,8 +190,10 @@ object PlanCheck {
         appPlugins ++ bsPlugins
     })
     catch {
+      case t: InvalidPlanException =>
+        throw new InvalidPlanException(message(t, t.plan), t.plan, omitClassName = true, captureStackTrace = false)
       case t: Throwable =>
-        throw new InvalidPlanException(message(t), omitClassName = true, captureStackTrace = false)
+        throw new InvalidPlanException(message(t, None), None, omitClassName = true, captureStackTrace = false)
     }
   }
 
@@ -185,6 +201,7 @@ object PlanCheck {
     bootloader: Bootloader,
     bsModule: BootstrapModule,
     allKeysFromRoleAppMainModule: Set[DIKey],
+    logger: TrivialLogger,
     maybeChm: Option[ConcurrentHashMap.KeySetView[AppConfig => Any, java.lang.Boolean]],
   )(activation: Activation
   ): Unit = {
@@ -194,9 +211,9 @@ object PlanCheck {
         activation = _ => activation,
       )
     )
-    println(s"\n\n\n$activation\n\n\n")
-    println(app.plan)
-    app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k) || test_ignore(k))
+    logger.log(s"Checking for activation=$activation, plan=${app.plan}")
+
+    app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k))
 
     // bindings can have arbitrary relationships with the rest of the graph which would force us to run the check
     // for all possible activations, we just collect all the parsers added via `makeConfig` and execute them on
@@ -216,10 +233,6 @@ object PlanCheck {
     }
   }
 
-  private[this] def test_ignore(target: DIKey): Boolean = {
-    target.tpe.tag.shortName.contains("XXX_LocatorLeak")
-  }
-
   private[this] def parseRoles(s: String): Set[String] = {
     s.split(" ").iterator.filter(_.nonEmpty).map(_.stripPrefix(":")).toSet
   }
@@ -228,7 +241,7 @@ object PlanCheck {
     s.split(" *\\| *").map(_.split(" ").iterator.filter(_.nonEmpty).map(activationKV).toSeq)
   }
 
-  private[this] def allActivations(activationChoicesExtractor: ActivationChoicesExtractor, bindings: ModuleBase, limit: Int): Set[Activation] = {
+  private[this] def allActivations(allPossibleChoices: Map[Axis, Set[AxisValue]], limit: Int): Set[Activation] = {
     var counter = 0
     var printed = false
     def go(accumulator: Activation, axisValues: Map[Axis, Set[AxisValue]]): Set[Activation] = {
@@ -251,8 +264,11 @@ object PlanCheck {
         }
       }
     }
-    val allPossibleChoices = activationChoicesExtractor.findAvailableChoices(bindings).availableChoices
     go(Activation.empty, allPossibleChoices)
+  }
+
+  private[this] def defaultLogger: TrivialLogger = {
+    TrivialLogger.make[this.type](DebugProperties.`distage.plancheck.debug`.name)
   }
 
 }
