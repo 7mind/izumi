@@ -36,6 +36,7 @@ class PlannerDefaultImpl(
   }
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+
     resolver.resolveConflicts(input) match {
       case Left(errors) =>
         throwOnConflict(input.activation, errors)

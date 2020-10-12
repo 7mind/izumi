@@ -4,8 +4,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.conflicts.Annotated
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 
@@ -14,6 +14,19 @@ import scala.annotation.nowarn
 @nowarn("msg=Unused import")
 class GraphPreparations(bindingTranslator: BindingTranslator) {
   import scala.collection.compat._
+  def toDeps(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = {
+    allOps.collect {
+      case (target, op: WiringOp) => (target, toDep(op))
+      case (target, op: MonadicOp) => (target, toDep(op))
+    }
+  }
+
+  def toDep: PartialFunction[InstantiationOp, Node[DIKey, InstantiationOp]] = {
+    case op: WiringOp =>
+      Node(op.wiring.requiredKeys, op: InstantiationOp)
+    case op: MonadicOp =>
+      Node(Set(op.effectKey), op: InstantiationOp)
+  }
 
   def computeOperationsUnsafe(input: PlannerInput): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
     input

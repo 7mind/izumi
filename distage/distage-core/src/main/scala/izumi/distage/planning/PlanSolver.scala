@@ -41,6 +41,15 @@ object PlanSolver {
     def resolveConflicts(
       input: PlannerInput
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
+
+      // TODO: just for testing
+      val verifier = new PlannerInputVerifier(preps)
+      verifier.verify(input) match {
+        case Left(value) =>
+          throw new RuntimeException(value.niceList())
+        case Right(_) =>
+      }
+
       for {
         problem <- computeProblem(input)
         resolution <- resolver.resolve(problem.matrix, problem.roots, problem.activations, problem.weakSetMembers)
@@ -77,10 +86,7 @@ object PlanSolver {
 
       val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
 
-      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
-        case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
-        case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
-      }
+      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(allOps)
 
       val sets: Map[Annotated[DIKey], Node[DIKey, ExecutableOp.InstantiationOp]] = computeSets(ac, allOps)
 
