@@ -9,7 +9,7 @@ import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
 import izumi.fundamentals.platform.files.IzFiles
-import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
+import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, UnloadablePathReference}
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -25,7 +25,7 @@ class IzResources(clazz: Class[_]) {
     } catch { case _: Throwable => None }
   }
 
-  def jarResource[C: ClassTag](name: String): ResourceLocation = {
+  def jarResource[C: ClassTag](name: String): IzResources.ResourceLocation = {
     classLocationUrl[C]()
       .flatMap {
         url =>
@@ -40,19 +40,19 @@ class IzResources(clazz: Class[_]) {
 
               Option(jar.getEntry(name)) match {
                 case Some(entry) =>
-                  Some(ResourceLocation.Jar(locFile, jar, entry))
+                  Some(IzResources.ResourceLocation.Jar(locFile, jar, entry))
                 case None =>
                   jar.close()
                   None
               }
             } else if (resolvedFile.exists()) {
-              Some(ResourceLocation.Filesystem(resolvedFile))
+              Some(IzResources.ResourceLocation.Filesystem(resolvedFile))
             } else {
               None
             }
           } catch { case _: Throwable => None }
       }
-      .getOrElse(ResourceLocation.NotFound)
+      .getOrElse(IzResources.ResourceLocation.NotFound)
   }
 
   def getPath(resPath: String): Option[PathReference] = {
@@ -100,7 +100,7 @@ class IzResources(clazz: Class[_]) {
 
 }
 
-object IzResourcesDirty extends IzResources(classOf[ResourceLocation]) {
+object IzResourcesDirty extends IzResources(classOf[IzResources.ResourceLocation]) {
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
@@ -173,7 +173,7 @@ object IzResourcesDirty extends IzResources(classOf[ResourceLocation]) {
   }
 }
 
-object IzResources extends IzResources(classOf[ResourceLocation]) {
+object IzResources extends IzResources(classOf[IzResources.ResourceLocation]) {
 
   implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
 

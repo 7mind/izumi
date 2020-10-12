@@ -17,6 +17,7 @@ import izumi.logstage.api.IzLogger
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
+import scala.collection.compat._
 
 /**
   * Default config resources:
@@ -101,10 +102,7 @@ object ConfigLoader {
     configLocation: ConfigLocation,
   ) extends ConfigLoader {
 
-    @nowarn("msg=Unused import")
     def loadConfig(): AppConfig = {
-      import scala.collection.compat._
-
       val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
       val commonExplicitConfigs = args.global.map(ConfigSource.File).toList
 

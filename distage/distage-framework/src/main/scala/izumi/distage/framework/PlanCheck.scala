@@ -34,25 +34,25 @@ object PlanCheck {
 
   /**
     * @param roleAppMain ...
-    * @param roles       ...
-    * @param activations ...
-    * @param config      Config resource file name, e.g. "application.conf"
-    * @param limit       ...
-    * @param checkConfig ...
+    * @param roles       "*" to check all roles
+    * @param activations "*" to check all possible activations
+    * @param config      Config resource file name, e.g. "application.conf" or "*" if using the same config settings as `roleAppMain`
+    * @param checkConfig Try to parse config file checking all the config bindings added using [[izumi.distage.config.ConfigModuleDef]]
+    * @param limit       Upper limit on possible activation checks, default = 9000
     */
   def checkRoleApp(
     roleAppMain: PlanHolder,
     roles: String = "*",
     activations: String = "*",
     config: String = "*",
-    limit: Int = defaultActivationsLimit,
     checkConfig: Boolean = defaultCheckConfig,
+    limit: Int = defaultActivationsLimit,
   ): LoadedPlugins = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
     val chosenConfig = if (config == "*") None else Some(config)
 
-    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, limit, checkConfig)
+    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, limit)
   }
 
   def checkRoleAppParsed(
@@ -60,8 +60,8 @@ object PlanCheck {
     chosenRoles: Option[Set[String]],
     chosenActivations: Option[Array[Iterable[(String, String)]]],
     chosenConfig: Option[String],
-    limit: Int,
     checkConfig: Boolean,
+    limit: Int,
   ): LoadedPlugins = {
 
     val roleAppBootstrapModule = roleAppMain.finalAppModule(ArgV(Array.empty))

@@ -11,6 +11,7 @@ import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.collection.compat._
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
