@@ -387,7 +387,7 @@ class PlannerDefaultImpl(
     import scala.collection.compat._
 
     val imports = plan
-      .predcessors.links.view
+      .successors.links.view
       .filterKeys(k => !plan.meta.nodes.contains(k))
       .map {
         case (missing, refs) =>
@@ -423,37 +423,6 @@ class PlannerDefaultImpl(
 
     DG.fromPred(IncidenceMatrix(plan.predcessors.links ++ allImports), fullMeta)
   }
-
-//  @nowarn("msg=Unused import")
-//  protected[this] def addImports(plan: SemiPlan): SemiPlan = {
-//    import scala.collection.compat._
-//
-//    val topology = analyzer.topology(plan.steps)
-//    val imports = topology
-//      .dependees
-//      .graph
-//      .view
-//      .filterKeys(k => !plan.index.contains(k))
-//      .map {
-//        case (missing, refs) =>
-//          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.value.toSynthetic)
-//          val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
-//          (missing, ImportDependency(missing, refs, origin))
-//      }
-//      .toMap
-//
-//    val allOps = (imports.values ++ plan.steps).toVector
-//    val missingRoots = plan.roots match {
-//      case Roots.Of(roots) =>
-//        roots
-//          .toSet.diff(allOps.map(_.target).toSet).map {
-//            root =>
-//              ImportDependency(root, Set.empty, OperationOrigin.Unknown)
-//          }.toVector
-//      case Roots.Everything => Vector.empty
-//    }
-//    SemiPlan(missingRoots ++ allOps, plan.roots)
-//  }
 
   protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
     val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")
