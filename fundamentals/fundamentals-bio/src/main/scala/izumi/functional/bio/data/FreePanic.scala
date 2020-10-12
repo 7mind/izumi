@@ -91,7 +91,7 @@ object FreePanic {
     override def toString: String = s"Terminate:[$termination]"
   }
   private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreePanic[S, E, A], cont: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
-    override def toString: String = s"FlatMap:[sub=$sub]"
+    override def toString: String = s"FlatMapped:[sub=$sub]"
   }
   private final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, BIOExit.Failure[E], A] {
     override def toString: String = s"Sandbox:[sub=$sub]"
@@ -106,7 +106,7 @@ object FreePanic {
     release: (A0, BIOExit[E, A]) => FreePanic[S, Nothing, Unit],
     use: A0 => FreePanic[S, E, A],
   ) extends FreePanic[S, E, A] {
-    override def toString: String = s"Redeem:[acquire=$acquire;use=${use.getClass.getSimpleName}]"
+    override def toString: String = s"BracketCase:[acquire=$acquire;use=${use.getClass.getSimpleName}]"
   }
 
   @inline implicit def BIOPanicInstances[S[_, _]]: BIOPanic[FreePanic[S, +?, +?]] = new BIOPanicInstances[S]

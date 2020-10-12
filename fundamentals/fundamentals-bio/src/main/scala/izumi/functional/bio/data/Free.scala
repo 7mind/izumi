@@ -41,7 +41,7 @@ object Free {
     override def toString: String = s"Suspend:[$a]"
   }
   private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
-    override def toString: String = s"FlatMap:[sub=$sub]"
+    override def toString: String = s"FlatMapped:[sub=$sub]"
   }
 
   @inline implicit def BIOMonadInstances[S[_, _]]: BIOMonad[Free[S, +?, +?]] = new BIOMonadInstances[S]
