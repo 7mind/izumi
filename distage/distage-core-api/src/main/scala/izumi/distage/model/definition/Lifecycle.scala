@@ -958,7 +958,11 @@ object Lifecycle {
           acquire = lifecycle.acquire.flatMap {
             a =>
               F.maybeSuspend {
-                finalizers.updateAndGet((() => lifecycle.release(a)) :: _)
+                // can't use `.updateAndGet` because of Scala.js
+                var oldValue = finalizers.get()
+                while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
+                  oldValue = finalizers.get()
+                }
                 a
               }
           }
