@@ -21,7 +21,7 @@ sealed trait FreePanic[S[_, _], +E, +A] {
   @inline final def catchAll[A1 >: A, E1](err: E => FreePanic[S, E1, A1]): FreePanic[S, E1, A1] =
     FreePanic.Redeem(this, err, (a: A) => FreePanic.pure(a))
   @inline final def catchSome[A1 >: A, E1 >: E](err: PartialFunction[E, FreePanic[S, E1, A1]]): FreePanic[S, E1, A1] =
-    FreePanic.Redeem(this, err.orElse(PartialFunction.fromFunction[E, FreePanic[S, E1, A1]](FreePanic.fail[S, E](_))), (a: A) => FreePanic.pure(a))
+    FreePanic.Redeem(this, err.orElse[E, FreePanic[S, E1, A1]] { case e => FreePanic.fail(e) }, (a: A) => FreePanic.pure(a))
   @inline final def swap: FreePanic[S, A, E] =
     FreePanic.Redeem[S, E, A, A, E](this, FreePanic.pure, FreePanic.fail(_))
 

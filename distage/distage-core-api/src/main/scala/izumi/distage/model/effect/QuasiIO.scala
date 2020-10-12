@@ -260,7 +260,16 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
     }
   }
 
-  implicit def fromFree[S[_, _], E]: DIApplicative[FreePanic[S, E, ?]] = new DIApplicative[FreePanic[S, E, ?]] {
+  implicit def fromFree[S[_, _], E]: DIApplicative[FreePanic[S, E, ?]] = new DIApplicative[FreePanic[S, E, +?]] {
+    override def traverse[A, B](l: Iterable[A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, List[B]] = {
+      l.foldLeft(pure(List.empty[B])) {
+        (acc, a) =>
+          acc.flatMap(list => f(a).map(r => list ++ List(r)))
+      }
+    }
+    override def traverse_[A](l: Iterable[A])(f: A => FreePanic[S, E, Unit]): FreePanic[S, E, Unit] = {
+      l.foldLeft(unit)((acc, a) => acc.flatMap(_ => f(a)))
+    }
     override def pure[A](a: A): FreePanic[S, E, A] = FreePanic.pure(a)
     override def map[A, B](fa: FreePanic[S, E, A])(f: A => B): FreePanic[S, E, B] = fa.map(f)
     override def map2[A, B, C](fa: FreePanic[S, E, A], fb: => FreePanic[S, E, B])(f: (A, B) => C): FreePanic[S, E, C] = {
