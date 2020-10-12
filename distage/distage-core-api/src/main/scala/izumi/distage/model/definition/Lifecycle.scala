@@ -11,6 +11,7 @@ import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapIm
 import izumi.distage.model.effect.DIEffect.fromCats
 import izumi.distage.model.effect.{DIApplicative, DIEffect}
 import izumi.distage.model.providers.Functoid
+import izumi.functional.bio.PredefinedHelper.Predefined
 import izumi.functional.bio.{BIOApplicative, BIOApplicative3, BIOFunctor, BIOFunctor3, BIOLocal}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
@@ -1160,7 +1161,18 @@ private[definition] trait LifecycleCatsInstances0 {
   }.asInstanceOf[Monoid[Lifecycle[F, A]]]
 }
 
-private[definition] trait LifecycleIzumiInstances {
+private[definition] trait LifecycleIzumiInstances extends LifecycleIzumiInstancesPriority0
+
+private[definition] trait LifecycleIzumiInstancesPriority0 extends LifecycleIzumiInstancesPriority1 {
+  @inline implicit final def zio3LifecycleInstance = Predefined(functor3ForLifecycle[zio.ZIO])
+  @inline implicit final def zio2LifecycleInstance  = Predefined(functor2ForLifecycle[zio.IO])
+}
+
+private[definition] trait LifecycleIzumiInstancesPriority1 extends LifecycleIzumiInstancesDef {
+  @inline implicit final def monix2LifecycleInstance  = Predefined(functor2ForLifecycle[monix.bio.IO])
+}
+
+private[definition] trait LifecycleIzumiInstancesDef {
   type LifecycleFunctor2[F[+_, +_]] = BIOFunctor[Lambda[(`+E`, `+A`) => Lifecycle[F[E, ?], A]]]
   type LifecycleFunctor3[F[-_, +_, +_]] = BIOFunctor3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, ?], A]]]
 

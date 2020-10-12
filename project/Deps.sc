@@ -432,7 +432,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all, monix_bio in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
       ),
       Artifact(
