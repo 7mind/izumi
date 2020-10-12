@@ -2,6 +2,7 @@ package izumi.distage.roles.launcher
 
 import distage.ModuleBase
 import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
@@ -9,7 +10,7 @@ import izumi.logstage.api.IzLogger
 import logstage.Info
 
 trait ModuleValidator {
-  def validate(strategy: PluginMergeStrategy, plugins: Seq[PluginBase], bsStrategy: PluginMergeStrategy, bsPlugins: Seq[PluginBase]): ValidatedModulePair
+  def validate(strategy: PluginMergeStrategy, plugins: LoadedPlugins, bsStrategy: PluginMergeStrategy, bsPlugins: LoadedPlugins): ValidatedModulePair
 }
 
 object ModuleValidator {
@@ -24,12 +25,12 @@ object ModuleValidator {
   ) extends ModuleValidator {
     override def validate(
       strategy: PluginMergeStrategy,
-      plugins: Seq[PluginBase],
+      plugins: LoadedPlugins,
       bsStrategy: PluginMergeStrategy,
-      bsPlugins: Seq[PluginBase],
+      bsPlugins: LoadedPlugins,
     ): ValidatedModulePair = {
-      val appModule = strategy.merge(plugins)
-      val bootstrapAutoModule = bsStrategy.merge(bsPlugins)
+      val appModule = strategy.merge(plugins.result)
+      val bootstrapAutoModule = bsStrategy.merge(bsPlugins.result)
 
       val conflicts = bootstrapAutoModule.keys.intersect(appModule.keys)
       if (conflicts.nonEmpty)

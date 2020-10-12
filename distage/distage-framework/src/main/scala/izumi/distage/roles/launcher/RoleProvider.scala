@@ -11,6 +11,7 @@ import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
 import scala.collection.immutable.Set
@@ -125,7 +126,7 @@ object RoleProvider {
     protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
       val roleClassName = role.cls.getName
       try {
-        Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
+        Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
       } catch {
         case t: Throwable =>
           logger.crit(s"""Failed to reflect RoleDescriptor companion object for $role: $t

@@ -14,7 +14,8 @@ import izumi.fundamentals.platform.language.unused
   *   }
   * }}}
   *
-  * @param ev Forces compile-time checks to re-run when the source code of a (relevant) class inheriting `PluginDef` is changed.
-  *           @see [[https://izumi.7mind.io/distage/distage-framework#compile-time-checks Compile-time checks]]
+  * @param recompilationToken Forces compile-time checks to re-run when the source code of a (relevant) class inheriting `PluginDef` is changed.
+  *
+  * @see [[https://izumi.7mind.io/distage/distage-framework#compile-time-checks Compile-time checks]]
   */
-abstract class PluginDef[T](implicit @unused ev: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef
+abstract class PluginDef[T](implicit @unused recompilationToken: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef

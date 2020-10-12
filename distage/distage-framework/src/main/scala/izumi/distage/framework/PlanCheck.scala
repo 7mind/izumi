@@ -11,10 +11,11 @@ import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoade
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition._
 import izumi.distage.model.effect.DIEffectAsync
+import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.ActivationParser.activationKV
@@ -22,104 +23,36 @@ import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
-import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
-
-import scala.language.experimental.macros
-import scala.language.implicitConversions
-import scala.reflect.macros.blackbox
 
 object PlanCheck {
   private[this] final val defaultActivationsLimit = DebugProperties.`distage.plancheck.max-activations`.strValue().fold(9000)(_.asInt(9000))
   private[this] final val defaultCheckConfig = DebugProperties.`distage.plancheck.check-config`.boolValue(true)
 
-  final class PerformPlanCheck[T <: PlanHolder, Roles <: String, Activations <: String, Config <: String](
-    roleAppMain: T,
-    roles: Roles,
-    activations: Activations,
-    config: Config,
-  ) {
-    def run(): Unit = checkRoleApp(roleAppMain, roles, activations, config)
-  }
-  object PerformPlanCheck {
-    implicit def performCompileTimeCheck[T <: PlanHolder, Roles <: String, Activations <: String, Config <: String]: PerformPlanCheck[T, Roles, Activations, Config] =
-      macro Materialize.impl[T, Roles, Activations, Config]
-  }
-
-  object Materialize {
-    def impl[T <: PlanHolder: c.WeakTypeTag, Roles <: String: c.WeakTypeTag, Activations <: String: c.WeakTypeTag, Config <: String: c.WeakTypeTag](
-      c: blackbox.Context
-    ): c.Expr[PerformPlanCheck[T, Roles, Activations, Config]] = {
-      import c.universe._
-
-      def getConstantType[S: c.WeakTypeTag]: String = {
-        weakTypeOf[S].dealias match {
-          case ConstantType(Constant(s: String)) => s
-          case tpe =>
-            c.abort(
-              c.enclosingPosition,
-              s"""When materializing PlanCheck[${weakTypeOf[T]}, ${weakTypeOf[Roles]}, ${weakTypeOf[Activations]}],
-                 |Bad String constant type: $tpe - Not a constant! Only constant string literal types are supported!
-               """.stripMargin,
-            )
-        }
-      }
-
-      val t = c.Expr[T](q"${weakTypeOf[T].asInstanceOf[SingleTypeApi].sym.asTerm}")
-      val roles = c.Expr[Roles](Liftable.liftString(getConstantType[Roles]))
-      val activations = c.Expr[Activations](Liftable.liftString(getConstantType[Activations]))
-      val config = c.Expr[Config](Liftable.liftString(getConstantType[Config]))
-
-      // err, do in place?
-
-      // FIXME: splice plugin references
-
-      reify {
-        new PerformPlanCheck[T, Roles, Activations, Config](t.splice, roles.splice, activations.splice, config.splice)
-      }
-    }
-  }
-
-  // 2.12 requires `Witness`
-  class Impl[RoleAppMain <: PlanHolder, Roles <: LiteralString, Activations <: LiteralString, Config <: LiteralString](
-    roleAppMain: RoleAppMain,
-    roles: Roles with LiteralString = LiteralString("*"),
-    activations: Activations with LiteralString = LiteralString("*"),
-    config: Config with LiteralString = LiteralString("*"),
-  )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T]
-  )
-  private[PlanCheck] final abstract class LiteralString { type T <: String }
-  object LiteralString {
-    @inline implicit final def apply(s: String): LiteralString { type T = s.type } = null
-  }
-  private[PlanCheck] final abstract class LiteralBoolean { type T <: Boolean }
-  object LiteralBoolean {
-    @inline implicit final def apply(b: Boolean): LiteralBoolean { type T = b.type } = null
-  }
-
-  // 2.13+
-//  class Impl[T <: PlanHolder, Roles <: String with Singleton, Activations <: String with Singleton](
-//    roleAppMain: T,
-//    roles: Roles,
-//    activations: Activations,
-//  )(implicit
-//    val planCheck: PlanCheck[T, Roles, Activations]
-//  )
-
+  /**
+    * @param roleAppMain ...
+    * @param roles       ...
+    * @param activations ...
+    * @param config      Config resource file name, e.g. "application.conf"
+    * @param limit       ...
+    * @param checkConfig ...
+    */
   def checkRoleApp(
     roleAppMain: PlanHolder,
     roles: String = "*",
     activations: String = "*",
     config: String = "*",
     limit: Int = defaultActivationsLimit,
-  ): Unit = {
+    checkConfig: Boolean = defaultCheckConfig,
+  ): LoadedPlugins = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
     val chosenConfig = if (config == "*") None else Some(config)
-    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, limit)
+
+    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, limit, checkConfig)
   }
 
   def checkRoleAppParsed(
@@ -128,12 +61,13 @@ object PlanCheck {
     chosenActivations: Option[Array[Iterable[(String, String)]]],
     chosenConfig: Option[String],
     limit: Int,
-  ): Unit = {
+    checkConfig: Boolean,
+  ): LoadedPlugins = {
 
     val roleAppBootstrapModule = roleAppMain.finalAppModule(ArgV(Array.empty))
     Injector[Identity]().produceRun(roleAppBootstrapModule overriddenBy new ModuleDef {
-      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-      make[IzLogger].fromValue(IzLogger.NullLogger)
+//      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
+//      make[IzLogger].fromValue(IzLogger.NullLogger)
       make[AppConfig].fromValue(AppConfig.empty)
       make[RawAppArgs].fromValue(RawAppArgs.empty)
       make[Activation].named("roleapp").todo // TODO
@@ -162,9 +96,19 @@ object PlanCheck {
             Functoid(ConfigLoader.Args forEnabledRoles (_: RolesInfo).availableRoleNames)
         }
       }
-      chosenConfig.foreach {
-        resourceName =>
-          make[ConfigLoader].fromValue[ConfigLoader](() => AppConfig(ConfigFactory.parseResources(resourceName)))
+      chosenConfig match {
+        case Some(resourceName) =>
+          make[ConfigLoader].fromValue[ConfigLoader](
+            () =>
+              AppConfig {
+                val cfg = ConfigFactory.parseResources(roleAppMain.getClass.getClassLoader, resourceName).resolve()
+                if (cfg.origin().resource() eq null) {
+                  throw new InvalidPlanException(s"Couldn't find a config resource with name `$resourceName` - file not found")
+                }
+                cfg
+              }
+          )
+        case None => // use original ConfigLoader
       }
     })(Functoid {
       (
@@ -173,11 +117,11 @@ object PlanCheck {
         activationChoicesExtractor: ActivationChoicesExtractor,
         roleAppActivationParser: RoleAppActivationParser,
         configLoader: ConfigLoader,
-//        roots: Set[DIKey] @Id("distage.roles.roots"),
+        //        roots: Set[DIKey] @Id("distage.roles.roots"),
         activationInfo: ActivationInfo,
         locatorRef: LocatorRef,
-        appPlugins: Seq[PluginBase] @Id("main"),
-        bsPlugins: Seq[PluginBase] @Id("main"),
+        appPlugins: LoadedPlugins @Id("main"),
+        bsPlugins: LoadedPlugins @Id("bootstrap"),
       ) =>
         val allChoices = chosenActivations match {
           case None =>
@@ -188,21 +132,26 @@ object PlanCheck {
         println(allChoices.niceList())
         println(locatorRef.get.plan)
 
-        val chm = ConcurrentHashMap.newKeySet[AppConfig => Any]()
-
         val allKeysFromRoleAppMainModule = {
           val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
           val keysThatCouldveBeenInBootstrap = roleAppBootstrapModule.keys
           keysUsedInBootstrap ++ keysThatCouldveBeenInBootstrap
         }
 
+        val maybeConcurrentConfigParsersMap = if (checkConfig) Some(ConcurrentHashMap.newKeySet[AppConfig => Any]()) else None
+
         //allChoices.foreach {
         DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
-          checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, chm)
+          checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, maybeConcurrentConfigParsersMap)
         }
 
-        val realAppConfig = configLoader.loadConfig()
-        chm.forEach(_.apply(realAppConfig))
+        maybeConcurrentConfigParsersMap.foreach {
+          chm =>
+            val realAppConfig = configLoader.loadConfig()
+            chm.forEach(_.apply(realAppConfig).discard())
+        }
+
+        appPlugins ++ bsPlugins
     })
   }
 
@@ -210,7 +159,7 @@ object PlanCheck {
     bootloader: Bootloader,
     bsModule: BootstrapModule,
     allKeysFromRoleAppMainModule: Set[DIKey],
-    chm: ConcurrentHashMap.KeySetView[AppConfig => Any, java.lang.Boolean],
+    maybeChm: Option[ConcurrentHashMap.KeySetView[AppConfig => Any, java.lang.Boolean]],
   )(activation: Activation
   ): Unit = {
     val app = bootloader.boot(
@@ -223,19 +172,21 @@ object PlanCheck {
     println(app.plan)
     app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k) || test_ignore(k))
 
-    // instead of partially evaluating the plan and running into problems because, due to mutators, even `makeConfig`
     // bindings can have arbitrary relationships with the rest of the graph which would force us to run the check
     // for all possible activations, we just collect all the parsers added via `makeConfig` and execute them on
     // an `AppConfig` once to check that the default config is well-formed.
-    app.plan.steps.foreach {
-      _.origin
-        .value.fold(
-          (),
-          _.tags.foreach {
-            case c: ConfTag => chm.add(c.parser)
-            case _ => ()
-          },
-        )
+    maybeChm.foreach {
+      chm =>
+        app.plan.steps.foreach {
+          _.origin
+            .value.fold(
+              onUnknown = (),
+              onDefined = _.tags.foreach {
+                case c: ConfTag => chm.add(c.parser)
+                case _ => ()
+              },
+            )
+        }
     }
   }
 

@@ -9,7 +9,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ActivationChoicesExtractor
 import izumi.distage.model.PlannerInput
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
-import izumi.distage.plugins.load.PluginLoaderDefaultImpl
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.launcher.RoleAppActivationParser
@@ -84,7 +84,7 @@ object StaticPluginCheckerMacro {
     val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
 
     val loadedPlugins = if (pluginPath == "") {
-      Seq.empty
+      LoadedPlugins.empty
     } else {
       new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
@@ -132,7 +132,7 @@ object StaticPluginCheckerMacro {
     val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq.filter(_.nonEmpty)
 
     check(
-      loadedPlugins = loadedPlugins,
+      loadedPlugins = loadedPlugins.result,
       configModule = configModule,
       additional = Module.empty,
       rootModule = gcRootModule,
@@ -143,7 +143,7 @@ object StaticPluginCheckerMacro {
 
     import c.universe._
 
-    val pluginsList: List[c.Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(loadedPlugins)
+    val pluginsList: List[c.Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(loadedPlugins.allRaw)
 
     c.Expr[Unit](q"{ lazy val _ = $pluginsList ; () }")
   }
@@ -205,9 +205,10 @@ object StaticPluginCheckerMacro {
     val mirror: ru.Mirror = currentMirror
 
     val clazz = mirror.staticClass(path) match {
-      case r if r.baseClasses == Nil =>
+      case r if r.baseClasses == Nil => // ???
         mirror.staticModule(path).moduleClass.asClass
-      case o => o
+      case o =>
+        o
     }
     val tpe = clazz.toType
     val expectTpe = ru.typeOf[T]

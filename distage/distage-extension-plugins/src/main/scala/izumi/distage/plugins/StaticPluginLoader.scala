@@ -1,8 +1,7 @@
 package izumi.distage.plugins
 
 import scala.language.experimental.macros
-
-import izumi.distage.plugins.load.PluginLoaderDefaultImpl
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
@@ -26,13 +25,14 @@ object StaticPluginLoader {
       val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
 
       val loadedPlugins = if (pluginPath == "") {
-        Seq.empty
+        LoadedPlugins.empty
       } else {
         new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
       }
 
-      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins)
+      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.result)
 
+      println(show(quoted))
       c.Expr[List[PluginBase]](q"$quoted")
     }
 
@@ -55,6 +55,7 @@ object StaticPluginLoader {
           }
       }.toList
     }
+
   }
 
 }

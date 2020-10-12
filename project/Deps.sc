@@ -492,7 +492,8 @@ object Izumi {
           scalatest.dependency in Scope.Compile.all,
         ),
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all),
+          Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
     ),

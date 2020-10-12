@@ -8,4 +8,4 @@ import izumi.fundamentals.platform.build.ExposedTestScope
   * This is just to verify that plugin enumerator picks up transitively inherited plugins
   */
 @ExposedTestScope
-abstract class SneakyPlugin[T <: String](implicit val ev: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef
+abstract class SneakyPlugin[T](implicit val ev: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef

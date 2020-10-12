@@ -1,6 +1,6 @@
 package izumi.distage.framework.services
 
-import java.io.File
+import java.io.{File, FileNotFoundException}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import izumi.distage.config.model.AppConfig
@@ -115,34 +115,37 @@ object ConfigLoader {
 
       val allConfigs = (roleExplicitConfigs.iterator ++ commonExplicitConfigs ++ roleReferenceConfigs.iterator.flatten ++ commonReferenceConfigs).toList
 
-      val cfgInfo = allConfigs.map {
+      val (cfgInfo, loaded) = allConfigs.map {
         case r: ConfigSource.Resource =>
+          def tryLoadResource(): Try[Config] = {
+            def filterEmptyResourceCfg(cfg: Config): Try[Config] =
+              if (cfg.origin().resource() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $r"))
+
+            Try(ConfigFactory.parseResources(r.name)).flatMap(filterEmptyResourceCfg).orElse {
+              Try(ConfigFactory.parseResources(IzResources.getClass.getClassLoader, r.name)).flatMap(filterEmptyResourceCfg)
+            }
+          }
+
           IzResources.getPath(r.name) match {
             case Some(LoadablePathReference(path, _)) =>
-              s"$r (available: $path)"
+              s"$r (available: $path)" -> (r -> tryLoadResource())
             case Some(UnloadablePathReference(path)) =>
-              s"$r (exists: $path)"
+              s"$r (exists: $path)" -> (r -> tryLoadResource())
             case None =>
-              s"$r (missing)"
+              s"$r (missing)" -> (r -> Success(ConfigFactory.empty()))
           }
 
         case f: ConfigSource.File =>
           if (f.file.exists()) {
-            s"$f (exists: ${f.file.getCanonicalPath})"
+            s"$f (exists: ${f.file.getCanonicalPath})" -> (f -> Try(ConfigFactory.parseFile(f.file)).flatMap {
+              cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
+            })
           } else {
-            s"$f (missing)"
+            s"$f (missing)" -> (f -> Success(ConfigFactory.empty()))
           }
-      }
+      }.unzip
 
       logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
-
-      val loaded = allConfigs.map {
-        case s @ ConfigSource.File(file) =>
-          s -> Try(ConfigFactory.parseFile(file))
-
-        case s @ ConfigSource.Resource(name, _) =>
-          s -> Try(ConfigFactory.parseResources(name))
-      }
 
       val (good, bad) = loaded.partition(_._2.isSuccess)
 

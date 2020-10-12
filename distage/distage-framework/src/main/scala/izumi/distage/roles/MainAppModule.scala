@@ -8,11 +8,10 @@ import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.framework.services._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition._
-import izumi.distage.model.plan.Roots
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
-import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
@@ -104,12 +103,12 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       configLoader.loadConfig()
   }
 
-  make[Seq[PluginBase]].named("bootstrap").from {
+  make[LoadedPlugins].named("bootstrap").from {
     (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
       loader.load(config)
   }
 
-  make[Seq[PluginBase]].named("main").from {
+  make[LoadedPlugins].named("main").from {
     (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
       loader.load(config)
   }
@@ -142,9 +141,9 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     (
       validator: ModuleValidator,
       strategy: PluginMergeStrategy @Id("main"),
-      plugins: Seq[PluginBase] @Id("main"),
+      plugins: LoadedPlugins @Id("main"),
       bsStrategy: PluginMergeStrategy @Id("bootstrap"),
-      bsPlugins: Seq[PluginBase] @Id("bootstrap"),
+      bsPlugins: LoadedPlugins @Id("bootstrap"),
     ) =>
       validator.validate(strategy, plugins, bsStrategy, bsPlugins)
   }

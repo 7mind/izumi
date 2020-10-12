@@ -9,7 +9,6 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
-import izumi.distage.framework.PlanCheck
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
@@ -336,51 +335,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role0CfgMinParsed.hasPath("activation"))
       assert(role4CfgMinParsed.hasPath("activation"))
-    }
-
-    "check role app module" in {
-//      PlanCheck.checkRoleApp(TestEntrypoint, "configwriter help")
-//      PlanCheck.checkRoleApp(
-//        TestEntrypoint,
-//        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//        "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//      )
-
-      new PlanCheck.Impl(
-        TestEntrypoint,
-        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      ).planCheck.run()
-
-      new PlanCheck.Impl(
-        TestEntrypoint,
-        "testtask00 testrole01 testrole02 testrole03 testrole04",
-        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      ).planCheck.run()
-
-      assertThrows[Throwable] {
-        new PlanCheck.Impl(
-          TestEntrypoint,
-          config = "testrole04-reference.conf",
-          activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-        ).planCheck.run()
-      }
-
-      new PlanCheck.Impl(
-        TestEntrypoint,
-        config = "checker-test-good.conf",
-        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      ).planCheck.run()
-
-//      new PlanCheck.Impl(
-//        TestEntrypoint,
-//        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//      ).planCheck.run()
-
-//      PlanCheck.checkRoleApp(
-//        TestEntrypoint,
-//        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//        "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
-//      )
     }
 
   }

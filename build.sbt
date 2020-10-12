@@ -1998,7 +1998,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
-    `distage-extension-plugins` % "test->compile;compile->compile"
+    `distage-extension-plugins` % "test->compile;compile->compile",
+    `distage-framework` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
