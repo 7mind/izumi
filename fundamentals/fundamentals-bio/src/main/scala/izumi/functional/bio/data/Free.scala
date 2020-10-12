@@ -3,7 +3,7 @@ package izumi.functional.bio.data
 import izumi.functional.bio.BIOMonad
 
 sealed trait Free[S[_, _], +E, +A] {
-  @inline final def flatMap[B, E1 >: E](fun: A => Free[S, E1, B]): Free[S, E1, B] = Free.FlatMap[S, E, E1, A, B](this, fun)
+  @inline final def flatMap[B, E1 >: E](fun: A => Free[S, E1, B]): Free[S, E1, B] = Free.FlatMapped[S, E, E1, A, B](this, fun)
   @inline final def map[B](fun: A => B): Free[S, E, B] = flatMap(a => Free.pure[S, B](fun(a)))
   @inline final def as[B](as: B): Free[S, E, B] = map(_ => as)
   @inline final def *>[B, E1 >: E](sc: Free[S, E1, B]): Free[S, E1, B] = flatMap(_ => sc)
@@ -21,9 +21,9 @@ sealed trait Free[S[_, _], +E, +A] {
     this match {
       case Free.Pure(a) => M.pure(a)
       case Free.Suspend(a) => transform(a)
-      case Free.FlatMap(sub, cont) =>
+      case Free.FlatMapped(sub, cont) =>
         sub match {
-          case Free.FlatMap(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
+          case Free.FlatMapped(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
           case another => another.foldMap(transform).flatMap(cont(_).foldMap(transform))
         }
     }
@@ -34,13 +34,13 @@ object Free {
   @inline def pure[S[_, _], A](a: A): Free[S, Nothing, A] = Pure(a)
   @inline def lift[S[_, _], E, A](s: S[E, A]): Free[S, E, A] = Suspend(s)
 
-  private[data] final case class Pure[S[_, _], A](a: A) extends Free[S, Nothing, A] {
+  private final case class Pure[S[_, _], A](a: A) extends Free[S, Nothing, A] {
     override def toString: String = s"Pure:[$a]"
   }
-  private[data] final case class Suspend[S[_, _], E, A](a: S[E, A]) extends Free[S, E, A] {
+  private final case class Suspend[S[_, _], E, A](a: S[E, A]) extends Free[S, E, A] {
     override def toString: String = s"Suspend:[$a]"
   }
-  private[data] final case class FlatMap[S[_, _], E, E1 >: E, A, B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
+  private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
     override def toString: String = s"FlatMap:[sub=$sub]"
   }
 
