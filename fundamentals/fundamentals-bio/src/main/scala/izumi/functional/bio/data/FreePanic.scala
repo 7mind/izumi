@@ -4,43 +4,46 @@ import izumi.functional.bio.{BIOExit, BIOPanic}
 
 import scala.util.Try
 
-sealed trait FreePanic[S[_, _], +E, +A] {
-  @inline final def flatMap[B, E1 >: E](fun: A => FreePanic[S, E1, B]): FreePanic[S, E1, B] = FreePanic.FlatMapped[S, E, E1, A, B](this, fun)
+sealed trait FreePanic[+S[_, _], +E, +A] {
+  @inline final def flatMap[S1[e, a] >: S[e, a], B, E1 >: E](fun: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] = FreePanic.FlatMapped[S1, E, E1, A, B](this, fun)
   @inline final def map[B](fun: A => B): FreePanic[S, E, B] = flatMap(a => FreePanic.pure[S, B](fun(a)))
   @inline final def as[B](as: B): FreePanic[S, E, B] = map(_ => as)
-  @inline final def *>[B, E1 >: E](sc: FreePanic[S, E1, B]): FreePanic[S, E1, B] = flatMap(_ => sc)
-  @inline final def <*[B, E1 >: E](sc: FreePanic[S, E1, B]): FreePanic[S, E1, A] = flatMap(sc.as)
+  @inline final def *>[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, B] = flatMap(_ => sc)
+  @inline final def <*[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, A] = flatMap(sc.as)
 
   @inline final def sandbox: FreePanic[S, BIOExit.Failure[E], A] =
     FreePanic.Sandbox(this)
 
-  @inline final def redeem[B, E1](err: E => FreePanic[S, E1, B], succ: A => FreePanic[S, E1, B]): FreePanic[S, E1, B] =
+  @inline final def redeem[S1[e, a] >: S[e, a], B, E1](err: E => FreePanic[S1, E1, B], succ: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] =
     FreePanic.Redeem(this, err, succ)
   @inline final def redeemPure[B](err: E => B, succ: A => B): FreePanic[S, Nothing, B] =
     FreePanic.Redeem[S, E, Nothing, A, B](this, e => FreePanic.pure(err(e)), a => FreePanic.pure(succ(a)))
-  @inline final def catchAll[A1 >: A, E1](err: E => FreePanic[S, E1, A1]): FreePanic[S, E1, A1] =
-    FreePanic.Redeem(this, err, (a: A) => FreePanic.pure(a))
-  @inline final def catchSome[A1 >: A, E1 >: E](err: PartialFunction[E, FreePanic[S, E1, A1]]): FreePanic[S, E1, A1] =
-    FreePanic.Redeem(this, err.orElse[E, FreePanic[S, E1, A1]] { case e => FreePanic.fail(e) }, (a: A) => FreePanic.pure(a))
+  @inline final def catchAll[S1[e, a] >: S[e, a], A1 >: A, E1](err: E => FreePanic[S1, E1, A1]): FreePanic[S1, E1, A1] =
+    FreePanic.Redeem[S1, E, E1, A, A1](this, err, FreePanic.pure)
+  @inline final def catchSome[S1[e, a] >: S[e, a], A2 >: A, E1 >: E](err: PartialFunction[E, FreePanic[S1, E1, A2]]): FreePanic[S1, E1, A2] =
+    FreePanic.Redeem[S1, E, E1, A, A2](this, err.orElse(FreePanic.fail(_)), FreePanic.pure)
   @inline final def flip: FreePanic[S, A, E] =
     FreePanic.Redeem[S, E, A, A, E](this, FreePanic.pure, FreePanic.fail(_))
 
-  @inline final def bracket[B, E1 >: E](release: A => FreePanic[S, Nothing, Unit])(use: A => FreePanic[S, E1, B]): FreePanic[S, E1, B] =
+  @inline final def bracket[S1[e, a] >: S[e, a], B, E1 >: E](release: A => FreePanic[S1, Nothing, Unit])(use: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] =
     FreePanic.BracketCase(this, (a: A, _: BIOExit[E1, B]) => release(a), use)
-  @inline final def bracketCase[B, E1 >: E](release: (A, BIOExit[E1, B]) => FreePanic[S, Nothing, Unit])(use: A => FreePanic[S, E1, B]): FreePanic[S, E1, B] =
+  @inline final def bracketCase[S1[e, a] >: S[e, a], B, E1 >: E](
+    release: (A, BIOExit[E1, B]) => FreePanic[S1, Nothing, Unit]
+  )(use: A => FreePanic[S1, E1, B]
+  ): FreePanic[S1, E1, B] =
     FreePanic.BracketCase(this, release, use)
-  @inline final def guarantee(g: FreePanic[S, Nothing, Unit]): FreePanic[S, E, A] =
-    FreePanic.BracketCase[S, E, A, A](this, (_: A, _: BIOExit[E, A]) => g, FreePanic.pure)
+  @inline final def guarantee[S1[e, a] >: S[e, a]](g: FreePanic[S1, Nothing, Unit]): FreePanic[S1, E, A] =
+    FreePanic.BracketCase[S1, E, A, A](this, (_: A, _: BIOExit[E, A]) => g, FreePanic.pure)
 
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
-  @inline final def mapK[T[_, _]](f: S ~>> T): FreePanic[T, E, A] = {
-    foldMap[FreePanic[T, +?, +?]] {
-      new FunctionKK[S, FreePanic[T, ?, ?]] { def apply[E1, A1](sb: S[E1, A1]): FreePanic[T, E1, A1] = FreePanic.lift(f(sb)) }
+  @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
+    foldMap[S1, FreePanic[T, +?, +?]] {
+      new FunctionKK[S1, FreePanic[T, ?, ?]] { def apply[E1, A1](sb: S1[E1, A1]): FreePanic[T, E1, A1] = FreePanic.lift(f(sb)) }
     }
   }
 
-  @inline def foldMap[G[+_, +_]](transform: S ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
     this match {
       case FreePanic.Pure(a) => G.pure(a)
       case FreePanic.Suspend(a) => transform(a)
