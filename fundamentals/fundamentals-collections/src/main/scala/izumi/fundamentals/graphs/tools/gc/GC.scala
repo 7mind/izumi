@@ -1,8 +1,8 @@
 package izumi.fundamentals.graphs.tools.gc
 
+import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.gc.GC.{GCInput, GCOutput}
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.WeakEdge
 
 // TODO: this class is not required for distage
 trait GC[N] {

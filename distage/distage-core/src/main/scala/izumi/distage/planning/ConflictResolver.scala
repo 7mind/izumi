@@ -1,15 +1,17 @@
 package izumi.distage.planning
 
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
+import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver._
-import izumi.fundamentals.graphs.tools.mutations.{ActivationChoices, MutationResolver}
-import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import izumi.distage.planning.mutations.MutationResolver._
+import izumi.distage.planning.mutations.{ActivationChoices, MutationResolver}
+import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
 

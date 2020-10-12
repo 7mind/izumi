@@ -1,13 +1,15 @@
-package izumi.fundamentals.graphs.tools.mutations
+package izumi.distage.planning.mutations
 
+import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts._
+import izumi.distage.planning.mutations.MutationResolver._
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.NonEmptyList
-import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver._
-import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.{nowarn, tailrec}
 
@@ -25,24 +27,11 @@ object MutationResolver {
   import scala.collection.compat._
   import scala.collection.immutable
 
-  final case class Node[N, V](deps: Set[N], meta: V)
   final case class RemappedValue[V, N](meta: V, remapped: Map[N, MutSel[N]])
   final case class SemiEdgeSeq[D, N, V](links: Seq[(D, Node[N, V])]) extends AnyVal
   final case class SemiIncidenceMatrix[D, N, V](links: Map[D, Node[N, V]]) extends AnyVal
-  final case class WeakEdge[N](predcessor: N, successor: N)
 
-  final case class Annotated[N](key: N, mut: Option[Int], axis: Set[AxisPoint]) {
-    def withoutAxis: MutSel[N] = MutSel(key, mut)
-    def isMutator: Boolean = mut.isDefined
-  }
-  final case class AxisPoint(axis: String, value: String) {
-    override def toString: String = s"$axis:$value"
-  }
   final case class Selected[N](key: N, axis: Set[AxisPoint])
-  final case class MutSel[N](key: N, mut: Option[Int]) {
-    def isMutator: Boolean = mut.isDefined
-    def asString: String = s"$key${mut.fold("")(i => s":$i")}"
-  }
 
   final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]]) //, unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   private final case class ResolvedMutations[N](

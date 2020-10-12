@@ -1,6 +1,6 @@
-package izumi.fundamentals.graphs.tools.mutations
+package izumi.distage.planning.mutations
 
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.AxisPoint
+import izumi.distage.model.definition.Axis.AxisPoint
 
 final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
   def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)

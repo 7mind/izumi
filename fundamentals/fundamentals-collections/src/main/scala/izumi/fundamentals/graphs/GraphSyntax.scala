@@ -4,7 +4,6 @@ import izumi.fundamentals.graphs.GraphImpl.DirectedGraphPred
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.gc.GC
 import izumi.fundamentals.graphs.tools.gc.GC.GCInput
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.WeakEdge
 
 trait GraphSyntax[G[n, m] <: AbstractGraph[n, m]] {
 

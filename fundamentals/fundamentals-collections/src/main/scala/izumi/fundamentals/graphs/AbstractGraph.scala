@@ -24,3 +24,6 @@ object GraphMeta {
 trait AbstractGraph[N, +M] {
   def meta: GraphMeta[N, M]
 }
+
+final case class Edge[N](predcessor: N, successor: N)
+final case class WeakEdge[N](predcessor: N, successor: N)

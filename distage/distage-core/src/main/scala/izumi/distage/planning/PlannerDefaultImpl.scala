@@ -2,6 +2,8 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
@@ -12,11 +14,9 @@ import izumi.distage.model.planning._
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
-import izumi.fundamentals.graphs.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.Toposort
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver._
-import izumi.fundamentals.graphs.{ConflictResolutionError, DG, GraphMeta}
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
