@@ -30,7 +30,7 @@ sealed trait FreePanic[S[_, _], +E, +A] {
   @inline final def bracketCase[B, E1 >: E](release: (A, BIOExit[E1, B]) => FreePanic[S, Nothing, Unit])(use: A => FreePanic[S, E1, B]): FreePanic[S, E1, B] =
     FreePanic.BracketCase(this, release, use)
   @inline final def guarantee(g: FreePanic[S, Nothing, Unit]): FreePanic[S, E, A] =
-    bracket(_ => g)(FreePanic.pure)
+    FreePanic.BracketCase[S, E, A, A](this, (_: A, _: BIOExit[E, A]) => g, FreePanic.pure)
 
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
