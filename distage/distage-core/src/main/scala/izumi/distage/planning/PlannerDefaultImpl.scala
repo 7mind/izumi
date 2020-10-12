@@ -26,7 +26,7 @@ class PlannerDefaultImpl(
   sanityChecker: SanityChecker,
   planningObserver: PlanningObserver,
   hook: PlanningHook,
-  resolver: ConflictResolver,
+  resolver: PlanSolver,
   analyzer: PlanAnalyzer,
   mirrorProvider: MirrorProvider,
 ) extends Planner {

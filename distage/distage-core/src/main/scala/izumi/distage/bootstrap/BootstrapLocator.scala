@@ -19,8 +19,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.distage.planning.mutations.MutationResolver
-import izumi.distage.planning.mutations.MutationResolver.MutationResolverImpl
+import izumi.distage.planning.mutations.SemigraphSolver
+import izumi.distage.planning.mutations.SemigraphSolver.SemigraphSolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
@@ -91,7 +91,7 @@ object BootstrapLocator {
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
-    val resolver = new ConflictResolver.Impl(new BindingTranslator.Impl(), new MutationResolverImpl[DIKey, Int, InstantiationOp]())
+    val resolver = new PlanSolver.Impl(new BindingTranslator.Impl(), new SemigraphSolverImpl[DIKey, Int, InstantiationOp]())
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
@@ -130,9 +130,9 @@ object BootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
 
-    make[ConflictResolver].from[ConflictResolver.Impl]
+    make[PlanSolver].from[PlanSolver.Impl]
 
-    make[MutationResolver[DIKey, Int, InstantiationOp]].from[MutationResolverImpl[DIKey, Int, InstantiationOp]]
+    make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]

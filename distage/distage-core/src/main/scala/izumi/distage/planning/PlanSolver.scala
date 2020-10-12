@@ -9,19 +9,19 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.mutations.MutationResolver._
-import izumi.distage.planning.mutations.{ActivationChoices, MutationResolver}
+import izumi.distage.planning.mutations.SemigraphSolver._
+import izumi.distage.planning.mutations.{ActivationChoices, SemigraphSolver}
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
 
-trait ConflictResolver {
+trait PlanSolver {
   def resolveConflicts(
     input: PlannerInput
   ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]]
 }
 
-object ConflictResolver {
+object PlanSolver {
   case class Problem(
     activations: Set[AxisPoint],
     matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
@@ -32,8 +32,8 @@ object ConflictResolver {
   @nowarn("msg=Unused import")
   class Impl(
     bindingTranslator: BindingTranslator,
-    resolver: MutationResolver[DIKey, Int, InstantiationOp],
-  ) extends ConflictResolver {
+    resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
+  ) extends PlanSolver {
 
     import izumi.functional.IzEither._
     import izumi.fundamentals.platform.strings.IzString._

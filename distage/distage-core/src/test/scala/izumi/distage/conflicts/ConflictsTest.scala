@@ -1,7 +1,7 @@
 package izumi.distage.conflicts
 
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.planning.mutations.MutationResolver
+import izumi.distage.planning.mutations.SemigraphSolver
 import org.scalatest.wordspec.AnyWordSpec
 
 class ConflictsTest extends AnyWordSpec {
@@ -18,7 +18,7 @@ class ConflictsTest extends AnyWordSpec {
         (complexMutators, Set.empty[AxisPoint], true, Set("app")),
       )
 
-      val resolver = new MutationResolver.MutationResolverImpl[String, Int, Int]
+      val resolver = new SemigraphSolver.SemigraphSolverImpl[String, Int, Int]
 
       for (((f, a, good, roots), idx) <- cases.zipWithIndex) {
         val result = resolver.resolve(f, roots, a, Set.empty)
