@@ -76,65 +76,30 @@ object PlanSolver {
       val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
       val ac = ActivationChoices(activations)
 
-      val allOpsMaybe = input
-        .bindings.bindings.iterator
-        // this is a minor optimization but it makes some conflict resolution strategies impossible
-        //.filter(b => activationChoices.allValid(toAxis(b)))
-        .flatMap {
-          b =>
-            val next = bindingTranslator.computeProvisioning(b)
-            (next.provisions ++ next.sets.values).map((b, _))
-        }
-        .zipWithIndex
-        .map {
-          case ((b, n), idx) =>
-            val mutIndex = b match {
-              case Binding.SingletonBinding(_, _, _, _, true) =>
-                Some(idx)
-              case _ =>
-                None
-            }
-
-            val axis = n match {
-              case _: CreateSet =>
-                Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
-              case _ =>
-                toAxis(b)
-            }
-
-            (Annotated(n.target, mutIndex, axis), n, b)
-        }
-        .map {
-          case aob @ (Annotated(key, Some(_), axis), _, b) =>
-            isProperlyActivatedSetElement(ac, axis) {
-              unconfigured =>
-                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
-            }.map(out => (aob, out))
-          case aob =>
-            Right((aob, true))
-        }
-
-      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = allOpsMaybe.biAggregate match {
-        case Left(value) =>
-          val message = value
-            .map {
-              e =>
-                s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
-            }.niceList()
-          throw new BadMutatorAxis(s"Mutators with unconfigured axis: $message", value)
-        case Right(value) =>
-          val goodMutators = value.filter(_._2).map(_._1)
-          goodMutators.map {
-            case (a, o, _) =>
-              (a, o)
-          }.toVector
-      }
+      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
 
       val ops: Vector[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
         case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
         case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
       }
 
+      val sets: Map[Annotated[DIKey], Node[DIKey, ExecutableOp.InstantiationOp]] = computeSets(ac, allOps)
+
+      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
+
+      val roots: Set[DIKey] = input.roots match {
+        case Roots.Of(roots) =>
+          roots.toSet
+        case Roots.Everything =>
+          allOps.map(_._1.key).toSet
+      }
+
+      val weakSetMembers: Set[WeakEdge[DIKey]] = findWeakSetMembers(sets, matrix, roots)
+
+      Right(Problem(activations, matrix, roots, weakSetMembers))
+    }
+
+    private def computeSets(ac: ActivationChoices, allOps: Vector[(Annotated[DIKey], InstantiationOp)]): Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
       val allSetOps = allOps
         .collect { case (target, op: CreateSet) => (target, op) }
 
@@ -191,7 +156,6 @@ object PlanSolver {
                       case None =>
                         Right((memberKey, true))
                     }
-
                 }
 
               members.biAggregate match {
@@ -214,19 +178,7 @@ object PlanSolver {
 
           }
           .toMap
-
-      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
-
-      val roots: Set[DIKey] = input.roots match {
-        case Roots.Of(roots) =>
-          roots.toSet
-        case Roots.Everything =>
-          allOps.map(_._1.key).toSet
-      }
-
-      val weakSetMembers: Set[WeakEdge[DIKey]] = findWeakSetMembers(sets, matrix, roots)
-
-      Right(Problem(activations, matrix, roots, weakSetMembers))
+      sets
     }
 
     private def isProperlyActivatedSetElement[T](ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Either[T, Boolean]): Either[T, Boolean] = {
@@ -280,6 +232,63 @@ object PlanSolver {
         case AxisTag(axisValue) =>
           axisValue.toAxisPoint
       }
+    }
+
+    private def computeOperations(ac: ActivationChoices, input: PlannerInput) = {
+      val allOpsMaybe = input
+        .bindings.bindings.iterator
+        // this is a minor optimization but it makes some conflict resolution strategies impossible
+        //.filter(b => activationChoices.allValid(toAxis(b)))
+        .flatMap {
+          b =>
+            val next = bindingTranslator.computeProvisioning(b)
+            (next.provisions ++ next.sets.values).map((b, _))
+        }
+        .zipWithIndex
+        .map {
+          case ((b, n), idx) =>
+            val mutIndex = b match {
+              case Binding.SingletonBinding(_, _, _, _, true) =>
+                Some(idx)
+              case _ =>
+                None
+            }
+
+            val axis = n match {
+              case _: CreateSet =>
+                Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
+              case _ =>
+                toAxis(b)
+            }
+
+            (Annotated(n.target, mutIndex, axis), n, b)
+        }
+        .map {
+          case aob @ (Annotated(key, Some(_), axis), _, b) =>
+            isProperlyActivatedSetElement(ac, axis) {
+              unconfigured =>
+                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+            }.map(out => (aob, out))
+          case aob =>
+            Right((aob, true))
+        }
+
+      val allOps: Vector[(Annotated[DIKey], InstantiationOp)] = allOpsMaybe.biAggregate match {
+        case Left(value) =>
+          val message = value
+            .map {
+              e =>
+                s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
+            }.niceList()
+          throw new BadMutatorAxis(s"Mutators with unconfigured axis: $message", value)
+        case Right(value) =>
+          val goodMutators = value.filter(_._2).map(_._1)
+          goodMutators.map {
+            case (a, o, _) =>
+              (a, o)
+          }.toVector
+      }
+      allOps
     }
   }
 

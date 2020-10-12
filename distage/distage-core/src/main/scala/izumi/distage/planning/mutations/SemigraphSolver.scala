@@ -172,7 +172,7 @@ object SemigraphSolver {
     }
 
     protected def resolveConflict(
-      @nowarn activations: ActivationChoices,
+      activations: ActivationChoices,
       conflict: Seq[(Annotated[N], Node[N, V])],
     ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
 
