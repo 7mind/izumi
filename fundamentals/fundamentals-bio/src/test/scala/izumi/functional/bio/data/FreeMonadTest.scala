@@ -16,7 +16,7 @@ class FreeMonadTest extends AnyWordSpec {
       _ <- syntax.sync(assert(res == 1))
       _ <- syntax.scopeUpdate(_ => 100)
       _ <- syntax.scopeAccess(res => assert(res == 100))
-      _ <- syntax.sync(throw new RuntimeException("Sandbox test")).sandbox.swap
+      _ <- syntax.sync(throw new RuntimeException("Sandbox test")).sandbox.flip
       _ <- syntax
         .sync(0).bracket(_ => syntax.scopeUpdate(_ => 1000)) {
           _ => syntax.fail(new RuntimeException("Bracket test"))
