@@ -1,7 +1,7 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots}
@@ -18,8 +18,8 @@ class PlannerInputVerifier(
   preps: GraphPreparations
 ) {
   import PlannerInputVerifier._
-  def verify(input: PlannerInput): Either[List[PlanIssue], Unit] = {
-    val ops = preps.computeOperationsUnsafe(input).toSeq
+  def verify(input: PlannerInputVerifier.Problem): Either[List[PlanIssue], Unit] = {
+    val ops = preps.computeOperationsUnsafe(input.bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>
         (axis, points.map(_.value).toSet)
@@ -46,11 +46,11 @@ class PlannerInputVerifier(
 
     val toTrace: ImmutableMultiMap[DIKey, (ExecutableOp.InstantiationOp, Set[AxisPoint])] = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
-    val roots: Set[DIKey] = preps.getRoots(input, justOps)
+    val roots: Set[DIKey] = preps.getRoots(input.roots, justOps)
 
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, roots)
 
-    val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => k.key -> (op, k.axis) }.toMultimap
+    val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     for {
       _ <- trace(allAxis, mutable.HashSet.empty, toTrace, weakSetMembers, justMutators)(roots, Set.empty)
@@ -83,7 +83,7 @@ class PlannerInputVerifier(
                   (op, activations diff currentActivation)
               }
               // we ignore activations for set definitions
-              setOps = withoutDefinedActivations.collect({ case (s: CreateSet, a) => s })
+              setOps = withoutDefinedActivations.collect({ case (s: CreateSet, _) => s })
               mergedSets <- setOps
                 .groupBy(_.target)
                 .map {
@@ -151,7 +151,7 @@ class PlannerInputVerifier(
           val deps = depsOf(weakSetMembers)(op)
 
           val acts = op match {
-            case cs: ExecutableOp.CreateSet =>
+            case _: ExecutableOp.CreateSet =>
               Set.empty[AxisPoint]
             case _ =>
               activations
@@ -258,5 +258,10 @@ object PlannerInputVerifier {
   case class UnsaturatedAxis(key: DIKey, name: String, missing: Seq[String]) extends PlanIssue
   case class MissingImport(key: DIKey) extends PlanIssue // not necessarily an issue, parent locator must be considered
   case class InconsistentSetMembers(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue // distage bug, should never happen (bindings machinery)
+
+  case class Problem(
+    bindings: ModuleBase,
+    roots: Roots,
+  )
 
 }

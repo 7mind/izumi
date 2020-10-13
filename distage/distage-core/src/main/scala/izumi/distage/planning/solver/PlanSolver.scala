@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
-import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
+import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
@@ -43,7 +43,7 @@ object PlanSolver {
 
       // TODO: just for testing
       val verifier = new PlannerInputVerifier(preps)
-      verifier.verify(input) match {
+      verifier.verify(PlannerInputVerifier.Problem(input.bindings, input.roots)) match {
         case Left(value) =>
           System.err.println(value.niceList())
         case Right(_) =>
@@ -91,7 +91,7 @@ object PlanSolver {
 
       val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
 
-      val roots: Set[DIKey] = preps.getRoots(input, allOps)
+      val roots: Set[DIKey] = preps.getRoots(input.roots, allOps)
 
       val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(sets, matrix, roots)
 
@@ -100,7 +100,7 @@ object PlanSolver {
 
     private def computeOperations(ac: ActivationChoices, input: PlannerInput): Seq[(Annotated[DIKey], InstantiationOp)] = {
       val allOpsMaybe = preps
-        .computeOperationsUnsafe(input)
+        .computeOperationsUnsafe(input.bindings)
         .map {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {

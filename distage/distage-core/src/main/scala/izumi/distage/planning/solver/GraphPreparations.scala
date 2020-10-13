@@ -1,12 +1,11 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
+import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
@@ -52,8 +51,8 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
       .toSet
   }
 
-  def getRoots(input: PlannerInput, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
-    input.roots match {
+  def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
+    input match {
       case Roots.Of(roots) =>
         roots.toSet
       case Roots.Everything =>
@@ -75,9 +74,10 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
       Node(Set(op.effectKey), op: InstantiationOp)
   }
 
-  def computeOperationsUnsafe(input: PlannerInput): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    input
-      .bindings.bindings.iterator
+  def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
+
+    bindings
+      .bindings.iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
       //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
