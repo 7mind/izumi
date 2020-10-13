@@ -1,14 +1,13 @@
-package izumi.distage.planning
+package izumi.distage.planning.solver
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
-import izumi.distage.planning.solver.{ActivationChoices, GraphPreparations, SemigraphSolver}
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
@@ -46,7 +45,7 @@ object PlanSolver {
       val verifier = new PlannerInputVerifier(preps)
       verifier.verify(input) match {
         case Left(value) =>
-          throw new RuntimeException(value.niceList())
+          System.err.println(value.niceList())
         case Right(_) =>
       }
 
@@ -92,14 +91,9 @@ object PlanSolver {
 
       val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
 
-      val roots: Set[DIKey] = input.roots match {
-        case Roots.Of(roots) =>
-          roots.toSet
-        case Roots.Everything =>
-          allOps.map(_._1.key).toSet
-      }
+      val roots: Set[DIKey] = preps.getRoots(input, allOps)
 
-      val weakSetMembers: Set[WeakEdge[DIKey]] = findWeakSetMembers(sets, matrix, roots)
+      val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(sets, matrix, roots)
 
       Right(Problem(activations, matrix, roots, weakSetMembers))
     }
@@ -197,40 +191,6 @@ object PlanSolver {
 
         }.toMap
       sets
-    }
-
-    protected[this] def findWeakSetMembers(
-      sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
-      matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
-      roots: Set[DIKey],
-    ): Set[WeakEdge[DIKey]] = {
-      import izumi.fundamentals.collections.IzCollections._
-
-      val indexed = matrix
-        .links.map {
-          case (successor, node) =>
-            (successor.key, node.meta)
-        }
-        .toMultimapMut
-
-      sets
-        .collect {
-          case (target, Node(_, s: CreateSet)) =>
-            (target, s.members)
-        }
-        .flatMap {
-          case (_, members) =>
-            members
-              .diff(roots)
-              .flatMap {
-                member =>
-                  indexed.get(member).toSeq.flatten.collect {
-                    case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
-                      WeakEdge(referenced, member)
-                  }
-              }
-        }
-        .toSet
     }
 
     private def isProperlyActivatedSetElement[T](ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Either[T, Boolean]): Either[T, Boolean] = {

@@ -1,13 +1,16 @@
-package izumi.distage.planning
+package izumi.distage.planning.solver
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.{ActivationChoices, GraphPreparations}
+import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.graphs.WeakEdge
 
 import scala.collection.mutable
 
@@ -23,18 +26,32 @@ class PlannerInputVerifier(
     }
     val (mutators, defns) = ops.partition(_._3.isMutator)
     val justOps = defns.map { case (k, op, _) => k -> op }
-    val setOps = preps.computeSetsUnsafe(justOps)
+    val setOps = preps
+      .computeSetsUnsafe(justOps)
+      .map {
+        case (k, (s, _)) =>
+          (Annotated(k, None, Set.empty), Node(s.members, s))
+
+      }.toMultimapView
+      .map {
+        case (k, v) =>
+          val members = v.flatMap(_.deps).toSet
+          (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
+      }
+      .toMap
+
+    val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
+
+    val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
+
     val toTrace: ImmutableMultiMap[DIKey, (ExecutableOp.InstantiationOp, Set[AxisPoint])] = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
-    val roots = input.roots match {
-      case Roots.Of(roots) =>
-        roots.toSet
-      case Roots.Everything =>
-        ops.map(_._1.key).toSet
-    }
+    val roots: Set[DIKey] = preps.getRoots(input, justOps)
+
+    val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, roots)
 
     for {
-      _ <- trace(allAxis, mutable.HashSet.empty, toTrace)(roots, Set.empty)
+      _ <- trace(allAxis, mutable.HashSet.empty, toTrace, weakSetMembers)(roots, Set.empty)
       // TODO: for both sets and mutators we need to filter out wrong ops and check for missing imports
       // TODO: consider weak sets properly
     } yield {}
@@ -44,6 +61,7 @@ class PlannerInputVerifier(
     allAxis: Map[String, Set[String]],
     visited: mutable.HashSet[DIKey],
     matrix: ImmutableMultiMap[DIKey, (ExecutableOp.InstantiationOp, Set[AxisPoint])],
+    weakSetMembers: Set[WeakEdge[DIKey]],
   )(current: Set[DIKey],
     currentActivation: Set[AxisPoint],
   ): Either[List[PlanIssue], Unit] = {
@@ -55,22 +73,47 @@ class PlannerInputVerifier(
           } else {
             for {
               ac <- Right(ActivationChoices(currentActivation))
-              ops <- matrix.get(key) match {
-                case Some(value) =>
-                  Right(value)
-                case None =>
-                  Right(Set.empty[(ExecutableOp.InstantiationOp, Set[AxisPoint])]) // .toRight(List(MissingImport(key)))
-              }
+              ops <- matrix.get(key).toRight(List(MissingImport(key)))
               withoutImpossibleActivations = ops.filter(op => ac.allValid(op._2))
               withoutDefinedActivations = withoutImpossibleActivations.map {
                 case (op, activations) =>
                   (op, activations diff currentActivation)
               }
-              next <- checkConflicts(allAxis, withoutDefinedActivations)
+              // we ignore activations for set definitions
+              setOps = withoutDefinedActivations.collect({ case (s: CreateSet, a) => s })
+              mergedSets <- setOps
+                .groupBy(_.target)
+                .map {
+                  case (_, o) =>
+                    for {
+                      members <- o
+                        .flatMap(_.members).map {
+                          m =>
+                            matrix.get(m) match {
+                              case Some(value) if value.size == 1 =>
+                                Right((m, ac.allValid(value.head._2)))
+                              case Some(value) =>
+                                Left(List(InconsistentSetMembers(value.map(_._1).toSeq)))
+                              case None =>
+                                Left(List(MissingImport(m)))
+                            }
+                        }.biAggregate
+                    } yield {
+                      (o.head.copy(members = members.filter(_._2).map(_._1)), Set.empty[AxisPoint])
+                    }
+                }.biAggregate
+              withMergedSets = withoutDefinedActivations.filterNot(_._1.isInstanceOf[CreateSet]) ++ mergedSets
+              _ <-
+                if (withMergedSets.isEmpty) {
+                  Left(List(MissingImport(key)))
+                } else {
+                  Right(())
+                }
+              next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
               _ <- Right(visited.add(key))
               _ <- next.map {
                 case (nextActivation, nextDeps) =>
-                  trace(allAxis, visited, matrix)(nextDeps, currentActivation ++ nextActivation)
+                  trace(allAxis, visited, matrix, weakSetMembers)(nextDeps, currentActivation ++ nextActivation)
               }.biAggregate
             } yield {}
           }
@@ -83,6 +126,7 @@ class PlannerInputVerifier(
   def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutDefinedActivations: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint])],
+    weakSetMembers: Set[WeakEdge[DIKey]],
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
 
     for {
@@ -93,8 +137,9 @@ class PlannerInputVerifier(
         case (op, activations) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
           op match {
-            case _: ExecutableOp.CreateSet =>
-              Seq.empty
+            case cs: ExecutableOp.CreateSet =>
+              val members = cs.members.filterNot(m => weakSetMembers.contains(WeakEdge(m, cs.target)))
+              Seq((Set.empty[AxisPoint], members))
             case op: ExecutableOp.WiringOp =>
               Seq((activations, preps.toDep(op).deps))
             case op: ExecutableOp.MonadicOp =>
@@ -129,23 +174,53 @@ class PlannerInputVerifier(
   ): Either[List[PlanIssue], Unit] = {
     // TODO: this method should fail in case any bindings in the set are indistinguishable
     // TODO: in case we implement precedence rules the implementation should change
-    Right(())
+
+    val compatible = mutable.ArrayBuffer.empty[(ExecutableOp.InstantiationOp, Set[AxisPoint])]
+    compatible.appendAll(ops.headOption)
+
+    val incompatible = mutable.ArrayBuffer.empty[(ExecutableOp.InstantiationOp, Set[AxisPoint])]
+
+    // TODO: quadratic, better approaches possible
+    for ((op, a) <- ops.drop(1)) {
+      if (compatible.forall(c => isCompatible(c._2, a))) {
+        compatible.append((op, a))
+      } else {
+        incompatible.append((op, a))
+      }
+    }
+
+    if (incompatible.isEmpty) {
+      Right(())
+    } else {
+      Left(List(ConflictingBindings(incompatible.map(_._1).toSeq)))
+    }
+  }
+
+  def isCompatible(c: Set[AxisPoint], a: Set[AxisPoint]): Boolean = {
+    val common = c.intersect(a)
+    val cDiff = c.diff(common)
+    val aDiff = a.diff(common)
+    !(cDiff.isEmpty && aDiff.isEmpty)
   }
 
   def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint])],
   ): Either[List[PlanIssue], Unit] = {
+    val currentAxis = ops.flatMap(_._2.map(_.axis))
     // TODO: this method should fail in case there are some missing/uncovered points on any of the axis
+
     Right(())
+
   }
 }
 
 object PlannerInputVerifier {
   sealed trait PlanIssue
   case class MissingImport(key: DIKey) extends PlanIssue
-  case class ConflictingBindings() extends PlanIssue
+  case class ConflictingBindings(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
   case class Conflictingactivations(op: ExecutableOp.InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
   case class UnsaturatedAxis() extends PlanIssue
+  case class InconsistentSetMembers(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
 
 }

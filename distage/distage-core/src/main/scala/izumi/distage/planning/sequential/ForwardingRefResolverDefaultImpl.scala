@@ -1,10 +1,10 @@
-package izumi.distage.planning
+package izumi.distage.planning.sequential
 
+import distage.Id
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import izumi.distage.model.reflection._
-import distage.Id
 
 import scala.collection.mutable
 

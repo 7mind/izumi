@@ -5,15 +5,62 @@ import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
+import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.fundamentals.graphs.WeakEdge
 
 import scala.annotation.nowarn
 
 @nowarn("msg=Unused import")
 class GraphPreparations(bindingTranslator: BindingTranslator) {
   import scala.collection.compat._
+
+  def findWeakSetMembers(
+    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    roots: Set[DIKey],
+  ): Set[WeakEdge[DIKey]] = {
+    import izumi.fundamentals.collections.IzCollections._
+
+    val indexed = matrix
+      .links.map {
+        case (successor, node) =>
+          (successor.key, node.meta)
+      }
+      .toMultimapMut
+
+    sets
+      .collect {
+        case (target, Node(_, s: CreateSet)) =>
+          (target, s.members)
+      }
+      .flatMap {
+        case (_, members) =>
+          members
+            .diff(roots)
+            .flatMap {
+              member =>
+                indexed.get(member).toSeq.flatten.collect {
+                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+                    WeakEdge(referenced, member)
+                }
+            }
+      }
+      .toSet
+  }
+
+  def getRoots(input: PlannerInput, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
+    input.roots match {
+      case Roots.Of(roots) =>
+        roots.toSet
+      case Roots.Everything =>
+        allOps.map(_._1.key).toSet
+    }
+  }
+
   def toDeps(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = {
     allOps.collect {
       case (target, op: WiringOp) => (target, toDep(op))
