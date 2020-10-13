@@ -50,8 +50,10 @@ class PlannerInputVerifier(
 
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, roots)
 
+    val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => k.key -> (op, k.axis) }.toMultimap
+
     for {
-      _ <- trace(allAxis, mutable.HashSet.empty, toTrace, weakSetMembers)(roots, Set.empty)
+      _ <- trace(allAxis, mutable.HashSet.empty, toTrace, weakSetMembers, justMutators)(roots, Set.empty)
       // TODO: for both sets and mutators we need to filter out wrong ops and check for missing imports
       // TODO: consider weak sets properly
     } yield {}
@@ -62,6 +64,7 @@ class PlannerInputVerifier(
     visited: mutable.HashSet[DIKey],
     matrix: ImmutableMultiMap[DIKey, (ExecutableOp.InstantiationOp, Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
+    justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
   )(current: Set[DIKey],
     currentActivation: Set[AxisPoint],
   ): Either[List[PlanIssue], Unit] = {
@@ -109,11 +112,12 @@ class PlannerInputVerifier(
                 } else {
                   Right(())
                 }
+              mutators = justMutators.getOrElse(key, Set.empty).toSeq.filter(m => ac.allValid(m._2)).flatMap(m => depsOf(weakSetMembers)(m._1))
               next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
               _ <- Right(visited.add(key))
               _ <- next.map {
                 case (nextActivation, nextDeps) =>
-                  trace(allAxis, visited, matrix, weakSetMembers)(nextDeps, currentActivation ++ nextActivation)
+                  trace(allAxis, visited, matrix, weakSetMembers, justMutators)(nextDeps ++ mutators, currentActivation ++ nextActivation)
               }.biAggregate
             } yield {}
           }
@@ -141,21 +145,33 @@ class PlannerInputVerifier(
         } else {
           Right(())
         }
-      next = withoutDefinedActivations.toSeq.flatMap {
+      next = withoutDefinedActivations.toSeq.map {
         case (op, activations) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
-          op match {
+          val deps = depsOf(weakSetMembers)(op)
+
+          val acts = op match {
             case cs: ExecutableOp.CreateSet =>
-              val members = cs.members.filterNot(m => weakSetMembers.contains(WeakEdge(m, cs.target)))
-              Seq((Set.empty[AxisPoint], members))
-            case op: ExecutableOp.WiringOp =>
-              Seq((activations, preps.toDep(op).deps))
-            case op: ExecutableOp.MonadicOp =>
-              Seq((activations, preps.toDep(op).deps))
+              Set.empty[AxisPoint]
+            case _ =>
+              activations
           }
+          (acts, deps)
       }
     } yield {
       next
+    }
+  }
+
+  private def depsOf(weakSetMembers: Set[WeakEdge[DIKey]])(op: InstantiationOp): Set[DIKey] = {
+    op match {
+      case cs: CreateSet =>
+        val members = cs.members.filterNot(m => weakSetMembers.contains(WeakEdge(m, cs.target)))
+        members
+      case op: ExecutableOp.WiringOp =>
+        preps.toDep(op).deps
+      case op: ExecutableOp.MonadicOp =>
+        preps.toDep(op).deps
     }
   }
 
@@ -237,10 +253,10 @@ class PlannerInputVerifier(
 
 object PlannerInputVerifier {
   sealed trait PlanIssue
-  case class MissingImport(key: DIKey) extends PlanIssue
   case class ConflictingBindings(key: DIKey, ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
   case class ConflictingActivations(op: ExecutableOp.InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
   case class UnsaturatedAxis(key: DIKey, name: String, missing: Seq[String]) extends PlanIssue
-  case class InconsistentSetMembers(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
+  case class MissingImport(key: DIKey) extends PlanIssue // not necessarily an issue, parent locator must be considered
+  case class InconsistentSetMembers(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue // distage bug, should never happen (bindings machinery)
 
 }
