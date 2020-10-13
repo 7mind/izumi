@@ -135,7 +135,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       """
       )
     )
-    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
+    assert(res.getMessage contains "diverging implicit expansion")
   }
 
 }
