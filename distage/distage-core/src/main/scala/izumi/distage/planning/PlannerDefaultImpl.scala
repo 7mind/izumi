@@ -13,6 +13,8 @@ import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOri
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
+import izumi.distage.planning.sequential.LoopBreaker
+import izumi.distage.planning.solver.PlanSolver
 import izumi.functional.Value
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.Toposort
@@ -36,6 +38,7 @@ class PlannerDefaultImpl(
   }
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+
     resolver.resolveConflicts(input) match {
       case Left(errors) =>
         throwOnConflict(input.activation, errors)

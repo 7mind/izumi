@@ -17,9 +17,10 @@ import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInt
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
+import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, SanityCheckerDefaultImpl}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.distage.planning.solver.{GraphPreparations, SemigraphSolver}
+import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
 import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity

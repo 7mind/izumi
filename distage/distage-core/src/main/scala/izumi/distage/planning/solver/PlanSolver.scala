@@ -1,14 +1,13 @@
-package izumi.distage.planning
+package izumi.distage.planning.solver
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
-import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
-import izumi.distage.planning.solver.{ActivationChoices, GraphPreparations, SemigraphSolver}
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.nowarn
@@ -41,6 +40,15 @@ object PlanSolver {
     def resolveConflicts(
       input: PlannerInput
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
+
+      // TODO: just for testing
+      val verifier = new PlannerInputVerifier(preps)
+      verifier.verify(PlannerInputVerifier.Problem(input.bindings, input.roots)) match {
+        case Left(value) =>
+          System.err.println(value.niceList())
+        case Right(_) =>
+      }
+
       for {
         problem <- computeProblem(input)
         resolution <- resolver.resolve(problem.matrix, problem.roots, problem.activations, problem.weakSetMembers)
@@ -77,30 +85,22 @@ object PlanSolver {
 
       val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
 
-      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = allOps.collect {
-        case (target, op: WiringOp) => (target, Node(op.wiring.requiredKeys, op: InstantiationOp))
-        case (target, op: MonadicOp) => (target, Node(Set(op.effectKey), op: InstantiationOp))
-      }
+      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(allOps)
 
       val sets: Map[Annotated[DIKey], Node[DIKey, ExecutableOp.InstantiationOp]] = computeSets(ac, allOps)
 
       val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
 
-      val roots: Set[DIKey] = input.roots match {
-        case Roots.Of(roots) =>
-          roots.toSet
-        case Roots.Everything =>
-          allOps.map(_._1.key).toSet
-      }
+      val roots: Set[DIKey] = preps.getRoots(input.roots, allOps)
 
-      val weakSetMembers: Set[WeakEdge[DIKey]] = findWeakSetMembers(sets, matrix, roots)
+      val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(sets, matrix, roots)
 
       Right(Problem(activations, matrix, roots, weakSetMembers))
     }
 
     private def computeOperations(ac: ActivationChoices, input: PlannerInput): Seq[(Annotated[DIKey], InstantiationOp)] = {
       val allOpsMaybe = preps
-        .computeOperationsUnsafe(input)
+        .computeOperationsUnsafe(input.bindings)
         .map {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
@@ -191,40 +191,6 @@ object PlanSolver {
 
         }.toMap
       sets
-    }
-
-    protected[this] def findWeakSetMembers(
-      sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
-      matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
-      roots: Set[DIKey],
-    ): Set[WeakEdge[DIKey]] = {
-      import izumi.fundamentals.collections.IzCollections._
-
-      val indexed = matrix
-        .links.map {
-          case (successor, node) =>
-            (successor.key, node.meta)
-        }
-        .toMultimapMut
-
-      sets
-        .collect {
-          case (target, Node(_, s: CreateSet)) =>
-            (target, s.members)
-        }
-        .flatMap {
-          case (_, members) =>
-            members
-              .diff(roots)
-              .flatMap {
-                member =>
-                  indexed.get(member).toSeq.flatten.collect {
-                    case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
-                      WeakEdge(referenced, member)
-                  }
-              }
-        }
-        .toSet
     }
 
     private def isProperlyActivatedSetElement[T](ac: ActivationChoices, value: Set[AxisPoint])(onError: Set[String] => Either[T, Boolean]): Either[T, Boolean] = {

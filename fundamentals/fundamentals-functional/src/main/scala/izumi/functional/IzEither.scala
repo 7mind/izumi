@@ -13,7 +13,7 @@ trait IzEither {
   @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](
     result: Col[Either[List[L], Col2[R]]]
   ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(result)
-  @inline implicit final def EitherBiSplit[L, R, Col[x] <: IterableOnce[x]](e: Col[Either[L, R]]): EitherBiSplit[L, R, Col] = new EitherBiSplit(e)
+  @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](e: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(e)
   @inline implicit final def EitherBiFind[Col[x] <: IterableOnce[x], T](s: Col[T]): EitherBiFind[Col, T] = new EitherBiFind(s)
   @inline implicit final def EitherBiFoldLeft[L, R, Col[x] <: IterableOnce[x]](s: Col[R]): EitherBiFoldLeft[L, R, Col] = new EitherBiFoldLeft(s)
 }
@@ -75,7 +75,7 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiSplit[L, R, Col[x] <: IterableOnce[x]](private val e: Col[Either[L, R]]) extends AnyVal {
+  final class EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](private val e: Col[Either[L, R]]) extends AnyVal {
     def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
       val bad = mutable.ArrayBuffer.empty[L]
       val good = mutable.ArrayBuffer.empty[R]
@@ -86,6 +86,22 @@ object IzEither extends IzEither {
       }
 
       (bl.fromSpecific(bad), br.fromSpecific(good))
+    }
+
+    def biAggregateScalar(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
+      val bad = mutable.ArrayBuffer.empty[L]
+      val good = mutable.ArrayBuffer.empty[R]
+
+      e.iterator.foreach {
+        case Left(e) => bad += e
+        case Right(v) => good += v
+      }
+
+      if (bad.isEmpty) {
+        Right(b.fromSpecific(good))
+      } else {
+        Left(bad.toList)
+      }
     }
   }
 
