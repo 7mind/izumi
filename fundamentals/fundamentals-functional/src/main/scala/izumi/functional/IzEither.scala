@@ -3,7 +3,6 @@ package izumi.functional
 import izumi.functional.IzEither._
 
 import scala.collection.compat._
-import scala.collection.mutable
 import scala.language.implicitConversions
 
 trait IzEither {
@@ -41,66 +40,85 @@ object IzEither extends IzEither {
 
   final class EitherBiAggregate[L, R, Col[x] <: IterableOnce[x]](private val result: Col[Either[List[L], R]]) extends AnyVal {
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
-      val bad = mutable.ArrayBuffer.empty[L]
-      val good = mutable.ArrayBuffer.empty[R]
+      val bad = List.newBuilder[L]
+      val good = b.newBuilder
 
       result.iterator.foreach {
         case Left(e) => bad ++= e
         case Right(v) => good += v
       }
 
-      if (bad.isEmpty) {
-        Right(b.fromSpecific(good))
+      val badList = bad.result()
+      if (badList.isEmpty) {
+        Right(good.result())
       } else {
-        Left(bad.toList)
+        Left(badList)
+      }
+    }
+
+    def biAggregateSequence: Either[List[L], Unit] = {
+      val bad = List.newBuilder[L]
+
+      result.iterator.foreach {
+        case Left(e) => bad ++= e
+        case _ =>
+      }
+
+      val badList = bad.result()
+      if (badList.isEmpty) {
+        Right(())
+      } else {
+        Left(badList)
       }
     }
   }
 
   final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](private val result: Col[Either[List[L], Col2[R]]]) extends AnyVal {
     def biFlatAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
-      val bad = mutable.ArrayBuffer.empty[L]
-      val good = mutable.ArrayBuffer.empty[R]
+      val bad = List.newBuilder[L]
+      val good = b.newBuilder
 
       result.iterator.foreach {
         case Left(e) => bad ++= e
         case Right(v) => good ++= v
       }
 
-      if (bad.isEmpty) {
-        Right(b.fromSpecific(good))
+      val badList = bad.result()
+      if (badList.isEmpty) {
+        Right(good.result())
       } else {
-        Left(bad.toList)
+        Left(badList)
       }
     }
   }
 
   final class EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](private val e: Col[Either[L, R]]) extends AnyVal {
     def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
-      val bad = mutable.ArrayBuffer.empty[L]
-      val good = mutable.ArrayBuffer.empty[R]
+      val bad = bl.newBuilder
+      val good = br.newBuilder
 
       e.iterator.foreach {
         case Left(e) => bad += e
         case Right(v) => good += v
       }
 
-      (bl.fromSpecific(bad), br.fromSpecific(good))
+      (bad.result(), good.result())
     }
 
     def biAggregateScalar(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
-      val bad = mutable.ArrayBuffer.empty[L]
-      val good = mutable.ArrayBuffer.empty[R]
+      val bad = List.newBuilder[L]
+      val good = b.newBuilder
 
       e.iterator.foreach {
         case Left(e) => bad += e
         case Right(v) => good += v
       }
 
-      if (bad.isEmpty) {
-        Right(b.fromSpecific(good))
+      val badList = bad.result()
+      if (badList.isEmpty) {
+        Right(good.result())
       } else {
-        Left(bad.toList)
+        Left(badList)
       }
     }
   }
