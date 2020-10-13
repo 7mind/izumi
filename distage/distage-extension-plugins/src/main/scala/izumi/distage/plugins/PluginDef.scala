@@ -14,7 +14,7 @@ import izumi.fundamentals.platform.language.unused
   *   }
   * }}}
   *
-  * @param recompilationToken Forces compile-time checks to re-run when the source code of a (relevant) class inheriting `PluginDef` is changed.
+  * @param recompilationToken Makes compile-time checks re-run when the source code of this `PluginDef` is changed, if it's used in the checked role.
   *
   * @see [[https://izumi.7mind.io/distage/distage-framework#compile-time-checks Compile-time checks]]
   */

@@ -9,6 +9,7 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString._
@@ -95,11 +96,12 @@ object ConfigLoader {
     }
   }
 
-  class LocalFSImpl(
+  @open class LocalFSImpl(
     logger: IzLogger @Id("early"),
     args: Args,
     configLocation: ConfigLocation,
   ) extends ConfigLoader {
+    protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
     def loadConfig(): AppConfig = {
       val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
@@ -112,35 +114,7 @@ object ConfigLoader {
 
       val allConfigs = (roleExplicitConfigs.iterator ++ commonExplicitConfigs ++ roleReferenceConfigs.iterator.flatten ++ commonReferenceConfigs).toList
 
-      val (cfgInfo, loaded) = allConfigs.map {
-        case r: ConfigSource.Resource =>
-          def tryLoadResource(): Try[Config] = {
-            def filterEmptyResourceCfg(cfg: Config): Try[Config] =
-              if (cfg.origin().resource() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $r"))
-
-            Try(ConfigFactory.parseResources(r.name)).flatMap(filterEmptyResourceCfg).orElse {
-              Try(ConfigFactory.parseResources(IzResources.getClass.getClassLoader, r.name)).flatMap(filterEmptyResourceCfg)
-            }
-          }
-
-          IzResources.getPath(r.name) match {
-            case Some(LoadablePathReference(path, _)) =>
-              s"$r (available: $path)" -> (r -> tryLoadResource())
-            case Some(UnloadablePathReference(path)) =>
-              s"$r (exists: $path)" -> (r -> tryLoadResource())
-            case None =>
-              s"$r (missing)" -> (r -> Success(ConfigFactory.empty()))
-          }
-
-        case f: ConfigSource.File =>
-          if (f.file.exists()) {
-            s"$f (exists: ${f.file.getCanonicalPath})" -> (f -> Try(ConfigFactory.parseFile(f.file)).flatMap {
-              cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
-            })
-          } else {
-            s"$f (missing)" -> (f -> Success(ConfigFactory.empty()))
-          }
-      }.unzip
+      val (cfgInfo, loaded) = loadConfigSources(allConfigs)
 
       logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
 
@@ -167,6 +141,40 @@ object ConfigLoader {
 
         AppConfig(config)
       }
+    }
+
+    protected def loadConfigSources(allConfigs: List[ConfigSource]): (List[String], List[(ConfigSource, Try[Config])]) = {
+      allConfigs.map(loadConfigSource).unzip
+    }
+
+    protected def loadConfigSource(configSource: ConfigSource): (String, (ConfigSource, Try[Config])) = configSource match {
+      case r: ConfigSource.Resource =>
+        def tryLoadResource(): Try[Config] = {
+          Try(ConfigFactory.parseResources(resourceClassLoader, r.name)).flatMap {
+            cfg =>
+              if (cfg.origin().resource() eq null) {
+                Failure(new FileNotFoundException(s"Couldn't find config file $r"))
+              } else Success(cfg)
+          }
+        }
+
+        IzResources(resourceClassLoader).getPath(r.name) match {
+          case Some(LoadablePathReference(path, _)) =>
+            s"$r (available: $path)" -> (r -> tryLoadResource())
+          case Some(UnloadablePathReference(path)) =>
+            s"$r (exists: $path)" -> (r -> tryLoadResource())
+          case None =>
+            s"$r (missing)" -> (r -> Success(ConfigFactory.empty()))
+        }
+
+      case f: ConfigSource.File =>
+        if (f.file.exists()) {
+          s"$f (exists: ${f.file.getCanonicalPath})" -> (f -> Try(ConfigFactory.parseFile(f.file)).flatMap {
+            cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
+          })
+        } else {
+          s"$f (missing)" -> (f -> Success(ConfigFactory.empty()))
+        }
     }
 
     protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {

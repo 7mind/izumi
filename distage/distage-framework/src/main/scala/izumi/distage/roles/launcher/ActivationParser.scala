@@ -4,9 +4,9 @@ import distage.Id
 import distage.config.AppConfig
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
+import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.strings.IzString.toRichString
 
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
@@ -27,7 +27,7 @@ object ActivationParser {
   ) extends ActivationParser {
 
     def parseActivation(): Activation = {
-      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(arg => activationKV(arg.value))
+      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisValue splitAxisValue _.value)
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       val configChoices = if (config.config.hasPath(configActivationSection)) {
@@ -41,7 +41,4 @@ object ActivationParser {
     protected def configActivationSection: String = "activation"
   }
 
-  def activationKV(s: String): (String, String) = {
-    s.split2(':')
-  }
 }

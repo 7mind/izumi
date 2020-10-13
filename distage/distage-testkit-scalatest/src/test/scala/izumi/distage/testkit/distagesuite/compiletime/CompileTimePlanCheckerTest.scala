@@ -1,11 +1,11 @@
 package izumi.distage.testkit.distagesuite.compiletime
 
-import izumi.distage.framework.{PlanCheck, PlanCheckMacro}
+import izumi.distage.framework.{PerformPlanCheck, PlanCheck}
 import izumi.distage.roles.test.TestEntrypointPatchedLeak
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-final class CompTimePlanCheckerTest extends AnyWordSpec {
+final class CompileTimePlanCheckerTest extends AnyWordSpec {
 
   "check role app module" in {
     PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help")
@@ -16,13 +16,13 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
 //      "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
 //    )
 
-//    new PlanCheckMacro.Impl(
+//    new PerformPlanCheck.Main(
 //      TestEntrypointPatchedLeak,
 //      "testtask00 testrole01 testrole02 testrole03 testrole04",
 //      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
 //    ).planCheck.rerunAtRuntime()
 
-//    new PlanCheckMacro.Impl(
+//    new PerformPlanCheck.Main(
 //      TestEntrypointPatchedLeak,
 //      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
 //      checkConfig = false,
@@ -30,7 +30,7 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
 //
 //
 //    assertThrows[Throwable] {
-//      new PlanCheckMacro.Impl(
+//      new PerformPlanCheck.Main(
 //        TestEntrypointPatchedLeak,
 //        config = "testrole04-reference.conf",
 //        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
@@ -38,7 +38,7 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
 //    }
 
     val err1 = intercept[TestFailedException](assertCompiles("""
-    new PlanCheckMacro.Impl(
+    new PerformPlanCheck.Main(
       izumi.distage.roles.test.TestEntrypoint,
       config = "checker-test-good.conf",
       activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
@@ -49,7 +49,7 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
     assert(err1.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
 
     val err2 = intercept[TestFailedException](assertCompiles("""
-    new PlanCheckMacro.Impl(
+    new PerformPlanCheck.Main(
       izumi.distage.roles.test.TestEntrypoint,
       config = "checker-test-good.conf",
       activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
@@ -63,15 +63,15 @@ final class CompTimePlanCheckerTest extends AnyWordSpec {
       config = "checker-test-good.conf",
       activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
     )
-    val compileTimePlugins = new PlanCheckMacro.Impl(
+    val compileTimePlugins = new PerformPlanCheck.Main(
       TestEntrypointPatchedLeak,
       config = "checker-test-good.conf",
       activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
     ).planCheck.checkedPlugins
 
-    assert(runtimePlugins.result.map(_.getClass).toSet == compileTimePlugins.map(_.getClass).toSet)
+    assert(runtimePlugins.throwOnError().result.map(_.getClass).toSet == compileTimePlugins.map(_.getClass).toSet)
 
-//      new PlanCheckMacro.Impl(
+//      new PerformPlanCheck.Main(
 //        TestEntrypointPatchedLeak,
 //        "testtask00 testrole01 testrole02 testrole03 testrole04",
 //      ).planCheck.run()

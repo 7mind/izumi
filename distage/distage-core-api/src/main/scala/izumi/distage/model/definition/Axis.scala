@@ -1,6 +1,7 @@
 package izumi.distage.model.definition
 
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.fundamentals.platform.strings.IzString.toRichString
 
 trait Axis { self =>
   def name: String = getClass.getName.toLowerCase.split('.').last.split('$').last
@@ -24,5 +25,10 @@ object Axis {
     final def toAxisPoint: AxisPoint = AxisPoint(axis.name, id)
 
     override final def toString: String = s"$axis:$id"
+  }
+  object AxisValue {
+    def splitAxisValue(s: String): (String, String) = {
+      s.split2(':')
+    }
   }
 }

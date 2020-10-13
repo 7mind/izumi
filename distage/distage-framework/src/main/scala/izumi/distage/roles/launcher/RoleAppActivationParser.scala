@@ -12,7 +12,7 @@ trait RoleAppActivationParser {
 }
 
 object RoleAppActivationParser {
-  private[this] final val sysPropIgnoreUnknownActivations = DebugProperties.`distage.roles.activation.ignore-unknown`.boolValue(false)
+  private[this] final val sysPropIgnoreUnknownActivations = DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(false)
 
   class Impl(
     logger: IzLogger,

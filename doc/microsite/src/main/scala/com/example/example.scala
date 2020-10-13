@@ -1,10 +1,8 @@
 package com.example
 
-import distage.DIKey
 import distage.StandardAxis.Mode
 import distage.config.ConfigModuleDef
 import distage.plugins.PluginDef
-import izumi.distage.staticinjector.plugins.ModuleRequirements
 
 final case class HostPort(host: String, port: Int)
 
@@ -20,10 +18,3 @@ final class AppPlugin extends PluginDef with ConfigModuleDef {
   make[Service]
   makeConfig[Config]("config")
 }
-
-// Declare OtherService as an external dependency
-final class AppRequirements
-  extends ModuleRequirements(
-    // If we remove this line, compilation will rightfully break
-    Set(DIKey[OtherService])
-  )

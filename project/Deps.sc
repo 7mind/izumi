@@ -471,6 +471,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.distage.docker,

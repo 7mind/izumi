@@ -20,7 +20,6 @@ import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.RoleAppMain.ArgV
-import izumi.distage.roles.launcher.ActivationParser.activationKV
 import izumi.distage.roles.launcher.{RoleAppActivationParser, RoleProvider}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -33,10 +32,25 @@ import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichStrin
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
+import scala.annotation.tailrec
+
 object PlanCheck {
-  final val defaultActivationsLimit = DebugProperties.`distage.plancheck.max-activations`.strValue().fold(9000)(_.asInt(9000))
-  final val defaultCheckConfig = DebugProperties.`distage.plancheck.check-config`.boolValue(true)
-  final val defaultPrintPlan = DebugProperties.`distage.plancheck.print-plan`.boolValue(false)
+  final val defaultActivationsLimit = DebugProperties.`izumi.distage.plancheck.bruteforce.max-activations`.strValue().fold(9000)(_.asInt(9000))
+  final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
+  final val defaultPrintPlan = DebugProperties.`izumi.distage.plancheck.print-plan`.boolValue(false)
+
+  sealed abstract class PlanCheckResult {
+    def loadedPlugins: LoadedPlugins
+
+    final def throwOnError(): LoadedPlugins = this match {
+      case PlanCheckResult.Correct(loadedPlugins) => loadedPlugins
+      case PlanCheckResult.Incorrect(_, exception) => throw exception
+    }
+  }
+  object PlanCheckResult {
+    final case class Correct(loadedPlugins: LoadedPlugins) extends PlanCheckResult
+    final case class Incorrect(loadedPlugins: LoadedPlugins, exception: InvalidPlanException) extends PlanCheckResult
+  }
 
   /**
     * @param roleAppMain ...
@@ -44,7 +58,6 @@ object PlanCheck {
     * @param activations "*" to check all possible activations
     * @param config      Config resource file name, e.g. "application.conf" or "*" if using the same config settings as `roleAppMain`
     * @param checkConfig Try to parse config file checking all the config bindings added using [[izumi.distage.config.ConfigModuleDef]]
-    * @param limit       Upper limit on possible activation checks, default = 9000
     */
   def checkRoleApp(
     roleAppMain: PlanHolder,
@@ -53,14 +66,13 @@ object PlanCheck {
     config: String = "*",
     checkConfig: Boolean = defaultCheckConfig,
     printPlan: Boolean = defaultPrintPlan,
-    limit: Int = defaultActivationsLimit,
     logger: TrivialLogger = defaultLogger,
-  ): LoadedPlugins = {
+  ): PlanCheckResult = {
     val chosenRoles = if (roles == "*") None else Some(parseRoles(roles))
     val chosenActivations = if (activations == "*") None else Some(parseActivations(activations))
     val chosenConfig = if (config == "*") None else Some(config)
 
-    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, printPlan, limit, logger)
+    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, printPlan, logger)
   }
 
   def checkRoleAppParsed(
@@ -70,38 +82,122 @@ object PlanCheck {
     chosenConfig: Option[String],
     checkConfig: Boolean,
     printPlan: Boolean,
-    limit: Int,
     logger: TrivialLogger = defaultLogger,
-  ): LoadedPlugins = {
+  ): PlanCheckResult = {
 
     var effectiveRoles = "* (effective: unknown, failed too early)"
     var effectiveActivations = "* (effective: unknown, failed too early)"
     var effectiveConfig = "*"
-    def message(t: Throwable, plan: Option[OrderedPlan]): String = {
+    var effectiveLoadedPlugins = LoadedPlugins.empty
+
+    // indirection for tailrec
+    def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
+
+    @tailrec def cutoffMacroTrace(t: Throwable): Unit = {
       val trace = t.getStackTrace
       val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
       t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
-
-      val printedPlan = plan.filter(_ => printPlan).fold("")("Plan was:\n" + _.render() + "\n\n")
-
-      s"""Found a problem with your DI wiring, when checking wiring of application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
-         |
-         |  roles       = ${chosenRoles.fold(effectiveRoles)(_.toSeq.sorted.mkString(" "))}
-         |  activations = ${chosenActivations.fold(effectiveActivations)(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}
-         |  config      = ${chosenConfig.fold(effectiveConfig)("resource:" + _)}
-         |  checkConfig = $checkConfig
-         |  printPlan   = $printPlan${if (!printPlan) ", set to `true` for plan printout" else ""}
-         |
-         |$printedPlan${t.stackTrace}
-         |""".stripMargin
+      val suppressed = t.getSuppressed
+      suppressed.foreach(cutSuppressed)
+      if (t.getCause ne null) cutoffMacroTrace(t.getCause)
     }
 
-    try Injector[Identity]().produceRun(roleAppMain.finalAppModule(ArgV(Array.empty)) overriddenBy new ModuleDef {
+    def handlePlanError(t: Throwable, plan: Option[OrderedPlan]): PlanCheckResult.Incorrect = {
+      val message = {
+        cutoffMacroTrace(t)
+        val printedPlan = plan.filter(_ => printPlan).fold("")("Plan was:\n" + _.render() + "\n\n")
+        s"""Found a problem with your DI wiring, when checking wiring of application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
+           |
+           |  roles       = ${chosenRoles.fold(effectiveRoles)(_.toSeq.sorted.mkString(" "))}
+           |  activations = ${chosenActivations.fold(effectiveActivations)(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}
+           |  config      = ${chosenConfig.fold(effectiveConfig)("resource:" + _)}
+           |  checkConfig = $checkConfig
+           |  printPlan   = $printPlan${if (!printPlan) ", set to `true` for plan printout" else ""}
+           |
+           |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
+           |
+           |$printedPlan${t.stackTrace}
+           |""".stripMargin
+      }
+
+      PlanCheckResult.Incorrect(effectiveLoadedPlugins, new InvalidPlanException(message, plan, omitClassName = true, captureStackTrace = false))
+    }
+
+    try {
+      val baseModule = roleAppMain.finalAppModule(ArgV(Array.empty))
+      val allKeysProvidedByBaseModule = baseModule.keys
+
+      Injector[Identity]().produceRun(
+        baseModule overriddenBy mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map((roleAppMain.getClass.getClassLoader, _)))
+      )(Functoid {
+        (
+          bootloader: Bootloader @Id("roleapp"),
+          bsModule: BootstrapModule @Id("roleapp"),
+          activationChoicesExtractor: ActivationChoicesExtractor,
+          roleAppActivationParser: RoleAppActivationParser,
+          configLoader: ConfigLoader,
+          rolesInfo: RolesInfo,
+          activationInfo: ActivationInfo,
+          locatorRef: LocatorRef,
+          appPlugins: LoadedPlugins @Id("main"),
+          bsPlugins: LoadedPlugins @Id("bootstrap"),
+        ) =>
+          val loadedPlugins = appPlugins ++ bsPlugins
+
+          effectiveLoadedPlugins = loadedPlugins
+          effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
+
+          val allChoices = chosenActivations match {
+            case None =>
+              val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
+              effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
+
+              allActivations(choices, defaultActivationsLimit)
+            case Some(choiceSets) =>
+              choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
+          }
+
+          logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
+          logger.log(s"Checking with allChoices=${allChoices.niceList()}")
+
+          val allKeysFromRoleAppMainModule = {
+            val keysUsedInBaseModule = locatorRef.get.allInstances.iterator.map(_.key).toSet
+            keysUsedInBaseModule ++ allKeysProvidedByBaseModule
+          }
+
+          val maybeConcurrentConfigParsersMap = if (checkConfig) {
+            Some(ConcurrentHashMap.newKeySet[AppConfig => Any]())
+          } else None
+
+          DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
+            checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger, maybeConcurrentConfigParsersMap)
+          }
+
+          maybeConcurrentConfigParsersMap.foreach {
+            chm =>
+              val realAppConfig = configLoader.loadConfig()
+              effectiveConfig = s"* (effective: `${realAppConfig.config.origin()}`)"
+              chm.forEach(_.apply(realAppConfig).discard())
+          }
+
+          PlanCheckResult.Correct(loadedPlugins)
+      })
+    } catch {
+      case t: Throwable =>
+        val plan = t match {
+          case t: InvalidPlanException => t.plan
+          case _ => None
+        }
+        handlePlanError(t, plan)
+    }
+  }
+
+  def mainAppModulePlanCheckerOverrides(chosenRoles: Option[Set[String]], chosenConfigResource: Option[(ClassLoader, String)]): ModuleDef = {
+    new ModuleDef {
       make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
       make[IzLogger].fromValue(IzLogger.NullLogger)
       make[AppConfig].fromValue(AppConfig.empty)
       make[RawAppArgs].fromValue(RawAppArgs.empty)
-      make[Activation].named("roleapp").todo // TODO
       make[RoleProvider].from {
         chosenRoles match {
           case None =>
@@ -127,12 +223,12 @@ object PlanCheck {
             Functoid(ConfigLoader.Args forEnabledRoles (_: RolesInfo).availableRoleNames)
         }
       }
-      chosenConfig match {
-        case Some(resourceName) =>
+      chosenConfigResource match {
+        case Some((classLoader, resourceName)) =>
           make[ConfigLoader].fromValue[ConfigLoader](
             () =>
               AppConfig {
-                val cfg = ConfigFactory.parseResources(roleAppMain.getClass.getClassLoader, resourceName).resolve()
+                val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
                 if (cfg.origin().resource() eq null) {
                   throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
                 }
@@ -141,59 +237,6 @@ object PlanCheck {
           )
         case None => // use original ConfigLoader
       }
-    })(Functoid {
-      (
-        bootloader: Bootloader @Id("roleapp"),
-        bsModule: BootstrapModule @Id("roleapp"),
-        activationChoicesExtractor: ActivationChoicesExtractor,
-        roleAppActivationParser: RoleAppActivationParser,
-        configLoader: ConfigLoader,
-        rolesInfo: RolesInfo,
-        activationInfo: ActivationInfo,
-        locatorRef: LocatorRef,
-        appPlugins: LoadedPlugins @Id("main"),
-        bsPlugins: LoadedPlugins @Id("bootstrap"),
-      ) =>
-        effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
-
-        val allChoices = chosenActivations match {
-          case None =>
-            val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
-            effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
-            allActivations(choices, limit)
-          case Some(choiceSets) =>
-            choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
-        }
-        logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
-        logger.log(s"Checking with allChoices=${allChoices.niceList()}")
-
-        val allKeysFromRoleAppMainModule = {
-          val keysUsedInBootstrap = locatorRef.get.allInstances.iterator.map(_.key).toSet
-          val keysThatCouldveBeenInBootstrap = roleAppMain.finalAppModule(ArgV(Array.empty)).keys
-          keysUsedInBootstrap ++ keysThatCouldveBeenInBootstrap
-        }
-
-        val maybeConcurrentConfigParsersMap = if (checkConfig) Some(ConcurrentHashMap.newKeySet[AppConfig => Any]()) else None
-
-        //allChoices.foreach {
-        DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
-          checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger, maybeConcurrentConfigParsersMap)
-        }
-
-        maybeConcurrentConfigParsersMap.foreach {
-          chm =>
-            val realAppConfig = configLoader.loadConfig()
-            effectiveConfig = s"* (effective: ${realAppConfig.config.origin()})"
-            chm.forEach(_.apply(realAppConfig).discard())
-        }
-
-        appPlugins ++ bsPlugins
-    })
-    catch {
-      case t: InvalidPlanException =>
-        throw new InvalidPlanException(message(t, t.plan), t.plan, omitClassName = true, captureStackTrace = false)
-      case t: Throwable =>
-        throw new InvalidPlanException(message(t, None), None, omitClassName = true, captureStackTrace = false)
     }
   }
 
@@ -238,7 +281,7 @@ object PlanCheck {
   }
 
   private[this] def parseActivations(s: String): Array[Iterable[(String, String)]] = {
-    s.split(" *\\| *").map(_.split(" ").iterator.filter(_.nonEmpty).map(activationKV).toSeq)
+    s.split(" *\\| *").map(_.split(" ").iterator.filter(_.nonEmpty).map(AxisValue.splitAxisValue).toSeq)
   }
 
   private[this] def allActivations(allPossibleChoices: Map[Axis, Set[AxisValue]], limit: Int): Set[Activation] = {
@@ -268,7 +311,7 @@ object PlanCheck {
   }
 
   private[this] def defaultLogger: TrivialLogger = {
-    TrivialLogger.make[this.type](DebugProperties.`distage.plancheck.debug`.name)
+    TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
   }
 
 }

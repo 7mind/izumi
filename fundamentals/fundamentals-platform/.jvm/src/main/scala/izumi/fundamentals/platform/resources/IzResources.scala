@@ -9,58 +9,22 @@ import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
 import izumi.fundamentals.platform.files.IzFiles
-import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, UnloadablePathReference}
+import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
+import izumi.fundamentals.platform.resources.IzResourcesDirty.ContentIterator
 
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success}
 
-class IzResources(clazz: Class[_]) {
-
-  private def classLocationUrl[C: ClassTag](): Option[URL] = {
-    val clazz = classTag[C].runtimeClass
-    try {
-      Option(clazz.getProtectionDomain.getCodeSource.getLocation)
-    } catch { case _: Throwable => None }
-  }
-
-  def jarResource[C: ClassTag](name: String): IzResources.ResourceLocation = {
-    classLocationUrl[C]()
-      .flatMap {
-        url =>
-          try {
-            val location = Paths.get(url.toURI)
-            val locFile = location.toFile
-            val resolved = location.resolve(name)
-            val resolvedFile = resolved.toFile
-
-            if (locFile.exists() && locFile.isFile) { // read from jar
-              val jar = new JarFile(locFile)
-
-              Option(jar.getEntry(name)) match {
-                case Some(entry) =>
-                  Some(IzResources.ResourceLocation.Jar(locFile, jar, entry))
-                case None =>
-                  jar.close()
-                  None
-              }
-            } else if (resolvedFile.exists()) {
-              Some(IzResources.ResourceLocation.Filesystem(resolvedFile))
-            } else {
-              None
-            }
-          } catch { case _: Throwable => None }
-      }
-      .getOrElse(IzResources.ResourceLocation.NotFound)
-  }
+final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
 
   def getPath(resPath: String): Option[PathReference] = {
     if (Paths.get(resPath).toFile.exists()) {
-      return Some(new LoadablePathReference(Paths.get(resPath), null))
+      return Some(LoadablePathReference(Paths.get(resPath), null))
     }
 
-    val u = getClass.getClassLoader.getResource(resPath)
+    val u = classLoader.getResource(resPath)
     if (u == null) {
       return None
     }
@@ -83,7 +47,7 @@ class IzResources(clazz: Class[_]) {
   }
 
   def read(fileName: String): Option[InputStream] = {
-    Option(clazz.getClassLoader.getResourceAsStream(fileName))
+    Option(classLoader.getResourceAsStream(fileName))
   }
 
   def readAsString(fileName: String): Option[String] = {
@@ -100,9 +64,10 @@ class IzResources(clazz: Class[_]) {
 
 }
 
-object IzResourcesDirty extends IzResources(classOf[IzResources.ResourceLocation]) {
+final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
+
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
-    val pathReference = getPath(sourcePath)
+    val pathReference = IzResources(classLoader).getPath(sourcePath)
     if (pathReference.isEmpty) {
       return RecursiveCopyOutput.empty
     }
@@ -140,10 +105,8 @@ object IzResourcesDirty extends IzResources(classOf[IzResources.ResourceLocation
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
-  final case class ContentIterator(files: Iterable[FileContent])
-
   def enumerateClasspath(sourcePath: String): ContentIterator = {
-    val pathReference = getPath(sourcePath)
+    val pathReference = IzResources(classLoader).getPath(sourcePath)
 
     pathReference match {
       case Some(LoadablePathReference(jarPath, _)) =>
@@ -167,15 +130,83 @@ object IzResourcesDirty extends IzResources(classOf[IzResources.ResourceLocation
         ContentIterator(targets.toSeq)
       case _ =>
         ContentIterator(Iterable.empty)
-
     }
-
   }
+
 }
 
-object IzResources extends IzResources(classOf[IzResources.ResourceLocation]) {
+object IzResourcesDirty {
+  @inline def apply(clazz: Class[_]): IzResourcesDirty = new IzResourcesDirty(clazz.getClassLoader)
+  @inline def apply(classLoader: ClassLoader): IzResourcesDirty = new IzResourcesDirty(classLoader)
 
-  implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
+  def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
+    IzResourcesDirty(classOf[ResourceLocation].getClassLoader)
+      .copyFromClasspath(sourcePath, targetDir)
+  }
+
+  def enumerateClasspath(sourcePath: String): ContentIterator = {
+    IzResourcesDirty(classOf[ResourceLocation].getClassLoader)
+      .enumerateClasspath(sourcePath)
+  }
+
+  final case class ContentIterator(files: Iterable[FileContent])
+}
+
+object IzResources {
+  @inline def apply(clazz: Class[_]): IzResources = new IzResources(clazz.getClassLoader)
+  @inline def apply(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
+
+  @inline implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz.getClassLoader)
+  @inline implicit def toResources(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
+
+  private def classLocationUrl[C: ClassTag](): Option[URL] = {
+    val clazz = classTag[C].runtimeClass
+    try {
+      Option(clazz.getProtectionDomain.getCodeSource.getLocation)
+    } catch { case _: Throwable => None }
+  }
+
+  def jarResource[C: ClassTag](name: String): ResourceLocation = {
+    classLocationUrl[C]()
+      .flatMap {
+        url =>
+          try {
+            val location = Paths.get(url.toURI)
+            val locFile = location.toFile
+            val resolved = location.resolve(name)
+            val resolvedFile = resolved.toFile
+
+            if (locFile.exists() && locFile.isFile) { // read from jar
+              val jar = new JarFile(locFile)
+
+              Option(jar.getEntry(name)) match {
+                case Some(entry) =>
+                  Some(ResourceLocation.Jar(locFile, jar, entry))
+                case None =>
+                  jar.close()
+                  None
+              }
+            } else if (resolvedFile.exists()) {
+              Some(ResourceLocation.Filesystem(resolvedFile))
+            } else {
+              None
+            }
+          } catch { case _: Throwable => None }
+      }
+      .getOrElse(ResourceLocation.NotFound)
+  }
+
+  def getPath(resPath: String): Option[PathReference] = {
+    classOf[ResourceLocation].getClassLoader.getPath(resPath)
+  }
+
+  def read(fileName: String): Option[InputStream] = {
+    classOf[ResourceLocation].getClassLoader.read(fileName)
+  }
+
+  def readAsString(fileName: String): Option[String] = {
+    classOf[ResourceLocation].getClassLoader.readAsString(fileName)
+  }
 
   final case class FileContent(path: Path, content: Array[Byte])
 
@@ -198,5 +229,4 @@ object IzResources extends IzResources(classOf[IzResources.ResourceLocation]) {
     final case class Jar(jarPath: File, jar: JarFile, entry: ZipEntry) extends ResourceLocation
     case object NotFound extends ResourceLocation
   }
-
 }

@@ -32,7 +32,6 @@ object StaticPluginLoader {
 
       val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.result)
 
-      println(show(quoted))
       c.Expr[List[PluginBase]](q"$quoted")
     }
 

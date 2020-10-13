@@ -1,15 +1,33 @@
 package izumi.distage.framework
 
-import izumi.fundamentals.platform.properties.DebugProperties
+import izumi.fundamentals.platform.properties
 
-object DebugProperties extends DebugProperties {
-  final val `distage.plancheck.check-config` = BoolProperty("distage.plancheck.check-config")
+object DebugProperties extends properties.DebugProperties {
+  /**
+    * Check if all `makeConfig[T]("config.path")` bindings from [[izumi.distage.config.ConfigModuleDef]] parse correctly
+    * during plan checking. This will ensure that default configs are well-formed.
+    *
+    * Default: `true`
+    */
+  final val `izumi.distage.plancheck.check-config` = BoolProperty("izumi.distage.plancheck.check-config")
 
-  /** Print full plan when a problem is found during plan checking. `false` by default, due to noisiness of large plan printouts */
-  final val `distage.plancheck.print-plan` = BoolProperty("distage.plancheck.print-plan")
+  /**
+    * Print full plan when a problem is found during plan checking.
+    *
+    * Default: `false`, due to noisiness of large plan printouts
+    */
+  final val `izumi.distage.plancheck.print-plan` = BoolProperty("izumi.distage.plancheck.print-plan")
 
-  /** Enable debug prints during plan checking */
-  final val `distage.plancheck.debug` = BoolProperty("distage.plancheck.debug")
+  /**
+    * Prevent compile-time plan checks from failing the build and print warnings instead.
+    *
+    * Default: `false`
+    */
+  final val `izumi.distage.plancheck.onlywarn` = BoolProperty("izumi.distage.plancheck.onlywarn")
 
-  final val `distage.plancheck.max-activations` = StrProperty("distage.plancheck.max-activations")
+  final val `izumi.distage.plancheck.bruteforce` = BoolProperty("izumi.distage.plancheck.bruteforce")
+  final val `izumi.distage.plancheck.bruteforce.max-activations` = StrProperty("izumi.distage.plancheck.max-activations")
+
+  /** Print debug messages during plan checking. Default: `false` */
+  final val `izumi.debug.macro.distage.plancheck` = BoolProperty("izumi.debug.macro.distage.plancheck")
 }

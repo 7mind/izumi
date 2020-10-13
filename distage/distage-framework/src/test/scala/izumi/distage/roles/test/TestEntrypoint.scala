@@ -19,7 +19,7 @@ object TestEntrypointPatchedLeak extends TestEntrypointBase {
   }
 }
 
-class TestEntrypointBase extends RoleAppMain.LauncherF[IO] {
+class TestEntrypointBase extends RoleAppMain.LauncherCats[IO] {
   override protected def pluginConfig: PluginConfig = {
     PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
   }

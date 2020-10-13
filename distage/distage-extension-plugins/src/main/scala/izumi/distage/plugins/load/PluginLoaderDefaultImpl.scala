@@ -72,7 +72,7 @@ object PluginLoaderDefaultImpl {
       val implementors = scanResult.getClassesImplementing(base)
       implementors
         .asScala
-        .filterNot(_.isAbstract)
+        .filterNot(c => c.isAbstract || c.isAnonymousInnerClass)
         .flatMap {
           classInfo =>
             val clz = classInfo.loadClass()
