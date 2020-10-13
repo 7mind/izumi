@@ -130,9 +130,17 @@ class PlannerInputVerifier(
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
 
     for {
-      _ <- checkForUnsaturatedAxis(allAxis, withoutDefinedActivations)
-      _ <- checkForConflictingAxis(withoutDefinedActivations)
-      _ <- checkForConflictingBindings(withoutDefinedActivations)
+      issues <- Right(
+        checkForUnsaturatedAxis(allAxis, withoutDefinedActivations) ++
+        checkForConflictingAxis(withoutDefinedActivations) ++
+        checkForConflictingBindings(withoutDefinedActivations)
+      )
+      _ <-
+        if (issues.nonEmpty) {
+          Left(issues)
+        } else {
+          Right(())
+        }
       next = withoutDefinedActivations.toSeq.flatMap {
         case (op, activations) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
@@ -153,25 +161,24 @@ class PlannerInputVerifier(
 
   def checkForConflictingAxis(
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint])]
-  ): Either[List[PlanIssue], Unit] = {
+  ): List[PlanIssue] = {
     ops
-      .map {
+      .toList
+      .flatMap {
         case (op, acts) =>
           val bad = acts.groupBy(_.axis).filter(_._2.size > 1)
           if (bad.isEmpty) {
-            Right(())
+            List.empty
           } else {
-            Left(Conflictingactivations(op, bad))
+            List(ConflictingActivations(op, bad))
           }
 
       }
-      .biAggregateScalar
-      .map(_ => ())
   }
 
   def checkForConflictingBindings(
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint])]
-  ): Either[List[PlanIssue], Unit] = {
+  ): List[PlanIssue] = {
     // TODO: this method should fail in case any bindings in the set are indistinguishable
     // TODO: in case we implement precedence rules the implementation should change
 
@@ -190,9 +197,9 @@ class PlannerInputVerifier(
     }
 
     if (incompatible.isEmpty) {
-      Right(())
+      List.empty
     } else {
-      Left(List(ConflictingBindings(incompatible.map(_._1).toSeq)))
+      List(ConflictingBindings(ops.head._1.target, incompatible.map(_._1).toSeq))
     }
   }
 
@@ -206,21 +213,34 @@ class PlannerInputVerifier(
   def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint])],
-  ): Either[List[PlanIssue], Unit] = {
+  ): List[PlanIssue] = {
     val currentAxis = ops.flatMap(_._2.map(_.axis))
     // TODO: this method should fail in case there are some missing/uncovered points on any of the axis
+    val toTest = ops.map(_._2.to(mutable.Set))
+    val issues = mutable.ArrayBuffer.empty[PlanIssue]
 
-    Right(())
+    currentAxis.foreach {
+      a =>
+        val definedValues = toTest.flatMap(_.filter(_.axis == a)).map(_.value)
+        val diff = allAxis.get(a).map(_.diff(definedValues)).toSeq.flatten
+        if (diff.nonEmpty) {
+          // TODO: quadratic
+          if (toTest.forall(set => set.map(_.axis).contains(a))) {
+            issues.append(UnsaturatedAxis(ops.head._1.target, a, diff))
+          }
+        }
+    }
 
+    issues.toList
   }
 }
 
 object PlannerInputVerifier {
   sealed trait PlanIssue
   case class MissingImport(key: DIKey) extends PlanIssue
-  case class ConflictingBindings(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
-  case class Conflictingactivations(op: ExecutableOp.InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
-  case class UnsaturatedAxis() extends PlanIssue
+  case class ConflictingBindings(key: DIKey, ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
+  case class ConflictingActivations(op: ExecutableOp.InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
+  case class UnsaturatedAxis(key: DIKey, name: String, missing: Seq[String]) extends PlanIssue
   case class InconsistentSetMembers(ops: Seq[ExecutableOp.InstantiationOp]) extends PlanIssue
 
 }
