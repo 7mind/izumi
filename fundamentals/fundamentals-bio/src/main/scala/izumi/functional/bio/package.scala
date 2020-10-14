@@ -141,7 +141,7 @@ package object bio extends Syntax3 with Syntax2 {
 
   type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, ?, ?]]
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
   }

@@ -9,11 +9,13 @@ import org.scalatest.distage.DistageAssertionsMacro
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-trait AssertSync {
-  final def assertIO[F[_]](arg: Boolean)(implicit Sync: Sync[F], prettifier: Prettifier, pos: source.Position): F[Assertion] = macro AssertSyncMacro.impl[F]
+/** scalatest assertion macro for any [[cats.effect.Sync]] */
+trait AssertSync[F[_]] {
+  final def assertIO(arg: Boolean)(implicit Sync: Sync[F], prettifier: Prettifier, pos: source.Position): F[Assertion] = macro AssertSyncMacro.impl[F]
 }
 
-object AssertSync extends AssertSync {
+object AssertSync {
+  final def assertIO[F[_]](arg: Boolean)(implicit Sync: Sync[F], prettifier: Prettifier, pos: source.Position): F[Assertion] = macro AssertSyncMacro.impl[F]
 
   object AssertSyncMacro {
     def impl[F[_]](
@@ -27,5 +29,4 @@ object AssertSync extends AssertSync {
       c.Expr[F[Assertion]](q"$Sync.delay(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
     }
   }
-
 }

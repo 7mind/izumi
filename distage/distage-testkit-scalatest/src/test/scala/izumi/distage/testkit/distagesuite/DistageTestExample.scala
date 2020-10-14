@@ -11,7 +11,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures._
-import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest, DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertZIO, DistageBIOEnvSpecScalatest, DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.bio.BIOApplicativeError
 import izumi.fundamentals.platform.functional.Identity
@@ -45,7 +45,7 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 }
 
-class DistageTestExampleBIOEnv extends DistageBIOEnvSpecScalatest[ZIO] with DistageMemoizeExample[Task] with AssertIO {
+class DistageTestExampleBIOEnv extends DistageBIOEnvSpecScalatest[ZIO] with DistageMemoizeExample[Task] with AssertZIO {
 
   val service = ZIO.access[Has[MockUserRepository[Task]]](_.get)
 
