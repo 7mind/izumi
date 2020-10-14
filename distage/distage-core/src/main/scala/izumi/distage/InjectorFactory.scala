@@ -33,8 +33,8 @@ trait InjectorFactory {
     * Use [[apply[F[_]*]] variants to specify a different effect type
     */
   // Note: this function exists only because of Scala 2.12's sub-par implicit handling,
-  // 2.12 fails to default to `QuasiIO.QuasiIOIdentity` when writing `Injector()`
-  // if cats-effect is on classpath, because of recursive (on 2.12: diverging) instances in `cats.effect.Sync`
+  // 2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
+  // is on classpath because of recursive (on 2.12: diverging) instances in `cats.effect.Sync` object
   def apply(): Injector[Identity]
 
   /**

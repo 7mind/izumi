@@ -52,7 +52,7 @@ object SemigraphSolver {
 
   class SemigraphSolverImpl[N, I, V] extends SemigraphSolver[N, I, V] {
 
-    def resolve(
+    override def resolve(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
       activations: Set[AxisPoint],
@@ -116,9 +116,6 @@ object SemigraphSolver {
         Left(List(AmbigiousActivationsSet(bad)))
     }
 
-    implicit class SemiGraphOps(matrix: Seq[(Annotated[N], Node[N, V])]) {
-      def toMultiNodeMap: ImmutableMultiMap[N, (Annotated[N], Node[N, V])] = matrix.map { case (key, node) => (key.key, (key, node)) }.toMultimap
-    }
     @tailrec
     private def traceGrouped(
       activations: ActivationChoices,
@@ -319,6 +316,10 @@ object SemigraphSolver {
       }
     }
 
+  }
+
+  implicit class SemiGraphOps[N, V](private val matrix: Seq[(Annotated[N], Node[N, V])]) extends AnyVal {
+    def toMultiNodeMap: ImmutableMultiMap[N, (Annotated[N], Node[N, V])] = matrix.iterator.map { case (key, node) => (key.key, (key, node)) }.toMultimap
   }
 
 }

@@ -10,7 +10,7 @@ import scala.collection.mutable
 
 class ForwardingRefResolverDefaultImpl(
   protected val planAnalyzer: PlanAnalyzer,
-  @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
+  initProxiesAsap: Boolean @Id("distage.init-proxies-asap"),
 ) extends ForwardingRefResolver {
 
   override def resolve(plan: OrderedPlan): OrderedPlan = {

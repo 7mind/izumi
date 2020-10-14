@@ -8,7 +8,9 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
+import izumi.functional.IzEither._
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
+import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
 
@@ -19,7 +21,7 @@ trait PlanSolver {
 }
 
 object PlanSolver {
-  case class Problem(
+  final case class Problem(
     activations: Set[AxisPoint],
     matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
     roots: Set[DIKey],
@@ -32,9 +34,6 @@ object PlanSolver {
     preps: GraphPreparations,
   ) extends PlanSolver {
 
-    import izumi.functional.IzEither._
-    import izumi.fundamentals.platform.strings.IzString._
-
     import scala.collection.compat._
 
     def resolveConflicts(
@@ -42,8 +41,8 @@ object PlanSolver {
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
       // TODO: just for testing
-      val verifier = new PlannerInputVerifier(preps)
-      verifier.verify(PlannerInputVerifier.Problem(input.bindings, input.roots)) match {
+      val verifier = PlanVerifier(preps)
+      verifier.verify(input.bindings, input.roots) match {
         case Left(value) =>
           System.err.println(value.niceList())
         case Right(_) =>
@@ -83,17 +82,23 @@ object PlanSolver {
       val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
       val ac = ActivationChoices(activations)
 
-      val allOps: Seq[(Annotated[DIKey], InstantiationOp)] = computeOperations(ac, input)
+      val allOps: Seq[(Annotated[DIKey], InstantiationOp)] =
+        computeOperations(ac, input)
 
-      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(allOps)
+      val ops: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] =
+        preps.toDeps(allOps)
 
-      val sets: Map[Annotated[DIKey], Node[DIKey, ExecutableOp.InstantiationOp]] = computeSets(ac, allOps)
+      val sets: Map[Annotated[DIKey], Node[DIKey, ExecutableOp.InstantiationOp]] =
+        computeSets(ac, allOps)
 
-      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(ops ++ sets)
+      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] =
+        SemiEdgeSeq(ops ++ sets)
 
-      val roots: Set[DIKey] = preps.getRoots(input.roots, allOps)
+      val roots: Set[DIKey] =
+        preps.getRoots(input.roots, allOps)
 
-      val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(sets, matrix, roots)
+      val weakSetMembers: Set[WeakEdge[DIKey]] =
+        preps.findWeakSetMembers(sets, matrix, roots)
 
       Right(Problem(activations, matrix, roots, weakSetMembers))
     }

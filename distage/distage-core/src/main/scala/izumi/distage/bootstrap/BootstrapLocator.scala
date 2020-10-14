@@ -78,7 +78,7 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 }
 
 object BootstrapLocator {
-  @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+  private[this] val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
   private[this] val fullStackTraces: Boolean = DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
   private[this] val initProxiesAsap: Boolean = DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true)
 

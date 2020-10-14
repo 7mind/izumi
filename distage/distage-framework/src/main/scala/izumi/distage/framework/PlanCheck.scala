@@ -13,10 +13,11 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition._
 import izumi.distage.model.effect.DIEffectAsync
 import izumi.distage.model.exceptions.InvalidPlanException
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.RoleAppMain.ArgV
@@ -146,6 +147,21 @@ object PlanCheck {
 
           effectiveLoadedPlugins = loadedPlugins
           effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
+
+          locally {
+            val bindings = bootloader.input.bindings
+            // need to ignore bsModule + Injector parent + defaults too, need to check F type
+
+            // OrderedPlanOps#isValid should use PlannerInputVerifier (?)
+//            app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k))
+
+            PlanVerifier()
+              .verify(bindings, Roots(rolesInfo.requiredComponents)) match {
+//              case Left(value) => throw new java.lang.RuntimeException(s"${value.niceList()}") { override def fillInStackTrace(): Throwable = this }
+              case Left(value) => System.err.println(s"${value.niceList()}")
+              case Right(value) => value
+            }
+          }
 
           val allChoices = chosenActivations match {
             case None =>

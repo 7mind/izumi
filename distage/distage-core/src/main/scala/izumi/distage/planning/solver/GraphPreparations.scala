@@ -14,7 +14,9 @@ import izumi.fundamentals.graphs.WeakEdge
 import scala.annotation.nowarn
 
 @nowarn("msg=Unused import")
-class GraphPreparations(bindingTranslator: BindingTranslator) {
+class GraphPreparations(
+  bindingTranslator: BindingTranslator
+) {
   import scala.collection.compat._
 
   def findWeakSetMembers(
@@ -75,9 +77,8 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
   }
 
   def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-
     bindings
-      .bindings.iterator
+      .iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
       //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
@@ -99,7 +100,7 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
             case _: CreateSet =>
               Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
             case _ =>
-              toAxis(b)
+              getAxisPoints(b)
           }
 
           (Annotated(n.target, mutIndex, axis), n, b)
@@ -131,7 +132,7 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
       .iterator
   }
 
-  protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
+  protected[this] def getAxisPoints(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
       case AxisTag(axisValue) =>
         axisValue.toAxisPoint
