@@ -7,6 +7,7 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
@@ -43,9 +44,9 @@ object PlanSolver {
       // TODO: just for testing
       val verifier = PlanVerifier(preps)
       verifier.verify(input.bindings, input.roots) match {
-        case Left(value) =>
-          System.err.println(value.niceList())
-        case Right(_) =>
+        case PlanVerifierResult(issues, _) if issues.nonEmpty =>
+          System.err.println(issues.niceList())
+        case _ =>
       }
 
       for {

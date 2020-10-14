@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.{DIKey, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
-import izumi.distage.model.definition.{BindingTag, ModuleDef}
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue.{MissingImport, UnsaturatedAxis}
@@ -67,8 +67,8 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     println(result)
-    assert(result.isLeft)
-    assert(result.left.toOption.get == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, Set(Axis1.B.toAxisPoint))))
+    assert(result.issues.nonEmpty)
+    assert(result.issues == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, Set(Axis1.B.toAxisPoint))))
   }
 
   "Verifier flags axis fork with only choice along inapplicable axis" in {
@@ -83,8 +83,8 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     println(result)
-    assert(result.isLeft)
-    assert(result.left.toOption.get == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, Set(Axis1.B.toAxisPoint))))
+    assert(result.issues.nonEmpty)
+    assert(result.issues == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, Set(Axis1.B.toAxisPoint))))
   }
 
   "Verifier flags missing import only for ImplB" in {
@@ -99,9 +99,9 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     println(result)
-    assert(result.isLeft)
-    assert(result.left.toOption.get.size == 1)
-    assert(result.left.toOption.get == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(DIKey[Fork1] -> implBOrigin))))
+    assert(result.issues.nonEmpty)
+    assert(result.issues.size == 1)
+    assert(result.issues == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(DIKey[Fork1] -> implBOrigin))))
   }
 
 }

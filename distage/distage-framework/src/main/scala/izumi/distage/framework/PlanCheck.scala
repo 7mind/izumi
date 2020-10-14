@@ -1,7 +1,5 @@
 package izumi.distage.framework
 
-import java.util.concurrent.ConcurrentHashMap
-
 import com.typesafe.config.ConfigFactory
 import distage.Injector
 import izumi.distage.config.model.exceptions.DIConfigReadException
@@ -18,6 +16,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.solver.PlanVerifier
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.RoleAppMain.ArgV
@@ -27,7 +26,6 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
 import izumi.logstage.api.IzLogger
@@ -148,19 +146,19 @@ object PlanCheck {
           effectiveLoadedPlugins = loadedPlugins
           effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
 
-          locally {
-            val bindings = bootloader.input.bindings
+          val bindings0000 = bootloader.input.bindings
+          val reachables0000 = locally {
             // need to ignore bsModule + Injector parent + defaults too, need to check F type
 
             // OrderedPlanOps#isValid should use PlannerInputVerifier (?)
 //            app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k))
 
-            PlanVerifier()
-              .verify(bindings, Roots(rolesInfo.requiredComponents)) match {
-//              case Left(value) => throw new java.lang.RuntimeException(s"${value.niceList()}") { override def fillInStackTrace(): Throwable = this }
-              case Left(value) => System.err.println(s"${value.niceList()}")
-              case Right(value) => value
+            val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(bindings0000, Roots(rolesInfo.requiredComponents))
+            if (issues.nonEmpty) {
+              //throw new java.lang.RuntimeException(s"${value.niceList()}") { override def fillInStackTrace(): Throwable = this }
+              System.err.println(s"${issues.niceList()}")
             }
+            reachableKeys
           }
 
           val allChoices = chosenActivations match {
@@ -181,19 +179,24 @@ object PlanCheck {
             keysUsedInBaseModule ++ allKeysProvidedByBaseModule
           }
 
-          val maybeConcurrentConfigParsersMap = if (checkConfig) {
-            Some(ConcurrentHashMap.newKeySet[AppConfig => Any]())
-          } else None
+//          val maybeConcurrentConfigParsersMap = if (checkConfig) {
+//            Some(ConcurrentHashMap.newKeySet[AppConfig => Any]())
+//          } else None
 
           DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
-            checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger, maybeConcurrentConfigParsersMap)
+            checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger)
           }
 
-          maybeConcurrentConfigParsersMap.foreach {
-            chm =>
-              val realAppConfig = configLoader.loadConfig()
-              effectiveConfig = s"* (effective: `${realAppConfig.config.origin()}`)"
-              chm.forEach(_.apply(realAppConfig).discard())
+          if (checkConfig) {
+            val realAppConfig = configLoader.loadConfig()
+            effectiveConfig = s"* (effective: `${realAppConfig.config.origin()}`)"
+            // FIXME: does not consider bsModule for reachability [must test it]
+            val parsersIter = bindings0000
+              .iterator
+              .filter(b => b.tags.exists(_.isInstanceOf[ConfTag]) && reachables0000.contains(b.key))
+              .flatMap(_.tags.iterator.collect { case c: ConfTag => c.parser })
+              .toList
+            parsersIter.foreach(_.apply(realAppConfig))
           }
 
           PlanCheckResult.Correct(loadedPlugins)
@@ -208,51 +211,52 @@ object PlanCheck {
     }
   }
 
-  def mainAppModulePlanCheckerOverrides(chosenRoles: Option[Set[String]], chosenConfigResource: Option[(ClassLoader, String)]): ModuleDef = {
-    new ModuleDef {
-      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-      make[IzLogger].fromValue(IzLogger.NullLogger)
-      make[AppConfig].fromValue(AppConfig.empty)
-      make[RawAppArgs].fromValue(RawAppArgs.empty)
-      make[RoleProvider].from {
-        chosenRoles match {
-          case None =>
-            @impl trait AllRolesProvider extends RoleProvider.Impl {
-              override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = true
+  def mainAppModulePlanCheckerOverrides(
+    chosenRoles: Option[Set[String]],
+    chosenConfigResource: Option[(ClassLoader, String)],
+  ): ModuleDef = new ModuleDef {
+    make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
+    make[IzLogger].fromValue(IzLogger.NullLogger)
+    make[AppConfig].fromValue(AppConfig.empty)
+    make[RawAppArgs].fromValue(RawAppArgs.empty)
+    make[RoleProvider].from {
+      chosenRoles match {
+        case None =>
+          @impl trait AllRolesProvider extends RoleProvider.Impl {
+            override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = true
+          }
+          TraitConstructor[AllRolesProvider]
+        case Some(chosenRoles) =>
+          @impl trait ConfiguredRoleProvider extends RoleProvider.Impl {
+            override protected def getInfo(bindings: Set[Binding], @unused requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
+              super.getInfo(bindings, chosenRoles, roleType)
             }
-            TraitConstructor[AllRolesProvider]
-          case Some(chosenRoles) =>
-            @impl trait ConfiguredRoleProvider extends RoleProvider.Impl {
-              override protected def getInfo(bindings: Set[Binding], @unused requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-                super.getInfo(bindings, chosenRoles, roleType)
+          }
+          TraitConstructor[ConfiguredRoleProvider]
+      }
+    }
+    make[ConfigLoader.Args].from {
+      chosenRoles match {
+        case Some(roleNames) =>
+          Functoid(() => ConfigLoader.Args.forEnabledRoles(roleNames))
+        case None =>
+          // use all roles
+          Functoid(ConfigLoader.Args forEnabledRoles (_: RolesInfo).availableRoleNames)
+      }
+    }
+    chosenConfigResource match {
+      case Some((classLoader, resourceName)) =>
+        make[ConfigLoader].fromValue[ConfigLoader](
+          () =>
+            AppConfig {
+              val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
+              if (cfg.origin().resource() eq null) {
+                throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
               }
+              cfg
             }
-            TraitConstructor[ConfiguredRoleProvider]
-        }
-      }
-      make[ConfigLoader.Args].from {
-        chosenRoles match {
-          case Some(roleNames) =>
-            Functoid(() => ConfigLoader.Args.forEnabledRoles(roleNames))
-          case None =>
-            // use all roles
-            Functoid(ConfigLoader.Args forEnabledRoles (_: RolesInfo).availableRoleNames)
-        }
-      }
-      chosenConfigResource match {
-        case Some((classLoader, resourceName)) =>
-          make[ConfigLoader].fromValue[ConfigLoader](
-            () =>
-              AppConfig {
-                val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
-                if (cfg.origin().resource() eq null) {
-                  throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
-                }
-                cfg
-              }
-          )
-        case None => // use original ConfigLoader
-      }
+        )
+      case None => // use original ConfigLoader
     }
   }
 
@@ -261,7 +265,6 @@ object PlanCheck {
     bsModule: BootstrapModule,
     allKeysFromRoleAppMainModule: Set[DIKey],
     logger: TrivialLogger,
-    maybeChm: Option[ConcurrentHashMap.KeySetView[AppConfig => Any, java.lang.Boolean]],
   )(activation: Activation
   ): Unit = {
     val app = bootloader.boot(
@@ -273,23 +276,6 @@ object PlanCheck {
     logger.log(s"Checking for activation=$activation, plan=${app.plan}")
 
     app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k))
-
-    // bindings can have arbitrary relationships with the rest of the graph which would force us to run the check
-    // for all possible activations, we just collect all the parsers added via `makeConfig` and execute them on
-    // an `AppConfig` once to check that the default config is well-formed.
-    maybeChm.foreach {
-      chm =>
-        app.plan.steps.foreach {
-          _.origin
-            .value.fold(
-              onUnknown = (),
-              onDefined = _.tags.foreach {
-                case c: ConfTag => chm.add(c.parser)
-                case _ => ()
-              },
-            )
-        }
-    }
   }
 
   private[this] def parseRoles(s: String): Set[String] = {

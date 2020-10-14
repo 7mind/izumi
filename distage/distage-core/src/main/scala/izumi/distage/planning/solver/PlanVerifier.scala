@@ -1,24 +1,23 @@
 package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.model.definition.{Binding, ModuleBase}
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue
+import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.graphs.WeakEdge
-import izumi.fundamentals.platform.language.SourceFilePosition
 
 import scala.annotation.nowarn
-import scala.collection.{MapView, mutable}
+import scala.collection.mutable
 
 @nowarn("msg=Unused import")
 class PlanVerifier(
@@ -26,7 +25,7 @@ class PlanVerifier(
 ) {
   import scala.collection.compat._
 
-  def verify(bindings: ModuleBase, roots: Roots): Either[Set[PlanIssue], Unit] = {
+  def verify(bindings: ModuleBase, roots: Roots): PlanVerifierResult = {
     val ops = preps.computeOperationsUnsafe(bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>
@@ -62,11 +61,9 @@ class PlanVerifier(
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
 
-    for {
-      _ <- trace(allAxis, mutVisited, toTrace, weakSetMembers, justMutators)(rootKeys.map(r => (r, r)), Set.empty).left.map(_.toSet)
-      // TODO: for both sets and mutators we need to filter out wrong ops and check for missing imports
-      // TODO: consider weak sets properly
-    } yield ()
+    val issues = trace(allAxis, mutVisited, toTrace, weakSetMembers, justMutators)(rootKeys.map(r => (r, r)), Set.empty).fold(_.toSet, _ => Set.empty[PlanIssue])
+
+    PlanVerifierResult(issues, mutVisited.toSet)
   }
 
   private def trace(
@@ -121,7 +118,7 @@ class PlanVerifier(
                               case Some(value) if value.size == 1 =>
                                 Right((m, ac.allValid(value.head._2)))
                               case Some(value) =>
-                                Left(List(InconsistentSetMembers(value.map(_._1).toSeq)))
+                                Left(List(InconsistentSetMembers(m, value.map(_._1).toSeq)))
                               case None =>
                                 Left(List(MissingImport(m, key, allImportingBindings(key))))
                             }
@@ -220,7 +217,7 @@ class PlanVerifier(
           if (bad.isEmpty) {
             List.empty
           } else {
-            List(ConflictingActivations(op, bad))
+            List(ConflictingActivations(op.target, op, bad))
           }
 
       }
@@ -291,19 +288,24 @@ object PlanVerifier {
 
   private[this] object Default extends PlanVerifier(new GraphPreparations(new BindingTranslator.Impl))
 
-  sealed trait PlanIssue
+  final case class PlanVerifierResult(
+    issues: Set[PlanIssue],
+    reachableKeys: Set[DIKey],
+  )
+
+  sealed abstract class PlanIssue {
+    def key: DIKey
+  }
   object PlanIssue {
     final case class ConflictingBindings(key: DIKey, ops: Seq[InstantiationOp]) extends PlanIssue
-    final case class ConflictingActivations(op: InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
+    final case class ConflictingActivations(key: DIKey, op: InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
     final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: Set[AxisPoint]) extends PlanIssue
     final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[(DIKey, OperationOrigin)])
       extends PlanIssue // not necessarily an issue, parent locator must be considered
-    final case class InconsistentSetMembers(ops: Seq[InstantiationOp]) extends PlanIssue // distage bug, should never happen (bindings machinery)
-//    final case class IncompatibleEffectType(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
+    final case class InconsistentSetMembers(key: DIKey, ops: Seq[InstantiationOp])
+      extends PlanIssue // distage bug, should never happen (bindings machinery must generate a unique key for each set member, they cannot have the same key by construction)
+    //
+//    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
+    //
   }
-
-  final case class Problem(
-    bindings: ModuleBase,
-    roots: Roots,
-  )
 }
