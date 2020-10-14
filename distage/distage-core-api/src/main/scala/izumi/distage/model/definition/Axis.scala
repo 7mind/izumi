@@ -20,11 +20,14 @@ object Axis {
 
   trait AxisValue {
     def axis: Axis
-    def id: String = getClass.getName.toLowerCase.split('.').last.split('$').last
+    def value: String = getClass.getName.toLowerCase.split('.').last.split('$').last
 
-    final def toAxisPoint: AxisPoint = AxisPoint(axis.name, id)
+    final def toAxisPoint: AxisPoint = AxisPoint(axis.name, value)
 
-    override final def toString: String = s"$axis:$id"
+    override final def toString: String = s"$axis:$value"
+
+    @deprecated("Renamed to `value`", "1.0")
+    final def id: String = value
   }
   object AxisValue {
     def splitAxisValue(s: String): (String, String) = {

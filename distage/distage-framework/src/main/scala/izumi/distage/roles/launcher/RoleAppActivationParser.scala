@@ -40,7 +40,7 @@ object RoleAppActivationParser {
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {
         case Some((base, members)) =>
-          members.find(_.id == choiceName) match {
+          members.find(_.value == choiceName) match {
             case Some(member) =>
               Some(base -> member)
             case None =>

@@ -15,7 +15,7 @@ object TestTagOps {
 
     abstract class TestAxis extends AxisValueDef
     final case class TestTag(t: String) extends TestAxis {
-      override def id: String = t
+      override def value: String = t
     }
   }
 

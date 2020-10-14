@@ -80,7 +80,7 @@ object PlanSolver {
     }
 
     protected def computeProblem(input: PlannerInput): Either[Nothing, Problem] = {
-      val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.id) }.toSet
+      val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.value) }.toSet
       val ac = ActivationChoices(activations)
 
       val allOps: Seq[(Annotated[DIKey], InstantiationOp)] =
