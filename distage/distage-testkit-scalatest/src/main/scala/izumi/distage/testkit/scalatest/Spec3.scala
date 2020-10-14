@@ -53,7 +53,7 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-abstract class DistageBIOEnvSpecScalatest[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
+abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, ?]]
   with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
 

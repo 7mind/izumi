@@ -8,7 +8,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInstance, MemoizedLevel1, MemoizedLevel2, MemoizedLevel3, TestInstance}
-import izumi.distage.testkit.scalatest.{AssertZIO, DistageBIOEnvSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import org.scalatest.Assertion
 import zio.{IO, ZIO}
 
@@ -38,7 +38,7 @@ object MemoizationEnv {
   }
 }
 
-abstract class DistageMemoizationEnvsTest extends DistageBIOEnvSpecScalatest[ZIO] with AssertZIO {
+abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
   override protected def config: TestConfig = {
     super
       .config.copy(

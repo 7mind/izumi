@@ -7,10 +7,10 @@ import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.tagged.DistageTestTaggedAxesExampleBase.{DepsCounters, DummyDep, PrdDep}
-import izumi.distage.testkit.scalatest.{AssertZIO, DistageBIOEnvSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import zio.ZIO
 
-abstract class DistageTestTaggedAxesExampleBase extends DistageBIOEnvSpecScalatest[ZIO] with AssertZIO {
+abstract class DistageTestTaggedAxesExampleBase extends Spec3[ZIO] with AssertZIO {
   override protected def config: TestConfig = super
     .config.copy(
       forcedRoots = Map(

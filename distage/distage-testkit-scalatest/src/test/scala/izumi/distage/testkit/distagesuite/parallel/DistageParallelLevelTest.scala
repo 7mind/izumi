@@ -9,7 +9,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
-import izumi.distage.testkit.scalatest.DistageSpecScalatest
+import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
 import org.scalatest.Assertion
@@ -22,7 +22,7 @@ object DistageParallelLevelTest {
   val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends DistageSpecScalatest[F] {
+abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](suitesCounter: AtomicInteger)(implicit F: DIEffect[F]) extends Spec1[F] {
   private[this] val maxSuites = 3
   private[this] val maxTests = 2
   private[this] val maxTestsOverSuites = maxTests * maxSuites

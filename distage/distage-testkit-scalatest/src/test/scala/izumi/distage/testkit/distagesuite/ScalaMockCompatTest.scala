@@ -2,11 +2,11 @@ package izumi.distage.testkit.distagesuite
 
 import distage.ModuleDef
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.DistageSpecScalatest
+import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 import org.scalamock.scalatest.MockFactory
 
-final class ScalaMockCompatTest extends DistageSpecScalatest[Identity] with MockFactory {
+final class ScalaMockCompatTest extends Spec1[Identity] with MockFactory {
 
   trait TestClass {
     def method: String

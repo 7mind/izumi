@@ -7,7 +7,7 @@ import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
 
-abstract class DistageBIOSpecScalatest[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F])
+abstract class Spec2[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F])
   extends DistageScalatestTestSuiteRunner[F[Throwable, ?]]
   with DistageAbstractScalatestSpec[F[Throwable, ?]] {
 
