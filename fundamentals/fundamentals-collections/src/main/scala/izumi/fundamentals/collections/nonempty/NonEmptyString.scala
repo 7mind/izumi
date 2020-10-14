@@ -1537,4 +1537,13 @@ object NonEmptyString {
       case None => None
       case Some(_) => Some(new NonEmptyString(seq.mkString))
     }
+
+  def from[T](str: String): Option[NonEmptyString] =
+    if (str.isEmpty) None else Some(new NonEmptyString(str))
+
+  def unsafeFrom(str: String): NonEmptyString = {
+    require(str.nonEmpty)
+    new NonEmptyString(str)
+  }
+
 }

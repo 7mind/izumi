@@ -3,6 +3,7 @@ package izumi.distage.planning.solver
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
@@ -14,6 +15,7 @@ import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.graphs.WeakEdge
 
 import scala.annotation.nowarn
@@ -132,11 +134,12 @@ class PlanVerifier(
             _ <-
               if (withMergedSets.isEmpty) {
                 val defined = ops.flatMap(op => op._2).groupBy(_.axis)
-                val probablyUnsaturatedAxis = defined
-                  .map {
-                    case (axis, definedPoints) =>
-                      UnsaturatedAxis(key, axis, currentActivation.filter(_.axis == axis).diff(definedPoints))
-                  }.filterNot(_.missingAxisValues.isEmpty)
+                val probablyUnsaturatedAxis = defined.flatMap {
+                  case (axis, definedPoints) =>
+                    NonEmptySet
+                      .from(currentActivation.filter(_.axis == axis).diff(definedPoints))
+                      .map(UnsaturatedAxis(key, axis, _))
+                }
 
                 if (probablyUnsaturatedAxis.nonEmpty) {
                   Left(probablyUnsaturatedAxis.toList)
@@ -210,17 +213,13 @@ class PlanVerifier(
     ops: Set[(InstantiationOp, Set[AxisPoint])]
   ): List[PlanIssue] = {
     ops
-      .toList
+      .iterator
       .flatMap {
         case (op, acts) =>
-          val bad = acts.groupBy(_.axis).filter(_._2.size > 1)
-          if (bad.isEmpty) {
-            List.empty
-          } else {
-            List(ConflictingActivations(op.target, op, bad))
-          }
-
-      }
+          NonEmptyMap
+            .from(acts.groupBy(_.axis).filter(_._2.size > 1))
+            .map(ConflictingActivations(op.target, op, _))
+      }.toList
   }
 
   def checkForConflictingBindings(
@@ -232,22 +231,21 @@ class PlanVerifier(
     val compatible = mutable.ArrayBuffer.empty[(InstantiationOp, Set[AxisPoint])]
     compatible.appendAll(ops.headOption)
 
-    val incompatible = mutable.ArrayBuffer.empty[(InstantiationOp, Set[AxisPoint])]
+    val incompatible = List.newBuilder[InstantiationOp]
 
     // TODO: quadratic, better approaches possible
     for ((op, a) <- ops.drop(1)) {
       if (compatible.forall(c => isCompatible(c._2, a))) {
         compatible.append((op, a))
       } else {
-        incompatible.append((op, a))
+        incompatible += op
       }
     }
 
-    if (incompatible.isEmpty) {
-      List.empty
-    } else {
-      List(ConflictingBindings(ops.head._1.target, incompatible.map(_._1).toSeq))
-    }
+    NonEmptyList
+      .from(incompatible.result())
+      .map(ConflictingBindings(ops.head._1.target, _))
+      .toList
   }
 
   def isCompatible(c: Set[AxisPoint], a: Set[AxisPoint]): Boolean = {
@@ -263,7 +261,7 @@ class PlanVerifier(
   ): List[PlanIssue] = {
     val currentAxis = ops.flatMap(_._2.map(_.axis))
     // TODO: this method should fail in case there are some missing/uncovered points on any of the axis
-    val toTest = ops.map(_._2.to(mutable.Set))
+    val toTest = ops.map(_._2.toSet)
     val issues = mutable.ArrayBuffer.empty[PlanIssue]
 
     currentAxis.foreach {
@@ -272,8 +270,9 @@ class PlanVerifier(
         val diff = allAxis.get(axis).map(_.diff(definedValues)).toSeq.flatten
         if (diff.nonEmpty) {
           // TODO: quadratic
-          if (toTest.forall(set => set.map(_.axis).contains(axis))) {
-            issues.append(UnsaturatedAxis(ops.head._1.target, axis, diff.map(AxisPoint(axis, _)).toSet))
+          val toTestAxises = toTest.map(_.map(_.axis))
+          if (toTestAxises.forall(_.contains(axis))) {
+            issues.append(UnsaturatedAxis(ops.head._1.target, axis, NonEmptySet.unsafeFrom(diff.iterator.map(AxisPoint(axis, _)).toSet)))
           }
         }
     }
@@ -297,13 +296,14 @@ object PlanVerifier {
     def key: DIKey
   }
   object PlanIssue {
-    final case class ConflictingBindings(key: DIKey, ops: Seq[InstantiationOp]) extends PlanIssue
-    final case class ConflictingActivations(key: DIKey, op: InstantiationOp, bad: Map[String, Set[AxisPoint]]) extends PlanIssue
-    final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: Set[AxisPoint]) extends PlanIssue
-    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[(DIKey, OperationOrigin)])
-      extends PlanIssue // not necessarily an issue, parent locator must be considered
-    final case class InconsistentSetMembers(key: DIKey, ops: Seq[InstantiationOp])
-      extends PlanIssue // distage bug, should never happen (bindings machinery must generate a unique key for each set member, they cannot have the same key by construction)
+    final case class ConflictingBindings(key: DIKey, ops: NonEmptyList[InstantiationOp]) extends PlanIssue
+    final case class ConflictingActivations(key: DIKey, op: InstantiationOp, bad: NonEmptyMap[String, Set[AxisPoint]]) extends PlanIssue
+    final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: NonEmptySet[AxisPoint]) extends PlanIssue
+    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[(DIKey, OperationOrigin)]) extends PlanIssue {
+      override def toString: String = MissingInstanceException.format(key, Set(dependee))
+    }
+    // distage bug, should never happen (bindings machinery must generate a unique key for each set member, they cannot have the same key by construction)
+    final case class InconsistentSetMembers(key: DIKey, ops: Seq[InstantiationOp]) extends PlanIssue
     //
 //    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
     //

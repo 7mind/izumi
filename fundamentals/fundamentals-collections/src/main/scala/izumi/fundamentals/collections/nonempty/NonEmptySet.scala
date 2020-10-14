@@ -1009,10 +1009,15 @@ object NonEmptySet {
     * @return a <code>NonEmptySet</code> containing the elements of the given <code>GenSeq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>GenSeq</code> is empty
     */
-  def from[T](set: Set[T]): Option[NonEmptySet[T]] =
+  def from[T](set: scala.collection.immutable.Set[T]): Option[NonEmptySet[T]] =
     set.headOption match {
       case None => None
-      case Some(_) => Some(new NonEmptySet(collection.immutable.Set.empty[T] ++ set))
+      case Some(_) => Some(new NonEmptySet(set))
     }
+
+  def unsafeFrom[T](set: scala.collection.immutable.Set[T]): NonEmptySet[T] = {
+    require(set.nonEmpty)
+    new NonEmptySet(set)
+  }
 
 }

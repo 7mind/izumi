@@ -885,10 +885,17 @@ object NonEmptyMap {
       case Some(first) => Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ seq.tail.toMap + first))
     }
 
-  def from[K, V](map: scala.collection.Map[K, V]): Option[NonEmptyMap[K, V]] =
-    map.headOption match {
-      case None => None
-      case Some(_) => Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ map))
-    }
+  def from[K, V](map: scala.collection.Map[K, V]): Option[NonEmptyMap[K, V]] = {
+    if (map.isEmpty) None else Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ map))
+  }
+
+  def from[K, V](map: scala.collection.immutable.Map[K, V]): Option[NonEmptyMap[K, V]] = {
+    if (map.isEmpty) None else Some(new NonEmptyMap(map))
+  }
+
+  def unsafeFrom[K, V](set: scala.collection.immutable.Map[K, V]): NonEmptyMap[K, V] = {
+    require(set.nonEmpty)
+    new NonEmptyMap(set)
+  }
 
 }

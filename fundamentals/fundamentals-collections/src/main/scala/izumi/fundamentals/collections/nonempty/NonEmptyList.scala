@@ -1495,6 +1495,11 @@ object NonEmptyList {
     from(iterableOnce.iterator.toList)
   }
 
+  def unsafeFrom[T](list: List[T]): NonEmptyList[T] = {
+    require(list.nonEmpty)
+    new NonEmptyList(list)
+  }
+
   implicit final class OptionOps[A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
     def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
   }
