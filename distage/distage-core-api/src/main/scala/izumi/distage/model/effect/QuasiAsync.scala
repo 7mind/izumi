@@ -12,6 +12,13 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
+/**
+  * Parallel & async operations for `F` required by `distage-*` libraries.
+  * Unlike `QuasiEffect` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  *
+  * Internal use class, as with [[QuasiEffect]], it's only public so that you can define your own instances,
+  * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  */
 trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]

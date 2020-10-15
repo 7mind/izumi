@@ -9,6 +9,22 @@ import izumi.fundamentals.platform.language.unused
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Evidence that `F` exhibits _almost_ effect-monad-like capabilities, but not quite,
+  * because we also allow an impure [[izumi.fundamentals.platform.functional.Identity]] instance,
+  * for which `maybeSuspend` does not in fact suspend!
+  *
+  * If you use this interface and forget to add manual suspension with by-name's and Function1's,
+  * you're going to get weird behavior for Identity instance.
+  *
+  * This interface serves internal need of `distage` for interoperability with all the existing
+  * Scala effect types and also impure `Identity`, you should NOT refer to it in your code if possible,
+  * it is public because you may want to define your own instances if a suitable instance of [[izumi.distage.modules.DefaultModule]]
+  * is missing for your custom effect type. Better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  *
+  * @see [[izumi.distage.modules.DefaultModule]] - `DefaultModule` makes instances of `QuasiEffect` for cats-effect, ZIO,
+  *      monix, monix-bio, `Identity`, and others, available for summoning in your wiring automatically
+  */
 trait QuasiEffect[F[_]] extends QuasiApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
@@ -203,6 +219,12 @@ private[effect] sealed trait LowPriorityQuasiEffectInstances {
 
 }
 
+/**
+  * An `Applicative` capability for `F`. Unlike `QuasiEffect` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  *
+  * Internal use class, as with [[QuasiEffect]], it's only public so that you can define your own instances,
+  * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  */
 trait QuasiApplicative[F[_]] {
   def pure[A](a: A): F[A]
 
