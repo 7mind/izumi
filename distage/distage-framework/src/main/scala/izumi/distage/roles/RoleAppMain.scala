@@ -20,6 +20,7 @@ import izumi.reflect.{TagK, TagKK}
 import scala.concurrent.ExecutionContext
 
 trait PlanHolder {
+  // FIXME: remove if unnecessary
   type AppEffectType[_]
   implicit def tagK: TagK[AppEffectType]
   def finalAppModule(argv: ArgV): Module

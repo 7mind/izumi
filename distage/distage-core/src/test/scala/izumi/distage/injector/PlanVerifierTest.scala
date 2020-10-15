@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
-import izumi.distage.model.definition.{BindingTag, ModuleDef}
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding

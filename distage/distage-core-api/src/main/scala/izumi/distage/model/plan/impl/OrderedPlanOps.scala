@@ -43,6 +43,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
     */
+  @throws[InvalidPlanException]
   final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
     isValid(ignoredImports).fold(())(throw _)
   }

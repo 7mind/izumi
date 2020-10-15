@@ -1,7 +1,7 @@
 package izumi.distage.framework
 
 import com.typesafe.config.ConfigFactory
-import distage.Injector
+import distage.{DefaultModule, Injector}
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
@@ -16,6 +16,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.solver.PlanVerifier
+import izumi.distage.planning.solver.PlanVerifier.PlanIssue.UnsaturatedAxis
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
@@ -29,7 +30,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
 import izumi.logstage.api.IzLogger
-import izumi.reflect.TagK
+import izumi.reflect.{Tag, TagK}
 
 import scala.annotation.tailrec
 
@@ -40,15 +41,21 @@ object PlanCheck {
 
   sealed abstract class PlanCheckResult {
     def loadedPlugins: LoadedPlugins
+    def issues: Option[InvalidPlanException]
 
+    @throws[InvalidPlanException]
     final def throwOnError(): LoadedPlugins = this match {
       case PlanCheckResult.Correct(loadedPlugins) => loadedPlugins
       case PlanCheckResult.Incorrect(_, exception) => throw exception
     }
   }
   object PlanCheckResult {
-    final case class Correct(loadedPlugins: LoadedPlugins) extends PlanCheckResult
-    final case class Incorrect(loadedPlugins: LoadedPlugins, exception: InvalidPlanException) extends PlanCheckResult
+    final case class Correct(loadedPlugins: LoadedPlugins) extends PlanCheckResult {
+      override def issues: Option[InvalidPlanException] = None
+    }
+    final case class Incorrect(loadedPlugins: LoadedPlugins, exception: InvalidPlanException) extends PlanCheckResult {
+      override def issues: Option[InvalidPlanException] = Some(exception)
+    }
   }
 
   /**
@@ -125,6 +132,9 @@ object PlanCheck {
     try {
       val baseModule = roleAppMain.finalAppModule(ArgV(Array.empty))
       val allKeysProvidedByBaseModule = baseModule.keys
+      import roleAppMain._
+      def combine[F[_]: TagK]: Tag[DefaultModule[F]] = Tag[DefaultModule[F]]
+      implicit val tg: Tag[DefaultModule[AppEffectType]] = combine[AppEffectType]
 
       Injector[Identity]().produceRun(
         baseModule overriddenBy mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map((roleAppMain.getClass.getClassLoader, _)))
@@ -135,16 +145,24 @@ object PlanCheck {
           activationChoicesExtractor: ActivationChoicesExtractor,
           roleAppActivationParser: RoleAppActivationParser,
           configLoader: ConfigLoader,
-          rolesInfo: RolesInfo,
           activationInfo: ActivationInfo,
           locatorRef: LocatorRef,
           appPlugins: LoadedPlugins @Id("main"),
           bsPlugins: LoadedPlugins @Id("bootstrap"),
+          // fixme:
+          rolesInfo: RolesInfo,
+          // fixme:
+          defaultModule: DefaultModule[AppEffectType],
         ) =>
           val loadedPlugins = appPlugins ++ bsPlugins
 
           effectiveLoadedPlugins = loadedPlugins
           effectiveRoles = s"* (effective: ${rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")})"
+
+          val allKeysFromRoleAppMainModule = {
+            val keysUsedInBaseModule = locatorRef.get.allInstances.iterator.map(_.key).toSet
+            keysUsedInBaseModule ++ allKeysProvidedByBaseModule
+          }
 
           val bindings0000 = bootloader.input.bindings
           val reachables0000 = locally {
@@ -153,38 +171,57 @@ object PlanCheck {
             // OrderedPlanOps#isValid should use PlannerInputVerifier (?)
 //            app.plan.assertValidOrThrow[F](k => allKeysFromRoleAppMainModule(k))
 
-            val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(bindings0000, Roots(rolesInfo.requiredComponents))
+            val veryBadInjectorContext = {
+              bootloader
+                .boot(
+                  BootConfig(
+                    bootstrap = _ => BootstrapModule.empty,
+                    appModule = _ => Module.empty,
+                    roots = _ => Roots.Everything,
+                  )
+                ).injector.produceGet[LocatorRef](Module.empty).use(_.get.allInstances.map(_.key)).toSet
+            }
+            val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(
+              bindings = bindings0000,
+              roots = Roots(rolesInfo.requiredComponents),
+              providedImports = allKeysFromRoleAppMainModule ++
+                bsModule.keys ++
+                defaultModule.module.keys ++
+                veryBadInjectorContext +
+                DIKey[LocatorRef],
+            )
+            if (!issues.forall(_.isInstanceOf[UnsaturatedAxis])) {
+              throw new java.lang.RuntimeException(s"${issues.niceList()}") { override def fillInStackTrace(): Throwable = this }
+            }
             if (issues.nonEmpty) {
-              //throw new java.lang.RuntimeException(s"${value.niceList()}") { override def fillInStackTrace(): Throwable = this }
-              System.err.println(s"${issues.niceList()}")
+              System.err.println(s"bad: ${issues.niceList()}")
             }
             reachableKeys
           }
 
-          val allChoices = chosenActivations match {
-            case None =>
-              val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
-              effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
+          // FIXME: config to enable bruteforce
+          val bruteforce = false
+          if (bruteforce) {
+            val allChoices = chosenActivations match {
+              case None =>
+                val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
+                effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
 
-              allActivations(choices, defaultActivationsLimit)
-            case Some(choiceSets) =>
-              choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
-          }
-
-          logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
-          logger.log(s"Checking with allChoices=${allChoices.niceList()}")
-
-          val allKeysFromRoleAppMainModule = {
-            val keysUsedInBaseModule = locatorRef.get.allInstances.iterator.map(_.key).toSet
-            keysUsedInBaseModule ++ allKeysProvidedByBaseModule
-          }
+                allActivations(choices, defaultActivationsLimit)
+              case Some(choiceSets) =>
+                choiceSets.iterator.map(roleAppActivationParser.parseActivation(_, activationInfo)).toSet
+            }
 
 //          val maybeConcurrentConfigParsersMap = if (checkConfig) {
 //            Some(ConcurrentHashMap.newKeySet[AppConfig => Any]())
 //          } else None
 
-          DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
-            checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger)
+            logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
+            logger.log(s"Checking with allChoices=${allChoices.niceList()}")
+
+            DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
+              checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger)
+            }
           }
 
           if (checkConfig) {

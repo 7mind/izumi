@@ -7,10 +7,11 @@ import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
+import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
+import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
@@ -27,7 +28,7 @@ class PlanVerifier(
 ) {
   import scala.collection.compat._
 
-  def verify(bindings: ModuleBase, roots: Roots): PlanVerifierResult = {
+  def verify(bindings: ModuleBase, roots: Roots, providedImports: DIKey => Boolean = _ == DIKey[LocatorRef]): PlanVerifierResult = {
     val ops = preps.computeOperationsUnsafe(bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>
@@ -62,9 +63,9 @@ class PlanVerifier(
     val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
-    val issues = trace(allAxis, mutVisited, toTrace, weakSetMembers, justMutators)(rootKeys.map(r => (r, r)), Set.empty).fold(_.toSet, _ => Set.empty[PlanIssue])
+    val issues = trace(allAxis, mutVisited, toTrace, weakSetMembers, justMutators, providedImports)(rootKeys.map(r => (r, r)), Set.empty)
 
-    PlanVerifierResult(issues, mutVisited.toSet)
+    PlanVerifierResult(issues.fold(_.toSet, _ => Set.empty[PlanIssue]), mutVisited.toSet)
   }
 
   private def trace(
@@ -73,13 +74,14 @@ class PlanVerifier(
     matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
     justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
+    providedImports: DIKey => Boolean,
   )(current: Set[(DIKey, DIKey)],
     currentActivation: Set[AxisPoint],
   ): Either[List[PlanIssue], Unit] = {
     current.map {
       case (key, dependee) =>
-        if (visited.contains(key)) {
-          Right(())
+        val currentResult: Either[List[PlanIssue], () => Either[List[PlanIssue], Unit]] = if (visited.contains(key)) {
+          Right(() => Right(()))
         } else {
           val ac = ActivationChoices(currentActivation)
           def allImportingBindings(d: DIKey): Set[(DIKey, OperationOrigin)] = {
@@ -150,12 +152,24 @@ class PlanVerifier(
               }
             mutators = justMutators.getOrElse(key, Set.empty).toSeq.filter(m => ac.allValid(m._2)).flatMap(m => depsOf(weakSetMembers)(m._1))
             next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
-            _ <- Right(visited.add(key))
-            _ <- next.map {
-              case (nextActivation, nextDeps) =>
-                trace(allAxis, visited, matrix, weakSetMembers, justMutators)((nextDeps ++ mutators).map(k => (k, key)), currentActivation ++ nextActivation)
-            }.biAggregate
-          } yield {}
+          } yield {
+            visited.add(key)
+
+            val goNext: () => Either[List[PlanIssue], Unit] = () =>
+              next.map {
+                case (nextActivation, nextDeps) =>
+                  trace(allAxis, visited, matrix, weakSetMembers, justMutators, providedImports)(
+                    (nextDeps ++ mutators).map(k => (k, key)),
+                    currentActivation ++ nextActivation,
+                  )
+              }.biAggregateSequence
+
+            goNext
+          }
+        }
+        currentResult match {
+          case Left(issues) => Left(issues.filter { case MissingImport(key, _, _) => !providedImports(key); case _ => true })
+          case Right(goNext) => goNext()
         }
     }.biAggregateSequence
   }
