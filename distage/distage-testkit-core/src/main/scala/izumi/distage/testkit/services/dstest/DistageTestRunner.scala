@@ -90,7 +90,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case (envExec, grouped) =>
         val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
         val memoizationEnvs = QuasiAsync
-          .QuasiIOParIdentity.parTraverse(grouped.groupBy(_.environment)) {
+          .quasiAsyncIdentity.parTraverse(grouped.groupBy(_.environment)) {
             case (env, tests) =>
               withRecoverFromFailedExecution(tests) {
                 Option(prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests))
@@ -551,8 +551,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   protected def configuredForeach[A](parallel: ParallelLevel)(environments: Iterable[A])(f: A => Unit): Unit = {
     parallel match {
-      case ParallelLevel.Fixed(n) if environments.size > 1 => QuasiAsync.QuasiIOParIdentity.parTraverseN_(n)(environments)(f)
-      case ParallelLevel.Unlimited if environments.size > 1 => QuasiAsync.QuasiIOParIdentity.parTraverse_(environments)(f)
+      case ParallelLevel.Fixed(n) if environments.size > 1 => QuasiAsync.quasiAsyncIdentity.parTraverseN_(n)(environments)(f)
+      case ParallelLevel.Unlimited if environments.size > 1 => QuasiAsync.quasiAsyncIdentity.parTraverse_(environments)(f)
       case _ => environments.foreach(f)
     }
   }

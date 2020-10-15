@@ -23,8 +23,8 @@ object RoleAppEntrypoint {
   ) extends RoleAppEntrypoint[F] {
 
     override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F]): F[Unit] = {
+      implicit val F: QuasiIO[F] = effect
       val roleIndex = getRoleIndex(locator)
-      implicit val e: QuasiIO[F] = effect
       for {
         _ <- runTasks(roleIndex)
         _ <- runRoles(roleIndex)

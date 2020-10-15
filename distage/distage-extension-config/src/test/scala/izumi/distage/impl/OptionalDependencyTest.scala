@@ -87,7 +87,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       }
     }
 
-    assert(new optSearch1[QuasiIO].find == QuasiIO.QuasiIOIdentity)
+    assert(new optSearch1[QuasiIO].find == QuasiIO.quasiIOIdentity)
 
     try QuasiIO.fromBIO(null)
     catch { case _: NullPointerException => }

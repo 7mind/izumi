@@ -5,10 +5,12 @@ import com.github.dockerjava.netty.NettyDockerCmdExecFactory
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 
-class DockerCmdExecFactoryResource[F[_]: QuasiIO](
+final class DockerCmdExecFactoryResource[F[_]](
   config: Docker.ClientConfig
+)(implicit
+  F: QuasiIO[F]
 ) extends Lifecycle.FromAutoCloseable[F, DockerCmdExecFactory](
-    QuasiIO[F].maybeSuspend {
+    F.maybeSuspend {
       new NettyDockerCmdExecFactory()
         .withReadTimeout(config.readTimeoutMs)
         .withConnectTimeout(config.connectTimeoutMs)

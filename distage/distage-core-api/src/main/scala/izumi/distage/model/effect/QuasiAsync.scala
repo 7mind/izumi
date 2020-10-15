@@ -31,7 +31,7 @@ trait QuasiAsync[F[_]] {
 object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val QuasiIOParIdentity: QuasiAsync[Identity] = {
+  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
       final val QuasiIOAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
@@ -79,7 +79,7 @@ object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: QuasiAsync[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]: BIOAsync: BIOTemporal]: QuasiAsync[F[Throwable, ?]] = {
     new QuasiAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)

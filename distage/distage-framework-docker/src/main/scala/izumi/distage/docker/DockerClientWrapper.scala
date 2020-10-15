@@ -70,10 +70,12 @@ object DockerClientWrapper {
 
   private[this] val jvmRun: String = UUID.randomUUID().toString
 
-  class Resource[F[_]: QuasiIO](
+  class Resource[F[_]](
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
+  )(implicit
+    F: QuasiIO[F]
   ) extends Lifecycle.Basic[F, DockerClientWrapper[F]]
     with IntegrationCheck[F] {
 
@@ -92,7 +94,7 @@ object DockerClientWrapper {
       .withDockerCmdExecFactory(factory)
       .build
 
-    override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
+    override def resourcesAvailable(): F[ResourceCheck] = F.maybeSuspend {
       try {
         client.infoCmd().exec()
         ResourceCheck.Success()
@@ -103,7 +105,7 @@ object DockerClientWrapper {
     }
 
     override def acquire: F[DockerClientWrapper[F]] = {
-      QuasiIO[F].maybeSuspend {
+      F.maybeSuspend {
         new DockerClientWrapper[F](
           rawClient = client,
           rawClientConfig = rawClientConfig,
@@ -118,7 +120,7 @@ object DockerClientWrapper {
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
-        containers <- QuasiIO[F].maybeSuspend {
+        containers <- F.maybeSuspend {
           resource
             .rawClient
             .listContainersCmd()
@@ -132,16 +134,16 @@ object DockerClientWrapper {
             import izumi.fundamentals.platform.strings.IzString._
             Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == DockerConst.State.exited
         }
-        _ <- QuasiIO[F].traverse_(containersToDestroy) {
+        _ <- F.traverse_(containersToDestroy) {
           c: Container =>
             val id = ContainerId(c.getId)
-            QuasiIO[F].definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
+            F.definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
               error =>
-                QuasiIO[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+                F.maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
             }
 
         }
-        _ <- QuasiIO[F].maybeSuspend(resource.rawClient.close())
+        _ <- F.maybeSuspend(resource.rawClient.close())
       } yield ()
     }
   }

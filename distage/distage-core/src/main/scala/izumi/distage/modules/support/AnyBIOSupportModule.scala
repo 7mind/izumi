@@ -29,7 +29,7 @@ class AnyBIOSupportModule[F[+_, +_]: TagKK] extends ModuleDef {
     QuasiApplicative.fromBIO[F, Throwable](_: BIOApplicative[F])
   }
   make[QuasiAsync2[F]].from {
-    QuasiAsync.fromBIOTemporal(_: BIOAsync[F], _: BIOTemporal[F])
+    QuasiAsync.fromBIO(_: BIOAsync[F], _: BIOTemporal[F])
   }
   make[SyncSafe2[F]].from {
     SyncSafe.fromBIO(_: BIO[F])

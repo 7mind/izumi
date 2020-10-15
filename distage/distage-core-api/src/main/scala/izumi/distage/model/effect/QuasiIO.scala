@@ -92,7 +92,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     }
   }
 
-  implicit val QuasiIOIdentity: QuasiIO[Identity] = new QuasiIO[Identity] {
+  implicit val quasiIOIdentity: QuasiIO[Identity] = new QuasiIO[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
@@ -241,7 +241,7 @@ trait QuasiApplicative[F[_]] {
 object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
   @inline def apply[F[_]: QuasiApplicative]: QuasiApplicative[F] = implicitly
 
-  implicit val QuasiApplicativeIdentity: QuasiApplicative[Identity] = new QuasiApplicative[Identity] {
+  implicit val quasiApplicativeIdentity: QuasiApplicative[Identity] = new QuasiApplicative[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)

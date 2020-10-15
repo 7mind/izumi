@@ -66,7 +66,7 @@ object PlanInterpreter {
       import izumi.fundamentals.platform.exceptions.IzThrowable._
       import izumi.fundamentals.platform.strings.IzString._
 
-      QuasiIO[F].fail {
+      F.fail {
         new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed:${repr.niceList()}", null)
           .addAllSuppressed(failures.map(_.failure))
       }
