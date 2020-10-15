@@ -1,8 +1,7 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.functional.bio.data.FreePanic
-import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
+import izumi.functional.bio.{Applicative2, Exit, IO2}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -133,7 +132,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): QuasiIO[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, ?]] = {
     type E = Throwable
     new QuasiIO[F[Throwable, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
@@ -158,8 +157,8 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
         F.bracketCase[Any, Throwable, A, B](acquire = F.suspend(acquire))(release = {
           case (a, exit) =>
             exit match {
-              case BIOExit.Success(_) => release(a, None).orTerminate
-              case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+              case Exit.Success(_) => release(a, None).orTerminate
+              case failure: Exit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
             }
         })(use = use)
       }
@@ -250,33 +249,13 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_], E](implicit F: BIOApplicative[F]): QuasiApplicative[F[E, ?]] = {
+  implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, ?]] = {
     new QuasiApplicative[F[E, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
       override def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
       override def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
-    }
-  }
-
-  implicit def fromFree[S[_, _], E]: DIApplicative[FreePanic[S, E, ?]] = new DIApplicative[FreePanic[S, E, +?]] {
-    override def traverse[A, B](l: Iterable[A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, List[B]] = {
-      l.foldLeft(pure(List.empty[B])) {
-        (acc, a) =>
-          acc.flatMap(list => f(a).map(r => list ++ List(r)))
-      }
-    }
-    override def traverse_[A](l: Iterable[A])(f: A => FreePanic[S, E, Unit]): FreePanic[S, E, Unit] = {
-      l.foldLeft(unit)((acc, a) => acc.flatMap(_ => f(a)))
-    }
-    override def pure[A](a: A): FreePanic[S, E, A] = FreePanic.pure(a)
-    override def map[A, B](fa: FreePanic[S, E, A])(f: A => B): FreePanic[S, E, B] = fa.map(f)
-    override def map2[A, B, C](fa: FreePanic[S, E, A], fb: => FreePanic[S, E, B])(f: (A, B) => C): FreePanic[S, E, C] = {
-      for {
-        a <- fa
-        b <- fb
-      } yield f(a, b)
     }
   }
 }
