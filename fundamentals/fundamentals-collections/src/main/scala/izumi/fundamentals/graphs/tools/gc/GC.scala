@@ -1,14 +1,15 @@
-package izumi.fundamentals.graphs.tools
+package izumi.fundamentals.graphs.tools.gc
 
+import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.GC.{GCInput, GCOutput}
+import izumi.fundamentals.graphs.tools.gc.GC.{GCInput, GCOutput}
 
+// TODO: this class is not required for distage
 trait GC[N] {
   def collect(input: GCInput[N]): Either[Nothing, GCOutput[N]]
 }
 
 object GC {
-  final case class WeakEdge[N](predcessor: N, successor: N)
   final case class GCInput[N](predcessorMatrix: IncidenceMatrix[N], roots: Set[N], weakSP: Set[WeakEdge[N]])
 
   final case class GCOutput[N](predcessorMatrix: IncidenceMatrix[N], removed: Set[N])

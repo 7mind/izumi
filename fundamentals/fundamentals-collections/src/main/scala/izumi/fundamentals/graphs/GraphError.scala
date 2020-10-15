@@ -1,6 +1,5 @@
 package izumi.fundamentals.graphs
 
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, MutSel, Node}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 sealed trait AbstractGraphError
@@ -16,13 +15,6 @@ object DAGError {
 sealed trait GraphTraversalError[N] extends GraphError[N]
 object GraphTraversalError {
   final case class UnrecoverableLoops[N]() extends GraphTraversalError[N]
-}
-
-sealed trait ConflictResolutionError[N, +V] extends GraphTraversalError[N]
-object ConflictResolutionError {
-  final case class AmbigiousActivationsSet[N](issues: Map[String, Set[AxisPoint]]) extends ConflictResolutionError[N, Nothing]
-  final case class ConflictingDefs[N, V](defs: Map[MutSel[N], Set[(Set[AxisPoint], Node[N, V])]]) extends ConflictResolutionError[N, V]
-  final case class UnsolvedConflicts[N](defs: Map[MutSel[N], Set[Annotated[N]]]) extends ConflictResolutionError[N, Nothing]
 }
 
 sealed trait ToposortError[N] extends GraphTraversalError[N]

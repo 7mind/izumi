@@ -2,7 +2,7 @@ package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp, SemiplanOp}
@@ -34,8 +34,8 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @tparam F effect type to check against
     */
-  final def assertValid[F[_]: DIEffect: TagK](): F[Unit] = {
-    DIEffect[F].maybeSuspend(assertValidOrThrow[F]())
+  final def assertValid[F[_]: QuasiIO: TagK](): F[Unit] = {
+    QuasiIO[F].maybeSuspend(assertValidOrThrow[F]())
   }
 
   /**

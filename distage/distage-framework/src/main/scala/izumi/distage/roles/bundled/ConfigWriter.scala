@@ -7,7 +7,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.definition.Id
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
@@ -31,7 +31,7 @@ final class ConfigWriter[F[_]](
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner[F],
-  F: DIEffect[F],
+  F: QuasiIO[F],
 ) extends RoleTask[F] {
 
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)

@@ -1,8 +1,8 @@
 //package izumi.fundamentals.graphs.demo
 //
 //import izumi.fundamentals.graphs.GraphFixtures._
-//import izumi.fundamentals.graphs.tools.mutations.MutationResolver
-//import izumi.fundamentals.graphs.tools.mutations.MutationResolver.{Annotated, AxisPoint, SemiEdgeSeq}
+//import izumi.distage.planning.mutations.MutationResolver
+//import izumi.distage.planning.mutations.MutationResolver.{Annotated, AxisPoint, SemiEdgeSeq}
 //import izumi.fundamentals.graphs.ui.GVR
 //import izumi.fundamentals.graphs.ui.LocationPolicy.Singleton
 //

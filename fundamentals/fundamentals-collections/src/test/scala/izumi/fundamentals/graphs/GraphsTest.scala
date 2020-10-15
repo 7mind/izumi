@@ -2,11 +2,8 @@ package izumi.fundamentals.graphs
 
 import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.GC.WeakEdge
-import izumi.fundamentals.graphs.tools.LoopDetector.{Cycles, Impl, Loop}
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.AxisPoint
-import izumi.fundamentals.graphs.tools.{LoopBreaker, LoopDetector}
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector.{Cycles, Impl, Loop}
+import izumi.fundamentals.graphs.tools.cycles.{LoopBreaker, LoopDetector}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GraphsTest extends AnyWordSpec {
@@ -111,29 +108,6 @@ class GraphsTest extends AnyWordSpec {
       assert(DAG.fromSucc(cyclic, GraphMeta.empty, breaker).map {
         d: DAG[Int, Nothing] => d.successors
       } == Right(acyclic))
-    }
-  }
-
-  "Conflict Resolver" should {
-    "resolve standard samples" in {
-      val cases = Seq(
-        (mutators, Set(AxisPoint("test", "prod")), true, Set("app")),
-        (mutators, Set.empty[AxisPoint], false, Set("app")),
-        (withLoop, Set(AxisPoint("test", "prod")), true, Set("app")),
-        (withLoop, Set.empty[AxisPoint], false, Set("app")),
-        (complexMutators, Set.empty[AxisPoint], true, Set("app")),
-      )
-
-      val resolver = new MutationResolver.MutationResolverImpl[String, Int, Int]
-
-      for (((f, a, good, roots), idx) <- cases.zipWithIndex) {
-        val result = resolver.resolve(f, roots, a, Set.empty)
-        if (good) {
-          assert(result.isRight, s"positive check #$idx failed")
-        } else {
-          assert(result.isLeft, s"negative check #$idx failed")
-        }
-      }
     }
   }
 }

@@ -19,8 +19,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.MutationResolverImpl
+import izumi.distage.planning.solver.{GraphPreparations, SemigraphSolver}
+import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
@@ -88,18 +88,19 @@ object BootstrapLocator {
     )
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
-    val resolver = new MutationResolverImpl[DIKey, Int, InstantiationOp]()
+    val resolver = new PlanSolver.Impl(
+      new SemigraphSolverImpl[DIKey, Int, InstantiationOp](),
+      new GraphPreparations(new BindingTranslator.Impl()),
+    )
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
       planningObserver = bootstrapObserver,
       hook = hook,
-      bindingTranslator = translator,
       analyzer = analyzer,
       mirrorProvider = mp,
       resolver = resolver,
@@ -132,7 +133,10 @@ object BootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
 
-    make[MutationResolver[DIKey, Int, InstantiationOp]].from[MutationResolverImpl[DIKey, Int, InstantiationOp]]
+    make[PlanSolver].from[PlanSolver.Impl]
+    make[GraphPreparations]
+
+    make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
