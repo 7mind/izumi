@@ -5,8 +5,10 @@ import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.effect.QuasiApplicative
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.Roots
+import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
@@ -386,6 +388,12 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
           res
         })
       new XImpl().acquire.get
+    }
+
+    "obtain QuasiApplicative for BIO Free/FreeError/FreePanic" in {
+      implicitly[QuasiApplicative[Free[Suspend2, Throwable, +?]]]
+      implicitly[QuasiApplicative[FreeError[Suspend2, Throwable, +?]]]
+      implicitly[QuasiApplicative[FreePanic[Suspend2, Throwable, +?]]]
     }
 
   }

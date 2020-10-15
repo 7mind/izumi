@@ -1,7 +1,7 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.functional.bio.{BIO, BIOApplicative, BIOExit}
+import izumi.functional.bio.{Applicative2, Exit, IO2}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -132,7 +132,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): QuasiIO[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, ?]] = {
     type E = Throwable
     new QuasiIO[F[Throwable, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
@@ -157,8 +157,8 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
         F.bracketCase[Any, Throwable, A, B](acquire = F.suspend(acquire))(release = {
           case (a, exit) =>
             exit match {
-              case BIOExit.Success(_) => release(a, None).orTerminate
-              case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+              case Exit.Success(_) => release(a, None).orTerminate
+              case failure: Exit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
             }
         })(use = use)
       }
@@ -249,7 +249,7 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_], E](implicit F: BIOApplicative[F]): QuasiApplicative[F[E, ?]] = {
+  implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, ?]] = {
     new QuasiApplicative[F[E, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)

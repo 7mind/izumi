@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import cats.effect.concurrent.TryableDeferred
+import izumi.functional.bio.data.~>>
 import zio.{IO, Promise}
 
 trait Promise2[+F[+_, +_], E, A] {
@@ -32,6 +33,16 @@ object Promise2 {
       override def succeed(a: A): F[Nothing, Boolean] = deferred.complete(F.pure(a)).redeemPure(_ => false, _ => true) // .complete throws if already completed
       override def fail(e: E): F[Nothing, Boolean] = deferred.complete(F.fail(e)).redeemPure(_ => false, _ => true)
       override def terminate(t: Throwable): F[Nothing, Boolean] = deferred.complete(F.terminate(t)).redeemPure(_ => false, _ => true)
+    }
+  }
+
+  implicit final class Promise2Ops[+F[+_, +_], E, A](private val self: Promise2[F, E, A]) extends AnyVal {
+    def mapK[G[+_, +_]](fg: F ~>> G)(implicit G: Functor2[G]): Promise2[G, E, A] = new Promise2[G, E, A] {
+      override def await: G[E, A] = fg(self.await)
+      override def poll: G[Nothing, Option[G[E, A]]] = fg(self.poll).map(_.map(fg(_)))
+      override def succeed(a: A): G[Nothing, Boolean] = fg(self.succeed(a))
+      override def fail(e: E): G[Nothing, Boolean] = fg(self.fail(e))
+      override def terminate(t: Throwable): G[Nothing, Boolean] = fg(self.terminate(t))
     }
   }
 }
