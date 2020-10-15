@@ -5,7 +5,7 @@ out: index.html
 BIO Hierarchy
 =============
 
-BIO is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
+**BIO** is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
 
 Key syntactic features:
 
@@ -38,8 +38,9 @@ Key semantic features:
 2. Automatic conversions to equivalent `cats.effect` instances using `import izumi.functional.bio.catz._`
 3. Automatic adaptation of trifunctor typeclasses to bifunctor typeclasses when required
 4. No ambiguous implicit errors. It's legal to have both `Monad3` and `MonadAsk3` as constraints,
-   despite the fact that `MonadAsk3` provides a `BIOMonad3`:
+   despite the fact that `MonadAsk3` provides a `Monad3`:
    ```scala
+import izumi.functional.bio.{Monad3, MonadAsk3}
    def adderEnv[F[-_, +_, +_]: Monad3: MonadAsk3] // would still work
    ```
 5. Primitive concurrent data structures: `Ref`, `Promise`, `Semaphore`
@@ -73,7 +74,7 @@ addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersi
 Overview
 --------
 
-The following graphic shows the current BIO hierarchy. Note that all the trifunctor typeclasses ending in `*3` typeclasses have bifunctor counterparts ending in `*2`.
+The following graphic shows the current `BIO` hierarchy. Note that all the trifunctor typeclasses ending in `*3` typeclasses have bifunctor counterparts ending in `*2`.
 
 ![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
 

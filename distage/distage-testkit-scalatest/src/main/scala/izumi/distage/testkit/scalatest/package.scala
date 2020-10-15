@@ -12,7 +12,7 @@ package object scalatest {
   lazy val AssertBIO: AssertIO2.type = AssertIO2
 
   @deprecated("Renamed to Spec1", "1.0")
-  type DistageSpecScalatest[F[+_, +_]] = Spec1[F]
+  type DistageSpecScalatest[F[_]] = Spec1[F]
 
   @deprecated("Renamed to Spec2", "1.0")
   type DistageBIOSpecScalatest[F[+_, +_]] = Spec2[F]

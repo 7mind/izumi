@@ -323,7 +323,7 @@ Example with `cats.effect.Resource`:
 
 ```scala mdoc:reset:to-string
 import distage.{Roots, ModuleDef, Injector}
-import cats.effect.{Bracket, Resource, IO}
+import cats.effect.{Resource, IO}
 
 class DBConnection
 class MessageQueueConnection
