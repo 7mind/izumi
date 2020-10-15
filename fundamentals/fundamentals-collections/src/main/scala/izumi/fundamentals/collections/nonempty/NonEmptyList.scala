@@ -1467,7 +1467,7 @@ object NonEmptyList {
     * @param nonEmptyList: the <code>NonEmptyList</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyList</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[Seq[T]] = Some(nonEmptyList.toList)
+  def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Some[Seq[T]] = Some(nonEmptyList.toList)
 
   /**
     * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>List</code>.

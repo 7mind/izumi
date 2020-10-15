@@ -1,5 +1,7 @@
 package izumi.fundamentals.collections.nonempty
 
+// shameless copypaste from Scalactic
+
 import scala.collection.compat.{Factory, _}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq}
@@ -1516,14 +1518,7 @@ object NonEmptyString {
     * @param nonEmptyString: the <code>NonEmptyString</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyString</code>s elements, wrapped in a <code>Some</code>
     */
-  //def unapplySeq(nonEmptyString: NonEmptyString): Option[Seq[Char]] = Some(nonEmptyString.theString)
-
-  def unapplySeq(nonEmptyString: NonEmptyString): Option[Seq[String]] = Some(Seq(nonEmptyString.theString))
-
-  /*
-    // TODO: Figure out how to get case NonEmptyString() to not compile
-    def unapplySeq[T](nonEmptyString: NonEmptyString[T]): Option[(T, Seq[T])] = Some(nonEmptyString.head, nonEmptyString.tail)
-   */
+  def unapplySeq(nonEmptyString: NonEmptyString): Some[Seq[String]] = Some(Seq(nonEmptyString.theString))
 
   /**
     * Optionally construct a <code>NonEmptyString</code> containing the characters, if any, of a given <code>Seq</code>.

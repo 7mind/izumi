@@ -995,12 +995,7 @@ object NonEmptySet {
     * @param nonEmptySet: the <code>NonEmptySet</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptySet</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[T](nonEmptySet: NonEmptySet[T]): Option[Seq[T]] = Some(nonEmptySet.toSeq)
-
-  /*
-    // TODO: Figure out how to get case NonEmptySet() to not compile
-    def unapplySeq[T](NonEmptySet: NonEmptySet[T]): Option[(T, Seq[T])] = Some(NonEmptySet.head, NonEmptySet.tail)
-   */
+  def unapplySeq[T](nonEmptySet: NonEmptySet[T]): Some[Seq[T]] = Some(nonEmptySet.toSeq)
 
   /**
     * Optionally construct a <code>NonEmptySet</code> containing the elements, if any, of a given <code>Set</code>.

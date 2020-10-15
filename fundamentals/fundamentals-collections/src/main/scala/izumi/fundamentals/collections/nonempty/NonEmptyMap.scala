@@ -1,5 +1,7 @@
 package izumi.fundamentals.collections.nonempty
 
+// shameless copypaste from Scalactic
+
 import scala.collection.{Iterable, Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.reflect.ClassTag
@@ -868,7 +870,7 @@ object NonEmptyMap {
     * @param nonEmptyMap: the <code>NonEmptyMap</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyMap</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[K, V](nonEmptyMap: NonEmptyMap[K, V]): Option[Seq[(K, V)]] = Some(nonEmptyMap.toSeq)
+  def unapplySeq[K, V](nonEmptyMap: NonEmptyMap[K, V]): Some[Seq[(K, V)]] = Some(nonEmptyMap.toSeq)
 
   /**
     * Optionally construct a <code>NonEmptyMap</code> containing the elements, if any, of a given <code>Seq</code>.

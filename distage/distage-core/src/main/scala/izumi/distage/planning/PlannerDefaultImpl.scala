@@ -2,7 +2,7 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
@@ -39,7 +39,6 @@ class PlannerDefaultImpl(
   }
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-
     resolver.resolveConflicts(input) match {
       case Left(errors) =>
         throwOnConflict(input.activation, errors)
@@ -198,7 +197,7 @@ class PlannerDefaultImpl(
 
   protected[this] def formatConflict(activation: Activation)(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
     conflictResolutionError match {
-      case AmbigiousActivationsSet(issues) =>
+      case ConflictingAxisChoices(issues) =>
         val printedActivationSelections = issues.map {
           case (axis, choices) => s"axis: `$axis`, selected: {${choices.map(_.value).mkString(", ")}}"
         }

@@ -27,10 +27,8 @@ object OperationOrigin {
     override def hashCode(): Int = 0
 
     override def equals(obj: Any): Boolean = obj match {
-      case _: EqualizedOperationOrigin =>
-        true
-      case _: OperationOrigin =>
-        true
+      case _: EqualizedOperationOrigin => true
+      case _: OperationOrigin => true
       case _ => false
     }
   }

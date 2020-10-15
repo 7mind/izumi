@@ -159,16 +159,7 @@ object PlanSolver {
                     case Some(value :: Nil) =>
                       isProperlyActivatedSetElement(ac, value) {
                         unconfigured =>
-                          Left(
-                            List(
-                              UnconfiguredSetElementAxis(
-                                firstOp.target,
-                                memberKey,
-                                firstOp.origin.value,
-                                unconfigured,
-                              )
-                            )
-                          )
+                          Left(List(UnconfiguredSetElementAxis(firstOp.target, memberKey, firstOp.origin.value, unconfigured)))
                       }.map(out => (memberKey, out))
                     case Some(other) =>
                       Left(List(InconsistentSetElementAxis(firstOp.target, memberKey, other)))
