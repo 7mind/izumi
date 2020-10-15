@@ -519,7 +519,7 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertSyn
 By default, tests are executed in parallel. This includes tests using `Identity`, monix, ZIO, and
 monads in the cats effect hierarchy. `Identity` is treated as the effect type for imperative
 code. This behavior and the behavior of cats effect monads is provided by low priority implicits of
-`DIEffect`, `DIEffectAsync`, and `DIEffectRunner`. These components can be provided by the
+`QuasiEffect`, `QuasiEffectAsync`, and `QuasiEffectRunner`. These components can be provided by the
 application if different behavior or other effects types are required.
 
 The execution of tests is grouped into:

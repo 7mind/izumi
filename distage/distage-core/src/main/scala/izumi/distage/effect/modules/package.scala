@@ -4,22 +4,22 @@ import izumi.distage.modules.support.{CatsIOSupportModule, IdentitySupportModule
 
 package object modules {
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  type IdentityDIEffectModule = IdentitySupportModule
+  type IdentityQuasiEffectModule = IdentitySupportModule
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  lazy val IdentityDIEffectModule: IdentitySupportModule.type = IdentitySupportModule
+  lazy val IdentityQuasiEffectModule: IdentitySupportModule.type = IdentitySupportModule
 
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  type CatsDIEffectModule = CatsIOSupportModule
+  type CatsQuasiEffectModule = CatsIOSupportModule
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  lazy val CatsDIEffectModule: CatsIOSupportModule.type = CatsIOSupportModule
+  lazy val CatsQuasiEffectModule: CatsIOSupportModule.type = CatsIOSupportModule
 
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  type MonixDIEffectModule = MonixBIOSupportModule
+  type MonixQuasiEffectModule = MonixBIOSupportModule
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  lazy val MonixDIEffectModule: MonixBIOSupportModule.type = MonixBIOSupportModule
+  lazy val MonixQuasiEffectModule: MonixBIOSupportModule.type = MonixBIOSupportModule
 
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  type ZIODIEffectModule = ZIOSupportModule
+  type ZIOQuasiEffectModule = ZIOSupportModule
   @deprecated("Redundant inclusion. Now included by default when using distage-framework/testkit or any of Injector.produce*/plan methods", "0.11")
-  lazy val ZIODIEffectModule: ZIOSupportModule.type = ZIOSupportModule
+  lazy val ZIOQuasiEffectModule: ZIOSupportModule.type = ZIOSupportModule
 }

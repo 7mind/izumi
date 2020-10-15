@@ -12,7 +12,7 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
-trait DIEffectAsync[F[_]] {
+trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
   def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
@@ -21,15 +21,15 @@ trait DIEffectAsync[F[_]] {
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
-object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
-  def apply[F[_]: DIEffectAsync]: DIEffectAsync[F] = implicitly
+object QuasiAsync extends LowPriorityQuasiEffectAsyncInstances {
+  def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val diEffectParIdentity: DIEffectAsync[Identity] = {
-    new DIEffectAsync[Identity] {
+  implicit lazy val QuasiEffectParIdentity: QuasiAsync[Identity] = {
+    new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val DIEffectAsyncIdentityThreadFactory = new NamedThreadFactory("dieffect-cached-pool", daemon = true)
-      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(DIEffectAsyncIdentityThreadFactory)
+      final val QuasiEffectAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiEffect-cached-pool", daemon = true)
+      final val QuasiEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(QuasiEffectAsyncIdentityThreadFactory)
       }
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
@@ -49,12 +49,12 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
       }
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentity(DIEffectAsyncIdentityPool)(l)(f)
+        parTraverseIdentity(QuasiEffectAsyncIdentityPool)(l)(f)
       }
 
       override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
         val limitedAsyncPool = ExecutionContext.fromExecutorService {
-          Executors.newFixedThreadPool(n, DIEffectAsyncIdentityThreadFactory)
+          Executors.newFixedThreadPool(n, QuasiEffectAsyncIdentityThreadFactory)
         }
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
@@ -72,8 +72,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
-    new DIEffectAsync[F[Throwable, ?]] {
+  implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: QuasiAsync[F[Throwable, ?]] = {
+    new QuasiAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
       }
@@ -118,7 +118,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
 }
 
-private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
+private[effect] sealed trait LowPriorityQuasiEffectAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -130,8 +130,8 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     P: P[F],
     T: T[F],
     C: C[F],
-  ): DIEffectAsync[F] = {
-    new DIEffectAsync[F] {
+  ): QuasiAsync[F] = {
+    new QuasiAsync[F] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
         C.asInstanceOf[Concurrent[F]].async(effect)
       }

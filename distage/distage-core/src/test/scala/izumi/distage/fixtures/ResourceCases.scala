@@ -3,8 +3,8 @@ package izumi.distage.fixtures
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiEffect.syntax._
 import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.immutable.Queue
@@ -79,12 +79,12 @@ object ResourceCases {
     class S3Component(val s: S3Client) extends IntegrationComponent
     class S3ClientImpl(val c: S3Component) extends S3Client
 
-    def s3ComponentResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Client: S3Client): Lifecycle[F, S3Component] =
+    def s3ComponentResource[F[_]: QuasiEffect](ref: Ref[F, Queue[Ops]], s3Client: S3Client): Lifecycle[F, S3Component] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ComponentStart).map(_ => new S3Component(s3Client))
       )(release = _ => ref.update(_ :+ ComponentStop).map(_ => ()))
 
-    def s3clientResource[F[_]: DIEffect](ref: Ref[F, Queue[Ops]], s3Component: S3Component): Lifecycle[F, S3ClientImpl] =
+    def s3clientResource[F[_]: QuasiEffect](ref: Ref[F, Queue[Ops]], s3Component: S3Component): Lifecycle[F, S3ClientImpl] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ClientStart).map(_ => new S3ClientImpl(s3Component))
       )(release = _ => ref.update(_ :+ ClientStop).map(_ => ()))
@@ -121,9 +121,9 @@ object ResourceCases {
     override def release: Unit = ()
   }
 
-  class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
-    def get: F[A] = DIEffect[F].maybeSuspend(r.get())
-    def update(f: A => A): F[A] = DIEffect[F].maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
+  class Ref[F[_]: QuasiEffect, A](r: AtomicReference[A]) {
+    def get: F[A] = QuasiEffect[F].maybeSuspend(r.get())
+    def update(f: A => A): F[A] = QuasiEffect[F].maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
     def set(a: A): F[A] = update(_ => a)
   }
 
@@ -131,8 +131,8 @@ object ResourceCases {
     def apply[F[_]]: Apply[F] = new Apply[F]()
 
     final class Apply[F[_]](private val dummy: Boolean = false) extends AnyVal {
-      def apply[A](a: A)(implicit F: DIEffect[F]): F[Ref[F, A]] = {
-        DIEffect[F].maybeSuspend(new Ref[F, A](new AtomicReference(a)))
+      def apply[A](a: A)(implicit F: QuasiEffect[F]): F[Ref[F, A]] = {
+        QuasiEffect[F].maybeSuspend(new Ref[F, A](new AtomicReference(a)))
       }
     }
   }
@@ -155,7 +155,7 @@ object ResourceCases {
   object Suspend2 {
     def apply[A](a: => A)(implicit dummy: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
-    implicit def DIEffectSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
+    implicit def QuasiEffectSuspend2[E <: Throwable]: QuasiEffect[Suspend2[E, ?]] = new QuasiEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def map2[A, B, C](fa: Suspend2[E, A], fb: => Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))

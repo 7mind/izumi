@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 
 import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiEffect
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, F}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
@@ -55,17 +55,17 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(empty.module.bindings.isEmpty)
   }
 
-  "Using Lifecycle & DIEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
+  "Using Lifecycle & QuasiEffect objects succeeds event if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
     assertDoesNotCompile("import cats._")
     assertDoesNotCompile("import zio._")
     assertDoesNotCompile("import monix._")
 
-    Then("DIEffect methods can be called")
-    def x[F[_]: DIEffect] = DIEffect[F].pure(1)
+    Then("QuasiEffect methods can be called")
+    def x[F[_]: QuasiEffect] = QuasiEffect[F].pure(1)
 
-    And("DIEffect in DIEffect object resolve")
+    And("QuasiEffect in QuasiEffect object resolve")
     assert(x[Identity] == 1)
 
     trait SomeBIO[+E, +A]
@@ -87,15 +87,15 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       }
     }
 
-    assert(new optSearch1[DIEffect].find == DIEffect.diEffectIdentity)
+    assert(new optSearch1[QuasiEffect].find == QuasiEffect.QuasiEffectIdentity)
 
-    try DIEffect.fromBIO(null)
+    try QuasiEffect.fromBIO(null)
     catch { case _: NullPointerException => }
     try BIO[SomeBIO, Unit](())(null)
     catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
-//    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
+//    assertDoesNotCompile("QuasiEffect.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("Lifecycle.fromCats(null)")
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
     BIOAsync[SomeBIO](null)
@@ -132,13 +132,13 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError("""
-         def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
+         def y[R[_[_]]: LowPriorityQuasiEffectInstances._Sync]() = ()
          y()
       """)
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[NoClassDefFoundError] {
-      DIEffect.fromCats[Option, Lifecycle[?[_], Int]](null, null)
+      QuasiEffect.fromCats[Option, Lifecycle[?[_], Int]](null, null)
     }
 
     And("Methods that mention cats types only in generics will error on call")

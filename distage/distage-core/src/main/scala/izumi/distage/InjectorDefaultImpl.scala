@@ -2,7 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.{Activation, BootstrapModule, Module, ModuleBase, ModuleDef}
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiEffect
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -15,7 +15,7 @@ final class InjectorDefaultImpl[F[_]](
   val parentFactory: InjectorFactory,
   val defaultModule: Module,
 )(implicit
-  override val F: DIEffect[F],
+  override val F: QuasiEffect[F],
   override val tagK: TagK[F],
 ) extends Injector[F] {
 
@@ -35,7 +35,7 @@ final class InjectorDefaultImpl[F[_]](
     planner.rewrite(module)
   }
 
-  override private[distage] def produceDetailedFX[G[_]: TagK: DIEffect](
+  override private[distage] def produceDetailedFX[G[_]: TagK: QuasiEffect](
     plan: OrderedPlan,
     filter: FinalizerFilter[G],
   ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {

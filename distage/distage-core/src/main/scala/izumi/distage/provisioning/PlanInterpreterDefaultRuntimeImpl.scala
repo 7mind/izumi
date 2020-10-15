@@ -7,8 +7,8 @@ import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiEffect.syntax._
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
@@ -46,7 +46,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     plan: OrderedPlan,
     parentContext: Locator,
     filterFinalizers: FinalizerFilter[F],
-  )(implicit F: DIEffect[F]
+  )(implicit F: QuasiEffect[F]
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
     Lifecycle.make(
       acquire = instantiateImpl(plan, parentContext)
@@ -65,7 +65,7 @@ class PlanInterpreterDefaultRuntimeImpl(
   private[this] def instantiateImpl[F[_]: TagK](
     plan: OrderedPlan,
     parentContext: Locator,
-  )(implicit F: DIEffect[F]
+  )(implicit F: QuasiEffect[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
     val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, mutProvisioningContext)
@@ -174,7 +174,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     } yield res
   }
 
-  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: QuasiEffect[F]): F[Seq[NewObjectOp]] = {
     step match {
       case op: ImportDependency =>
         F pure importStrategy.importDependency(context, this, op)
@@ -238,7 +238,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
   }
 
-  private[this] def verifyEffectType[F[_]: TagK](ops: Vector[ExecutableOp])(addFailure: ProvisioningFailure => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
+  private[this] def verifyEffectType[F[_]: TagK](ops: Vector[ExecutableOp])(addFailure: ProvisioningFailure => F[Unit])(implicit F: QuasiEffect[F]): F[Unit] = {
     val provisionerEffectType = SafeType.getK[F]
     val monadicOps = ops.collect { case m: MonadicOp => m }
     F.traverse_(monadicOps) {

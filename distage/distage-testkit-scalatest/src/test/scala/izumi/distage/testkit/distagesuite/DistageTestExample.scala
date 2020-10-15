@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import cats.effect.{IO => CIO}
 import distage._
 import distage.plugins.PluginDef
-import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiEffect.syntax._
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
@@ -92,7 +92,7 @@ object DistageTestExampleBase {
   final case class SetElementRetainer(element: SetElement4)
 }
 
-abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super
     .config.copy(
@@ -228,7 +228,7 @@ final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
 final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]
 
-abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
   "distage test" should {
     "sleep" in {
       _: MockUserRepository[F] =>
@@ -267,7 +267,7 @@ final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
 final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
 
-abstract class OverloadingTest[F[_]: DIEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class OverloadingTest[F[_]: QuasiEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
   "test overloading of `in`" in {
     () =>
       // `in` with Unit return type is ok
@@ -288,7 +288,7 @@ final class OverloadingTestCIO extends OverloadingTest[CIO]
 final class OverloadingTestTask extends OverloadingTest[Task]
 final class OverloadingTestIdentity extends OverloadingTest[Identity]
 
-abstract class ActivationTest[F[_]: DIEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class ActivationTest[F[_]: QuasiEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
   "resolve bindings for the same key via activation axis" in {
     activeComponent: ActiveComponent =>
       assert(activeComponent == TestActiveComponent)
@@ -299,7 +299,7 @@ final class ActivationTestCIO extends ActivationTest[CIO]
 final class ActivationTestTask extends ActivationTest[Task]
 final class ActivationTestIdentity extends ActivationTest[Identity]
 
-abstract class ForcedRootTest[F[_]: DIEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] {
+abstract class ForcedRootTest[F[_]: QuasiEffect: TagK: DefaultModule] extends DistageSpecScalatest[F] {
   override protected def config: TestConfig = super
     .config.copy(
       moduleOverrides = new ModuleDef {

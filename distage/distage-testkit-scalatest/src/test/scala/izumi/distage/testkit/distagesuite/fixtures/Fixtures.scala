@@ -7,7 +7,7 @@ import distage.TagK
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiEffect
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -35,8 +35,8 @@ trait ActiveComponent
 case object TestActiveComponent extends ActiveComponent
 case object ProdActiveComponent extends ActiveComponent
 
-class MockPostgresCheck[F[_]: DIEffect]() extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure(ResourceCheck.Success())
+class MockPostgresCheck[F[_]: QuasiEffect]() extends IntegrationCheck[F] {
+  override def resourcesAvailable(): F[ResourceCheck] = QuasiEffect[F].pure(ResourceCheck.Success())
 }
 
 class MockPostgresDriver[F[_]](val check: MockPostgresCheck[F])
@@ -45,22 +45,22 @@ class MockRedis[F[_]]()
 
 class MockUserRepository[F[_]](val pg: MockPostgresDriver[F])
 
-class MockCache[F[_]: DIEffect](val redis: MockRedis[F]) extends IntegrationCheck[F] {
+class MockCache[F[_]: QuasiEffect](val redis: MockRedis[F]) extends IntegrationCheck[F] {
   locally {
     val integer = MockCache.instanceCounter.getOrElseUpdate(redis, new AtomicInteger(0))
     if (integer.incrementAndGet() > 2) { // one instance per each monad
       throw new RuntimeException(s"Something is wrong with memoization: $integer instances were created")
     }
   }
-  override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure(ResourceCheck.Success())
+  override def resourcesAvailable(): F[ResourceCheck] = QuasiEffect[F].pure(ResourceCheck.Success())
 }
 
 object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class ApplePaymentProvider[F[_]: DIEffect] extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure(ResourceCheck.ResourceUnavailable("Test", None))
+class ApplePaymentProvider[F[_]: QuasiEffect] extends IntegrationCheck[F] {
+  override def resourcesAvailable(): F[ResourceCheck] = QuasiEffect[F].pure(ResourceCheck.ResourceUnavailable("Test", None))
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])
@@ -68,6 +68,6 @@ class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: M
 class ForcedRootProbe {
   var started = false
 }
-class ForcedRootResource[F[_]: DIEffect](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
-  override def acquire: F[Unit] = DIEffect[F].maybeSuspend(forcedRootProbe.started = true)
+class ForcedRootResource[F[_]: QuasiEffect](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
+  override def acquire: F[Unit] = QuasiEffect[F].maybeSuspend(forcedRootProbe.started = true)
 }

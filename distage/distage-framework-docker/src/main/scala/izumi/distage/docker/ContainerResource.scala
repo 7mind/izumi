@@ -11,8 +11,8 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.QuasiEffect.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiEffect}
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable._
@@ -30,8 +30,8 @@ case class ContainerResource[F[_], T](
   client: DockerClientWrapper[F],
   logger: IzLogger,
 )(implicit
-  val F: DIEffect[F],
-  val P: DIEffectAsync[F],
+  val F: QuasiEffect[F],
+  val P: QuasiAsync[F],
 ) extends Lifecycle.Basic[F, DockerContainer[T]] {
 
   private[this] val rawClient = client.rawClient

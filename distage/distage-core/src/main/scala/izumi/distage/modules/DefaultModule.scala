@@ -1,7 +1,7 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiEffect, QuasiEffectRunner}
 import izumi.distage.modules.support._
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
@@ -16,7 +16,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   * - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
@@ -29,7 +29,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[_]` with `cats-effect` instances
   *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
-  *   - Any `F[_]` with [[izumi.distage.model.effect.DIEffect]] instances
+  *   - Any `F[_]` with [[izumi.distage.model.effect.QuasiEffect]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
   @inline def of[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
@@ -47,7 +47,7 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
     * This adds cats typeclass instances to the default effect module if you have cats-effect on classpath,
-    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & DIEffect, but not cats-effect instances.
+    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiEffect, but not cats-effect instances.
     */
   implicit def forZIOPlusCats[K[_], ZIO[_, _, _], R](
     implicit
@@ -163,12 +163,12 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances5 {
-  implicit final def fromDIEffect[F[_]: TagK: DIEffect: DIEffectAsync: DIEffectRunner]: DefaultModule[F] = {
+  implicit final def fromQuasiEffect[F[_]: TagK: QuasiEffect: QuasiAsync: QuasiEffectRunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
-      addImplicit[DIEffect[F]]
-      addImplicit[DIEffectAsync[F]]
-      addImplicit[DIApplicative[F]]
-      addImplicit[DIEffectRunner[F]]
+      addImplicit[QuasiEffect[F]]
+      addImplicit[QuasiAsync[F]]
+      addImplicit[QuasiApplicative[F]]
+      addImplicit[QuasiEffectRunner[F]]
     })
   }
 }

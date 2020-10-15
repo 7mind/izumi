@@ -3,7 +3,7 @@ package izumi.distage.modules.support
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, Sync, Timer}
 import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
-import izumi.distage.model.effect.{DIApplicative, DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiEffect, QuasiEffectRunner}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.mono.SyncSafe
 
@@ -11,7 +11,7 @@ import izumi.functional.mono.SyncSafe
   *
   * For any `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds `cats-effect` typeclass instances for `F[_]`
   *
   * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
@@ -19,21 +19,21 @@ import izumi.functional.mono.SyncSafe
 class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   include(CatsEffectInstancesModule[F])
 
-  make[DIEffectRunner[F]].from {
-    implicit F: Effect[F] => DIEffectRunner.fromCats
+  make[QuasiEffectRunner[F]].from {
+    implicit F: Effect[F] => QuasiEffectRunner.fromCats
   }
-  make[DIEffect[F]].from {
-    implicit F: Sync[F] => DIEffect.fromCats
+  make[QuasiEffect[F]].from {
+    implicit F: Sync[F] => QuasiEffect.fromCats
   }
-  make[DIEffectAsync[F]].from {
+  make[QuasiAsync[F]].from {
     (C0: Concurrent[F], T0: Timer[F], P0: Parallel[F]) =>
       implicit val C: Concurrent[F] = C0
       implicit val T: Timer[F] = T0
       implicit val P: Parallel[F] = P0
-      DIEffectAsync.fromCats
+      QuasiAsync.fromCats
   }
-  make[DIApplicative[F]].from {
-    implicit F: Applicative[F] => DIApplicative.fromCats
+  make[QuasiApplicative[F]].from {
+    implicit F: Applicative[F] => QuasiApplicative.fromCats
   }
   make[SyncSafe[F]].from {
     implicit F: Sync[F] => SyncSafe.fromSync

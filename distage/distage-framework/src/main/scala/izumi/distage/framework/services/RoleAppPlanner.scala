@@ -5,7 +5,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.effect.{QuasiAsync, QuasiEffect, QuasiEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.fundamentals.platform.functional.Identity
@@ -34,9 +34,9 @@ object RoleAppPlanner {
   ) extends RoleAppPlanner[F] { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[DIEffectRunner[F]],
-      DIKey.get[DIEffect[F]],
-      DIKey.get[DIEffectAsync[F]],
+      DIKey.get[QuasiEffectRunner[F]],
+      DIKey.get[QuasiEffect[F]],
+      DIKey.get[QuasiAsync[F]],
     )
 
     override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {

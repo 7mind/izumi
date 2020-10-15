@@ -6,7 +6,7 @@ import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetw
 import izumi.distage.docker.Docker.DockerReusePolicy
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.{QuasiAsync, QuasiEffect}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -33,7 +33,7 @@ trait ContainerNetworkDef {
 }
 
 object ContainerNetworkDef {
-  def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => Lifecycle[F, conf.Network] = {
+  def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, QuasiEffect[F], QuasiAsync[F]) => Lifecycle[F, conf.Network] = {
     new NetworkResource(conf.config, _, prefix, _)(_, _)
   }
 
@@ -43,8 +43,8 @@ object ContainerNetworkDef {
     prefixName: String,
     logger: IzLogger,
   )(implicit
-    F: DIEffect[F],
-    P: DIEffectAsync[F],
+    F: QuasiEffect[F],
+    P: QuasiAsync[F],
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 

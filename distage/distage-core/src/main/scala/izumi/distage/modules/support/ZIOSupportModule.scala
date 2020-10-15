@@ -9,7 +9,7 @@ object ZIOSupportModule extends ZIOSupportModule
 
 /** `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
   * Note: by default this module will add the following components:
