@@ -377,10 +377,8 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++ Seq(cats_effect_laws, scalatest, discipline, discipline_scaltest) ++
-          Seq(
-            monix_bio in Scope.Optional.all,
-            scala_java_time in Scope.Test.js,
-          ) ++ Seq(zio_interop_cats in Scope.Test.all),
+          Seq(zio_interop_cats in Scope.Test.all) ++
+          Seq(scala_java_time in Scope.Test.js),
         depends = Seq(
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
@@ -398,10 +396,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
-        libs = allMonadsOptional ++ Seq(
-          monix in Scope.Optional.all,
-          monix_bio in Scope.Optional.all,
-        ),
+        libs = allMonadsOptional,
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
@@ -411,15 +406,17 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonadsOptional = (cats_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ Seq(zio_core, monix_bio)).map(_ in Scope.Test.all)
+  final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
+  final val allZioOptional = Seq(zio_core, izumi_reflect).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ Seq(monix, monix_bio).map(_ in Scope.Optional.all)
+  final val allMonadsTest = (cats_all ++ Seq(zio_core, izumi_reflect, monix_bio)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allCatsOptional ++ allZioOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
       ),
       Artifact(
@@ -431,9 +428,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.core,
         libs = allMonadsOptional ++ Seq(
-          monix in Scope.Optional.all,
-          monix_bio in Scope.Optional.all,
-          zio_interop_cats in Scope.Optional.all,
+          zio_interop_cats in Scope.Optional.all
         ) ++ Seq(
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
@@ -471,7 +466,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allCatsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -486,14 +481,13 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitCore,
-        libs = allMonadsOptional,
-        depends = Seq(Projects.distage.config, Projects.distage.framework, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Compile.all),
+        libs = Nil,
+        depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
-        libs = allMonadsOptional ++ allMonadsTest ++ Seq(
+        libs = allMonadsOptional ++ Seq(
           scalamock in Scope.Test.all,
           scalatest.dependency in Scope.Compile.all,
         ),
@@ -513,7 +507,7 @@ object Izumi {
       Artifact(
         name = Projects.logstage.core,
         libs = Seq(scala_reflect in Scope.Provided.all) ++
-          allMonadsOptional ++
+          allCatsOptional ++ allZioOptional ++
           Seq(scala_java_time in Scope.Compile.js),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.platform).map(_ in Scope.Compile.all),
       ),

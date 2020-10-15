@@ -590,11 +590,12 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "io.monix" %% "monix" % V.monix % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "discipline-core" % V.discipline % Test,
       "org.typelevel" %% "discipline-scalatest" % V.discipline_scalatest % Test,
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
     )
   )
@@ -1682,8 +1683,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
@@ -1794,6 +1793,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "com.github.docker-java" % "docker-java" % V.docker_java
     )
@@ -1889,10 +1889,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
 
 lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"))
   .dependsOn(
-    `distage-extension-config` % "test->compile;compile->compile",
-    `distage-framework` % "test->compile;compile->compile",
-    `distage-extension-logstage` % "test->compile;compile->compile",
-    `distage-core` % "test->compile;compile->compile"
+    `distage-framework` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1900,11 +1897,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
@@ -2013,10 +2006,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Test,
+      "io.monix" %% "monix" % V.monix % Optional,
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
     )

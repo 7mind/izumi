@@ -29,13 +29,13 @@ class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +
   // - https://github.com/zio/izumi-reflect/issues/83
   def addConverted3To2[G[+e, +a] >: F[Any, e @v, a @v] <: F[Any, e @v, a @v]: TagKK]: Unit = {
     make[BIOAsync[G]].from {
-      implicit F: BIOAsync3[F] => BIORoot.BIOConvert3To2[BIOAsync3, F, Any]
+      implicit F: BIOAsync3[F] => BIORoot.Convert3To2[BIOAsync3, F, Any]
     }
     make[BIOTemporal[G]].from {
-      implicit F: BIOTemporal3[F] => BIORoot.BIOConvert3To2[BIOTemporal3, F, Any]
+      implicit F: BIOTemporal3[F] => BIORoot.Convert3To2[BIOTemporal3, F, Any]
     }
     make[BIOFork[G]].from {
-      implicit Fork: BIOFork3[F] => BIORoot.BIOConvert3To2[BIOFork3, F, Any]
+      implicit Fork: BIOFork3[F] => BIORoot.Convert3To2[BIOFork3, F, Any]
     }
     ()
   }

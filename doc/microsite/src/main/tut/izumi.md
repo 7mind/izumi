@@ -94,6 +94,7 @@ Videos:
 * [Hyper-pragmatic Pure FP Testing with distage-testkit, Functional Scala, London](https://www.youtube.com/watch?v=CzpvjkUukAs)
 * [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
+@@toc { depth=2 }
 
 @@@ index
 
@@ -104,7 +105,6 @@ Videos:
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
 * [PPER](pper/00_pper.md)
-
 
 @@@
 

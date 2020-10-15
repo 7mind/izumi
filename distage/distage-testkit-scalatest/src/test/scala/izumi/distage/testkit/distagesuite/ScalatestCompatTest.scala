@@ -1,11 +1,11 @@
 package izumi.distage.testkit.distagesuite
 
-import izumi.distage.testkit.scalatest.{AssertIO, DistageSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertZIO, Spec1}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.{must, should}
 
-final class ScalatestCompatTestShould extends DistageSpecScalatest[Identity] with should.Matchers with AssertIO {
+final class ScalatestCompatTestShould extends Spec1[Identity] with should.Matchers with AssertZIO {
 
   "test" should {
     "start" in {
@@ -18,7 +18,7 @@ final class ScalatestCompatTestShould extends DistageSpecScalatest[Identity] wit
 
 }
 
-final class ScalatestCompatTestMust extends DistageSpecScalatest[Identity] with must.Matchers with AssertIO {
+final class ScalatestCompatTestMust extends Spec1[Identity] with must.Matchers with AssertZIO {
 
   "test" should {
     "start" in {

@@ -1,7 +1,7 @@
 package izumi.functional.bio.env
 
 import cats.Eq
-import izumi.functional.bio.BIO
+import izumi.functional.bio.IO2
 import izumi.functional.bio.impl.MiniBIO
 import izumi.functional.bio.test.CatsLawsTestBase
 import org.scalacheck.Arbitrary
@@ -12,9 +12,9 @@ trait MiniBIOEnv {
   implicit def arbMiniBIO[A](implicit arb: Arbitrary[A]): Arbitrary[MiniBIO[Throwable, A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_)
-        arb.arbitrary.map(BIO[MiniBIO].pure(_))
+        arb.arbitrary.map(IO2[MiniBIO].pure(_))
       else
-        Arbitrary.arbThrowable.arbitrary.map(BIO[MiniBIO].fail(_))
+        Arbitrary.arbThrowable.arbitrary.map(IO2[MiniBIO].fail(_))
     }
   }
 

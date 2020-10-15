@@ -266,7 +266,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector, Roots}
+import distage.{BootstrapModuleDef, ModuleDef, Injector}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 

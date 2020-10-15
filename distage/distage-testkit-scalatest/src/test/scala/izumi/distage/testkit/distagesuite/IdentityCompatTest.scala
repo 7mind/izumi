@@ -1,10 +1,10 @@
 package izumi.distage.testkit.distagesuite
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.testkit.scalatest.DistageSpecScalatest
+import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 
-final class IdentityCompatTest extends DistageSpecScalatest[Identity] {
+final class IdentityCompatTest extends Spec1[Identity] {
 
   "tests in identity" should {
 

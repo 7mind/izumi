@@ -10,6 +10,7 @@ import org.scalatest.distage.DistageAssertionsMacro
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
+/** scalatest assertion macro for [[cats.effect.IO]] */
 trait AssertCIO {
   final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): IO[Assertion] = macro AssertCIOMacro.impl
 }

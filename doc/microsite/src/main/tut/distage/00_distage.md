@@ -89,9 +89,9 @@ a few experimental @ref[macros](distage-framework.md#compile-time-checks) for ab
 Documentation
 -------------
 
-- @ref[Introduction](basics.md)
-- @ref[Advanced Features](advanced-features.md)
+- @ref[Overview](basics.md)
 - @ref[Debugging](debugging.md)
+- @ref[Advanced Features](advanced-features.md)
 - @ref[distage-framework](distage-framework.md)
 - @ref[distage-framework-docker](distage-framework-docker.md)
 - @ref[distage-testkit](distage-testkit.md)
@@ -125,9 +125,9 @@ Videos:
 
 @@@ index
 
-* [Introduction](basics.md)
-* [Advanced Features](advanced-features.md)
+* [Overview](basics.md)
 * [Debugging](debugging.md)
+* [Advanced Features](advanced-features.md)
 * [distage-framework](distage-framework.md)
 * [distage-framework-docker](distage-framework-docker.md)
 * [distage-testkit](distage-testkit.md)
