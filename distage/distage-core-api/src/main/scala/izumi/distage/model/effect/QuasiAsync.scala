@@ -28,15 +28,15 @@ trait QuasiAsync[F[_]] {
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
-object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
+object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
   implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val QuasiIOAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
-      final val QuasiIOAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(QuasiIOAsyncIdentityThreadFactory)
+      final val QuasiAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
+      final val QuasiAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(QuasiAsyncIdentityThreadFactory)
       }
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
@@ -56,12 +56,12 @@ object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
       }
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentity(QuasiIOAsyncIdentityPool)(l)(f)
+        parTraverseIdentity(QuasiAsyncIdentityPool)(l)(f)
       }
 
       override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
         val limitedAsyncPool = ExecutionContext.fromExecutorService {
-          Executors.newFixedThreadPool(n, QuasiIOAsyncIdentityThreadFactory)
+          Executors.newFixedThreadPool(n, QuasiAsyncIdentityThreadFactory)
         }
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
@@ -125,7 +125,7 @@ object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
 
 }
 
-private[effect] sealed trait LowPriorityQuasiIOAsyncInstances {
+private[effect] sealed trait LowPriorityQuasiAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.

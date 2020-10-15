@@ -70,7 +70,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +?, +?]]]
         implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +?, +?]]]
         implicitly[QuasiApplicative3[F] =:= QuasiApplicative2[F[Any, +?, +?]]]
-        implicitly[QuasiIOAsync3[F] =:= QuasiIOAsync2[F[Any, +?, +?]]]
+        implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +?, +?]]]
         ()
       }
     }

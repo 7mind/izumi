@@ -14,5 +14,5 @@ trait IdentitySupportModule extends ModuleDef {
   addImplicit[QuasiApplicative[Identity]]
   addImplicit[QuasiIO[Identity]]
   addImplicit[QuasiIORunner[Identity]]
-//  addImplicit[QuasiIOAsync[Identity]] // No QuasiIOAsync for Identity on JS
+//  addImplicit[QuasiAsync[Identity]] // No QuasiAsync for Identity on JS
 }
