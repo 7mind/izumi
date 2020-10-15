@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import cats.effect.concurrent.Semaphore
+import izumi.functional.bio.data.~>
 import zio.ZIO
 import zio.stm.{USTM, ZSTM}
 
@@ -33,5 +34,14 @@ object Semaphore1 {
     override def release: USTM[Unit] = tSemaphore.release
     override def acquireN(n: Long): USTM[Unit] = tSemaphore.acquireN(n)
     override def releaseN(n: Long): USTM[Unit] = tSemaphore.releaseN(n)
+  }
+
+  implicit final class Semaphore1Ops[+F[_]](private val self: Semaphore1[F]) extends AnyVal {
+    def mapK[G[_]](fg: F ~> G): Semaphore1[G] = new Semaphore1[G] {
+      override def acquire: G[Unit] = fg(self.acquire)
+      override def release: G[Unit] = fg(self.release)
+      override def acquireN(n: Long): G[Unit] = fg(self.acquireN(n))
+      override def releaseN(n: Long): G[Unit] = fg(self.releaseN(n))
+    }
   }
 }

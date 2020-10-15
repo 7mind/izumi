@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.data.~>
 import zio.{IO, Ref}
 
 trait Ref1[+F[_], A] {
@@ -30,4 +31,14 @@ object Ref1 {
       override def update(f: A => A): F[Nothing, A] = ref.updateAndGet(f).orTerminate
       override def update_(f: A => A): F[Nothing, Unit] = ref.update(f).orTerminate
     }
+
+  implicit final class Ref1Ops[+F[_], A](private val self: Ref1[F, A]) extends AnyVal {
+    def mapK[G[_]](fg: F ~> G): Ref1[G, A] = new Ref1[G, A] {
+      override def get: G[A] = fg(self.get)
+      override def set(a: A): G[Unit] = fg(self.set(a))
+      override def modify[B](f: A => (B, A)): G[B] = fg(self.modify(f))
+      override def update(f: A => A): G[A] = fg(self.update(f))
+      override def update_(f: A => A): G[Unit] = fg(self.update_(f))
+    }
+  }
 }

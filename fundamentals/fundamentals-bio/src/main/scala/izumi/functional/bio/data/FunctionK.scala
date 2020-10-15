@@ -14,6 +14,12 @@ object FunctionK {
     @inline def andThen[H[_]](f: FunctionK[G, H]): FunctionK[F, H] = f.compose(self)
   }
 
+  implicit final class FunctionKCatsOps[F[_], G[_]](private val self: FunctionK[F, G]) extends AnyVal {
+    @inline def toCats: cats.arrow.FunctionK[F, G] = Lambda[cats.arrow.FunctionK[F, G]](self(_))
+  }
+
+  def fromCats[F[_], G[_]](fn: cats.arrow.FunctionK[F, G]): FunctionK[F, G] = FunctionK(fn(_))
+
   @inline def id[F[_]]: FunctionK[F, F] = (identity[Any] _).asInstanceOf[FunctionK[F, F]]
 
   /**
@@ -41,4 +47,13 @@ object FunctionK {
   private[FunctionK] final abstract class TagFor212ImplicitScope
 
   private[FunctionK] type UnknownA
+
+  implicit def conversion2To1[F[_, _], G[_, _], E](f: FunctionKK[F, G]): FunctionK[F[E, ?], G[E, ?]] = f.asInstanceOf[FunctionK[F[E, ?], G[E, ?]]]
+  implicit def Convert2To1[F[_, _], G[_, _], E](implicit f: FunctionKK[F, G]): FunctionK[F[E, ?], G[E, ?]] = f.asInstanceOf[FunctionK[F[E, ?], G[E, ?]]]
+
+  // workaround for inference issues with `E=Nothing`
+  implicit def conversion2To1Nothing[F[_, _], G[_, _]](f: FunctionKK[F, G]): FunctionK[F[Nothing, ?], G[Nothing, ?]] =
+    f.asInstanceOf[FunctionK[F[Nothing, ?], G[Nothing, ?]]]
+  implicit def Convert2To1Nothing[F[_, _], G[_, _]](implicit f: FunctionKK[F, G]): FunctionK[F[Nothing, ?], G[Nothing, ?]] =
+    f.asInstanceOf[FunctionK[F[Nothing, ?], G[Nothing, ?]]]
 }

@@ -1,6 +1,6 @@
 package izumi.functional.bio.data
 
-import izumi.functional.bio.{BIOExit, BIOPanic}
+import izumi.functional.bio.{Exit, Panic2}
 
 import scala.util.Try
 
@@ -11,7 +11,7 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
   @inline final def *>[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, B] = flatMap(_ => sc)
   @inline final def <*[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, A] = flatMap(sc.as)
 
-  @inline final def sandbox: FreePanic[S, BIOExit.Failure[E], A] =
+  @inline final def sandbox: FreePanic[S, Exit.Failure[E], A] =
     FreePanic.Sandbox(this)
 
   @inline final def redeem[S1[e, a] >: S[e, a], B, E1](err: E => FreePanic[S1, E1, B], succ: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] =
@@ -26,14 +26,14 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
     FreePanic.Redeem[S, E, A, A, E](this, FreePanic.pure, FreePanic.fail(_))
 
   @inline final def bracket[S1[e, a] >: S[e, a], B, E1 >: E](release: A => FreePanic[S1, Nothing, Unit])(use: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] =
-    FreePanic.BracketCase(this, (a: A, _: BIOExit[E1, B]) => release(a), use)
+    FreePanic.BracketCase(this, (a: A, _: Exit[E1, B]) => release(a), use)
   @inline final def bracketCase[S1[e, a] >: S[e, a], B, E1 >: E](
-    release: (A, BIOExit[E1, B]) => FreePanic[S1, Nothing, Unit]
+    release: (A, Exit[E1, B]) => FreePanic[S1, Nothing, Unit]
   )(use: A => FreePanic[S1, E1, B]
   ): FreePanic[S1, E1, B] =
     FreePanic.BracketCase(this, release, use)
   @inline final def guarantee[S1[e, a] >: S[e, a]](g: FreePanic[S1, Nothing, Unit]): FreePanic[S1, E, A] =
-    FreePanic.BracketCase[S1, E, A, A](this, (_: A, _: BIOExit[E, A]) => g, FreePanic.pure)
+    FreePanic.BracketCase[S1, E, A, A](this, (_: A, _: Exit[E, A]) => g, FreePanic.pure)
 
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
@@ -41,7 +41,7 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
     foldMap[S1, FreePanic[T, +?, +?]](FunctionKK(FreePanic lift f(_)))
   }
 
-  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Panic2[G]): G[E, A] = {
     this match {
       case FreePanic.Pure(a) => G.pure(a)
       case FreePanic.Suspend(a) => transform(a)
@@ -56,7 +56,7 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
       case s: FreePanic.Sandbox[S, E, A] =>
         s.sub.foldMap(transform).sandbox.leftMap(_.asInstanceOf[E])
       case FreePanic.BracketCase(acquire, release, use) =>
-        acquire.foldMap(transform).bracketCase((a, e: BIOExit[E, A]) => release(a, e).foldMap(transform))(a => use(a).foldMap(transform))
+        acquire.foldMap(transform).bracketCase((a, e: Exit[E, A]) => release(a, e).foldMap(transform))(a => use(a).foldMap(transform))
       case FreePanic.FlatMapped(sub, cont) =>
         sub match {
           case FreePanic.FlatMapped(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
@@ -77,7 +77,7 @@ object FreePanic {
   )(release: A0 => FreePanic[S, Nothing, Unit]
   )(use: A0 => FreePanic[S, E, A]
   ): FreePanic[S, E, A] = {
-    BracketCase(acquire, (a: A0, _: BIOExit[E, A]) => release(a), use)
+    BracketCase(acquire, (a: A0, _: Exit[E, A]) => release(a), use)
   }
 
   private final case class Pure[S[_, _], A](a: A) extends FreePanic[S, Nothing, A] {
@@ -95,7 +95,7 @@ object FreePanic {
   private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreePanic[S, E, A], cont: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
-  private final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, BIOExit.Failure[E], A] {
+  private final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, Exit.Failure[E], A] {
     override def toString: String = s"Sandbox:[sub=$sub]"
   }
   private final case class Redeem[S[_, _], E, E1, A, B](sub: FreePanic[S, E, A], err: E => FreePanic[S, E1, B], suc: A => FreePanic[S, E1, B])
@@ -105,22 +105,22 @@ object FreePanic {
 
   private final case class BracketCase[S[_, _], E, A0, A](
     acquire: FreePanic[S, E, A0],
-    release: (A0, BIOExit[E, A]) => FreePanic[S, Nothing, Unit],
+    release: (A0, Exit[E, A]) => FreePanic[S, Nothing, Unit],
     use: A0 => FreePanic[S, E, A],
   ) extends FreePanic[S, E, A] {
     override def toString: String = s"BracketCase:[acquire=$acquire;use=${use.getClass.getSimpleName}]"
   }
 
-  @inline implicit def BIOPanicInstances[S[_, _]]: BIOPanic[FreePanic[S, +?, +?]] = new BIOPanicInstances[S]
+  @inline implicit def Panic2Instances[S[_, _]]: Panic2[FreePanic[S, +?, +?]] = new Panic2Instances[S]
 
-  final class BIOPanicInstances[S[_, _]] extends BIOPanic[FreePanic[S, +?, +?]] {
+  final class Panic2Instances[S[_, _]] extends Panic2[FreePanic[S, +?, +?]] {
     @inline override def flatMap[R, E, A, B](r: FreePanic[S, E, A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, B] = r.flatMap(f)
-    @inline override def sandbox[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, BIOExit.Failure[E], A] = r.sandbox
+    @inline override def sandbox[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, Exit.Failure[E], A] = r.sandbox
     @inline override def catchAll[R, E, A, E2](r: FreePanic[S, E, A])(f: E => FreePanic[S, E2, A]): FreePanic[S, E2, A] = r.catchAll(f)
     @inline override def catchSome[R, E, A, E1 >: E](r: FreePanic[S, E, A])(f: PartialFunction[E, FreePanic[S, E1, A]]): FreePanic[S, E1, A] = r.catchSome(f)
     @inline override def bracketCase[R, E, A, B](
       acquire: FreePanic[S, E, A]
-    )(release: (A, BIOExit[E, B]) => FreePanic[S, Nothing, Unit]
+    )(release: (A, Exit[E, B]) => FreePanic[S, Nothing, Unit]
     )(use: A => FreePanic[S, E, B]
     ): FreePanic[S, E, B] = acquire.bracketCase(release)(use)
 

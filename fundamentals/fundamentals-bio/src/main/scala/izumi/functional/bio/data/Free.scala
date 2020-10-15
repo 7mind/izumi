@@ -1,6 +1,6 @@
 package izumi.functional.bio.data
 
-import izumi.functional.bio.BIOMonad
+import izumi.functional.bio.Monad2
 
 sealed trait Free[+S[_, _], +E, +A] {
   @inline final def flatMap[S1[e, a] >: S[e, a], B, E1 >: E](fun: A => Free[S1, E1, B]): Free[S1, E1, B] = Free.FlatMapped[S1, E, E1, A, B](this, fun)
@@ -15,9 +15,9 @@ sealed trait Free[+S[_, _], +E, +A] {
     foldMap[S1, Free[T, +?, +?]](FunctionKK(Free Suspend f(_)))
   }
 
-  @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit M: BIOMonad[G]): G[E, A] = {
+  @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {
     this match {
-      case Free.Pure(a) => M.pure(a)
+      case Free.Pure(a) => G.pure(a)
       case Free.Suspend(a) => transform.apply(a)
       case Free.FlatMapped(sub, cont) =>
         sub match {
@@ -42,9 +42,9 @@ object Free {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
 
-  @inline implicit def BIOMonadInstances[S[_, _]]: BIOMonad[Free[S, +?, +?]] = new BIOMonadInstances[S]
+  @inline implicit def Monad2Instances[S[_, _]]: Monad2[Free[S, +?, +?]] = new Monad2Instances[S]
 
-  final class BIOMonadInstances[S[_, _]] extends BIOMonad[Free[S, +?, +?]] {
+  final class Monad2Instances[S[_, _]] extends Monad2[Free[S, +?, +?]] {
     @inline override def flatMap[R, E, A, B](r: Free[S, E, A])(f: A => Free[S, E, B]): Free[S, E, B] = r.flatMap(f)
     @inline override def pure[A](a: A): Free[S, Nothing, A] = Free.pure(a)
   }
