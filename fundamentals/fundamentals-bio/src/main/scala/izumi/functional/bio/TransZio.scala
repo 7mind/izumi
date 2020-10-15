@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import cats.arrow.FunctionK
+import izumi.functional.bio.data.FunctionK
 import zio._
 
 trait TransZio[F[_, _]] {

@@ -12,15 +12,13 @@ sealed trait Free[+S[_, _], +E, +A] {
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): Free[T, E, A] = {
-    foldMap[S1, Free[T, +?, +?]] {
-      new FunctionKK[S1, Free[T, ?, ?]] { def apply[E1, A1](sb: S1[E1, A1]): Free[T, E1, A1] = Free.Suspend(f(sb)) }
-    }
+    foldMap[S1, Free[T, +?, +?]](FunctionKK(Free Suspend f(_)))
   }
 
   @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit M: BIOMonad[G]): G[E, A] = {
     this match {
       case Free.Pure(a) => M.pure(a)
-      case Free.Suspend(a) => transform(a)
+      case Free.Suspend(a) => transform.apply(a)
       case Free.FlatMapped(sub, cont) =>
         sub match {
           case Free.FlatMapped(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)

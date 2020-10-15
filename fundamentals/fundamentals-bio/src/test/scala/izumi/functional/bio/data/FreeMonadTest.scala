@@ -66,7 +66,7 @@ object FreeMonadTest {
   def compiler[F[+_, +_]: BIO]: F[Nothing, TestFreeChoice ~>> F] = {
     F.sync {
       val scope = new AtomicReference[Int](0)
-      FunctionKK(_.interpret(scope))
+      FunctionKK[TestFreeChoice, F](_.interpret(scope))
     }
   }
 }

@@ -21,7 +21,7 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
   @inline final def catchAll[S1[e, a] >: S[e, a], A1 >: A, E1](err: E => FreePanic[S1, E1, A1]): FreePanic[S1, E1, A1] =
     FreePanic.Redeem[S1, E, E1, A, A1](this, err, FreePanic.pure)
   @inline final def catchSome[S1[e, a] >: S[e, a], A2 >: A, E1 >: E](err: PartialFunction[E, FreePanic[S1, E1, A2]]): FreePanic[S1, E1, A2] =
-    FreePanic.Redeem[S1, E, E1, A, A2](this, err.orElse(FreePanic.fail(_)), FreePanic.pure)
+    FreePanic.Redeem[S1, E, E1, A, A2](this, err.orElse { case e => FreePanic.fail(e) }, FreePanic.pure)
   @inline final def flip: FreePanic[S, A, E] =
     FreePanic.Redeem[S, E, A, A, E](this, FreePanic.pure, FreePanic.fail(_))
 
@@ -38,9 +38,7 @@ sealed trait FreePanic[+S[_, _], +E, +A] {
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
-    foldMap[S1, FreePanic[T, +?, +?]] {
-      new FunctionKK[S1, FreePanic[T, ?, ?]] { def apply[E1, A1](sb: S1[E1, A1]): FreePanic[T, E1, A1] = FreePanic.lift(f(sb)) }
-    }
+    foldMap[S1, FreePanic[T, +?, +?]](FunctionKK(FreePanic lift f(_)))
   }
 
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: BIOPanic[G]): G[E, A] = {
