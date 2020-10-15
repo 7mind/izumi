@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect
-import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
@@ -18,7 +18,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
     context: ProvisioningKeyProvider,
     @unused executor: OperationExecutor,
     op: MonadicOp.AllocateResource,
-  )(implicit F: DIEffect[F]
+  )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor

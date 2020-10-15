@@ -3,7 +3,7 @@ package izumi.distage.roles.test.fixtures
 import distage.LocatorRef
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Axis
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
@@ -54,21 +54,21 @@ object Fixture {
 
   }
 
-  abstract class ProbeCheck[F[_]: DIEffect] extends ProbeResource[F] with IntegrationCheck[F] {
-    override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].maybeSuspend {
+  abstract class ProbeCheck[F[_]: QuasiIO] extends ProbeResource[F] with IntegrationCheck[F] {
+    override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
       counter.onCheck(this)
       ResourceCheck.Success()
     }
   }
 
-  class IntegrationResource0[F[_]: DIEffect](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
-  class IntegrationResource1[F[_]: DIEffect](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource0[F[_]: QuasiIO](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource1[F[_]: QuasiIO](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
 
-  case class ProbeResource0[F[_]: DIEffect](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
+  case class ProbeResource0[F[_]: QuasiIO](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
 
-  case class JustResource1[F[_]: DIEffect](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
-  case class JustResource2[F[_]: DIEffect](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
-  case class JustResource3[F[_]: DIEffect](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource1[F[_]: QuasiIO](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource2[F[_]: QuasiIO](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource3[F[_]: QuasiIO](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
 
   trait AxisComponent
   object AxisComponentIncorrect extends AxisComponent

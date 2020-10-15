@@ -3,7 +3,6 @@ package izumi.distage.testkit.services.scalatest.dstest
 import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.Done
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
 import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
-import izumi.fundamentals.platform.language.unused
 
 import scala.collection.mutable
 
@@ -21,9 +20,9 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     underlying.endAll()
   }
 
-  override def beginSuite(@unused id: SuiteData): Unit = {}
+  override def beginSuite(id: SuiteData): Unit = {}
 
-  override def endSuite(@unused id: SuiteData): Unit = {
+  override def endSuite(id: SuiteData): Unit = {
     finish(_.id.suiteId == id.suiteId)
   }
 

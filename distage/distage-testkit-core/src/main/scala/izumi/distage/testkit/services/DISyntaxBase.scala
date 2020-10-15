@@ -1,7 +1,7 @@
 package izumi.distage.testkit.services
 
 import distage.{Tag, TagK}
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.SourceFilePosition
 
@@ -12,7 +12,7 @@ trait DISyntaxBase[F[_]] {
 
   protected final def takeAny(function: Functoid[Any], pos: SourceFilePosition): Unit = {
     val f: Functoid[F[Any]] = function.flatAp {
-      F: DIEffect[F] => (a: Any) =>
+      F: QuasiIO[F] => (a: Any) =>
         F.pure(a)
     }
 

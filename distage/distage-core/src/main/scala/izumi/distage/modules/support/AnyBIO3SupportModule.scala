@@ -12,13 +12,13 @@ import scala.annotation.unchecked.{uncheckedVariance => v}
   *
   * For any `F[-_, +_, +_]` with available `make[BIOAsync3[F]]`, `make[BIOTemporal3[F]]` and `make[BIORunner3[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.DIEffect]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
   * Depends on `make[BIOAsync3[F]]`, `make[BIOTemporal3[F]]`, `make[BIOLocal[F]]`, `make[BIOFork3[F]]` & `make[BIORunner3[F]]`
   */
 class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]) extends ModuleDef {
-  // DIEffect & bifunctor bio instances
+  // QuasiIO & bifunctor bio instances
   include(AnyBIOSupportModule[F[Any, +?, +?]])
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
@@ -67,10 +67,10 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[BIORunner3[F] =:= BIORunner[F[Any, +?, +?]]]
         implicitly[BIOPrimitives3[F] =:= BIOPrimitives[F[Any, +?, +?]]]
         implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +?, +?]]]
-        implicitly[DIEffectRunner3[F] =:= DIEffectRunner2[F[Any, +?, +?]]]
-        implicitly[DIEffect3[F] =:= DIEffect2[F[Any, +?, +?]]]
-        implicitly[DIApplicative3[F] =:= DIApplicative2[F[Any, +?, +?]]]
-        implicitly[DIEffectAsync3[F] =:= DIEffectAsync2[F[Any, +?, +?]]]
+        implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +?, +?]]]
+        implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +?, +?]]]
+        implicitly[QuasiApplicative3[F] =:= QuasiApplicative2[F[Any, +?, +?]]]
+        implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +?, +?]]]
         ()
       }
     }

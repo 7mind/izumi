@@ -12,7 +12,14 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
-trait DIEffectAsync[F[_]] {
+/**
+  * Parallel & async operations for `F` required by `distage-*` libraries.
+  * Unlike `QuasiIO` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  *
+  * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
+  * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  */
+trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
   def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
@@ -21,15 +28,15 @@ trait DIEffectAsync[F[_]] {
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
-object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
-  def apply[F[_]: DIEffectAsync]: DIEffectAsync[F] = implicitly
+object QuasiAsync extends LowPriorityQuasiAsyncInstances {
+  def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val diEffectParIdentity: DIEffectAsync[Identity] = {
-    new DIEffectAsync[Identity] {
+  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
+    new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val DIEffectAsyncIdentityThreadFactory = new NamedThreadFactory("dieffect-cached-pool", daemon = true)
-      final val DIEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(DIEffectAsyncIdentityThreadFactory)
+      final val QuasiAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
+      final val QuasiAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(QuasiAsyncIdentityThreadFactory)
       }
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
@@ -49,12 +56,12 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
       }
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentity(DIEffectAsyncIdentityPool)(l)(f)
+        parTraverseIdentity(QuasiAsyncIdentityPool)(l)(f)
       }
 
       override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
         val limitedAsyncPool = ExecutionContext.fromExecutorService {
-          Executors.newFixedThreadPool(n, DIEffectAsyncIdentityThreadFactory)
+          Executors.newFixedThreadPool(n, QuasiAsyncIdentityThreadFactory)
         }
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
@@ -72,8 +79,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIOTemporal[F[+_, +_]: BIOAsync: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
-    new DIEffectAsync[F[Throwable, ?]] {
+  implicit def fromBIO[F[+_, +_]: BIOAsync: BIOTemporal]: QuasiAsync[F[Throwable, ?]] = {
+    new QuasiAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
       }
@@ -118,7 +125,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
 }
 
-private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
+private[effect] sealed trait LowPriorityQuasiAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -130,8 +137,8 @@ private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
     P: P[F],
     T: T[F],
     C: C[F],
-  ): DIEffectAsync[F] = {
-    new DIEffectAsync[F] {
+  ): QuasiAsync[F] = {
+    new QuasiAsync[F] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
         C.asInstanceOf[Concurrent[F]].async(effect)
       }
