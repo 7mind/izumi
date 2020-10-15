@@ -21,7 +21,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     underlying.endAll()
   }
 
-  override def beginSuite(@unused id: SuiteData): Unit = {}
+  override def beginSuite(id: SuiteData): Unit = {}
 
   override def endSuite(id: SuiteData): Unit = {
     finish(_.id.suiteId == id.suiteId)
