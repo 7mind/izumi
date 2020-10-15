@@ -3,7 +3,7 @@ package izumi.distage.roles.launcher
 import java.util.concurrent.CountDownLatch
 
 import cats.effect.{ContextShift, IO, LiftIO}
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.functional.bio.{BIOAsync, F}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
@@ -48,9 +48,9 @@ object AppShutdownStrategy {
     }
   }
 
-  class ImmediateExitShutdownStrategy[F[_]: QuasiEffect] extends AppShutdownStrategy[F] {
+  class ImmediateExitShutdownStrategy[F[_]: QuasiIO] extends AppShutdownStrategy[F] {
     def await(logger: IzLogger): F[Unit] = {
-      QuasiEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         logger.info("Exiting immediately...")
       }
     }

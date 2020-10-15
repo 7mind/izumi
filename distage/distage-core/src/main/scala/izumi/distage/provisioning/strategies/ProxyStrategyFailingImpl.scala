@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.NoopProvisionerImplCalled
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
 class ProxyStrategyFailingImpl extends ProxyStrategy {
-  override def initProxy[F[_]: TagK: QuasiEffect](
+  override def initProxy[F[_]: TagK: QuasiIO](
     @unused context: ProvisioningKeyProvider,
     @unused executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,

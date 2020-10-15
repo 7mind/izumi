@@ -3,7 +3,7 @@ package distage
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.model.definition
 import izumi.distage.model.definition.BootstrapContextModule
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory, modules}
@@ -18,7 +18,7 @@ object Injector extends InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def apply[F[_]: QuasiEffect: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
+  override def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
     bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
@@ -30,7 +30,7 @@ object Injector extends InjectorFactory {
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def apply[F[_]: QuasiEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
+  override def apply[F[_]: QuasiIO: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
     bootstrap(bootstrapBase, BootstrapLocator.defaultBootstrapActivation, overrides.merge)
   }
 
@@ -51,7 +51,7 @@ object Injector extends InjectorFactory {
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def withBootstrapActivation[F[_]: QuasiEffect: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
+  override def withBootstrapActivation[F[_]: QuasiIO: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
     bootstrap(BootstrapLocator.defaultBootstrap, BootstrapLocator.defaultBootstrapActivation ++ activation, overrides.merge)
   }
 
@@ -66,7 +66,7 @@ object Injector extends InjectorFactory {
     * @param overrides     Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                      They can be used to extend the Injector, e.g. add ability to inject config values
     */
-  override def withBootstrapActivation[F[_]: QuasiEffect: TagK: DefaultModule](
+  override def withBootstrapActivation[F[_]: QuasiIO: TagK: DefaultModule](
     activation: Activation,
     bootstrapBase: BootstrapContextModule,
     overrides: BootstrapModule*
@@ -80,11 +80,11 @@ object Injector extends InjectorFactory {
     * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  override def inherit[F[_]: QuasiEffect: TagK](parent: Locator): Injector[F] = {
+  override def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
     new InjectorDefaultImpl(parent, this, defaultModule = definition.Module.empty)
   }
 
-  override def inheritWithDefaultModule[F[_]: QuasiEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
+  override def inheritWithDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
     new InjectorDefaultImpl(parent, this, defaultModule = defaultModule ++ IdentitySupportModule) // Identity support always on
   }
 
@@ -107,21 +107,21 @@ object Injector extends InjectorFactory {
   object NoCycles extends InjectorBootstrap(Cycles.Disable)
 
   private[Injector] sealed abstract class InjectorBootstrap(cycleChoice: Cycles.AxisValueDef) extends InjectorFactory {
-    override final def apply[F[_]: QuasiEffect: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
+    override final def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
       bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation, overrides.merge)
     }
 
-    override final def apply[F[_]: QuasiEffect: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
+    override final def apply[F[_]: QuasiIO: TagK: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector[F] = {
       bootstrap(bootstrapBase, cycleActivation, overrides.merge)
     }
 
-    override final def withBootstrapActivation[F[_]: QuasiEffect: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
+    override final def withBootstrapActivation[F[_]: QuasiIO: TagK: DefaultModule](activation: Activation, overrides: BootstrapModule*): Injector[F] = {
       bootstrap(BootstrapLocator.defaultBootstrap, cycleActivation ++ activation, overrides.merge)
     }
 
     override final def apply(): Injector[Identity] = apply[Identity]()
 
-    override final def withBootstrapActivation[F[_]: QuasiEffect: TagK: DefaultModule](
+    override final def withBootstrapActivation[F[_]: QuasiIO: TagK: DefaultModule](
       activation: Activation,
       bootstrapBase: BootstrapContextModule,
       overrides: BootstrapModule*
@@ -129,18 +129,18 @@ object Injector extends InjectorFactory {
       bootstrap(bootstrapBase, cycleActivation ++ activation, overrides.merge)
     }
 
-    override final def inherit[F[_]: QuasiEffect: TagK](parent: Locator): Injector[F] = {
+    override final def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
       new InjectorDefaultImpl(parent, this, definition.Module.empty)
     }
 
-    override final def inheritWithDefaultModule[F[_]: QuasiEffect: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
+    override final def inheritWithDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: Module): Injector[F] = {
       new InjectorDefaultImpl(parent, this, defaultModule)
     }
 
     private[this] def cycleActivation: Activation = definition.Activation(Cycles -> cycleChoice)
   }
 
-  private[this] def bootstrap[F[_]: QuasiEffect: TagK: DefaultModule](
+  private[this] def bootstrap[F[_]: QuasiIO: TagK: DefaultModule](
     bootstrapBase: BootstrapContextModule,
     activation: Activation,
     overrides: BootstrapModule,

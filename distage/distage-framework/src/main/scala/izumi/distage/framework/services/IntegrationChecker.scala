@@ -4,8 +4,8 @@ import distage.{DIKey, TagK}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
-import izumi.distage.model.effect.QuasiEffect.syntax._
-import izumi.distage.model.effect.{QuasiAsync, QuasiEffect}
+import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.functional.Identity
@@ -19,7 +19,7 @@ import scala.util.control.NonFatal
 trait IntegrationChecker[F[_]] {
   def collectFailures(identityIntegrations: Set[DIKey], effectIntegrations: Set[DIKey], integrationLocator: Locator): F[Option[NonEmptyList[ResourceCheck.Failure]]]
 
-  final def checkOrFail(identityIntegrations: Set[DIKey], effectIntegrations: Set[DIKey], integrationLocator: Locator)(implicit F: QuasiEffect[F]): F[Unit] = {
+  final def checkOrFail(identityIntegrations: Set[DIKey], effectIntegrations: Set[DIKey], integrationLocator: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
     collectFailures(identityIntegrations, effectIntegrations, integrationLocator).flatMap {
       case Some(failures) =>
         F.fail(new IntegrationCheckException(failures))
@@ -48,7 +48,7 @@ object IntegrationChecker {
           s"Going to check availability of ${(identityIntegrations.size + effectIntegrations.size) -> "resources"} ${(identityIntegrations ++ effectIntegrations).niceList() -> "resourceList"}"
         )
       }
-      implicit val F: QuasiEffect[F] = integrationLocator.get[QuasiEffect[F]]
+      implicit val F: QuasiIO[F] = integrationLocator.get[QuasiIO[F]]
       implicit val P: QuasiAsync[F] = integrationLocator.get[QuasiAsync[F]]
 
       def retrieveChecks[A](keys: Set[DIKey]): (Set[DIKey], Set[A]) = {
@@ -73,7 +73,7 @@ object IntegrationChecker {
       }
     }
 
-    private def runCheck[F1[_]](resource: IntegrationCheck[F1])(implicit F1: QuasiEffect[F1]): F1[Either[ResourceCheck.Failure, Unit]] = {
+    private def runCheck[F1[_]](resource: IntegrationCheck[F1])(implicit F1: QuasiIO[F1]): F1[Either[ResourceCheck.Failure, Unit]] = {
       resource.resourcesAvailable().map {
         case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
           logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
@@ -89,7 +89,7 @@ object IntegrationChecker {
     private def checkWrap[F1[_]](
       resource: IntegrationCheck[F1]
     )(wrap: => F[Either[ResourceCheck.Failure, Unit]]
-    )(implicit F: QuasiEffect[F]
+    )(implicit F: QuasiIO[F]
     ): F[Either[ResourceCheck.Failure, Unit]] = {
       logger.debug(s"Checking $resource")
       F.definitelyRecover(wrap) {

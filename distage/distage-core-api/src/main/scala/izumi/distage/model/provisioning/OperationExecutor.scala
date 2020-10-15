@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning
 
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.ExecutableOp
 import izumi.reflect.TagK
 
@@ -9,5 +9,5 @@ trait WiringExecutor {
 }
 
 trait OperationExecutor extends WiringExecutor {
-  def execute[F[_]: TagK: QuasiEffect](context: ProvisioningKeyProvider, step: ExecutableOp): F[Seq[NewObjectOp]]
+  def execute[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, step: ExecutableOp): F[Seq[NewObjectOp]]
 }

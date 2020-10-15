@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.effect.QuasiEffect
-import izumi.distage.model.effect.QuasiEffect.syntax._
+import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
@@ -16,7 +16,7 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
     context: ProvisioningKeyProvider,
     @unused executor: OperationExecutor,
     op: MonadicOp.ExecuteEffect,
-  )(implicit F: QuasiEffect[F]
+  )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor

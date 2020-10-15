@@ -2,7 +2,7 @@ package izumi.distage.model.recursive
 
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id, Module, ModuleBase}
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
@@ -36,7 +36,7 @@ class Bootloader(
         activation = config.activation(activation),
         overrides = config.bootstrap(bootstrapModule),
       )(
-        QuasiEffect[Identity],
+        QuasiIO[Identity],
         TagK[Identity],
         DefaultModule(defaultModule),
       )

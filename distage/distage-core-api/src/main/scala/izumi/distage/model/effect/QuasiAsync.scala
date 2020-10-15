@@ -14,9 +14,9 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
-  * Unlike `QuasiEffect` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  * Unlike `QuasiIO` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
   *
-  * Internal use class, as with [[QuasiEffect]], it's only public so that you can define your own instances,
+  * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   */
 trait QuasiAsync[F[_]] {
@@ -28,15 +28,15 @@ trait QuasiAsync[F[_]] {
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
-object QuasiAsync extends LowPriorityQuasiEffectAsyncInstances {
+object QuasiAsync extends LowPriorityQuasiIOAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val QuasiEffectParIdentity: QuasiAsync[Identity] = {
+  implicit lazy val QuasiIOParIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val QuasiEffectAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiEffect-cached-pool", daemon = true)
-      final val QuasiEffectAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(QuasiEffectAsyncIdentityThreadFactory)
+      final val QuasiIOAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
+      final val QuasiIOAsyncIdentityPool = ExecutionContext.fromExecutorService {
+        Executors.newCachedThreadPool(QuasiIOAsyncIdentityThreadFactory)
       }
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
@@ -56,12 +56,12 @@ object QuasiAsync extends LowPriorityQuasiEffectAsyncInstances {
       }
 
       override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentity(QuasiEffectAsyncIdentityPool)(l)(f)
+        parTraverseIdentity(QuasiIOAsyncIdentityPool)(l)(f)
       }
 
       override def parTraverseN[A, B](n: Int)(l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
         val limitedAsyncPool = ExecutionContext.fromExecutorService {
-          Executors.newFixedThreadPool(n, QuasiEffectAsyncIdentityThreadFactory)
+          Executors.newFixedThreadPool(n, QuasiIOAsyncIdentityThreadFactory)
         }
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
@@ -125,7 +125,7 @@ object QuasiAsync extends LowPriorityQuasiEffectAsyncInstances {
 
 }
 
-private[effect] sealed trait LowPriorityQuasiEffectAsyncInstances {
+private[effect] sealed trait LowPriorityQuasiIOAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.

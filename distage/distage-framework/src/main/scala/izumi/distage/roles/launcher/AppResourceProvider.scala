@@ -5,7 +5,7 @@ import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Id, Lifecycle}
-import izumi.distage.model.effect.{QuasiEffect, QuasiEffectRunner}
+import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.recursive.Bootloader
 import izumi.fundamentals.platform.functional.Identity
@@ -37,14 +37,14 @@ object AppResourceProvider {
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
-            val runner = runtimeLocator.get[QuasiEffectRunner[F]]
-            implicit val F: QuasiEffect[F] = runtimeLocator.get[QuasiEffect[F]]
+            val runner = runtimeLocator.get[QuasiIORunner[F]]
+            implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
 
             PreparedApp(prepareMainResource(runtimeLocator)(F), runner, F)
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiEffect[F]): Lifecycle[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
       bootloader
         .injectorFactory
         .inherit(runtimeLocator)

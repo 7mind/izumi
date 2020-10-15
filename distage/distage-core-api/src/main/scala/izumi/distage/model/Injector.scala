@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
@@ -218,5 +218,5 @@ trait Injector[F[_]] extends Planner with Producer {
   }
 
   protected[this] implicit def tagK: TagK[F]
-  protected[this] implicit def F: QuasiEffect[F]
+  protected[this] implicit def F: QuasiIO[F]
 }

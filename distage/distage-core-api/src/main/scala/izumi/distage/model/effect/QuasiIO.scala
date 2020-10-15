@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 /**
-  * Evidence that `F` exhibits _almost_ effect-monad-like capabilities, but not quite,
+  * Evidence that `F` is _almost_ `IO`-monad-like capabilities, but not quite,
   * because we also allow an impure [[izumi.fundamentals.platform.functional.Identity]] instance,
   * for which `maybeSuspend` does not in fact suspend!
   *
@@ -22,10 +22,10 @@ import scala.util.{Failure, Success, Try}
   * it is public because you may want to define your own instances if a suitable instance of [[izumi.distage.modules.DefaultModule]]
   * is missing for your custom effect type. Better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   *
-  * @see [[izumi.distage.modules.DefaultModule]] - `DefaultModule` makes instances of `QuasiEffect` for cats-effect, ZIO,
+  * @see [[izumi.distage.modules.DefaultModule]] - `DefaultModule` makes instances of `QuasiIO` for cats-effect, ZIO,
   *      monix, monix-bio, `Identity`, and others, available for summoning in your wiring automatically
   */
-trait QuasiEffect[F[_]] extends QuasiApplicative[F] {
+trait QuasiIO[F[_]] extends QuasiApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
   def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
@@ -34,7 +34,7 @@ trait QuasiEffect[F[_]] extends QuasiApplicative[F] {
   final def bracketAuto[A <: AutoCloseable, B](acquire: => F[A])(use: A => F[B]): F[B] = bracket(acquire)(a => maybeSuspend(a.close()))(use)
 
   /** A weaker version of `delay`. Does not guarantee _actual_
-    * suspension of side-effects, because QuasiEffect[Identity] is allowed
+    * suspension of side-effects, because QuasiIO[Identity] is allowed
     */
   def maybeSuspend[A](eff: => A): F[A]
 
@@ -74,25 +74,25 @@ trait QuasiEffect[F[_]] extends QuasiApplicative[F] {
   }
 }
 
-object QuasiEffect extends LowPriorityQuasiEffectInstances {
-  @inline def apply[F[_]: QuasiEffect]: QuasiEffect[F] = implicitly
+object QuasiIO extends LowPriorityQuasiIOInstances {
+  @inline def apply[F[_]: QuasiIO]: QuasiIO[F] = implicitly
 
   object syntax {
-    implicit def suspendedSyntax[F[_], A](fa: => F[A]): QuasiEffectSuspendedSyntax[F, A] = new QuasiEffectSuspendedSyntax(() => fa)
+    implicit def suspendedSyntax[F[_], A](fa: => F[A]): QuasiIOSuspendedSyntax[F, A] = new QuasiIOSuspendedSyntax(() => fa)
 
-    implicit final class QuasiEffectSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
-      @inline def map[B](f: A => B)(implicit F: QuasiEffect[F]): F[B] = F.map(fa)(f)
-      @inline def flatMap[B](f: A => F[B])(implicit F: QuasiEffect[F]): F[B] = F.flatMap(fa)(f)
+    implicit final class QuasiIOSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
+      @inline def map[B](f: A => B)(implicit F: QuasiIO[F]): F[B] = F.map(fa)(f)
+      @inline def flatMap[B](f: A => F[B])(implicit F: QuasiIO[F]): F[B] = F.flatMap(fa)(f)
     }
 
-    final class QuasiEffectSuspendedSyntax[F[_], A](private val fa: () => F[A]) extends AnyVal {
-      @inline def guarantee(`finally`: => F[Unit])(implicit F: QuasiEffect[F]): F[A] = {
+    final class QuasiIOSuspendedSyntax[F[_], A](private val fa: () => F[A]) extends AnyVal {
+      @inline def guarantee(`finally`: => F[Unit])(implicit F: QuasiIO[F]): F[A] = {
         F.bracket(acquire = F.unit)(release = _ => `finally`)(use = _ => fa())
       }
     }
   }
 
-  implicit val QuasiEffectIdentity: QuasiEffect[Identity] = new QuasiEffect[Identity] {
+  implicit val QuasiIOIdentity: QuasiIO[Identity] = new QuasiIO[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
@@ -132,9 +132,9 @@ object QuasiEffect extends LowPriorityQuasiEffectInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): QuasiEffect[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): QuasiIO[F[Throwable, ?]] = {
     type E = Throwable
-    new QuasiEffect[F[Throwable, ?]] {
+    new QuasiIO[F[Throwable, ?]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
@@ -171,7 +171,7 @@ object QuasiEffect extends LowPriorityQuasiEffectInstances {
   }
 }
 
-private[effect] sealed trait LowPriorityQuasiEffectInstances {
+private[effect] sealed trait LowPriorityQuasiIOInstances {
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -179,9 +179,9 @@ private[effect] sealed trait LowPriorityQuasiEffectInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]](implicit @unused l: `cats.effect.Sync`[Sync], F0: Sync[F]): QuasiEffect[F] = {
+  implicit def fromCats[F[_], Sync[_[_]]](implicit @unused l: `cats.effect.Sync`[Sync], F0: Sync[F]): QuasiIO[F] = {
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
-    new QuasiEffect[F] {
+    new QuasiIO[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.flatMap(fa)(a => F.map(fb)(f(a, _)))
@@ -220,9 +220,9 @@ private[effect] sealed trait LowPriorityQuasiEffectInstances {
 }
 
 /**
-  * An `Applicative` capability for `F`. Unlike `QuasiEffect` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  * An `Applicative` capability for `F`. Unlike `QuasiIO` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
   *
-  * Internal use class, as with [[QuasiEffect]], it's only public so that you can define your own instances,
+  * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   */
 trait QuasiApplicative[F[_]] {

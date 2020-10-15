@@ -11,7 +11,7 @@ import izumi.reflect.TagKK
   *
   * For any `F[+_, +_]` with available `make[BIOAsync[F]]`, `make[BIOTemporal[F]]` and `make[BIORunner[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
   *
   * Depends on `make[BIOAsync[F]]`, `make[BIOTemporal[F]]`, `make[BIORunner[F]]`
@@ -19,16 +19,16 @@ import izumi.reflect.TagKK
 class AnyBIOSupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   include(BIOInstancesModule[F])
 
-  make[QuasiEffectRunner2[F]]
-    .from[QuasiEffectRunner.BIOImpl[F]]
+  make[QuasiIORunner2[F]]
+    .from[QuasiIORunner.BIOImpl[F]]
 
-  make[QuasiEffect2[F]].from {
-    QuasiEffect.fromBIO(_: BIO[F])
+  make[QuasiIO2[F]].from {
+    QuasiIO.fromBIO(_: BIO[F])
   }
   make[QuasiApplicative2[F]].from {
     QuasiApplicative.fromBIO[F, Throwable](_: BIOApplicative[F])
   }
-  make[QuasiEffectAsync2[F]].from {
+  make[QuasiAsync2[F]].from {
     QuasiAsync.fromBIOTemporal(_: BIOAsync[F], _: BIOTemporal[F])
   }
   make[SyncSafe2[F]].from {

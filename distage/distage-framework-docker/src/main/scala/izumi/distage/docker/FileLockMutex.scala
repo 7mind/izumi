@@ -4,8 +4,8 @@ import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
 import java.nio.file.StandardOpenOption
 
-import izumi.distage.model.effect.QuasiEffect.syntax._
-import izumi.distage.model.effect.{QuasiAsync, QuasiEffect}
+import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ object FileLockMutex {
     maxAttempts: Int,
   )(effect: F[E]
   )(implicit
-    F: QuasiEffect[F],
+    F: QuasiIO[F],
     P: QuasiAsync[F],
   ): F[E] = {
     def retryOnFileLock(eff: F[FileLock], attempts: Int = 0): F[Option[FileLock]] = {

@@ -9,7 +9,7 @@ import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiEffect}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.BIOLocal
 import izumi.fundamentals.platform.functional.Identity
@@ -253,10 +253,10 @@ trait Lifecycle[+F[_], +OuterResource] {
   def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
 
   final def map[G[x] >: F[x]: QuasiApplicative, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
-  final def flatMap[G[x] >: F[x]: QuasiEffect, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
-  final def evalMap[G[x] >: F[x]: QuasiEffect, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
-  final def evalTap[G[x] >: F[x]: QuasiEffect](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
-    evalMap[G, OuterResource](a => QuasiEffect[G].map(f(a))(_ => a))
+  final def flatMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
+  final def evalMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+  final def evalTap[G[x] >: F[x]: QuasiIO](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
+    evalMap[G, OuterResource](a => QuasiIO[G].map(f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
   final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, OuterResource] =
@@ -303,7 +303,7 @@ object Lifecycle {
   import cats.effect.Resource
 
   implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: QuasiEffect[F]): F[B] = {
+    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a =>
           F.suspendF(resource.extract(a) match {
@@ -315,12 +315,12 @@ object Lifecycle {
   }
 
   implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
-    def useEffect(implicit F: QuasiEffect[F]): F[A] =
+    def useEffect(implicit F: QuasiIO[F]): F[A] =
       resource.use(identity)
   }
 
   implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: QuasiEffect[F]): F[B] =
+    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
       resource.use(_.run(function))
   }
 
@@ -352,18 +352,18 @@ object Lifecycle {
   }
 
   /** @param effect is performed interruptibly, unlike in [[make]] */
-  def suspend[F[_]: QuasiEffect, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
+  def suspend[F[_]: QuasiIO, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
     liftF(effect).flatten
   }
 
-  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiEffect[F]): Lifecycle[F, A] = {
+  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): Lifecycle[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
 
-  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: QuasiEffect[F]): Lifecycle[F, A] = {
+  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = {
     make(acquire) {
       es =>
         F.maybeSuspend {
@@ -502,18 +502,18 @@ object Lifecycle {
   }
 
   implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
-    def toEffect[F[_]: QuasiEffect]: Lifecycle[F, A] = {
+    def toEffect[F[_]: QuasiIO]: Lifecycle[F, A] = {
       new Lifecycle[F, A] {
         override type InnerResource = resource.InnerResource
-        override def acquire: F[InnerResource] = QuasiEffect[F].maybeSuspend(resource.acquire)
-        override def release(res: InnerResource): F[Unit] = QuasiEffect[F].maybeSuspend(resource.release(res))
+        override def acquire: F[InnerResource] = QuasiIO[F].maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): F[Unit] = QuasiIO[F].maybeSuspend(resource.release(res))
         override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
       }
     }
   }
 
   implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
-    def flatten(implicit F: QuasiEffect[F]): Lifecycle[F, A] = resource.flatMap(identity)
+    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
   }
 
   implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
@@ -523,7 +523,7 @@ object Lifecycle {
       * This function only makes sense in code examples or at top-level,
       * please use [[SyntaxUse#use]] instead!
       */
-    def unsafeGet()(implicit F: QuasiEffect[F]): F[A] = {
+    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
       F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
     }
   }
@@ -691,7 +691,7 @@ object Lifecycle {
     *   }
     * }}}
     */
-  @open class FromAutoCloseable[+F[_]: QuasiEffect, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
+  @open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
 
   /**
     * Trait-based proxy over a [[Lifecycle]] value
@@ -948,8 +948,8 @@ object Lifecycle {
   }
 
   @inline
-  private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiEffect[F]): Lifecycle[F, B] = {
-    import QuasiEffect.syntax._
+  private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiIO[F]): Lifecycle[F, B] = {
+    import QuasiIO.syntax._
     new Lifecycle[F, B] {
       override type InnerResource = AtomicReference[List[() => F[Unit]]]
 
@@ -995,7 +995,7 @@ object Lifecycle {
   }
 
   @inline
-  private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiEffect[F]): Lifecycle[F, B] = {
+  private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiIO[F]): Lifecycle[F, B] = {
     flatMapImpl(self)(a => Lifecycle.liftF(f(a)))
   }
 
@@ -1136,5 +1136,5 @@ object Lifecycle {
   }
 
   @deprecated("renamed to fromAutoCloseable", "0.11")
-  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiEffect[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
+  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 }

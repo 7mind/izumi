@@ -516,11 +516,14 @@ Provided by trait @scaladoc[AssertBIO](izumi.distage.testkit.scalatest.AssertSyn
 
 ### Execution Order
 
-By default, tests are executed in parallel. This includes tests using `Identity`, monix, ZIO, and
-monads in the cats effect hierarchy. `Identity` is treated as the effect type for imperative
-code. This behavior and the behavior of cats effect monads is provided by low priority implicits of
-`QuasiEffect`, `QuasiEffectAsync`, and `QuasiEffectRunner`. These components can be provided by the
-application if different behavior or other effects types are required.
+By default, tests are executed in parallel. This includes tests using `ZIO`, `monix`, `cats.effect.IO`, and
+any effect type with `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclass instances. 
+`Identity` is treated as an effect type for imperative code.
+
+Interoperability with all existing Scala effect types is provided by implicit instances of
+@scaladoc[`QuasiIO`](izumi.distage.model.effect.QuasiIO), @scaladoc[`QuasiAsync`](izumi.distage.model.effect.QuasiAsync),
+and @scaladoc[`QuasiIORunner`](izumi.distage.model.effect.QuasiIORunner).
+These components will be provided to the application automatically via @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule), but may be overridden by user bindings if different behavior or support for custom effect types is required.
 
 The execution of tests is grouped into:
 
@@ -531,9 +534,9 @@ The execution of tests is grouped into:
 The default is to run all of these in parallel. The
 @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each
 of these groups. The default is
-@scaladoc[`Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not
-constrain the number of parallel tests. `Fixed(n: Int)` limits the execution to at most `n` test
-cases. While `Sequential` executes the test cases one at a time.
+@scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not
+constrain the number of parallel tests. `ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test
+cases. While `ParallelLevel.Sequential` executes the test cases one at a time.
 
 - `parallelEnvs` - Parallel level for distinct memoization environments.
 - `parallelSuites` - Parallel level for test suites.

@@ -3,7 +3,7 @@ package izumi.distage.modules.support
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, Sync, Timer}
 import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiEffect, QuasiEffectRunner}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.mono.SyncSafe
 
@@ -11,7 +11,7 @@ import izumi.functional.mono.SyncSafe
   *
   * For any `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds `cats-effect` typeclass instances for `F[_]`
   *
   * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
@@ -19,11 +19,11 @@ import izumi.functional.mono.SyncSafe
 class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   include(CatsEffectInstancesModule[F])
 
-  make[QuasiEffectRunner[F]].from {
-    implicit F: Effect[F] => QuasiEffectRunner.fromCats
+  make[QuasiIORunner[F]].from {
+    implicit F: Effect[F] => QuasiIORunner.fromCats
   }
-  make[QuasiEffect[F]].from {
-    implicit F: Sync[F] => QuasiEffect.fromCats
+  make[QuasiIO[F]].from {
+    implicit F: Sync[F] => QuasiIO.fromCats
   }
   make[QuasiAsync[F]].from {
     (C0: Concurrent[F], T0: Timer[F], P0: Parallel[F]) =>

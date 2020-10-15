@@ -10,8 +10,8 @@ import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiEffect
-import izumi.distage.model.effect.QuasiEffect.syntax._
+import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
@@ -29,7 +29,7 @@ class DockerClientWrapper[F[_]](
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
-  F: QuasiEffect[F]
+  F: QuasiIO[F]
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
@@ -70,7 +70,7 @@ object DockerClientWrapper {
 
   private[this] val jvmRun: String = UUID.randomUUID().toString
 
-  class Resource[F[_]: QuasiEffect](
+  class Resource[F[_]: QuasiIO](
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
@@ -92,7 +92,7 @@ object DockerClientWrapper {
       .withDockerCmdExecFactory(factory)
       .build
 
-    override def resourcesAvailable(): F[ResourceCheck] = QuasiEffect[F].maybeSuspend {
+    override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
       try {
         client.infoCmd().exec()
         ResourceCheck.Success()
@@ -103,7 +103,7 @@ object DockerClientWrapper {
     }
 
     override def acquire: F[DockerClientWrapper[F]] = {
-      QuasiEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         new DockerClientWrapper[F](
           rawClient = client,
           rawClientConfig = rawClientConfig,
@@ -118,7 +118,7 @@ object DockerClientWrapper {
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
-        containers <- QuasiEffect[F].maybeSuspend {
+        containers <- QuasiIO[F].maybeSuspend {
           resource
             .rawClient
             .listContainersCmd()
@@ -132,16 +132,16 @@ object DockerClientWrapper {
             import izumi.fundamentals.platform.strings.IzString._
             Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == DockerConst.State.exited
         }
-        _ <- QuasiEffect[F].traverse_(containersToDestroy) {
+        _ <- QuasiIO[F].traverse_(containersToDestroy) {
           c: Container =>
             val id = ContainerId(c.getId)
-            QuasiEffect[F].definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
+            QuasiIO[F].definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
               error =>
-                QuasiEffect[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+                QuasiIO[F].maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
             }
 
         }
-        _ <- QuasiEffect[F].maybeSuspend(resource.rawClient.close())
+        _ <- QuasiIO[F].maybeSuspend(resource.rawClient.close())
       } yield ()
     }
   }

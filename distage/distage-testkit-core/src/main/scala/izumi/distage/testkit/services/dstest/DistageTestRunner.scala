@@ -11,8 +11,8 @@ import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.effect.QuasiEffect.syntax._
-import izumi.distage.model.effect.{QuasiAsync, QuasiEffect, QuasiEffectRunner}
+import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
@@ -61,8 +61,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   // first we need to plan runtime for our monad. Identity is also supported
   private[this] val runtimeGcRoots: Set[DIKey] = Set(
-    DIKey.get[QuasiEffectRunner[F]],
-    DIKey.get[QuasiEffect[F]],
+    DIKey.get[QuasiIORunner[F]],
+    DIKey.get[QuasiIO[F]],
     DIKey.get[QuasiAsync[F]],
   )
 
@@ -90,7 +90,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case (envExec, grouped) =>
         val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
         val memoizationEnvs = QuasiAsync
-          .QuasiEffectParIdentity.parTraverse(grouped.groupBy(_.environment)) {
+          .QuasiIOParIdentity.parTraverse(grouped.groupBy(_.environment)) {
             case (env, tests) =>
               withRecoverFromFailedExecution(tests) {
                 Option(prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests))
@@ -239,8 +239,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           planChecker.verify(runtimePlan)
           memoizationInjector.produceCustomF[Identity](runtimePlan).use {
             runtimeLocator =>
-              val runner = runtimeLocator.get[QuasiEffectRunner[F]]
-              implicit val F: QuasiEffect[F] = runtimeLocator.get[QuasiEffect[F]]
+              val runner = runtimeLocator.get[QuasiIORunner[F]]
+              implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
               implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
 
               runner.run {
@@ -267,7 +267,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     tests: => Iterable[DistageTest[F]],
   )(use: Locator => F[Unit]
   )(implicit
-    F: QuasiEffect[F]
+    F: QuasiIO[F]
   ): F[Unit] = {
     // shared plan
     planCheck.verify(plan.shared)
@@ -289,7 +289,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def withTestsRecoverCase(tests: => Iterable[DistageTest[F]])(testsAction: => F[Unit])(implicit F: QuasiEffect[F]): F[Unit] = {
+  protected def withTestsRecoverCase(tests: => Iterable[DistageTest[F]])(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
     F.definitelyRecoverCause {
       testsAction
     } {
@@ -325,7 +325,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     plans: TriSplittedPlan,
   )(onSuccess: => F[Unit]
   )(implicit
-    F: QuasiEffect[F]
+    F: QuasiIO[F]
   ): F[Unit] = {
     checker.collectFailures(plans.sideRoots1, plans.sideRoots2, integrationLocator).flatMap {
       case Some(failures) =>
@@ -357,7 +357,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     testRunnerLogger: IzLogger,
   )(levelGroups: Iterable[MemoizationLevelGroup[F]]
   )(implicit
-    F: QuasiEffect[F],
+    F: QuasiIO[F],
     P: QuasiAsync[F],
   ): F[Unit] = {
     val testsBySuite = levelGroups.flatMap {
@@ -391,7 +391,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     testRunnerLogger: IzLogger,
     groupStrengthenedKeys: Set[DIKey],
   )(preparedTest: PreparedTest[F]
-  )(implicit F: QuasiEffect[F]
+  )(implicit F: QuasiIO[F]
   ): F[Unit] = {
     val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
 
@@ -457,7 +457,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedIndividual(test: DistageTest[F], testPlan: OrderedPlan, parent: Locator)(implicit F: QuasiEffect[F]): F[Unit] = {
+  protected def proceedIndividual(test: DistageTest[F], testPlan: OrderedPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
     def testDuration(before: Option[Long]): FiniteDuration = {
       before.fold(Duration.Zero) {
         before =>
@@ -525,7 +525,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   )(getParallelismGroup: A => ParallelLevel
   )(f: A => F[Unit]
   )(implicit
-    F: QuasiEffect[F],
+    F: QuasiIO[F],
     P: QuasiAsync[F],
   ): F[Unit] = {
     F.traverse_(groupAndSortByParallelLevel(l)(getParallelismGroup)) {
@@ -541,7 +541,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def configuredTraverse_[A](parallel: ParallelLevel)(l: Iterable[A])(f: A => F[Unit])(implicit F: QuasiEffect[F], P: QuasiAsync[F]): F[Unit] = {
+  protected def configuredTraverse_[A](parallel: ParallelLevel)(l: Iterable[A])(f: A => F[Unit])(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[Unit] = {
     parallel match {
       case ParallelLevel.Fixed(n) if l.size > 1 => P.parTraverseN_(n)(l)(f)
       case ParallelLevel.Unlimited if l.size > 1 => P.parTraverse_(l)(f)
@@ -551,8 +551,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   protected def configuredForeach[A](parallel: ParallelLevel)(environments: Iterable[A])(f: A => Unit): Unit = {
     parallel match {
-      case ParallelLevel.Fixed(n) if environments.size > 1 => QuasiAsync.QuasiEffectParIdentity.parTraverseN_(n)(environments)(f)
-      case ParallelLevel.Unlimited if environments.size > 1 => QuasiAsync.QuasiEffectParIdentity.parTraverse_(environments)(f)
+      case ParallelLevel.Fixed(n) if environments.size > 1 => QuasiAsync.QuasiIOParIdentity.parTraverseN_(n)(environments)(f)
+      case ParallelLevel.Unlimited if environments.size > 1 => QuasiAsync.QuasiIOParIdentity.parTraverse_(environments)(f)
       case _ => environments.foreach(f)
     }
   }
@@ -667,7 +667,7 @@ object DistageTestRunner {
       initialState: State
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
-    )(implicit F: QuasiEffect[F]
+    )(implicit F: QuasiIO[F]
     ): F[Unit] = {
       for {
         _ <- stateAction(initialState, nodeTests.toSeq)
@@ -680,7 +680,7 @@ object DistageTestRunner {
       thisPlan: TriSplittedPlan,
     )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
-    )(implicit F: QuasiEffect[F]
+    )(implicit F: QuasiIO[F]
     ): F[Unit] = {
       stateAcquire(initialState, thisPlan, allTests)(this.stateTraverse(_)(stateAcquire)(stateAction))
     }

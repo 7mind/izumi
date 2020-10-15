@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.effect.QuasiEffect
-import izumi.distage.model.effect.QuasiEffect.syntax._
+import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
@@ -50,7 +50,7 @@ class ProxyStrategyDefaultImpl(
     context: ProvisioningKeyProvider,
     executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
-  )(implicit F: QuasiEffect[F]
+  )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)

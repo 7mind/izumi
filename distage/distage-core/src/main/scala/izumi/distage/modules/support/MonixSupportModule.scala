@@ -11,7 +11,7 @@ object MonixSupportModule extends MonixSupportModule
 
 /** `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.distage.model.effect.QuasiEffect]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds `cats-effect` typeclass instances for `monix`
   *
   * Note: by default this module will implement
@@ -22,7 +22,7 @@ object MonixSupportModule extends MonixSupportModule
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportModule {
-  // QuasiEffect & cats-effect instances
+  // QuasiIO & cats-effect instances
   include(AnyCatsEffectSupportModule[Task])
 
   make[Scheduler].from(Scheduler.global)

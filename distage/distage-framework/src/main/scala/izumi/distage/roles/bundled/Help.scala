@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.effect.QuasiEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.roles.bundled.ConfigWriter.Options
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -10,13 +10,13 @@ import izumi.fundamentals.platform.cli.model.schema._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
-class Help[F[_]: QuasiEffect](
+class Help[F[_]: QuasiIO](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
 ) extends RoleTask[F] {
 
   override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
-    QuasiEffect[F].maybeSuspend(showHelp())
+    QuasiIO[F].maybeSuspend(showHelp())
   }
 
   private[this] def showHelp(): Unit = {
