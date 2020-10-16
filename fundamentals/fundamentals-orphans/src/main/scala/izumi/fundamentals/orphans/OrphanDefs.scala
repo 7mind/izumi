@@ -35,9 +35,30 @@ object `cats.kernel.Monoid` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
+final abstract class `cats.Functor`[R[_[_]]]
+object `cats.Functor` {
+  @inline implicit final def get: `cats.Functor`[cats.Functor] = null
+}
+
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
 final abstract class `cats.Applicative`[R[_[_]]]
 object `cats.Applicative` {
-  @inline implicit final def catsApplicative: `cats.Applicative`[cats.Applicative] = null
+  @inline implicit final def get: `cats.Applicative`[cats.Applicative] = null
+}
+
+final abstract class `cats.Monad`[M[_[_]]]
+object `cats.Monad` {
+  @inline implicit final def get: `cats.Monad`[cats.Monad] = null
+}
+
+final abstract class `cats.Semigroup`[S[_]]
+object `cats.Semigroup` {
+  @inline implicit final def get: `cats.Semigroup`[cats.Semigroup] = null
 }
 
 final abstract class `cats.Parallel`[K[_[_]]]
@@ -55,7 +76,12 @@ object `cats.Parallel` {
   */
 final abstract class `cats.effect.Sync`[R[_[_]]]
 object `cats.effect.Sync` {
-  @inline implicit final def catsEffectSync: `cats.effect.Sync`[cats.effect.Sync] = null
+  @inline implicit final def get: `cats.effect.Sync`[cats.effect.Sync] = null
+}
+
+final abstract class `cats.effect.Bracket`[R[_[_], E]]
+object `cats.effect.Bracket` {
+  @inline implicit final def get: `cats.effect.Bracket`[cats.effect.Bracket] = null
 }
 
 final abstract class `cats.effect.Concurrent`[K[_[_]]]

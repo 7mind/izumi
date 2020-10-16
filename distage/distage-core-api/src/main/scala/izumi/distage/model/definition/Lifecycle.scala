@@ -4,20 +4,21 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Resource.{Allocate, Bind, Suspend}
-import cats.effect.{ExitCase, Sync, concurrent}
+import cats.effect.{ExitCase, Resource, Sync, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiIO}
+import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.BIOLocal
+import izumi.functional.bio.{Functor2, Functor3, Local3}
+import izumi.fundamentals.orphans.{`cats.Functor`, _}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{open, unused}
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.ZManaged.ReleaseMap
-import zio.{Has, Reservation, ZIO, ZLayer, ZManaged}
+import zio._
 
 import scala.annotation.tailrec
 import scala.language.experimental.macros
@@ -252,7 +253,7 @@ trait Lifecycle[+F[_], +OuterResource] {
     */
   def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
 
-  final def map[G[x] >: F[x]: QuasiApplicative, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
+  final def map[G[x] >: F[x]: QuasiFunctor, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
   final def flatMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
   final def evalMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
   final def evalTap[G[x] >: F[x]: QuasiIO](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
@@ -277,7 +278,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
 
-object Lifecycle {
+object Lifecycle extends LifecycleCatsInstances {
 
   /**
     * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
@@ -389,7 +390,7 @@ object Lifecycle {
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
-  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
+  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: cats.effect.Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
       override def acquire: F[concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]] = {
         concurrent.Ref.of[F, List[ExitCase[Throwable] => F[Unit]]](Nil)(F)
@@ -528,6 +529,14 @@ object Lifecycle {
     }
   }
 
+  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +?, +?]] = new Functor2[Lifecycle2[F, +?, +?]] {
+    override def map[R, E, A, B](r: Lifecycle[F[E, ?], A])(f: A => B): Lifecycle[F[E, ?], B] = r.map(f)
+  }
+
+  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -?, +?, +?]] = new Functor3[Lifecycle3[F, -?, +?, +?]] {
+    override def map[R, E, A, B](r: Lifecycle[F[R, E, ?], A])(f: A => B): Lifecycle[F[R, E, ?], B] = r.map(f)
+  }
+
   /**
     * Class-based proxy over a [[Lifecycle]] value
     *
@@ -568,7 +577,7 @@ object Lifecycle {
     *   }
     * }}}
     */
-  @open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
+  @open class OfCats[F[_]: cats.effect.Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
 
   /**
     * Class-based proxy over a [[zio.ZManaged]] value
@@ -785,24 +794,21 @@ object Lifecycle {
     *   val catsResource = Resource.liftF(IO(5))
     *
     *   val module = new distage.ModuleDef {
-    *
     *     make[Int].fromResource(catsResource)
-    *
-    *     addImplicit[Sync[IO]]
     *   }
     * }}}
     *
     * NOTE: binding a cats Resource[F, A] will add a
-    *       dependency on `Sync[F]` for
-    *       your corresponding `F` type
+    *       dependency on `Sync[F]` for your corresponding `F` type
+    *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */
   implicit final def providerFromCats[F[_]: TagK, A](
     resource: => Resource[F, A]
   )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
   ): Functoid[Lifecycle.FromCats[F, A]] = {
-    Functoid.identity[Sync[F]].map {
-      implicit bracket: Sync[F] =>
-        fromCats(resource)
+    Functoid.identity[cats.effect.Sync[F]].map {
+      implicit sync: cats.effect.Sync[F] =>
+        fromCats(resource)(sync)
     }
   }
 
@@ -849,92 +855,17 @@ object Lifecycle {
   }
 
   /** Support binding various FP libraries' Resource types in `.fromResource` */
-  trait AdaptProvider[A] {
-    type Out
-    def apply(a: Functoid[A])(implicit tag: ResourceTag[Out]): Functoid[Out]
-  }
-  object AdaptProvider {
-    type Aux[A, B] = AdaptProvider[A] { type Out = B }
+  type AdaptFunctoid[A] = AdaptFunctoidImpl[A]
+  lazy val AdaptFunctoid: AdaptFunctoidImpl.type = AdaptFunctoidImpl
 
-    /**
-      * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
-      *
-      * Example:
-      * {{{
-      *   import cats.effect._
-      *   import doobie.hikari._
-      *
-      *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
-      *
-      *   val module = new distage.ModuleDef {
-      *
-      *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
-      *
-      *     make[JdbcConfig].from {
-      *       conf: JdbcConfig @ConfPath("jdbc") => conf
-      *     }
-      *
-      *     make[HikariTransactor[IO]].fromResource {
-      *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
-      *         implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
-      *
-      *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
-      *     }
-      *
-      *     addImplicit[Sync[IO]]
-      *   }
-      * }}}
-      *
-      * NOTE: binding a cats Resource[F, A] will add a
-      * dependency on `Sync[F]` for
-      * your corresponding `F` type
-      */
-    implicit final def providerFromCatsProvider[F[_], A]: AdaptProvider.Aux[Resource[F, A], Lifecycle.FromCats[F, A]] = {
-      new AdaptProvider[Resource[F, A]] {
-        type Out = Lifecycle.FromCats[F, A]
+  type LifecycleTag[R] = LifecycleTagImpl[R]
+  lazy val LifecycleTag: LifecycleTagImpl.type = LifecycleTagImpl
 
-        override def apply(a: Functoid[Resource[F, A]])(implicit tag: ResourceTag[Lifecycle.FromCats[F, A]]): Functoid[Lifecycle.FromCats[F, A]] = {
-          import tag.tagFull
-          implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
-
-          a.zip(Functoid.identity[Sync[F]])
-            .map { case (resource, sync) => fromCats(resource)(sync) }
-        }
-      }
-    }
-
-    /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
-      */
-    implicit final def providerFromZIOProvider[R, E, A]: AdaptProvider.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
-      new AdaptProvider[ZManaged[R, E, A]] {
-        type Out = Lifecycle.FromZIO[R, E, A]
-
-        override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-          import tag.tagFull
-          a.map(fromZIO)
-        }
-      }
-    }
-
-    /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
-      */
-    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptProvider.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
-      new AdaptProvider[ZLayer[R, E, Has[A]]] {
-        type Out = Lifecycle.FromZIO[R, E, A]
-
-        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: ResourceTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-          import tag.tagFull
-          a.map(layer => fromZIO(layer.map(_.get).build))
-        }
-      }
-    }
-
-  }
+  type TrifunctorHasLifecycleTag[R0, T] = TrifunctorHasLifecycleTagImpl[R0, T]
+  lazy val TrifunctorHasLifecycleTag: TrifunctorHasLifecycleTagImpl.type = TrifunctorHasLifecycleTagImpl
 
   @inline
-  private final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiApplicative[F]): Lifecycle[F, B] = {
+  private final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {
     new Lifecycle[F, B] {
       type InnerResource = self.InnerResource
       override def acquire: F[InnerResource] = self.acquire
@@ -1022,111 +953,20 @@ object Lifecycle {
     }
   }
 
-  trait ResourceTag[R] {
-    type F[_]
-    type A
-    implicit def tagFull: Tag[R]
-    implicit def tagK: TagK[F]
-    implicit def tagA: Tag[A]
-  }
-  object ResourceTag extends ResourceTagLowPriority {
-    @inline def apply[A: ResourceTag]: ResourceTag[A] = implicitly
+  @deprecated("renamed to AdaptFunctoid", "1.0")
+  type AdaptProvider[A] = AdaptFunctoidImpl[A]
+  @deprecated("renamed to AdaptFunctoid", "1.0")
+  lazy val AdaptProvider: AdaptFunctoidImpl.type = AdaptFunctoidImpl
 
-    implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
-      new ResourceTag[R] {
-        type F[X] = F0[X]
-        type A = A0
-        val tagK: TagK[F0] = TagK[F0]
-        val tagA: Tag[A0] = Tag[A0]
-        val tagFull: Tag[R] = Tag[R]
-      }
-    }
-  }
-  sealed trait ResourceTagLowPriority {
-    /**
-      * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
-      * a workaround for highlighting in Intellij IDEA
-      *
-      * (it's also used to display error trace from TagK's @implicitNotFound)
-      *
-      * TODO: report to IJ bug tracker
-      */
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: ResourceTag[R] =
-      macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
-  }
+  @deprecated("renamed to LifecycleTag", "1.0")
+  type ResourceTag[R] = LifecycleTagImpl[R]
+  @deprecated("renamed to LifecycleTag", "1.0")
+  lazy val ResourceTag: LifecycleTagImpl.type = LifecycleTagImpl
 
-  trait TrifunctorHasResourceTag[R0, T] {
-    type F[-RR, +EE, +AA]
-    type R
-    type E
-    type A <: T
-    implicit def tagBIOLocal: Tag[BIOLocal[F]]
-    implicit def tagFull: Tag[Lifecycle[F[Any, E, ?], A]]
-    implicit def ctorR: HasConstructor[R]
-    implicit def ev: R0 <:< Lifecycle[F[R, E, ?], A]
-    implicit def resourceTag: ResourceTag[Lifecycle[F[Any, E, ?], A]]
-  }
-  import scala.annotation.unchecked.{uncheckedVariance => v}
-  object TrifunctorHasResourceTag extends TrifunctorHasResourceTagLowPriority {
-
-    implicit def trifunctorResourceTag[
-      R1 <: Lifecycle[F0[R0, E0, ?], A0],
-      F0[_, _, _]: TagK3,
-      R0: HasConstructor,
-      E0: Tag,
-      A0 <: A1: Tag,
-      A1,
-    ]: TrifunctorHasResourceTag[R1 with Lifecycle[F0[R0, E0, ?], A0], A1] {
-      type R = R0
-      type E = E0
-      type A = A0
-      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-    } = new TrifunctorHasResourceTag[R1, A1] { self =>
-      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-      type R = R0
-      type E = E0
-      type A = A0
-      val tagBIOLocal: Tag[BIOLocal[F]] = implicitly
-      val ctorR: HasConstructor[R0] = implicitly
-      val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = implicitly
-      val ev: R1 <:< Lifecycle[F0[R0, E0, ?], A0] = implicitly
-      val resourceTag: ResourceTag[Lifecycle[F0[Any, E0, ?], A0]] = new ResourceTag[Lifecycle[F0[Any, E0, ?], A0]] {
-        type F[AA] = F0[Any, E0, AA]
-        type A = A0
-        val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = self.tagFull
-        val tagK: TagK[F0[Any, E0, ?]] = TagK[F0[Any, E0, ?]]
-        val tagA: Tag[A0] = implicitly
-      }
-    }
-  }
-  sealed trait TrifunctorHasResourceTagLowPriority extends TrifunctorHasResourceTagLowPriority1 {
-    implicit def trifunctorResourceTagNothing[
-      R1 <: Lifecycle[F0[R0, Nothing, ?], A0],
-      F0[_, _, _]: TagK3,
-      R0: HasConstructor,
-      A0 <: A1: Tag,
-      A1,
-    ]: TrifunctorHasResourceTag[R1 with Lifecycle[F0[R0, Nothing, ?], A0], A1] {
-      type R = R0
-      type E = Nothing
-      type A = A0
-      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v] @v
-    } = TrifunctorHasResourceTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
-  }
-  sealed trait TrifunctorHasResourceTagLowPriority1 {
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasResourceTag[R, T] =
-      macro ResourceTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
-  }
-
-  object ResourceTagMacro {
-    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: Lifecycle[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[Nothing] = {
-      val tagMacro = new TagMacro(c)
-      tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
-      val tagTrace = tagMacro.getImplicitError()
-
-      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
-    }
-  }
+  @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
+  type TrifunctorHasResourceTag[R0, T] = TrifunctorHasLifecycleTagImpl[R0, T]
+  @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
+  lazy val TrifunctorHasResourceTag: TrifunctorHasLifecycleTagImpl.type = TrifunctorHasLifecycleTagImpl
 
   @deprecated("Use distage.Lifecycle", "0.11")
   type DIResourceBase[+F[_], +A] = Lifecycle[F, A]
@@ -1137,4 +977,237 @@ object Lifecycle {
 
   @deprecated("renamed to fromAutoCloseable", "0.11")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
+}
+
+private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
+  implicit final def catsMonadForLifecycle[Monad[_[_]], F[_]](
+    implicit
+    @unused l1: `cats.Monad`[Monad],
+    F: QuasiIO[F],
+  ): Monad[Lifecycle[F, ?]] = {
+    new cats.StackSafeMonad[Lifecycle[F, ?]] {
+      override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
+      override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
+    }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+  }
+
+  implicit final def catsMonoidForLifecycle[Monoid[_], F[_], A](
+    implicit
+    @unused l2: `cats.kernel.Monoid`[Monoid],
+    F: QuasiIO[F],
+    A0: Monoid[A],
+  ): Monoid[Lifecycle[F, A]] = {
+    val A = A0.asInstanceOf[cats.Monoid[A]]
+    new cats.Monoid[Lifecycle[F, A]] {
+      override def empty: Lifecycle[F, A] = Lifecycle.pure[F, A](A.empty)
+      override def combine(x: Lifecycle[F, A], y: Lifecycle[F, A]): Lifecycle[F, A] = {
+        for {
+          rx <- x
+          ry <- y
+        } yield A.combine(rx, ry)
+      }
+    }.asInstanceOf[Monoid[Lifecycle[F, A]]]
+  }
+}
+
+private[definition] sealed trait LifecycleCatsInstancesLowPriority {
+  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]](
+    implicit
+    @unused l: `cats.Functor`[Functor],
+    F: QuasiFunctor[F],
+  ): Functor[Lifecycle[F, ?]] = {
+    new cats.Functor[Lifecycle[F, ?]] {
+      override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
+    }.asInstanceOf[Functor[Lifecycle[F, ?]]]
+  }
+}
+
+/** Support binding various FP libraries' Resource types in `.fromResource` */
+private[definition] trait AdaptFunctoidImpl[A] {
+  type Out
+  def apply(a: Functoid[A])(implicit tag: LifecycleTagImpl[Out]): Functoid[Out]
+}
+private[definition] object AdaptFunctoidImpl {
+  type Aux[A, B] = AdaptFunctoidImpl[A] { type Out = B }
+
+  /**
+    * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
+    *
+    * Example:
+    * {{{
+    *   import cats.effect._
+    *   import doobie.hikari._
+    *
+    *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
+    *
+    *   val module = new distage.ModuleDef {
+    *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
+    *
+    *     make[JdbcConfig].from {
+    *       conf: JdbcConfig @ConfPath("jdbc") => conf
+    *     }
+    *
+    *     make[HikariTransactor[IO]].fromResource {
+    *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
+    *         implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
+    *
+    *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
+    *     }
+    *   }
+    * }}}
+    *
+    * NOTE: binding a cats Resource[F, A] will add a
+    *       dependency on `Sync[F]` for your corresponding `F` type
+    *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
+    */
+  implicit final def providerFromCatsProvider[F[_], A]: AdaptFunctoidImpl.Aux[Resource[F, A], Lifecycle.FromCats[F, A]] = {
+    new AdaptFunctoidImpl[Resource[F, A]] {
+      type Out = Lifecycle.FromCats[F, A]
+
+      override def apply(a: Functoid[Resource[F, A]])(implicit tag: LifecycleTagImpl[Lifecycle.FromCats[F, A]]): Functoid[Lifecycle.FromCats[F, A]] = {
+        import tag.tagFull
+        implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
+
+        a.zip(Functoid.identity[Sync[F]])
+          .map { case (resource, sync) => fromCats(resource)(sync) }
+      }
+    }
+  }
+
+  /**
+    * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+    */
+  implicit final def providerFromZIOProvider[R, E, A]: AdaptFunctoidImpl.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
+    new AdaptFunctoidImpl[ZManaged[R, E, A]] {
+      type Out = Lifecycle.FromZIO[R, E, A]
+
+      override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: LifecycleTagImpl[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+        import tag.tagFull
+        a.map(fromZIO)
+      }
+    }
+  }
+
+  /**
+    * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+    */
+  implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoidImpl.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
+    new AdaptFunctoidImpl[ZLayer[R, E, Has[A]]] {
+      type Out = Lifecycle.FromZIO[R, E, A]
+
+      override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: LifecycleTagImpl[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+        import tag.tagFull
+        a.map(layer => fromZIO(layer.map(_.get).build))
+      }
+    }
+  }
+
+}
+
+trait LifecycleTagImpl[R] {
+  type F[_]
+  type A
+  implicit def tagFull: Tag[R]
+  implicit def tagK: TagK[F]
+  implicit def tagA: Tag[A]
+}
+object LifecycleTagImpl extends LifecycleTagLowPriority {
+  @inline def apply[A: LifecycleTagImpl]: LifecycleTagImpl[A] = implicitly
+
+  implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTagImpl[R with Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
+    new LifecycleTagImpl[R] {
+      type F[X] = F0[X]
+      type A = A0
+      val tagK: TagK[F0] = TagK[F0]
+      val tagA: Tag[A0] = Tag[A0]
+      val tagFull: Tag[R] = Tag[R]
+    }
+  }
+}
+sealed trait LifecycleTagLowPriority {
+  /**
+    * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
+    * a workaround for highlighting in Intellij IDEA
+    *
+    * (it's also used to display error trace from TagK's @implicitNotFound)
+    *
+    * TODO: report to IJ bug tracker
+    */
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleTagImpl[R] =
+    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+}
+
+object LifecycleTagMacro {
+  def fakeResourceTagMacroIntellijWorkaroundImpl[R <: Lifecycle[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[Nothing] = {
+    val tagMacro = new TagMacro(c)
+    tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
+    val tagTrace = tagMacro.getImplicitError()
+
+    c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
+  }
+}
+
+private[definition] trait TrifunctorHasLifecycleTagImpl[R0, T] {
+  type F[-RR, +EE, +AA]
+  type R
+  type E
+  type A <: T
+  implicit def tagBIOLocal: Tag[Local3[F]]
+  implicit def tagFull: Tag[Lifecycle[F[Any, E, ?], A]]
+  implicit def ctorR: HasConstructor[R]
+  implicit def ev: R0 <:< Lifecycle[F[R, E, ?], A]
+  implicit def resourceTag: LifecycleTagImpl[Lifecycle[F[Any, E, ?], A]]
+}
+private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLifecycleTagLowPriority {
+  import scala.annotation.unchecked.{uncheckedVariance => v}
+
+  implicit def trifunctorResourceTag[
+    R1 <: Lifecycle[F0[R0, E0, ?], A0],
+    F0[_, _, _]: TagK3,
+    R0: HasConstructor,
+    E0: Tag,
+    A0 <: A1: Tag,
+    A1,
+  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, E0, ?], A0], A1] {
+    type R = R0
+    type E = E0
+    type A = A0
+    type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
+  } = new TrifunctorHasLifecycleTagImpl[R1, A1] { self =>
+    type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
+    type R = R0
+    type E = E0
+    type A = A0
+    val tagBIOLocal: Tag[Local3[F]] = implicitly
+    val ctorR: HasConstructor[R0] = implicitly
+    val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = implicitly
+    val ev: R1 <:< Lifecycle[F0[R0, E0, ?], A0] = implicitly
+    val resourceTag: LifecycleTagImpl[Lifecycle[F0[Any, E0, ?], A0]] = new LifecycleTagImpl[Lifecycle[F0[Any, E0, ?], A0]] {
+      type F[AA] = F0[Any, E0, AA]
+      type A = A0
+      val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = self.tagFull
+      val tagK: TagK[F0[Any, E0, ?]] = TagK[F0[Any, E0, ?]]
+      val tagA: Tag[A0] = implicitly
+    }
+  }
+}
+sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycleTagLowPriority1 {
+  import scala.annotation.unchecked.{uncheckedVariance => v}
+
+  implicit def trifunctorResourceTagNothing[
+    R1 <: Lifecycle[F0[R0, Nothing, ?], A0],
+    F0[_, _, _]: TagK3,
+    R0: HasConstructor,
+    A0 <: A1: Tag,
+    A1,
+  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, Nothing, ?], A0], A1] {
+    type R = R0
+    type E = Nothing
+    type A = A0
+    type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v] @v
+  } = TrifunctorHasLifecycleTagImpl.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
+}
+sealed trait TrifunctorHasLifecycleTagLowPriority1 {
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] =
+    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }

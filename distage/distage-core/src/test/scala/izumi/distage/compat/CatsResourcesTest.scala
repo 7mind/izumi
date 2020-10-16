@@ -108,6 +108,19 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .unsafeRunSync()
   }
 
+  "cats instances for Lifecycle" in {
+    def failImplicit[A](implicit a: A = null): A = a
+    def request[F[_]: cats.effect.Sync] = {
+      val F = cats.Functor[Lifecycle[F, ?]]
+      val M = cats.Monad[Lifecycle[F, ?]]
+      val m = cats.Monoid[Lifecycle[F, Int]]
+      val _ = (F, m, M)
+      val fail = failImplicit[cats.kernel.Order[Lifecycle[F, Int]]]
+      assert(fail == null)
+    }
+    request[IO]
+  }
+
   "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
     assertCompiles(
       """
@@ -125,7 +138,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       """
       )
     )
-    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptProvider.Aux")
+    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
   }
 
 }
