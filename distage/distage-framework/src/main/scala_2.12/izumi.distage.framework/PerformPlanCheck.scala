@@ -28,7 +28,7 @@ final case class PerformPlanCheck[
   onlyWarn: Option[OnlyWarn],
   checkedPlugins: Seq[PluginBase],
 ) {
-  def run(): PlanCheckResult =
+  def check(): PlanCheckResult =
     checkRoleApp(
       roleAppMain = roleAppMain,
       roles = roles,
@@ -89,7 +89,7 @@ object PerformPlanCheck {
     val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T, PrintPlan#T, OnlyWarn#T]
   ) {
     def rerunAtRuntime(): Unit = {
-      planCheck.run().throwOnError().discard()
+      planCheck.check().throwOnError().discard()
     }
 
     def main(args: Array[String]): Unit = rerunAtRuntime().discard()

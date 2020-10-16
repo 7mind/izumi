@@ -132,10 +132,14 @@ object PlanCheck {
     try {
       val baseModule = roleAppMain.finalAppModule(ArgV(Array.empty))
       val allKeysProvidedByBaseModule = baseModule.keys
-      import roleAppMain._
+      import roleAppMain.AppEffectType
       def combine[F[_]: TagK]: Tag[DefaultModule[F]] = Tag[DefaultModule[F]]
       // FIXME: remove defaultmoudle
-      implicit val tg: Tag[DefaultModule[AppEffectType]] = combine[AppEffectType]
+      implicit val tg: Tag[DefaultModule[AppEffectType]] = combine[AppEffectType](roleAppMain.tagK)
+      object xa {
+        type T <: DefaultModule[AppEffectType]
+      }
+      implicit val t: Tag[xa.T] = tg.asInstanceOf[Tag[xa.T]]
 
       Injector[Identity]().produceRun(
         baseModule overriddenBy mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map((roleAppMain.getClass.getClassLoader, _)))
@@ -153,7 +157,7 @@ object PlanCheck {
           // fixme:
           rolesInfo: RolesInfo,
           // fixme:
-          defaultModule: DefaultModule[AppEffectType],
+          defaultModule: xa.T,
         ) =>
           val loadedPlugins = appPlugins ++ bsPlugins
 

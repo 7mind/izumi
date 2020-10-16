@@ -237,7 +237,7 @@ class PlannerDefaultImpl(
     ops: Set[OperationOrigin],
   ): String = {
     val keyMinimizer = KeyMinimizer(
-      ops.flatMap(_.foldPartial(Set.empty[DIKey], { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
+      ops.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
       + key.key
     )
     val axisValuesInBindings = ops
@@ -248,7 +248,7 @@ class PlannerDefaultImpl(
       .iterator.map {
         op =>
           val bindingTags = op.fold(Set.empty[AxisValue], _.tags.collect { case AxisTag(t) => t })
-          val conflicting = axisValuesInBindings.removedAll(bindingTags)
+          val conflicting = axisValuesInBindings.diff(bindingTags)
           val implTypeStr = op.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
           s"$implTypeStr ${op.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags
             .mkString(", ")}}"
