@@ -7,6 +7,8 @@ object FunctionK {
 
   @inline def apply[F[_], G[_]](polyFunction: F[UnknownA] => G[UnknownA]): FunctionK[F, G] = polyFunction.asInstanceOf[FunctionK[F, G]]
 
+  @inline def id[F[_]]: FunctionK[F, F] = (identity[Any] _).asInstanceOf[FunctionK[F, F]]
+
   implicit final class FunctionKOps[-F[_], +G[_]](private val self: FunctionK[F, G]) extends AnyVal {
     @inline def apply[A](f: F[A]): G[A] = self.asInstanceOf[F[A] => G[A]](f)
 
@@ -14,13 +16,11 @@ object FunctionK {
     @inline def andThen[H[_]](f: FunctionK[G, H]): FunctionK[F, H] = f.compose(self)
   }
 
+  implicit def fromCats[F[_], G[_]](fn: cats.arrow.FunctionK[F, G]): FunctionK[F, G] = FunctionK(fn(_))
+
   implicit final class FunctionKCatsOps[F[_], G[_]](private val self: FunctionK[F, G]) extends AnyVal {
     @inline def toCats: cats.arrow.FunctionK[F, G] = Lambda[cats.arrow.FunctionK[F, G]](self(_))
   }
-
-  def fromCats[F[_], G[_]](fn: cats.arrow.FunctionK[F, G]): FunctionK[F, G] = FunctionK(fn(_))
-
-  @inline def id[F[_]]: FunctionK[F, F] = (identity[Any] _).asInstanceOf[FunctionK[F, F]]
 
   /**
     * When it's more convenient to write a polymorphic function using a class or kind-projector's lambda syntax:
@@ -29,11 +29,11 @@ object FunctionK {
     *   Lambda[FunctionK.Instance[F, G]](a => f(b(a)))
     * }}}
     */
-  trait Instance[-F[_], +G[_]] { self =>
+  trait Instance[-F[_], +G[_]] {
     def apply[A](fa: F[A]): G[A]
 
-    @inline final def compose[F1[_]](f: FunctionK[F1, F]): FunctionK[F1, G] = f.andThen(self)
-    @inline final def andThen[H[_]](f: FunctionK[G, H]): FunctionK[F, H] = f.compose(self)
+    @inline final def compose[F1[_]](f: FunctionK[F1, F]): FunctionK[F1, G] = f.andThen(this)
+    @inline final def andThen[H[_]](f: FunctionK[G, H]): FunctionK[F, H] = f.compose(this)
   }
   object Instance {
     @inline implicit def asFunctionK[F[_], G[_]](functionKKInstance: FunctionK.Instance[F, G]): FunctionK[F, G] =

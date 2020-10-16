@@ -2,7 +2,7 @@ package izumi.functional.bio.data
 
 import izumi.functional.bio.Monad2
 
-sealed trait Free[+S[_, _], +E, +A] {
+sealed abstract class Free[+S[_, _], +E, +A] {
   @inline final def flatMap[S1[e, a] >: S[e, a], B, E1 >: E](fun: A => Free[S1, E1, B]): Free[S1, E1, B] = Free.FlatMapped[S1, E, E1, A, B](this, fun)
   @inline final def map[B](fun: A => B): Free[S, E, B] = flatMap(a => Free.pure[S, B](fun(a)))
   @inline final def as[B](as: => B): Free[S, E, B] = map(_ => as)

@@ -4,7 +4,7 @@ import izumi.functional.bio.{Exit, Panic2}
 
 import scala.util.Try
 
-sealed trait FreePanic[+S[_, _], +E, +A] {
+sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def flatMap[S1[e, a] >: S[e, a], B, E1 >: E](fun: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] = FreePanic.FlatMapped[S1, E, E1, A, B](this, fun)
   @inline final def map[B](fun: A => B): FreePanic[S, E, B] = flatMap(a => FreePanic.pure[S, B](fun(a)))
   @inline final def as[B](as: => B): FreePanic[S, E, B] = map(_ => as)

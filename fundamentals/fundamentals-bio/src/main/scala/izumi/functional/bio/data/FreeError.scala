@@ -5,7 +5,7 @@ import izumi.functional.bio.data.FreeError.fail
 
 import scala.util.Try
 
-sealed trait FreeError[+S[_, _], +E, +A] {
+sealed abstract class FreeError[+S[_, _], +E, +A] {
   @inline final def flatMap[S1[e, a] >: S[e, a], B, E1 >: E](fun: A => FreeError[S1, E1, B]): FreeError[S1, E1, B] = FreeError.FlatMapped[S1, E, E1, A, B](this, fun)
   @inline final def map[B](fun: A => B): FreeError[S, E, B] = flatMap(a => FreeError.pure[S, B](fun(a)))
   @inline final def as[B](as: => B): FreeError[S, E, B] = map(_ => as)
