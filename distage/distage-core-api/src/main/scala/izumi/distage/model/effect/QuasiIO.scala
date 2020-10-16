@@ -1,8 +1,9 @@
 package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.functional.bio.{Applicative2, Exit, IO2}
-import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.effect.Sync`}
+import izumi.distage.model.effect.QuasiIO.QuasiIOIdentity
+import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2}
+import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 
@@ -92,7 +93,9 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     }
   }
 
-  implicit val quasiIOIdentity: QuasiIO[Identity] = new QuasiIO[Identity] {
+  @inline implicit def quasiIOIdentity: QuasiIO[Identity] = QuasiIOIdentity
+
+  object QuasiIOIdentity extends QuasiIO[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
@@ -225,29 +228,20 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
   * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   */
-trait QuasiApplicative[F[_]] {
+trait QuasiApplicative[F[_]] extends QuasiFunctor[F] {
   def pure[A](a: A): F[A]
-
-  def map[A, B](fa: F[A])(f: A => B): F[B]
   def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C]
 
   def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
   def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
 
-  final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
   final val unit: F[Unit] = pure(())
 }
 
 object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
   @inline def apply[F[_]: QuasiApplicative]: QuasiApplicative[F] = implicitly
 
-  implicit val quasiApplicativeIdentity: QuasiApplicative[Identity] = new QuasiApplicative[Identity] {
-    override def pure[A](a: A): Identity[A] = a
-    override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
-    override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
-    override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
-    override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
-  }
+  @inline implicit def quasiApplicativeIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
 
   implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, ?]] = {
     new QuasiApplicative[F[E, ?]] {
@@ -267,7 +261,7 @@ trait LowPriorityQuasiApplicativeInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Applicative[_[_]]](implicit @unused R: `cats.Applicative`[Applicative], F0: Applicative[F]): QuasiApplicative[F] = {
+  implicit def fromCats[F[_], Applicative[_[_]]](implicit @unused l: `cats.Applicative`[Applicative], F0: Applicative[F]): QuasiApplicative[F] = {
     val F = F0.asInstanceOf[cats.Applicative[F]]
     new QuasiApplicative[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
@@ -275,6 +269,44 @@ trait LowPriorityQuasiApplicativeInstances {
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
       override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
+    }
+  }
+}
+
+/**
+  * A `Functor` capability for `F`. Unlike `QuasiIO` there's nothing "quasi" about it – it makes sense. But named like that for consistency anyway.
+  *
+  * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
+  * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  */
+trait QuasiFunctor[F[_]] {
+  def map[A, B](fa: F[A])(f: A => B): F[B]
+  final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
+}
+
+object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
+  @inline def apply[F[_]: QuasiFunctor]: QuasiFunctor[F] = implicitly
+
+  @inline implicit def quasiFunctorIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
+
+  implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, ?]] = {
+    new QuasiFunctor[F[E, ?]] {
+      override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
+    }
+  }
+}
+
+trait LowPriorityQuasiFunctorInstances {
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  implicit def fromCats[F[_], Functor[_[_]]](implicit @unused l: `cats.Functor`[Functor], F0: Functor[F]): QuasiFunctor[F] = {
+    val F = F0.asInstanceOf[cats.Functor[F]]
+    new QuasiFunctor[F] {
+      override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
     }
   }
 }

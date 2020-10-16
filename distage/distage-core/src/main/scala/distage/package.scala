@@ -40,8 +40,12 @@ package object distage extends Distage {
   override type TagK[T[_]] = izumi.reflect.TagK[T]
   override val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
-  override type Lifecycle[+F[_], Resource] = model.definition.Lifecycle[F, Resource]
+  override type Lifecycle[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
   override val Lifecycle: model.definition.Lifecycle.type = model.definition.Lifecycle
+
+  override type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, ?], A]
+
+  override type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, ?], A]
 
   override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis
