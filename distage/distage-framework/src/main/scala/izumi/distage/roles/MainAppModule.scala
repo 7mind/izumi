@@ -34,7 +34,7 @@ import izumi.logstage.api.{IzLogger, Log}
   * 6. Enumerate app plugins and bootstrap plugins
   * 7. Enumerate available roles, show role info and and apply merge strategy/conflict resolution
   * 8. Validate loaded roles (for non-emptyness and conflicts between bootstrap and app plugins)
-  * 9. Build plan for DIEffect runner
+  * 9. Build plan for [[izumi.distage.model.effect.QuasiIORunner]]
   * 10. Build plan for integration checks
   * 11. Build plan for application
   * 12. Run role tasks
@@ -107,11 +107,11 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     }
 
   make[Seq[PluginBase]]
-    .named("main")
-    .from {
-      (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
-        loader.load(config)
+    .named("main").from {
+      (_: PluginLoader @Id("main")).load(_: PluginConfig @Id("main"))
     }
+    .annotateParameter[PluginLoader]("main")
+    .annotateParameter[PluginConfig]("main")
 
   make[Activation].named("main").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
@@ -123,9 +123,9 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   make[IzLogger].from {
     (
       parameters: RawAppArgs,
-      defaultLogLevel: Log.Level @Id("early"),
       earlyLogger: IzLogger @Id("early"),
       config: AppConfig,
+      defaultLogLevel: Log.Level @Id("early"),
       defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
     ) =>
       EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
@@ -191,7 +191,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     logger: IzLogger =>
       logger.router
   }
-  make[ModuleProvider].from[ModuleProvider.Impl]
+  make[ModuleProvider].from[ModuleProvider.Impl[F]]
 
   make[BootstrapModule].named("roleapp").from {
     (provider: ModuleProvider, bsModule: ModuleBase @Id("bootstrap")) =>

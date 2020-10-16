@@ -5,7 +5,7 @@ out: index.html
 BIO Hierarchy
 =============
 
-BIO is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
+**BIO** is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
 
 Key syntactic features:
 
@@ -15,14 +15,14 @@ Key syntactic features:
 These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
 
 ```scala mdoc:to-string
-import izumi.functional.bio.{F, BIOMonad, BIOMonadAsk, BIOPrimitives, BIORef3}
+import izumi.functional.bio.{F, Monad2, MonadAsk3, Primitives2, Ref3}
 
-def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] =
+def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
   F.mkRef(0)
    .flatMap(ref => ref.update(_ + i) *> ref.get)
 
 // update ref from the environment and return result
-def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] =
+def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] =
   F.access {
     ref => 
       for {
@@ -35,11 +35,15 @@ def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, In
 Key semantic features:
 
 1. Typed error handling with bifunctor effect types
-2. Automatic conversions to equivalent `cats.effect` instances in `import izumi.functional.bio.catz._`
+2. Automatic conversions to equivalent `cats.effect` instances using `import izumi.functional.bio.catz._`
 3. Automatic adaptation of trifunctor typeclasses to bifunctor typeclasses when required
-4. No ambiguous implicit errors. It's legal to have both `BIOMonad3` and `BIOMonadAsk` as constraints,
-    despite the fact that `BIOMonadAsk` provides a `BIOMonad3`: `def adderEnv[F[-_, +_, +_]: BIOMonad3: BIOMonadAsk] // would still work`
-5. Wrappers for primitive concurrent data structures: `BIORef`, `BIOPromise`, `BIOSemaphore`
+4. No ambiguous implicit errors. It's legal to have both `Monad3` and `MonadAsk3` as constraints,
+   despite the fact that `MonadAsk3` provides a `Monad3`:
+   ```scala
+import izumi.functional.bio.{Monad3, MonadAsk3}
+   def adderEnv[F[-_, +_, +_]: Monad3: MonadAsk3] // would still work
+   ```
+5. Primitive concurrent data structures: `Ref`, `Promise`, `Semaphore`
 
 To use it, add `fundamentals-bio` library:
 
@@ -51,13 +55,8 @@ libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$
 
 @@@
 
-Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector):
 
-```scala
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
-```
-
-On Scala 2.12 you _must_ enable partial unification and set `2.13` source mode for the library to work correctly:
+On Scala `2.12` you _must_ enable partial unification and set `2.13` source mode for the library to work correctly:
 
 ```scala
 // _Required_ options for Scala 2.12
@@ -65,12 +64,17 @@ scalacOptions += "-Ypartial-unification"
 scalacOptions += "-Xsource:2.13"
 ```
 
+Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector) plugin:
+
+```scala
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+```
+
 
 Overview
 --------
 
-The following graphic shows the current BIO relationship hierarchy. Note that all the trifunctor `BIO*3` typeclasses
-have bifunctor `BIO*` counterparts.
+The following graphic shows the current `BIO` hierarchy. Note that all the trifunctor typeclasses ending in `*3` typeclasses have bifunctor counterparts ending in `*2`.
 
 ![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
 
@@ -82,7 +86,7 @@ Auxiliary algebras:
 
 [(image)](media/algebras.svg)
 
-Raw subtyping hierarchy:
+Raw inheritance hierarchy:
 
 ![BIO-inheritance-hierarchy](media/bio-hierarchy.svg)
 

@@ -49,6 +49,10 @@ trait Distage {
   val Axis: model.definition.Axis.type = model.definition.Axis
 
   val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
+  val Mode: model.definition.StandardAxis.Mode.type = model.definition.StandardAxis.Mode
+  val Repo: model.definition.StandardAxis.Repo.type = model.definition.StandardAxis.Repo
+  val World: model.definition.StandardAxis.World.type = model.definition.StandardAxis.World
+  val Scene: model.definition.StandardAxis.Scene.type = model.definition.StandardAxis.Scene
 
   type DIKey = model.reflection.DIKey
   val DIKey: model.reflection.DIKey.type = model.reflection.DIKey

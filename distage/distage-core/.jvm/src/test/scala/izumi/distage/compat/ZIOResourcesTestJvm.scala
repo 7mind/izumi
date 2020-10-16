@@ -241,9 +241,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         ZManaged
           .fromEffect(ZIO.never)
           .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
-          .fork.use(
-            (_: Fiber[Nothing, Unit]).interrupt.unit
-          )
+          .fork
+          .use((_: Fiber[Nothing, Unit]).interrupt.unit)
       )
 
       When("Lifecycle is also interruptible")
@@ -269,6 +268,36 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
               .toResourceZIO
           ).use((_: Fiber[Nothing, Unit]).interrupt.unit)
       }
+    }
+
+    "In fa.flatMap(fb), fa and fb retain original interruptibility" in {
+      Then("Lifecycle.fromZIO(_).flatMap is interruptible")
+      unsafeRun(
+        Lifecycle
+          .fromZIO[Any, Throwable, Fiber[Nothing, Unit]](
+            ZManaged
+              .fromEffect(ZIO.never)
+              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+              .fork
+          )
+          .flatMap(a => Lifecycle.unit[Task].map(_ => a))
+          .use((_: Fiber[Nothing, Unit]).interrupt.unit)
+      )
+
+      Then("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
+      unsafeRun(
+        Lifecycle
+          .unit[Task].flatMap {
+            _ =>
+              Lifecycle
+                .fromZIO[Any, Throwable, Fiber[Nothing, Unit]](
+                  ZManaged
+                    .fromEffect(ZIO.never)
+                    .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+                    .fork
+                )
+          }.use((_: Fiber[Nothing, Unit]).interrupt.unit)
+      )
     }
 
   }

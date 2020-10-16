@@ -4,7 +4,7 @@ import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.strings.IzString._
-import org.scalatest.Suite.getIndentedTextForTest
+import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
 import org.scalatest.events._
 
 class DistageScalatestReporter extends TestReporter {
@@ -17,28 +17,51 @@ class DistageScalatestReporter extends TestReporter {
   override def endAll(): Unit = {}
 
   override def beginSuite(id: SuiteData): Unit = {
-//    doReport(id.suiteId)(TestStarting(
-//      _,
-//      id.suiteName, id.suiteId, Some(id.suiteClassName),
-//      id.suiteName,
-//      id.suiteName,
-//    ))
+    doReport(id.suiteId)(
+      SuiteStarting(
+        _,
+        id.suiteName,
+        id.suiteId,
+        Some(id.suiteClassName),
+        formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0)),
+      )
+    )
   }
 
   override def endSuite(id: SuiteData): Unit = {
-//    doReport(id.suiteId)(TestSucceeded(
-//      _,
-//      id.suiteName, id.suiteId, Some(id.suiteClassName),
-//      id.suiteName,
-//      id.suiteName,
-//      Vector.empty,
-//    ))
+    doReport(id.suiteId)(
+      SuiteCompleted(
+        _,
+        id.suiteName,
+        id.suiteId,
+        Some(id.suiteClassName),
+        formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0)),
+        duration = None,
+      )
+    )
+  }
+
+  override def testInfo(test: TestMeta, message: String): Unit = {
+    val suiteName1 = test.id.suiteName
+    val suiteId1 = test.id.suiteId
+    val suiteClassName1 = test.id.suiteClassName
+    val testName = test.id.name
+    val formatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
+    doReport(suiteId1)(
+      InfoProvided(
+        _,
+        s"Test: ${test.id} \n$message",
+        Some(NameInfo(suiteName1, suiteId1, Some(suiteClassName1), Some(testName))),
+        location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+        formatter = formatter,
+      )
+    )
   }
 
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
     val suiteName1 = test.id.suiteName
     val suiteId1 = test.id.suiteId
-    val suiteClassName1 = test.id.suiteId
+    val suiteClassName1 = test.id.suiteClassName
     val testName = test.id.name
 
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))

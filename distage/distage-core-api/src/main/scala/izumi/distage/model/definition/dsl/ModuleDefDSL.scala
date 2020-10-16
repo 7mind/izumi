@@ -16,7 +16,7 @@ import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.HashSet
 
 /**
   * DSL for defining module Bindings.
@@ -40,13 +40,15 @@ import scala.collection.immutable.ListSet
   *   - `make[X]` = create X using its constructor
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
-  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Provider]] function
-  *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
-  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a [[Lifecycle]] specifying its creation and destruction lifecycle
+  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]] requesting an Y parameter
+  *   - `make[X].from { y: Y @Id("special") => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter
+  *   - `make[X].from { y: Y => new X(y) }`.annotateParameter[Y]("special") = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter
   *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
-  *   - `make[X].using[X]` = bind X to refer to another already bound instance of `X`
   *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
-  *   - `make[ImplXYZ].aliased[X].aliased[Y].aliased[Z]` = bind ImplXYZ and bind X, Y, Z to refer to the bound instance of ImplXYZ
+  *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
+  *   - `make[X].fromResource(X.resource[F]: Lifecycle[F, X])` = create X using a `Lifecycle` value specifying its creation and destruction lifecycle
+  *   - `make[X].from[XImpl].modify(fun(_))` = Create X using XImpl's constructor and apply `fun` to the result
+  *   - `make[X].from[XImpl].modifyBy(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = Create X using XImpl's constructor and modify its `Functoid` using the provided lambda - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
   *
   * Set bindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
@@ -57,10 +59,14 @@ import scala.collection.immutable.ListSet
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
   *
+  * Mutators:
+  *   - `modify[X](fun(_))` = add a modifier applying `fun` to the value bound at `X` (mutator application order is unspecified)
+  *   - `modify[X].by(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = add a modifier, applying the provided lambda to a `Functoid` retrieving `X` - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
+  *
   * Tags:
   *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding.
-  *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. Tags of a Set and its elements are separate.
-  *   - `many[X].tagged("xsettag")` = Tag the binding of Set of X with a tag. Tags of a Set and its elements are separate.
+  *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
+  *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
@@ -71,18 +77,16 @@ import scala.collection.immutable.ListSet
   */
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
 
-  override final def bindings: Set[Binding] = freeze
-  override final def iterator: Iterator[Binding] = freezeIterator
+  override final def bindings: Set[Binding] = freeze()
+  override final def iterator: Iterator[Binding] = freezeIterator()
 
-  private[this] final def freeze: Set[Binding] = {
-    // Use ListSet for more deterministic order, e.g. have the same bindings order between app runs for more comfortable debugging
-    // FIXME: remove ListSet
-    ListSet
+  private[this] final def freeze(): Set[Binding] = {
+    HashSet
       .newBuilder.++= {
-        freezeIterator
+        freezeIterator()
       }.result()
   }
-  private[this] final def freezeIterator: Iterator[Binding] = {
+  private[this] final def freezeIterator(): Iterator[Binding] = {
     val frozenTags0 = frozenTags
     retaggedIncludes
       .iterator
@@ -655,6 +659,9 @@ object ModuleDefDSL {
     "aliased",
     "annotateParameter",
     "modify",
+    "modifyBy",
+    "addDependency",
+    "addDependencies",
   )
 
   final class MakeDSL[T](
@@ -741,6 +748,18 @@ object ModuleDefDSL {
 
     final def modifyBy(f: Functoid[T] => Functoid[T]): Self = {
       addOp(Modify(f))(toSame)
+    }
+
+    final def addDependency[B: Tag]: Self = {
+      modifyBy(_.addDependency(DIKey.get[B]))
+    }
+
+    final def addDependency(key: DIKey): Self = {
+      modifyBy(_.addDependency(key))
+    }
+
+    final def addDependencies(keys: Iterable[DIKey]): Self = {
+      modifyBy(_.addDependencies(keys))
     }
 
     final def annotateParameter[P: Tag](name: Identifier): Self = {

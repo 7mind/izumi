@@ -1,6 +1,6 @@
 package izumi.functional.mono
 
-import izumi.functional.bio.{BIO, SyncSafe2}
+import izumi.functional.bio.{F, IO2, SyncSafe2}
 import izumi.fundamentals.orphans.`cats.effect.Sync`
 
 import scala.language.implicitConversions
@@ -29,9 +29,9 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
-  implicit final def fromBIO[F[+_, +_]: BIO]: SyncSafe[F[Nothing, ?]] =
+  implicit final def fromBIO[F[+_, +_]: IO2]: SyncSafe[F[Nothing, ?]] =
     new SyncSafe[F[Nothing, ?]] {
-      override def syncSafe[A](f: => A): F[Nothing, A] = BIO[F].sync(f)
+      override def syncSafe[A](f: => A): F[Nothing, A] = F.sync(f)
     }
 }
 

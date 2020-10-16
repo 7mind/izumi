@@ -1,13 +1,10 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
-import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
-
-trait BIOSyntax extends BIOImplicitPuns
 
 object BIOSyntax {
 
@@ -110,29 +107,31 @@ object BIOSyntax {
       *   // f: F[Option[Unit], Unit] = F.fail(Some(())
       * }}}
       */
-    @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit filter: BIOWithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
+    @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
       F.withFilter[Any, E1, A](r)(predicate)
   }
 
   class BIOBracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOBracket[F]) extends BIOErrorOps(r) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
-    @inline final def bracketCase[E1 >: E, B](release: (A, BIOExit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
-    @inline final def guaranteeCase(cleanup: BIOExit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
+    @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
+    @inline final def guaranteeCase(cleanup: Exit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
   }
 
   class BIOPanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOPanic[F]) extends BIOBracketOps(r) {
-    @inline final def sandbox: F[BIOExit.Failure[E], A] = F.sandbox(r)
-    @inline final def sandboxBIOExit: F[Nothing, BIOExit[E, A]] = F.redeemPure(F.sandbox(r))(identity, BIOExit.Success(_))
+    @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
+    @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @deprecated("renamed to sandboxExit", "0.11")
+    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable
       * Example:
       *
       * {{{
-      *   BIO[F].pure(1)
+      *   F.pure(1)
       *     .map(_ => ???)
       *     .sandboxThrowable
-      *     .catchAll(_ => BIO(println("Caught error!")))
+      *     .catchAll(_ => IO2(println("Caught error!")))
       * }}}
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
@@ -214,10 +213,10 @@ object BIOSyntax {
   trait BIOImplicitPuns4 extends BIOImplicitPuns5 {
     @inline implicit final def BIO[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
     /**
-      * Shorthand for [[BIO#syncThrowable]]
+      * Shorthand for [[IO3#syncThrowable]]
       *
       * {{{
-      *   BIO(println("Hello world!"))
+      *   IO2(println("Hello world!"))
       * }}}
       */
     @inline final def BIO[F[+_, +_], A](effect: => A)(implicit F: BIO[F]): F[Throwable, A] = F.syncThrowable(effect)

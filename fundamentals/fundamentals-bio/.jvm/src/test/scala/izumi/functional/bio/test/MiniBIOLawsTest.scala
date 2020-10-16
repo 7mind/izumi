@@ -8,11 +8,11 @@ import izumi.functional.bio.env.MiniBIOEnv
 import izumi.functional.bio.impl.MiniBIO
 
 class MiniBIOLawsTest extends CatsLawsTestBase with MiniBIOEnv {
-    val syncTests = new SyncTests[MiniBIO[Throwable, ?]] {
-      val laws = new SyncLaws[MiniBIO[Throwable, ?]] {
-        val F = Sync[MiniBIO[Throwable, ?]]
-      }
+  val syncTests = new SyncTests[MiniBIO[Throwable, ?]] {
+    val laws = new SyncLaws[MiniBIO[Throwable, ?]] {
+      val F = Sync[MiniBIO[Throwable, ?]]
     }
+  }
 
   checkAll("MiniBIO sync", syncTests.sync[Int, Int, Int])
 }

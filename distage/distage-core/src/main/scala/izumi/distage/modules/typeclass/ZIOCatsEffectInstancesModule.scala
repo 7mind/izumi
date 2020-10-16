@@ -2,7 +2,7 @@ package izumi.distage.modules.typeclass
 
 import java.util.concurrent.ThreadPoolExecutor
 
-import cats.effect.{Blocker, ConcurrentEffect, Timer}
+import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
 import cats.{Parallel, effect}
 import distage.{Id, ModuleDef}
 import zio.interop.catz
@@ -29,6 +29,7 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   make[Parallel[Task]].from(catz.parallelInstance[Any, Throwable])
   make[Timer[Task]].from[ZIOClockTimer[Throwable]]
 
+  make[ContextShift[Task]].from(catz.zioContextShift[Any, Throwable])
   make[Blocker].from {
     pool: ThreadPoolExecutor @Id("zio.io") =>
       Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(pool))

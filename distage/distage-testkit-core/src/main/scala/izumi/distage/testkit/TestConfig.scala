@@ -5,7 +5,8 @@ import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
+import izumi.distage.testkit.TestConfig.PriorAxisDIKeys.MaxLevel
+import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.BootstrapFactory
 import izumi.logstage.api.Log
 
@@ -86,7 +87,7 @@ final case class TestConfig(
   activation: Activation = StandardAxis.testProdActivation,
   moduleOverrides: Module = Module.empty,
   bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-  memoizationRoots: AxisDIKeys = AxisDIKeys.empty,
+  memoizationRoots: PriorAxisDIKeys = PriorAxisDIKeys.empty,
   forcedRoots: AxisDIKeys = AxisDIKeys.empty,
   // parallelism options
   parallelEnvs: ParallelLevel = ParallelLevel.Unlimited,
@@ -120,7 +121,7 @@ object TestConfig {
       *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
       *  you cannot specify multiple axis values for _the same_ axis on bindings.
       *
-      *  @see [[izumi.fundamentals.graphs.tools.mutations.ActivationChoices#allValid]]
+      *  @see [[izumi.distage.planning.solver.ActivationChoices#allValid]]
       */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
       def activatedSection(axisValues: Set[AxisValue], activation: Activation): Boolean = {
@@ -138,12 +139,20 @@ object TestConfig {
         }.toSet
     }
 
-    @nowarn("msg=Unused import")
     def ++(that: AxisDIKeys): AxisDIKeys = {
-      import scala.collection.compat._
       val allKeys = ArraySeq.unsafeWrapArray((this.keyMap.iterator ++ that.keyMap.iterator).toArray)
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.flatMap(_._2).toSet }
       AxisDIKeys(updatedKeys)
+    }
+
+    def +(key: DIKey): AxisDIKeys = {
+      this ++ Set(key)
+    }
+    def +(axisKey: (AxisValue, DIKey)): AxisDIKeys = {
+      this ++ Map(axisKey)
+    }
+    def +(setAxisKey: (Set[AxisValue], DIKey))(implicit d: DummyImplicit): AxisDIKeys = {
+      this ++ Map(setAxisKey)
     }
   }
   object AxisDIKeys {
@@ -155,11 +164,55 @@ object TestConfig {
     @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisValue], Set[_ <: DIKey])]): AxisDIKeys =
       AxisDIKeys(map.toMap[Set[_ <: AxisValue], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisValue], Set[DIKey]]])
 
+    @inline implicit def fromSingleMap(map: Iterable[(AxisValue, DIKey)]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
+
     @inline implicit def fromSingleToSetMap(map: Iterable[(AxisValue, Set[_ <: DIKey])]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> v.toSet[DIKey] }.toMap)
 
-    @inline implicit def fromSingleMap(map: Iterable[(AxisValue, DIKey)]): AxisDIKeys =
-      AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
+    @inline implicit def fromSetToSingleMap(map: Iterable[(Set[_ <: AxisValue], DIKey)]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisValue] -> Set(v) }.toMap)
+  }
+
+  final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys]) extends AnyVal {
+    def ++(that: PriorAxisDIKeys): PriorAxisDIKeys = {
+      val allKeys = ArraySeq.unsafeWrapArray((this.keys.iterator ++ that.keys.iterator).toArray)
+      val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.map(_._2).reduce(_ ++ _) }
+      PriorAxisDIKeys(updatedKeys)
+    }
+    def ++(that: AxisDIKeys)(implicit d: DummyImplicit): PriorAxisDIKeys = {
+      this ++ PriorAxisDIKeys(Map(MaxLevel -> that))
+    }
+    def ++[A](elem: (Int, A))(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
+      addToLevel(elem._1, elem._2)
+    }
+
+    def +(key: DIKey): PriorAxisDIKeys = addToLevel(MaxLevel, Set(key))
+    def +(priorKey: (Int, DIKey)): PriorAxisDIKeys = addToLevel(priorKey._1, Set(priorKey._2))
+
+    def addToLevel(level: Int, keys: AxisDIKeys): PriorAxisDIKeys = {
+      this ++ PriorAxisDIKeys(Map(level -> keys))
+    }
+  }
+  object PriorAxisDIKeys {
+    def empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
+
+    final val MaxLevel = Int.MaxValue
+
+    @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys =
+      PriorAxisDIKeys(Map(MaxLevel -> AxisDIKeys.fromSet(set)))
+
+    @inline implicit def fromPriorSet(map: Map[Int, Set[_ <: DIKey]]): PriorAxisDIKeys =
+      PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
+
+    @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys =
+      PriorAxisDIKeys(Map(MaxLevel -> set))
+
+    @nowarn("msg=Unused import")
+    @inline implicit def fromPriorAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
+      import scala.collection.compat._
+      PriorAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)
+    }
   }
 
   sealed trait ParallelLevel

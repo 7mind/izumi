@@ -1,84 +1,85 @@
-<svg version="1.1" baseProfile="full" width="1327" height="199" viewbox="0 0 1327 199" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font-weight:bold; font-size:12pt; font-family:'Calibri', Helvetica, sans-serif;;stroke-width:3;stroke-linejoin:round;stroke-linecap:round">
+<svg version="1.1" baseProfile="full" width="1016.75" height="199" viewbox="0 0 1016.75 199" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font:bold normal 12pt Helvetica, Helvetica, sans-serif;;stroke-linejoin:round;stroke-linecap:round">
   <title >nomnoml</title>
-  <desc >[cats.effect.*]&lt;:--[BIOCatsConversions]
+  <desc >[cats.effect.*]&lt;:--[CatsConversions]
 
-[BIOFiber]&lt;:--[BIOFork3]
-[BIOFork3]&lt;:--[BIOFork]
+[Fork3]&lt;:--[Fiber3]
 
-[BlockingIO3]&lt;:--[BlockingIO]
+[BlockingIO3]&lt;:--[BlockingIO2]
 
-[BIOPromise]&lt;:--[BIOPrimitives3]
-[BIOSemaphore]&lt;:--[BIOPrimitives3]
-[BIORef]&lt;:--[BIOPrimitives3]
-[BIOPrimitives3]&lt;:--[BIOPrimitives]
+[Primitives2]&lt;:--[Primitives3]
+[Primitives3]&lt;:--[Ref3]
+[Primitives3]&lt;:--[Semaphore3]
+[Primitives3]&lt;:--[Promise3]
 
-[Entropy3]&lt;:--[Entropy2]
-[Entropy2]&lt;:--[Entropy]
+[Entropy]&lt;:--[Entropy2]
+[Entropy2]&lt;:--[Entropy3]
 
-[Clock3]&lt;:--[Clock2]
-[Clock2]&lt;:--[Clock]
+[Clock]&lt;:--[Clock2]
+[Clock2]&lt;:--[Clock3]
 
-[BIORunner]</desc>
-  <path d="M107 44.5 L107 64.5 L107 84.5 L107 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M112.3 57.8 L107 57.8 L101.7 57.8 L107 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M286.5 44.5 L286.5 64.5 L286.5 84.5 L286.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M291.8 57.8 L286.5 57.8 L281.2 57.8 L286.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M286.5 115.5 L286.5 135.5 L286.5 155.5 L286.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M291.8 128.8 L286.5 128.8 L281.2 128.8 L286.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M433 44.5 L433 64.5 L433 84.5 L433 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M438.3 57.8 L433 57.8 L427.7 57.8 L433 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M589 44.5 L589 64.5 L679.4 84.5 L679.4 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M594.3 57.8 L589 57.8 L583.7 57.8 L589 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M749.5 44.5 L749.5 64.5 L749.5 84.5 L749.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M754.8 57.8 L749.5 57.8 L744.2 57.8 L749.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M891 44.5 L891 64.5 L811.3 84.5 L811.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M896.3 57.8 L891 57.8 L885.7 57.8 L891 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M749.5 115.5 L749.5 135.5 L749.5 155.5 L749.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M754.8 128.8 L749.5 128.8 L744.2 128.8 L749.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M1013.5 44.5 L1013.5 64.5 L1013.5 84.5 L1013.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M1018.8 57.8 L1013.5 57.8 L1008.2 57.8 L1013.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M1013.5 115.5 L1013.5 135.5 L1013.5 155.5 L1013.5 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M1018.8 128.8 L1013.5 128.8 L1008.2 128.8 L1013.5 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M1136 44.5 L1136 64.5 L1136 84.5 L1136 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M1141.3 57.8 L1136 57.8 L1130.7 57.8 L1136 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <path d="M1136 115.5 L1136 135.5 L1136 155.5 L1136 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;"></path>
-  <path d="M1141.3 128.8 L1136 128.8 L1130.7 128.8 L1136 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></path>
-  <rect x="37.5" y="13.5" height="31" width="140" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="107.5" y="35" style="fill: #33322E;text-anchor: middle;">cats.effect.*</text>
-  <rect x="13.5" y="84.5" height="31" width="187" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="107" y="106" style="fill: #33322E;text-anchor: middle;">BIOCatsConversions</text>
-  <rect x="240.5" y="13.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="286.5" y="35" style="fill: #33322E;text-anchor: middle;">BIOFiber</text>
-  <rect x="240.5" y="84.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="286.5" y="106" style="fill: #33322E;text-anchor: middle;">BIOFork3</text>
-  <rect x="245.5" y="155.5" height="31" width="83" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="287" y="177" style="fill: #33322E;text-anchor: middle;">BIOFork</text>
-  <rect x="372.5" y="13.5" height="31" width="121" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="433" y="35" style="fill: #33322E;text-anchor: middle;">BlockingIO3</text>
-  <rect x="377.5" y="84.5" height="31" width="111" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="433" y="106" style="fill: #33322E;text-anchor: middle;">BlockingIO</text>
-  <rect x="533.5" y="13.5" height="31" width="111" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="589" y="35" style="fill: #33322E;text-anchor: middle;">BIOPromise</text>
-  <rect x="675.5" y="84.5" height="31" width="149" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="750" y="106" style="fill: #33322E;text-anchor: middle;">BIOPrimitives3</text>
-  <rect x="684.5" y="13.5" height="31" width="130" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="749.5" y="35" style="fill: #33322E;text-anchor: middle;">BIOSemaphore</text>
-  <rect x="854.5" y="13.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="891" y="35" style="fill: #33322E;text-anchor: middle;">BIORef</text>
-  <rect x="679.5" y="155.5" height="31" width="140" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="749.5" y="177" style="fill: #33322E;text-anchor: middle;">BIOPrimitives</text>
-  <rect x="967.5" y="13.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1013.5" y="35" style="fill: #33322E;text-anchor: middle;">Entropy3</text>
-  <rect x="967.5" y="84.5" height="31" width="92" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1013.5" y="106" style="fill: #33322E;text-anchor: middle;">Entropy2</text>
-  <rect x="972.5" y="155.5" height="31" width="83" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1014" y="177" style="fill: #33322E;text-anchor: middle;">Entropy</text>
-  <rect x="1099.5" y="13.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1136" y="35" style="fill: #33322E;text-anchor: middle;">Clock3</text>
-  <rect x="1099.5" y="84.5" height="31" width="73" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1136" y="106" style="fill: #33322E;text-anchor: middle;">Clock2</text>
-  <rect x="1104.5" y="155.5" height="31" width="64" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1136.5" y="177" style="fill: #33322E;text-anchor: middle;">Clock</text>
-  <rect x="1212.5" y="13.5" height="31" width="102" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;"></rect>
-  <text x="1263.5" y="35" style="fill: #33322E;text-anchor: middle;">BIORunner</text>
+[UnsafeRun2]&lt;:--[UnsafeRun3]
+</desc>
+  <rect x="0" y="0" height="199" width="1016.75" style="stroke:none; fill:transparent;"></rect>
+  <path d="M87.5 44.5 L87.5 64.5 L87.5 84.5 L87.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M92.8 57.8 L87.5 57.8 L82.2 57.8 L87.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M233.5 44.5 L233.5 64.5 L233.5 84.5 L233.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M238.8 57.8 L233.5 57.8 L228.2 57.8 L233.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M360 44.5 L360 64.5 L360 84.5 L360 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M365.3 57.8 L360 57.8 L354.7 57.8 L360 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M505 44.5 L505 64.5 L505 84.5 L505 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M510.3 57.8 L505 57.8 L499.7 57.8 L505 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M454.5 109.5 L316.8 135.5 L316.8 155.5 L316.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M442.4 117.2 L441.4 112 L440.4 106.8 L454.5 109.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M475.9 115.5 L438.3 135.5 L438.3 155.5 L438.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M466.6 126.5 L464.1 121.8 L461.6 117.1 L475.9 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M537 115.5 L578.3 135.5 L578.3 155.5 L578.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M551.3 116.5 L549 121.3 L546.7 126.1 L537 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M704.8 44.5 L704.8 64.5 L704.8 84.5 L704.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M710.1 57.8 L704.8 57.8 L699.4 57.8 L704.8 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M704.8 115.5 L704.8 135.5 L704.8 155.5 L704.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M710.1 128.8 L704.8 128.8 L699.4 128.8 L704.8 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M821.3 44.5 L821.3 64.5 L821.3 84.5 L821.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M826.6 57.8 L821.3 57.8 L815.9 57.8 L821.3 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M821.3 115.5 L821.3 135.5 L821.3 155.5 L821.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M826.6 128.8 L821.3 128.8 L815.9 128.8 L821.3 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <path d="M949.8 44.5 L949.8 64.5 L949.8 84.5 L949.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
+  <path d="M955.1 57.8 L949.8 57.8 L944.4 57.8 L949.8 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
+  <rect x="34.5" y="13.5" height="31" width="106" data-name="cats.effect.*" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="87.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="cats.effect.*">cats.effect.*</text>
+  <rect x="13.5" y="84.5" height="31" width="148" data-name="CatsConversions" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="87.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="CatsConversions">CatsConversions</text>
+  <rect x="203.5" y="13.5" height="31" width="60" data-name="Fork3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="233.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Fork3">Fork3</text>
+  <rect x="201.5" y="84.5" height="31" width="64" data-name="Fiber3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="233.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Fiber3">Fiber3</text>
+  <rect x="305.5" y="13.5" height="31" width="109" data-name="BlockingIO3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="360" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BlockingIO3">BlockingIO3</text>
+  <rect x="305.5" y="84.5" height="31" width="109" data-name="BlockingIO2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="360" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BlockingIO2">BlockingIO2</text>
+  <rect x="454.5" y="13.5" height="31" width="101" data-name="Primitives2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="505" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Primitives2">Primitives2</text>
+  <rect x="454.5" y="84.5" height="31" width="101" data-name="Primitives3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="505" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Primitives3">Primitives3</text>
+  <rect x="291.5" y="155.5" height="31" width="51" data-name="Ref3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="317" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Ref3">Ref3</text>
+  <rect x="382.5" y="155.5" height="31" width="112" data-name="Semaphore3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="438.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Semaphore3">Semaphore3</text>
+  <rect x="534.5" y="155.5" height="31" width="88" data-name="Promise3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="578.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Promise3">Promise3</text>
+  <rect x="666.5" y="13.5" height="31" width="76" data-name="Entropy" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="704.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy">Entropy</text>
+  <rect x="662.5" y="84.5" height="31" width="85" data-name="Entropy2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="705" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy2">Entropy2</text>
+  <rect x="662.5" y="155.5" height="31" width="85" data-name="Entropy3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="705" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy3">Entropy3</text>
+  <rect x="791.5" y="13.5" height="31" width="60" data-name="Clock" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="821.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock">Clock</text>
+  <rect x="787.5" y="84.5" height="31" width="68" data-name="Clock2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="821.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock2">Clock2</text>
+  <rect x="787.5" y="155.5" height="31" width="68" data-name="Clock3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="821.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock3">Clock3</text>
+  <rect x="895.5" y="13.5" height="31" width="109" data-name="UnsafeRun2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="950" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="UnsafeRun2">UnsafeRun2</text>
+  <rect x="895.5" y="84.5" height="31" width="109" data-name="UnsafeRun3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
+  <text x="950" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="UnsafeRun3">UnsafeRun3</text>
 </svg>

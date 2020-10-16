@@ -5,9 +5,9 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel}
+import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
 import izumi.fundamentals.platform.functional.Identity
@@ -19,7 +19,7 @@ final case class TestEnvironment(
   roles: RolesInfo,
   activationInfo: ActivationInfo,
   activation: Activation,
-  memoizationRoots: AxisDIKeys,
+  memoizationRoots: PriorAxisDIKeys,
   forcedRoots: AxisDIKeys,
   parallelEnvs: ParallelLevel,
   bootstrapFactory: BootstrapFactory,
@@ -49,14 +49,12 @@ object TestEnvironment {
     logLevel: Log.Level,
   )
 
-  final case class MemoizationEnvWithPlan(
+  final case class MemoizationEnv(
     envExec: EnvExecutionParams,
     integrationLogger: IzLogger,
-    memoizationPlan: TriSplittedPlan,
     runtimePlan: OrderedPlan,
-    memoizatonInjector: Injector[Identity],
+    memoizationInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
-    allStrengthenedKeys: Set[DIKey],
   )
 
   final case class PreparedTest[F[_]](

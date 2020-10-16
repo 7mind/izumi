@@ -1,7 +1,5 @@
 package izumi.distage.bootstrap
 
-import java.util.concurrent.atomic.AtomicReference
-
 import izumi.distage.AbstractLocator
 import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
 import izumi.distage.model.Locator.LocatorMeta
@@ -21,8 +19,8 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver
-import izumi.fundamentals.graphs.tools.mutations.MutationResolver.MutationResolverImpl
+import izumi.distage.planning.solver.{GraphPreparations, SemigraphSolver}
+import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
@@ -49,29 +47,30 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
     resource.unsafeGet().throwOnFailure()
   }
 
-  private[this] val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
-
-  override def instances: collection.Seq[IdentifiedRef] = {
-    Option(_instances.get()) match {
-      case Some(value) =>
-        value
-      case None =>
-        throw new SanityCheckFailedException(s"Injector bootstrap tried to enumerate instances from root locator, something is terribly wrong")
-    }
-  }
+  private[this] val _instances: collection.Seq[IdentifiedRef] = bootstrappedContext.instances
 
   override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
-  override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
-    Option(_instances.get()) match {
-      case Some(_) =>
-        index.get(key)
-      case None =>
-        throw new MissingInstanceException(s"Injector bootstrap tried to perform a lookup from root locator, bootstrap plan in incomplete! Missing key: $key", key)
+  override def meta: LocatorMeta = LocatorMeta.empty
+
+  override def instances: collection.Seq[IdentifiedRef] = {
+    val instances = _instances
+    if (instances ne null) {
+      instances
+    } else {
+      throw new SanityCheckFailedException(s"Injector bootstrap tried to enumerate instances from root locator, something is terribly wrong")
     }
   }
 
-  override def meta: LocatorMeta = LocatorMeta.empty
+  override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
+    val instances = _instances
+    if (instances ne null) {
+      index.get(key)
+    } else {
+      throw new MissingInstanceException(s"Injector bootstrap tried to perform a lookup from root locator, bootstrap plan in incomplete! Missing key: $key", key)
+    }
+  }
+
 }
 
 object BootstrapLocator {
@@ -89,18 +88,19 @@ object BootstrapLocator {
     )
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslator.Impl()
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
-    val resolver = new MutationResolverImpl[DIKey, Int, InstantiationOp]()
+    val resolver = new PlanSolver.Impl(
+      new SemigraphSolverImpl[DIKey, Int, InstantiationOp](),
+      new GraphPreparations(new BindingTranslator.Impl()),
+    )
 
     new PlannerDefaultImpl(
       forwardingRefResolver = forwardingRefResolver,
       sanityChecker = sanityChecker,
       planningObserver = bootstrapObserver,
       hook = hook,
-      bindingTranslator = translator,
       analyzer = analyzer,
       mirrorProvider = mp,
       resolver = resolver,
@@ -133,7 +133,10 @@ object BootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
 
-    make[MutationResolver[DIKey, Int, InstantiationOp]].from[MutationResolverImpl[DIKey, Int, InstantiationOp]]
+    make[PlanSolver].from[PlanSolver.Impl]
+    make[GraphPreparations]
+
+    make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]

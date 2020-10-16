@@ -113,10 +113,10 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     *   // Got `Int` 3
     * }}}
     *
-    * You can also modify with additional dependencies:
+    * You can also modify while summoning additional dependencies:
     *
     * {{{
-    *   modify[Int].by(_.flatAp {
+    *   modify[Int]("named").by(_.flatAp {
     *     (adder: Adder, multiplier: Multiplier) =>
     *       int: Int =>
     *         multiplier.multiply(adder.add(int, 1), 10)
@@ -124,9 +124,9 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     * }}}
     */
   final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
-  final private def _modify[T: Tag](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): SingletonRef = {
+  final private def _modify[T](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): SingletonRef = {
     val newProvider: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
-    val binding = Bindings.provider[T](newProvider).copy(isMutator = true)
+    val binding = Bindings.provider[T](newProvider)(tag, pos).copy(isMutator = true)
     _registered(new SingletonRef(binding))
   }
 
@@ -139,23 +139,58 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
 object AbstractBindingDefDSL {
 
   final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
-    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
+    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
       by(_.map(f))
+    }
 
-    def apply(name: Identifier)(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
+    def apply(name: Identifier)(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
       by(name)(_.map(f))
+    }
 
-    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL =
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f))
+    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f)(tag, pos))
+    }
 
-    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f))
+    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f)(tag, pos))
+    }
+
+    def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey.get[B]))
+    }
+
+    def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(key))
+    }
+
+    def addDependencies(keys: Iterable[DIKey])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependencies(keys))
     }
   }
 
-  final class ModifyTaggingDSL(private val ref: SingletonRef) extends AnyVal {
-    def tagged(tags: BindingTag*): ModifyTaggingDSL = {
+  final class ModifyTaggingDSL[T](private val ref: SingletonRef) extends AnyVal {
+    def tagged(tags: BindingTag*): ModifyTaggingDSL[T] = {
       new ModifyTaggingDSL(ref.append(AddTags(tags.toSet)))
+    }
+
+    def by(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = {
+      new ModifyTaggingDSL[T](ref.append(Modify(f)))
+    }
+
+    def map(f: T => T): ModifyTaggingDSL[T] = {
+      by(_.mapSame(f))
+    }
+
+    def addDependency[B: Tag]: ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey.get[B]))
+    }
+
+    def addDependency(key: DIKey): ModifyTaggingDSL[T] = {
+      by(_.addDependency(key))
+    }
+
+    def addDependencies(keys: Iterable[DIKey]): ModifyTaggingDSL[T] = {
+      by(_.addDependencies(keys))
     }
   }
 

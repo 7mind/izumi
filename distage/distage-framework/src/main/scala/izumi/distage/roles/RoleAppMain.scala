@@ -6,7 +6,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppShutdownStrategy._
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
-import izumi.functional.bio._
+import izumi.functional.bio.BIOAsync
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity

@@ -20,9 +20,9 @@ import scala.util.{Failure, Success, Try}
 
 /**
   * Default config resources:
-  *   - `\$roleName.conf``
-  *   - `\$roleName-reference.conf`
-  *   - `\$roleName-reference-dev.conf`
+  *   - `\${roleName}.conf`
+  *   - `\${roleName}-reference.conf`
+  *   - `\${roleName}-reference-dev.conf`
   *   - `application.conf`
   *   - `application-reference.conf`
   *   - `application-reference-dev.conf`

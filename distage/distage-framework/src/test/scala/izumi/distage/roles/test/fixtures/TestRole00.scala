@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService
 
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
@@ -16,9 +16,9 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
-class TestTask00[F[_]: DIEffect](logger: IzLogger) extends RoleTask[F] {
+class TestTask00[F[_]: QuasiIO](logger: IzLogger) extends RoleTask[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
-    DIEffect[F].maybeSuspend {
+    QuasiIO[F].maybeSuspend {
       logger.info(s"[TestTask00] Entrypoint invoked!: $roleParameters, $freeArgs")
     }
   }
@@ -29,7 +29,7 @@ object TestTask00 extends RoleDescriptor {
 
 object roles {
 
-  class TestRole00[F[_]: DIEffect](
+  class TestRole00[F[_]: QuasiIO](
     logger: IzLogger,
     notCloseable: NotCloseable,
     val conf: TestServiceConf,
@@ -45,12 +45,12 @@ object roles {
   ) extends RoleService[F] {
     notCloseable.discard()
 
-    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
+    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
       logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
       assert(conf.overridenInt == 111)
     }) {
       _ =>
-        DIEffect[F].maybeSuspend {
+        QuasiIO[F].maybeSuspend {
           logger.info(s"[TestRole00] exiting role...")
         }
     }
@@ -66,11 +66,11 @@ object roles {
     final case class SetElementOnlyCfg(abc: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck[F])
-    final class TestRole00ResourceIntegrationCheck[F[_]: DIEffect](
+    final class TestRole00ResourceIntegrationCheck[F[_]: QuasiIO](
       private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
     ) extends IntegrationCheck[F] {
-      override def resourcesAvailable(): F[ResourceCheck] = DIEffect[F].pure {
+      override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure {
         assert(cfg2.value == "configvalue:updated")
         ResourceCheck.Success()
       }
@@ -79,12 +79,12 @@ object roles {
 
 }
 
-class TestRole01[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
+class TestRole01[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
     logger.info(s"[TestRole01] started: $roleParameters, $freeArgs")
   }) {
     _ =>
-      DIEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         logger.info(s"[TestRole01] exiting role...")
       }
   }
@@ -95,12 +95,12 @@ object TestRole01 extends RoleDescriptor {
   override def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, Some("Example role"), None, freeArgsAllowed = false)
 }
 
-class TestRole02[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
+class TestRole02[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
     logger.info(s"[TestRole02] started: $roleParameters, $freeArgs")
   }) {
     _ =>
-      DIEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         logger.info(s"[TestRole02] exiting role...")
       }
   }
@@ -109,16 +109,16 @@ object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
 }
 
-class TestRole03[F[_]: DIEffect](
+class TestRole03[F[_]: QuasiIO](
   logger: IzLogger,
   axisComponent: AxisComponent,
 ) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
     logger.info(s"[TestRole03] started: $roleParameters, $freeArgs")
     assert(axisComponent == AxisComponentCorrect, TestRole03.expectedError)
   }) {
     _ =>
-      DIEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         logger.info(s"[TestRole03] exiting role...")
       }
   }
@@ -128,16 +128,16 @@ object TestRole03 extends RoleDescriptor {
   override final val id = "testrole03"
 }
 
-class TestRole04[F[_]: DIEffect](
+class TestRole04[F[_]: QuasiIO](
   logger: IzLogger,
   listconf: ListConf,
 ) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
     logger.info(s"[TestRole04] started: $roleParameters, $freeArgs")
     assert(listconf.ints == List(3, 2, 1), listconf.ints)
   }) {
     _ =>
-      DIEffect[F].maybeSuspend {
+      QuasiIO[F].maybeSuspend {
         logger.info(s"[TestRole04] exiting role...")
       }
   }

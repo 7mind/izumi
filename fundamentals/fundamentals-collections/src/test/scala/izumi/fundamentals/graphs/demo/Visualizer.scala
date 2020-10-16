@@ -5,8 +5,8 @@
 //import izumi.fundamentals.graphs.GraphFixtures._
 //import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
 //import izumi.fundamentals.graphs.struct.IncidenceMatrix
-//import izumi.fundamentals.graphs.tools.GC.GCInput
-//import izumi.fundamentals.graphs.tools.LoopDetector.Impl
+//import izumi.fundamentals.graphs.tools.gc.GC.GCInput
+//import izumi.fundamentals.graphs.tools.cycles.LoopDetector.Impl
 //import izumi.fundamentals.graphs.tools.random.RandomGraph
 //import izumi.fundamentals.graphs.tools.{CycleEraser, GC, LoopBreaker}
 //import izumi.fundamentals.graphs.ui.GVR

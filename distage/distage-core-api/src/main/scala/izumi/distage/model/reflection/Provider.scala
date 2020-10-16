@@ -20,7 +20,7 @@ trait Provider {
 
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
-  def addUnused(keys: Seq[DIKey]): Provider
+  def addUnused(keys: Iterable[DIKey]): Provider
   def replaceKeys(f: DIKey => DIKey): Provider
 
   private val eqField: AnyRef = {
@@ -106,7 +106,7 @@ object Provider {
         providerType = ProviderType.Function,
       )
 
-    override def addUnused(keys: Seq[DIKey]): Provider =
+    override def addUnused(keys: Iterable[DIKey]): Provider =
       copy(
         parameters = parameters ++ keys.map(key => LinkedParameter(SymbolInfo("<unused>", key.tpe, isByName = false, wasGeneric = false), key)),
         providerType = ProviderType.FunctionWithUnusedKeys,

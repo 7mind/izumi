@@ -4,8 +4,8 @@ import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
 import java.nio.file.StandardOpenOption
 
-import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration._
@@ -19,8 +19,8 @@ object FileLockMutex {
     maxAttempts: Int,
   )(effect: F[E]
   )(implicit
-    F: DIEffect[F],
-    P: DIEffectAsync[F],
+    F: QuasiIO[F],
+    P: QuasiAsync[F],
   ): F[E] = {
     def retryOnFileLock(eff: F[FileLock], attempts: Int = 0): F[Option[FileLock]] = {
       logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
@@ -58,12 +58,18 @@ object FileLockMutex {
       }
     }
 
-    F.bracket(createChannel)(channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit)) {
-      channel =>
-        F.bracket(acquireLock(channel)) {
-          case Some(lock) => F.maybeSuspend(lock.close())
-          case None => F.unit
-        }(_ => effect)
-    }
+    F.bracket(
+      acquire = createChannel
+    )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit))(
+      use = {
+        channel =>
+          F.bracket(
+            acquire = acquireLock(channel)
+          )(release = {
+            case Some(lock) => F.maybeSuspend(lock.close())
+            case None => F.unit
+          })(use = _ => effect)
+      }
+    )
   }
 }

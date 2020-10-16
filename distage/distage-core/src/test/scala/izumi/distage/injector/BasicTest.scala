@@ -7,9 +7,9 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
+import izumi.distage.model.definition.conflicts.ConflictResolutionError
 import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.fundamentals.graphs.ConflictResolutionError
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -503,6 +503,15 @@ class BasicTest extends AnyWordSpec with MkInjector {
     intercept[BadMutatorAxis] {
       mkInjector().produce(definition).unsafeGet()
     }
+  }
+
+  "regression test: imports correctly specify which binding they are required by when missing" in {
+    val definition = new ModuleDef {
+      make[String].from((_: Int).toString)
+    }
+
+    val error = intercept[Throwable](mkInjector().produceGet[String](definition).unsafeGet())
+    assert(error.getMessage.contains("String"))
   }
 
 }

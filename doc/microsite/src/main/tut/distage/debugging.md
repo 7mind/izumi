@@ -8,30 +8,36 @@ Debugging
 Use `OrderedPlan#assertValid` method to test whether the plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string
-import distage.{DIKey, Roots, ModuleDef, Injector, Activation}
+import distage.{DIKey, Roots, ModuleDef, Injector}
 
 class A(b: B)
 class B
 
-val badModule = new ModuleDef {
+def badModule = new ModuleDef {
   make[A]
-  make[Int].fromEffect(zio.Task { ??? })
+  make[B].fromEffect(zio.Task { ??? })
 }
 
-val badPlan = Injector[cats.effect.IO]().plan(badModule, Activation.empty, Roots.Everything)
+val badPlan = Injector[cats.effect.IO]().plan(badModule, Roots.target[A])
 ```
 
 ```scala mdoc:crash:to-string
+// the effect types are mismatched - `badModule` uses `zio.Task`, but we expect `cats.effect.IO`
+
 badPlan.assertValid[cats.effect.IO]().unsafeRunSync()
 ```
 
 ```scala mdoc:to-string
-val goodModule = new ModuleDef {
+def goodModule = new ModuleDef {
   make[A]
   make[B].fromEffect(cats.effect.IO(new B))
 }
 
-val plan = Injector[cats.effect.IO]().plan(goodModule, Activation.empty, Roots.Everything)
+val plan = Injector[cats.effect.IO]().plan(goodModule, Roots.target[A])
+```
+
+```scala mdoc:to-string
+// the effect types in `goodModule` and here match now
 
 plan.assertValid[cats.effect.IO]().unsafeRunSync()
 ```
@@ -64,22 +70,25 @@ The printer highlights circular dependencies:
 To debug macros used by `distage` you may use the following Java Properties:
 
 ```bash
-sbt -Dizumi.debug.macro.rtti=true compile # fundamentals-reflection & LightTypeTag macros
-sbt -Dizumi.debug.macro.distage.constructors=true compile # izumi.distage.constructors.* macros
-sbt -Dizumi.debug.macro.distage.functoid=true compile # Functoid macro
+# izumi-reflect macros
+-Dizumi.debug.macro.rtti=true
+
+# izumi.distage.constructors.* macros
+-Dizumi.debug.macro.distage.constructors=true
+
+# Functoid macro
+-Dizumi.debug.macro.distage.functoid=true
 ```
 
 ### Graphviz rendering
 
-Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable dumping of graphviz files with a graphical representation of the `Plan`.
+Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writing GraphViz files with a graphical representation of the `OrderedPlan`. Data will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in the current working directory.
 
-```scala mdoc:to-string
-import distage.GraphDumpBootstrapModule
+```scala mdoc:reset:to-string
+import distage.{GraphDumpBootstrapModule, Injector}
 
-val injector = Injector(GraphDumpBootstrapModule())
+Injector(GraphDumpBootstrapModule)
 ```
-
-Data will be saved dumped to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in current working directory. 
 
 You'll need a `GraphViz` installation to render these files into a viewable PNG images:
 

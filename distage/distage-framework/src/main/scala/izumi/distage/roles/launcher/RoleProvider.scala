@@ -89,7 +89,8 @@ object RoleProvider {
         case _ =>
           Seq.empty
       }.flatMap {
-          case Right((roleBinding, descriptor)) => mkRoleBinding(roleBinding, descriptor)
+          case Right((roleBinding, descriptor)) =>
+            mkRoleBinding(roleBinding, descriptor)
           case Left(roleBinding) =>
             if (reflectionEnabled()) {
               reflectCompanionDescriptor(roleBinding.key.tpe) match {

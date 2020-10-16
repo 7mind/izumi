@@ -11,8 +11,8 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect.syntax._
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable._
@@ -30,8 +30,8 @@ case class ContainerResource[F[_], T](
   client: DockerClientWrapper[F],
   logger: IzLogger,
 )(implicit
-  val F: DIEffect[F],
-  val P: DIEffectAsync[F],
+  val F: QuasiIO[F],
+  val P: QuasiAsync[F],
 ) extends Lifecycle.Basic[F, DockerContainer[T]] {
 
   private[this] val rawClient = client.rawClient
@@ -163,8 +163,8 @@ case class ContainerResource[F[_], T](
       waitFor = 200.millis,
       maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
     ) {
-      for {
-        containers <- F.maybeSuspend {
+      F.suspendF {
+        val containers = {
           /**
             * We will filter out containers by "running" status if container exposes any ports to be mapped
             * and by "exited" status also if there are no exposed ports.
@@ -190,7 +190,7 @@ case class ContainerResource[F[_], T](
               throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
           }
         }
-        candidate = {
+        val candidate = {
           val portSet = ports.map(_.port).toSet
           val candidates = containers.flatMap {
             c =>
@@ -212,7 +212,9 @@ case class ContainerResource[F[_], T](
           }
           if (portSet.nonEmpty) {
             // here we are checking if all ports was successfully mapped
-            candidates.find { case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty }
+            candidates.find {
+              case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty
+            }
           } else {
             // or if container has no ports we will check that there is exists container that belongs at least to this test run (or exists container that actually still runs)
             candidates.find(_._2.getState.getRunning).orElse {
@@ -225,7 +227,8 @@ case class ContainerResource[F[_], T](
             }
           }
         }
-        existing <- candidate match {
+
+        candidate match {
           case Some((c, cInspection, existingPorts)) =>
             val unverified = DockerContainer[T](
               id = ContainerId(c.getId),
@@ -244,7 +247,7 @@ case class ContainerResource[F[_], T](
             logger.info(s"No existing container found for ${config.image}, will run new...")
             doRun(ports)
         }
-      } yield existing
+      }
     }
   }
 

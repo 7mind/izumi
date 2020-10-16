@@ -2,7 +2,7 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
@@ -15,7 +15,7 @@ import izumi.reflect.TagK
 import scala.concurrent.duration.Duration
 
 trait PlanInterpreter {
-  def instantiate[F[_]: TagK: DIEffect](
+  def instantiate[F[_]: TagK: QuasiIO](
     plan: OrderedPlan,
     parentContext: Locator,
     filterFinalizers: FinalizerFilter[F],
@@ -47,7 +47,7 @@ object PlanInterpreter {
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
-    def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
+    def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
       val repr = failures.map {
         case ProvisioningFailure(op, f) =>
           val pos = OpFormatter.formatBindingPosition(op.origin)
@@ -66,7 +66,7 @@ object PlanInterpreter {
       import izumi.fundamentals.platform.exceptions.IzThrowable._
       import izumi.fundamentals.platform.strings.IzString._
 
-      DIEffect[F].fail {
+      F.fail {
         new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed:${repr.niceList()}", null)
           .addAllSuppressed(failures.map(_.failure))
       }
@@ -75,7 +75,7 @@ object PlanInterpreter {
 
   object FailedProvision {
     implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
-      def throwOnFailure()(implicit F: DIEffect[F]): F[Locator] = p.fold(_.throwException(), F.pure)
+      def throwOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(_.throwException(), F.pure)
     }
   }
 

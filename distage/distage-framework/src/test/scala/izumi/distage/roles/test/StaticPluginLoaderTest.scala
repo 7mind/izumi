@@ -25,7 +25,7 @@ class StaticPluginLoaderTest extends AnyWordSpec {
     }
 
     "Prepopulate plugins list in compile time (PluginConfig)" in {
-      val plugins = PluginLoader().load(PluginConfig.staticallyAvailablePlugins("com.github.pshirshov.test.plugins"))
+      val plugins = PluginLoader().load(PluginConfig.static("com.github.pshirshov.test.plugins"))
       assert(plugins.size == 6)
       assert(
         plugins.map(_.getClass).toSet == Set(

@@ -7,7 +7,6 @@ object ModuleMake {
 
   sealed trait Aux[-S, +T <: ModuleBase] {
     def make(bindings: Set[Binding]): T
-
     final def empty: T = make(Set.empty)
   }
 }

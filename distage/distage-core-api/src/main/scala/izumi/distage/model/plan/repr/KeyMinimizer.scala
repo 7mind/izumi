@@ -12,7 +12,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   private[this] val index: Map[String, Int] = {
     import scala.collection.compat._
     allKeys
-      .toSeq
+      .iterator
       .flatMap(extract)
       .map(name => name.split('.').last -> name)
       .toMultimapView
@@ -33,13 +33,15 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
   def renderType(tpe: SafeType): String = {
-    import minimizedLTTRenderables._
-    tpe.tag.ref.render()
+    import minimizedLTTRenderables.RenderableSyntax
+    tpe.tag.ref.render()(minimizedLTTRenderables.r_LightTypeTag)
   }
 
-  def renderKey(key: DIKey): String = renderKey(key, renderType)
+  def renderKey(key: DIKey): String = {
+    renderKey(key, renderType)
+  }
 
-  private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
+  @inline private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
       case DIKey.TypeKey(tpe, idx) =>

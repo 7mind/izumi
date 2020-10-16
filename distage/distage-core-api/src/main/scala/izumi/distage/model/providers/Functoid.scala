@@ -66,6 +66,8 @@ import scala.language.implicitConversions
   *
   * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
   *
+  * Note: `javax.inject.Named` annotation is also supported
+  *
   * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
   * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
   * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
@@ -88,7 +90,7 @@ final case class Functoid[+A](get: Provider) {
   }
 
   /** Applicative's `ap` method - can be used to chain transformations like `flatMap`.
-    * Apply a function produced by `that` Provider to the argument produced by `this` Provider
+    * Apply a function produced by `that` Provider to the value produced by `this` Provider
     */
   def flatAp[B: Tag](that: Functoid[A => B]): Functoid[B] = {
     map2(that) { case (a, f) => f(a) }
@@ -102,7 +104,7 @@ final case class Functoid[+A](get: Provider) {
   /** Add `B` as an unused dependency of this Provider */
   def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey.get[B])
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
-  def addDependencies(keys: Seq[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
+  def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
@@ -200,6 +202,10 @@ object Functoid {
         providerType = ProviderType.Function,
       )
     )
+  }
+
+  implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
+    def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
   }
 
   @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {

@@ -2,7 +2,7 @@ package izumi.distage.docker
 
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
-import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
@@ -33,7 +33,7 @@ final case class DockerContainer[Tag](
 }
 
 object DockerContainer {
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => ContainerResource[F, conf.Tag] = {
+  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F]) => ContainerResource[F, conf.Tag] = {
     new ContainerResource[F, conf.Tag](conf.config, _, _)(_, _)
   }
 

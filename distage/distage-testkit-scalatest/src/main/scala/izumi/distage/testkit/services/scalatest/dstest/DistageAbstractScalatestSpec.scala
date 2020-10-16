@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{TagK, TagKK}
 import izumi.distage.constructors.HasConstructor
-import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
@@ -88,7 +88,7 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    private def cancel(F: DIEffect[F]): F[Nothing] = {
+    private def cancel(F: QuasiIO[F]): F[Nothing] = {
       F.maybeSuspend(cancelNow())
     }
 
@@ -113,7 +113,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(function, env, pos, id)
     }
@@ -152,7 +152,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }
@@ -191,7 +191,7 @@ object DistageAbstractScalatestSpec {
         context.fold(testname)(_.toName(testname)),
         suiteName,
         suiteId,
-        suiteName,
+        suiteId,
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }
