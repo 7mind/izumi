@@ -10,7 +10,7 @@ import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.BIOExit
-import izumi.functional.bio.BIORunner.FailureHandler
+import izumi.functional.bio.UnsafeRun2.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter

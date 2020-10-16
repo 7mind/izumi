@@ -42,8 +42,8 @@ object AppResourceProvider {
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
-            val runner = runtimeLocator.get[DIEffectRunner[F]]
-            val F = runtimeLocator.get[DIEffect[F]]
+            val runner = runtimeLocator.get[QuasiIORunner[F]]
+            val F = runtimeLocator.get[QuasiIO[F]]
 
             PreparedApp(prepareMainResource(runtimeLocator)(F), runner, F)
         }

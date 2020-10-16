@@ -15,7 +15,7 @@ trait Syntax3 extends ImplicitPuns {
     * Auto-narrows to the most powerful available class:
     *
     * {{{
-    *   def y[F[+_, +_]: BIOTemporal] = {
+    *   def y[F[+_, +_]: Temporal2] = {
     *     F.timeout(5.seconds)(F.forever(F.unit))
     *   }
     * }}}
@@ -309,10 +309,10 @@ object Syntax3 {
     @inline final def Functor3[FR[-_, +_, +_]: Functor3]: Functor3[FR] = implicitly
   }
   trait ImplicitPuns14 extends ImplicitPuns15 {
-    // Note, as long as these auxilary conversions to BIOMonad/Applicative/Functor syntaxes etc.
-    // have the same output type as BIOMonad3/etc conversions above, they will avoid the specificity rule
+    // Note, as long as these auxilary conversions to Monad/Applicative/Functor syntaxes etc.
+    // have the same output type as Monad3/etc conversions above, they will avoid the specificity rule
     // and _will not_ clash (because the outputs are equal, not <:<).
-    // If you merge them into `BIOLocalSyntax with BIOMonad3`, they _will_ start clashing
+    // If you merge them into `LocalOps with MonadOps`, they _will_ start clashing
 
     @inline implicit final def Local3[FR[-_, +_, +_]: Local3, R, E, A](self: FR[R, E, A]): LocalOps[FR, R, E, A] = new LocalOps[FR, R, E, A](self)
     @inline implicit final def Local3[FR[-_, +_, +_]: Monad3, R, E, A](self: FR[R, E, A]): MonadOps[FR, R, E, A] = new MonadOps[FR, R, E, A](self)

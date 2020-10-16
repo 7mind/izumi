@@ -224,7 +224,7 @@ log.info(s"Hey! I'm logging with ${log}stage!")
 I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
 ```
 
-`LogBIO3.log` extends environment support to trifunctor effect types with an instance of `BIOMonadAsk[F]` typeclass (from @ref[BIO](../bio/00_bio.md))
+`LogBIO3.log` extends environment support to trifunctor effect types with an instance of `MonadAsk3[F]` typeclass (from @ref[BIO](../bio/00_bio.md))
 
 Example:
 

@@ -1,7 +1,7 @@
 package izumi.logstage
 
 import cats.effect.Sync
-import izumi.functional.bio.{BIO, SyncSafe2}
+import izumi.functional.bio.{IO2, SyncSafe2}
 import izumi.fundamentals.platform.language.IzScala
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
@@ -38,11 +38,11 @@ class ImplicitsTest extends AnyWordSpec {
     val log: LogBIO[zio.IO] = LogBIO.fromLogger(IzLogger())
     log.discard()
 
-    def logIO[F[+_, +_]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
+    def logIO[F[+_, +_]: IO2]: LogBIO[F] = LogIO.fromLogger(IzLogger())
 
     logIO[zio.IO]
 
-    def logBIO[F[+_, +_]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
+    def logBIO[F[+_, +_]: IO2]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
 
     logBIO[zio.IO]
   }

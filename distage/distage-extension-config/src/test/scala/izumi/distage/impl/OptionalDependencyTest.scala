@@ -6,7 +6,7 @@ import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.modules.DefaultModule
-import izumi.functional.bio.{BIO, BIO3, BIOApplicative, BIOApplicativeError, BIOArrow, BIOArrowChoice, BIOAsk, BIOAsync, BIOBifunctor, BIOBracket, BIOConcurrent, BIOError, BIOFork, BIOFunctor, BIOGuarantee, BIOLocal, BIOMonad, BIOMonadAsk, BIOPanic, BIOParallel, BIOPrimitives, BIOProfunctor, BIORef3, BIOTemporal, F}
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Arrow3, ArrowChoice3, Ask3, Async2, BIO, Bifunctor2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, IO3, Local3, Monad2, MonadAsk3, Panic2, Parallel2, Primitives2, Profunctor3, Ref3, Temporal2}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -15,7 +15,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
   "test 2" in {
     // update ref from the environment and return result
-    def adderEnv[F[-_, +_, +_]: BIOMonadAsk](i: Int): F[BIORef3[F, Int], Nothing, Int] = {
+    def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] = {
       F.access {
         ref =>
           for {
@@ -26,20 +26,20 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     }
 
     locally {
-      implicit val ask: BIOMonadAsk[Identity3] = null
+      implicit val ask: MonadAsk3[Identity3] = null
       intercept[NullPointerException](adderEnv[Identity3](0))
     }
   }
 
   "test 1" in {
-    def adder[F[+_, +_]: BIOMonad: BIOPrimitives](i: Int): F[Nothing, Int] = {
+    def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] = {
       F.mkRef(0)
         .flatMap(ref => ref.update(_ + i) *> ref.get)
     }
 
     locally {
-      implicit val bioMonad: BIOMonad[Identity2] = null
-      implicit val primitives: BIOPrimitives[Identity2] = null
+      implicit val bioMonad: Monad2[Identity2] = null
+      implicit val primitives: Primitives2[Identity2] = null
       intercept[NullPointerException](adder[Identity2](0))
     }
   }
@@ -71,8 +71,8 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     trait SomeBIO[+E, +A]
     type SomeBIO3[-R, +E, +A] = R => SomeBIO[E, A]
 
-    def threeTo2[FR[-_, +_, +_]](implicit FR: BIO3[FR]): FR[Any, Nothing, Unit] = {
-      val F: BIO[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
+    def threeTo2[FR[-_, +_, +_]](implicit FR: IO3[FR]): FR[Any, Nothing, Unit] = {
+      val F: IO2[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
       F.unit
     }
 
@@ -80,7 +80,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     final class optSearch1[C[_[_]]] { def find[F[_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
 
     locally {
-      implicit val BIO3SomeBIO3: BIO3[SomeBIO3] = null
+      implicit val BIO3SomeBIO3: IO3[SomeBIO3] = null
       try threeTo2[SomeBIO3]
       catch {
         case _: NullPointerException =>
@@ -98,35 +98,35 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    assertDoesNotCompile("QuasiIO.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("Lifecycle.fromCats(null)")
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
-    BIOAsync[SomeBIO](null)
+    Async2[SomeBIO](null)
 
     Lifecycle.makePair(Some((1, Some(()))))
 
     And("Can search for all hierarchy classes")
-    optSearch[BIOFunctor[SomeBIO]]
-    optSearch[BIOApplicative[SomeBIO]]
-    optSearch[BIOMonad[SomeBIO]]
-    optSearch[BIOBifunctor[SomeBIO]]
-    optSearch[BIOGuarantee[SomeBIO]]
-    optSearch[BIOApplicativeError[SomeBIO]]
-    optSearch[BIOError[SomeBIO]]
-    optSearch[BIOBracket[SomeBIO]]
-    optSearch[BIOPanic[SomeBIO]]
-    optSearch[BIOParallel[SomeBIO]]
-    optSearch[BIO[SomeBIO]]
-    optSearch[BIOAsync[SomeBIO]]
-    optSearch[BIOTemporal[SomeBIO]]
-    optSearch[BIOConcurrent[SomeBIO]]
-    optSearch[BIOAsk[SomeBIO3]]
-    optSearch[BIOMonadAsk[SomeBIO3]]
-    optSearch[BIOProfunctor[SomeBIO3]]
-    optSearch[BIOArrow[SomeBIO3]]
-    optSearch[BIOArrowChoice[SomeBIO3]]
-    optSearch[BIOLocal[SomeBIO3]]
+    optSearch[Functor2[SomeBIO]]
+    optSearch[Applicative2[SomeBIO]]
+    optSearch[Monad2[SomeBIO]]
+    optSearch[Bifunctor2[SomeBIO]]
+    optSearch[Guarantee2[SomeBIO]]
+    optSearch[ApplicativeError2[SomeBIO]]
+    optSearch[Error2[SomeBIO]]
+    optSearch[Bracket2[SomeBIO]]
+    optSearch[Panic2[SomeBIO]]
+    optSearch[Parallel2[SomeBIO]]
+    optSearch[IO2[SomeBIO]]
+    optSearch[Async2[SomeBIO]]
+    optSearch[Temporal2[SomeBIO]]
+    optSearch[Concurrent2[SomeBIO]]
+    optSearch[Ask3[SomeBIO3]]
+    optSearch[MonadAsk3[SomeBIO3]]
+    optSearch[Profunctor3[SomeBIO3]]
+    optSearch[Arrow3[SomeBIO3]]
+    optSearch[ArrowChoice3[SomeBIO3]]
+    optSearch[Local3[SomeBIO3]]
 
-    optSearch[BIOFork[SomeBIO]]
-    optSearch[BIOPrimitives[SomeBIO]]
-//    optSearch[BlockingIO[SomeBIO]] // hard to make searching this not require zio currently (`type ZIOWithBlocking` creates issue)
+    optSearch[Fork2[SomeBIO]]
+    optSearch[Primitives2[SomeBIO]]
+//    optSearch[BlockingIO2[SomeBIO]] // hard to make searching this not require zio currently (`type ZIOWithBlocking` creates issue)
 
     And("`No More Orphans` type provider object is accessible")
     izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()

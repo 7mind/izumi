@@ -3,19 +3,19 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
-import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORoot, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3, SyncSafe2, SyncSafe3}
+import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.reflect.{TagK3, TagKK}
 
 import scala.annotation.unchecked.{uncheckedVariance => v}
 
 /** Any `BIO` effect type support for `distage` resources, effects, roles & tests.
   *
-  * For any `F[-_, +_, +_]` with available `make[BIOAsync3[F]]`, `make[BIOTemporal3[F]]` and `make[BIORunner3[F]]` bindings.
+  * For any `F[-_, +_, +_]` with available `make[Async3[F]]`, `make[Temporal3[F]]` and `make[UnsafeRun3[F]]` bindings.
   *
   * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   * - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
-  * Depends on `make[BIOAsync3[F]]`, `make[BIOTemporal3[F]]`, `make[BIOLocal[F]]`, `make[BIOFork3[F]]` & `make[BIORunner3[F]]`
+  * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
   */
 class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]) extends ModuleDef {
   // QuasiIO & bifunctor bio instances
@@ -28,14 +28,14 @@ class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +
   // - https://github.com/zio/izumi-reflect/issues/82
   // - https://github.com/zio/izumi-reflect/issues/83
   def addConverted3To2[G[+e, +a] >: F[Any, e @v, a @v] <: F[Any, e @v, a @v]: TagKK]: Unit = {
-    make[BIOAsync[G]].from {
-      implicit F: BIOAsync3[F] => BIORoot.Convert3To2[BIOAsync3, F, Any]
+    make[Async2[G]].from {
+      implicit F: Async3[F] => Async2[F[Any, +?, +?]]
     }
-    make[BIOTemporal[G]].from {
-      implicit F: BIOTemporal3[F] => BIORoot.Convert3To2[BIOTemporal3, F, Any]
+    make[Temporal2[G]].from {
+      implicit F: Temporal3[F] => Temporal2[F[Any, +?, +?]]
     }
-    make[BIOFork[G]].from {
-      implicit Fork: BIOFork3[F] => BIORoot.Convert3To2[BIOFork3, F, Any]
+    make[Fork2[G]].from {
+      implicit Fork: Fork3[F] => Fork2[F[Any, +?, +?]]
     }
     ()
   }
@@ -47,25 +47,25 @@ object AnyBIO3SupportModule extends App with ModuleDef {
   /**
     * Make [[AnyBIO3SupportModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOFork3[F]]` and `make[BIOPrimitives3[F]]` are not required by [[AnyBIO3SupportModule]]
+    * `make[Fork3[F]]` and `make[Primitives3[F]]` are not required by [[AnyBIO3SupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3](implicit tagBIO: TagKK[F[Any, +?, +?]]): ModuleDef =
+  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](implicit tagBIO: TagKK[F[Any, +?, +?]]): ModuleDef =
     new ModuleDef {
       include(AnyBIO3SupportModule[F])
 
-      addImplicit[BIOAsync3[F]]
-      addImplicit[BIOTemporal3[F]]
-      addImplicit[BIOLocal[F]]
-      addImplicit[BIOFork3[F]]
-      addImplicit[BIOPrimitives3[F]]
-      addImplicit[BIORunner3[F]]
+      addImplicit[Async3[F]]
+      addImplicit[Temporal3[F]]
+      addImplicit[Local3[F]]
+      addImplicit[Fork3[F]]
+      addImplicit[Primitives3[F]]
+      addImplicit[UnsafeRun3[F]]
 
       // no corresponding bifunctor (`F[Any, +?, +?]`) instances need to be added for these types because they already match
       private[this] def aliasingCheck(): Unit = {
         lazy val _ = aliasingCheck()
-        implicitly[BIORunner3[F] =:= BIORunner[F[Any, +?, +?]]]
-        implicitly[BIOPrimitives3[F] =:= BIOPrimitives[F[Any, +?, +?]]]
+        implicitly[UnsafeRun3[F] =:= UnsafeRun2[F[Any, +?, +?]]]
+        implicitly[Primitives3[F] =:= Primitives2[F[Any, +?, +?]]]
         implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +?, +?]]]
         implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +?, +?]]]
         implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +?, +?]]]

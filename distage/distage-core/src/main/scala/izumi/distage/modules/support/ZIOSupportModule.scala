@@ -23,16 +23,16 @@ object ZIOSupportModule extends ZIOSupportModule
 trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule {
   include(AnyBIO3SupportModule[ZIO])
 
-  addImplicit[BIOAsync3[ZIO]]
-  make[BIOTemporal3[ZIO]].from {
+  addImplicit[Async3[ZIO]]
+  make[Temporal3[ZIO]].from {
     implicit r: zio.clock.Clock =>
-      implicitly[BIOTemporal3[ZIO]]
+      implicitly[Temporal3[ZIO]]
   }
-  addImplicit[BIOLocal[ZIO]]
-  addImplicit[BIOFork3[ZIO]]
-  addImplicit[BIOPrimitives3[ZIO]]
+  addImplicit[Local3[ZIO]]
+  addImplicit[Fork3[ZIO]]
+  addImplicit[Primitives3[ZIO]]
 
-  addImplicit[BIOTransZio[IO]]
+  addImplicit[TransZio[IO]]
 
   make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
   make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)

@@ -2,8 +2,7 @@ package izumi.distage.testkit.services
 
 import distage.{Tag, TagKK}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.BIOApplicativeError
-import izumi.functional.bio.BIORunner.BIOBadBranch
+import izumi.functional.bio.{ApplicativeError2, TypedError}
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
@@ -11,11 +10,11 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
 
   protected final def takeBIO(function: Functoid[F[_, _]], pos: SourceFilePosition): Unit = {
     val fAsThrowable: Functoid[F[Throwable, _]] = function
-      .map2(Functoid.identity[BIOApplicativeError[F]]) {
+      .map2(Functoid.identity[ApplicativeError2[F]]) {
         (effect, F) =>
           F.leftMap(effect) {
             case t: Throwable => t
-            case otherError: Any => BIOBadBranch("Test failed, unexpectedly got bad branch. ", otherError)
+            case otherError: Any => TypedError("Test failed, unexpectedly got bad branch. ", otherError)
           }
       }
 

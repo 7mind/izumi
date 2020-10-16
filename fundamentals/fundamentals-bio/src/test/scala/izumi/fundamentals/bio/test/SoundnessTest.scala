@@ -26,12 +26,12 @@ class SoundnessTest extends AnyWordSpec {
     than `Bifunctorial`: `(implicit guard: Lub[F#Functoriality, Trifunctorial, Bifunctorial])`
    */
 
-  type BIOArrow2[F[+_, +_]] = BIOArrow[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOArrow2[F[+_, +_]] = Arrow3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type FR[F[-_, +_, +_], R] = { type l[+E, +A] = F[R, E, A] }
 
   "Cannot convert polymorphic BIOArrow into a bifunctor typeclass (normally)" in {
     val res = intercept[TestFailedException](assertCompiles("""
-      def valueF[F[-_, +_, +_]: BIOArrow: BIOMonadAsk: BIO3] = {
+      def valueF[F[-_, +_, +_]: BIOArrow: MonadAsk3: BIO3] = {
         val FA: BIOArrow2[FR[F, Int]#l] = implicitly[BIOArrow2[FR[F, Int]#l]]
         FA.andThen(F.unit, F.access((i: Int) => F.sync(println(i))))
       }

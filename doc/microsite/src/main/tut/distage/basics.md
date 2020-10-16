@@ -611,7 +611,7 @@ Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
 import distage.{ModuleDef, Injector}
-import izumi.functional.bio.{BIOError, BIOPrimitives, F}
+import izumi.functional.bio.{BIOError, Primitives2, F}
 import zio.{Task, IO}
 
 trait KVStore[F[_, _]] {
@@ -619,7 +619,7 @@ trait KVStore[F[_, _]] {
   def put(key: String, value: String): F[Nothing, Unit]
 }
 
-def dummyKVStore[F[+_, +_]: BIOError: BIOPrimitives]: F[Nothing, KVStore[F]] = {
+def dummyKVStore[F[+_, +_]: BIOError: Primitives2]: F[Nothing, KVStore[F]] = {
   for {
     ref <- F.mkRef(Map.empty[String, String])
   } yield new KVStore[F] {
@@ -661,7 +661,7 @@ You need to specify your effect type when constructing `Injector`, as in `Inject
 
 ### ZIO Has Bindings
 
-You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: BIOLocal`:
+You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
 ```scala mdoc:reset:invisible
 class Dep1

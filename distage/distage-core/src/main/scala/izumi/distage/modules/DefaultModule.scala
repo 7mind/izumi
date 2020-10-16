@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.support._
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
-import izumi.functional.bio.{BIOAsync, BIOAsync3, BIOFork, BIOFork3, BIOLocal, BIOPrimitives, BIOPrimitives3, BIORunner, BIORunner3, BIOTemporal, BIOTemporal3}
+import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -123,13 +123,13 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
-  implicit final def fromBIO[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: DefaultModule2[F] = {
+  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
     DefaultModule(AnyBIOSupportModule.withImplicits[F])
   }
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
-  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: BIOAsync3: BIOTemporal3: BIOLocal: BIORunner3: BIOFork3: BIOPrimitives3](
+  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](
     implicit tagBIO: TagKK[F[Any, +?, +?]]
   ): DefaultModule3[F] = {
     DefaultModule(AnyBIO3SupportModule.withImplicits[F])

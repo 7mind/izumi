@@ -5,7 +5,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.MonixBIOPlatformDependentSupportModule
 import izumi.distage.modules.typeclass.BIOInstancesModule
-import izumi.functional.bio.{BIOAsync, BIOFork, BIOPrimitives, BIOTemporal}
+import izumi.functional.bio.{Async2, Fork2, Primitives2, Temporal2}
 import monix.bio.{IO, Task, UIO}
 import monix.execution.Scheduler
 
@@ -33,12 +33,12 @@ trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupp
   make[Scheduler].from(Scheduler.global)
   make[IO.Options].from(IO.defaultOptions)
 
-  addImplicit[BIOAsync[IO]]
-  make[BIOTemporal[IO]].from {
-    implicit T: Timer[UIO] => implicitly[BIOTemporal[IO]]
+  addImplicit[Async2[IO]]
+  make[Temporal2[IO]].from {
+    implicit T: Timer[UIO] => implicitly[Temporal2[IO]]
   }
-  addImplicit[BIOFork[IO]]
-  addImplicit[BIOPrimitives[IO]]
+  addImplicit[Fork2[IO]]
+  addImplicit[Primitives2[IO]]
 
   make[ConcurrentEffect[Task]].from(IO.catsEffect(_: Scheduler, _: IO.Options))
   addImplicit[Parallel[Task]]

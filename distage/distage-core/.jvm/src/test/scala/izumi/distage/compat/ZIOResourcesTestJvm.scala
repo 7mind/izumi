@@ -6,7 +6,7 @@ import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
-import izumi.functional.bio.BIO
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
@@ -91,7 +91,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -196,7 +196,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: BIO] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
 
       val ctxResource = produceBIO[IO]
 

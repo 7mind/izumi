@@ -5,23 +5,23 @@ import izumi.functional.bio._
 import izumi.reflect.TagKK
 
 /**
-  * Adds `bio` typeclass instances for any effect type `F[+_, +_]` with an available `make[BIOAsync[F]` binding
+  * Adds `bio` typeclass instances for any effect type `F[+_, +_]` with an available `make[Async2[F]` binding
   *
-  * Depends on `make[BIOAsync[F]]`
+  * Depends on `make[Async2[F]]`
   */
 class BIOInstancesModule[F[+_, +_]: TagKK] extends ModuleDef {
-  make[BIOFunctor[F]].using[BIOAsync[F]]
-  make[BIOBifunctor[F]].using[BIOAsync[F]]
-  make[BIOApplicative[F]].using[BIOAsync[F]]
-  make[BIOGuarantee[F]].using[BIOAsync[F]]
-  make[BIOApplicativeError[F]].using[BIOAsync[F]]
-  make[BIOMonad[F]].using[BIOAsync[F]]
-  make[BIOError[F]].using[BIOAsync[F]]
-  make[BIOBracket[F]].using[BIOAsync[F]]
-  make[BIOPanic[F]].using[BIOAsync[F]]
-  make[BIO[F]].using[BIOAsync[F]]
-  make[BIOParallel[F]].using[BIOAsync[F]]
-  make[BIOConcurrent[F]].using[BIOAsync[F]]
+  make[BIOFunctor[F]].using[Async2[F]]
+  make[BIOBifunctor[F]].using[Async2[F]]
+  make[Applicative2[F]].using[Async2[F]]
+  make[BIOGuarantee[F]].using[Async2[F]]
+  make[ApplicativeError2[F]].using[Async2[F]]
+  make[BIOMonad[F]].using[Async2[F]]
+  make[BIOError[F]].using[Async2[F]]
+  make[BIOBracket[F]].using[Async2[F]]
+  make[BIOPanic[F]].using[Async2[F]]
+  make[BIO[F]].using[Async2[F]]
+  make[BIOParallel[F]].using[Async2[F]]
+  make[BIOConcurrent[F]].using[Async2[F]]
 }
 
 object BIOInstancesModule {
@@ -30,16 +30,16 @@ object BIOInstancesModule {
   /**
     * Make [[BIOInstancesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[BIOTemporal[F]]`, `make[BIORunner[F]]` `make[BIOFork[F]]` and `make[BIOPrimitives[F]]` are not required by [[BIOInstancesModule]]
+    * `make[Temporal2[F]]`, `make[UnsafeRun2[F]]` `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[BIOInstancesModule]]
     * but are added for completeness
     */
-  def withImplicits[F[+_, +_]: TagKK: BIOAsync: BIOTemporal: BIORunner: BIOFork: BIOPrimitives]: ModuleDef = new ModuleDef {
+  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: ModuleDef = new ModuleDef {
     include(BIOInstancesModule[F])
 
-    addImplicit[BIOAsync[F]]
-    addImplicit[BIOFork[F]]
-    addImplicit[BIOTemporal[F]]
-    addImplicit[BIOPrimitives[F]]
-    addImplicit[BIORunner[F]]
+    addImplicit[Async2[F]]
+    addImplicit[Fork2[F]]
+    addImplicit[Temporal2[F]]
+    addImplicit[Primitives2[F]]
+    addImplicit[UnsafeRun2[F]]
   }
 }

@@ -9,7 +9,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ActivationChoicesExtractor, ConfigLoader}
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition._
-import izumi.distage.model.effect.DIEffectAsync
+import izumi.distage.model.effect.QuasiAsync
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
@@ -134,6 +134,7 @@ object PlanCheck {
       val allKeysProvidedByBaseModule = baseModule.keys
       import roleAppMain._
       def combine[F[_]: TagK]: Tag[DefaultModule[F]] = Tag[DefaultModule[F]]
+      // FIXME: remove defaultmoudle
       implicit val tg: Tag[DefaultModule[AppEffectType]] = combine[AppEffectType]
 
       Injector[Identity]().produceRun(
@@ -219,7 +220,7 @@ object PlanCheck {
             logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
             logger.log(s"Checking with allChoices=${allChoices.niceList()}")
 
-            DIEffectAsync.diEffectParIdentity.parTraverse_(allChoices) {
+            QuasiAsync.quasiAsyncIdentity.parTraverse_(allChoices) {
               checkPlanJob(bootloader, bsModule, allKeysFromRoleAppMainModule, logger)
             }
           }

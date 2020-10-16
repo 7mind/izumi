@@ -1,7 +1,7 @@
 package izumi.functional.bio.syntax
 
 import cats.data.Kleisli
-import izumi.functional.bio.{Applicative3, ApplicativeError3, ArrowChoice3, Ask3, Async3, BIOArrow, Bifunctor3, Bracket3, Concurrent3, Error3, Exit, Fiber3, Fork3, Functor3, Guarantee3, IO3, Local3, Monad3, Panic3, Parallel3, Profunctor3, Temporal3, WithFilter}
+import izumi.functional.bio.{Applicative3, ApplicativeError3, Arrow3, ArrowChoice3, Ask3, Async3, Bifunctor3, Bracket3, Concurrent3, Error3, Exit, Fiber3, Fork3, Functor3, Guarantee3, IO3, Local3, Monad3, Panic3, Parallel3, Profunctor3, Temporal3, WithFilter}
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -201,7 +201,7 @@ object BIO3Syntax {
     @inline final def dimap[R1, A1](f: R1 => R)(g: A => A1): FR[R1, E, A1] = F.dimap(r)(f)(g)
   }
 
-  class BIOArrowOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: BIOArrow[FR])
+  class BIOArrowOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Arrow3[FR])
     extends BIOProfunctorOps(r) {
     @inline final def andThen[E1 >: E, A1](g: FR[A, E1, A1]): FR[R, E1, A1] = F.andThen(r, g)
     @inline final def compose[E1 >: E, R1](g: FR[R1, E1, R]): FR[R1, E1, A] = F.andThen(g, r)
@@ -346,11 +346,11 @@ object BIO3Syntax {
     @inline final def BIOArrowChoice[FR[-_, +_, +_]: ArrowChoice3]: ArrowChoice3[FR] = implicitly
   }
   trait BIOImplicitPuns18 extends BIOImplicitPuns19 {
-    @inline implicit final def BIOArrow[FR[-_, +_, +_]: BIOArrow, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowOps[FR, R, E, A] =
+    @inline implicit final def BIOArrow[FR[-_, +_, +_]: Arrow3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOArrowOps[FR, R, E, A] =
       new BIO3Syntax.BIOArrowOps[FR, R, E, A](self)
     @inline implicit final def BIOArrow[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
-    @inline final def BIOArrow[FR[-_, +_, +_]: BIOArrow]: BIOArrow[FR] = implicitly
+    @inline final def BIOArrow[FR[-_, +_, +_]: Arrow3]: Arrow3[FR] = implicitly
   }
   trait BIOImplicitPuns19 extends BIOImplicitPuns20 {
     @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: Profunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOProfunctorOps[FR, R, E, A] =

@@ -5,7 +5,7 @@ import java.util.concurrent.{Executors, ThreadFactory}
 
 import cats.Parallel
 import cats.effect.{Concurrent, Timer}
-import izumi.functional.bio.{BIOAsync, BIOTemporal, F}
+import izumi.functional.bio.{Async2, F, Temporal2}
 import izumi.fundamentals.orphans.{`cats.Parallel`, `cats.effect.Concurrent`, `cats.effect.Timer`}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -80,7 +80,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIO[F[+_, +_]: BIOAsync: BIOTemporal]: QuasiAsync[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]: Async2: Temporal2]: QuasiAsync[F[Throwable, ?]] = {
     import scala.collection.compat._
     new QuasiAsync[F[Throwable, ?]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {

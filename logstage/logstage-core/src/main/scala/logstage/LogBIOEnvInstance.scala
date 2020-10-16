@@ -1,6 +1,6 @@
 package logstage
 
-import izumi.functional.bio.BIOMonadAsk
+import izumi.functional.bio.MonadAsk3
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.CustomContext
 import zio.Has
@@ -8,7 +8,7 @@ import zio.Has
 class LogBIOEnvInstance[F[-_, +_, +_]](
   get: Has[LogBIO3[F]] => LogBIO3[F]
 )(implicit
-  F: BIOMonadAsk[F]
+  F: MonadAsk3[F]
 ) extends LogBIOEnv[F] {
   override def log(entry: Log.Entry): F[Has[LogBIO3[F]], Nothing, Unit] =
     F.access(get(_).log(entry))

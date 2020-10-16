@@ -9,7 +9,7 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.functional.bio.BIOLocal
+import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer, unused}
 import izumi.reflect.TagK3
 import org.scalactic.source
@@ -198,7 +198,7 @@ object DistageAbstractScalatestSpec {
 
     def in[R: HasConstructor](function: Functoid[F[R, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((eff, r), f) => f.provide(eff)(r)
         },
         pos.get,
@@ -207,7 +207,7 @@ object DistageAbstractScalatestSpec {
 
     def in[R: HasConstructor](function: Functoid[F[R, _, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((eff, r), f) => f.provide(eff)(r)
         },
         pos.get,
@@ -215,11 +215,11 @@ object DistageAbstractScalatestSpec {
     }
 
     def in[R: HasConstructor](value: => F[R, _, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(Functoid.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
     }
 
     def in[R: HasConstructor](value: => F[R, _, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(Functoid.identity[BIOLocal[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
     }
 
     def in(function: Functoid[F[Any, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {

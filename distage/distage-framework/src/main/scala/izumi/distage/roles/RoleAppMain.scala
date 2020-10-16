@@ -9,7 +9,7 @@ import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy._
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
-import izumi.functional.bio.BIOAsync
+import izumi.functional.bio.Async2
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
@@ -83,7 +83,7 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
+  abstract class LauncherBIO[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 

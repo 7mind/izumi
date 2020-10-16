@@ -1,7 +1,7 @@
 package izumi.distage.model.effect
 
 import izumi.distage.model.effect.QuasiIORunner.CatsImpl
-import izumi.functional.bio.BIORunner
+import izumi.functional.bio.UnsafeRun2
 import izumi.fundamentals.orphans.`cats.effect.Effect`
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
@@ -26,10 +26,10 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     override def run[A](f: => A): A = f
   }
 
-  implicit def fromBIO[F[_, _]: BIORunner]: QuasiIORunner[F[Throwable, ?]] = new BIOImpl[F]
+  implicit def fromBIO[F[_, _]: UnsafeRun2]: QuasiIORunner[F[Throwable, ?]] = new BIOImpl[F]
 
-  final class BIOImpl[F[_, _]: BIORunner] extends QuasiIORunner[F[Throwable, ?]] {
-    override def run[A](f: => F[Throwable, A]): A = BIORunner[F].unsafeRun(f)
+  final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, ?]] {
+    override def run[A](f: => F[Throwable, A]): A = UnsafeRun2[F].unsafeRun(f)
   }
 
   final class CatsImpl[F[_]: cats.effect.Effect] extends QuasiIORunner[F] {
