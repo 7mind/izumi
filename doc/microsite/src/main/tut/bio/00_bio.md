@@ -56,10 +56,10 @@ libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$
 @@@
 
 
-On Scala `2.12` you _must_ enable partial unification and set `2.13` source mode for the library to work correctly:
+If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and `-Xsource:2.13` for this library to work correctly:
 
 ```scala
-// _Required_ options for Scala 2.12
+// REQUIRED options for Scala 2.12
 scalacOptions += "-Ypartial-unification"
 scalacOptions += "-Xsource:2.13"
 ```

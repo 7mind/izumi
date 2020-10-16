@@ -2,8 +2,12 @@ package izumi.functional.bio.data
 
 import scala.language.implicitConversions
 
+/**
+  * Note: if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with FunctionKK,
+  * you must enable `-Xsource:2.13` compiler option. BIO does not work without this option on 2.12.
+  */
 object FunctionKK {
-  private[data] type FunctionKK[-F[_, _], +G[_, _]] <: (Any { type xa }) with TagFor212ImplicitScope
+  private[data] type FunctionKK[-F[_, _], +G[_, _]]
 
   @inline def apply[F[_, _], G[_, _]](polyFunction: F[UnknownE, UnknownA] => G[UnknownE, UnknownA]): FunctionKK[F, G] = polyFunction.asInstanceOf[FunctionKK[F, G]]
 
@@ -33,12 +37,6 @@ object FunctionKK {
     @inline implicit def asFunctionKK[F[_, _], G[_, _]](functionKKInstance: FunctionKK.Instance[F, G]): FunctionKK[F, G] =
       FunctionKK(functionKKInstance.apply)
   }
-
-  /**
-    * 2.12 compat. In 2.13+ abstract type aliases receive the implicit scope of their enclosing object on their own.
-    * But in 2.12 only *Class Types* do. So, here's a Class Type
-    */
-  private[FunctionKK] final abstract class TagFor212ImplicitScope
 
   private[FunctionKK] type UnknownE
   private[FunctionKK] type UnknownA
