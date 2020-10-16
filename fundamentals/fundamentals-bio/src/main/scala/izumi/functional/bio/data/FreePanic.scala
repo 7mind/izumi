@@ -54,7 +54,12 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
             suc(_).foldMap(transform),
           )
       case s: FreePanic.Sandbox[S, E, A] =>
-        s.sub.foldMap(transform).sandbox.leftMap(_.asInstanceOf[E])
+        @inline def foldMapSandbox[e, a](s: FreePanic[S, e, a] with FreePanic.Sandbox[S, _, _]): G[e, a] = {
+          s match {
+            case FreePanic.Sandbox(sub) => sub.foldMap(transform).sandbox
+          }
+        }
+        foldMapSandbox[E, A](s)
       case FreePanic.BracketCase(acquire, release, use) =>
         acquire.foldMap(transform).bracketCase((a, e: Exit[E, A]) => release(a, e).foldMap(transform))(a => use(a).foldMap(transform))
       case FreePanic.FlatMapped(sub, cont) =>
@@ -80,30 +85,29 @@ object FreePanic {
     BracketCase(acquire, (a: A0, _: Exit[E, A]) => release(a), use)
   }
 
-  private final case class Pure[S[_, _], A](a: A) extends FreePanic[S, Nothing, A] {
+  final case class Pure[S[_, _], A](a: A) extends FreePanic[S, Nothing, A] {
     override def toString: String = s"Pure:[$a]"
   }
-  private final case class Suspend[S[_, _], E, A](s: S[E, A]) extends FreePanic[S, E, A] {
+  final case class Suspend[S[_, _], E, A](s: S[E, A]) extends FreePanic[S, E, A] {
     override def toString: String = s"Suspend:[$s]"
   }
-  private final case class Fail[S[_, _], E](fail: () => E) extends FreePanic[S, E, Nothing] {
+  final case class Fail[S[_, _], E](fail: () => E) extends FreePanic[S, E, Nothing] {
     override def toString: String = s"Fail:[$fail]"
   }
-  private final case class Terminate[S[_, _]](termination: () => Throwable) extends FreePanic[S, Nothing, Nothing] {
+  final case class Terminate[S[_, _]](termination: () => Throwable) extends FreePanic[S, Nothing, Nothing] {
     override def toString: String = s"Terminate:[$termination]"
   }
-  private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreePanic[S, E, A], cont: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
+  final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreePanic[S, E, A], cont: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
-  private final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, Exit.Failure[E], A] {
+  final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, Exit.Failure[E], A] {
     override def toString: String = s"Sandbox:[sub=$sub]"
   }
-  private final case class Redeem[S[_, _], E, E1, A, B](sub: FreePanic[S, E, A], err: E => FreePanic[S, E1, B], suc: A => FreePanic[S, E1, B])
-    extends FreePanic[S, E1, B] {
+  final case class Redeem[S[_, _], E, E1, A, B](sub: FreePanic[S, E, A], err: E => FreePanic[S, E1, B], suc: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
     override def toString: String = s"Redeem:[sub=$sub]"
   }
 
-  private final case class BracketCase[S[_, _], E, A0, A](
+  final case class BracketCase[S[_, _], E, A0, A](
     acquire: FreePanic[S, E, A0],
     release: (A0, Exit[E, A]) => FreePanic[S, Nothing, Unit],
     use: A0 => FreePanic[S, E, A],

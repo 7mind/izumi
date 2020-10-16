@@ -58,20 +58,19 @@ object FreeError {
   @inline def lift[S[_, _], E, A](s: S[E, A]): FreeError[S, E, A] = Suspend(s)
   @inline def fail[S[_, _], E](e: => E): FreeError[S, E, Nothing] = Fail(() => e)
 
-  private final case class Pure[S[_, _], A](a: A) extends FreeError[S, Nothing, A] {
+  final case class Pure[S[_, _], A](a: A) extends FreeError[S, Nothing, A] {
     override def toString: String = s"Pure:[$a]"
   }
-  private final case class Suspend[S[_, _], E, A](s: S[E, A]) extends FreeError[S, E, A] {
+  final case class Suspend[S[_, _], E, A](s: S[E, A]) extends FreeError[S, E, A] {
     override def toString: String = s"Suspend:[$s]"
   }
-  private final case class Fail[S[_, _], E](fail: () => E) extends FreeError[S, E, Nothing] {
+  final case class Fail[S[_, _], E](fail: () => E) extends FreeError[S, E, Nothing] {
     override def toString: String = s"Fail:[$fail]"
   }
-  private final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreeError[S, E, A], cont: A => FreeError[S, E1, B]) extends FreeError[S, E1, B] {
+  final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreeError[S, E, A], cont: A => FreeError[S, E1, B]) extends FreeError[S, E1, B] {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
-  private final case class Redeem[S[_, _], E, E1, A, B](sub: FreeError[S, E, A], err: E => FreeError[S, E1, B], suc: A => FreeError[S, E1, B])
-    extends FreeError[S, E1, B] {
+  final case class Redeem[S[_, _], E, E1, A, B](sub: FreeError[S, E, A], err: E => FreeError[S, E1, B], suc: A => FreeError[S, E1, B]) extends FreeError[S, E1, B] {
     override def toString: String = s"Redeem:[sub=$sub]"
   }
 

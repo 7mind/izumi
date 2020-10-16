@@ -2,7 +2,7 @@ package izumi.functional.bio.data
 
 import java.util.concurrent.atomic.AtomicReference
 
-import izumi.functional.bio.{BIO, BIORunner, F}
+import izumi.functional.bio.{BIO, BIORunner, F, IO2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 import zio.internal.Platform
@@ -36,7 +36,7 @@ class FreeMonadTest extends AnyWordSpec {
 
 object FreeMonadTest {
   sealed trait TestFreeChoice[+E, +A] {
-    def interpret[F[+_, +_]: BIO](scope: AtomicReference[Int]): F[E, A] = TestFreeChoice.interpret[F, E, A](scope)(this)
+    def interpret[F[+_, +_]: IO2](scope: AtomicReference[Int]): F[E, A] = TestFreeChoice.interpret[F, E, A](scope)(this)
   }
   object TestFreeChoice {
     final case class Pure[+A](execution: A) extends TestFreeChoice[Nothing, A]
