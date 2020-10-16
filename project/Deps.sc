@@ -276,7 +276,7 @@ object Izumi {
       final val id = ArtifactId("distage")
       final val basePath = Seq("distage")
 
-      final lazy val model = ArtifactId("distage-core-api")
+      final lazy val coreApi = ArtifactId("distage-core-api")
       final lazy val proxyCglib = ArtifactId("distage-core-proxy-cglib")
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-extension-config")
@@ -415,14 +415,14 @@ object Izumi {
     name = Projects.distage.id,
     artifacts = Seq(
       Artifact(
-        name = Projects.distage.model,
-        libs = allCatsOptional ++ allZioOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        name = Projects.distage.coreApi,
+        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.proxyCglib,
         libs = Seq(cglib_nodep),
-        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
@@ -433,12 +433,12 @@ object Izumi {
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),
-        depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
+        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
         libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
         settings = crossScalaSources,
@@ -446,7 +446,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.plugins,
         libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
@@ -454,14 +454,14 @@ object Izumi {
       Artifact(
         name = Projects.distage.extensionLogstage,
         libs = Seq.empty,
-        depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.frameworkApi,
         libs = Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(

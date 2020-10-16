@@ -917,8 +917,12 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+      "io.monix" %% "monix-bio" % V.monix_bio % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
