@@ -72,15 +72,19 @@ object PluginLoaderDefaultImpl {
       val implementors = scanResult.getClassesImplementing(base)
       implementors
         .asScala
-        .filterNot(c => c.isAbstract || c.isAnonymousInnerClass)
+        .filterNot(c => c.isAbstract || c.isSynthetic || c.isAnonymousInnerClass)
         .flatMap {
           classInfo =>
             val clz = classInfo.loadClass()
-            TypeUtil.isObject(clz) match {
-              case Some(moduleField) =>
-                Seq(TypeUtil.instantiateObject[T](moduleField))
-              case None =>
-                TypeUtil.instantiateZeroArgClass[T](clz).toSeq
+            if (!TypeUtil.isAnonymous(clz)) {
+              TypeUtil.isObject(clz) match {
+                case Some(moduleField) =>
+                  Seq(TypeUtil.instantiateObject[T](moduleField))
+                case None =>
+                  TypeUtil.instantiateZeroArgClass[T](clz).toSeq
+              }
+            } else {
+              Nil
             }
         }
         .toSeq // 2.13 compat

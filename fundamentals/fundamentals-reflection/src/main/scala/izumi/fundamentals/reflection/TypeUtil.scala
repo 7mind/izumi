@@ -85,4 +85,8 @@ object TypeUtil {
     ctor.newInstance().asInstanceOf[T]
   }
 
+  final def isAnonymous(clazz: Class[_]): Boolean = {
+    clazz.isAnonymousClass || clazz.getName.contains("$anon$")
+  }
+
 }

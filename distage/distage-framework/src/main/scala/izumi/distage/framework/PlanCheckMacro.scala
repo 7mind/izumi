@@ -87,7 +87,7 @@ object PlanCheckMacro {
     // and that can be easily instantiated with `new`
     val referencablePlugins = checkedLoadedPlugins
       .allRaw
-      .filterNot(_.getClass.isAnonymousClass)
+      .filterNot(TypeUtil isAnonymous _.getClass)
       .filter(p => TypeUtil.isObject(p.getClass).isDefined || TypeUtil.isZeroArgClass(p.getClass).isDefined)
 
     // We _have_ to call `new` to cause Intellij's incremental compiler to recompile users,
