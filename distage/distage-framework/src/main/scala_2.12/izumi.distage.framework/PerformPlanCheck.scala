@@ -18,8 +18,7 @@ final case class PerformPlanCheck[
   CheckConfig <: Boolean,
   PrintPlan <: Boolean,
   OnlyWarn <: Boolean,
-](
-  roleAppMain: RoleAppMain,
+](roleAppMain: RoleAppMain,
   roles: Roles,
   activations: Activations,
   config: Config,
