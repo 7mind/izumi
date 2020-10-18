@@ -10,6 +10,7 @@ import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue.{DuplicateActivations, MissingImport, UnsaturatedAxis, UnsolvableConflict}
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
@@ -164,7 +165,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     )
   }
 
-  "Verifier flags shadowed activations (overridden by all other activations)" in {
+  "progression test: can't Verifier flags shadowed activations (overridden by all other activations)" in assertThrows[TestFailedException] {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
@@ -208,7 +209,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       mkInjector().produceGet[Fork1](definition, Activation.empty).unsafeGet()
     }
 
-    val result = PlanVerifier().verify(definition, Roots.target[Fork1])
+//    val result = PlanVerifier().verify(definition, Roots.target[Fork1])
 //    assert(result.issues.nonEmpty)
 //    assert(result.issues.size == 99)
   }
@@ -261,7 +262,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.isEmpty)
   }
 
-  "Verifier flags shadowed activations in specificity activation chains" in {
+  "progression test: can't Verifier flags shadowed activations in specificity activation chains" in assertThrows[TestFailedException] {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
@@ -310,7 +311,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 //    assert(result.issues.size == 99)
   }
 
-  "Verifier handles specificity activation chains" in {
+  "progression test: can't Verifier handles specificity activation chains" in assertThrows[TestFailedException] {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {

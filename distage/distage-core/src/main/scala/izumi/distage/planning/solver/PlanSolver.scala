@@ -1,5 +1,6 @@
 package izumi.distage.planning.solver
 
+import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
@@ -7,7 +8,6 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
@@ -34,19 +34,15 @@ object PlanSolver {
     resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
     preps: GraphPreparations,
   ) extends PlanSolver {
-
     import scala.collection.compat._
 
     def resolveConflicts(
       input: PlannerInput
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
-      // TODO: just for testing
-      val verifier = PlanVerifier(preps)
-      verifier.verify(input.bindings, input.roots) match {
-        case PlanVerifierResult(issues, _) if issues.nonEmpty =>
-          System.err.println(issues.niceList())
-        case _ =>
+      if (enableDebugVerify) {
+        val res = PlanVerifier(preps).verify(input.bindings, input.roots)
+        if (res.issues.nonEmpty) System.err.println(res.issues.niceList())
       }
 
       for {
@@ -204,4 +200,5 @@ object PlanSolver {
 
   }
 
+  private[this] final val enableDebugVerify = DebugProperties.`izumi.distage.debug.verify-all`.boolValue(false)
 }

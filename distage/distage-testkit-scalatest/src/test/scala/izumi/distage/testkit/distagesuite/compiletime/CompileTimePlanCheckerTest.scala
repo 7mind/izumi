@@ -60,7 +60,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
     )
   }
 
-  "check role app module" in {
+  "progression test: check role app module" in assertThrows[TestFailedException] {
     PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help")
 
 //    PlanCheck.checkRoleApp(

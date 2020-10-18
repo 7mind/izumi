@@ -49,7 +49,7 @@ object PlanVerifierCases {
     )
 
     trait Fork1
-    class ImplA(badDep: BadDep) extends Fork1
+    class ImplA(val badDep: BadDep) extends Fork1
     class ImplB() extends Fork1
 
     trait BadDep

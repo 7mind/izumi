@@ -11,6 +11,7 @@ import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 object PlanCheckMacro {
+  private[this] final val sysPropOnlyWarn = DebugProperties.`izumi.distage.plancheck.onlywarn`.boolValue(false)
 
   def impl[
     RoleAppMain <: PlanHolder: c.WeakTypeTag,
@@ -72,7 +73,7 @@ object PlanCheckMacro {
         case PlanCheckResult.Correct(loadedPlugins) =>
           loadedPlugins
         case PlanCheckResult.Incorrect(loadedPlugins, exception) =>
-          val warn = onlyWarn.getOrElse(DebugProperties.`izumi.distage.plancheck.onlywarn`.boolValue(false))
+          val warn = onlyWarn.getOrElse(sysPropOnlyWarn)
           if (warn) {
             c.warning(c.enclosingPosition, exception.stackTrace)
             loadedPlugins
