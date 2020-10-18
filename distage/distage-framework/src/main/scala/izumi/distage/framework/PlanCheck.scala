@@ -189,7 +189,7 @@ object PlanCheck {
             val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(
               bindings = bindings0000,
               roots = Roots(rolesInfo.requiredComponents),
-              providedImports = allKeysFromRoleAppMainModule ++
+              providedKeys = allKeysFromRoleAppMainModule ++
                 bsModule.keys ++
                 defaultModule.module.keys ++
                 veryBadInjectorContext +

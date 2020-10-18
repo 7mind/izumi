@@ -449,6 +449,8 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def head: T = toSet.head
 
+  def tail: Set[T] = toSet.tail
+
   /**
     * Returns <code>false</code> to indicate this <code>NonEmptySet</code>, like all <code>NonEmptySet</code>s, is non-empty.
     *
@@ -987,7 +989,7 @@ object NonEmptySet {
     * @param firstElement the first element (with index 0) contained in this <code>NonEmptySet</code>
     * @param otherElements a varargs of zero or more other elements (with index 1, 2, 3, ...) contained in this <code>NonEmptySet</code>
     */
-  def apply[T](firstElement: T, otherElements: T*): NonEmptySet[T] = new NonEmptySet(otherElements.toSet + firstElement)
+  @inline def apply[T](firstElement: T, otherElements: T*): NonEmptySet[T] = new NonEmptySet(otherElements.toSet + firstElement)
 
   /**
     * Variable argument extractor for <code>NonEmptySet</code>s.
@@ -995,7 +997,7 @@ object NonEmptySet {
     * @param nonEmptySet: the <code>NonEmptySet</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptySet</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[T](nonEmptySet: NonEmptySet[T]): Some[Seq[T]] = Some(nonEmptySet.toSeq)
+  @inline def unapplySeq[T](nonEmptySet: NonEmptySet[T]): Some[Seq[T]] = Some(nonEmptySet.toSeq)
 
   /**
     * Optionally construct a <code>NonEmptySet</code> containing the elements, if any, of a given <code>Set</code>.
@@ -1004,13 +1006,13 @@ object NonEmptySet {
     * @return a <code>NonEmptySet</code> containing the elements of the given <code>GenSeq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>GenSeq</code> is empty
     */
-  def from[T](set: scala.collection.immutable.Set[T]): Option[NonEmptySet[T]] =
+  @inline def from[T](set: scala.collection.immutable.Set[T]): Option[NonEmptySet[T]] =
     set.headOption match {
       case None => None
       case Some(_) => Some(new NonEmptySet(set))
     }
 
-  def unsafeFrom[T](set: scala.collection.immutable.Set[T]): NonEmptySet[T] = {
+  @inline def unsafeFrom[T](set: scala.collection.immutable.Set[T]): NonEmptySet[T] = {
     require(set.nonEmpty)
     new NonEmptySet(set)
   }

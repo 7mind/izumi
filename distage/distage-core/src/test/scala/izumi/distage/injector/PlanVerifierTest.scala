@@ -2,6 +2,7 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
+import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -355,6 +356,44 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     assert(result.issues.isEmpty)
+  }
+
+  "Verifier finds issues around a provided import" in {
+    import PlanVerifierCase2._
+
+    val definition = new ModuleDef {
+      many[Dep]
+        .ref[ExternalDep]
+
+      make[X]
+      make[Fork1].tagged(Axis.A).from[ImplA]
+      make[Fork1].tagged(Axis.B).from[ImplB]
+
+      make[BadDep].tagged(Axis.B).from[BadDepImplB]
+    }
+
+    val result1 = PlanVerifier().verify(definition, Roots.target[X])
+    assert(result1.issues.map(_.getClass) == Set(classOf[MissingImport], classOf[UnsaturatedAxis]))
+
+    val result2 = PlanVerifier().verify(definition, Roots.target[X], providedKeys = Set(DIKey[ExternalDep]))
+    assert(result2.issues == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))))
+  }
+
+  "Verifier lets unsaturated axis slide if it's substituted by a provided import" in {
+    import PlanVerifierCase2._
+
+    val definition = new ModuleDef {
+      make[Fork1].tagged(Axis.A).from[ImplA]
+      make[Fork1].tagged(Axis.B).from[ImplB]
+
+      make[BadDep].tagged(Axis.B).from[BadDepImplB]
+    }
+
+    val result1 = PlanVerifier().verify(definition, Roots.target[Fork1])
+    assert(result1.issues == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))))
+
+    val result2 = PlanVerifier().verify(definition, Roots.target[Fork1], providedKeys = Set(DIKey[BadDep]))
+    assert(result2.issues.isEmpty)
   }
 
 }

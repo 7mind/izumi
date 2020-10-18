@@ -39,8 +39,26 @@ object PlanVerifierCases {
 
   }
 
-  // unsaturated on multiple-axises
+  object PlanVerifierCase2 {
+    trait Dep
+    class ExternalDep extends Dep
 
-  // [specificity?]
+    class X(
+      val external: ExternalDep,
+      val fork1: Fork1,
+    )
+
+    trait Fork1
+    class ImplA(badDep: BadDep) extends Fork1
+    class ImplB() extends Fork1
+
+    trait BadDep
+    class BadDepImplB extends BadDep
+
+    object Axis extends Axis {
+      case object A extends AxisValueDef
+      case object B extends AxisValueDef
+    }
+  }
 
 }
