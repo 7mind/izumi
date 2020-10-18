@@ -32,7 +32,7 @@ import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichStrin
 import izumi.logstage.api.IzLogger
 import izumi.reflect.{Tag, TagK}
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 
 object PlanCheck {
   final val defaultActivationsLimit = DebugProperties.`izumi.distage.plancheck.bruteforce.max-activations`.strValue().fold(9000)(_.asInt(9000))
@@ -139,7 +139,7 @@ object PlanCheck {
       object xa {
         type T <: DefaultModule[AppEffectType]
       }
-      implicit val t: Tag[xa.T] = tg.asInstanceOf[Tag[xa.T]]
+      @nowarn implicit val t: Tag[xa.T] = tg.asInstanceOf[Tag[xa.T]]
 
       Injector[Identity]().produceRun(
         baseModule overriddenBy mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map((roleAppMain.getClass.getClassLoader, _)))
