@@ -28,7 +28,7 @@ class StaticPluginLoaderTest extends AnyWordSpec {
       val plugins = PluginLoader().load(PluginConfig.static("com.github.pshirshov.test.plugins"))
       assert(plugins.size == 6)
       assert(
-        plugins.map(_.getClass).toSet == Set(
+        plugins.result.map(_.getClass).toSet == Set(
           EmptyTestPlugin.getClass,
           classOf[StaticTestPlugin],
           classOf[DependingPlugin],

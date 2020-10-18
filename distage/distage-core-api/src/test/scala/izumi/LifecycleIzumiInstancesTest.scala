@@ -1,19 +1,17 @@
 package izumi
 
-import izumi.distage.model.definition.Lifecycle
-import izumi.functional.bio.{BIOApplicative, BIOApplicative3, BIOFunctor, BIOFunctor3}
+import izumi.distage.model.definition.{Lifecycle2, Lifecycle3}
+import izumi.functional.bio.{Functor2, Functor3}
 import org.scalatest.wordspec.AnyWordSpec
 
 class LifecycleIzumiInstancesTest extends AnyWordSpec {
   "Summon Functor2/Functor3 instances for Lifecycle" in {
-    def t2[F[+_, +_]: BIOApplicative] = {
-      type G[+E, +A] = Lifecycle[F[E, ?], A]
-      BIOFunctor[G]
+    def t2[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +?, +?]] = {
+      Functor2[Lifecycle2[F, +?, +?]]
     }
 
-    def t3[F[-_, +_, +_]: BIOApplicative3] = {
-      type G[-R, +E, +A] = Lifecycle[F[R, E, ?], A]
-      BIOFunctor3[G]
+    def t3[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -?, +?, +?]] = {
+      Functor3[Lifecycle3[F, -?, +?, +?]]
     }
 
     t2[zio.IO]

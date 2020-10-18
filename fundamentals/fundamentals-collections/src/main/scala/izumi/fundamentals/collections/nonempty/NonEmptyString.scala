@@ -1,5 +1,7 @@
 package izumi.fundamentals.collections.nonempty
 
+// shameless copypaste from Scalactic
+
 import scala.collection.compat.{Factory, _}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq}
@@ -545,6 +547,8 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @return the first character of this <code>NonEmptyString</code>.
     */
   def head: Char = theString.head
+
+  def tail: String = theString.tail
 
   /**
     * Finds index of first occurrence of some value in this <code>NonEmptyString</code>.
@@ -1508,7 +1512,7 @@ object NonEmptyString {
     * @param firstChar the first character (with index 0) contained in this <code>NonEmptyString</code>
     * @param otherChars a varargs of zero or more other characters (with index 1, 2, 3, ...) contained in this <code>NonEmptyString</code>
     */
-  def apply(firstChar: Char, otherChars: Char*): NonEmptyString = new NonEmptyString(firstChar.toString + otherChars.mkString)
+  @inline def apply(firstChar: Char, otherChars: Char*): NonEmptyString = new NonEmptyString(firstChar.toString + otherChars.mkString)
 
   /**
     * Variable argument extractor for <code>NonEmptyString</code>s.
@@ -1516,14 +1520,7 @@ object NonEmptyString {
     * @param nonEmptyString: the <code>NonEmptyString</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyString</code>s elements, wrapped in a <code>Some</code>
     */
-  //def unapplySeq(nonEmptyString: NonEmptyString): Option[Seq[Char]] = Some(nonEmptyString.theString)
-
-  def unapplySeq(nonEmptyString: NonEmptyString): Option[Seq[String]] = Some(Seq(nonEmptyString.theString))
-
-  /*
-    // TODO: Figure out how to get case NonEmptyString() to not compile
-    def unapplySeq[T](nonEmptyString: NonEmptyString[T]): Option[(T, Seq[T])] = Some(nonEmptyString.head, nonEmptyString.tail)
-   */
+  @inline def unapplySeq(nonEmptyString: NonEmptyString): Some[Seq[String]] = Some(Seq(nonEmptyString.theString))
 
   /**
     * Optionally construct a <code>NonEmptyString</code> containing the characters, if any, of a given <code>Seq</code>.
@@ -1532,9 +1529,18 @@ object NonEmptyString {
     * @return a <code>NonEmptyString</code> containing the elements of the given <code>Seq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>Seq</code> is empty
     */
-  def from[T](seq: Seq[Char]): Option[NonEmptyString] =
+  @inline def from[T](seq: Seq[Char]): Option[NonEmptyString] =
     seq.headOption match {
       case None => None
       case Some(_) => Some(new NonEmptyString(seq.mkString))
     }
+
+  @inline def from[T](str: String): Option[NonEmptyString] =
+    if (str.isEmpty) None else Some(new NonEmptyString(str))
+
+  @inline def unsafeFrom(str: String): NonEmptyString = {
+    require(str.nonEmpty)
+    new NonEmptyString(str)
+  }
+
 }

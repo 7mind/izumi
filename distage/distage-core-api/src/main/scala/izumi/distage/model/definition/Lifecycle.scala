@@ -1152,7 +1152,7 @@ private[definition] trait TrifunctorHasLifecycleTagImpl[R0, T] {
   type R
   type E
   type A <: T
-  implicit def tagBIOLocal: Tag[Local3[F]]
+  implicit def tagLocal3: Tag[Local3[F]]
   implicit def tagFull: Tag[Lifecycle[F[Any, E, ?], A]]
   implicit def ctorR: HasConstructor[R]
   implicit def ev: R0 <:< Lifecycle[F[R, E, ?], A]
@@ -1178,7 +1178,7 @@ private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLi
     type R = R0
     type E = E0
     type A = A0
-    val tagBIOLocal: Tag[Local3[F]] = implicitly
+    val tagLocal3: Tag[Local3[F]] = implicitly
     val ctorR: HasConstructor[R0] = implicitly
     val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = implicitly
     val ev: R1 <:< Lifecycle[F0[R0, E0, ?], A0] = implicitly

@@ -4,11 +4,12 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
 import izumi.functional.Value
 import izumi.fundamentals.platform.cache.SyncCache
+import izumi.fundamentals.reflection.TypeUtil
 
 import scala.jdk.CollectionConverters._
 
 class PluginLoaderDefaultImpl extends PluginLoader {
-  override def load(config: PluginConfig): Seq[PluginBase] = {
+  override def load(config: PluginConfig): LoadedPlugins = {
     /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
     val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
       Seq.empty
@@ -16,7 +17,7 @@ class PluginLoaderDefaultImpl extends PluginLoader {
       scanClasspath(config)
     }
 
-    applyOverrides(loadedPlugins, config)
+    LoadedPlugins(loadedPlugins, config.merges, config.overrides)
   }
 
   protected[this] def scanClasspath(config: PluginConfig): Seq[PluginBase] = {
@@ -71,15 +72,19 @@ object PluginLoaderDefaultImpl {
       val implementors = scanResult.getClassesImplementing(base)
       implementors
         .asScala
-        .filterNot(_.isAbstract)
+        .filterNot(c => c.isAbstract || c.isSynthetic || c.isAnonymousInnerClass)
         .flatMap {
           classInfo =>
             val clz = classInfo.loadClass()
-
-            if (Option(clz.getSimpleName).exists(_.endsWith("$"))) {
-              Seq(clz.getField("MODULE$").get(null).asInstanceOf[T])
+            if (!TypeUtil.isAnonymous(clz)) {
+              TypeUtil.isObject(clz) match {
+                case Some(moduleField) =>
+                  Seq(TypeUtil.instantiateObject[T](moduleField))
+                case None =>
+                  TypeUtil.instantiateZeroArgClass[T](clz).toSeq
+              }
             } else {
-              clz.getDeclaredConstructors.find(_.getParameterCount == 0).map(_.newInstance().asInstanceOf[T]).toSeq
+              Nil
             }
         }
         .toSeq // 2.13 compat

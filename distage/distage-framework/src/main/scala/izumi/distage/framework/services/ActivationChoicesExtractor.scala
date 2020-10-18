@@ -1,8 +1,7 @@
 package izumi.distage.framework.services
 
-import distage.ModuleBase
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.{Axis, BindingTag}
+import izumi.distage.model.definition.{Axis, BindingTag, ModuleBase}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.strings.IzString._
 
@@ -12,7 +11,7 @@ trait ActivationChoicesExtractor {
 
 object ActivationChoicesExtractor {
 
-  class ActivationChoicesExtractorImpl extends ActivationChoicesExtractor {
+  class Impl extends ActivationChoicesExtractor {
     def findAvailableChoices(module: ModuleBase): ActivationInfo = {
       findAvailableChoicesDetailed(module) match {
         case Left(badAxis) =>

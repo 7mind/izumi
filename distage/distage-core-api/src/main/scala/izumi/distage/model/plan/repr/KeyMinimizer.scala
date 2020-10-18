@@ -6,7 +6,18 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.reflect.macrortti.LightTypeTagRef.SymName
 import izumi.reflect.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
-class KeyMinimizer(allKeys: Set[DIKey]) {
+class KeyMinimizer(
+  allKeys: Set[DIKey]
+) {
+
+  def renderKey(key: DIKey): String = {
+    renderKey(key, renderType)
+  }
+
+  def renderType(tpe: SafeType): String = {
+    import minimizedLTTRenderables.RenderableSyntax
+    tpe.tag.ref.render()(minimizedLTTRenderables.r_LightTypeTag)
+  }
 
   @nowarn("msg=Unused import")
   private[this] val index: Map[String, Int] = {
@@ -30,15 +41,6 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
         if (withSameName <= 1) shortname else sym.name
       }
     }
-  }
-
-  def renderType(tpe: SafeType): String = {
-    import minimizedLTTRenderables.RenderableSyntax
-    tpe.tag.ref.render()(minimizedLTTRenderables.r_LightTypeTag)
-  }
-
-  def renderKey(key: DIKey): String = {
-    renderKey(key, renderType)
   }
 
   @inline private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {

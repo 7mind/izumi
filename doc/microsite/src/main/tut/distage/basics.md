@@ -5,6 +5,17 @@ Overview
 
 ### Quick Start
 
+#### Dependencies
+
+Add the `distage-core` library:
+
+@@dependency[sbt,Maven,Gradle] {
+  group="io.7mind.izumi"
+  artifact="distage-framework-docker_2.13"
+  version="$izumi.version$"
+}
+
+
 #### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
@@ -164,12 +175,12 @@ You may use `Injector.inherit` to obtain access to your outer object graph in yo
 
 #### Real-world example
 
-Check out [`distage-example` project](https://github.com/7mind/distage-example) for a complete example built using `distage`, tagless final, `http4s`, `doobie` and `zio` libraries.
+Check out [`distage-example`](https://github.com/7mind/distage-example) sample project for a complete example built using `distage`, @ref[bifunctor tagless final](../bio/00_bio.md), `http4s`, `doobie` and `zio` libraries.
 
 It shows how to write an idiomatic `distage`-style from scratch and how to:
 
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
-- setup portable, zero-setup test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
+- setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
 - enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
 
@@ -600,7 +611,7 @@ Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
 import distage.{ModuleDef, Injector}
-import izumi.functional.bio.{BIOError, BIOPrimitives, F}
+import izumi.functional.bio.{BIOError, Primitives2, F}
 import zio.{Task, IO}
 
 trait KVStore[F[_, _]] {
@@ -608,7 +619,7 @@ trait KVStore[F[_, _]] {
   def put(key: String, value: String): F[Nothing, Unit]
 }
 
-def dummyKVStore[F[+_, +_]: BIOError: BIOPrimitives]: F[Nothing, KVStore[F]] = {
+def dummyKVStore[F[+_, +_]: BIOError: Primitives2]: F[Nothing, KVStore[F]] = {
   for {
     ref <- F.mkRef(Map.empty[String, String])
   } yield new KVStore[F] {
@@ -650,7 +661,7 @@ You need to specify your effect type when constructing `Injector`, as in `Inject
 
 ### ZIO Has Bindings
 
-You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: BIOLocal`:
+You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
 ```scala mdoc:reset:invisible
 class Dep1
@@ -841,7 +852,7 @@ If a suitable trait is specified as an implementation class for a binding, `Trai
 
 Example:
 
-```scala mdoc:reset:to-string
+```scala mdoc:reset-object:to-string
 import distage.{ModuleDef, Id, Injector}
 
 trait Trait1 {
@@ -899,16 +910,17 @@ object PlusedInt {
 
 }
 
-Injector()
-  .produceRun(new ModuleDef {
-    make[Int].named("a").from(1)
-    make[Int].named("b").from(2)
-    make[Pluser]
-    make[PlusedInt].from[PlusedInt.Impl]
-  }) {
-    plusedInt: PlusedInt => 
-      plusedInt.result
-  }
+def module = new ModuleDef {
+  make[Int].named("a").from(1)
+  make[Int].named("b").from(2)
+  make[Pluser]
+  make[PlusedInt].from[PlusedInt.Impl]
+}
+
+Injector().produceRun(module) {
+  plusedInt: PlusedInt => 
+    plusedInt.result()
+}
 ```
 
 #### @impl annotation
@@ -926,6 +938,40 @@ import distage.impl
   override def result(): Int = {
     pluser.plus(a, b)
   }
+}
+```
+
+#### Avoiding constructors even further
+
+When overriding behavior of a class, you may avoid writing a repeat of its constructor in your sub-class by inheriting
+it with a trait instead. Example:
+
+```scala mdoc:to-string
+/**
+  * Note how we avoid writing a call to the super-constructor 
+  * of `PlusedInt.Impl`, such as:
+  *
+  * {{{
+  *   abstract class OverridenPlusedIntImpl(
+  *     pluser: Pluser
+  *   ) extends PlusedInt.Impl(pluser)
+  * }}}
+  *
+  * Which would be unavoidable with class-to-class inheritance.
+  * Using trait-to-class inheritance we avoid writing any boilerplate
+  * besides the overrides we want to apply to the class. 
+  */
+@impl trait OverridenPlusedIntImpl extends PlusedInt.Impl {
+ override def result(): Int = {
+   super.result() * 10
+ }
+}
+
+Injector().produceRun(module overriddenBy new ModuleDef {
+  make[PlusedInt].from[OverridenPlusedIntImpl]
+}) {
+  plusedInt: PlusedInt => 
+    plusedInt.result()
 }
 ```
 

@@ -6,7 +6,7 @@ import izumi.functional.Renderable
 final case class RolesInfo(
   requiredComponents: Set[DIKey],
   requiredRoleBindings: Seq[RoleBinding],
-  availableRoleNames: Seq[String],
+  availableRoleNames: Set[String],
   availableRoleBindings: Seq[RoleBinding],
   unrequiredRoleNames: Set[String],
 ) {

@@ -9,7 +9,6 @@ import izumi.fundamentals.platform.language.unused
 
 class ProviderStrategyDefaultImpl extends ProviderStrategy {
   def callProvider(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: WiringOp.CallProvider): Seq[NewObjectOp.NewInstance] = {
-
     val args: Vector[TypedRef[_]] = op
       .wiring.associations.map {
         param =>

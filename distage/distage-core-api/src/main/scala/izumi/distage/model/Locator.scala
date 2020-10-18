@@ -28,7 +28,7 @@ trait Locator {
     *
     * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators. All the keys must be unique
     */
-  def instances: collection.Seq[IdentifiedRef]
+  def instances: immutable.Seq[IdentifiedRef]
 
   def plan: OrderedPlan
   def parent: Option[Locator]
@@ -48,7 +48,7 @@ trait Locator {
   def lookupRefOrThrow[T: Tag](key: DIKey): TypedRef[T]
   def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]]
 
-  def index: Map[DIKey, Any] = instances.map(i => i.key -> i.value).toMap
+  def index: Map[DIKey, Any]
 
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Returned keys may overlap, if parent locators contain objects for the same key.
@@ -92,15 +92,16 @@ trait Locator {
 object Locator {
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
-    override def instances: Seq[IdentifiedRef] = Nil
+    override def instances: immutable.Seq[IdentifiedRef] = Nil
     override def plan: OrderedPlan = OrderedPlan.empty
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
+    override def index: Map[DIKey, Any] = Map.empty
 
     override def meta: LocatorMeta = LocatorMeta.empty
   }
 
-  final case class LocatorMeta(timings: Map[DIKey, Duration])
+  final case class LocatorMeta(timings: Map[DIKey, Duration]) extends AnyVal
   object LocatorMeta {
     def empty: LocatorMeta = LocatorMeta(Map.empty)
   }

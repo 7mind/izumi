@@ -1,7 +1,7 @@
 package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts._
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
@@ -52,7 +52,7 @@ object SemigraphSolver {
 
   class SemigraphSolverImpl[N, I, V] extends SemigraphSolver[N, I, V] {
 
-    def resolve(
+    override def resolve(
       predcessors: SemiEdgeSeq[Annotated[N], N, V],
       roots: Set[N],
       activations: Set[AxisPoint],
@@ -108,17 +108,14 @@ object SemigraphSolver {
 
     protected def nonAmbigiousActivations(
       activations: Set[AxisPoint]
-    ): Either[List[AmbigiousActivationsSet[N]], Unit] = {
+    ): Either[List[ConflictingAxisChoices[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
       if (bad.isEmpty)
         Right(())
       else
-        Left(List(AmbigiousActivationsSet(bad)))
+        Left(List(ConflictingAxisChoices(bad)))
     }
 
-    implicit class SemiGraphOps(matrix: Seq[(Annotated[N], Node[N, V])]) {
-      def toMultiNodeMap: ImmutableMultiMap[N, (Annotated[N], Node[N, V])] = matrix.map { case (key, node) => (key.key, (key, node)) }.toMultimap
-    }
     @tailrec
     private def traceGrouped(
       activations: ActivationChoices,
@@ -176,23 +173,25 @@ object SemigraphSolver {
       conflict: Seq[(Annotated[N], Node[N, V])],
     ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
 
-      val (onlyValid, _) = filterDeactivated(activations, conflict)
+      val (onlyValid, /*invalid*/ _) = filterDeactivated(activations, conflict)
 
       NonEmptyList.from(onlyValid) match {
         case Some(conflict) =>
-          // keep in mind: `invalid` contains elements which are known to be inactive (there is a conflicting axis point)
-          conflict.size match {
-            case 1 =>
-              Right(Map(conflict.head))
-            case _ =>
-              val hasAxis = conflict.toList.filter(_._1.axis.nonEmpty)
-              hasAxis match {
-                case head :: Nil =>
+          // keep in mind: only `invalid` contains elements which are known to be inactive (there is a conflicting axis point)
+          if (conflict.toList.sizeIs == 1) {
+            Right(Map(conflict.head))
+          } else {
+            val hasAxis = conflict.toList.filter(_._1.axis.nonEmpty)
+            hasAxis match {
+              case head :: Nil =>
+                if (activations.allConfigured(head._1.axis)) {
                   Right(Map(head))
-
-                case _ =>
-                  Left(List(ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)))
-              }
+                } else {
+                  Left(List(conflictingDefsError(conflict)))
+                }
+              case _ =>
+                chooseMostSpecificInConflict(activations, conflict)
+            }
           }
         case None =>
           Right(Map.empty)
@@ -205,6 +204,37 @@ object SemigraphSolver {
       conflict: Seq[(Annotated[N], Node[N, V])],
     ): (Seq[(Annotated[N], Node[N, V])], Seq[(Annotated[N], Node[N, V])]) = {
       conflict.partition { case (k, _) => activations.allValid(k.axis) }
+    }
+
+    // activation is better (more specific) than another if it contains all of its axis points and more,
+    // however, activations cannot be compared if they contain opposite axis points along any axis
+    protected def chooseMostSpecificInConflict(
+      activations: ActivationChoices,
+      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
+    ): Either[List[ConflictingDefs[N, V]], Map[Annotated[N], Node[N, V]]] = {
+      val sorted = conflict.toList.sortWith((a, b) => b._1.axis.subsetOf(a._1.axis))
+      val mostSpecific = sorted.head
+      val mostSpecificAxis = mostSpecific._1.axis
+      val others = sorted.tail
+
+      val allAreComparableAndStrictlyLess = others.iterator.map(_._1.axis).forall {
+        cAxis =>
+          cAxis != mostSpecificAxis && cAxis.subsetOf(mostSpecificAxis) &&
+          (cAxis ++ mostSpecificAxis).groupBy(_.axis).forall(_._2.sizeIs == 1)
+      }
+
+      // most specific binding must have fully-configured axis,
+      // otherwise there is an ambiguity with all the more specific bindings
+      // that will override this one if new choices appear
+      if (allAreComparableAndStrictlyLess && mostSpecificAxis.nonEmpty && activations.allConfigured(mostSpecificAxis)) {
+        Right(Map(mostSpecific))
+      } else {
+        Left(List(conflictingDefsError(conflict)))
+      }
+    }
+
+    protected def conflictingDefsError(conflict: NonEmptyList[(Annotated[N], Node[N, V])]): ConflictingDefs[N, V] = {
+      ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)
     }
 
     private def resolveMutations(predcessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {
@@ -319,6 +349,10 @@ object SemigraphSolver {
       }
     }
 
+  }
+
+  implicit class SemiGraphOps[N, V](private val matrix: Seq[(Annotated[N], Node[N, V])]) extends AnyVal {
+    def toMultiNodeMap: ImmutableMultiMap[N, (Annotated[N], Node[N, V])] = matrix.iterator.map { case (key, node) => (key.key, (key, node)) }.toMultimap
   }
 
 }

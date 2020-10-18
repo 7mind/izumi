@@ -1,23 +1,84 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Axis.AxisPoint
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.conflicts.Annotated
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.definition.{Binding, ModuleBase}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
+import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.fundamentals.graphs.WeakEdge
 
 import scala.annotation.nowarn
 
 @nowarn("msg=Unused import")
-class GraphPreparations(bindingTranslator: BindingTranslator) {
+class GraphPreparations(
+  bindingTranslator: BindingTranslator
+) {
   import scala.collection.compat._
 
-  def computeOperationsUnsafe(input: PlannerInput): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    input
-      .bindings.bindings.iterator
+  def findWeakSetMembers(
+    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    roots: Set[DIKey],
+  ): Set[WeakEdge[DIKey]] = {
+    import izumi.fundamentals.collections.IzCollections._
+
+    val indexed = matrix
+      .links.map {
+        case (successor, node) =>
+          (successor.key, node.meta)
+      }
+      .toMultimapMut
+
+    sets
+      .collect {
+        case (target, Node(_, s: CreateSet)) =>
+          (target, s.members)
+      }
+      .flatMap {
+        case (_, members) =>
+          members
+            .diff(roots)
+            .flatMap {
+              member =>
+                indexed.get(member).toSeq.flatten.collect {
+                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+                    WeakEdge(referenced, member)
+                }
+            }
+      }
+      .toSet
+  }
+
+  def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
+    input match {
+      case Roots.Of(roots) =>
+        roots.toSet
+      case Roots.Everything =>
+        allOps.map(_._1.key).toSet
+    }
+  }
+
+  def toDeps(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = {
+    allOps.collect {
+      case (target, op: WiringOp) => (target, toDep(op))
+      case (target, op: MonadicOp) => (target, toDep(op))
+    }
+  }
+
+  def toDep: PartialFunction[InstantiationOp, Node[DIKey, InstantiationOp]] = {
+    case op: WiringOp =>
+      Node(op.wiring.requiredKeys, op: InstantiationOp)
+    case op: MonadicOp =>
+      Node(Set(op.effectKey), op: InstantiationOp)
+  }
+
+  def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
+    bindings
+      .iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
       //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
@@ -39,7 +100,7 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
             case _: CreateSet =>
               Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
             case _ =>
-              toAxis(b)
+              getAxisPoints(b)
           }
 
           (Annotated(n.target, mutIndex, axis), n, b)
@@ -71,7 +132,7 @@ class GraphPreparations(bindingTranslator: BindingTranslator) {
       .iterator
   }
 
-  protected[this] def toAxis(b: Binding): Set[AxisPoint] = {
+  protected[this] def getAxisPoints(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
       case AxisTag(axisValue) =>
         axisValue.toAxisPoint

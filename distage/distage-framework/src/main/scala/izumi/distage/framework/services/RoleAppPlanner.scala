@@ -1,18 +1,21 @@
 package izumi.distage.framework.services
 
-import distage.{BootstrapModule, DIKey, Injector, TagK, _}
+import distage.Injector
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleDef}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.{OrderedPlan, Roots, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
+import izumi.reflect.TagK
 
-trait RoleAppPlanner[F[_]] {
-  def reboot(bsModule: BootstrapModule): RoleAppPlanner[F]
+trait RoleAppPlanner {
+  def reboot(bsModule: BootstrapModule): RoleAppPlanner
   def makePlan(appMainRoots: Set[DIKey] /*, appModule: ModuleBase*/ ): AppStartupPlans
 }
 
@@ -26,12 +29,13 @@ object RoleAppPlanner {
 
   class Impl[F[_]: TagK](
     options: PlanningOptions,
+    activation: Activation @Id("roleapp"),
     bsModule: BootstrapModule @Id("roleapp"),
     bootloader: Bootloader @Id("roleapp"),
     logger: IzLogger,
   )(implicit
     defaultModule: DefaultModule[F]
-  ) extends RoleAppPlanner[F] { self =>
+  ) extends RoleAppPlanner { self =>
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[QuasiIORunner[F]],
@@ -39,25 +43,26 @@ object RoleAppPlanner {
       DIKey.get[QuasiAsync[F]],
     )
 
-    override def reboot(bsOverride: BootstrapModule): RoleAppPlanner[F] = {
-      new RoleAppPlanner.Impl[F](options, bsModule overriddenBy bsOverride, bootloader, logger)
+    override def reboot(bsOverride: BootstrapModule): RoleAppPlanner = {
+      new RoleAppPlanner.Impl[F](options, activation, bsModule overriddenBy bsOverride, bootloader, logger)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
       val selfReflectionModule = new ModuleDef {
-        make[RoleAppPlanner[F]].fromValue(self)
+        make[RoleAppPlanner].fromValue(self)
         make[PlanningOptions].fromValue(options)
       }
       val bootstrappedApp = bootloader.boot(
         BootConfig(
           bootstrap = _ => bsModule,
           appModule = _ overriddenBy selfReflectionModule,
+          activation = _ => activation,
           roots = _ => Roots(runtimeGcRoots),
         )
       )
       val runtimeKeys = bootstrappedApp.plan.keys
 
-      val appPlan = bootstrappedApp.injector.trisectByKeys(bootloader.activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
+      val appPlan = bootstrappedApp.injector.trisectByKeys(activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
       }
 

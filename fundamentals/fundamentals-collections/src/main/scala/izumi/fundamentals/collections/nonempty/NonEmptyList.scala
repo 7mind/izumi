@@ -484,6 +484,8 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def head: T = toList.head
 
+  def tail: List[T] = toList.tail
+
   /**
     * Finds index of first occurrence of some value in this <code>NonEmptyList</code>.
     *
@@ -1445,7 +1447,7 @@ object NonEmptyList {
   /**
     * Constructs a new <code>NonEmptyList</code> of one element
     */
-  def apply[T](singleElement: T): NonEmptyList[T] = new NonEmptyList[T](singleElement :: Nil)
+  @inline def apply[T](singleElement: T): NonEmptyList[T] = new NonEmptyList[T](singleElement :: Nil)
 
   /**
     * Constructs a new <code>NonEmptyList</code> given at least two elements.
@@ -1454,12 +1456,12 @@ object NonEmptyList {
     * @param firstElement the first element (with index 0) contained in this <code>NonEmptyList</code>
     * @param otherElements a varargs of zero or more other elements (with index 1, 2, 3, ...) contained in this <code>NonEmptyList</code>
     */
-  def apply[T](firstElement: T, secondElement: T, otherElements: T*): NonEmptyList[T] = new NonEmptyList(firstElement :: secondElement :: otherElements.toList)
+  @inline def apply[T](firstElement: T, secondElement: T, otherElements: T*): NonEmptyList[T] = new NonEmptyList(firstElement :: secondElement :: otherElements.toList)
 
   /**
     * Constructs a new <code>NonEmptyList</code> given at least one element.
     */
-  def apply[T](firstElement: T, otherElements: Iterable[T]): NonEmptyList[T] = new NonEmptyList(firstElement :: otherElements.toList)
+  @inline def apply[T](firstElement: T, otherElements: Iterable[T]): NonEmptyList[T] = new NonEmptyList(firstElement :: otherElements.toList)
 
   /**
     * Variable argument extractor for <code>NonEmptyList</code>s.
@@ -1467,7 +1469,7 @@ object NonEmptyList {
     * @param nonEmptyList: the <code>NonEmptyList</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyList</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Option[Seq[T]] = Some(nonEmptyList.toList)
+  @inline def unapplySeq[T](nonEmptyList: NonEmptyList[T]): Some[Seq[T]] = Some(nonEmptyList.toList)
 
   /**
     * Optionally construct a <code>NonEmptyList</code> containing the elements, if any, of a given <code>List</code>.
@@ -1476,7 +1478,7 @@ object NonEmptyList {
     * @return a <code>NonEmptyList</code> containing the elements of the given <code>List</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>List</code> is empty
     */
-  def from[T](list: List[T]): Option[NonEmptyList[T]] = {
+  @inline def from[T](list: List[T]): Option[NonEmptyList[T]] = {
     if (list.isEmpty) None else Some(new NonEmptyList(list))
   }
 
@@ -1487,15 +1489,20 @@ object NonEmptyList {
     * @return a <code>NonEmptyList</code> containing the elements of the given <code>Seq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>Seq</code> is empty
     */
-  def from[T](seq: Iterable[T]): Option[NonEmptyList[T]] = {
+  @inline def from[T](seq: Iterable[T]): Option[NonEmptyList[T]] = {
     from(seq.toList)
   }
 
-  def from[T](iterableOnce: IterableOnce[T]): Option[NonEmptyList[T]] = {
+  @inline def from[T](iterableOnce: IterableOnce[T]): Option[NonEmptyList[T]] = {
     from(iterableOnce.iterator.toList)
   }
 
+  @inline def unsafeFrom[T](list: List[T]): NonEmptyList[T] = {
+    require(list.nonEmpty)
+    new NonEmptyList(list)
+  }
+
   implicit final class OptionOps[A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
-    def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
+    @inline def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
   }
 }

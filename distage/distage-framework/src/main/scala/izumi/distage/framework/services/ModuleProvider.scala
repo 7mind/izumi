@@ -1,16 +1,16 @@
 package izumi.distage.framework.services
 
-import distage.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
+import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.BIOExit
-import izumi.functional.bio.BIORunner.FailureHandler
+import izumi.functional.bio.UnsafeRun2.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter

@@ -19,7 +19,7 @@ trait DistageTestEnv {
       makeEnv(testConfig, pluginLoader, roles, mergeStrategy)
     }
 
-    if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
+    if (DistageTestEnv.cache ne null) {
       DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
     } else {
       doMake()
@@ -34,9 +34,9 @@ trait DistageTestEnv {
   ): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
-    val appModule = mergeStrategy.merge(appPlugins) overriddenBy testConfig.moduleOverrides
-    val bootstrapModule = mergeStrategy.merge(bsPlugins) overriddenBy testConfig.bootstrapOverrides
-    val availableActivations = new ActivationChoicesExtractor.ActivationChoicesExtractorImpl().findAvailableChoices(appModule)
+    val appModule = mergeStrategy.merge(appPlugins.result) overriddenBy testConfig.moduleOverrides
+    val bootstrapModule = mergeStrategy.merge(bsPlugins.result) overriddenBy testConfig.bootstrapOverrides
+    val availableActivations = new ActivationChoicesExtractor.Impl().findAvailableChoices(appModule)
 
     val bsModule = bootstrapModule overriddenBy new BootstrapModuleDef {
       make[ActivationInfo].fromValue(availableActivations)
@@ -65,7 +65,7 @@ trait DistageTestEnv {
 
   protected def loadRoles(): RolesInfo = {
     // For all normal scenarios we don't need roles to setup a test
-    RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
+    RolesInfo(Set.empty, Seq.empty, Set.empty, Seq.empty, Set.empty)
   }
 
   protected def makeMergeStrategy(): PluginMergeStrategy = {
@@ -79,7 +79,13 @@ trait DistageTestEnv {
 }
 
 object DistageTestEnv {
-  private[distage] val cache = new SyncCache[EnvCacheKey, TestEnvironment]
+  private[distage] final val cache: SyncCache[EnvCacheKey, TestEnvironment] = {
+    if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
+      new SyncCache[EnvCacheKey, TestEnvironment]
+    } else {
+      null
+    }
+  }
 
-  final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
+  private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
 }

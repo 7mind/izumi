@@ -16,12 +16,6 @@ function scala212 {
   VERSION_COMMAND="++ $SCALA212 "
 }
 
-function scala211 {
-  echo "Using Scala 2.11..."
-  VERSION_COMMAND="++ $SCALA211 "
-}
-
-
 function scalaall {
   VERSION_COMMAND="+"
 }

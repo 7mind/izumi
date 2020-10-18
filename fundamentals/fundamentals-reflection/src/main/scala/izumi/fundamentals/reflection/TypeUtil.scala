@@ -1,5 +1,7 @@
 package izumi.fundamentals.reflection
 
+import java.lang.reflect.{Constructor, Field}
+
 object TypeUtil {
   def isAssignableFrom(superClass: Class[_], obj: Any): Boolean = {
     def instanceClass = obj.getClass
@@ -48,4 +50,43 @@ object TypeUtil {
       null: Any
     }
   }
+
+  final def isObject(clazz: Class[_]): Option[Field] = {
+    val name = clazz.getName
+    if ((name ne null) && name.endsWith("$")) {
+      try {
+        val field = clazz.getField("MODULE$")
+        if ((field.getModifiers & java.lang.reflect.Modifier.STATIC) != 0) Some(field) else None
+      } catch {
+        case _: NoSuchFieldException => None
+      }
+    } else {
+      None
+    }
+  }
+
+  final def isZeroArgClass(clazz: Class[_]): Option[Constructor[_]] = {
+    clazz.getDeclaredConstructors.find(_.getParameterCount == 0)
+  }
+
+  @inline final def instantiateObject[T](clazz: Class[_]): T = {
+    clazz.getField("MODULE$").get(null).asInstanceOf[T]
+  }
+
+  @inline final def instantiateObject[T](field: Field): T = {
+    field.get(null).asInstanceOf[T]
+  }
+
+  @inline final def instantiateZeroArgClass[T](clazz: Class[_]): Option[T] = {
+    isZeroArgClass(clazz).map(instantiateZeroArgClass[T])
+  }
+
+  @inline final def instantiateZeroArgClass[T](ctor: Constructor[_]): T = {
+    ctor.newInstance().asInstanceOf[T]
+  }
+
+  final def isAnonymous(clazz: Class[_]): Boolean = {
+    clazz.isAnonymousClass || clazz.getName.contains("$anon$")
+  }
+
 }

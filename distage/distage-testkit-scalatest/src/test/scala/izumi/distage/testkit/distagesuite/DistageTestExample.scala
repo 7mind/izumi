@@ -13,7 +13,7 @@ import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
 import izumi.distage.testkit.distagesuite.fixtures._
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.functional.bio.BIOApplicativeError
+import izumi.functional.bio.ApplicativeError2
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks._

@@ -13,7 +13,6 @@ class BundledRolesModule[F[_]: TagK](version: String) extends ModuleDef with Rol
 }
 
 object BundledRolesModule {
-  def apply[F[_]: TagK](version: String): BundledRolesModule[F] = {
-    new BundledRolesModule(version)
-  }
+  def apply[F[_]: TagK](implicit izArtifact: IzArtifactMaterializer): BundledRolesModule[F] = new BundledRolesModule(izArtifact.get.version.version)
+  def apply[F[_]: TagK](version: String): BundledRolesModule[F] = new BundledRolesModule(version)
 }

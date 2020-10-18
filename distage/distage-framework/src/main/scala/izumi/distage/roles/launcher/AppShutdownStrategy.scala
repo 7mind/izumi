@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch
 
 import cats.effect.{ContextShift, IO, LiftIO}
 import izumi.distage.model.effect.QuasiIO
-import izumi.functional.bio.{BIOAsync, F}
+import izumi.functional.bio.{Async2, F}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 
@@ -101,7 +101,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class BIOShutdownStrategy[F[+_, +_]: BIOAsync] extends AppShutdownStrategy[F[Throwable, ?]] {
+  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
     private val shutdownPromise: Promise[Unit] = Promise[Unit]()
     private val mainLatch: CountDownLatch = new CountDownLatch(1)
 

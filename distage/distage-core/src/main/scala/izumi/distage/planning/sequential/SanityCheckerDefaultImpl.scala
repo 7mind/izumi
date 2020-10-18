@@ -1,4 +1,4 @@
-package izumi.distage.planning
+package izumi.distage.planning.sequential
 
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}

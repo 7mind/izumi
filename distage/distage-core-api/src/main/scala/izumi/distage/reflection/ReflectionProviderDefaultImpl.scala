@@ -272,8 +272,21 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass && decl.asMethod.paramLists.nonEmpty
   }
 
-  private[this] def findConstructor(tpe: TypeNative): SymbNative = {
-    tpe.decl(u.u.termNames.CONSTRUCTOR).alternatives.find(_.isPublic).getOrElse(u.u.NoSymbol)
+  @inline private[this] def findConstructor(tpe: TypeNative): SymbNative = {
+    findConstructor0(tpe).getOrElse(u.u.NoSymbol)
+  }
+
+  private[this] def findConstructor0(tpe: TypeNative): Option[SymbNative] = {
+    tpe match {
+      case intersection: u.u.RefinedTypeApi =>
+        intersection.parents.collectFirst(Function.unlift(findConstructor0))
+      case tpe =>
+        if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isTrait) {
+          tpe.baseClasses.collectFirst(Function.unlift(b => if (b ne tpe.typeSymbol) findConstructor0(b.typeSignature) else None))
+        } else {
+          tpe.decl(u.u.termNames.CONSTRUCTOR).alternatives.find(_.isPublic)
+        }
+    }
   }
 
   protected def typeOfWithAnnotation: TypeNative

@@ -80,8 +80,6 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def sandbox[R, E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = r.sandbox.mapError(ZIOExit.toExit[E])
 
-  // BIOAsync
-
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: ZIO[Any, Nothing, Nothing] = ZIO.never
 

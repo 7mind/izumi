@@ -10,7 +10,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction,
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.functional.bio.BIOLocal
+import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.reflect.{Tag, TagK, TagK3}
@@ -76,7 +76,6 @@ import scala.collection.immutable.HashSet
   * @see [[ModuleDefDSL]]
   */
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
-
   override final def bindings: Set[Binding] = freeze()
   override final def iterator: Iterator[Binding] = freezeIterator()
 
@@ -314,6 +313,11 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
+    /**
+      * Create a dummy binding that throws an exception with an error message when it's created.
+      *
+      * Useful for prototyping.
+      */
     def todo(implicit pos: CodePositionMaterializer): AfterBind = {
       val provider = Functoid.todoProvider(key)(pos).get
       bind(ImplDef.ProviderImpl(provider.ret, provider))
@@ -469,7 +473,7 @@ object ModuleDefDSL {
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
@@ -477,7 +481,7 @@ object ModuleDefDSL {
       def fromHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T]): AfterBind = {
         import tag._
         val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
-          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]](tagBIOLocal)) {
+          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
             case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
         dsl.fromResource(provider)
@@ -486,34 +490,34 @@ object ModuleDefDSL {
     sealed trait MakeFromHasLowPriorityOverloads[T, AfterBind] extends Any {
       protected[this] def dsl: MakeDSLBase[T, AfterBind]
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /** Adds a dependency on `Local3[F]` */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r, F: BIOLocal[F]) => F.provide(effect)(r)
+        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+          (r, F: Local3[F]) => F.provide(effect)(r)
         })
       }
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /** Adds a dependency on `Local3[F]` */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        dsl.fromEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, ?], I]): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r: R, F: BIOLocal[F]) => provideLifecycle(F)(resource, r)
+        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
         })
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
@@ -522,7 +526,7 @@ object ModuleDefDSL {
         function: Functoid[Lifecycle[F[R, E, ?], I]]
       )(implicit d1: DummyImplicit
       ): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
@@ -562,7 +566,7 @@ object ModuleDefDSL {
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
@@ -570,7 +574,7 @@ object ModuleDefDSL {
       final def addHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
         import tag._
         val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
-          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]](tagBIOLocal)) {
+          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
             case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
         dsl.addResource(provider)
@@ -579,25 +583,25 @@ object ModuleDefDSL {
     sealed trait AddFromHasLowPriorityOverloads[T, AfterAdd] extends Any {
       protected[this] def dsl: SetDSLBase[T, AfterAdd, _]
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /** Adds a dependency on `Local3[F]` */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r, F: BIOLocal[F]) => F.provide(effect)(r)
+        dsl.addEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+          (r, F: Local3[F]) => F.provide(effect)(r)
         })
       }
 
-      /** Adds a dependency on `BIOLocal[F]` */
+      /** Adds a dependency on `Local3[F]` */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
         function: Functoid[F[R, E, I]]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        dsl.addEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
@@ -606,13 +610,13 @@ object ModuleDefDSL {
         resource: Lifecycle[F[R, E, ?], I]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[BIOLocal[F]]) {
-          (r: R, F: BIOLocal[F]) => provideLifecycle(F)(resource, r)
+        dsl.addResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
         })
       }
 
       /**
-        * Adds a dependency on `BIOLocal[F]`
+        * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
@@ -622,7 +626,7 @@ object ModuleDefDSL {
       )(implicit pos: CodePositionMaterializer,
         d1: DummyImplicit,
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[BIOLocal[F]]) {
+        dsl.addResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
@@ -630,7 +634,7 @@ object ModuleDefDSL {
     }
   }
 
-  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: BIOLocal[F])(resource: Lifecycle[F[R, E, ?], A], r: R): Lifecycle[F[Any, E, ?], A] = {
+  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, ?], A], r: R): Lifecycle[F[Any, E, ?], A] = {
     new Lifecycle[F[Any, E, ?], A] {
       override type InnerResource = resource.InnerResource
       override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
@@ -800,20 +804,11 @@ object ModuleDefDSL {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
     }
 
-//    /** These tags apply ONLY to EmptySet binding itself, not to set elements * */
-//    def tagged(tags: BindingTag*): SetDSL[T] = {
-//      addOp(AddTagsAll(tags.toSet))(new SetDSL[T](_))
-//    }
   }
 
   final class SetNamedDSL[T](
     override protected val mutableState: SetRef
-  ) extends SetDSLMutBase[T] {
-
-//    def tagged(tags: BindingTag*): SetNamedDSL[T] = {
-//      addOp(AddTagsAll(tags.toSet))(new SetNamedDSL[T](_))
-//    }
-  }
+  ) extends SetDSLMutBase[T]
 
   final class SetElementDSL[T](
     override protected val mutableState: SetRef,

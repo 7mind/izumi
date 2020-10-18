@@ -1,33 +1,49 @@
 package izumi.distage.roles
 
+import distage.Injector
 import cats.effect.LiftIO
-import distage.{DefaultModule, DefaultModule2, Injector, Lifecycle, Module, TagK, TagKK}
+import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import izumi.distage.model.definition.Module
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy._
-import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, PreparedApp}
-import izumi.functional.bio.BIOAsync
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
+import izumi.functional.bio.Async2
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
+import izumi.reflect.{TagK, TagKK}
 
 import scala.concurrent.ExecutionContext
 
-abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtifactMaterializer) {
+trait PlanHolder {
+  // FIXME: remove if unnecessary
+  type AppEffectType[_]
+  implicit def tagK: TagK[AppEffectType]
+  def finalAppModule(argv: ArgV): Module
+}
+
+abstract class RoleAppMain[F[_]](
+  implicit
+  val tagK: TagK[F],
+  val defaultModule: DefaultModule[F],
+  val artifact: IzArtifactMaterializer,
+) extends PlanHolder {
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
+  override final type AppEffectType[A] = F[A]
+
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
-      val appModule = makeAppModule(argv)
-      val overrideModule = makeAppModuleOverride(argv)
-      Injector.NoProxies[Identity]().produceRun(appModule overriddenBy overrideModule) {
-        appResource: Lifecycle[Identity, PreparedApp[F]] =>
-          appResource.use(_.run())
+      Injector.NoProxies[Identity]().produceRun(finalAppModule(argv)) {
+        appResource: AppResource[F] =>
+          appResource.runApp()
       }
     } catch {
       case t: Throwable =>
@@ -35,18 +51,24 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
     }
   }
 
-  protected def requiredRoles(@unused args: ArgV): Vector[RawRoleParams] = {
+  def finalAppModule(argv: ArgV): Module = {
+    val appModule = makeAppModule(argv, AdditionalRoles(requiredRoles(argv)))
+    val overrideModule = makeAppModuleOverride(argv)
+    appModule overriddenBy overrideModule
+  }
+
+  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = {
     Vector.empty
   }
 
-  protected def makeAppModuleOverride(@unused args: ArgV): Module = {
+  protected def makeAppModuleOverride(@unused argv: ArgV): Module = {
     Module.empty
   }
 
-  protected def makeAppModule(args: ArgV): Module = {
+  protected def makeAppModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
     new MainAppModule[F](
-      args = args,
-      additionalRoles = AdditionalRoles(requiredRoles(args)),
+      args = argv,
+      additionalRoles = additionalRoles,
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
@@ -61,15 +83,15 @@ abstract class RoleAppMain[F[_]: TagK: DefaultModule](implicit artifact: IzArtif
 
 object RoleAppMain {
 
-  abstract class LauncherF[F[_]: TagK: LiftIO: DefaultModule](
+  abstract class LauncherBIO[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+  }
+
+  abstract class LauncherCats[F[_]: TagK: LiftIO: DefaultModule](
     shutdownExecutionContext: ExecutionContext = ExecutionContext.global
   )(implicit artifact: IzArtifactMaterializer
   ) extends RoleAppMain[F] {
     override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(shutdownExecutionContext)
-  }
-
-  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 
   abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {

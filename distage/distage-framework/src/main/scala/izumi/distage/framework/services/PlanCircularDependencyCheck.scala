@@ -1,8 +1,7 @@
 package izumi.distage.framework.services
 
-import distage.OrderedPlan
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.logstage.api.IzLogger
 
 class PlanCircularDependencyCheck(

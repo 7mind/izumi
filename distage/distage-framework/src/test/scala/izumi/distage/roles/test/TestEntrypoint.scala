@@ -2,14 +2,24 @@ package izumi.distage.roles.test
 
 import cats.effect.IO
 import distage.plugins.PluginConfig
+import izumi.distage.model.definition
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
+import izumi.distage.roles.test.fixtures.Fixture.XXX_LocatorLeak
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 object TestEntrypoint extends TestEntrypointBase
 
-class TestEntrypointBase extends RoleAppMain.LauncherF[IO] {
+// for `CompTimePlanCheckerTest`
+object TestEntrypointPatchedLeak extends TestEntrypointBase {
+  override protected def makeAppModuleOverride(argv: RoleAppMain.ArgV): definition.Module = super.makeAppModuleOverride(argv) ++ new ModuleDef {
+    todo[XXX_LocatorLeak]
+  }
+}
+
+class TestEntrypointBase extends RoleAppMain.LauncherCats[IO] {
   override protected def pluginConfig: PluginConfig = {
     PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
   }

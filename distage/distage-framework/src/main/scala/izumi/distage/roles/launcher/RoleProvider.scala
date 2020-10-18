@@ -4,7 +4,6 @@ import distage.{Id, _}
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.SafeType
-import izumi.distage.plugins.PluginBase
 import izumi.distage.roles.model.definition.RoleTag
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
@@ -12,85 +11,82 @@ import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
 import scala.collection.immutable.Set
 
-trait RoleProvider[F[_]] {
-  def loadRoles(): RolesInfo
+trait RoleProvider {
+  def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo
 }
 
 object RoleProvider {
 
-  class Impl[F[_]: TagK](
+  class Impl(
     logger: IzLogger,
     reflectionEnabled: Boolean @Id("distage.roles.reflection"),
     parameters: RawAppArgs,
-    bsPlugins: Seq[PluginBase] @Id("bootstrap"),
-    appPlugins: Seq[PluginBase] @Id("main"),
-  ) extends RoleProvider[F] {
+  ) extends RoleProvider {
 
-    def loadRoles(): RolesInfo = {
-      val bindings = appPlugins.flatMap(_.bindings)
-      val bsBindings = bsPlugins.flatMap(_.bindings)
-      logger.info(
-        s"Available ${appPlugins.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${bsPlugins.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ..."
+    def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
+      val rolesInfo = {
+        val bindings = appModule.bindings
+        val activeRoleNames = parameters.roles.map(_.role).toSet
+        val roleType = SafeType.get[AbstractRole[F]]
+        getInfo(bindings, activeRoleNames, roleType)
+      }
+
+      logger.info(s"Available ${rolesInfo.render() -> "roles"}")
+
+      rolesInfo
+    }
+
+    protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
+      val availableRoleBindings = instantiateRoleBindings(bindings, roleType)
+      val enabledRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
+      val roleNames = availableRoleBindings.map(_.descriptor.id).toSet
+
+      val rolesInfo = RolesInfo(
+        requiredComponents = enabledRoleBindings.iterator.map(_.binding.key).toSet,
+        requiredRoleBindings = enabledRoleBindings,
+        availableRoleNames = roleNames,
+        availableRoleBindings = availableRoleBindings,
+        unrequiredRoleNames = roleNames.diff(enabledRoleBindings.iterator.map(_.descriptor.id).toSet),
       )
 
-      val activeRoleNames = parameters.roles.map(_.role).toSet
-      val roles = this.getInfo(bindings, activeRoleNames)
-
-      logger.info(s"Available ${roles.render() -> "roles"}")
-
-      val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
+      val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id).toSet)
       if (missing.nonEmpty) {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-        throw new DIAppBootstrapException(s"Unknown roles: $missing")
+        throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
       }
-      if (roles.requiredRoleBindings.isEmpty) {
+      if (enabledRoleBindings.isEmpty) {
         throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
                                              |
-                                             |Available roles: ${roles.render()}""".stripMargin)
+                                             |Available roles:${rolesInfo.render()}""".stripMargin)
       }
 
-      roles
+      rolesInfo
     }
 
-    protected def getInfo(bindings: Seq[Binding], requiredRoles: Set[String]): RolesInfo = {
-      val availableBindings = getRoles(bindings)
+    protected def instantiateRoleBindings(bb: Set[Binding], roleType: SafeType): Seq[RoleBinding] = {
+      bb.iterator
+        .flatMap {
+          case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) =>
+            s.tags.collect {
+              case RoleTag(roleDescriptor) =>
+                Right((s, roleDescriptor))
+            }
 
-      val roles = availableBindings.map(_.descriptor.id)
+          case s: ImplBinding if s.implementation.implType <:< roleType =>
+            Seq(Left(s))
 
-      val enabledRoles = availableBindings.filter(isRoleEnabled(requiredRoles))
-
-      RolesInfo(
-        enabledRoles.map(_.binding.key).toSet,
-        enabledRoles,
-        roles,
-        availableBindings,
-        roles.toSet.diff(requiredRoles),
-      )
-    }
-
-    private def reflectionEnabled(): Boolean = {
-      reflectionEnabled && !IzJvm.isGraalNativeImage()
-    }
-
-    private[this] def getRoles(bb: Seq[Binding]): Seq[RoleBinding] = {
-      bb.flatMap {
-        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) =>
-          s.tags.collect {
-            case RoleTag(roleDescriptor) => Right((s, roleDescriptor))
-          }
-
-        case s: ImplBinding if isRoleType(s.implementation.implType) =>
-          Seq(Left(s))
-
-        case _ =>
-          Seq.empty
-      }.flatMap {
+          case _ =>
+            Seq.empty
+        }
+        .map {
           case Right((roleBinding, descriptor)) =>
             mkRoleBinding(roleBinding, descriptor)
+
           case Left(roleBinding) =>
             if (reflectionEnabled()) {
               reflectCompanionDescriptor(roleBinding.key.tpe) match {
@@ -109,27 +105,28 @@ object RoleProvider {
               throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no RoleDescriptor, companion reflection is disabled")
             }
         }
+        .toSeq
     }
 
-    private[this] def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
+    protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
       requiredRoles.contains(b.descriptor.id) || requiredRoles.contains(b.tpe.tag.shortName.toLowerCase)
     }
 
-    private[this] def isRoleType(tpe: SafeType): Boolean = {
-      tpe <:< SafeType.get[AbstractRole[F]]
+    protected final def reflectionEnabled(): Boolean = {
+      reflectionEnabled && !IzJvm.isGraalNativeImage()
     }
 
-    private[this] def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): Seq[RoleBinding] = {
-      val impltype = roleBinding.implementation.implType
+    protected final def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {
       val runtimeClass = roleBinding.key.tpe.cls
-      Seq(RoleBinding(roleBinding, runtimeClass, impltype, roleDescriptor))
+      val implType = roleBinding.implementation.implType
+      RoleBinding(roleBinding, runtimeClass, implType, roleDescriptor)
     }
 
-    // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???
+    // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ??? (Not that relevant anymore with RoleModuleDef...)
     protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
       val roleClassName = role.cls.getName
       try {
-        Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
+        Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
       } catch {
         case t: Throwable =>
           logger.crit(s"""Failed to reflect RoleDescriptor companion object for $role: $t

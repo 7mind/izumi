@@ -1,4 +1,4 @@
-package izumi.distage.planning
+package izumi.distage.planning.sequential
 
 import izumi.distage.model.exceptions.UnsupportedOpException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey

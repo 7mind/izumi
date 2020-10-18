@@ -184,7 +184,7 @@ Wire the collected modules as usual:
 ```scala mdoc:to-string
 // combine all modules into one
 
-val appModule = appModules.merge
+val appModule = appModules.result.merge
 
 // launch
 
@@ -195,87 +195,13 @@ Injector()
 
 ### Compile-time checks
 
-An experimental compile-time verification API is available in the `distage-framework` module.
+WIP on current `1.0.0-M1`. Version`1.0.0` will have finalized API.
 
-To use it add `distage-framework` library:
 
-@@dependency[sbt,Maven,Gradle] {
-  group="io.7mind.izumi"
-  artifact="distage-framework_2.13"
-  version="$izumi.version$"
-}
+- https://github.com/7mind/izumi/pull/1285
+- (https://github.com/7mind/izumi/issues/1226)
 
-Only plugins defined in a different module can be checked at compile-time.
 
-`test` scope counts as a separate module.
-
-Example:
-
-In main scope:
-
-```scala mdoc:reset:invisible:to-string
-```
-
-```scala mdoc:fakepackage:to-string
-"fakepackage com.example": Unit
-
-import distage.DIKey
-import distage.StandardAxis.Env
-import distage.config.ConfigModuleDef
-import distage.plugins.PluginDef
-import izumi.distage.staticinjector.plugins.ModuleRequirements
-
-final case class HostPort(host: String, port: Int)
-
-final case class Config(hostPort: HostPort)
-
-final class Service(conf: Config, otherService: OtherService)
-final class OtherService
-
-// error: OtherService is not bound here, even though Service depends on it
-final class AppPlugin extends PluginDef with ConfigModuleDef {
-  tag(Env.Prod)
-
-  make[Service]
-  makeConfig[Config]("config")
-}
-
-// Declare OtherService as an external dependency
-final class AppRequirements extends ModuleRequirements(
-  // If we remove this line, compilation will rightfully break
-  Set(DIKey[OtherService])
-)
-```
-
-In config:
-
-```scala
-// src/main/resources/application.conf
-config {
-  host = localhost
-  port = 8080
-}
-```
-
-In test scope:
-
-```scala mdoc:reset-object:invisible:to-string
-```
-
-```scala mdoc:fakepackage:to-string
-"fakepackage com.example.test": Unit
-
-import com.example._
-import org.scalatest.wordspec.AnyWordSpec
-import izumi.distage.staticinjector.plugins.StaticPluginChecker
-
-final class AppPluginTest extends AnyWordSpec {
-  "App plugin will work (if OtherService is provided later)" in {
-    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("mode:prod", ".*.application.conf")
-  }
-}
-```
-
-`checkWithConfig` will run at compile-time whenever `AppPluginTest` is recompiled.
-
-Note: Since version `0.10.0`, configuration files are no longer checked for correctness by the compile-time checker, see: https://github.com/7mind/izumi/issues/763
+- @scaladoc[izumi.distage.framework.PlanCheck](izumi.distage.framework.PlanCheck)
+- @scaladoc[izumi.distage.framework.PlanCheckMacro](izumi.distage.framework.PlanCheckMacro)
+- @scaladoc[izumi.distage.planning.solver.PlanVerifier](izumi.distage.planning.solver.PlanVerifier)

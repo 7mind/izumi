@@ -17,6 +17,7 @@ sealed trait Binding {
 
   def addTags(tags: Set[BindingTag]): Binding
   def withTags(tags: Set[BindingTag]): Binding
+  final def modifyTags(f: Set[BindingTag] => Set[BindingTag]): Binding = withTags(f(tags))
 
   def isMutator: Boolean
 

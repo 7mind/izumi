@@ -2,7 +2,7 @@ package izumi.distage.config
 
 import izumi.distage.config.ConfigModuleDef.FromConfig
 import izumi.distage.config.codec.DIConfigReader
-import izumi.distage.model.definition.BindingTag.ConfTag
+import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
 import izumi.distage.model.providers.Functoid
@@ -14,16 +14,19 @@ import scala.language.implicitConversions
 
 trait ConfigModuleDef extends ModuleDef {
   final def makeConfig[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
-    pos.discard()
-    make[T].tagged(ConfTag(path)).from(wireConfig[T](path))
+    pos.discard() // usage in `make[T]` not detected
+    val parser = ConfigModuleDef.wireConfig[T](path)
+    make[T].tagged(ConfTag(path)(parser)).from(parser)
   }
   final def makeConfigNamed[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
     pos.discard()
-    make[T].named(path).tagged(ConfTag(path)).from(wireConfig[T](path))
+    val parser = ConfigModuleDef.wireConfig[T](path)
+    make[T].named(path).tagged(ConfTag(path)(parser)).from(parser)
   }
   final def makeConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard()
-    make[T].tagged(ConfTag(path)).from(wireConfigWithDefault[T](path)(default))
+    val parser = ConfigModuleDef.wireConfigWithDefault[T](path)(default)
+    make[T].tagged(ConfTag(path)(parser)).from(parser)
   }
 
   @inline final def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
@@ -39,17 +42,19 @@ trait ConfigModuleDef extends ModuleDef {
 object ConfigModuleDef {
   final class FromConfig[T](private val make: MakeDSL[T]) extends AnyVal {
     def fromConfig(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
-      make.tagged(ConfTag(path)).from(wireConfig[T](path))
+      val parser = wireConfig[T](path)
+      make.tagged(ConfTag(path)(parser)).from(parser)
     }
     def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLNamedAfterFrom[T] = {
-      make.named(path).tagged(ConfTag(path)).from(wireConfig[T](path))
+      val parser = wireConfig[T](path)
+      make.named(path).tagged(ConfTag(path)(parser)).from(parser)
     }
   }
 
-  def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
+  def wireConfig[T: Tag: DIConfigReader](path: String): AppConfig => T = {
     DIConfigReader[T].decodeAppConfig(path)
   }
-  def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): Functoid[T] = {
+  def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): AppConfig => T = {
     DIConfigReader[T].decodeAppConfigWithDefault(path)(default)
   }
 }

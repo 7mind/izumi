@@ -1,5 +1,7 @@
 package izumi.fundamentals.collections.nonempty
 
+// shameless copypaste from Scalactic
+
 import scala.collection.{Iterable, Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.reflect.ClassTag
@@ -452,6 +454,8 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def head: (K, V) = toMap.head
 
+  def tail: Map[K, V] = toMap.tail
+
   /**
     * Tests whether this <code>NonEmptyMap</code> contains given key.
     *
@@ -858,7 +862,7 @@ object NonEmptyMap {
     * @param firstElement the first element (with index 0) contained in this <code>NonEmptyMap</code>
     * @param otherElements a varargs of zero or more other elements (with index 1, 2, 3, ...) contained in this <code>NonEmptyMap</code>
     */
-  def apply[K, V](firstElement: (K, V), otherElements: (K, V)*): NonEmptyMap[K, V] = new NonEmptyMap(otherElements.toMap + firstElement)
+  @inline def apply[K, V](firstElement: (K, V), otherElements: (K, V)*): NonEmptyMap[K, V] = new NonEmptyMap(otherElements.toMap + firstElement)
 
   /**
     * Variable argument extractor for <code>NonEmptyMap</code>s.
@@ -868,7 +872,7 @@ object NonEmptyMap {
     * @param nonEmptyMap: the <code>NonEmptyMap</code> containing the elements to extract
     * @return an <code>Seq</code> containing this <code>NonEmptyMap</code>s elements, wrapped in a <code>Some</code>
     */
-  def unapplySeq[K, V](nonEmptyMap: NonEmptyMap[K, V]): Option[Seq[(K, V)]] = Some(nonEmptyMap.toSeq)
+  @inline def unapplySeq[K, V](nonEmptyMap: NonEmptyMap[K, V]): Some[Seq[(K, V)]] = Some(nonEmptyMap.toSeq)
 
   /**
     * Optionally construct a <code>NonEmptyMap</code> containing the elements, if any, of a given <code>Seq</code>.
@@ -879,16 +883,23 @@ object NonEmptyMap {
     * @return a <code>NonEmptyMap</code> containing the elements of the given <code>Seq</code>, if non-empty, wrapped in
     *     a <code>Some</code>; else <code>None</code> if the <code>Seq</code> is empty
     */
-  def from[K, V](seq: Seq[(K, V)]): Option[NonEmptyMap[K, V]] =
+  @inline def from[K, V](seq: Seq[(K, V)]): Option[NonEmptyMap[K, V]] =
     seq.headOption match {
       case None => None
       case Some(first) => Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ seq.tail.toMap + first))
     }
 
-  def from[K, V](map: scala.collection.Map[K, V]): Option[NonEmptyMap[K, V]] =
-    map.headOption match {
-      case None => None
-      case Some(_) => Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ map))
-    }
+  @inline def from[K, V](map: scala.collection.Map[K, V]): Option[NonEmptyMap[K, V]] = {
+    if (map.isEmpty) None else Some(new NonEmptyMap(scala.collection.immutable.Map.empty[K, V] ++ map))
+  }
+
+  @inline def from[K, V](map: scala.collection.immutable.Map[K, V]): Option[NonEmptyMap[K, V]] = {
+    if (map.isEmpty) None else Some(new NonEmptyMap(map))
+  }
+
+  @inline def unsafeFrom[K, V](set: scala.collection.immutable.Map[K, V]): NonEmptyMap[K, V] = {
+    require(set.nonEmpty)
+    new NonEmptyMap(set)
+  }
 
 }

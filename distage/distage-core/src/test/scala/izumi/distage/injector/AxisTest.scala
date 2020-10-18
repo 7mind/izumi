@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.BadSetAxis
+import izumi.distage.model.exceptions.{BadSetAxis, ConflictResolutionException}
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
@@ -79,9 +79,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val instance = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait])))
+      .produceGet[JustTrait](definition, Activation(Repo -> Repo.Prod))
       .unsafeGet()
-      .get[JustTrait]
     assert(instance.isInstanceOf[Impl1])
   }
 
@@ -94,10 +93,67 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val instance = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[JustTrait])))
+      .produceGet[JustTrait](definition, Activation(Repo -> Repo.Dummy))
       .unsafeGet()
-      .get[JustTrait]
     assert(instance.isInstanceOf[Impl0])
+  }
+
+  "should raise conflict if there's both an implementation with no axis and a choice, but no choice is set" in {
+    import BasicCase1._
+
+    val definition = new ModuleDef {
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
+    }
+
+    assertThrows[ConflictResolutionException] {
+      mkInjector()
+        .produceGet[JustTrait](definition, Activation())
+        .unsafeGet()
+        .isInstanceOf[Impl1]
+    }
+  }
+
+  "should raise conflict if there's both an implementation with no axis and an unset choice" in {
+    import BasicCase1._
+
+    val definition = new ModuleDef {
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
+    }
+
+    assertThrows[ConflictResolutionException] {
+      mkInjector()
+        .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
+        .unsafeGet()
+    }
+  }
+
+  "should raise conflict if there's both an implementation with no axis and one with more choices than current choice" in {
+    import BasicCase1._
+
+    val definition = new ModuleDef {
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
+    }
+
+    assertThrows[ConflictResolutionException] {
+      mkInjector()
+        .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
+        .unsafeGet()
+    }
+  }
+
+  "a sole existing implementation with an axis should always be selected as long as there are no opposite axis choices" in {
+    import BasicCase1._
+
+    val definition = new ModuleDef {
+      make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
+    }
+
+    assert(mkInjector().produceGet[JustTrait](definition, Activation(Repo -> Repo.Prod)).unsafeGet().isInstanceOf[Impl1])
+    assert(mkInjector().produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod)).unsafeGet().isInstanceOf[Impl1])
+    assert(mkInjector().produceGet[JustTrait](definition, Activation()).unsafeGet().isInstanceOf[Impl1])
   }
 
   "#1221: choose set elements with expected axis tag" in {

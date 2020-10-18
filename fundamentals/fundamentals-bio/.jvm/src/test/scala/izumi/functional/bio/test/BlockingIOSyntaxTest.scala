@@ -1,6 +1,6 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{BlockingIO, BlockingIO3, BlockingIOInstances, F, Functor2, Monad3}
+import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, F, Functor2, Monad3}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.blocking.Blocking
 import zio.{Has, ZIO}
@@ -10,7 +10,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   def `attach BlockingIO methods to a trifunctor BIO`[F[-_, +_, +_]: Monad3: BlockingIO3]: F[Any, Throwable, Int] = {
     F.syncBlocking(2)
   }
-  def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: Functor2: BlockingIO]: F[Throwable, Int] = {
+  def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: Functor2: BlockingIO2]: F[Throwable, Int] = {
     F.syncBlocking(2)
   }
   locally {
@@ -23,8 +23,8 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
   }
 
   "BlockingIO.apply is callable" in {
-    class X[F[+_, +_]: BlockingIO] {
-      def hello = BlockingIO[F].syncBlocking(println("hello world!"))
+    class X[F[+_, +_]: BlockingIO2] {
+      def hello = BlockingIO2[F].syncBlocking(println("hello world!"))
     }
     class X3[F[-_, +_, +_]: BlockingIO3] {
       def hello = BlockingIO3[F].syncBlocking(println("hello world!"))

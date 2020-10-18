@@ -17,13 +17,16 @@ import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInt
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
+import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, SanityCheckerDefaultImpl}
+import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
+import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.distage.planning.solver.{GraphPreparations, SemigraphSolver}
-import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
+
+import scala.collection.immutable
 
 final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
   override val parent: Option[AbstractLocator] = None
@@ -40,20 +43,21 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
       .bootstrapPlanner
       .plan(PlannerInput.noGC(bindings, bootstrapActivation))
   }
-  override lazy val index: Map[DIKey, Any] = super.index
+
+  override lazy val index: Map[DIKey, Any] = instances.map(i => i.key -> i.value).toMap
 
   private[this] val bootstrappedContext: Locator = {
     val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.unsafeGet().throwOnFailure()
   }
 
-  private[this] val _instances: collection.Seq[IdentifiedRef] = bootstrappedContext.instances
+  private[this] val _instances: immutable.Seq[IdentifiedRef] = bootstrappedContext.instances
 
   override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override def meta: LocatorMeta = LocatorMeta.empty
 
-  override def instances: collection.Seq[IdentifiedRef] = {
+  override def instances: immutable.Seq[IdentifiedRef] = {
     val instances = _instances
     if (instances ne null) {
       instances
@@ -74,15 +78,16 @@ final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivat
 }
 
 object BootstrapLocator {
-  @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
-  private[this] val fullStackTraces: Boolean = DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
+  private[this] final val mirrorProvider = MirrorProvider.Impl
+  private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
+  private[this] final val initProxiesAsap = izumi.distage.DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true)
 
   private final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObserver = new PlanningObserverAggregate(
       Set(
-        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](DebugProperties.`izumi.distage.debug.bootstrap`.name))
+        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](izumi.distage.DebugProperties.`izumi.distage.debug.bootstrap`.name))
         //new GraphObserver(analyzer, Set.empty),
       )
     )
@@ -124,7 +129,7 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[Boolean].named("distage.init-proxies-asap").fromValue(DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true))
+    make[Boolean].named("distage.init-proxies-asap").fromValue(initProxiesAsap)
     make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]

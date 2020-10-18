@@ -8,7 +8,7 @@ import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.model.reflection.TypedRef
-import izumi.functional.bio.{BIOApplicative, BIOAsk, BIOLocal, F}
+import izumi.functional.bio.{Applicative2, Ask3, F, Local3}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
@@ -22,18 +22,18 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
   def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1 }
 
-  def getDep1[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency1], Nothing, Dependency1] =
+  def getDep1[F[-_, +_, +_]: Ask3]: F[Has[Dependency1], Nothing, Dependency1] =
     F.askWith((_: Has[Dependency1]).get)
-  def getDep2[F[-_, +_, +_]: BIOAsk]: F[Has[Dependency2], Nothing, Dependency2] =
+  def getDep2[F[-_, +_, +_]: Ask3]: F[Has[Dependency2], Nothing, Dependency2] =
     F.askWith((_: Has[Dependency2]).get)
 
-  final class ResourceHasImpl[F[-_, +_, +_]: BIOLocal](
+  final class ResourceHasImpl[F[-_, +_, +_]: Local3](
   ) extends Lifecycle.LiftF(for {
       d1 <- getDep1
       d2 <- getDep2
     } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
-  final class ResourceEmptyHasImpl[F[+_, +_]: BIOApplicative](
+  final class ResourceEmptyHasImpl[F[+_, +_]: Applicative2](
     d1: Dependency1
   ) extends Lifecycle.LiftF[F[Throwable, ?], Trait1](
       F.pure(trait1(d1))
@@ -177,8 +177,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
         many[Trait2].addHas[ResourceHasImpl[ZIO]]
         many[Trait1].addHas[ResourceEmptyHasImpl[IO]]
 
-        addImplicit[BIOApplicative[IO]]
-        addImplicit[BIOLocal[ZIO]]
+        addImplicit[Applicative2[IO]]
+        addImplicit[Local3[ZIO]]
       })
 
       val injector = mkNoCyclesInjector()
@@ -216,12 +216,12 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "polymorphic ZIOHas injection" in {
       import TraitCase2._
 
-      def definition[F[-_, +_, +_]: TagK3: BIOLocal] = PlannerInput.noGC(new ModuleDef {
+      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.noGC(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
-        addImplicit[BIOLocal[F]]
-        addImplicit[BIOApplicative[F[Any, +?, +?]]]
+        addImplicit[Local3[F]]
+        addImplicit[Applicative2[F[Any, +?, +?]]]
         make[Trait3 { def dep1: Dependency1 }].fromHas(
           (d3: Dependency3) =>
             (for {

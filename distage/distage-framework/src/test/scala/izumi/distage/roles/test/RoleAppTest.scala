@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
@@ -66,7 +67,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       )
 
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
-      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]]))
+      assert(
+        probe.resources.getCheckedResources().toSet == Set[IntegrationCheck[IO]](probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]])
+      )
     }
 
     "start roles regression test" in {
@@ -101,7 +104,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
       assert(probe.resources.getCheckedResources().toSet.size == 2)
-      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource[IO]], probe.locator.get[IntegrationResource1[IO]]))
+      assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](probe.locator.get[TestResource[IO]], probe.locator.get[IntegrationResource1[IO]]))
     }
 
     "be able to read activations from config" in {
@@ -164,8 +167,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -179,7 +183,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet == Set(locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
           }
         }
       }
@@ -200,8 +204,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -215,7 +220,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet == Set(locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
           }
         }
       }
@@ -240,8 +245,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
+        activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), Activation.empty, BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -256,11 +262,16 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
               assert(initCounter.getStartedCloseables().size == 2)
               assert(initCounter.getCheckedResources().size == 1)
-              assert(initCounter.getCheckedResources().toSet == Set(locator.get[IntegrationResource1[IO]]))
+              assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
 
               assert(initCounterIdentity.getStartedCloseables().size == 3)
               assert(initCounterIdentity.getCheckedResources().size == 2)
-              assert(initCounterIdentity.getCheckedResources().toSet == Set(locator.get[IntegrationResource0[Identity]], locator.get[IntegrationResource1[Identity]]))
+              assert(
+                initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
+                  locator.get[IntegrationResource0[Identity]],
+                  locator.get[IntegrationResource1[Identity]],
+                )
+              )
           }
         }
       }
@@ -301,7 +312,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
       assert(role0CfgMinParsed.getString("testservice.overridenInt") == "111")
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 265)
-      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala == List("111", "222"))
+      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List("111", "222"))
 
       val role4Cfg = cfg("testrole04", version)
       val role4CfgMin = cfg("testrole04-minimized", version)
@@ -322,8 +333,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role4CfgMinParsed.hasPath("listconf"))
 
-//      assert(role0CfgMinParsed.hasPath("activation"))
-//      assert(role4CfgMinParsed.hasPath("activation"))
+      assert(role0CfgMinParsed.hasPath("activation"))
+      assert(role4CfgMinParsed.hasPath("activation"))
     }
 
   }

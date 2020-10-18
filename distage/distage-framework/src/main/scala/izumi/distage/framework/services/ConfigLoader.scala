@@ -1,22 +1,23 @@
 package izumi.distage.framework.services
 
-import java.io.File
+import java.io.{File, FileNotFoundException}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
-import distage.Id
-import distage.config.AppConfig
+import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
+import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
+import scala.collection.compat._
 
 /**
   * Default config resources:
@@ -29,6 +30,9 @@ import scala.util.{Failure, Success, Try}
   *   - `common.conf`
   *   - `common-reference.conf`
   *   - `common-reference-dev.conf`
+  *
+  * NOTE: You can change default config locations by overriding `make[ConfigLocation]`
+  * binding in [[izumi.distage.roles.RoleAppMain#moduleOverrides]] (defaults defined in [[izumi.distage.roles.MainAppModule]])
   *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
   * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
@@ -43,6 +47,8 @@ import scala.util.{Failure, Success, Try}
   *
   *   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
   *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
+  *
+  * @see [[ConfigLoader.ConfigLocation]]
   */
 trait ConfigLoader {
   def loadConfig(): AppConfig
@@ -51,67 +57,66 @@ trait ConfigLoader {
 }
 
 object ConfigLoader {
-  val defaultBaseConfigs = Seq("application", "common")
 
-  final case class Args(global: Option[File], role: Map[String, Option[File]], defaultBaseConfigs: Seq[String])
+  trait ConfigLocation {
+    def forRole(roleName: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(roleName)
+    def forBase(filename: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(filename)
+    def defaultBaseConfigs: Seq[String] = ConfigLocation.defaultBaseConfigs
+  }
+  object ConfigLocation {
+    final class Impl extends ConfigLocation
+
+    def defaultBaseConfigs: Seq[String] = Seq("application", "common")
+
+    def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+      Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
+        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
+      )
+    }
+  }
+
+  final case class Args(
+    global: Option[File],
+    role: Map[String, Option[File]],
+  )
   object Args {
-    def makeConfigLoaderParameters(parameters: RawAppArgs): ConfigLoader.Args = {
+    def forEnabledRoles(roleNames: IterableOnce[String]): ConfigLoader.Args = {
+      Args(None, roleNames.iterator.map(_ -> None).toMap)
+    }
+
+    def makeConfigLoaderArgs(parameters: RawAppArgs): ConfigLoader.Args = {
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
       val roleConfigs = parameters.roles.map {
         roleParams =>
           roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile
       }
-      ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap, ConfigLoader.defaultBaseConfigs)
+      ConfigLoader.Args(maybeGlobalConfig, roleConfigs.toMap)
     }
   }
 
-  class LocalFSImpl(
+  @open class LocalFSImpl(
     logger: IzLogger @Id("early"),
     args: Args,
+    configLocation: ConfigLocation,
   ) extends ConfigLoader {
+    protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
-    @nowarn("msg=Unused import")
     def loadConfig(): AppConfig = {
-      import scala.collection.compat._
-
-      val commonReferenceConfigs = defaultBaseConfigs.flatMap(defaultConfigReferences)
+      val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
       val commonExplicitConfigs = args.global.map(ConfigSource.File).toList
 
       val (roleReferenceConfigs, roleExplicitConfigs) = (args.role: Iterable[(String, Option[File])]).partitionMap {
-        case (role, None) => Left(defaultConfigReferences(role))
+        case (role, None) => Left(configLocation.forRole(role))
         case (_, Some(file)) => Right(ConfigSource.File(file))
       }
 
       val allConfigs = (roleExplicitConfigs.iterator ++ commonExplicitConfigs ++ roleReferenceConfigs.iterator.flatten ++ commonReferenceConfigs).toList
 
-      val cfgInfo = allConfigs.map {
-        case r: ConfigSource.Resource =>
-          IzResources.getPath(r.name) match {
-            case Some(LoadablePathReference(path, _)) =>
-              s"$r (available: $path)"
-            case Some(UnloadablePathReference(path)) =>
-              s"$r (exists: $path)"
-            case None =>
-              s"$r (missing)"
-          }
-
-        case f: ConfigSource.File =>
-          if (f.file.exists()) {
-            s"$f (exists: ${f.file.getCanonicalPath})"
-          } else {
-            s"$f (missing)"
-          }
-      }
+      val (cfgInfo, loaded) = loadConfigSources(allConfigs)
 
       logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
-
-      val loaded = allConfigs.map {
-        case s @ ConfigSource.File(file) =>
-          s -> Try(ConfigFactory.parseFile(file))
-
-        case s @ ConfigSource.Resource(name, _) =>
-          s -> Try(ConfigFactory.parseResources(name))
-      }
 
       val (good, bad) = loaded.partition(_._2.isSuccess)
 
@@ -136,6 +141,40 @@ object ConfigLoader {
 
         AppConfig(config)
       }
+    }
+
+    protected def loadConfigSources(allConfigs: List[ConfigSource]): (List[String], List[(ConfigSource, Try[Config])]) = {
+      allConfigs.map(loadConfigSource).unzip
+    }
+
+    protected def loadConfigSource(configSource: ConfigSource): (String, (ConfigSource, Try[Config])) = configSource match {
+      case r: ConfigSource.Resource =>
+        def tryLoadResource(): Try[Config] = {
+          Try(ConfigFactory.parseResources(resourceClassLoader, r.name)).flatMap {
+            cfg =>
+              if (cfg.origin().resource() eq null) {
+                Failure(new FileNotFoundException(s"Couldn't find config file $r"))
+              } else Success(cfg)
+          }
+        }
+
+        IzResources(resourceClassLoader).getPath(r.name) match {
+          case Some(LoadablePathReference(path, _)) =>
+            s"$r (available: $path)" -> (r -> tryLoadResource())
+          case Some(UnloadablePathReference(path)) =>
+            s"$r (exists: $path)" -> (r -> tryLoadResource())
+          case None =>
+            s"$r (missing)" -> (r -> Success(ConfigFactory.empty()))
+        }
+
+      case f: ConfigSource.File =>
+        if (f.file.exists()) {
+          s"$f (exists: ${f.file.getCanonicalPath})" -> (f -> Try(ConfigFactory.parseFile(f.file)).flatMap {
+            cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
+          })
+        } else {
+          s"$f (missing)" -> (f -> Success(ConfigFactory.empty()))
+        }
     }
 
     protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
@@ -171,13 +210,6 @@ object ConfigLoader {
       }
     }
 
-    protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-      Seq(
-        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
-      )
-    }
   }
 
   object LocalFSImpl {

@@ -3,23 +3,30 @@ package izumi.fundamentals.platform.strings
 import java.nio.charset.StandardCharsets
 
 import scala.language.implicitConversions
-import scala.util.Try
+import scala.util.control.NonFatal
+import scala.collection.compat._
 
 final class IzString(private val s: String) extends AnyVal {
   @inline final def utf8: Array[Byte] = {
     s.getBytes(StandardCharsets.UTF_8)
   }
 
-  @inline final def asBoolean(defValue: Boolean): Boolean = {
-    asBoolean().getOrElse(defValue)
-  }
-
   @inline final def asBoolean(): Option[Boolean] = {
-    Try(s.toBoolean).toOption
+    try Some(s.toBoolean)
+    catch { case e if NonFatal(e) => None }
+  }
+  @inline final def asBoolean(defValue: Boolean): Boolean = {
+    try s.toBoolean
+    catch { case e if NonFatal(e) => defValue }
   }
 
   @inline final def asInt(): Option[Int] = {
-    Try(s.toInt).toOption
+    try Some(s.toInt)
+    catch { case e if NonFatal(e) => None }
+  }
+  @inline final def asInt(defValue: Int): Int = {
+    try s.toInt
+    catch { case e if NonFatal(e) => defValue }
   }
 
   @inline final def shift(delta: Int, fill: String = " "): String = {
@@ -168,11 +175,12 @@ final class IzString(private val s: String) extends AnyVal {
   }
 }
 
-final class IzIterable[A](private val s: Iterable[A]) extends AnyVal {
+final class IzIterable[A](private val s: IterableOnce[A]) extends AnyVal {
   def niceList(shift: String = " ", prefix: String = "- "): String = {
-    if (s.nonEmpty) {
+    val iterator = s.iterator
+    if (iterator.nonEmpty) {
       val fullPrefix = s"\n$shift$prefix"
-      s.mkString(fullPrefix, fullPrefix, "")
+      iterator.mkString(fullPrefix, fullPrefix, "")
     } else {
       "ø"
     }
@@ -207,7 +215,7 @@ final class IzStringBytes(private val s: Iterable[Byte]) extends AnyVal {
 
 object IzString {
   implicit def toRichString(s: String): IzString = new IzString(s)
-  implicit def toRichIterable[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
+  implicit def toRichIterable[A](s: IterableOnce[A]): IzIterable[A] = new IzIterable(s)
   implicit def toRichStringIterable[A](s: Iterable[String]): IzStringIterable[A] = new IzStringIterable(s)
   implicit def toRichStringBytes[A](s: Iterable[Byte]): IzStringBytes = new IzStringBytes(s)
 }

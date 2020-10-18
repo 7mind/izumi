@@ -8,6 +8,8 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.reflect.TagK
 
+import scala.collection.immutable
+
 final class LocatorDefaultImpl[F[_]](
   val plan: OrderedPlan,
   val parent: Option[Locator],
@@ -25,6 +27,9 @@ final class LocatorDefaultImpl[F[_]](
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])
   }
 
-  override def instances: collection.Seq[IdentifiedRef] =
+  override def index: Map[DIKey, Any] =
+    dependencyMap.index
+
+  override def instances: immutable.Seq[IdentifiedRef] =
     dependencyMap.enumerate
 }

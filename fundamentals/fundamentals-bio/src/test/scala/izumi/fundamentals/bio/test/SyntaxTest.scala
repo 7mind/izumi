@@ -69,7 +69,7 @@ class SyntaxTest extends AnyWordSpec {
     x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(()))
   }
 
-  "BIOAsync.race is callable along with all BIOParallel syntax" in {
+  "Async2.race is callable along with all BIOParallel syntax" in {
     import izumi.functional.bio.Async2
 
     def x[F[+_, +_]: Async2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
@@ -85,7 +85,7 @@ class SyntaxTest extends AnyWordSpec {
     x[bio.IO](bio.UIO.evalTotal(()), bio.UIO.evalTotal(()))
   }
 
-  "BIOAsync3.race is callable along with all BIOParallel syntax" in {
+  "Async3.race is callable along with all BIOParallel syntax" in {
     import izumi.functional.bio.Async3
 
     def x[F[-_, +_, +_]: Async3](a: F[Any, Nothing, Unit], b: F[Any, Nothing, Unit]) = {
@@ -231,13 +231,13 @@ class SyntaxTest extends AnyWordSpec {
     def z[F[+_, +_]: Functor2]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
     }
-    def `attach BIOPrimitives & Fork2 methods even when they aren't imported`[F[+_, +_]: Monad2: Primitives2: Fork2]: F[Nothing, Int] = {
+    def `attach Primitives2 & Fork2 methods even when they aren't imported`[F[+_, +_]: Monad2: Primitives2: Fork2]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
         F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
       }.flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
-    def `attach BIOPrimitives & Fork23 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: Monad3: Primitives3: Fork3]: FR[Nothing, Nothing, Int] = {
+    def `attach Primitives2 & Fork23 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: Monad3: Primitives3: Fork3]: FR[Nothing, Nothing, Int] = {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
@@ -246,8 +246,8 @@ class SyntaxTest extends AnyWordSpec {
         x[zio.IO],
         y[zio.IO],
         z[zio.IO],
-        `attach BIOPrimitives & Fork2 methods even when they aren't imported`[zio.IO],
-        `attach BIOPrimitives & Fork23 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+        `attach Primitives2 & Fork2 methods even when they aren't imported`[zio.IO],
+        `attach Primitives2 & Fork23 methods to a trifunctor BIO even when not imported`[zio.ZIO],
       )
     }
 
@@ -340,7 +340,7 @@ class SyntaxTest extends AnyWordSpec {
         )
         .map(_ + 2)
     }
-    def biotemporalPlusLocal[FR[-_, +_, +_]: Temporal3: Local3]: FR[Any, Throwable, Unit] = {
+    def Temporal2PlusLocal[FR[-_, +_, +_]: Temporal3: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
           _: Int =>
@@ -365,7 +365,7 @@ class SyntaxTest extends AnyWordSpec {
       y[zio.ZIO],
       arrowAsk[zio.ZIO],
       profunctorOnly[zio.ZIO],
-      biotemporalPlusLocal[zio.ZIO],
+      Temporal2PlusLocal[zio.ZIO],
       biomonadPlusLocal[zio.ZIO],
       bifunctorOnly[zio.ZIO],
     )

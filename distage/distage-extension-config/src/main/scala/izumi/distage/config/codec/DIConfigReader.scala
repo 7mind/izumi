@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigException.Missing
 import com.typesafe.config.{Config, ConfigValue}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
-import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.reflect.Tag
 import pureconfig.ConfigReader
 import pureconfig.error.ConfigReaderException
@@ -83,9 +82,9 @@ trait DIConfigReader[A] {
         throw new DIConfigReadException(
           s"""Couldn't read configuration type at path="$path" as type `${Tag[T].tag}` due to error:
              |
-             |  ${exception.stackTrace}
+             |- ${exception.getMessage}
              |
-             |Config was: $config
+             |Config was: ${config.origin().description()}
              |""".stripMargin,
           exception,
         )

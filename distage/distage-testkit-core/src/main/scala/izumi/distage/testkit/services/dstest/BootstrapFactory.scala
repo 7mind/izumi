@@ -3,6 +3,7 @@ package izumi.distage.testkit.services.dstest
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.ConfigLoader.ConfigLocation
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.model.meta.RolesInfo
@@ -12,7 +13,8 @@ import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
 
 trait BootstrapFactory {
-  def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader
+  def makeConfigLocation(configBaseName: String): ConfigLocation
+  def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader
   def makeModuleProvider[F[_]: TagK](
     options: PlanningOptions,
     config: AppConfig,
@@ -25,8 +27,10 @@ trait BootstrapFactory {
 
 object BootstrapFactory {
   object Impl extends BootstrapFactory {
-    def makeConfigLoader(configResourceName: String, logger: IzLogger): ConfigLoader = {
-      new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configResourceName -> None), ConfigLoader.defaultBaseConfigs))
+    override def makeConfigLocation(configBaseName: String): ConfigLocation = new ConfigLocation.Impl
+
+    def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
+      new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configBaseName -> None)), makeConfigLocation(configBaseName))
     }
 
     def makeModuleProvider[F[_]: TagK](

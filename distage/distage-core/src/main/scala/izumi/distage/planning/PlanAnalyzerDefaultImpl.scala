@@ -16,9 +16,9 @@ import scala.collection.mutable
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   import scala.collection.compat._
 
-  def topology(ops: Seq[ExecutableOp]): PlanTopology = {
+  def topology(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
-      ops,
+      plan,
       _ => _ => false,
       _ => true,
     )
@@ -62,7 +62,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
   private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
     val dependencies = plan
-      .toList.foldLeft(new Accumulator) {
+      .foldLeft(new Accumulator) {
         case (acc, op: InstantiationOp) =>
           val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
           acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
@@ -72,9 +72,10 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
           acc.getOrElseUpdate(op.target, mutable.Set.empty)
           acc
       }
-      .filter(postFilter)
       .view
-      .mapValues(_.toSet).toMap
+      .filter(postFilter)
+      .mapValues(_.toSet)
+      .toMap
 
     val dependants = reverseReftable(dependencies)
     PlanTopologyImmutable(DependencyGraph(dependants, DependencyKind.Required), DependencyGraph(dependencies, DependencyKind.Depends))

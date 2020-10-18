@@ -2,7 +2,7 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{AmbigiousActivationsSet, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
@@ -10,9 +10,12 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp,
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
+import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.model.{Planner, PlannerInput}
+import izumi.distage.planning.sequential.LoopBreaker
+import izumi.distage.planning.solver.PlanSolver
 import izumi.functional.Value
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.Toposort
@@ -184,11 +187,9 @@ class PlannerDefaultImpl(
     val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")
 
     throw new ConflictResolutionException(
-      s"""There must be exactly one valid binding for each DIKey.
+      s"""Found multiple instances for a key. There must be exactly one binding for each DIKey. List of issues:$issueRepr
          |
-         |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate between multiple instances with the same type.
-         |
-         |List of problematic bindings:$issueRepr
+         |You can use named instances: `make[X].named("id")` syntax and `distage.Id` annotation to disambiguate between multiple instances of the same type.
        """.stripMargin,
       issues,
     )
@@ -196,7 +197,7 @@ class PlannerDefaultImpl(
 
   protected[this] def formatConflict(activation: Activation)(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
     conflictResolutionError match {
-      case AmbigiousActivationsSet(issues) =>
+      case ConflictingAxisChoices(issues) =>
         val printedActivationSelections = issues.map {
           case (axis, choices) => s"axis: `$axis`, selected: {${choices.map(_.value).mkString(", ")}}"
         }
@@ -208,50 +209,58 @@ class PlannerDefaultImpl(
         defs
           .map {
             case (k, nodes) =>
-              val candidates = conflictingAxisTagsHint(
+              conflictingAxisTagsHint(
+                key = k,
                 activeChoices = activation.activeChoices.values.toSet,
                 ops = nodes.map(_._2.meta.origin.value),
               )
-              s"""Conflict resolution failed for key `${k.asString}` with reason:
-                 |
-                 |   Conflicting definitions available without a disambiguating axis choice
-                 |
-                 |   Candidates left: ${candidates.niceList().shift(4)}""".stripMargin
           }.niceList()
 
       case UnsolvedConflicts(defs) =>
         defs
           .map {
             case (k, axisBinds) =>
-              s"""Conflict resolution failed for key `${k.asString}` with reason:
+              s"""Conflict resolution failed for key:
                  |
-                 |   Unsolved conflicts.
+                 |   - ${k.asString}
+                 |
+                 |   Reason: Unsolved conflicts.
                  |
                  |   Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
           }.niceList()
     }
   }
 
-  protected[this] def conflictingAxisTagsHint(activeChoices: Set[AxisValue], ops: Set[OperationOrigin]): Seq[String] = {
+  protected[this] def conflictingAxisTagsHint(
+    key: MutSel[DIKey],
+    activeChoices: Set[AxisValue],
+    ops: Set[OperationOrigin],
+  ): String = {
+    val keyMinimizer = KeyMinimizer(
+      ops.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
+      + key.key
+    )
     val axisValuesInBindings = ops
-      .iterator.collect {
-        case d: OperationOrigin.Defined => d.binding.tags
-      }.flatten.collect {
-        case AxisTag(t) => t
-      }.toSet
+      .iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }
+      .flatten.collect { case AxisTag(t) => t }.toSet
     val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
-    ops.toSeq.map {
-      op =>
-        val bindingTags = op.fold(Set.empty, _.tags.collect { case AxisTag(t) => t })
+    val candidates = ops
+      .iterator.map {
+        op =>
+          val bindingTags = op.fold(Set.empty[AxisValue], _.tags.collect { case AxisTag(t) => t })
+          val conflicting = axisValuesInBindings.diff(bindingTags)
+          val implTypeStr = op.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
+          s"$implTypeStr ${op.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags
+            .mkString(", ")}}"
+      }.niceList().shift(4)
 
-        val originStr = op.fold("Unknown", _.origin.toString)
-        val implTypeStr = op match {
-          case OperationOrigin.SyntheticBinding(b: Binding.ImplBinding) => b.implementation.implType.toString
-          case OperationOrigin.UserBinding(b: Binding.ImplBinding) => b.implementation.implType.toString
-          case _ => ""
-        }
-        s"$implTypeStr $originStr, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
-    }
+    s"""Conflict resolution failed for key:
+       |
+       |   - ${keyMinimizer.renderKey(key.key)}
+       |
+       |   Reason: Conflicting definitions available without a disambiguating axis choice.
+       |
+       |   Candidates left:$candidates""".stripMargin
   }
 
 }

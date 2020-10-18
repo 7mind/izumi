@@ -20,7 +20,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
   */
 trait RoleTask[+F[_]] extends AbstractRole[F] {
   /**
-    * Application startup wouldn't progress until this method return
+    * Application startup wouldn't progress until this method returns
     */
   def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit]
 }

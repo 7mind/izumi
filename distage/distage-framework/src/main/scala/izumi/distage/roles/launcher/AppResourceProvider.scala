@@ -1,20 +1,25 @@
 package izumi.distage.roles.launcher
 
 import distage.{Injector, TagK}
+import izumi.distage.InjectorFactory
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.{Id, Lifecycle}
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
-import izumi.distage.model.recursive.Bootloader
+import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
-  def makeAppResource(): Lifecycle[Identity, PreparedApp[F]]
+  def makeAppResource: AppResource[F]
 }
 
 object AppResourceProvider {
+
+  final case class AppResource[F[_]](resource: Lifecycle[Identity, PreparedApp[F]]) extends AnyVal {
+    def runApp(): Unit = resource.use(_.run())
+  }
 
   final case class FinalizerFilters[F[_]](
     filterF: FinalizerFilter[F],
@@ -29,24 +34,23 @@ object AppResourceProvider {
     entrypoint: RoleAppEntrypoint[F],
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
-    bootloader: Bootloader @Id("roleapp"),
+    injectorFactory: InjectorFactory,
   ) extends AppResourceProvider[F] {
-    def makeAppResource(): Lifecycle[Identity, PreparedApp[F]] = {
+    def makeAppResource: AppResource[F] = AppResource {
       appPlan
         .injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
             val runner = runtimeLocator.get[QuasiIORunner[F]]
-            implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
+            val F = runtimeLocator.get[QuasiIO[F]]
 
             PreparedApp(prepareMainResource(runtimeLocator)(F), runner, F)
         }
     }
 
     private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
-      bootloader
-        .injectorFactory
+      injectorFactory
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app.shared, filters.filterF)
         .flatMap {
