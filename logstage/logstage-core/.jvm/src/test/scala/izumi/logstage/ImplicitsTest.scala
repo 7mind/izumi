@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
-import logstage.{LogBIO, LogIO}
+import logstage.{LogIO, LogIO2}
 import org.scalatest.wordspec.AnyWordSpec
 
 class ImplicitsTest extends AnyWordSpec {
@@ -34,21 +34,21 @@ class ImplicitsTest extends AnyWordSpec {
     }
   }
 
-  "create LogBIO from BIO" in {
-    val log: LogBIO[zio.IO] = LogBIO.fromLogger(IzLogger())
+  "create LogIO2 from BIO" in {
+    val log: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger())
     log.discard()
 
-    def logIO[F[+_, +_]: IO2]: LogBIO[F] = LogIO.fromLogger(IzLogger())
+    def logIO[F[+_, +_]: IO2]: LogIO2[F] = LogIO.fromLogger(IzLogger())
 
     logIO[zio.IO]
 
-    def logBIO[F[+_, +_]: IO2]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
+    def logBIO[F[+_, +_]: IO2]: LogIO2[F] = LogIO2.fromLogger(IzLogger())
 
     logBIO[zio.IO]
   }
 
-  "LogBIO to LogIO covariance works when partially annotated" in {
-    implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger[Suspend2](IzLogger())
+  "LogIO2 to LogIO covariance works when partially annotated" in {
+    implicit val log0: LogIO2[Suspend2] = LogIO2.fromLogger[Suspend2](IzLogger())
 
     for {
       _ <- logIO()
@@ -59,8 +59,8 @@ class ImplicitsTest extends AnyWordSpec {
     } yield ()
   }
 
-  "progression test: LogBIO to LogIO covariance fails when not annotated" in {
-    implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger(IzLogger())
+  "progression test: LogIO2 to LogIO covariance fails when not annotated" in {
+    implicit val log0: LogIO2[Suspend2] = LogIO2.fromLogger(IzLogger())
     log0.discard()
 
     assertTypeError("""

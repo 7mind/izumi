@@ -1,5 +1,6 @@
 package izumi.distage.modules
 
+import cats.Parallel
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.support._
@@ -143,12 +144,13 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_]: TagK, ConcurrentEffect[_[_]], Timer[_[_]], Parallel[_[_]], ContextShift[_[_]]](
-    implicit
-    @unused l1: `cats.effect.ConcurrentEffect`[ConcurrentEffect],
-    @unused l2: `cats.effect.Timer`[Timer],
-    @unused l3: `cats.Parallel`[Parallel],
-    @unused l4: `cats.effect.ContextShift`[Parallel],
+  implicit final def fromCats[
+    F[_]: TagK,
+    ConcurrentEffect[_[_]]: `cats.effect.ConcurrentEffect`,
+    Timer[_[_]]: `cats.effect.Timer`,
+    Parallel[_[_]]: `cats.Parallel`,
+    ContextShift[_[_]]: `cats.effect.ContextShift`,
+  ](implicit
     F0: ConcurrentEffect[F],
     T0: Timer[F],
     P0: Parallel[F],

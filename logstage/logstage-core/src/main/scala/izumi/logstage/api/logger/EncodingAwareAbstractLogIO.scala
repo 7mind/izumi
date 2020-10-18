@@ -1,9 +1,9 @@
-package logstage
+package izumi.logstage.api.logger
 
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.rendering.AnyEncoded
 
-trait EncodingAwareAbstractLogIO[F[_], E <: AnyEncoded] extends AbstractLogIO[F] {
+trait EncodingAwareAbstractLogIO[F[_], -E <: AnyEncoded] extends AbstractLogIO[F] {
   override type Self[f[_]] <: EncodingAwareAbstractLogIO[f, E]
 
   final def withCustomContext(context: (String, E)*): Self[F] = withCustomContextMap(context.toMap)

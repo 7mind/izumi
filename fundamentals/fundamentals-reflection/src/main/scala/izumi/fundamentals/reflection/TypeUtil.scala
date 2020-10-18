@@ -3,6 +3,7 @@ package izumi.fundamentals.reflection
 import java.lang.reflect.{Constructor, Field}
 
 object TypeUtil {
+
   def isAssignableFrom(superClass: Class[_], obj: Any): Boolean = {
     def instanceClass = obj.getClass
 
@@ -86,7 +87,8 @@ object TypeUtil {
   }
 
   final def isAnonymous(clazz: Class[_]): Boolean = {
-    clazz.isAnonymousClass || clazz.getName.contains("$anon$")
+    clazz.isAnonymousClass ||
+    clazz.getName.contains("$anon$") // On Java 8 `.isAnonymousClass` returns false for Scala's anonymous classes, work around it with name matching
   }
 
 }

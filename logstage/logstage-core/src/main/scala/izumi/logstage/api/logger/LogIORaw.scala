@@ -1,10 +1,14 @@
-package logstage
+package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.logger.AbstractMacroRawLoggerF
+import izumi.logstage.api.Log
+import izumi.logstage.api.Log.Level
 import izumi.logstage.api.rendering.AnyEncoded
 
-final class LogIORaw[F[_], E <: AnyEncoded](delegate: AbstractLogIO[F]) extends EncodingAwareAbstractLogIO[F, E] with AbstractMacroRawLoggerF[F] {
+final class LogIORaw[F[_], E <: AnyEncoded](
+  delegate: AbstractLogIO[F]
+) extends EncodingAwareAbstractLogIO[F, E]
+  with AbstractMacroRawLoggerF[F] {
   override type Self[f[_]] = LogIORaw[f, E]
 
   def log(entry: Log.Entry): F[Unit] = delegate.log(entry)

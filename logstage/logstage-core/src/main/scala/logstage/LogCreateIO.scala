@@ -14,7 +14,7 @@ trait LogCreateIO[F[_]] {
 }
 
 object LogCreateIO {
-  def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
+  @inline def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
   implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe[F])
 
@@ -37,6 +37,14 @@ object LogCreateIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogCreateBIO[F]): LogCreateIO[F[E, ?]] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogCreateIO2[F]): LogCreateIO[F[E, ?]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[_] <:< G[_]): LogCreateIO[G] = log.widen
+}
+
+object LogCreateIO2 {
+  @inline def apply[F[_, _]: LogCreateIO2]: LogCreateIO2[F] = implicitly
+}
+
+object LogCreateIO3 {
+  @inline def apply[F[_, _, _]: LogCreateIO3]: LogCreateIO3[F] = implicitly
 }

@@ -48,6 +48,6 @@ object Roots {
   /** Disable garbage collection and try to instantiate every single binding. */
   case object Everything extends Roots
 
-  @deprecated("GCMode.NoGC has been renamed to `Roots.Everything`", "old name will be deleted in 0.11.1")
+  @deprecated("GCMode.NoGC has been renamed to `Roots.Everything`", "old name will be deleted in 1.1.1")
   lazy val NoGC: Everything.type = Everything
 }

@@ -1,18 +1,22 @@
 package logstage
 
+import izumi.functional.bio.{MonadAsk3, SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log._
+import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
 import izumi.logstage.api.rendering.AnyEncoded
+import izumi.reflect.Tag
+import logstage.LogIO3Ask.LogIO3AskImpl
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait LogIO[F[_]] extends EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
+trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
   override type Self[f[_]] = LogIO[f]
 
-  final def raw: LogIORaw[F, AnyEncoded] = new LogIORaw(this)
+  final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
 
   override def widen[G[_]](implicit @unused ev: F[_] <:< G[_]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
@@ -49,6 +53,8 @@ object LogIO {
     }
   }
 
+  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
+
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIO covariant, because covariant implicits
@@ -58,6 +64,44 @@ object LogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, ?]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.widen
+}
+
+object LogIO2 {
+  @inline def apply[F[_, _]: LogIO2]: LogIO2[F] = implicitly
+
+  @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): LogIO2[F] = LogIO.fromLogger(logger)
+
+  /**
+    * Lets you refer to an implicit logger's methods without naming a variable
+    *
+    * {{{
+    *   import logstage.LogIO2.log
+    *
+    *   def fn[F[_, _]: LogIO2]: F[Nothing, Unit] = {
+    *     log.info(s"I'm logging with ${log}stage!")
+    *   }
+    * }}}
+    */
+  @inline def log[F[_, _]](implicit l: LogIO2[F]): l.type = l
+}
+
+object LogIO3 {
+  @inline def apply[F[_, _, _]: LogIO3]: LogIO3[F] = implicitly
+
+  @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): LogIO3[F] = LogIO.fromLogger(logger)
+
+  /**
+    * Lets you refer to an implicit logger's methods without naming a variable
+    *
+    * {{{
+    *   import logstage.LogIO3.log
+    *
+    *   def fn[F[_, _, _]: LogIO3]: F[Any, Nothing, Unit] = {
+    *     log.info(s"I'm logging with ${log}stage!")
+    *   }
+    * }}}
+    */
+  @inline def log[F[_, _, _]](implicit l: LogIO3[F]): l.type = l
 }

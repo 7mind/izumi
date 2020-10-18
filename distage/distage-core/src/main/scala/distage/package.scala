@@ -127,22 +127,4 @@ package object distage extends Distage {
   override type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   override val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
 
-  @deprecated("Use distage.Lifecycle.Basic", "0.11")
-  override type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "0.11")
-  override val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
-
-  @deprecated("Use distage.Lifecycle", "0.11")
-  override type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
-
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
-  override type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
-  override val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
-
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
-  override type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
-  override val GCMode: model.plan.Roots.type = model.plan.Roots
-
 }

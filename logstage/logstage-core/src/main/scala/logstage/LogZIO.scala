@@ -5,31 +5,29 @@ import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
 import logstage.LogstageCats.WrappedLogIO
-import zio.{Has, IO, ZIO}
+import zio.{IO, ZIO}
 
-object LogstageZIO {
+object LogZIO {
+  type Service = LogIO3[ZIO]
 
-  type LogZIO = Has[LogBIO3[ZIO]]
-  object LogZIO {
-    type Service = LogBIO3[ZIO]
-  }
   /**
     * Lets you carry LogZIO capability in environment
     *
     * {{{
-    *   import logstage.LogstageZIO.log
-    *   import zio.ZIO
+    *   import logstage.LogZIO
+    *   import logstage.LogZIO.log
+    *   import zio.URIO
     *
-    *   def fn[F[-_, +_, +_]]: ZIO[LogZIO, Nothing, Unit] = {
+    *   def fn: URIO[LogZIO, Unit] = {
     *     log.info(s"I'm logging with ${log}stage!")
     *   }
     * }}}
     */
-  object log extends LogBIOEnvInstance[ZIO](_.get)
+  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get)
 
-  def withFiberId(logger: AbstractLogger): LogBIO[IO] = {
+  def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
-      override def withCustomContext(context: CustomContext): LogBIO[IO] = {
+      override def withCustomContext(context: CustomContext): LogIO2[IO] = {
         withFiberId(logger.withCustomContext(context))
       }
 
@@ -42,7 +40,7 @@ object LogstageZIO {
     }
   }
 
-  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogBIO[ZIO[R, ?, ?]] = {
+  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO2[ZIO[R, ?, ?]] = {
     new WrappedLogIO[ZIO[R, Nothing, ?]](logger)(SyncSafe[ZIO[R, Nothing, ?]]) {
       override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, ?]] = {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
@@ -54,4 +52,11 @@ object LogstageZIO {
     }
   }
 
+  @deprecated("renamed to logstage.LogZIO", "1.0")
+  type LogZIO = logstage.LogZIO
+  @deprecated("renamed to logstage.LogZIO", "1.0")
+  object LogZIO {
+    @deprecated("renamed to logstage.LogZIO.Service", "1.0")
+    type Service = logstage.LogZIO.Service
+  }
 }

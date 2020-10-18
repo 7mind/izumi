@@ -18,9 +18,9 @@ trait UnsafeRun2[F[_, _]] {
   def unsafeRunAsync[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): Unit
   def unsafeRunAsyncAsFuture[E, A](io: => F[E, A]): Future[Exit[E, A]]
 
-  @deprecated("use `unsafeRunSync`", "0.11")
+  @deprecated("use `unsafeRunSync`", "1.0")
   final def unsafeRunSyncAsEither[E, A](io: => F[E, A]): Exit[E, A] = unsafeRunSync(io)
-  @deprecated("use `unsafeRunAsync`", "0.11")
+  @deprecated("use `unsafeRunAsync`", "1.0")
   final def unsafeRunAsyncAsEither[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): Unit = unsafeRunAsync(io)(callback)
 }
 
@@ -150,9 +150,9 @@ object UnsafeRun2 {
 
   }
 
-  @deprecated("renamed to TypedError", "0.11")
+  @deprecated("renamed to TypedError", "1.0")
   type BIOBadBranch[+A] = TypedError[A]
-  @deprecated("renamed to TypedError", "0.11")
+  @deprecated("renamed to TypedError", "1.0")
   lazy val BIOBadBranch: TypedError.type = TypedError
 
 }

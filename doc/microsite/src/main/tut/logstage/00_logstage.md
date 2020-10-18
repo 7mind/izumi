@@ -4,8 +4,7 @@ out: index.html
 
 @@toc { depth=2 }
 
-LogStage
-========
+# LogStage
 
 LogStage is a zero-cost structural logging framework for Scala & Scala.js
 
@@ -19,8 +18,7 @@ Key features:
 6. Method-level logging granularity. Can configure methods `com.example.Service.start` and `com.example.Service.doSomething` independently,
 7. Slf4J adapters: route legacy Slf4J logs into LogStage router
 
-Dependencies
-------------
+## Dependencies
 
 @@@vars
 ```scala
@@ -39,8 +37,7 @@ libraryDependencies ++= Seq(
 ```
 @@@
 
-Overview
---------
+## Overview
 
 The following snippet:
 
@@ -85,8 +82,7 @@ Note:
 2. Each JSON message contains `@class` field with holds a unique `event class` identifier.
    All events produced by the same source code line will share the same `event class`.
    
-Syntax Reference
-------------
+## Syntax Reference
 
 1. Simple variable:
    ```scala
@@ -113,9 +109,7 @@ Syntax Reference
    logger.info(${camelCaseName-> ' '})
    ```
 
-
-Basic setup
------------
+## Basic setup
 
 ```scala mdoc:to-string:reset
 import logstage.{ConsoleSink, IzLogger, Trace}
@@ -134,10 +128,9 @@ logger.info("Hey")
 contextLogger.info(s"Hey")
 ```
 
-Log algebras
-------------
+## Log algebras
 
-`LogIO`, `LogBIO` & `LogBIO3` algebras provide a purely-functional API for one-, two-, and three-parameter effect types respectively:
+`LogIO`, `LogIO2` & `LogIO3` algebras provide a purely-functional API for one-, two-, and three-parameter effect types respectively:
 
 ```scala mdoc:to-string:reset
 import logstage.{IzLogger, LogIO}
@@ -147,14 +140,29 @@ val logger = IzLogger()
 
 val log = LogIO.fromLogger[IO](logger)
 
-log.info(s"Hey! I'm logging with ${log}stage!")
+log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
 ```
 
 ```
 I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
 ```
 
-`LogIO`/`LogBIO` algebras can be extended with custom context using their `.apply` method, same as `IzLogger`:
+
+
+`LogIO.log`/`LogIO2.log`/`LogIO3.log`/`IzLogger.log` let you refer to an implicit logger's methods without having to name a logger variable
+
+```scala mdoc:to-string:reset
+import logstage.LogIO
+import logstage.LogIO.log
+
+def logfun[F[_]: LogIO]: F[Unit] = {
+  log.info(s"I'm logging with ${log}stage!")
+}
+```
+
+### Adding Custom Context to Loggers
+
+`LogIO*` algebras can be extended with custom context using their `.withCustomContext` method, same as `IzLogger`:
 
 ```scala mdoc:reset:invisible
 import com.example.Entity
@@ -170,80 +178,78 @@ import io.circe.Printer
 import io.circe.syntax._
 
 def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
-  val ctxLog = log("ID" -> entity.id, "entityAsJSON" -> entity.asJson.printWith(Printer.spaces2))
+  val logWithContext: LogIO[IO] = {
+    log.withCustomContext(
+      "ID" -> entity.id,
+      "entityAsJSON" -> entity.asJson.printWith(Printer.spaces2),
+    )
+  }
 
   load(entity).handleErrorWith {
     case error =>
-      ctxLog.error(s"Failed to import entity: $error.").void
+      logWithContext.error(s"Failed to import entity: $error.").void
       // JSON message includes `ID` and `entityAsJSON` fields
   }
 }
 ```
 
-`LogIO.log`/`LogBIO.log`/`LogBIO3.log`/`IzLogger.log` let you refer to an implicit logger's methods without naming a variable
+## ZIO environment support
 
-```scala mdoc:to-string:reset
-import logstage.LogIO
-import logstage.LogIO.log
-
-def fn[F[_]: LogIO]: F[Unit] = {
-  log.info(s"I'm logging with ${log}stage!")
-}
-```
-
-ZIO environment support
------------------------
-
-`LogstageZIO.log` lets you carry `LogZIO` capability in environment.
+`LogZIO.log` lets you carry `LogZIO` capability in environment.
 
 Example:
 
 ```scala mdoc:to-string:reset
-import logstage.LogstageZIO.{LogZIO, log}
-import zio.ZIO
+import logstage.{IzLogger, LogIO3, LogZIO}
+import logstage.LogZIO.log
+import zio.{Has, URIO}
 
-val fn: ZIO[LogZIO, Nothing, Unit] = {
+val fn: URIO[LogZIO, Unit] = {
   log.info(s"I'm logging with ${log}stage!")
 }
-```
 
-`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
-
-Example: 
-
-```scala mdoc:to-string:reset
-import logstage.{IzLogger, LogstageZIO}
-import zio.IO
-
-val log = LogstageZIO.withFiberId(IzLogger())
-
-log.info(s"Hey! I'm logging with ${log}stage!")
-```
-
-```
-I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
-```
-
-`LogBIO3.log` extends environment support to trifunctor effect types with an instance of `MonadAsk3[F]` typeclass (from @ref[BIO](../bio/00_bio.md))
-
-Example:
-
-```scala mdoc:to-string:reset
-import logstage.{LogBIO3, LogBIOEnv, IzLogger}
-import logstage.LogBIOEnv.log
-import zio.{Has, ZIO}
-
-class Service[F[-_, +_, +_]: LogBIOEnv] {
-  val fn: F[Has[LogBIO3[F]], Nothing, Unit] = {
-    log.info(s"I'm logging with ${log}stage!")
-  }
-}
+val logger: LogZIO.Service = LogIO3.fromLogger(IzLogger())
 
 zio.Runtime.default.unsafeRun {
-  implicit val logger: LogBIOEnv[ZIO] = LogBIOEnv.make[ZIO]
-  new Service[ZIO]
-    .fn
-    .provide(Has(LogBIO3.fromLogger(IzLogger())))
+  fn.provide(Has(logger))
+}
+```
+
+### Adding FiberId to log messages
+
+`LogZIO.withFiberId` provides a `LogIO` instance that logs the current ZIO `FiberId` in addition to the JVM thread id:
+
+```scala mdoc:override:to-string
+val HACK_OVERRIDE_logger: LogZIO.Service = LogZIO.withFiberId(IzLogger())
+
+zio.Runtime.default.unsafeRun {
+   fn.provide(Has(HACK_OVERRIDE_logger))
+}
+```
+
+```
+I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogZIO$$anon$1@c39104astage!
+```
+
+### Tagless trifunctor support
+
+`LogIO3Ask.log` adds environment support for all trifunctor effect types with an instance of `MonadAsk3[F]` typeclass from @ref[BIO](../bio/00_bio.md) hierarchy.
+
+Example:
+
+```scala mdoc:to-string:reset
+import logstage.{LogIO3, LogIO3Ask, IzLogger}
+import logstage.LogIO3Ask.log
+import zio.{Has, ZIO}
+
+def fn[F[-_, +_, +_]: LogIO3Ask]: F[Has[LogIO3[F]], Nothing, Unit] = {
+ log.info(s"I'm logging with ${log}stage!")
+}
+
+val logger = LogIO3.fromLogger(IzLogger())
+
+zio.Runtime.default.unsafeRun {
+  fn[ZIO].provide(Has(logger))
 }
 ```
 

@@ -40,7 +40,7 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
 
 private[effect] sealed trait LowPriorityQuasiIORunnerInstances {
 
-  implicit def fromCats[F[_], Effect[_[_]]](implicit @unused l: `cats.effect.Effect`[Effect], F: Effect[F]): QuasiIORunner[F] =
+  implicit def fromCats[F[_], Effect[_[_]]: `cats.effect.Effect`](implicit F: Effect[F]): QuasiIORunner[F] =
     new CatsImpl[F]()(F.asInstanceOf[cats.effect.Effect[F]])
 
 }

@@ -82,10 +82,10 @@ object StandardAxis {
     )
   }
 
-  @deprecated("Use `distage.StandardAxis.Mode` instead", "0.11")
+  @deprecated("Use `distage.StandardAxis.Mode` instead", "1.0")
   lazy val Env: Mode.type = Mode
 
-  @deprecated("Use `distage.StandardAxis.World` instead", "0.11")
+  @deprecated("Use `distage.StandardAxis.World` instead", "1.0")
   lazy val ExternalApi: World.type = World
 
 }

@@ -137,7 +137,7 @@ object ModuleBase {
       T.make(module.bindings.map(_.withTags(Set.empty)))
     }
 
-    @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+    @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
     def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = overriddenBy(that)
   }
 

@@ -27,9 +27,9 @@ final case class PluginConfig(
   def cachePackages(cachePackages: Boolean): PluginConfig = copy(cachePackages = cachePackages)
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)
 
-  @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+  @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
   def overridenBy(plugins: Seq[PluginBase]): PluginConfig = overriddenBy(plugins)
-  @deprecated("Bad grammar. Use `overriddenBy`", "0.11")
+  @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
   def overridenBy(plugin: PluginBase): PluginConfig = overriddenBy(plugin)
 }
 
@@ -43,7 +43,7 @@ object PluginConfig {
   /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
     *
     * WARN: may interact badly with incremental compilation
-    * WARN: will _not_ find plugins defined in the current module,only those defined in dependency modules
+    * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
     *       (similarly to how you cannot call Scala macros defined in the current module)
     */
   def static(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
@@ -63,6 +63,6 @@ object PluginConfig {
     * WARN: will _not_ find plugins defined in the current module,only those defined in dependency modules
     *       (similarly to how you cannot call Scala macros defined in the current module)
     */
-  @deprecated("renamed to `.static`", "1.0.0")
+  @deprecated("renamed to `.static`", "1.0")
   def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
 }

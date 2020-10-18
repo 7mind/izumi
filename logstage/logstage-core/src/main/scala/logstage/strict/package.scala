@@ -1,13 +1,15 @@
 package logstage
 
 import izumi.logstage.api
-import zio.Has
+import zio.{Has, ZIO}
 
-package object strict extends Strict {
+package object strict extends LogstageStrict {
+  type LogIO2Strict[F[_, _]] = LogIOStrict[F[Nothing, ?]]
+  type LogIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, ?]]
+  type LogIO3AskStrict[F[_, _, _]] = LogIOStrict[F[Has[LogIO3Strict[F]], Nothing, ?]]
+
+  type LogZIOStrict = Has[LogIO3Strict[ZIO]]
+
   override type IzStrictLogger = api.strict.IzStrictLogger
   override final val IzStrictLogger: api.strict.IzStrictLogger.type = api.strict.IzStrictLogger
-
-  override type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, ?]]
-  override type LogBIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, ?]]
-  override type LogBIOEnvStrict[F[_, _, _]] = LogBIOStrict[F[Has[LogBIO3Strict[F]], ?, ?]]
 }

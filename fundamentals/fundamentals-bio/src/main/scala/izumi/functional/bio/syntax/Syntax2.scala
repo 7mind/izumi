@@ -122,7 +122,7 @@ object Syntax2 {
   class PanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BracketOps(r) {
     @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "0.11")
+    @deprecated("renamed to sandboxExit", "1.0")
     @inline final def sandboxBIOExit = sandboxExit
 
     /**

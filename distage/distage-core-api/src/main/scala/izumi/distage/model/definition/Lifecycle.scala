@@ -968,22 +968,20 @@ object Lifecycle extends LifecycleCatsInstances {
   @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
   lazy val TrifunctorHasResourceTag: TrifunctorHasLifecycleTagImpl.type = TrifunctorHasLifecycleTagImpl
 
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   type DIResourceBase[+F[_], +A] = Lifecycle[F, A]
   object DIResourceBase {
-    @deprecated("Use distage.Lifecycle.NoCloseBase", "0.11")
+    @deprecated("Use distage.Lifecycle.NoCloseBase", "1.0")
     type NoClose[+F[_], +A] = NoCloseBase[F, A]
   }
 
-  @deprecated("renamed to fromAutoCloseable", "0.11")
+  @deprecated("renamed to fromAutoCloseable", "1.0")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 }
 
 private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
-  implicit final def catsMonadForLifecycle[Monad[_[_]], F[_]](
-    implicit
-    @unused l1: `cats.Monad`[Monad],
-    F: QuasiIO[F],
+  implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
+    implicit F: QuasiIO[F]
   ): Monad[Lifecycle[F, ?]] = {
     new cats.StackSafeMonad[Lifecycle[F, ?]] {
       override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
@@ -991,9 +989,8 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
     }.asInstanceOf[Monad[Lifecycle[F, ?]]]
   }
 
-  implicit final def catsMonoidForLifecycle[Monoid[_], F[_], A](
+  implicit final def catsMonoidForLifecycle[Monoid[_]: `cats.kernel.Monoid`, F[_], A](
     implicit
-    @unused l2: `cats.kernel.Monoid`[Monoid],
     F: QuasiIO[F],
     A0: Monoid[A],
   ): Monoid[Lifecycle[F, A]] = {
@@ -1011,10 +1008,8 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
 }
 
 private[definition] sealed trait LifecycleCatsInstancesLowPriority {
-  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]](
-    implicit
-    @unused l: `cats.Functor`[Functor],
-    F: QuasiFunctor[F],
+  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]: `cats.Functor`](
+    implicit F: QuasiFunctor[F]
   ): Functor[Lifecycle[F, ?]] = {
     new cats.Functor[Lifecycle[F, ?]] {
       override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)

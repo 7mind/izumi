@@ -2,7 +2,6 @@ package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
 import izumi.functional.bio.impl.{TemporalMonix, TemporalZio}
-import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -43,10 +42,8 @@ object TemporalInstances extends TemporalInstancesLowPriority1 {
   @inline implicit final def Temporal3Zio(implicit clockService: zio.clock.Clock): Predefined.Of[Temporal3[ZIO]] = Predefined(new TemporalZio(clockService))
 }
 sealed trait TemporalInstancesLowPriority1 {
-  @inline implicit final def TemporalMonix[MonixBIO[+_, +_], Timer[_[_]]](
+  @inline implicit final def TemporalMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.Timer`](
     implicit
-    @unused l1: `monix.bio.IO`[MonixBIO],
-    @unused l2: `cats.effect.Timer`[Timer],
-    timer: Timer[MonixBIO[Nothing, ?]],
+    timer: Timer[MonixBIO[Nothing, ?]]
   ): Predefined.Of[Temporal2[MonixBIO]] = new TemporalMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Temporal2[MonixBIO]]]
 }

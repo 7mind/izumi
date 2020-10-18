@@ -182,7 +182,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]](implicit @unused l: `cats.effect.Sync`[Sync], F0: Sync[F]): QuasiIO[F] = {
+  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.Sync`](implicit @unused F0: Sync[F]): QuasiIO[F] = {
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
     new QuasiIO[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
@@ -261,7 +261,7 @@ trait LowPriorityQuasiApplicativeInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Applicative[_[_]]](implicit @unused l: `cats.Applicative`[Applicative], F0: Applicative[F]): QuasiApplicative[F] = {
+  implicit def fromCats[F[_], Applicative[_[_]]: `cats.Applicative`](implicit F0: Applicative[F]): QuasiApplicative[F] = {
     val F = F0.asInstanceOf[cats.Applicative[F]]
     new QuasiApplicative[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
@@ -303,7 +303,7 @@ trait LowPriorityQuasiFunctorInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Functor[_[_]]](implicit @unused l: `cats.Functor`[Functor], F0: Functor[F]): QuasiFunctor[F] = {
+  implicit def fromCats[F[_], Functor[_[_]]: `cats.Functor`](implicit F0: Functor[F]): QuasiFunctor[F] = {
     val F = F0.asInstanceOf[cats.Functor[F]]
     new QuasiFunctor[F] {
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)

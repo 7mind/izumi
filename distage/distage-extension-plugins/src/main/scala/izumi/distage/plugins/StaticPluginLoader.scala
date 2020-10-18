@@ -7,7 +7,16 @@ import izumi.fundamentals.reflection.ReflectionUtil
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{universe => ru}
 
+/** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
+  *
+  * WARN: may interact badly with incremental compilation
+  * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
+  *       (similarly to how you cannot call Scala macros defined in the current module)
+  *
+  * @see [[PluginConfig.static]]
+  */
 object StaticPluginLoader {
+
   def staticallyAvailablePlugins(pluginsPackage: String): List[PluginBase] = macro StaticPluginLoaderMacro.staticallyAvailablePlugins
 
   object StaticPluginLoaderMacro {

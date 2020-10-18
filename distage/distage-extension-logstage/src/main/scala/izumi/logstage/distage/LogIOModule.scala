@@ -34,23 +34,23 @@ object LogIOModule {
 }
 
 /** [[LogIOModule]] for bifunctors */
-class LogBIOModule[F[_, _]: TagKK](
+class LogIO2Module[F[_, _]: TagKK](
   maybeRouter: Option[LogRouter],
   setupStaticLogRouter: Boolean,
 ) extends LogIOModule[F[Nothing, ?]](maybeRouter, setupStaticLogRouter)
 
-object LogBIOModule {
-  @inline def apply[F[_, _]: TagKK](router: LogRouter, setupStaticLogRouter: Boolean): LogBIOModule[F] = new LogBIOModule(Some(router), setupStaticLogRouter)
-  @inline def apply[F[_, _]: TagKK](): LogBIOModule[F] = new LogBIOModule(None, setupStaticLogRouter = false)
+object LogIO2Module {
+  @inline def apply[F[_, _]: TagKK](router: LogRouter, setupStaticLogRouter: Boolean): LogIO2Module[F] = new LogIO2Module(Some(router), setupStaticLogRouter)
+  @inline def apply[F[_, _]: TagKK](): LogIO2Module[F] = new LogIO2Module(None, setupStaticLogRouter = false)
 }
 
 /** [[LogIOModule]] for trifunctors */
-class LogBIO3Module[F[_, _, _]: TagK3](
+class LogIO3Module[F[_, _, _]: TagK3](
   maybeRouter: Option[LogRouter],
   setupStaticLogRouter: Boolean,
 ) extends LogIOModule[F[Any, Nothing, ?]](maybeRouter, setupStaticLogRouter)
 
-object LogBIO3Module {
-  @inline def apply[F[_, _, _]: TagK3](router: LogRouter, setupStaticLogRouter: Boolean): LogBIO3Module[F] = new LogBIO3Module(Some(router), setupStaticLogRouter)
-  @inline def apply[F[_, _, _]: TagK3](): LogBIO3Module[F] = new LogBIO3Module(None, setupStaticLogRouter = false)
+object LogIO3Module {
+  @inline def apply[F[_, _, _]: TagK3](router: LogRouter, setupStaticLogRouter: Boolean): LogIO3Module[F] = new LogIO3Module(Some(router), setupStaticLogRouter)
+  @inline def apply[F[_, _, _]: TagK3](): LogIO3Module[F] = new LogIO3Module(None, setupStaticLogRouter = false)
 }

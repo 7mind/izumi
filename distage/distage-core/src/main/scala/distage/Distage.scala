@@ -129,22 +129,22 @@ trait Distage {
   type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
 
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
   type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
   val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
 
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
   type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
   val GCMode: model.plan.Roots.type = model.plan.Roots
 
-  @deprecated("Use distage.Lifecycle.Basic", "0.11")
+  @deprecated("Use distage.Lifecycle.Basic", "1.0")
   type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
 
 }

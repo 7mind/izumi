@@ -164,11 +164,11 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
 
-  @deprecated("Renamed to `assertValidOrThrow`", "0.11")
+  @deprecated("Renamed to `assertValidOrThrow`", "1.0")
   final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = assertValidOrThrow[F]()
 
   /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  @deprecated("Renamed to `isValid`", "0.11")
+  @deprecated("Renamed to `isValid`", "1.0")
   final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = isValid[F]()
 
 }
