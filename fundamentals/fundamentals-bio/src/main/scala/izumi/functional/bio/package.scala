@@ -1,5 +1,6 @@
 package izumi.functional
 
+import izumi.functional.bio.data.Isomorphism2
 import izumi.functional.bio.syntax.{Syntax2, Syntax3}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
@@ -149,6 +150,11 @@ package object bio extends Syntax3 with Syntax2 {
   type BlockingIO2[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO2 {
     @inline def apply[F[+_, +_]: BlockingIO2]: BlockingIO2[F] = implicitly
+  }
+
+  type TransZio[F[_, _]] = Isomorphism2[F, zio.IO]
+  object TransZio {
+    @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
   type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]], E, A]

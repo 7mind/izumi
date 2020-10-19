@@ -12,7 +12,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): Free[T, E, A] = {
-    foldMap[S1, Free[T, +?, +?]](FunctionKK(Free Suspend f(_)))
+    foldMap[S1, Free[T, +?, +?]](Morphism2(Free Suspend f(_)))
   }
 
   @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {

@@ -38,7 +38,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
-    foldMap[S1, FreePanic[T, +?, +?]](FunctionKK(FreePanic lift f(_)))
+    foldMap[S1, FreePanic[T, +?, +?]](Morphism2(FreePanic lift f(_)))
   }
 
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Panic2[G]): G[E, A] = {

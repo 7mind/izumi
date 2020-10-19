@@ -1,6 +1,5 @@
 package izumi.distage.modules
 
-import cats.Parallel
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.support._

@@ -4,7 +4,6 @@ import izumi.distage.model.effect.QuasiIORunner.CatsImpl
 import izumi.functional.bio.UnsafeRun2
 import izumi.fundamentals.orphans.`cats.effect.Effect`
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 
 /**
   * An `unsafeRun` for `F`. Required for `distage-framework` apps and `distage-testkit` tests,
