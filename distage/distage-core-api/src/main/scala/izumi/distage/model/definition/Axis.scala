@@ -1,7 +1,11 @@
 package izumi.distage.model.definition
 
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.fundamentals.collections.IzCollections.toRichMappings
+import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.platform.strings.IzString.toRichString
+
+import scala.collection.compat._
 
 trait Axis { self =>
   def name: String = getClass.getName.toLowerCase.split('.').last.split('$').last
@@ -16,6 +20,12 @@ object Axis {
 
   final case class AxisPoint(axis: String, value: String) {
     override def toString: String = s"$axis:$value"
+  }
+  object AxisPoint {
+    implicit final class SetOps(private val value: IterableOnce[AxisPoint]) extends AnyVal {
+      def toActivationMap: Map[String, String] = value.iterator.map(v => v.axis -> v.value).toMap
+      def toActivationMultimapMut: MutableMultiMap[String, String] = value.iterator.map(v => v.axis -> v.value).toMultimapMut
+    }
   }
 
   trait AxisValue {

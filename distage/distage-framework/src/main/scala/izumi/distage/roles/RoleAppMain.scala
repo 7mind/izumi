@@ -51,7 +51,7 @@ abstract class RoleAppMain[F[_]](
     }
   }
 
-  def finalAppModule(argv: ArgV): Module = {
+  override final def finalAppModule(argv: ArgV): Module = {
     val appModule = makeAppModule(argv, AdditionalRoles(requiredRoles(argv)))
     val overrideModule = makeAppModuleOverride(argv)
     appModule overriddenBy overrideModule

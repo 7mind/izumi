@@ -33,7 +33,7 @@ object OperationOrigin {
     }
   }
   object EqualizedOperationOrigin {
-    implicit def make(o: OperationOrigin): EqualizedOperationOrigin = EqualizedOperationOrigin(o)
+    implicit def fromOperationOrigin(o: OperationOrigin): EqualizedOperationOrigin = EqualizedOperationOrigin(o)
   }
 
   sealed trait Defined extends OperationOrigin {

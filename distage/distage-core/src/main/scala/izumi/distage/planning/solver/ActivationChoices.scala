@@ -26,6 +26,6 @@ final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) ex
 
 object ActivationChoices {
   def apply(activations: Set[AxisPoint]): ActivationChoices = {
-    new ActivationChoices(activations.map(a => (a.axis, a)).toMap)
+    new ActivationChoices(activations.iterator.map(a => (a.axis, a)).toMap)
   }
 }

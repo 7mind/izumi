@@ -151,7 +151,7 @@ class PlannerDefaultImpl(
       .map {
         case (missing, refs) =>
           val maybeFirstOrigin = refs.headOption.flatMap(key => plan.meta.nodes.get(key)).map(_.origin.value.toSynthetic)
-          val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+          val origin = EqualizedOperationOrigin(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
           (missing, ImportDependency(missing, refs, origin))
       }
       .toMap

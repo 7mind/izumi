@@ -86,6 +86,8 @@ import scala.collection.compat._
   */
 final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
 
+  def keySet: NonEmptySet[K] = NonEmptySet.unsafeFrom(toMap.keySet)
+
   /**
     * Returns a new <code>NonEmptyMap</code> containing the entries of this <code>NonEmptyMap</code> and the entries of the passed <code>NonEmptyMap</code>.
     * The entry type of the resulting <code>NonEmptyMap</code> is the most specific superclass encompassing the entry types of this and the passed <code>NonEmptyMap</code>.

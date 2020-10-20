@@ -54,14 +54,14 @@ class PlanVerifier(
 
     val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
 
-    val toTrace: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+    val matrixToTrace: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
     val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, rootKeys)
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
-    val issues = trace(allAxis, mutVisited, toTrace, weakSetMembers, justMutators, providedKeys)(rootKeys.map(r => (r, r)), Set.empty)
+    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys)(rootKeys.map(r => (r, r)), Set.empty)
 
     PlanVerifierResult(issues.fold(_.toSet, _ => Set.empty[PlanIssue]), mutVisited.toSet)
   }
@@ -97,7 +97,7 @@ class PlanVerifier(
               case Some(ops) =>
                 val ac = ActivationChoices(currentActivation)
 
-                val withoutDefinedActivations = {
+                val withoutCurrentActivations = {
                   val withoutImpossibleActivationsIter = ops.iterator.filter(ac allValid _._2)
                   withoutImpossibleActivationsIter.map {
                     case (op, activations) =>
@@ -108,7 +108,7 @@ class PlanVerifier(
                 for {
                   // we ignore activations for set definitions
                   withMergedSets <- {
-                    val (setOps, otherOps) = withoutDefinedActivations.partitionMap { case (s: CreateSet, _, _) => Left(s); case a => Right(a) }
+                    val (setOps, otherOps) = withoutCurrentActivations.partitionMap { case (s: CreateSet, _, _) => Left(s); case a => Right(a) }
                     for {
                       mergedSets <- setOps.groupBy(_.target).values.biMapAggregate {
                         ops =>
@@ -120,7 +120,7 @@ class PlanVerifier(
                                     case Some(value) if value.sizeIs == 1 =>
                                       if (ac.allValid(value.head._2)) Right(List(memberKey)) else Right(Nil)
                                     case Some(value) =>
-                                      Left(List(InconsistentSetMembers(memberKey, NonEmptyList.unsafeFrom(value.iterator.map(_._1).toList))))
+                                      Left(List(InconsistentSetMembers(memberKey, NonEmptyList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
                                     case None =>
                                       reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
                                   }
@@ -130,10 +130,9 @@ class PlanVerifier(
                     } yield otherOps ++ mergedSets
                   }
                   _ <-
-                    // provided key cannot have unsaturated axis
-                    if (withMergedSets.isEmpty && !providedKeys(key)) {
-                      val defined = ops.flatMap(_._2).groupBy(_.axis)
-                      val probablyUnsaturatedAxis = defined.flatMap {
+                    if (withMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
+                      val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
+                      val probablyUnsaturatedAxis = allDefinedPoints.flatMap {
                         case (axis, definedPoints) =>
                           NonEmptySet
                             .from(currentActivation.filter(_.axis == axis).diff(definedPoints))
@@ -181,7 +180,7 @@ class PlanVerifier(
     currentActivation: Set[AxisPoint],
   )(importedKey: DIKey,
     d: DIKey,
-  ): Set[(DIKey, OperationOrigin)] = {
+  ): Set[OperationOrigin] = {
     // FIXME: reuse formatting from conflictingAxisTagsHint
     matrix
       .getOrElse(d, Set.empty)
@@ -191,38 +190,40 @@ class PlanVerifier(
               case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
               case op: ExecutableOp.MonadicOp => Set(op.effectKey)
             }).contains(importedKey) =>
-          op.target -> op.origin.value
+          op.origin.value
       }
   }
 
   protected[this] def checkConflicts(
     allAxis: Map[String, Set[String]],
-    withoutDefinedActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+    withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val issues = {
-      checkForUnsaturatedAxis(allAxis, withoutDefinedActivations) ++
-      checkForConflictingAxisChoices(withoutDefinedActivations) ++
-      checkForDuplicateActivations(withoutDefinedActivations) ++
-      checkForUnsolvableConflicts(withoutDefinedActivations)
+      checkForUnsaturatedAxis(allAxis, withoutCurrentActivations) ++
+      checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
+      checkForConflictingAxisChoices(withoutCurrentActivations) ++
+      checkForDuplicateActivations(withoutCurrentActivations) ++
+      checkForUnsolvableConflicts(withoutCurrentActivations)
     }
 
     if (issues.nonEmpty) {
       Left(issues)
     } else {
-      val next = withoutDefinedActivations.toSeq.map {
-        case (op, activations, _) =>
-          // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
-          val deps = depsOf(weakSetMembers)(op)
+      val next = withoutCurrentActivations
+        .iterator.map {
+          case (op, activations, _) =>
+            // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
+            val deps = depsOf(weakSetMembers)(op)
 
-          val acts = op match {
-            case _: ExecutableOp.CreateSet =>
-              Set.empty[AxisPoint]
-            case _ =>
-              activations
-          }
-          (acts, deps)
-      }
+            val acts = op match {
+              case _: ExecutableOp.CreateSet =>
+                Set.empty[AxisPoint]
+              case _ =>
+                activations
+            }
+            (acts, deps)
+        }.toSeq
       Right(next)
     }
   }
@@ -248,7 +249,7 @@ class PlanVerifier(
         case (op, activation, _) =>
           NonEmptyMap
             .from(activation.groupBy(_.axis).filter(_._2.sizeIs > 1))
-            .map(ConflictingAxisChoices(op.target, op, _))
+            .map(ConflictingAxisChoices(op.target, op.origin.value, _))
       }.toList
   }
 
@@ -269,7 +270,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  protected[this] final def checkForUnsolvableConflicts(
+  @tailrec protected[this] final def checkForUnsolvableConflicts(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[UnsolvableConflict] = {
     // TODO: in case we implement precedence rules the implementation should change
@@ -293,7 +294,7 @@ class PlanVerifier(
       case None => Nil
       case Some(commonAxes) =>
         if (commonAxes.isEmpty) {
-          List(UnsolvableConflict(ops.head._1.target, NonEmptySet.unsafeFrom(ops.map(t => t._1 -> t._3))))
+          List(UnsolvableConflict(ops.head._1.target, NonEmptySet.unsafeFrom(ops.map(t => t._1.origin.value -> t._3))))
         } else {
           checkForUnsolvableConflicts(ops.map { case (op, cutActs, fullActs) => (op, cutActs, fullActs.filterNot(commonAxes contains _.axis)) })
         }
@@ -306,26 +307,49 @@ class PlanVerifier(
 //    aAxis.intersect(bAxis).nonEmpty || aAxis.isEmpty || bAxis.isEmpty
 //  }
 
-  /** This method fails in case there are missing/uncovered points on any of the axis */
+  /** This method fails in case there are missing/uncovered points on any of the reachable axis */
   protected[this] final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[UnsaturatedAxis] = {
-    val currentAxis: List[String] = ops.iterator.flatMap(_._2.map(_.axis)).toList
-    val toTest: Set[Set[AxisPoint]] = ops.map(_._2.toSet)
+    val currentAxis: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
+    val toTest: Set[Set[AxisPoint]] = ops.map(_._2)
 
     currentAxis.flatMap {
       axis =>
-        val definedValues = toTest.flatMap(_.filter(_.axis == axis).map(_.value))
+        val definedValues = toTest.flatMap(_.iterator.filter(_.axis == axis).map(_.value).toSet)
         val diff = allAxis.get(axis).map(_.diff(definedValues)).toSeq.flatten
         if (diff.nonEmpty) {
           // TODO: quadratic
-          val toTestAxises: Set[Set[String]] = toTest.map(_.map(_.axis))
+          val toTestAxises: Iterator[Set[String]] = toTest.iterator.map(_.map(_.axis))
           if (toTestAxises.forall(_.contains(axis))) {
             Some(UnsaturatedAxis(ops.head._1.target, axis, NonEmptySet.unsafeFrom(diff.iterator.map(AxisPoint(axis, _)).toSet)))
           } else None
         } else None
     }
+  }
+
+  protected[this] final def checkForShadowedActivations(
+    allAxis: Map[String, Set[String]],
+    ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+  ): List[ShadowedActivation] = {
+    // FIXME: quadratic shit
+    ops
+      .iterator.flatMap {
+        case (op, _, axis) =>
+          val bigger = ops.iterator.collect { case (op, _, thatAxis) if axis != thatAxis && axis.subsetOf(thatAxis) => (thatAxis, op.origin.value) }.toMap
+          NonEmptyMap.from(bigger) match {
+            case None => Nil
+            case Some(strictlyBiggerActivations) =>
+              val axisAxes = axis.map(_.axis)
+              val coveredAxis = strictlyBiggerActivations.iterator.flatMap(_._1).filterNot(axisAxes contains _.axis).toActivationMultimapMut
+              if (coveredAxis == allAxis.view.filterKeys(coveredAxis.keySet).toMap) {
+                List(ShadowedActivation(op.target, op.origin.value, axis, allAxis, strictlyBiggerActivations))
+              } else {
+                Nil
+              }
+          }
+      }.toList
   }
 }
 
@@ -344,24 +368,36 @@ object PlanVerifier {
     def key: DIKey
   }
   object PlanIssue {
-    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[(DIKey, OperationOrigin)]) extends PlanIssue {
-      override def toString: String = MissingInstanceException.format(key, Set(dependee))
+    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[OperationOrigin]) extends PlanIssue {
+      override def toString: String = {
+        // FIXME: reuse formatting from conflictingAxisTagsHint [show multiple origins with different axes]
+        MissingInstanceException.format(key, Set(dependee))
+      }
     }
 
     /** There are reachable axis choices for which there is no binding for this key */
     final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: NonEmptySet[AxisPoint]) extends PlanIssue
 
     /** Binding contains multiple axis choices for the same axis */
-    final case class ConflictingAxisChoices(key: DIKey, op: InstantiationOp, bad: NonEmptyMap[String, Set[AxisPoint]]) extends PlanIssue
+    final case class ConflictingAxisChoices(key: DIKey, op: OperationOrigin, bad: NonEmptyMap[String, Set[AxisPoint]]) extends PlanIssue
 
     /** Multiple bindings contain identical axis choices */
     final case class DuplicateActivations(key: DIKey, ops: NonEmptyMap[Set[AxisPoint], NonEmptySet[OperationOrigin]]) extends PlanIssue
 
+    /** There is a binding with an activation that is completely shadowed by other bindings with larger activations and cannot be chosen */
+    final case class ShadowedActivation(
+      key: DIKey,
+      op: OperationOrigin,
+      activation: Set[AxisPoint],
+      allPossibleAxisChoices: Map[String, Set[String]],
+      shadowingBindings: NonEmptyMap[Set[AxisPoint], OperationOrigin],
+    ) extends PlanIssue
+
     /** There is no possible activation that could choose a unique binding among these contradictory axes */
-    final case class UnsolvableConflict(key: DIKey, ops: NonEmptySet[(InstantiationOp, Set[AxisPoint])]) extends PlanIssue
+    final case class UnsolvableConflict(key: DIKey, ops: NonEmptySet[(OperationOrigin, Set[AxisPoint])]) extends PlanIssue
 
     /** A distage bug, should never happen (bindings machinery guarantees a unique key for each set member, they cannot have the same key by construction) */
-    final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[InstantiationOp]) extends PlanIssue
+    final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue
 
     //
 //    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue

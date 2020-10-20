@@ -8,9 +8,8 @@ import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.{DuplicateActivations, MissingImport, UnsaturatedAxis, UnsolvableConflict}
+import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
@@ -103,7 +102,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     assert(result.issues.nonEmpty)
     assert(result.issues.size == 1)
-    assert(result.issues == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(DIKey[Fork1] -> implBOrigin))))
+    assert(result.issues == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin))))
   }
 
   "Verifier flags conflicting activations" in {
@@ -237,9 +236,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       mkInjector().produceGet[Fork1](definition, Activation.empty).unsafeGet()
     }
 
-//    val result = PlanVerifier().verify(definition, Roots.target[Fork1])
-//    assert(result.issues.nonEmpty)
-//    assert(result.issues.size == 99)
+    val result = PlanVerifier().verify(definition, Roots.target[Fork1])
+    assert(result.issues.nonEmpty)
+    assert(result.issues.size == 1)
+    assert(result.issues.head.key == DIKey[Fork1])
+    assert(result.issues.head.asInstanceOf[ShadowedActivation].activation == Set.empty)
+    assert(result.issues.head.asInstanceOf[ShadowedActivation].shadowingBindings.keySet == NonEmptySet(Set(AxisPoint("axis1", "a")), Set(AxisPoint("axis1", "b"))))
   }
 
   "Verifier flags axis-less unsolvable conflicts" in {
@@ -336,7 +338,28 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     assert(result.issues.nonEmpty)
-//    assert(result.issues.size == 99)
+    assert(result.issues.size == 2)
+    assert(result.issues.map(_.asInstanceOf[ShadowedActivation].key) == Set(DIKey[Fork1]))
+    assert(
+      result.issues.map(_.asInstanceOf[ShadowedActivation].activation) == Set(
+        Set(AxisPoint("axis1", "a")),
+        Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c")),
+      )
+    )
+    assert(
+      result.issues.map(_.asInstanceOf[ShadowedActivation].shadowingBindings.keySet) == Set(
+        NonEmptySet(
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "d")),
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c")),
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "e")),
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "f")),
+        ),
+        NonEmptySet(
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "e")),
+          Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "f")),
+        ),
+      )
+    )
   }
 
   "Verifier handles specificity activation chains" in {
@@ -346,9 +369,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis1.A).from[ImplA2] // less-specific activation
       make[Fork1].tagged(Axis1.A, Axis2.D).from[ImplA5]
       make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.F).from[ImplA4]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.B, Axis2.C).from[ImplB]
+      make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA6]
 
-      make[Fork2].tagged(Axis3.E).from[ImplC]
+      make[Fork2].tagged(Axis2.C, Axis3.E).from[ImplC]
+      make[Fork2].tagged(Axis2.C).from[ImplC]
     }
 
     assertThrows[ConflictResolutionException] {
@@ -371,17 +396,28 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance3 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C, Axis3.F)).unsafeGet()
     assert(instance3.isInstanceOf[ImplA4])
 
-    val instance4 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
-    assert(instance4.asInstanceOf[ImplB].trait2.isInstanceOf[ImplC])
+    assertThrows[ConflictResolutionException] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
+    }
 
-    val instance5 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
-    assert(instance5.asInstanceOf[ImplB].trait2.isInstanceOf[ImplC])
+    val instance4 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
+    assert(instance4.isInstanceOf[ImplA6])
 
-    val instance6 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C)).unsafeGet()
+    assertThrows[ConflictResolutionException] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C)).unsafeGet()
+    }
+
+    val instance6 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C, Axis3.E)).unsafeGet()
     assert(instance6.asInstanceOf[ImplB].trait2.isInstanceOf[ImplC])
 
-    val instance7 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C, Axis3.E)).unsafeGet()
+    val instance7 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C, Axis3.F)).unsafeGet()
     assert(instance7.asInstanceOf[ImplB].trait2.isInstanceOf[ImplC])
+
+    val instance8 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D, Axis3.E)).unsafeGet()
+    assert(instance8.isInstanceOf[ImplA6])
+
+    val instance9 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D, Axis3.F)).unsafeGet()
+    assert(instance9.isInstanceOf[ImplA6])
 
     val result = PlanVerifier().verify(definition, Roots.target[Fork1])
     assert(result.issues.isEmpty)

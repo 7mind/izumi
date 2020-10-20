@@ -21,9 +21,8 @@ final case class Activation(activeChoices: Map[Axis, AxisValue]) extends AnyVal 
   @inline def +(axisChoice: (Axis, AxisValue)): Activation = Activation(activeChoices + axisChoice)
   @inline def +(axisValue: AxisValue): Activation = Activation(activeChoices + (axisValue.axis -> axisValue))
 
-  /** `that` activation subsumes `this` activation if all axis choices in `this` are present in `that` */
-  @inline def <=(that: Activation): Boolean = activeChoices.toSet.subsetOf(that.activeChoices.toSet)
-  @inline def subsetOf(that: Activation): Boolean = this <= that
+  /** `this` activation is a subset of `that` activation if all axis choices in `this` are also present in `that` */
+  @inline def subsetOf(that: Activation): Boolean = activeChoices.toSet.subsetOf(that.activeChoices.toSet)
 }
 
 object Activation {
