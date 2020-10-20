@@ -4,6 +4,8 @@ import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, modules, planning}
 
+import izumi.distage.planning.solver
+
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
@@ -20,6 +22,9 @@ trait Distage {
 
   type Locator = model.Locator
   type LocatorRef = model.recursive.LocatorRef
+
+  type PlanVerifier = solver.PlanVerifier
+  val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
   type DefaultModule[F[_]] = modules.DefaultModule[F]
   val DefaultModule: modules.DefaultModule.type = modules.DefaultModule

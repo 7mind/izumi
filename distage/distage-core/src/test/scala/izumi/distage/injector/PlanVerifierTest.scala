@@ -165,7 +165,35 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     )
   }
 
-  "progression test: can't Verifier flags shadowed activations (overridden by all other activations)" in assertThrows[TestFailedException] {
+  "Verifier flags conflicting activations with partially shared axis" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      make[Fork1].tagged(Axis1.A, Axis3.E).from[ImplA]
+      make[Fork1].tagged(Axis1.B, Axis3.F).from[ImplA]
+      make[Fork1].tagged(Axis1.A, Axis2.C).from[ImplA]
+      make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA]
+    }
+
+    assertThrows[ConflictResolutionException] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+    }
+
+    assertThrows[ConflictResolutionException] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+    }
+
+    val result = PlanVerifier().verify(definition, Roots.target[Fork1])
+    assert(result.issues.nonEmpty)
+    assert(result.issues.size == 1)
+    assert(result.issues.head.asInstanceOf[UnsolvableConflict].key == DIKey[Fork1])
+    assert(
+      result.issues.head.asInstanceOf[UnsolvableConflict].ops.map(_._2) ==
+      NonEmptySet(Set(Axis2.C), Set(Axis2.D), Set(Axis3.E), Set(Axis3.F)).map(_.map(_.toAxisPoint))
+    )
+  }
+
+  "Verifier flags shadowed activations (overridden by all other activations)" in {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
@@ -262,7 +290,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.isEmpty)
   }
 
-  "progression test: can't Verifier flags shadowed activations in specificity activation chains" in assertThrows[TestFailedException] {
+  "Verifier flags shadowed activations in specificity activation chains" in {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
@@ -311,7 +339,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 //    assert(result.issues.size == 99)
   }
 
-  "progression test: can't Verifier handles specificity activation chains" in assertThrows[TestFailedException] {
+  "Verifier handles specificity activation chains" in {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {

@@ -269,7 +269,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  @tailrec protected[this] final def checkForUnsolvableConflicts(
+  protected[this] final def checkForUnsolvableConflicts(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[UnsolvableConflict] = {
     // TODO: in case we implement precedence rules the implementation should change

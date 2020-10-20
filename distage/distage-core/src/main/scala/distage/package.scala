@@ -1,5 +1,5 @@
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.planning.extensions
+import izumi.distage.planning.{extensions, solver}
 import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
@@ -18,6 +18,9 @@ package object distage extends Distage {
 
   override type Locator = model.Locator
   override type LocatorRef = model.recursive.LocatorRef
+
+  override type PlanVerifier = solver.PlanVerifier
+  override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
   override type DefaultModule[F[_]] = modules.DefaultModule[F]
   override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
