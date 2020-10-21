@@ -61,22 +61,29 @@ class PlanVerifier(
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, rootKeys)
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
-    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys)(rootKeys.map(r => (r, r)), Set.empty)
+    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, rootKeys)
 
-    PlanVerifierResult(issues.fold(_.toSet, _ => Set.empty[PlanIssue]), mutVisited.toSet)
+    PlanVerifierResult(issues, mutVisited.toSet)
   }
 
   protected[this] def trace(
     allAxis: Map[String, Set[String]],
-    visited: mutable.HashSet[DIKey],
+    allVisited: mutable.HashSet[DIKey],
     matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
     justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     providedKeys: DIKey => Boolean,
-  )(current: Set[(DIKey, DIKey)],
-    currentActivation: Set[AxisPoint],
-  ): Either[List[PlanIssue], Unit] = {
-    current.biMapAggregateVoid {
+    rootKeys: Set[DIKey],
+  ): Set[PlanIssue] = {
+
+    // for trampoline
+    sealed trait RecResult {
+      type RecursionResult <: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]
+    }
+    type RecursionResult = RecResult#RecursionResult
+    @inline def RecursionResult(a: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]): RecursionResult = a.asInstanceOf[RecursionResult]
+
+    @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
       case (key, dependee) =>
         @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[List[MissingImport], Nothing] = {
           Left(List(MissingImport(key, dependee, allImportingBindings(matrix, currentActivation)(key, dependee))))
@@ -86,93 +93,105 @@ class PlanVerifier(
           if (providedKeys(key)) orElse else reportMissing(key, dependee)
         }
 
-        val currentResult: Either[List[PlanIssue], () => Either[List[PlanIssue], Unit]] = {
-          if (visited.contains(key)) {
-            Right(() => Right(()))
-          } else {
-            matrix.get(key) match {
-              case None =>
-                reportMissingIfNotProvided(key, dependee)(Right(() => Right(())))
+        if (visited.contains(key)) {
+          Right(Iterator.empty)
+        } else {
+          matrix.get(key) match {
+            case None =>
+              reportMissingIfNotProvided(key, dependee)(Right(Iterator.empty))
 
-              case Some(ops) =>
-                val ac = ActivationChoices(currentActivation)
+            case Some(ops) =>
+              val ac = ActivationChoices(currentActivation)
 
-                val withoutCurrentActivations = {
-                  val withoutImpossibleActivationsIter = ops.iterator.filter(ac allValid _._2)
-                  withoutImpossibleActivationsIter.map {
-                    case (op, activations) =>
-                      (op, activations diff currentActivation, activations)
-                  }.toSet
+              val withoutCurrentActivations = {
+                val withoutImpossibleActivationsIter = ops.iterator.filter(ac allValid _._2)
+                withoutImpossibleActivationsIter.map {
+                  case (op, activations) =>
+                    (op, activations diff currentActivation, activations)
+                }.toSet
+              }
+
+              for {
+                // we ignore activations for set definitions
+                withMergedSets <- {
+                  val (setOps, otherOps) = withoutCurrentActivations.partitionMap { case (s: CreateSet, _, _) => Left(s); case a => Right(a) }
+                  for {
+                    mergedSets <- setOps.groupBy(_.target).values.biMapAggregate {
+                      ops =>
+                        for {
+                          members <- ops
+                            .iterator.flatMap(_.members).biFlatMapAggregateTo {
+                              memberKey =>
+                                matrix.get(memberKey) match {
+                                  case Some(value) if value.sizeIs == 1 =>
+                                    if (ac.allValid(value.head._2)) Right(List(memberKey)) else Right(Nil)
+                                  case Some(value) =>
+                                    Left(List(InconsistentSetMembers(memberKey, NonEmptyList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
+                                  case None =>
+                                    reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
+                                }
+                            }(Set)
+                        } yield (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
+                    }
+                  } yield otherOps ++ mergedSets
                 }
+                _ <-
+                  if (withMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
+                    val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
+                    val probablyUnsaturatedAxis = allDefinedPoints.flatMap {
+                      case (axis, definedPoints) =>
+                        NonEmptySet
+                          .from(currentActivation.filter(_.axis == axis).diff(definedPoints))
+                          .map(UnsaturatedAxis(key, axis, _))
+                    }
 
-                for {
-                  // we ignore activations for set definitions
-                  withMergedSets <- {
-                    val (setOps, otherOps) = withoutCurrentActivations.partitionMap { case (s: CreateSet, _, _) => Left(s); case a => Right(a) }
-                    for {
-                      mergedSets <- setOps.groupBy(_.target).values.biMapAggregate {
-                        ops =>
-                          for {
-                            members <- ops
-                              .iterator.flatMap(_.members).biFlatMapAggregateTo {
-                                memberKey =>
-                                  matrix.get(memberKey) match {
-                                    case Some(value) if value.sizeIs == 1 =>
-                                      if (ac.allValid(value.head._2)) Right(List(memberKey)) else Right(Nil)
-                                    case Some(value) =>
-                                      Left(List(InconsistentSetMembers(memberKey, NonEmptyList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
-                                    case None =>
-                                      reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
-                                  }
-                              }(Set)
-                          } yield (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
-                      }
-                    } yield otherOps ++ mergedSets
-                  }
-                  _ <-
-                    if (withMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
-                      val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
-                      val probablyUnsaturatedAxis = allDefinedPoints.flatMap {
-                        case (axis, definedPoints) =>
-                          NonEmptySet
-                            .from(currentActivation.filter(_.axis == axis).diff(definedPoints))
-                            .map(UnsaturatedAxis(key, axis, _))
-                      }
-
-                      if (probablyUnsaturatedAxis.isEmpty) {
-                        reportMissing(key, dependee)
-                      } else {
-                        Left(probablyUnsaturatedAxis.toList)
-                      }
+                    if (probablyUnsaturatedAxis.isEmpty) {
+                      reportMissing(key, dependee)
                     } else {
-                      Right(())
+                      Left(probablyUnsaturatedAxis.toList)
                     }
-                  next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
-                } yield {
-                  val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(weakSetMembers)(m._1)).toSeq
-
-                  val goNext = () => {
-                    next.biMapAggregateVoid {
-                      case (nextActivation, nextDeps) =>
-                        trace(allAxis, visited, matrix, weakSetMembers, justMutators, providedKeys)(
-                          current = (nextDeps ++ mutators).map((_, key)),
-                          currentActivation = currentActivation ++ nextActivation,
-                        )
-                    }
+                  } else {
+                    Right(())
                   }
+                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
+              } yield {
+                allVisited.add(key)
 
-                  visited.add(key)
+                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(weakSetMembers)(m._1)).toSeq
 
-                  goNext
+                val goNext = next.iterator.map {
+                  case (nextActivation, nextDeps) =>
+                    () =>
+                      go(
+                        visited = visited + key,
+                        current = (nextDeps ++ mutators).map((_, key)),
+                        currentActivation = currentActivation ++ nextActivation,
+                      )
                 }
-            }
+
+                goNext
+              }
           }
         }
-        currentResult match {
-          case Right(value) => value()
-          case l @ Left(_) => l
+    })
+
+    // trampoline
+    val errors = Set.newBuilder[PlanIssue]
+    val remainder = mutable.Stack(() => go(Set.empty, Set.from(rootKeys.map(r => r -> r)), Set.empty))
+
+    while (remainder.nonEmpty) {
+      val i = remainder.pop().apply()
+      while (i.hasNext) {
+        i.next() match {
+          case Right(nextSteps) =>
+            remainder ++= nextSteps
+          case Left(newErrors) =>
+            errors ++= newErrors
         }
+      }
     }
+
+    errors.result()
   }
 
   protected[this] final def allImportingBindings(

@@ -431,7 +431,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .ref[ExternalDep]
 
       make[X]
-      make[Fork1].tagged(Axis.A).from[ImplA]
+      make[Fork1].tagged(Axis.A).from[ImplA].addDependency[Set[Dep]]
       make[Fork1].tagged(Axis.B).from[ImplB]
 
       make[BadDep].tagged(Axis.B).from[BadDepImplB]
@@ -439,9 +439,24 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result1 = PlanVerifier().verify(definition, Roots.target[X])
     assert(result1.issues.map(_.getClass) == Set(classOf[MissingImport], classOf[UnsaturatedAxis]))
+    assert(
+      result1.issues == Set(
+        MissingImport(DIKey[ExternalDep], DIKey[X], result1.issues.collect { case MissingImport(_, d, origins) if d == DIKey[X] => origins }.flatten),
+        MissingImport(
+          DIKey[ExternalDep],
+          result1.issues.collectFirst { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
+          result1.issues.collect { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
+        ),
+        UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a"))),
+      )
+    )
 
     val result2 = PlanVerifier().verify(definition, Roots.target[X], providedKeys = Set(DIKey[ExternalDep]))
-    assert(result2.issues == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))))
+    assert(
+      result2.issues == Set(
+        UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))
+      )
+    )
   }
 
   "Verifier lets unsaturated axis slide if it's substituted by a provided import" in {
