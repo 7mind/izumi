@@ -3082,7 +3082,8 @@ lazy val `izumi` = (project in file("."))
             ),
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
     scalacOptions in ThisBuild ++= Seq(
-      s"-Xmacro-settings:scalatest-version=${V.scalatest}"
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
     )
   )
   .disablePlugins(AssemblyPlugin)

@@ -6,14 +6,14 @@ import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
 import izumi.distage.testkit.scalatest.Spec2
-import izumi.fundamentals.platform.properties.EnvVarsCI
+import izumi.fundamentals.platform.build.MacroParameters
 import izumi.logstage.api.Log
 import zio.IO
 
 // this tests needed to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends Spec2[IO] {
 
-  if (!EnvVarsCI.isIzumiCI()) {
+  if (!MacroParameters.sbtIsInsideCI().contains(true)) {
 
     "distage test runner should start only one container for reusable" should {
       "support docker resources" in {
