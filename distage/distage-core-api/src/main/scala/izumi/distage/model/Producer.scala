@@ -14,6 +14,7 @@ trait Producer {
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
+  /** Produce [[Locator]] interpreting effect- and resource-bindings into the provided `F` */
   final def produceCustomF[F[_]: TagK: QuasiIO](plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceFX[F](plan, FinalizerFilter.all[F])
   }
@@ -21,6 +22,7 @@ trait Producer {
     produceDetailedFX[F](plan, FinalizerFilter.all[F])
   }
 
+  /** Produce [[Locator]], supporting only effect- and resource-bindings in `Identity` */
   final def produceCustomIdentity(plan: OrderedPlan): Lifecycle[Identity, Locator] =
     produceCustomF[Identity](plan)
   final def produceDetailedIdentity(plan: OrderedPlan): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] =

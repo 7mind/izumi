@@ -4,7 +4,9 @@ import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, Module
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
@@ -185,7 +187,23 @@ trait Injector[F[_]] extends Planner with Producer {
   }
 
   final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
-    produceCustomF(plan)
+    produceCustomF[F](plan)
+  }
+
+  /** Produce [[Locator]] interpreting effect- and resource-bindings into the provided `F` */
+  final def produceCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Locator] = {
+    produceCustomF[G](plan(plannerInput))
+  }
+  final def produceDetailedCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
+    produceDetailedCustomF[G](plan(plannerInput))
+  }
+
+  /** Produce [[Locator]], supporting only effect- and resource-bindings in `Identity` */
+  final def produceCustomIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Locator] = {
+    produceCustomF[Identity](plan(plannerInput))
+  }
+  final def produceDetailedIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] = {
+    produceDetailedCustomF[Identity](plan(plannerInput))
   }
 
   @deprecated("Use .produceRun. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
@@ -214,7 +232,7 @@ trait Injector[F[_]] extends Planner with Producer {
 
   @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
   final def produceF(plan: OrderedPlan): Lifecycle[F, Locator] = {
-    produceCustomF(plan)
+    produceCustomF[F](plan)
   }
 
   protected[this] implicit def tagK: TagK[F]
