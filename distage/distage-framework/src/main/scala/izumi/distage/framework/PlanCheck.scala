@@ -112,7 +112,7 @@ object PlanCheck {
       val message = {
         cutoffMacroTrace(t)
         val printedPlan = plan.filter(_ => printPlan).fold("")("Plan was:\n" + _.render() + "\n\n")
-        s"""Found a problem with your DI wiring, when checking wiring of application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
+        s"""Found a problem with your DI wiring, when checking application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
            |
            |  roles       = ${chosenRoles.fold(effectiveRoles)(_.toSeq.sorted.mkString(" "))}
            |  activations = ${chosenActivations.fold(effectiveActivations)(_.map(_.map(t => t._1 + ":" + t._2).mkString(" ")).mkString(" | "))}

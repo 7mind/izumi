@@ -1,7 +1,6 @@
 package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
-import distage.Id
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.StandardAxis._
@@ -55,15 +54,15 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
   makeConfig[SetElementOnlyCfg]("setElementConfig")
 
-  makeConfigNamed[IntegrationOnlyCfg2]("integrationOnlyCfg2")
-  make[IntegrationOnlyCfg2].from {
-    conf: IntegrationOnlyCfg2 @Id("integrationOnlyCfg2") =>
+  makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
+  modify[IntegrationOnlyCfg2] {
+    conf: IntegrationOnlyCfg2 =>
       IntegrationOnlyCfg2(conf.value + ":updated")
   }
 
-  makeConfigNamed[TestServiceConf2]("testservice2")
-  make[TestServiceConf2].from {
-    conf: TestServiceConf2 @Id("testservice2") =>
+  makeConfig[TestServiceConf2]("testservice2")
+  modify[TestServiceConf2] {
+    conf: TestServiceConf2 =>
       TestServiceConf2(conf.strval + ":updated")
   }
   makeConfig[ListConf]("listconf")

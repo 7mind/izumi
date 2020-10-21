@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, Module
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}

@@ -421,7 +421,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val context = mkInjector().produce(definition).unsafeGet()
 
-    assert(context.get[Mutable].b.contains(SomethingUseful("x")))
+    assert(context.get[Mutable] == Mutable(1, Some(SomethingUseful("x"))))
   }
 
   "support mutations with axis tags when axis is configured" in {
@@ -431,9 +431,9 @@ class BasicTest extends AnyWordSpec with MkInjector {
       new ModuleDef {
         make[SomethingUseful].fromValue(SomethingUseful("x"))
 
-        make[Mutable].fromValue(Mutable(1, None))
+        make[Mutable].named("x").fromValue(Mutable(1, None))
 
-        modify[Mutable].by {
+        modify[Mutable].named("x").by {
           _.flatAp {
             (u: SomethingUseful) => (m: Mutable) =>
               m.copy(b = Some(u))
@@ -441,19 +441,15 @@ class BasicTest extends AnyWordSpec with MkInjector {
         }
 
         modify[Mutable]
-          .by {
-            _.map {
-              (m: Mutable) =>
-                m.copy(a = m.a + 10)
-            }
+          .named("x") {
+            (m: Mutable) =>
+              m.copy(a = m.a + 10)
           }.tagged(Repo.Prod)
 
         modify[Mutable]
-          .by {
-            _.map {
-              (m: Mutable) =>
-                m.copy(a = m.a + 20)
-            }
+          .named("x") {
+            (m: Mutable) =>
+              m.copy(a = m.a + 20)
           }.tagged(Repo.Dummy)
       },
       Activation(Repo -> Repo.Prod),
@@ -461,8 +457,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val context = mkInjector().produce(definition).unsafeGet()
 
-    assert(context.get[Mutable].b.contains(SomethingUseful("x")))
-    assert(context.get[Mutable].a == 11)
+    assert(context.get[Mutable]("x") == Mutable(11, Some(SomethingUseful("x"))))
   }
 
   "support mutations with axis tags when axis is unconfigured" in {

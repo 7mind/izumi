@@ -2,11 +2,11 @@ package izumi.distage.model.definition.dsl
 
 import izumi.distage.constructors.macros.AnyConstructorMacro
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.definition._
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SingletonRef, _}
 import izumi.distage.model.exceptions.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
@@ -124,10 +124,16 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     * }}}
     */
   final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
-  final private def _modify[T](key: DIKey)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): SingletonRef = {
+  final private def _modify[T](key: DIKey.BasicKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): SingletonRef = {
+    val (tpeKey: DIKey.TypeKey, maybeId) = key match {
+      case tpeKey: DIKey.TypeKey => tpeKey -> None
+      case idKey @ DIKey.IdKey(tpe, id, m) => DIKey.TypeKey(tpe, m) -> Some(Identifier.fromIdContract(id)(idKey.idContract))
+    }
     val newProvider: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
-    val binding = Bindings.provider[T](newProvider)(tag, pos).copy(isMutator = true)
-    _registered(new SingletonRef(binding))
+    val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, pos.get.position, isMutator = true)
+    val ref = _registered(new SingletonRef(binding))
+    maybeId.foreach(ref append SetId(_))
+    ref
   }
 
   final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
@@ -139,20 +145,38 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
 object AbstractBindingDefDSL {
 
   final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
+    def named(name: Identifier): ModifyNamedDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = {
+      new ModifyNamedDSL(dsl, name)
+    }
+
     def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
       by(_.map(f))
     }
 
-    def apply(name: Identifier)(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(name)(_.map(f))
+    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f)(pos))
+    }
+
+    def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey.get[B]))
+    }
+
+    def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(key))
+    }
+
+    def addDependencies(keys: Iterable[DIKey])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependencies(keys))
+    }
+  }
+
+  final class ModifyNamedDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL], name: Identifier) {
+    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.map(f))
     }
 
     def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f)(tag, pos))
-    }
-
-    def by(name: Identifier)(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f)(tag, pos))
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f)(pos))
     }
 
     def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {

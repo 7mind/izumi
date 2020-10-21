@@ -444,7 +444,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         MissingImport(DIKey[ExternalDep], DIKey[X], result1.issues.collect { case MissingImport(_, d, origins) if d == DIKey[X] => origins }.flatten),
         MissingImport(
           DIKey[ExternalDep],
-          result1.issues.collectFirst { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
+          result1.issues.collectFirst { case MissingImport(_, d, _) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
           result1.issues.collect { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
         ),
         UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a"))),

@@ -66,7 +66,6 @@ object PerformPlanCheck {
   ]: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn] =
     macro PlanCheckMacro.impl[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]
 
-  // 2.12 requires `Witness`-like mechanism
   class Main[
     RoleAppMain <: PlanHolder,
     Roles <: String with Singleton,
