@@ -263,10 +263,10 @@ object BIOSyntax {
     @inline final def BIOFunctor[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }
   trait BIOImplicitPuns14 {
-    @deprecated("Use BIOError", "0.11")
+    @deprecated("Use Error2", "0.11")
     @inline implicit final def BIOMonadError[F[+_, +_]: Error2, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
       new BIOSyntax.BIOErrorOps[F, E, A](self)
-    @deprecated("Use BIOError", "0.11")
+    @deprecated("Use Error2", "0.11")
     @inline final def BIOMonadError[F[+_, +_]: Error2]: Error2[F] = implicitly
   }
 
