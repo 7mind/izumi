@@ -3110,6 +3110,7 @@ lazy val `izumi` = (project in file("."))
     })
     ,
     credentials in ThisBuild += Credentials(file(".secrets/credentials.sonatype-nexus.properties")),
+    credentials in ThisBuild += Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"),
     homepage in ThisBuild := Some(url("https://izumi.7mind.io")),
     licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
     developers in ThisBuild := List(
