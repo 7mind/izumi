@@ -193,14 +193,22 @@ object Izumi {
         enabled = Seq(Plugin("SbtgenVerificationPlugin")),
         disabled = Seq(Plugin("AssemblyPlugin")),
       )
+
+      final val outOfSource = Seq(
+        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("${Projects
+          .root.id.value}")).value.toPath().relativize(baseDirectory.value.toPath)).toFile""".raw
+      )
+
       final val settings = Seq()
 
-      final val sharedAggSettings = Seq(
+      final val sharedAggSettings = outOfSource ++ Seq(
         "crossScalaVersions" := Targets.targetScala.map(_.value),
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
       final val rootSettings = Defaults.SharedOptions ++ Seq(
+        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
+          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
@@ -228,7 +236,7 @@ object Izumi {
         ),
       )
 
-      final val sharedSettings = Defaults.SbtMetaOptions ++ Seq(
+      final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,

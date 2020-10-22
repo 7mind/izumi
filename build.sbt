@@ -50,6 +50,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -154,6 +155,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -274,6 +276,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -399,6 +402,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -498,6 +502,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -612,6 +617,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -720,6 +726,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -825,6 +832,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -938,6 +946,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1041,6 +1050,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1152,6 +1162,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1278,6 +1289,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1385,6 +1397,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1490,6 +1503,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1593,6 +1607,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1724,6 +1739,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1836,6 +1852,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -1938,6 +1955,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2051,6 +2069,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2159,6 +2178,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2262,6 +2282,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2368,6 +2389,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2472,6 +2494,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2662,6 +2685,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2764,6 +2788,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.12") => Seq(
@@ -2843,6 +2868,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2864,6 +2890,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2885,6 +2912,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2909,6 +2937,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2933,6 +2962,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2950,6 +2980,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2967,6 +2998,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -2981,6 +3013,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
 lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -3015,6 +3048,7 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     skip in publish := true,
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("izumi")).value.toPath().relativize(baseDirectory.value.toPath)).toFile,
     crossScalaVersions := Seq(
       "2.13.3",
       "2.12.12"
@@ -3062,6 +3096,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-described-version=${com.typesafe.sbt.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
+    target := baseDirectory.in(LocalProject("izumi")).value.toPath().resolve("target").resolve("izumi").toFile,
     crossScalaVersions := Nil,
     scalaVersion := "2.13.3",
     organization in ThisBuild := "io.7mind.izumi",

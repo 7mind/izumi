@@ -55,7 +55,7 @@ object MacroParameters {
   def gitHeadCommit(): Option[String] = macro MacroParametersImpl.gitHeadCommit
   def gitDescribedVersion(): Option[String] = macro MacroParametersImpl.gitHeadCommit
 
-  def sbtIsInsideCI(): Option[Boolean] = macro MacroParametersImpl.sbtIsCi
+  def sbtIsInsideCI(): Option[Boolean] = macro MacroParametersImpl.sbtIsInsideCI
 
 
   def macroSetting(name: String): Option[String] = macro MacroParametersImpl.extractAttrMacro
