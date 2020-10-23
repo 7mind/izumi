@@ -130,7 +130,7 @@ object PlanCheck {
     }
 
     try {
-      val baseModule = roleAppMain.finalAppModule(ArgV(Array.empty))
+      val baseModule = roleAppMain.finalAppModule
       val allKeysProvidedByBaseModule = baseModule.keys
       import roleAppMain.AppEffectType
       def combine[F[_]: TagK]: Tag[DefaultModule[F]] = Tag[DefaultModule[F]]
@@ -209,7 +209,7 @@ object PlanCheck {
           if (bruteforce) {
             val allChoices = chosenActivations match {
               case None =>
-                val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings).availableChoices
+                val choices = activationChoicesExtractor.findAvailableChoices(bootloader.input.bindings)
                 effectiveActivations = s"* (effective: ${choices.map { case (k, vs) => s"$k:${vs.mkString("|")}" }.mkString(" ")})"
 
                 allActivations(choices, defaultActivationsLimit)

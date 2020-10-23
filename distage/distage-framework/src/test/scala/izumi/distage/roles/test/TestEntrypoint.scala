@@ -14,7 +14,7 @@ object TestEntrypoint extends TestEntrypointBase
 
 // for `CompTimePlanCheckerTest`
 object TestEntrypointPatchedLeak extends TestEntrypointBase {
-  override protected def makeAppModuleOverride(argv: RoleAppMain.ArgV): definition.Module = super.makeAppModuleOverride(argv) ++ new ModuleDef {
+  override protected def appModuleOverrides(argv: RoleAppMain.ArgV): definition.Module = super.appModuleOverrides(argv) ++ new ModuleDef {
     todo[XXX_LocatorLeak]
   }
 }

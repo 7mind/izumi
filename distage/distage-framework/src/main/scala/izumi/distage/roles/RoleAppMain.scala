@@ -1,9 +1,9 @@
 package izumi.distage.roles
 
-import distage.Injector
 import cats.effect.LiftIO
-import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import distage.Injector
 import izumi.distage.model.definition.Module
+import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
@@ -23,7 +23,7 @@ trait PlanHolder {
   // FIXME: remove if unnecessary
   type AppEffectType[_]
   implicit def tagK: TagK[AppEffectType]
-  def finalAppModule(argv: ArgV): Module
+  def finalAppModule: Module
 }
 
 abstract class RoleAppMain[F[_]](
@@ -51,21 +51,15 @@ abstract class RoleAppMain[F[_]](
     }
   }
 
-  override final def finalAppModule(argv: ArgV): Module = {
-    val appModule = makeAppModule(argv, AdditionalRoles(requiredRoles(argv)))
-    val overrideModule = makeAppModuleOverride(argv)
-    appModule overriddenBy overrideModule
+  override final def finalAppModule: Module = finalAppModule(ArgV.empty)
+
+  def finalAppModule(argv: ArgV): Module = {
+    val mainModule = appModule(argv, AdditionalRoles(requiredRoles(argv)))
+    val overrideModule = appModuleOverrides(argv)
+    mainModule overriddenBy overrideModule
   }
 
-  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = {
-    Vector.empty
-  }
-
-  protected def makeAppModuleOverride(@unused argv: ArgV): Module = {
-    Module.empty
-  }
-
-  protected def makeAppModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
+  protected def appModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
     new MainAppModule[F](
       args = argv,
       additionalRoles = additionalRoles,
@@ -74,6 +68,16 @@ abstract class RoleAppMain[F[_]](
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
     )
+  }
+
+  /** Overrides and mutators applied to [[MainAppModule]] (result of [[appModule]]) */
+  protected def appModuleOverrides(@unused argv: ArgV): Module = {
+    Module.empty
+  }
+
+  /** Roles always enabled in this [[RoleAppMain]] */
+  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = {
+    Vector.empty
   }
 
   protected def createEarlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
@@ -99,6 +103,9 @@ object RoleAppMain {
   }
 
   final case class ArgV(args: Array[String])
+  object ArgV {
+    def empty: ArgV = ArgV(Array.empty)
+  }
   final case class AdditionalRoles(knownRequiredRoles: Vector[RawRoleParams])
 
   object Options extends ParserDef {
