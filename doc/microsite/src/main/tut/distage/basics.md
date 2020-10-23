@@ -11,7 +11,7 @@ Add the `distage-core` library:
 
 @@dependency[sbt,Maven,Gradle] {
   group="io.7mind.izumi"
-  artifact="distage-framework-docker_2.13"
+  artifact="distage-core_2.13"
   version="$izumi.version$"
 }
 
@@ -74,7 +74,7 @@ We will not do it directly. First we'll only declare the component interfaces we
 ```scala mdoc:to-string
 import distage.ModuleDef
 
-val HelloByeModule = new ModuleDef {
+def HelloByeModule = new ModuleDef {
   make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
   make[HelloByeApp] // `.from` is not required for concrete classes 
@@ -293,7 +293,7 @@ class TestPrintGreeter extends Greeter {
 
 // declare 3 possible implementations
 
-val TestModule = new ModuleDef {
+def TestModule = new ModuleDef {
   make[Greeter].tagged(Style.Normal, Mode.Prod).from[PrintGreeter]
   make[Greeter].tagged(Style.Normal, Mode.Test).from[TestPrintGreeter]
   make[Greeter].tagged(Style.AllCaps).from[AllCapsGreeter]
@@ -355,7 +355,7 @@ class MyApp(db: DBConnection, mq: MessageQueueConnection) {
   val run = IO(println("Hello World!"))
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
   make[MyApp]
@@ -394,7 +394,7 @@ class InitResource extends Lifecycle.Simple[Init] {
   }
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[Init].fromResource[InitResource]
 }
 
@@ -1042,7 +1042,7 @@ object Actor {
   final case class Configuration(allCaps: Boolean)
 }
 
-val factoryModule = new ModuleDef {
+def factoryModule = new ModuleDef {
   make[Actor.Factory]
   make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
@@ -1144,9 +1144,9 @@ def SyncInterpreters[F[_]: TagK: Sync] = {
 
 def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 
-// create object graph Resource
+// create object graph Lifecycle
 
-val objectsResource = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
+val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
 
@@ -1186,7 +1186,7 @@ object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
   def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
-val RealInterpretersZIO = {
+def RealInterpretersZIO = {
   SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
     make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
   }
@@ -1195,7 +1195,7 @@ val RealInterpretersZIO = {
 def chooseInterpreters(isDummy: Boolean) = {
   val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
                      else         RealInterpretersZIO
-  val module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  def module = ProgramModule[RIO[Console, ?]] ++ interpreters
   
   Injector[RIO[Console, ?]]()
     .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
