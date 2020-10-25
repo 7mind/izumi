@@ -1,7 +1,6 @@
 package distage
 
-import izumi.distage.plugins
-import izumi.distage.plugins.{StaticPluginLoader, load}
+import izumi.distage.plugins.load
 
 package object plugins extends DistagePlugins {
 
@@ -18,7 +17,7 @@ package object plugins extends DistagePlugins {
   override type PluginLoader = load.PluginLoader
   override val PluginLoader: load.PluginLoader.type = load.PluginLoader
 
-  override val StaticPlugingLoader: StaticPluginLoader.type = plugins.StaticPluginLoader
+  override val StaticPlugingLoader: izumi.distage.plugins.StaticPluginLoader.type = izumi.distage.plugins.StaticPluginLoader
 
   override type PluginLoaderDefaultImpl = load.PluginLoaderDefaultImpl
   override val PluginLoaderDefaultImpl: load.PluginLoaderDefaultImpl.type = load.PluginLoaderDefaultImpl

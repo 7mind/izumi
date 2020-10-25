@@ -2,7 +2,7 @@ package izumi.distage.roles.launcher
 
 import distage.config.AppConfig
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.{Activation, Id}
 import izumi.distage.roles.{DebugProperties, RoleAppMain}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -31,12 +31,12 @@ object ActivationParser {
   ) extends ActivationParser {
 
     def parseActivation(): Activation = {
-      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisValue splitAxisValue _.value)
+      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisPoint parseAxisPoint _.value)
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       val configChoices = if (config.config.hasPath(configActivationSection)) {
-        ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).activation
-      } else Map.empty
+        ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).activation.map(AxisPoint(_))
+      } else Iterable.empty
       val configActivations = parser.parseActivation(configChoices, activationInfo)
 
       val resultActivation = defaultActivations ++ requiredActivations ++ configActivations ++ cmdActivations // commandline choices override values in config

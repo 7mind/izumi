@@ -182,7 +182,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.Sync`](implicit @unused F0: Sync[F]): QuasiIO[F] = {
+  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.Sync`](implicit F0: Sync[F]): QuasiIO[F] = {
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
     new QuasiIO[F] {
       override def pure[A](a: A): F[A] = F.pure(a)

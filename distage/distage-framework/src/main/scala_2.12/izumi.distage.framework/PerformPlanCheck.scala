@@ -13,17 +13,15 @@ import scala.reflect.macros.whitebox
 final case class PerformPlanCheck[
   RoleAppMain <: PlanHolder,
   Roles <: String,
-  Activations <: String,
+  ExcludeActivations <: String,
   Config <: String,
   CheckConfig <: Boolean,
-  PrintPlan <: Boolean,
   OnlyWarn <: Boolean,
 ](roleAppMain: RoleAppMain,
   roles: Roles,
-  activations: Activations,
+  excludeActivations: ExcludeActivations,
   config: Config,
   checkConfig: Option[CheckConfig],
-  printPlan: Option[PrintPlan],
   onlyWarn: Option[OnlyWarn],
   checkedPlugins: Seq[PluginBase],
 ) {
@@ -31,10 +29,9 @@ final case class PerformPlanCheck[
     checkRoleApp(
       roleAppMain = roleAppMain,
       roles = roles,
-      activations = activations,
+      excludeActivations = excludeActivations,
       config = config,
       checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-      printPlan = printPlan.getOrElse(PlanCheck.defaultPrintPlan),
     )
 }
 
@@ -42,50 +39,45 @@ object PerformPlanCheck {
   def bruteforce[
     RoleAppMain <: PlanHolder,
     Roles <: LiteralString,
-    Activations <: LiteralString,
+    ExcludeActivations <: LiteralString,
     Config <: LiteralString,
     CheckConfig <: LiteralBoolean,
-    PrintPlan <: LiteralBoolean,
     OnlyWarn <: LiteralBoolean,
   ](@unused roleAppMain: RoleAppMain,
     @unused roles: Roles with LiteralString = LiteralString("*"),
-    @unused activations: Activations with LiteralString = LiteralString("*"),
+    @unused excludeActivations: ExcludeActivations with LiteralString = LiteralString("*"),
     @unused config: Config with LiteralString = LiteralString("*"),
     @unused checkConfig: CheckConfig with LiteralBoolean = unset,
-    @unused printPlan: PrintPlan with LiteralBoolean = unset,
     @unused onlyWarn: OnlyWarn with LiteralBoolean = unset,
-  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T, PrintPlan#T, OnlyWarn#T]
-  ): PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T, PrintPlan#T, OnlyWarn#T] = planCheck
+  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
+  ): PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T] = planCheck
 
   implicit def materialize[
     RoleAppMain <: PlanHolder,
     Roles <: String,
-    Activations <: String,
+    ExcludeActivations <: String,
     Config <: String,
     CheckConfig <: Boolean,
-    PrintPlan <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn] =
-    macro PlanCheckMacro.impl[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]
+  ]: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
+    macro PlanCheckMacro.impl[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
 
   // 2.12 requires `Witness`-like mechanism
   class Main[
     RoleAppMain <: PlanHolder,
     Roles <: LiteralString,
-    Activations <: LiteralString,
+    ExcludeActivations <: LiteralString,
     Config <: LiteralString,
     CheckConfig <: LiteralBoolean,
-    PrintPlan <: LiteralBoolean,
     OnlyWarn <: LiteralBoolean,
   ](@unused roleAppMain: RoleAppMain,
     @unused roles: Roles with LiteralString = LiteralString("*"),
-    @unused activations: Activations with LiteralString = LiteralString("*"),
+    @unused excludeActivations: ExcludeActivations with LiteralString = LiteralString("*"),
     @unused config: Config with LiteralString = LiteralString("*"),
     @unused checkConfig: CheckConfig with LiteralBoolean = unset,
-    @unused printPlan: PrintPlan with LiteralBoolean = unset,
     @unused onlyWarn: OnlyWarn with LiteralBoolean = unset,
   )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, Activations#T, Config#T, CheckConfig#T, PrintPlan#T, OnlyWarn#T]
+    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
   ) {
     def rerunAtRuntime(): Unit = {
       planCheck.check().throwOnError().discard()

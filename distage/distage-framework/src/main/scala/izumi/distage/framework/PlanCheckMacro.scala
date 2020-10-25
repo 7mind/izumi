@@ -19,10 +19,9 @@ object PlanCheckMacro {
     Activations <: String: c.WeakTypeTag,
     Config <: String: c.WeakTypeTag,
     CheckConfig <: Boolean: c.WeakTypeTag,
-    PrintPlan <: Boolean: c.WeakTypeTag,
     OnlyWarn <: Boolean: c.WeakTypeTag,
   ](c: blackbox.Context
-  ): c.Expr[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]] = {
+  ): c.Expr[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]] = {
     import c.universe._
 
     def getConstantType0[S](tpe: Type): S = {
@@ -31,7 +30,7 @@ object PlanCheckMacro {
         case tpe =>
           c.abort(
             c.enclosingPosition,
-            s"""When materializing ${weakTypeOf[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]]},
+            s"""When materializing ${weakTypeOf[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]]},
                |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
              """.stripMargin,
           )
@@ -54,7 +53,6 @@ object PlanCheckMacro {
     val activations = getConstantType[Activations]
     val config = getConstantType[Config]
     val checkConfig = noneIfUnset[CheckConfig]
-    val printPlan = noneIfUnset[PrintPlan]
     val onlyWarn = noneIfUnset[OnlyWarn]
 
     val maybeMain = instantiateObject[RoleAppMain](c.universe)
@@ -64,10 +62,9 @@ object PlanCheckMacro {
       PlanCheck.checkRoleApp(
         roleAppMain = maybeMain,
         roles = roles,
-        activations = activations,
+        excludeActivations = activations,
         config = config,
         checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-        printPlan = printPlan.getOrElse(PlanCheck.defaultPrintPlan),
         logger = logger,
       ) match {
         case PlanCheckResult.Correct(loadedPlugins) =>
@@ -106,13 +103,12 @@ object PlanCheckMacro {
 
     reify {
       val plugins = referenceStmt.splice
-      new PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn](
+      new PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn](
         roleAppMain.splice,
         lit[Roles](roles).splice,
         lit[Activations](activations).splice,
         lit[Config](config).splice,
         opt[CheckConfig](checkConfig).splice,
-        opt[PrintPlan](printPlan).splice,
         opt[OnlyWarn](onlyWarn).splice,
         plugins,
       )

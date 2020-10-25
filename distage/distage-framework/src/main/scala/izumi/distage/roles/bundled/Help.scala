@@ -10,13 +10,14 @@ import izumi.fundamentals.platform.cli.model.schema._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
-class Help[F[_]: QuasiIO](
+class Help[F[_]](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
+  F: QuasiIO[F],
 ) extends RoleTask[F] {
 
   override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
-    QuasiIO[F].maybeSuspend(showHelp())
+    F.maybeSuspend(showHelp())
   }
 
   private[this] def showHelp(): Unit = {
@@ -53,7 +54,7 @@ class Help[F[_]: QuasiIO](
          |$activations""".stripMargin
 
     val help = ParserSchemaFormatter.makeDocs(
-      ParserSchema(GlobalArgsSchema(Options, Some(baseDoc), Some(notes)), descriptors)
+      ParserSchema(GlobalArgsSchema(Options, Some(baseDoc), Some(notes)), descriptors.toIndexedSeq.sortBy(_.id))
     )
 
     println(help)

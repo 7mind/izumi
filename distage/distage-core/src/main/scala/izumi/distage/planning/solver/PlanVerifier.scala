@@ -184,7 +184,7 @@ class PlanVerifier(
       while (i.hasNext) {
         i.next() match {
           case Right(nextSteps) =>
-            remainder ++= nextSteps
+            remainder pushAll nextSteps
           case Left(newErrors) =>
             errors ++= newErrors
         }

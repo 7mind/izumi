@@ -30,7 +30,7 @@ object BootstrapFactory {
     override def makeConfigLocation(configBaseName: String): ConfigLocation = new ConfigLocation.Impl
 
     def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configBaseName -> None)), makeConfigLocation(configBaseName))
+      new ConfigLoader.LocalFSImpl(logger, makeConfigLocation(configBaseName), ConfigLoader.Args(None, Map(configBaseName -> None)))
     }
 
     def makeModuleProvider[F[_]: TagK](

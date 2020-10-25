@@ -38,21 +38,28 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
     assert(err.getMessage.contains("Expected type NUMBER. Found STRING instead"))
   }
 
-  "Check with invalid axis produces error" ignore {
-    PlanCheck
-      .checkRoleApp(StaticTestMain, "statictestrole", "missing:axis", "check-test-good.conf")
-      .issues.exists(_.getMessage.contains("Unknown axis: missing"))
+  "Check with invalid role produces error" in {
+    assert {
+      PlanCheck
+        .checkRoleApp(StaticTestMain, "unknownrole")
+        .issues.exists(_.getMessage.contains("Unknown roles:"))
+    }
 
     val err = intercept[Throwable](assertCompiles("""
-      PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "missing:axis", "check-test-good.conf")
+      PerformPlanCheck.bruteforce(StaticTestMain, "unknownrole")
       """.stripMargin))
-    assert(err.getMessage.contains("Unknown axis: missing"))
+    assert(err.getMessage.contains("Unknown roles:"))
   }
 
   "onlyWarn mode does not fail compilation on errors" in {
     assertThrows[InvalidPlanException] {
       PlanCheck.checkRoleApp(StaticTestMain, "statictestrole", config = "check-test-bad.conf").throwOnError()
     }
+    assertTypeError(
+      """
+      PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = false)
+        """
+    )
     assertCompiles(
       """
       PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = true)
@@ -60,80 +67,85 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
     )
   }
 
-  "progression test: check role app module" in assertThrows[TestFailedException] {
+  // split into meaningful tests
+  "check role app module" ignore {
+    val err0 = intercept[Throwable] {
+      new PerformPlanCheck.Main(
+        TestEntrypointPatchedLeak,
+        config = "testrole04-reference.conf",
+        excludeActivations = "mode:test",
+      ).planCheck.check().throwOnError()
+    }
+    assert(err0.getMessage.contains("config"))
+
     PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help")
 
-//    PlanCheck.checkRoleApp(
-//      TestEntrypointPatchedLeak,
-//      "testtask00 testrole01 testrole02 testrole03 testrole04",
-//      "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//    )
+    PlanCheck.checkRoleApp(
+      TestEntrypointPatchedLeak,
+      "testtask00 testrole01 testrole02 testrole03 testrole04",
+      "mode:test",
+    )
 
-//    new PerformPlanCheck.Main(
-//      TestEntrypointPatchedLeak,
-//      "testtask00 testrole01 testrole02 testrole03 testrole04",
-//      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//    ).planCheck.rerunAtRuntime()
+    new PerformPlanCheck.Main(
+      TestEntrypointPatchedLeak,
+      "testtask00 testrole01 testrole02 testrole03 testrole04",
+      excludeActivations = "mode:test",
+    ).planCheck.check().throwOnError()
 
-//    new PerformPlanCheck.Main(
-//      TestEntrypointPatchedLeak,
-//      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//      checkConfig = false,
-//    ).planCheck.rerunAtRuntime()
-//
-//
-//    assertThrows[Throwable] {
-//      new PerformPlanCheck.Main(
-//        TestEntrypointPatchedLeak,
-//        config = "testrole04-reference.conf",
-//        activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-//      ).planCheck.run()
-//    }
+    new PerformPlanCheck.Main(
+      TestEntrypointPatchedLeak,
+      excludeActivations = "mode:test",
+      checkConfig = false,
+    ).planCheck.check().throwOnError()
 
     val err1 = intercept[TestFailedException](assertCompiles("""
     new PerformPlanCheck.Main(
       izumi.distage.roles.test.TestEntrypoint,
       config = "checker-test-good.conf",
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-      printPlan = true,
+      excludeActivations = "mode:test",
     )
       """))
-    assert(err1.getMessage.contains("Plan was:"))
-    assert(err1.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
+    println(err1)
+//    assert(err1.getMessage.contains("Plan was:"))
+//    assert(err1.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
 
     val err2 = intercept[TestFailedException](assertCompiles("""
     new PerformPlanCheck.Main(
       izumi.distage.roles.test.TestEntrypoint,
       config = "checker-test-good.conf",
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+      excludeActivations = "mode:test",
     )
     """))
-    assert(!err2.getMessage.contains("Plan was:"))
-    assert(!err2.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
+    println(err2)
+//    assert(!err2.getMessage.contains("Plan was:"))
+//    assert(!err2.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
 
-    val runtimePlugins = PlanCheck.checkRoleApp(
-      TestEntrypointPatchedLeak,
-      config = "checker-test-good.conf",
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
-    )
+    val runtimePlugins = PlanCheck
+      .checkRoleApp(
+        TestEntrypointPatchedLeak,
+        config = "checker-test-good.conf",
+        excludeActivations = "mode:test",
+      ).throwOnError()
+
     val compileTimePlugins = new PerformPlanCheck.Main(
       TestEntrypointPatchedLeak,
       config = "checker-test-good.conf",
-      activations = "mode:prod axiscomponentaxis:correct | mode:prod axiscomponentaxis:incorrect",
+      excludeActivations = "mode:test",
     ).planCheck.checkedPlugins
 
-    assert(runtimePlugins.throwOnError().result.map(_.getClass).toSet == compileTimePlugins.map(_.getClass).toSet)
+    assert(runtimePlugins.result.map(_.getClass).toSet == compileTimePlugins.map(_.getClass).toSet)
 
-//      new PerformPlanCheck.Main(
+//    new PerformPlanCheck.Main(
+//      TestEntrypointPatchedLeak,
+//      "testtask00 testrole01 testrole02 testrole03 testrole04",
+//    ).planCheck.check().throwOnError()
+
+//    PlanCheck
+//      .checkRoleApp(
 //        TestEntrypointPatchedLeak,
 //        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//      ).planCheck.run()
-
-//      PlanCheck.checkRoleApp(
-//        TestEntrypointPatchedLeak,
-//        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//        "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
-//      )
+//        activations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
+//      ).throwOnError()
   }
 
 }

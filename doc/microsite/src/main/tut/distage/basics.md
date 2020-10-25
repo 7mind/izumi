@@ -5,6 +5,44 @@ Overview
 
 ### Quick Start
 
+
+##### New overview
+(sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
+
+###### Concepts
+####### ModuleDef
+######## Activation axis
+######## Functoid
+####### Injector
+######## Object graph
+######## Planning
+######## Verification
+######### Roots
+####### Lifecycle
+####### Roles
+####### Plugins
+####### Compile-time verification
+####### Testing with injected components
+
+##### Binding Types
+###### Singleton Bindings
+###### Named bindings
+###### Set bindings
+####### Weak Set bindings
+###### Lifecycle / Resource bindings
+###### Effect bindings
+###### ZIO Environment / Reader bindings
+###### Config bindings
+###### Role bindings
+###### Docker bindings
+
+##### Auto-generated things
+###### Effect support modules
+###### Auto-Traits
+###### Auto-Factories
+###### Class constructors
+###### Circular dependency resolution
+
 #### Dependencies
 
 Add the `distage-core` library:

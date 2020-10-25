@@ -1,6 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.{Activation, Axis, Id}
 import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
@@ -8,7 +9,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 trait RoleAppActivationParser {
-  def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation
+  def parseActivation(rawActivations: Iterable[AxisPoint], activationInfo: ActivationInfo): Activation
 }
 
 object RoleAppActivationParser {
@@ -19,9 +20,9 @@ object RoleAppActivationParser {
     ignoreUnknownActivations: Boolean @Id("distage.roles.activation.ignore-unknown"),
   ) extends RoleAppActivationParser {
 
-    override def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation = {
+    override def parseActivation(rawActivations: Iterable[AxisPoint], activationInfo: ActivationInfo): Activation = {
       val usedChoices = rawActivations.flatMap {
-        case (axisName, choiceName) =>
+        case AxisPoint(axisName, choiceName) =>
           validateAxisChoice(activationInfo)(axisName, choiceName)
       }
       validateAllChoices(usedChoices)

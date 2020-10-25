@@ -11,17 +11,15 @@ import scala.language.experimental.macros
 final case class PerformPlanCheck[
   RoleAppMain <: PlanHolder,
   Roles <: String,
-  Activations <: String,
+  ExcludeActivations <: String,
   Config <: String,
   CheckConfig <: Boolean,
-  PrintPlan <: Boolean,
   OnlyWarn <: Boolean,
 ](roleAppMain: RoleAppMain,
   roles: Roles,
-  activations: Activations,
+  excludeActivations: ExcludeActivations,
   config: Config,
   checkConfig: Option[CheckConfig],
-  printPlan: Option[PrintPlan],
   onlyWarn: Option[OnlyWarn],
   checkedPlugins: Seq[PluginBase],
 ) {
@@ -29,10 +27,9 @@ final case class PerformPlanCheck[
     checkRoleApp(
       roleAppMain = roleAppMain,
       roles = roles,
-      activations = activations,
+      excludeActivations = excludeActivations,
       config = config,
       checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-      printPlan = printPlan.getOrElse(PlanCheck.defaultPrintPlan),
     )
 }
 
@@ -40,49 +37,44 @@ object PerformPlanCheck {
   def bruteforce[
     RoleAppMain <: PlanHolder,
     Roles <: String with Singleton,
-    Activations <: String with Singleton,
+    ExcludeActivations <: String with Singleton,
     Config <: String with Singleton,
     CheckConfig <: Boolean with Singleton,
-    PrintPlan <: Boolean with Singleton,
     OnlyWarn <: Boolean with Singleton,
   ](@unused roleAppMain: RoleAppMain,
     @unused roles: Roles = "*",
-    @unused activations: Activations = "*",
+    @unused excludeActivations: ExcludeActivations = "*",
     @unused config: Config = "*",
     @unused checkConfig: CheckConfig = unset,
-    @unused printPlan: PrintPlan = unset,
     @unused onlyWarn: OnlyWarn = unset,
-  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]
-  ): PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn] = planCheck
+  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
+  ): PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] = planCheck
 
   implicit def materialize[
     RoleAppMain <: PlanHolder,
     Roles <: String,
-    Activations <: String,
+    ExcludeActivations <: String,
     Config <: String,
     CheckConfig <: Boolean,
-    PrintPlan <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn] =
-    macro PlanCheckMacro.impl[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]
+  ]: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
+    macro PlanCheckMacro.impl[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
 
   class Main[
     RoleAppMain <: PlanHolder,
     Roles <: String with Singleton,
-    Activations <: String with Singleton,
+    ExcludeActivations <: String with Singleton,
     Config <: String with Singleton,
     CheckConfig <: Boolean with Singleton,
-    PrintPlan <: Boolean with Singleton,
     OnlyWarn <: Boolean with Singleton,
   ](@unused roleAppMain: RoleAppMain,
     @unused roles: Roles = "*",
-    @unused activations: Activations = "*",
+    @unused excludeActivations: ExcludeActivations = "*",
     @unused config: Config = "*",
     @unused checkConfig: CheckConfig = unset,
-    @unused printPlan: PrintPlan = unset,
     @unused onlyWarn: OnlyWarn = unset,
   )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, PrintPlan, OnlyWarn]
+    val planCheck: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
   ) {
     def rerunAtRuntime(): Unit = {
       planCheck.check().throwOnError().discard()

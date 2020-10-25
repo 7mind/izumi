@@ -38,9 +38,11 @@ final class ConfigWriter[F[_]](
   //  After https://github.com/7mind/izumi/issues/779 this will no longer be necessary
   private[this] val _HackyMandatorySection = ConfigPath("activation")
 
-  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = F.maybeSuspend {
-    val config = ConfigWriter.parse(roleParameters)
-    writeReferenceConfig(config)
+  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+    F.maybeSuspend {
+      val config = ConfigWriter.parse(roleParameters)
+      writeReferenceConfig(config)
+    }
   }
 
   private[this] def writeReferenceConfig(options: WriteReference): Unit = {
