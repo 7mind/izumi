@@ -183,13 +183,14 @@ object PlanCheck {
                 defaultModule.module.keys ++
                 veryBadInjectorContext +
                 DIKey[LocatorRef],
+              ignoredActivations = excludedActivations,
             )
             val verifiedIssues = issues.filterNot {
-              case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues.toSet.subsetOf(excludedActivations)
+              case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues.subsetOf(excludedActivations)
               case _ => false
             }
             if (verifiedIssues.nonEmpty) {
-              throw new RuntimeException(s"${issues.niceList()}") { override def fillInStackTrace(): Throwable = this }
+              throw new InvalidPlanException(issues.niceList(), None, false, false)
             } else {
               reachableKeys
             }

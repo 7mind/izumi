@@ -28,7 +28,12 @@ class PlanVerifier(
 ) {
   import scala.collection.compat._
 
-  def verify(bindings: ModuleBase, roots: Roots, providedKeys: DIKey => Boolean = _ == DIKey[LocatorRef]): PlanVerifierResult = {
+  def verify(
+    bindings: ModuleBase,
+    roots: Roots,
+    providedKeys: DIKey => Boolean = _ == DIKey[LocatorRef],
+    ignoredActivations: Set[AxisPoint] = Set.empty,
+  ): PlanVerifierResult = {
     val ops = preps.computeOperationsUnsafe(bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>
@@ -61,7 +66,7 @@ class PlanVerifier(
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, rootKeys)
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
-    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, rootKeys)
+    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, ignoredActivations, rootKeys)
 
     PlanVerifierResult(issues, mutVisited.toSet)
   }
@@ -73,6 +78,7 @@ class PlanVerifier(
     weakSetMembers: Set[WeakEdge[DIKey]],
     justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     providedKeys: DIKey => Boolean,
+    ignoredActivations: Set[AxisPoint],
     rootKeys: Set[DIKey],
   ): Set[PlanIssue] = {
 
@@ -91,6 +97,11 @@ class PlanVerifier(
 
         @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[List[PlanIssue], A]): Either[List[PlanIssue], A] = {
           if (providedKeys(key)) orElse else reportMissing(key, dependee)
+        }
+
+        def tryReportUnsaturated(l: Iterable[UnsaturatedAxis]): Either[List[UnsaturatedAxis], Unit] = {
+          val nl = l.iterator.filterNot(_.missingAxisValues.subsetOf(ignoredActivations)).toList
+          if (nl.isEmpty) Right(()) else Left(nl)
         }
 
         if (visited.contains(key)) {
@@ -148,12 +159,12 @@ class PlanVerifier(
                     if (probablyUnsaturatedAxis.isEmpty) {
                       reportMissing(key, dependee)
                     } else {
-                      Left(probablyUnsaturatedAxis.toList)
+                      tryReportUnsaturated(probablyUnsaturatedAxis)
                     }
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
+                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers, ignoredActivations)
               } yield {
                 allVisited.add(key)
 
@@ -217,9 +228,10 @@ class PlanVerifier(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
+    ignoredActivations: Set[AxisPoint],
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val issues = {
-      checkForUnsaturatedAxis(allAxis, withoutCurrentActivations) ++
+      checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, ignoredActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
       checkForConflictingAxisChoices(withoutCurrentActivations) ++
       checkForDuplicateActivations(withoutCurrentActivations) ++
@@ -277,7 +289,9 @@ class PlanVerifier(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[DuplicateActivations] = {
     val duplicateAxisMap = ops
-      .groupBy(_._2)
+//      .groupBy(_._2)
+//      .filter(_._2.sizeIs > 1)
+      .groupBy(_._3)
       .filter(_._2.sizeIs > 1)
       .view.mapValues(NonEmptySet unsafeFrom _.map(_._1.origin.value))
       .toMap
@@ -330,6 +344,7 @@ class PlanVerifier(
   protected[this] final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+    ignoredActivations: Set[AxisPoint],
   ): List[UnsaturatedAxis] = {
     val currentAxis: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
     val toTest: Set[Set[AxisPoint]] = ops.map(_._2)
@@ -343,6 +358,7 @@ class PlanVerifier(
           val toTestAxises: Iterator[Set[String]] = toTest.iterator.map(_.map(_.axis))
           if (toTestAxises.forall(_.contains(axis))) {
             Some(UnsaturatedAxis(ops.head._1.target, axis, NonEmptySet.unsafeFrom(diff.iterator.map(AxisPoint(axis, _)).toSet)))
+              .filterNot(_.missingAxisValues.subsetOf(ignoredActivations))
           } else None
         } else None
     }

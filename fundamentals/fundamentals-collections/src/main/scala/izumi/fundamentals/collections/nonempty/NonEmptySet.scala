@@ -762,6 +762,8 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def stringPrefix: String = "NonEmptySet"
 
+  def subsetOf(that: Set[T]): Boolean = toSet.subsetOf(that)
+
   /**
     * The result of summing all the elements of this <code>NonEmptySet</code>.
     *

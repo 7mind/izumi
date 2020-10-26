@@ -68,23 +68,35 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
   }
 
   // split into meaningful tests
-  "check role app module" ignore {
-    val err0 = intercept[Throwable] {
+  "check role app module" in {
+    val c0 = intercept[Throwable](assertCompiles("""
       new PerformPlanCheck.Main(
         TestEntrypointPatchedLeak,
         config = "testrole04-reference.conf",
         excludeActivations = "mode:test",
-      ).planCheck.check().throwOnError()
+      )
+    """))
+    assert(c0.getMessage.contains("DIConfigReadException"))
+
+    val err0 = intercept[Throwable] {
+      PlanCheck
+        .checkRoleApp(
+          TestEntrypointPatchedLeak,
+          config = "testrole04-reference.conf",
+          excludeActivations = "mode:test",
+        )
+        .throwOnError()
     }
-    assert(err0.getMessage.contains("config"))
+    assert(err0.getMessage.contains("DIConfigReadException"))
 
-    PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help")
+    PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help").throwOnError()
 
-    PlanCheck.checkRoleApp(
-      TestEntrypointPatchedLeak,
-      "testtask00 testrole01 testrole02 testrole03 testrole04",
-      "mode:test",
-    )
+    PlanCheck
+      .checkRoleApp(
+        TestEntrypointPatchedLeak,
+        "testtask00 testrole01 testrole02 testrole03 testrole04",
+        "mode:test",
+      ).throwOnError()
 
     new PerformPlanCheck.Main(
       TestEntrypointPatchedLeak,
@@ -104,21 +116,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
       config = "checker-test-good.conf",
       excludeActivations = "mode:test",
     )
-      """))
-    println(err1)
-//    assert(err1.getMessage.contains("Plan was:"))
-//    assert(err1.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
-
-    val err2 = intercept[TestFailedException](assertCompiles("""
-    new PerformPlanCheck.Main(
-      izumi.distage.roles.test.TestEntrypoint,
-      config = "checker-test-good.conf",
-      excludeActivations = "mode:test",
-    )
     """))
-    println(err2)
-//    assert(!err2.getMessage.contains("Plan was:"))
-//    assert(!err2.getMessage.contains("{type.TestRole03[=λ %0 → IO[+0]]}"))
+    assert(err1.getMessage.contains("Required by refs:"))
+    assert(err1.getMessage.contains("XXX_LocatorLeak"))
 
     val runtimePlugins = PlanCheck
       .checkRoleApp(
