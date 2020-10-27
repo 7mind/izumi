@@ -49,8 +49,8 @@ object PerformPlanCheck {
     @unused config: Config with LiteralString = LiteralString("*"),
     @unused checkConfig: CheckConfig with LiteralBoolean = unset,
     @unused onlyWarn: OnlyWarn with LiteralBoolean = unset,
-  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
-  ): PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T] = planCheck
+  )(implicit planCheck: PlanCheckCompileTime[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
+  ): PlanCheckCompileTime[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T] = planCheck
 
   implicit def materialize[
     RoleAppMain <: PlanHolder,
@@ -59,7 +59,7 @@ object PerformPlanCheck {
     Config <: String,
     CheckConfig <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
+  ]: PlanCheckCompileTime[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
     macro PlanCheckMacro.impl[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
 
   // 2.12 requires `Witness`-like mechanism
@@ -77,7 +77,7 @@ object PerformPlanCheck {
     @unused checkConfig: CheckConfig with LiteralBoolean = unset,
     @unused onlyWarn: OnlyWarn with LiteralBoolean = unset,
   )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
+    val planCheck: PlanCheckCompileTime[RoleAppMain, Roles#T, ExcludeActivations#T, Config#T, CheckConfig#T, OnlyWarn#T]
   ) {
     def rerunAtRuntime(): Unit = {
       planCheck.check().throwOnError().discard()

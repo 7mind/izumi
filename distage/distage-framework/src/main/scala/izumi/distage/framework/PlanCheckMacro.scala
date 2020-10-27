@@ -21,7 +21,7 @@ object PlanCheckMacro {
     CheckConfig <: Boolean: c.WeakTypeTag,
     OnlyWarn <: Boolean: c.WeakTypeTag,
   ](c: blackbox.Context
-  ): c.Expr[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]] = {
+  ): c.Expr[PlanCheckCompileTime[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]] = {
     import c.universe._
 
     def getConstantType0[S](tpe: Type): S = {
@@ -30,7 +30,7 @@ object PlanCheckMacro {
         case tpe =>
           c.abort(
             c.enclosingPosition,
-            s"""When materializing ${weakTypeOf[PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]]},
+            s"""When materializing ${weakTypeOf[PlanCheckCompileTime[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn]]},
                |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
              """.stripMargin,
           )
@@ -41,7 +41,7 @@ object PlanCheckMacro {
     }
     def noneIfUnset[S: c.WeakTypeTag]: Option[S] = {
       val tpe = weakTypeOf[S].dealias
-      if (tpe =:= typeOf[PerformPlanCheck.Unset]) {
+      if (tpe =:= typeOf[PlanCheckCompileTime.Unset]) {
         None
       } else {
         Some(getConstantType0[S](tpe))
@@ -103,7 +103,7 @@ object PlanCheckMacro {
 
     reify {
       val plugins = referenceStmt.splice
-      new PerformPlanCheck[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn](
+      new PlanCheckCompileTime[RoleAppMain, Roles, Activations, Config, CheckConfig, OnlyWarn](
         roleAppMain.splice,
         lit[Roles](roles).splice,
         lit[Activations](activations).splice,

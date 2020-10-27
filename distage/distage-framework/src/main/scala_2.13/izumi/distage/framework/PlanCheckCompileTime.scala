@@ -8,7 +8,7 @@ import izumi.fundamentals.platform.language.unused
 
 import scala.language.experimental.macros
 
-final case class PerformPlanCheck[
+final case class PlanCheckCompileTime[
   RoleAppMain <: PlanHolder,
   Roles <: String,
   ExcludeActivations <: String,
@@ -33,8 +33,8 @@ final case class PerformPlanCheck[
     )
 }
 
-object PerformPlanCheck {
-  def bruteforce[
+object PlanCheckCompileTime {
+  def checkRoleApp[
     RoleAppMain <: PlanHolder,
     Roles <: String with Singleton,
     ExcludeActivations <: String with Singleton,
@@ -47,8 +47,8 @@ object PerformPlanCheck {
     @unused config: Config = "*",
     @unused checkConfig: CheckConfig = unset,
     @unused onlyWarn: OnlyWarn = unset,
-  )(implicit planCheck: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
-  ): PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] = planCheck
+  )(implicit planCheck: PlanCheckCompileTime[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
+  ): PlanCheckCompileTime[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] = planCheck
 
   implicit def materialize[
     RoleAppMain <: PlanHolder,
@@ -57,7 +57,7 @@ object PerformPlanCheck {
     Config <: String,
     CheckConfig <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
+  ]: PlanCheckCompileTime[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn] =
     macro PlanCheckMacro.impl[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
 
   class Main[
@@ -74,7 +74,7 @@ object PerformPlanCheck {
     @unused checkConfig: CheckConfig = unset,
     @unused onlyWarn: OnlyWarn = unset,
   )(implicit
-    val planCheck: PerformPlanCheck[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
+    val planCheck: PlanCheckCompileTime[RoleAppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn]
   ) {
     def rerunAtRuntime(): Unit = {
       planCheck.check().throwOnError().discard()

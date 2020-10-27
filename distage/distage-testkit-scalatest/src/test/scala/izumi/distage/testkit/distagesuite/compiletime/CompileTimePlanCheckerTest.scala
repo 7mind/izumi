@@ -1,30 +1,30 @@
 package izumi.distage.testkit.distagesuite.compiletime
 
 import com.github.pshirshov.test.plugins.StaticTestMain
-import izumi.distage.framework.{PerformPlanCheck, PlanCheck}
+import izumi.distage.framework.{PlanCheck, PlanCheckCompileTime}
 import izumi.distage.model.exceptions.InvalidPlanException
-import izumi.distage.roles.test.TestEntrypointPatchedLeak
+import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 final class CompileTimePlanCheckerTest extends AnyWordSpec {
 
   "Check without config" in {
-    PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "", checkConfig = false).check().throwOnError()
-    PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "test:x", checkConfig = false).check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "", checkConfig = false).check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "test:x", checkConfig = false).check().throwOnError()
   }
 
   "Check when config & requirements are valid" in {
-    PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "test:x", "check-test-good.conf").check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "test:x", "check-test-good.conf").check().throwOnError()
   }
 
   "Check depending plugin with plugins" in {
-    PerformPlanCheck.bruteforce(StaticTestMain, "dependingrole", "test:x", checkConfig = false).check().throwOnError()
-    PerformPlanCheck.bruteforce(StaticTestMain, "dependingrole", "test:x", "check-test-good.conf").check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "dependingrole", "test:x", checkConfig = false).check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "dependingrole", "test:x", "check-test-good.conf").check().throwOnError()
   }
 
   "Check with different activation" in {
-    PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "test:y", "check-test-good.conf").check().throwOnError()
+    PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "test:y", "check-test-good.conf").check().throwOnError()
   }
 
   "regression test: can again check when config is false after 1.0" in {
@@ -33,7 +33,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
       .issues.exists(_.getMessage.contains("Expected type NUMBER. Found STRING instead"))
 
     val err = intercept[TestFailedException] {
-      assertCompiles("""PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", "test:x", "check-test-bad.conf")""")
+      assertCompiles("""PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "test:x", "check-test-bad.conf")""")
     }
     assert(err.getMessage.contains("Expected type NUMBER. Found STRING instead"))
   }
@@ -46,7 +46,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
     }
 
     val err = intercept[Throwable](assertCompiles("""
-      PerformPlanCheck.bruteforce(StaticTestMain, "unknownrole")
+      PlanCheckCompileTime.checkRoleApp(StaticTestMain, "unknownrole")
       """.stripMargin))
     assert(err.getMessage.contains("Unknown roles:"))
   }
@@ -57,28 +57,81 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
     }
     assertTypeError(
       """
-      PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = false)
+      PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = false)
         """
     )
     assertCompiles(
       """
-      PerformPlanCheck.bruteforce(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = true)
+      PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", config = "check-test-bad.conf", onlyWarn = true)
         """
     )
   }
 
-  // split into meaningful tests
-  "check role app module" in {
-    val c0 = intercept[Throwable](assertCompiles("""
-      new PerformPlanCheck.Main(
+  "role app configwriter role passes check" in {
+    PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help").throwOnError()
+  }
+
+  "role app passes check if `mode:test` activation is excluded and XXX_LocatorLeak is provided in RoleAppMain object" in {
+    new PlanCheckCompileTime.Main(
+      TestEntrypointPatchedLeak,
+      "testtask00 testrole01 testrole02 testrole03 testrole04",
+      "mode:test",
+    ).planCheck.check().throwOnError()
+
+    new PlanCheckCompileTime.Main(
+      TestEntrypointPatchedLeak,
+      "testtask00 testrole01 testrole02 testrole03 testrole04",
+      excludeActivations = "mode:test",
+      checkConfig = true,
+    ).planCheck.check().throwOnError()
+
+    new PlanCheckCompileTime.Main(
+      TestEntrypointPatchedLeak,
+      excludeActivations = "mode:test",
+      checkConfig = true,
+    ).planCheck.check().throwOnError()
+
+    new PlanCheckCompileTime.Main(
+      TestEntrypointPatchedLeak,
+      excludeActivations = "mode:test",
+      checkConfig = false,
+    ).planCheck.check().throwOnError()
+  }
+
+  "role app fails check if XXX_LocatorLeak is missing" in {
+    val errCompile = intercept[TestFailedException](assertCompiles("""
+    new PlanCheckCompileTime.Main(
+      TestEntrypoint,
+      config = "checker-test-good.conf",
+      excludeActivations = "mode:test",
+    )
+    """))
+    assert(errCompile.getMessage.contains("Required by refs:"))
+    assert(errCompile.getMessage.contains("XXX_LocatorLeak"))
+
+    val errRuntime = intercept[InvalidPlanException](
+      PlanCheck
+        .checkRoleApp(
+          TestEntrypoint,
+          config = "checker-test-good.conf",
+          excludeActivations = "mode:test",
+        ).throwOnError()
+    )
+    assert(errRuntime.getMessage.contains("Required by refs:"))
+    assert(errRuntime.getMessage.contains("XXX_LocatorLeak"))
+  }
+
+  "role app fails config check if config file with insufficient configs is passed" in {
+    val errCompile = intercept[Throwable](assertCompiles("""
+      new PlanCheckCompileTime.Main(
         TestEntrypointPatchedLeak,
         config = "testrole04-reference.conf",
         excludeActivations = "mode:test",
       )
     """))
-    assert(c0.getMessage.contains("DIConfigReadException"))
+    assert(errCompile.getMessage.contains("DIConfigReadException"))
 
-    val err0 = intercept[Throwable] {
+    val errRuntime = intercept[InvalidPlanException] {
       PlanCheck
         .checkRoleApp(
           TestEntrypointPatchedLeak,
@@ -87,39 +140,10 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
         )
         .throwOnError()
     }
-    assert(err0.getMessage.contains("DIConfigReadException"))
+    assert(errRuntime.getMessage.contains("DIConfigReadException"))
+  }
 
-    PlanCheck.checkRoleApp(TestEntrypointPatchedLeak, "configwriter help").throwOnError()
-
-    PlanCheck
-      .checkRoleApp(
-        TestEntrypointPatchedLeak,
-        "testtask00 testrole01 testrole02 testrole03 testrole04",
-        "mode:test",
-      ).throwOnError()
-
-    new PerformPlanCheck.Main(
-      TestEntrypointPatchedLeak,
-      "testtask00 testrole01 testrole02 testrole03 testrole04",
-      excludeActivations = "mode:test",
-    ).planCheck.check().throwOnError()
-
-    new PerformPlanCheck.Main(
-      TestEntrypointPatchedLeak,
-      excludeActivations = "mode:test",
-      checkConfig = false,
-    ).planCheck.check().throwOnError()
-
-    val err1 = intercept[TestFailedException](assertCompiles("""
-    new PerformPlanCheck.Main(
-      izumi.distage.roles.test.TestEntrypoint,
-      config = "checker-test-good.conf",
-      excludeActivations = "mode:test",
-    )
-    """))
-    assert(err1.getMessage.contains("Required by refs:"))
-    assert(err1.getMessage.contains("XXX_LocatorLeak"))
-
+  "role app check reports checking the same plugins at runtime as at compile-time" in {
     val runtimePlugins = PlanCheck
       .checkRoleApp(
         TestEntrypointPatchedLeak,
@@ -127,25 +151,13 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec {
         excludeActivations = "mode:test",
       ).throwOnError()
 
-    val compileTimePlugins = new PerformPlanCheck.Main(
+    val compileTimePlugins = new PlanCheckCompileTime.Main(
       TestEntrypointPatchedLeak,
       config = "checker-test-good.conf",
       excludeActivations = "mode:test",
     ).planCheck.checkedPlugins
 
     assert(runtimePlugins.result.map(_.getClass).toSet == compileTimePlugins.map(_.getClass).toSet)
-
-//    new PerformPlanCheck.Main(
-//      TestEntrypointPatchedLeak,
-//      "testtask00 testrole01 testrole02 testrole03 testrole04",
-//    ).planCheck.check().throwOnError()
-
-//    PlanCheck
-//      .checkRoleApp(
-//        TestEntrypointPatchedLeak,
-//        "testtask00 testrole01 testrole02 testrole03 testrole04",
-//        activations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
-//      ).throwOnError()
   }
 
 }
