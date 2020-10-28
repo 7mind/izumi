@@ -157,7 +157,7 @@ class PlanVerifier(
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers)
+                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers, excludedActivations)
               } yield {
                 allVisited.add(key)
 
@@ -228,9 +228,10 @@ class PlanVerifier(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
+    excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val issues = {
-      checkForUnsaturatedAxis(allAxis, withoutCurrentActivations) ++
+      checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, excludedActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
       checkForConflictingAxisChoices(withoutCurrentActivations) ++
       checkForDuplicateActivations(withoutCurrentActivations) ++
@@ -285,8 +286,6 @@ class PlanVerifier(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[DuplicateActivations] = {
     val duplicateAxisMap = ops
-//      .groupBy(_._2)
-//      .filter(_._2.sizeIs > 1)
       .groupBy(_._3)
       .filter(_._2.sizeIs > 1)
       .view.mapValues(NonEmptySet unsafeFrom _.map(_._1.origin.value))
@@ -314,29 +313,26 @@ class PlanVerifier(
     }
   }
 
-//  private[this] def isCompatible(a: Set[AxisPoint], b: Set[AxisPoint]): Boolean = {
-//    val aAxis = a.map(_.axis)
-//    val bAxis = b.map(_.axis)
-//    aAxis.intersect(bAxis).nonEmpty || aAxis.isEmpty || bAxis.isEmpty
-//  }
-
   /** This method fails in case there are missing/uncovered points on any of the reachable axis */
   protected[this] final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+    excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): List[UnsaturatedAxis] = {
-    val currentAxis: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
-    val toTest: Set[Set[AxisPoint]] = ops.map(_._2)
+    val currentAxes: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
+    val opActivations: Set[Set[AxisPoint]] = ops.map(_._2)
+    val opActivationsAxes: Set[Set[String]] = opActivations.iterator.map(_.map(_.axis)).toSet
 
-    currentAxis.flatMap {
-      axis =>
-        val definedValues = toTest.flatMap(_.iterator.filter(_.axis == axis).map(_.value).toSet)
-        val diff = allAxis.get(axis).map(_.diff(definedValues)).toSeq.flatten
+    currentAxes.flatMap {
+      currentAxis =>
+        val currentChoices: Set[String] = opActivations.flatMap(_.iterator.filter(_.axis == currentAxis).map(_.value))
+        val diff = allAxis.get(currentAxis).iterator.flatMap(_ diff currentChoices).map(AxisPoint(currentAxis, _)).toSet
         if (diff.nonEmpty) {
           // TODO: quadratic
-          val toTestAxises: Iterator[Set[String]] = toTest.iterator.map(_.map(_.axis))
-          if (toTestAxises.forall(_.contains(axis))) {
-            Some(UnsaturatedAxis(ops.head._1.target, axis, NonEmptySet.unsafeFrom(diff.iterator.map(AxisPoint(axis, _)).toSet)))
+          if (opActivationsAxes.forall(_.contains(currentAxis))) {
+            ???
+
+//            Some(UnsaturatedAxis(ops.head._1.target, currentAxis, NonEmptySet.unsafeFrom(diff)))
           } else None
         } else None
     }
