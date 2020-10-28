@@ -2,11 +2,11 @@ package izumi.distage.planning.solver
 
 import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
+import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._

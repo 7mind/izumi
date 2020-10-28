@@ -1,11 +1,11 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq

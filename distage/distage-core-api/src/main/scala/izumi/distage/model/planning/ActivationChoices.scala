@@ -1,6 +1,4 @@
-package izumi.distage.planning.solver
-
-import izumi.distage.model.definition.Axis.AxisPoint
+package izumi.distage.model.planning
 
 final case class ActivationChoices(activationChoices: Map[String, AxisPoint]) extends AnyVal {
   def allValid(a: Set[AxisPoint]): Boolean = a.forall(validChoice)

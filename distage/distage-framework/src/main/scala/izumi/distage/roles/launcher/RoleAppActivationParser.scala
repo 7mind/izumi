@@ -1,8 +1,8 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.{Activation, Axis, Id}
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.strings.IzString._

@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.conflicts
 
-import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.planning.AxisPoint
 
 sealed trait ConflictResolutionError[N, +V]
 

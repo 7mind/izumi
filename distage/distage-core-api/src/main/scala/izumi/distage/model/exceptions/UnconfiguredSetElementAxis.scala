@@ -1,7 +1,7 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
 
 class BadSetAxis(message: String, val problems: List[SetAxisIssue]) extends DIException(message)

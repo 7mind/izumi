@@ -16,7 +16,6 @@ import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference,
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -57,7 +56,6 @@ trait ConfigLoader {
   final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
 }
 
-@nowarn("msg=Unused import")
 object ConfigLoader {
   import scala.collection.compat._
 
@@ -180,8 +178,8 @@ object ConfigLoader {
         }
     }
 
-    protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
-      roleConfigs.foldLeft(ConfigFactory.empty()) {
+    protected def foldConfigs(roleConfigs: IterableOnce[(ConfigSource, Config)]): Config = {
+      roleConfigs.iterator.foldLeft(ConfigFactory.empty()) {
         case (acc, (src, cfg)) =>
           verifyConfigs(src, cfg, acc)
           acc.withFallback(cfg)

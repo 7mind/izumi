@@ -5,7 +5,6 @@ import izumi.distage.model.effect.QuasiIO.QuasiIOIdentity
 import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}

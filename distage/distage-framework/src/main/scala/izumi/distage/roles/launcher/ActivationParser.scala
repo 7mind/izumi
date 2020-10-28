@@ -2,8 +2,8 @@ package izumi.distage.roles.launcher
 
 import distage.config.AppConfig
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.{Activation, Id}
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.roles.{DebugProperties, RoleAppMain}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger

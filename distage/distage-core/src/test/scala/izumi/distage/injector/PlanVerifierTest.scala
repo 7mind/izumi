@@ -2,13 +2,14 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
-import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierConfig
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -451,7 +452,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       )
     )
 
-    val result2 = PlanVerifier().verify(definition, Roots.target[X], providedKeys = Set(DIKey[ExternalDep]))
+    val result2 = PlanVerifier().verify(definition, Roots.target[X], PlanVerifierConfig(providedKeys = Set(DIKey[ExternalDep])))
     assert(
       result2.issues == Set(
         UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))
@@ -472,7 +473,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result1 = PlanVerifier().verify(definition, Roots.target[Fork1])
     assert(result1.issues == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))))
 
-    val result2 = PlanVerifier().verify(definition, Roots.target[Fork1], providedKeys = Set(DIKey[BadDep]))
+    val result2 = PlanVerifier().verify(definition, Roots.target[Fork1], PlanVerifierConfig(providedKeys = Set(DIKey[BadDep])))
     assert(result2.issues.isEmpty)
   }
 

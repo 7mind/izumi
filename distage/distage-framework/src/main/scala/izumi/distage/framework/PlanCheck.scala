@@ -6,20 +6,20 @@ import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
 import izumi.distage.framework.services.ConfigLoader
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition._
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.{OrderedPlan, Roots}
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.UnsaturatedAxis
-import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
+import izumi.distage.planning.solver.PlanVerifier.{PlanVerifierConfig, PlanVerifierResult}
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
@@ -62,10 +62,18 @@ object PlanCheck {
     *
     *              "* -role1 -role2" to check all roles _except_ specific roles.
     *
-    * @param excludeActivations "axis1:choice1 axis2:choice2" to ignore missing components for any of the specified axis choices.
+    * @param excludeActivations "repo:dummy" to ignore missing implementations or other issues in `repo:dummy` axis choice.
     *
-    *                           Allows the check to pass even if some axis choices are (wilfully) invalid,
-    *                           e.g. if you have no `dummy` components for the `repo:dummy` choice, you may exclude "repo:dummy" from being checked.
+    *                           "repo:dummy | scene:managed" to ignore missing implementations or other issues in `repo:dummy` axis choice and in `scene:managed` axis choice.
+    *
+    *                           "repo:dummy mode:test | scene:managed" to ignore missing implementations or other issues in `repo:dummy mode:test` activation and in `scene:managed` activation.
+    *                           This will ignore parts of the graph accessible through these activations and larger activations that include them.
+    *                           That is, anything involving `scene:managed` or the combination of both `repo:dummy mode:test` will not be checked.
+    *                           but activations `repo:prod mode:test scene:provided` and `repo:dummy mode:prod scene:provided` are not excluded and will be checked.
+    *
+    *                           Allows the check to pass even if some axis choices or combinations of choices are (wilfully) left invalid,
+    *                           e.g. if you do have `repo:prod` components, but no counterpart `repo:dummy` components,
+    *                                and don't want to add them, then you may exclude "repo:dummy" from being checked.
     *
     * @param config      Config resource file name, e.g. "application.conf" or "*" if using the same config settings as `roleAppMain`
     *
@@ -89,13 +97,14 @@ object PlanCheck {
   def checkRoleAppParsed(
     roleAppMain: PlanHolder,
     chosenRoles: RoleSelection,
-    excludedActivations: Set[AxisPoint],
+    excludedActivations: Set[NonEmptySet[AxisPoint]],
     chosenConfig: Option[String],
     checkConfig: Boolean,
     logger: TrivialLogger = makeDefaultLogger(),
   ): PlanCheckResult = {
 
     var effectiveRoles = "unknown, failed too early"
+    var effectivePlugins = "unknown, failed too early"
     var effectiveConfig = "unknown, failed too early"
     var effectiveLoadedPlugins = LoadedPlugins.empty
 
@@ -111,6 +120,7 @@ object PlanCheck {
            |
            |  roles               = $chosenRoles (effective: $effectiveRoles)
            |  excludedActivations = ${excludedActivations.mkString(" ")}
+           |  plugins             = $effectivePlugins
            |  checkConfig         = $checkConfig$confiStr
            |
            |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
@@ -156,6 +166,7 @@ object PlanCheck {
 
           effectiveLoadedPlugins = loadedPlugins
           effectiveRoles = rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")
+          effectivePlugins = appPlugins.toString
 
           val allKeysFromRoleAppMainModule = {
             val keysUsedInBaseModule = locatorRef.get.allInstances.iterator.map(_.key).toSet
@@ -178,18 +189,16 @@ object PlanCheck {
             val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(
               bindings = bindings,
               roots = Roots(rolesInfo.requiredComponents),
-              providedKeys = allKeysFromRoleAppMainModule ++
-                bsModule.keys ++
-                defaultModule.module.keys ++
-                veryBadInjectorContext +
-                DIKey[LocatorRef],
-              ignoredActivations = excludedActivations,
+              planVerifierConfig = PlanVerifierConfig(
+                providedKeys = allKeysFromRoleAppMainModule ++
+                  bsModule.keys ++
+                  defaultModule.module.keys ++
+                  veryBadInjectorContext +
+                  DIKey[LocatorRef],
+                excludedActivations = excludedActivations,
+              ),
             )
-            val verifiedIssues = issues.filterNot {
-              case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues.subsetOf(excludedActivations)
-              case _ => false
-            }
-            if (verifiedIssues.nonEmpty) {
+            if (issues.nonEmpty) {
               throw new InvalidPlanException(issues.niceList(), None, false, false)
             } else {
               reachableKeys
@@ -200,8 +209,7 @@ object PlanCheck {
             val realAppConfig = configLoader.loadConfig()
             effectiveConfig = s"* (effective: `${realAppConfig.config.origin()}`)"
             // FIXME: does not consider bsModule for reachability [must test it]
-            val parsers = bindings
-              .iterator
+            val parsers = bindings.iterator
               .filter(reachableKeys contains _.key)
               .flatMap(_.tags.iterator.collect { case c: ConfTag => c.parser })
               .toArray
@@ -314,8 +322,10 @@ object PlanCheck {
     )
   }
 
-  private[this] def parseActivations(s: String): Set[AxisPoint] = {
-    s.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+  private[this] def parseActivations(s: String): Set[NonEmptySet[AxisPoint]] = {
+    s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
+        NonEmptySet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+      }.toSet
   }
 
   private[this] def makeDefaultLogger(): TrivialLogger = {

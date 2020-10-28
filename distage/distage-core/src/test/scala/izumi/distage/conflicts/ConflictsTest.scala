@@ -1,6 +1,6 @@
 package izumi.distage.conflicts
 
-import izumi.distage.model.definition.Axis.AxisPoint
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.SemigraphSolver
 import org.scalatest.wordspec.AnyWordSpec
 
