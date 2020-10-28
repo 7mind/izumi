@@ -3,7 +3,7 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio._
-import zio.{Has, IO, ZIO}
+import zio.{Has, IO, ZEnv, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule
 
@@ -34,6 +34,17 @@ trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule 
 
   addImplicit[TransZio[IO]]
 
+  make[zio.Runtime[ZEnv]].from((r: zio.Runtime[Any], zenv: ZEnv) => r.map(_ => zenv))
+
   make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
   make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)
+
+  make[zio.console.Console].from(Has(_: zio.console.Console.Service))
+  make[zio.console.Console.Service].from(zio.console.Console.Service.live)
+
+  make[zio.system.System].from(Has(_: zio.system.System.Service))
+  make[zio.system.System.Service].from(zio.system.System.Service.live)
+
+  make[zio.random.Random].from(Has(_: zio.random.Random.Service))
+  make[zio.random.Random.Service].from(zio.random.Random.Service.live)
 }

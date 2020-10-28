@@ -4,19 +4,24 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 
 import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.UnsafeRun2.InterruptAction
 import monix.bio
 import monix.execution.Scheduler
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
-import zio.{Cause, IO, Runtime, Supervisor}
+import zio.{Cause, IO, Runtime, Supervisor, ZIO}
 
 import scala.concurrent.Future
 
 trait UnsafeRun2[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
   def unsafeRunSync[E, A](io: => F[E, A]): Exit[E, A]
+
   def unsafeRunAsync[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): Unit
   def unsafeRunAsyncAsFuture[E, A](io: => F[E, A]): Future[Exit[E, A]]
+
+  def unsafeRunAsyncInterruptible[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): InterruptAction[F]
+  def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => F[E, A]): (Future[Exit[E, A]], InterruptAction[F])
 
   @deprecated("use `unsafeRunSync`", "1.0")
   final def unsafeRunSyncAsEither[E, A](io: => F[E, A]): Exit[E, A] = unsafeRunSync(io)
@@ -44,6 +49,12 @@ object UnsafeRun2 {
 
   def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
 
+  /**
+    * @param interrupt May semantically block until the target computation either finishes completely or finishes running
+    *                  its finalizers, depending on the underlying effect type.
+    */
+  final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
+
   class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
     override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
       io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
@@ -55,7 +66,22 @@ object UnsafeRun2 {
       io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
     }
     override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
-      io.sandboxExit.runToFutureOpt(s, opts, implicitly)
+      val p = scala.concurrent.Promise[Exit[E, A]]()
+      unsafeRunAsync(io)(p.success)
+      p.future
+    }
+    override def unsafeRunAsyncInterruptible[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[bio.IO] = {
+      val canceler = io.runAsyncOptF {
+        case Left(e) => callback(Exit.MonixExit.toExit(e))
+        case Right(value) => callback(Exit.Success(value))
+      }(s, opts)
+      InterruptAction(canceler)
+    }
+
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => bio.IO[E, A]): (Future[Exit[E, A]], InterruptAction[bio.IO]) = {
+      val p = scala.concurrent.Promise[Exit[E, A]]()
+      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
+      (p.future, canceler)
     }
   }
 
@@ -94,6 +120,32 @@ object UnsafeRun2 {
       val p = scala.concurrent.Promise[Exit[E, A]]()
       unsafeRunAsync(io)(p.success)
       p.future
+    }
+
+    override def unsafeRunAsyncInterruptible[E, A](io: => IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[IO] = {
+      val canceler = runtime.unsafeRun {
+        ZIO.descriptor
+          .bracketExit(
+            release = (descriptor, exit: zio.Exit[E, A]) =>
+              ZIO.effectTotal {
+                exit match {
+                  case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) => ()
+                  case _ => callback(Exit.ZIOExit.toExit(exit))
+                }
+              },
+            use = _ => io,
+          )
+          .interruptible
+          .forkDaemon
+          .map(_.interrupt.unit)
+      }
+      InterruptAction(canceler)
+    }
+
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => IO[E, A]): (Future[Exit[E, A]], InterruptAction[IO]) = {
+      val p = scala.concurrent.Promise[Exit[E, A]]()
+      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
+      (p.future, canceler)
     }
   }
 
