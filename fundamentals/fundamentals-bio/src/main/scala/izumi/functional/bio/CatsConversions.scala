@@ -1,9 +1,9 @@
 package izumi.functional.bio
 
 import cats.Eval
-import cats.effect.{CancelToken, Concurrent, ExitCase, Fiber}
+import cats.effect.{CancelToken, Concurrent, ExitCase, Fiber, IO, SyncIO}
 import izumi.functional.bio.CatsConversions._
-import izumi.functional.bio.SpecificityHelper.{S1, S10, S2, S3, S4, S5, S6, S7, S8, S9}
+import izumi.functional.bio.SpecificityHelper.{S1, S10, S11, S2, S3, S4, S5, S6, S7, S8, S9}
 
 import scala.util.Either
 import cats.~>
@@ -55,17 +55,25 @@ trait CatsConversions7 extends CatsConversions8 {
 trait CatsConversions8 extends CatsConversions9 {
   @inline implicit final def BIOParallelToParallel[F[+_, +_]](implicit F: Parallel2[F]): cats.Parallel[F[Throwable, ?]] = new BIOCatsParallel[F](F)
 }
-trait CatsConversions9 {
+trait CatsConversions9 extends CatsConversions10 {
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     Fork: Fork2[F],
   ): cats.effect.Concurrent[F[Throwable, ?]] with S10 = new BIOCatsConcurrent[F](F, Fork)
 }
+trait CatsConversions10 {
+  @inline implicit final def BIOAsyncForkUnsafeRunToConcurrentEffect[F[+_, +_]](
+    implicit @unused ev: Functor2[F],
+    F: Async2[F],
+    Fork: Fork2[F],
+    UnsafeRun: UnsafeRun2[F],
+  ): cats.effect.ConcurrentEffect[F[Throwable, ?]] with S11 = new BIOCatsConcurrentEffect[F](F, Fork, UnsafeRun)
+}
 
 object CatsConversions {
 
-  trait BIOCatsFunctor[F[+_, +_], E] extends cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 {
+  trait BIOCatsFunctor[F[+_, +_], E] extends cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 with S11 {
     def F: Functor2[F]
 
     @inline override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -166,7 +174,7 @@ object CatsConversions {
     @inline override final def never[A]: F[Throwable, A] = F.never
   }
 
-  class BIOCatsConcurrent[F[+_, +_]](override val F: Async2[F], private val Fork: Fork2[F]) extends BIOCatsAsync[F](F) with cats.effect.Concurrent[F[Throwable, ?]] {
+  class BIOCatsConcurrent[F[+_, +_]](override val F: Async2[F], val Fork: Fork2[F]) extends BIOCatsAsync[F](F) with cats.effect.Concurrent[F[Throwable, ?]] {
     @inline override final def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, *], A]] = {
       F.map(Fork.fork(fa))(_.toCats(F))
     }
@@ -189,4 +197,19 @@ object CatsConversions {
 //    override def continual[A, B](fa: F[Throwable, A])(f: Either[Throwable, A] => F[Throwable, B]): F[Throwable, B] = super.continual(fa)(f)
   }
 
+  class BIOCatsConcurrentEffect[F[+_, +_]](override val F: Async2[F], override val Fork: Fork2[F], val UnsafeRun: UnsafeRun2[F])
+    extends BIOCatsConcurrent[F](F, Fork)
+    with cats.effect.ConcurrentEffect[F[Throwable, ?]] {
+    override final def runCancelable[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[F[Throwable, Unit]] = {
+      SyncIO[F[Throwable, Unit]] {
+        UnsafeRun.unsafeRunAsyncInterruptible(fa)(exit => cb(exit.toThrowableEither)).interrupt
+      }
+    }
+
+    override final def runAsync[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = {
+      SyncIO {
+        UnsafeRun.unsafeRunAsync(fa)(exit => cb(exit.toThrowableEither))
+      }
+    }
+  }
 }

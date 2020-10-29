@@ -7,6 +7,7 @@ sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
   def leftMap[E1](f: E => E1): Exit[E1, A]
   def flatMap[E1 >: E, B](f: A => Exit[E1, B]): Exit[E1, B]
+  def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, A]
 }
 
 object Exit {
@@ -49,6 +50,7 @@ object Exit {
     override def map[B](f: A => B): Success[B] = Success(f(value))
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def flatMap[E1 >: Nothing, B](f: A => Exit[E1, B]): Exit[E1, B] = f(value)
+    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, A] = Right(value)
   }
 
   sealed trait Failure[+E] extends Exit[E, Nothing] {
@@ -68,12 +70,14 @@ object Exit {
   final case class Error[+E](error: E, trace: Trace[E]) extends Exit.Failure[E] {
     override def toEither: Right[Nothing, E] = Right(error)
     override def toEitherCompound: Right[Nothing, E] = Right(error)
+    override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
     override def leftMap[E1](f: E => E1): Exit[E1, Nothing] = Error[E1](f(error), trace.map(f))
   }
 
   final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions)
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
+    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Termination {

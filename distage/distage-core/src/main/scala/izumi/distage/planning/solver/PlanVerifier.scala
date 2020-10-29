@@ -320,19 +320,19 @@ class PlanVerifier(
     excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): List[UnsaturatedAxis] = {
     val currentAxes: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
-    val opActivations: Set[Set[AxisPoint]] = ops.map(_._2)
-    val opActivationsAxes: Set[Set[String]] = opActivations.iterator.map(_.map(_.axis)).toSet
+    val opFilteredActivations: Set[Set[AxisPoint]] = ops.map(_._2)
+    val opAxisSets: Set[Set[String]] = opFilteredActivations.iterator.map(_.map(_.axis)).toSet
 
     currentAxes.flatMap {
       currentAxis =>
-        val currentChoices: Set[String] = opActivations.flatMap(_.iterator.filter(_.axis == currentAxis).map(_.value))
-        val diff = allAxis.get(currentAxis).iterator.flatMap(_ diff currentChoices).map(AxisPoint(currentAxis, _)).toSet
-        if (diff.nonEmpty) {
+        val allCurrentAxisChoices: Set[String] = allAxis.getOrElse(currentAxis, Set.empty[String])
+        val opsCurrentAxisChoices: Set[String] = opFilteredActivations.flatMap(_.iterator.filter(_.axis == currentAxis).map(_.value))
+        val unsaturatedChoices = (allCurrentAxisChoices diff opsCurrentAxisChoices).map(AxisPoint(currentAxis, _))
+        if (unsaturatedChoices.nonEmpty && !isIgnoredActivation(excludedActivations)(unsaturatedChoices)) {
           // TODO: quadratic
-          if (opActivationsAxes.forall(_.contains(currentAxis))) {
-            ???
-
-//            Some(UnsaturatedAxis(ops.head._1.target, currentAxis, NonEmptySet.unsafeFrom(diff)))
+          if (opAxisSets.forall(_ contains currentAxis)) {
+//            ???
+            Some(UnsaturatedAxis(ops.head._1.target, currentAxis, NonEmptySet.unsafeFrom(unsaturatedChoices)))
           } else None
         } else None
     }

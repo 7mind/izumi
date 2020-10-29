@@ -91,13 +91,13 @@ class AsyncMonix extends Async2[IO] {
   }
 
   override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
-    IO.async(cb => register(cb apply Try(_)))
+    IO.async(cb => register(_.fold(cb.onError, cb.onSuccess)))
   }
   override final def asyncF[R, E, A](register: (Either[E, A] => Unit) => IO[E, Unit]): IO[E, A] = {
-    IO.asyncF(cb => register(cb apply Try(_)))
+    IO.asyncF(cb => register(_.fold(cb.onError, cb.onSuccess)))
   }
   override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): IO[E, A] = {
-    IO.cancelable[E, A](cb => register(cb apply Try(_)))
+    IO.cancelable[E, A](cb => register(_.fold(cb.onError, cb.onSuccess)))
   }
   override final def fromFuture[A](mkFuture: ExecutionContext => Future[A]): IO[Throwable, A] = {
     IO.deferFutureAction(mkFuture)

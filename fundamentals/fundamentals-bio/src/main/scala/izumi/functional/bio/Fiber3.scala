@@ -22,7 +22,7 @@ object Fiber3 {
     new Fiber2[monix.bio.IO, E, A] {
       override val join: monix.bio.IO[E, A] = f.join
       override val observe: monix.bio.IO[Nothing, Exit[E, A]] = f.join.redeemCause(c => toExit(c), a => Exit.Success(a))
-      override val interrupt: monix.bio.IO[Nothing, Unit] = f.cancel.void
+      override val interrupt: monix.bio.IO[Nothing, Unit] = f.cancel
     }
 
   implicit final class ToCats[FR[-_, +_, +_], A](private val bioFiber: Fiber3[FR, Throwable, A]) extends AnyVal {

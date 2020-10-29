@@ -1,18 +1,32 @@
 package izumi.functional.bio.test
 
-import cats.effect.laws.ConcurrentLaws
-import cats.effect.laws.discipline.ConcurrentTests
-import cats.effect.{Concurrent, ContextShift}
-import izumi.functional.bio.catz.BIOAsyncForkToConcurrent
+import cats.effect.laws.ConcurrentEffectLaws
+import cats.effect.laws.discipline.ConcurrentEffectTests
+import cats.effect.laws.discipline.arbitrary.catsEffectLawsArbitraryForIO
+import cats.effect.laws.util.TestContext
+import cats.effect.{ConcurrentEffect, ContextShift}
 import izumi.functional.bio.env.ZIOTestEnv
+import izumi.functional.bio.{UnsafeRun2, catz}
+import zio.IO
+import zio.internal.{Executor, Platform, Tracing}
 
 class BioZioLawsTest extends CatsLawsTestBase with ZIOTestEnv {
-  val concurrentTestZio = new ConcurrentTests[zio.Task] {
-    val laws = new ConcurrentLaws[zio.Task] {
-      val F = Concurrent[zio.Task](BIOAsyncForkToConcurrent)
-      val contextShift = ContextShift[zio.Task](zio.interop.catz.zioContextShift)
+  implicit val testContext: TestContext = TestContext()
+  implicit val runtime: UnsafeRun2[IO] = UnsafeRun2.createZIO {
+    Platform
+      .fromExecutor(Executor.fromExecutionContext(Int.MaxValue)(testContext))
+      .withTracing(Tracing.disabled)
+      .withReportFailure(_ => ())
+  }
+  implicit val CE: ConcurrentEffect[zio.Task] = ConcurrentEffect[zio.Task](catz.BIOAsyncForkUnsafeRunToConcurrentEffect)
+
+  val concurrentEffectTestZio: ConcurrentEffectTests[zio.Task] = new ConcurrentEffectTests[zio.Task] {
+    override val laws = new ConcurrentEffectLaws[zio.Task] {
+      override val F = CE
+      override val contextShift = ContextShift[zio.Task](zio.interop.catz.zioContextShift)
     }
   }
 
-  checkAll("ConcurrentZIO", concurrentTestZio.sync[Int, Int, Int])
+  checkAll("ConcurrentZIO", concurrentEffectTestZio.concurrent[Int, Int, Int])
+//  checkAll("ConcurrentEffectZIO", concurrentEffectTestZio.concurrentEffect[Int, Int, Int])
 }

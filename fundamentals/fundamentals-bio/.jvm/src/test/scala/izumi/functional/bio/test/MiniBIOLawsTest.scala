@@ -3,14 +3,14 @@ package izumi.functional.bio.test
 import cats.effect.Sync
 import cats.effect.laws.SyncLaws
 import cats.effect.laws.discipline.SyncTests
-import izumi.functional.bio.catz._
+import izumi.functional.bio.catz.BIOToSync
 import izumi.functional.bio.env.MiniBIOEnv
 import izumi.functional.bio.impl.MiniBIO
 
 class MiniBIOLawsTest extends CatsLawsTestBase with MiniBIOEnv {
-  val syncTests = new SyncTests[MiniBIO[Throwable, ?]] {
-    val laws = new SyncLaws[MiniBIO[Throwable, ?]] {
-      val F = Sync[MiniBIO[Throwable, ?]]
+  val syncTests: SyncTests[MiniBIO[Throwable, ?]] = new SyncTests[MiniBIO[Throwable, ?]] {
+    override val laws = new SyncLaws[MiniBIO[Throwable, ?]] {
+      override val F = Sync[MiniBIO[Throwable, ?]]
     }
   }
 

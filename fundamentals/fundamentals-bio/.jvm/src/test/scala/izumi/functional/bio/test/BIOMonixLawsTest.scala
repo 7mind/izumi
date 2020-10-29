@@ -1,18 +1,25 @@
 package izumi.functional.bio.test
 
-import cats.effect.laws.ConcurrentLaws
-import cats.effect.laws.discipline.ConcurrentTests
-import cats.effect.{Concurrent, ContextShift}
-import izumi.functional.bio.catz.BIOAsyncForkToConcurrent
+import cats.effect.ConcurrentEffect
+import cats.effect.laws.ConcurrentEffectLaws
+import cats.effect.laws.discipline.ConcurrentEffectTests
 import izumi.functional.bio.env.MonixEnv
+import izumi.functional.bio.{UnsafeRun2, catz}
+import monix.execution.schedulers.TestScheduler
 
 class BIOMonixLawsTest extends CatsLawsTestBase with MonixEnv {
-  val concurrentTestsMonix = new ConcurrentTests[monix.bio.Task] {
-    override val laws = new ConcurrentLaws[monix.bio.Task] {
-      val F = Concurrent[monix.bio.Task](BIOAsyncForkToConcurrent)
-      val contextShift = ContextShift[monix.bio.Task](monix.bio.IO.contextShift)
+  implicit val testScheduler: TestScheduler = TestScheduler()
+  implicit val runtime: UnsafeRun2[monix.bio.IO] = UnsafeRun2.createMonixBIO(testScheduler, opt)
+  implicit val CE: ConcurrentEffect[monix.bio.Task] = ConcurrentEffect[monix.bio.Task](catz.BIOAsyncForkUnsafeRunToConcurrentEffect)
+
+  val concurrentEffectTestsMonix: ConcurrentEffectTests[monix.bio.Task] = new ConcurrentEffectTests[monix.bio.Task] {
+    override val laws = new ConcurrentEffectLaws[monix.bio.Task] {
+      override val F = CE
+      override val contextShift = cs
     }
   }
 
-  checkAll("ConcurrentMonix", concurrentTestsMonix.sync[Int, Int, Int])
+  checkAll("SyncMonix", concurrentEffectTestsMonix.sync[Int, Int, Int])
+//  checkAll("ConcurrentMonix", concurrentEffectTestsMonix.concurrent[Int, Int, Int])
+//  checkAll("ConcurrentEffectMonix", concurrentEffectTestsMonix.concurrentEffect[Int, Int, Int])
 }
