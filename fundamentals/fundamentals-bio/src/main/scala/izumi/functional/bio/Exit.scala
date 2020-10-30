@@ -84,6 +84,16 @@ object Exit {
     def apply(exception: Throwable, trace: Trace[Nothing]): Termination = new Termination(exception, List(exception), trace)
   }
 
+  final case class Interruption(compoundException: Throwable, trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
+    override def toEither: Left[List[Throwable], Nothing] = Left(List(compoundException))
+    override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
+    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
+    override def leftMap[E1](f: Nothing => E1): this.type = this
+  }
+  object Interruption {
+    def apply(trace: Trace[Nothing]): Interruption = Interruption(new InterruptedException(trace.asString), trace)
+  }
+
   object ZIOExit {
     @inline def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
       case zio.Exit.Success(v) =>
@@ -96,13 +106,10 @@ object Exit {
       result.failureOrCause match {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
+        case Right(cause) if cause.interrupted =>
+          Interruption(Trace.ZIOTrace(cause))
         case Right(cause) =>
-          val unchecked = cause.defects
-          val exceptions = if (cause.interrupted) {
-            new InterruptedException :: unchecked
-          } else {
-            unchecked
-          }
+          val exceptions = cause.defects
           val compound = exceptions match {
             case e :: Nil => e
             case _ => FiberFailure(cause)
@@ -112,22 +119,10 @@ object Exit {
     }
   }
 
-  implicit lazy val MonadExit: Monad2[Exit] = new Monad2[Exit] {
-    override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
-    override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
-    override final def flatMap[R, E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
-  }
-
-  implicit lazy val BifunctorExit: Bifunctor2[Exit] = new Bifunctor2[Exit] {
-    override final val InnerF: Functor2[Exit] = MonadExit
-    override final def bimap[R, E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
-    override final def leftMap[R, E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
-  }
-
   object MonixExit {
     @inline def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
       exit match {
-        case Left(None) => Termination(new Throwable("The task was cancelled."), Trace.empty)
+        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
         case Left(Some(error)) => toExit(error)
         case Right(value) => Success(value)
       }
@@ -146,6 +141,15 @@ object Exit {
         case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
       }
     }
+  }
+
+  implicit lazy val ExitInstances: Monad2[Exit] with Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
+    override final val InnerF: Functor2[Exit] = this
+    override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
+    override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
+    override final def bimap[R, E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
+    override final def leftMap[R, E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
+    override final def flatMap[R, E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
   }
 
 }

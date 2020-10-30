@@ -23,8 +23,8 @@ import scala.util.control.NonFatal
 import scala.util.{Either, Failure, Success, Try}
 
 trait MonixTestEnv extends BaseLawsSuite {
-  implicit val opt: IO.Options = IO.defaultOptions
-  implicit val cs: ContextShift[Task] = ContextShift[Task]
+  implicit lazy val opt: IO.Options = IO.defaultOptions
+  implicit lazy val cs: ContextShift[Task] = IO.contextShift
 }
 
 /**

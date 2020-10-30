@@ -130,6 +130,7 @@ object CatsConversions {
               a,
               e match {
                 case Exit.Success(_) => ExitCase.Completed
+                case Exit.Interruption(_, _) => ExitCase.Canceled
                 case value: Exit.Failure[Throwable] => ExitCase.Error(value.toThrowable)
               },
             )
@@ -202,13 +203,13 @@ object CatsConversions {
     with cats.effect.ConcurrentEffect[F[Throwable, ?]] {
     override final def runCancelable[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[F[Throwable, Unit]] = {
       SyncIO[F[Throwable, Unit]] {
-        UnsafeRun.unsafeRunAsyncInterruptible(fa)(exit => cb(exit.toThrowableEither)).interrupt
+        UnsafeRun.unsafeRunAsyncInterruptible(fa)(exit => cb(exit.toThrowableEither).unsafeRunAsync(_ => ())).interrupt
       }
     }
 
     override final def runAsync[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = {
       SyncIO {
-        UnsafeRun.unsafeRunAsync(fa)(exit => cb(exit.toThrowableEither))
+        UnsafeRun.unsafeRunAsync(fa)(exit => cb(exit.toThrowableEither).unsafeRunAsync(_ => ()))
       }
     }
   }
