@@ -1,16 +1,15 @@
-package izumi.functional.bio.test
+package izumi.functional.bio.laws
 
 import cats.effect.laws.ConcurrentEffectLaws
 import cats.effect.laws.discipline.ConcurrentEffectTests
-import cats.effect.laws.discipline.arbitrary.catsEffectLawsArbitraryForIO
 import cats.effect.laws.util.TestContext
 import cats.effect.{ConcurrentEffect, ContextShift}
-import izumi.functional.bio.env.ZIOTestEnv
+import izumi.functional.bio.laws.env.ZIOTestEnv
 import izumi.functional.bio.{UnsafeRun2, catz}
 import zio.IO
 import zio.internal.{Executor, Platform, Tracing}
 
-class BioZioLawsTest extends CatsLawsTestBase with ZIOTestEnv {
+class ZIOLawsTest extends CatsLawsTestBase with ZIOTestEnv {
   implicit val testContext: TestContext = TestContext()
   implicit val runtime: UnsafeRun2[IO] = UnsafeRun2.createZIO {
     Platform

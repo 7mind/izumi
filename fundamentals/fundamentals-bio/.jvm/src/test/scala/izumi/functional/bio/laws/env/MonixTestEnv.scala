@@ -1,70 +1,45 @@
-package izumi.functional.bio.env
+package izumi.functional.bio.laws.env
+
+import java.io.{ByteArrayOutputStream, PrintStream}
 
 import cats.Eq
-import cats.effect.laws.util.{TestContext, TestInstances}
-import cats.effect.{ConcurrentEffect, ContextShift}
-import izumi.functional.bio.IO2
-import monix.bio.{BiCallback, Cause, IO, Task, UIO}
-import monix.execution.{Cancelable, CancelableFuture, ExecutionModel, Scheduler, UncaughtExceptionReporter}
-import org.scalacheck.Arbitrary
-import org.scalatestplus.scalacheck.Checkers
-
-trait MonixEnv extends BaseLawsSuite {
-  implicit val opt: IO.Options = IO.defaultOptions
-  implicit val cs: ContextShift[Task] = ContextShift[Task]
-
-//  implicit def eqExit: Eq[Cause[Nothing]] = Eq.fromUniversalEquals
-//
-//  implicit def equalityTask[A](implicit effect: ConcurrentEffect[Task], A: Eq[A], testContext: TestContext): Eq[Task[A]] =
-//    Eq.by(_.attempt.redeemCause(Left(_), Right(_)).to[cats.effect.IO])
-//
-//  implicit def arbMonixBIO[A](implicit arb: Arbitrary[A]): Arbitrary[Task[A]] = Arbitrary {
-//    Arbitrary.arbBool.arbitrary.flatMap {
-//      if (_) arb.arbitrary.map(IO2[monix.bio.IO].pure(_))
-//      else Arbitrary.arbThrowable.arbitrary.map(IO2[monix.bio.IO].fail(_))
-//    }
-//  }
-}
-
-import cats.Eq
-import cats.effect.{IO => CIO}
 import cats.effect.laws.discipline.Parameters
 import cats.effect.laws.discipline.arbitrary.{catsEffectLawsArbitraryForIO, catsEffectLawsCogenForIO}
-import monix.bio.internal.TaskCreate
-import monix.execution.atomic.Atomic
-import monix.execution.internal.Platform
-import monix.execution.schedulers.TestScheduler
-import org.scalacheck.Arbitrary.{arbitrary => getArbitrary}
-import org.scalacheck.{Arbitrary, Cogen, Gen}
-
-import scala.util.Either
-
-import cats.Eq
+import cats.effect.{ContextShift, IO => CIO}
 import cats.laws._
+import izumi.functional.bio.IO2
+import monix.bio.{Cause, IO, Task, UIO}
+import monix.execution.atomic.Atomic
 import monix.execution.exceptions.DummyException
-import monix.execution.internal.Platform
 import monix.execution.schedulers.TestScheduler
-import org.scalacheck.Test.Parameters
+import monix.execution.{Cancelable, CancelableFuture, Scheduler}
+import org.scalacheck.Arbitrary.{arbitrary => getArbitrary}
 import org.scalacheck.{Arbitrary, Cogen, Gen, Prop}
-import org.typelevel.discipline.Laws
+import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionException, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
+import scala.util.{Either, Failure, Success, Try}
+
+trait MonixTestEnv extends BaseLawsSuite {
+  implicit val opt: IO.Options = IO.defaultOptions
+  implicit val cs: ContextShift[Task] = ContextShift[Task]
+}
 
 /**
   * Base trait to inherit in all `monix-bio` tests that use ScalaCheck.
   */
 trait BaseLawsSuite extends BaseLawsSuite0 with ArbitraryInstances {
 
-//  /**
-//    * Customizes Cats-Effect's default params.
-//    *
-//    * At the moment of writing, these match the defaults, but it's
-//    * better to specify these explicitly.
-//    */
-//  implicit val params: Parameters =
-//    Parameters(stackSafeIterationsCount = if (isJVM) 10000 else 100, allowNonTerminationLaws = true)
+  /**
+    * Customizes Cats-Effect's default params.
+    *
+    * At the moment of writing, these match the defaults, but it's
+    * better to specify these explicitly.
+    */
+  implicit val params: Parameters =
+    Parameters(stackSafeIterationsCount = if (isJVM) 10000 else 100, allowNonTerminationLaws = true)
 }
 
 trait ArbitraryInstances extends ArbitraryInstancesBase {
@@ -74,7 +49,7 @@ trait ArbitraryInstances extends ArbitraryInstancesBase {
     A: Eq[A],
     E: Eq[E],
     sc: TestScheduler,
-    opts: IO.Options = IO.defaultOptions,
+    opts: IO.Options,
   ): Eq[IO[E, A]] = {
 
     new Eq[IO[E, A]] {
@@ -87,7 +62,7 @@ trait ArbitraryInstances extends ArbitraryInstancesBase {
     implicit
     A: Eq[A],
     sc: TestScheduler,
-    opts: IO.Options = IO.defaultOptions,
+    opts: IO.Options,
   ): Eq[UIO[A]] = {
 
     new Eq[UIO[A]] {
@@ -104,7 +79,7 @@ trait ArbitraryInstances extends ArbitraryInstancesBase {
     A: Eq[A],
     E: Eq[E],
     ec: TestScheduler,
-    opts: IO.Options = IO.defaultOptions,
+    opts: IO.Options,
   ): Eq[IO.Par[E, A]] = {
     new Eq[IO.Par[E, A]] {
       import IO.Par.unwrap
@@ -402,8 +377,7 @@ trait ArbitraryInstancesBase0 extends cats.instances.AllInstances with TestUtils
       }
     }
 
-  implicit lazy val equalityThrowable = new Eq[Throwable] {
-
+  implicit lazy val equalityThrowable: Eq[Throwable] = new Eq[Throwable] {
     override def eqv(x: Throwable, y: Throwable): Boolean = {
       val ex1 = extractEx(x)
       val ex2 = extractEx(y)
@@ -412,7 +386,7 @@ trait ArbitraryInstancesBase0 extends cats.instances.AllInstances with TestUtils
 
     // Unwraps exceptions that got caught by Future's implementation
     // and that got wrapped in ExecutionException (`Future(throw ex)`)
-    def extractEx(ex: Throwable): Throwable =
+    private[this] def extractEx(ex: Throwable): Throwable =
       ex match {
         case ref: ExecutionException =>
           Option(ref.getCause).getOrElse(ref)
@@ -437,10 +411,6 @@ trait ArbitraryInstancesBase0 extends cats.instances.AllInstances with TestUtils
   implicit def cogenForFuture[A]: Cogen[Future[A]] =
     Cogen[Unit].contramap(_ => ())
 }
-
-import java.io.{ByteArrayOutputStream, PrintStream}
-
-import scala.util.control.NonFatal
 
 /**
   * INTERNAL API — test utilities.

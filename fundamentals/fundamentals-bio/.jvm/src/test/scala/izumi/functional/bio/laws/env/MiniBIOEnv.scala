@@ -1,4 +1,4 @@
-package izumi.functional.bio.env
+package izumi.functional.bio.laws.env
 
 import cats.Eq
 import izumi.functional.bio.IO2
