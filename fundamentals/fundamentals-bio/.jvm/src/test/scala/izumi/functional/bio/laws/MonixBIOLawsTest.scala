@@ -21,7 +21,5 @@ class MonixBIOLawsTest extends CatsLawsTestBase with MonixTestEnv {
     }
   }
 
-//  checkAll("SyncMonix", concurrentEffectTestsMonix.sync[Int, Int, Int])
-//  checkAll("ConcurrentMonix", concurrentEffectTestsMonix.concurrent[Int, Int, Int])
   checkAll("ConcurrentEffectMonix", concurrentEffectTestsMonix.concurrentEffect[Int, Int, Int])
 }

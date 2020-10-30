@@ -6,7 +6,6 @@ import cats.Eq
 import cats.effect.laws.discipline.Parameters
 import cats.effect.laws.discipline.arbitrary.{catsEffectLawsArbitraryForIO, catsEffectLawsCogenForIO}
 import cats.effect.{ContextShift, IO => CIO}
-import cats.laws._
 import izumi.functional.bio.IO2
 import monix.bio.{Cause, IO, Task, UIO}
 import monix.execution.atomic.Atomic
@@ -14,11 +13,10 @@ import monix.execution.exceptions.DummyException
 import monix.execution.schedulers.TestScheduler
 import monix.execution.{Cancelable, CancelableFuture, Scheduler}
 import org.scalacheck.Arbitrary.{arbitrary => getArbitrary}
-import org.scalacheck.{Arbitrary, Cogen, Gen, Prop}
-import org.scalatestplus.scalacheck.Checkers
+import org.scalacheck.{Arbitrary, Cogen, Gen}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionException, Future}
 import scala.util.control.NonFatal
 import scala.util.{Either, Failure, Success, Try}
 
@@ -27,10 +25,13 @@ trait MonixTestEnv extends BaseLawsSuite {
   implicit lazy val cs: ContextShift[Task] = IO.contextShift
 }
 
+// Copypaste from monix-bio test suite
+// https://github.com/monix/monix-bio/blob/c1b6e6b/core/shared/src/test/scala/monix/bio/BaseLawsSuite.scala
+
 /**
   * Base trait to inherit in all `monix-bio` tests that use ScalaCheck.
   */
-trait BaseLawsSuite extends BaseLawsSuite0 with ArbitraryInstances {
+trait BaseLawsSuite extends ArbitraryInstances {
 
   /**
     * Customizes Cats-Effect's default params.
@@ -38,8 +39,18 @@ trait BaseLawsSuite extends BaseLawsSuite0 with ArbitraryInstances {
     * At the moment of writing, these match the defaults, but it's
     * better to specify these explicitly.
     */
-  implicit val params: Parameters =
-    Parameters(stackSafeIterationsCount = if (isJVM) 10000 else 100, allowNonTerminationLaws = true)
+  implicit val params: Parameters = Parameters.default
+
+//  override lazy val checkConfig: Parameters =
+//    org.scalacheck.Test.Parameters.default
+//      .withMinSuccessfulTests(if (isJVM) 100 else 10)
+//      .withMaxDiscardRatio(if (isJVM) 5.0f else 50.0f)
+
+//  lazy val slowCheckConfig: Parameters =
+//    org.scalacheck.Test.Parameters.default
+//      .withMinSuccessfulTests(10)
+//      .withMaxDiscardRatio(50.0f)
+//      .withMaxSize(6)
 }
 
 trait ArbitraryInstances extends ArbitraryInstancesBase {
@@ -229,12 +240,12 @@ trait ArbitraryInstancesBase extends ArbitraryInstances0 {
       for (f <- fun.arbitrary) yield { case (t: Throwable) => f(t.hashCode()) }
     }
 
-  implicit def arbitraryTaskToLong[A, B](implicit A: Arbitrary[A], B: Arbitrary[B]): Arbitrary[Task[A] => B] =
+  implicit def arbitraryTaskToLong[A, B](implicit B: Arbitrary[B]): Arbitrary[Task[A] => B] =
     Arbitrary {
       for (b <- B.arbitrary) yield (_: Task[A]) => b
     }
 
-  implicit def arbitraryIOToLong[A, B](implicit A: Arbitrary[A], B: Arbitrary[B]): Arbitrary[CIO[A] => B] =
+  implicit def arbitraryIOToLong[A, B](implicit B: Arbitrary[B]): Arbitrary[CIO[A] => B] =
     Arbitrary {
       for (b <- B.arbitrary) yield (_: CIO[A]) => b
     }
@@ -246,27 +257,7 @@ trait ArbitraryInstancesBase extends ArbitraryInstances0 {
     catsEffectLawsCogenForIO
 }
 
-trait BaseLawsSuite0 extends Checkers with ArbitraryInstances0 {
-
-  def isJVM = true
-//
-//  override lazy val checkConfig: Parameters =
-//    org.scalacheck.Test.Parameters.default
-//      .withMinSuccessfulTests(if (isJVM) 100 else 10)
-//      .withMaxDiscardRatio(if (isJVM) 5.0f else 50.0f)
-
-//  lazy val slowCheckConfig: Parameters =
-//    org.scalacheck.Test.Parameters.default
-//      .withMinSuccessfulTests(10)
-//      .withMaxDiscardRatio(50.0f)
-//      .withMaxSize(6)
-}
-
 trait ArbitraryInstances0 extends ArbitraryInstancesBase0 {
-
-  /** Syntax for equivalence in tests. */
-  implicit def isEqListToProp[A](list: List[IsEq[A]])(implicit A: Eq[A]): Prop =
-    Prop(list.forall(isEq => A.eqv(isEq.lhs, isEq.rhs)))
 
   implicit def equalityCancelableFuture[E, A](
     implicit
@@ -305,7 +296,7 @@ trait ArbitraryInstances0 extends ArbitraryInstancesBase0 {
     Cogen[Unit].contramap(_ => ())
 }
 
-trait ArbitraryInstancesBase0 extends cats.instances.AllInstances with TestUtils {
+trait ArbitraryInstancesBase0 extends EqThrowable with TestUtils {
 
   implicit def equalityFutureEither[E, A](implicit A: Eq[A], E: Eq[E], ec: TestScheduler): Eq[Future[Either[E, A]]] =
     new Eq[Future[Either[E, A]]] {
@@ -377,28 +368,9 @@ trait ArbitraryInstancesBase0 extends cats.instances.AllInstances with TestUtils
       }
     }
 
-  implicit lazy val equalityThrowable: Eq[Throwable] = new Eq[Throwable] {
-    override def eqv(x: Throwable, y: Throwable): Boolean = {
-      val ex1 = extractEx(x)
-      val ex2 = extractEx(y)
-      ex1.getClass == ex2.getClass && ex1.getMessage == ex2.getMessage
-    }
-
-    // Unwraps exceptions that got caught by Future's implementation
-    // and that got wrapped in ExecutionException (`Future(throw ex)`)
-    private[this] def extractEx(ex: Throwable): Throwable =
-      ex match {
-        case ref: ExecutionException =>
-          Option(ref.getCause).getOrElse(ref)
-        case _ =>
-          ex
-      }
-  }
-
   implicit def equalityTry[A: Eq]: Eq[Try[A]] =
     new Eq[Try[A]] {
       val optA = implicitly[Eq[Option[A]]]
-      val optT = implicitly[Eq[Option[Throwable]]]
 
       def eqv(x: Try[A], y: Try[A]): Boolean =
         if (x.isSuccess) optA.eqv(x.toOption, y.toOption)
@@ -443,21 +415,4 @@ trait TestUtils {
       }
     }
 
-  /**
-    * Catches `System.err` output, for testing purposes.
-    */
-  def catchSystemErr(thunk: => Unit): String =
-    synchronized {
-      val oldErr = System.err
-      val outStream = new ByteArrayOutputStream()
-      val fakeErr = new PrintStream(outStream)
-      System.setErr(fakeErr)
-      try {
-        thunk
-      } finally {
-        System.setErr(oldErr)
-        fakeErr.close()
-      }
-      outStream.toString("utf-8")
-    }
 }

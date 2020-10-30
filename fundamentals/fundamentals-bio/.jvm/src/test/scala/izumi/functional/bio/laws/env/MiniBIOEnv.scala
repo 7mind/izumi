@@ -7,7 +7,7 @@ import org.scalacheck.Arbitrary
 
 import scala.util.Try
 
-trait MiniBIOEnv {
+trait MiniBIOEnv extends EqThrowable {
   implicit def arbMiniBIO[A](implicit arb: Arbitrary[A]): Arbitrary[MiniBIO[Throwable, A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_) arb.arbitrary.map(IO2[MiniBIO].pure(_))
@@ -23,10 +23,5 @@ trait MiniBIOEnv {
   }
 
   private[this] def equalityTry[A: Eq]: Eq[Try[A]] =
-    new Eq[Try[A]] {
-      val optA: Eq[Option[A]] = Eq[Option[A]]
-      override def eqv(x: Try[A], y: Try[A]): Boolean =
-        if (x.isSuccess) optA.eqv(x.toOption, y.toOption)
-        else y.isFailure
-    }
+    Eq.by(_.toEither)
 }
