@@ -6,9 +6,12 @@ import scala.collection.compat._
 import scala.language.implicitConversions
 
 trait IzEither {
-  @inline implicit final def EitherBiAggregate[L, R, Col[x] <: IterableOnce[x]](result: Col[Either[List[L], R]]): EitherBiAggregate[L, R, Col] = new EitherBiAggregate(
-    result
-  )
+  @inline implicit final def EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](
+    result: Col[Either[Src[L], R]]
+  ): EitherBiAggregate[L, R, Src, Col] =
+    new EitherBiAggregate(
+      result
+    )
   @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](
     result: Col[Either[List[L], Col2[R]]]
   ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(result)
@@ -116,7 +119,7 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiAggregate[L, R, Col[x] <: IterableOnce[x]](private val result: Col[Either[List[L], R]]) extends AnyVal {
+  final class EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](private val result: Col[Either[Src[L], R]]) extends AnyVal {
     /** `sequence` with error accumulation */
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
       val bad = List.newBuilder[L]

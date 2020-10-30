@@ -1,6 +1,7 @@
 package izumi.distage.model.provisioning
 
 import izumi.distage.model.Locator
+import izumi.distage.model.exceptions.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp
 
 import scala.util.Try
@@ -11,10 +12,13 @@ final case class ProvisioningFailureContext(
   step: ExecutableOp,
 )
 
-final case class ProvisioningFailure(
+sealed trait ProvisioningFailure
+
+final case class AggregateFailure(failures: Seq[ProvisionerIssue]) extends ProvisioningFailure
+final case class StepProvisioningFailure(
   op: ExecutableOp,
   failure: Throwable,
-)
+) extends ProvisioningFailure
 
 trait ProvisioningFailureInterceptor {
   def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]

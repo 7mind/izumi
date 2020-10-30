@@ -195,11 +195,11 @@ object Izumi {
       )
 
       final val outOfSource = Seq(
-        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("${Projects
-          .root.id.value}")).value.toPath().relativize(baseDirectory.value.toPath)).toFile""".raw
+//        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("${Projects
+//          .root.id.value}")).value.toPath().relativize(baseDirectory.value.toPath)).toFile""".raw
       )
 
-      final val settings = Seq()
+      final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource ++ Seq(
         "crossScalaVersions" := Targets.targetScala.map(_.value),
@@ -207,8 +207,8 @@ object Izumi {
       )
 
       final val rootSettings = Defaults.SharedOptions ++ Seq(
-        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
-          .root.id.value}").toFile""".raw,
+//        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
+//          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
@@ -222,7 +222,7 @@ object Izumi {
             |    Some(Opts.resolver.sonatypeSnapshots)
             |})
             |""".stripMargin.raw,
-        "credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
+        //"credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
         "credentials" in SettingScope.Build += """Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties")""".raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
@@ -680,7 +680,7 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    topLevelSettings = Projects.root.settings,
+    topLevelSettings = Projects.root.topLevelSettings,
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
     rootSettings = Projects.root.rootSettings,

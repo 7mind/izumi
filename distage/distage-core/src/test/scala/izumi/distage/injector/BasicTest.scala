@@ -20,6 +20,8 @@ class BasicTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
     val definition = PlannerInput(
       new ModuleDef {
+        make[Bullshit1]
+        make[Bullshit2]
         make[TestClass]
         make[TestDependency3]
         make[TestDependency0].from[TestImpl0]
@@ -30,6 +32,8 @@ class BasicTest extends AnyWordSpec with MkInjector {
       },
       Activation.empty,
       DIKey[TestDependency1],
+      DIKey[Bullshit1],
+      DIKey[Bullshit2],
       DIKey[LocatorDependent],
     )
 

@@ -1,10 +1,13 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.plan.ExecutableOp.MonadicOp
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.reflection.SafeType
 
-class IncompatibleEffectTypesException(val op: MonadicOp, val provisionerEffectType: SafeType, val actionEffectType: SafeType)
-  extends DIException(IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType))
+sealed trait ProvisionerIssue
+
+case class MissingImport(op: ImportDependency) extends ProvisionerIssue
+
+case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue
 
 object IncompatibleEffectTypesException {
   def format(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType): String = {

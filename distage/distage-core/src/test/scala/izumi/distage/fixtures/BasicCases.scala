@@ -61,6 +61,9 @@ object BasicCases {
 
     case class LocatorDependent(ref: LocatorRef)
 
+    case class Bullshit1(a: String)
+    case class Bullshit2(a: Int)
+
   }
 
   object BasicCase2 {

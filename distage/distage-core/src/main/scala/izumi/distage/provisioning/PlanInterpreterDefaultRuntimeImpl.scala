@@ -9,7 +9,7 @@ import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.IncompatibleEffectTypesException
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, ProvisionerIssue}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
@@ -18,10 +18,12 @@ import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection._
+import izumi.functional.IzEither._
 import izumi.reflect.TagK
 
 import scala.annotation.nowarn
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -76,62 +78,54 @@ class PlanInterpreterDefaultRuntimeImpl(
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
     val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
-    def processStep(step: ExecutableOp): F[Unit] = {
+    def currentContext() = {
+      LocatorContext(mutProvisioningContext.toImmutable, parentContext)
+    }
+
+    def failureContext(step: NonImportOp): ProvisioningFailureContext = {
+      ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
+    }
+    def doStep(step: NonImportOp): F[Either[Throwable, Seq[NewObjectOp]]] = {
+      for {
+        maybeResult <- F.definitelyRecover[Try[Seq[NewObjectOp]]](
+          action = execute(currentContext(), step).map(Success(_))
+        )(recover =
+          exception =>
+            F.maybeSuspend {
+              failureHandler
+                .onExecutionFailed(failureContext(step))
+                .applyOrElse(exception, Failure(_: Throwable))
+            }
+        )
+      } yield {
+        maybeResult.toEither
+      }
+    }
+
+    def processStep[T <: ExecutableOp, E](h: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
       for {
         before <- F.maybeSuspend(System.nanoTime())
         excludeOp <- F.maybeSuspend(mutExcluded.contains(step.target))
-        _ <-
-          if (excludeOp) {
-            F.unit
-          } else {
-            val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
-
-            F.definitelyRecover[Try[Seq[NewObjectOp]]](
-              action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
-            )(recover =
-              exception =>
-                F.maybeSuspend {
-                  failureHandler
-                    .onExecutionFailed(failureContext)
-                    .applyOrElse(exception, Failure(_: Throwable))
-                }
-            ).flatMap {
-                case Success(newObjectOps) =>
-                  F.maybeSuspend {
-                    newObjectOps.foreach {
-                      newObject =>
-                        val maybeSuccess = Try {
-                          interpretResult(mutProvisioningContext, newObject)
-                        }.recoverWith(failureHandler.onBadResult(failureContext))
-
-                        maybeSuccess match {
-                          case Success(_) =>
-                          case Failure(failure) =>
-                            mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                            mutFailures += ProvisioningFailure(step, failure)
-                        }
-                    }
-                  }
-
-                case Failure(failure) =>
-                  F.maybeSuspend {
-                    mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                    mutFailures += ProvisioningFailure(step, failure)
-                    ()
-                  }
-              }
-          }
+        r <- F.ifThenElse(excludeOp)(F.pure(Right(Seq.empty[NewObjectOp]): Either[E, Seq[NewObjectOp]]), h(step))
         after <- F.maybeSuspend(System.nanoTime())
       } yield {
         val time = after - before
         meta.put(step.target, time)
-        ()
+        r
       }
     }
 
-    val (imports, otherSteps) = plan.steps.partition {
-      case _: ImportDependency => true
-      case _ => false
+    def doImport(step: ImportDependency): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+      F.maybeSuspend(importStrategy.importDependency(currentContext(), this, step))
+    }
+
+    val imports = new ArrayBuffer[ImportDependency]()
+    val otherSteps = new ArrayBuffer[NonImportOp]()
+    plan.steps.foreach {
+      case i: ImportDependency =>
+        imports.append(i)
+      case o: NonImportOp =>
+        otherSteps.append(o)
     }
 
     @nowarn("msg=Unused import")
@@ -144,41 +138,79 @@ class PlanInterpreterDefaultRuntimeImpl(
       Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
     }
 
+    def runSteps(otherSteps: ArrayBuffer[ExecutableOp.NonImportOp]): F[Unit] = {
+      F.traverse(otherSteps)(
+        step =>
+          processStep(doStep)(step).flatMap {
+            case Right(newObjectOps) =>
+              F.maybeSuspend {
+                newObjectOps.foreach {
+                  newObject =>
+                    val maybeSuccess = Try {
+                      interpretResult(mutProvisioningContext, newObject)
+                    }.recoverWith(failureHandler.onBadResult(failureContext(step)))
+
+                    maybeSuccess match {
+                      case Success(_) =>
+                      case Failure(failure) =>
+                        mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                        mutFailures += StepProvisioningFailure(step, failure)
+                    }
+                }
+              }
+
+            case Left(failure) =>
+              F.maybeSuspend {
+                mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                mutFailures += StepProvisioningFailure(step, failure)
+                ()
+              }
+          }
+      )
+        .map(_ => ())
+
+    }
+
     for {
       // do imports first before everything
-      _ <- F.traverse_(imports)(processStep)
+      importResults <- F.traverse(imports)(processStep(doImport)).map(_.biAggregateScalar)
       // verify effect type for everything else first before everything
-      _ <- verifyEffectType[F](otherSteps)(failure => F.maybeSuspend(mutFailures += failure))
+      effectIssues <- verifyEffectType[F](otherSteps.toSeq)
 
-      failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
-      immutable = mutProvisioningContext.toImmutable
-      res <-
-        if (failedImportsOrEffects) {
-          F.maybeSuspend(doFail(immutable))
-        } else {
-          F.traverse_(otherSteps)(processStep)
-            .flatMap {
-              _ =>
-                F.maybeSuspend {
-                  if (mutFailures.nonEmpty) {
-                    doFail(immutable)
-                  } else {
-                    val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), makeMeta(), immutable)
-                    val res = Right(finalLocator)
-                    locatorRef.ref.set(res)
-                    res
-                  }
-                }
-            }
-        }
-    } yield res
+      allIssues = importResults.left.getOrElse(List.empty) ++ effectIssues.left.getOrElse(List.empty)
+
+      _ <- F.ifThenElse(allIssues.isEmpty)(
+        F.unit,
+        F.maybeSuspend {
+          mutFailures += AggregateFailure(allIssues)
+          ()
+        },
+      )
+
+      _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => interpretResult(mutProvisioningContext, r)))
+
+      out <- F.ifThenElse(mutFailures.nonEmpty)(
+        F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
+        runSteps(otherSteps).flatMap {
+          _ =>
+            F.ifThenElse(mutFailures.nonEmpty)(
+              F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
+              F.maybeSuspend {
+                val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), makeMeta(), mutProvisioningContext.toImmutable)
+                locatorRef.ref.set(Right(finalLocator))
+                Right(finalLocator): Either[FailedProvision[F], LocatorDefaultImpl[F]]
+              },
+            )
+        },
+      )
+
+    } yield {
+      out
+    }
   }
 
-  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: QuasiIO[F]): F[Seq[NewObjectOp]] = {
+  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: NonImportOp)(implicit F: QuasiIO[F]): F[Seq[NewObjectOp]] = {
     step match {
-      case op: ImportDependency =>
-        F pure importStrategy.importDependency(context, this, op)
-
       case op: CreateSet =>
         F pure setStrategy.makeSet(context, this, op)
 
@@ -238,20 +270,19 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
   }
 
-  private[this] def verifyEffectType[F[_]: TagK](ops: Vector[ExecutableOp])(addFailure: ProvisioningFailure => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
-    val provisionerEffectType = SafeType.getK[F]
+  private[this] def verifyEffectType[F[_]: TagK](
+    ops: Seq[NonImportOp]
+  )(implicit F: QuasiIO[F]
+  ): F[Either[Seq[IncompatibleEffectTypesException], Unit]] = {
     val monadicOps = ops.collect { case m: MonadicOp => m }
-    F.traverse_(monadicOps) {
-      op =>
-        val actionEffectType = op.effectHKTypeCtor
-        val isEffect = actionEffectType != SafeType.identityEffectType
+    val badOps = monadicOps
+      .filter(_.isIncompatibleEffectType[F])
+      .map {
+        op =>
+          IncompatibleEffectTypesException(op, op.provisionerEffectType[F], op.actionEffectType)
+      }
 
-        if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
-          addFailure(ProvisioningFailure(op, new IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType)))
-        } else {
-          F.unit
-        }
-    }
+    F.ifThenElse(badOps.isEmpty)(F.pure(Right(())), F.pure(Left(badOps)))
   }
 
 }
