@@ -60,10 +60,6 @@ object BasicCases {
     class Impl3 extends JustTrait
 
     case class LocatorDependent(ref: LocatorRef)
-
-    case class Bullshit1(a: String)
-    case class Bullshit2(a: Int)
-
   }
 
   object BasicCase2 {

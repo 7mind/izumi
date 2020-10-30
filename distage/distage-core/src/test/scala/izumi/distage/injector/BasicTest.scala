@@ -20,8 +20,6 @@ class BasicTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
     val definition = PlannerInput(
       new ModuleDef {
-        make[Bullshit1]
-        make[Bullshit2]
         make[TestClass]
         make[TestDependency3]
         make[TestDependency0].from[TestImpl0]
@@ -32,8 +30,6 @@ class BasicTest extends AnyWordSpec with MkInjector {
       },
       Activation.empty,
       DIKey[TestDependency1],
-      DIKey[Bullshit1],
-      DIKey[Bullshit2],
       DIKey[LocatorDependent],
     )
 
@@ -45,7 +41,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       injector.produce(plan).unsafeGet()
     }
 
-    assert(exc.getMessage.linesIterator.toList.head == "Provisioner stopped after 1 instances, 1/4 operations failed:")
+    assert(exc.getMessage.linesIterator.toList.head == "Provisioner failed on 1 of 4 required operations, just 1 succeeded:")
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
