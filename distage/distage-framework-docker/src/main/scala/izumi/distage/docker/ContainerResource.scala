@@ -282,11 +282,15 @@ case class ContainerResource[F[_], T](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        logger.info(s"Going to pull `${config.image}`...")
-        rawClient
-          .pullImageCmd(config.image)
-          .start()
-          .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
+        if (config.alwaysPull) {
+          logger.info(s"Going to pull `${config.image}`...")
+          rawClient
+            .pullImageCmd(config.image)
+            .start()
+            .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
+        } else {
+          logger.info(s"Skipping explicit pull of `${config.image}`")
+        }
 
         logger.debug(s"Going to create container from image `${config.image}`...")
         val res = cmd.exec()
