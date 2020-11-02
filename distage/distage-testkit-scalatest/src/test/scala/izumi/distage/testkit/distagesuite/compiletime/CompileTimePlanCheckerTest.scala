@@ -3,7 +3,7 @@ package izumi.distage.testkit.distagesuite.compiletime
 import com.github.pshirshov.test.plugins.StaticTestMain
 import com.github.pshirshov.test2.plugins.Fixture.TestRoleAppMain2
 import izumi.distage.framework.{PlanCheck, PlanCheckCompileTime}
-import izumi.distage.model.exceptions.InvalidPlanException
+import izumi.distage.model.exceptions.{InvalidPlanException, PlanCheckException}
 import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
@@ -32,7 +32,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "regression test: can again check when config is false after 1.0" in {
     PlanCheck
       .checkRoleApp(StaticTestMain, "statictestrole", "test:y", "check-test-bad.conf")
-      .issues.exists(_.getMessage.contains("Expected type NUMBER. Found STRING instead"))
+      .maybeErrorMessage.exists(_.contains("Expected type NUMBER. Found STRING instead"))
 
     val err = intercept[TestFailedException] {
       assertCompiles("""PlanCheckCompileTime.checkRoleApp(StaticTestMain, "statictestrole", "test:y", "check-test-bad.conf")""")
@@ -44,7 +44,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert {
       PlanCheck
         .checkRoleApp(StaticTestMain, "unknownrole")
-        .issues.exists(_.getMessage.contains("Unknown roles:"))
+        .maybeErrorMessage.exists(_.contains("Unknown roles:"))
     }
 
     val err = intercept[Throwable](assertCompiles("""
@@ -54,7 +54,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "onlyWarn mode does not fail compilation on errors" in {
-    assertThrows[InvalidPlanException] {
+    assertThrows[PlanCheckException] {
       PlanCheck.checkRoleApp(StaticTestMain, "statictestrole", config = "check-test-bad.conf").throwOnError()
     }
     assertTypeError(
@@ -77,7 +77,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       ).throwOnError()
 
     And("fail without exclusion")
-    intercept[InvalidPlanException] {
+    intercept[PlanCheckException] {
       PlanCheck
         .checkRoleApp(
           TestRoleAppMain2
@@ -102,13 +102,31 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       checkConfig = false,
     ).planCheck.check().throwOnError()
 
-    intercept[InvalidPlanException] {
+    assertTypeError(
+      """
+       new PlanCheckCompileTime.Main(
+        TestEntrypointPatchedLeak,
+        checkConfig = false,
+      ).planCheck.check().throwOnError()
+      """
+    )
+
+    intercept[PlanCheckException] {
       PlanCheck
         .checkRoleApp(
           TestEntrypointPatchedLeak,
           checkConfig = false,
         ).throwOnError()
     }
+  }
+
+  "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
+    val issues = PlanCheck
+      .checkRoleApp(
+        TestEntrypointPatchedLeak,
+        excludeActivations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
+      ).maybeError
+    assert(issues.isDefined)
   }
 
   "role app fails config check if config file with insufficient configs is passed" in {
@@ -121,7 +139,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     """))
     assert(errCompile.getMessage.contains("DIConfigReadException"))
 
-    val errRuntime = intercept[InvalidPlanException] {
+    val errRuntime = intercept[PlanCheckException] {
       PlanCheck
         .checkRoleApp(
           TestEntrypointPatchedLeak,
@@ -144,7 +162,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(errCompile.getMessage.contains("Required by refs:"))
     assert(errCompile.getMessage.contains("XXX_LocatorLeak"))
 
-    val errRuntime = intercept[InvalidPlanException](
+    val errRuntime = intercept[PlanCheckException](
       PlanCheck
         .checkRoleApp(
           TestEntrypoint,

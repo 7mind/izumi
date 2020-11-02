@@ -331,7 +331,6 @@ class PlanVerifier(
         if (unsaturatedChoices.nonEmpty && !isIgnoredActivation(excludedActivations)(unsaturatedChoices)) {
           // TODO: quadratic
           if (opAxisSets.forall(_ contains currentAxis)) {
-//            ???
             Some(UnsaturatedAxis(ops.head._1.target, currentAxis, NonEmptySet.unsafeFrom(unsaturatedChoices)))
           } else None
         } else None
@@ -420,6 +419,12 @@ object PlanVerifier {
 
     /** There is no possible activation that could choose a unique binding among these contradictory axes */
     final case class UnsolvableConflict(key: DIKey, ops: NonEmptySet[(OperationOrigin, Set[AxisPoint])]) extends PlanIssue
+
+    /**
+      * A config binding (from `distage-extension-config` module) could not be parsed from the reference config using configured binding.
+      * Note: [[PlanVerifier]] will not detect this issue, but it may be returned by [[izumi.distage.framework.PlanCheck]]
+      */
+    final case class UnparseableConfigBinding(key: DIKey, op: OperationOrigin, exception: Throwable) extends PlanIssue
 
     /** A distage bug, should never happen (bindings machinery guarantees a unique key for each set member, they cannot have the same key by construction) */
     final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue

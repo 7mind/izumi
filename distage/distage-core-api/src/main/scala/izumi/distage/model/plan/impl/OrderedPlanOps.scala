@@ -43,7 +43,6 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
     */
-  @throws[InvalidPlanException]
   final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
     isValid(ignoredImports).fold(())(throw _)
   }
@@ -74,10 +73,9 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     */
   final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
     val locatorRefKey = DIKey[LocatorRef]
-    val nonMagicImports = steps
-      .iterator.collect {
-        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
-      }.toList
+    val nonMagicImports = steps.iterator.collect {
+      case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
+    }.toList
     NonEmptyList.from(nonMagicImports)
   }
   final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
@@ -92,10 +90,9 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     */
   final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
     val effectType = SafeType.getK[F]
-    val badSteps = steps
-      .iterator.collect {
-        case op: MonadicOp if !(op.effectHKTypeCtor <:< effectType || op.effectHKTypeCtor <:< SafeType.identityEffectType) => op
-      }.toList
+    val badSteps = steps.iterator.collect {
+      case op: MonadicOp if !(op.effectHKTypeCtor <:< effectType || op.effectHKTypeCtor <:< SafeType.identityEffectType) => op
+    }.toList
     NonEmptyList.from(badSteps)
   }
 

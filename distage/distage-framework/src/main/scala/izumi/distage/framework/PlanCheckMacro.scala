@@ -4,7 +4,6 @@ import izumi.distage.framework.PlanCheck.PlanCheckResult
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.roles.PlanHolder
-import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
 
 import scala.reflect.api.Universe
@@ -69,21 +68,20 @@ object PlanCheckMacro {
       ) match {
         case PlanCheckResult.Correct(loadedPlugins) =>
           loadedPlugins
-        case PlanCheckResult.Incorrect(loadedPlugins, exception) =>
+        case PlanCheckResult.Incorrect(loadedPlugins, message, _) =>
           val warn = onlyWarn.getOrElse(sysPropOnlyWarn)
           if (warn) {
-            c.warning(c.enclosingPosition, exception.stackTrace)
+            c.warning(c.enclosingPosition, message)
             loadedPlugins
           } else {
-            c.abort(c.enclosingPosition, exception.stackTrace)
+            c.abort(c.enclosingPosition, message)
           }
       }
 
     // filter out anonymous classes that can't be referred in code
     // & retain only those that are suitable for being loaded by PluginLoader (objects / zero-arg classes) -
     // and that can be easily instantiated with `new`
-    val referencablePlugins = checkedLoadedPlugins
-      .allRaw
+    val referencablePlugins = checkedLoadedPlugins.allRaw
       .filterNot(TypeUtil isAnonymous _.getClass)
       .filter(p => TypeUtil.isObject(p.getClass).isDefined || TypeUtil.isZeroArgClass(p.getClass).isDefined)
 

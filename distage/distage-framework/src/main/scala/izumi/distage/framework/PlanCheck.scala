@@ -7,14 +7,15 @@ import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition._
-import izumi.distage.model.exceptions.InvalidPlanException
-import izumi.distage.model.plan.{OrderedPlan, Roots}
+import izumi.distage.model.exceptions.PlanCheckException
+import izumi.distage.model.plan.Roots
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.{PlanVerifierConfig, PlanVerifierResult}
+import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierConfig, PlanVerifierResult}
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.launcher.RoleProvider
@@ -22,7 +23,6 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
@@ -34,22 +34,24 @@ import scala.annotation.{nowarn, tailrec}
 object PlanCheck {
   final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
 
-  sealed abstract class PlanCheckResult {
+  sealed trait PlanCheckResult {
     def loadedPlugins: LoadedPlugins
-    def issues: Option[InvalidPlanException]
+    def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]]
+    def maybeErrorMessage: Option[String]
 
-    @throws[InvalidPlanException]
     final def throwOnError(): LoadedPlugins = this match {
       case PlanCheckResult.Correct(loadedPlugins) => loadedPlugins
-      case PlanCheckResult.Incorrect(_, exception) => throw exception
+      case PlanCheckResult.Incorrect(_, message, _) => throw new PlanCheckException(message)
     }
   }
   object PlanCheckResult {
     final case class Correct(loadedPlugins: LoadedPlugins) extends PlanCheckResult {
-      override def issues: Option[InvalidPlanException] = None
+      override def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]] = None
+      override def maybeErrorMessage: Option[String] = None
     }
-    final case class Incorrect(loadedPlugins: LoadedPlugins, exception: InvalidPlanException) extends PlanCheckResult {
-      override def issues: Option[InvalidPlanException] = Some(exception)
+    final case class Incorrect(loadedPlugins: LoadedPlugins, message: String, cause: Either[Throwable, NonEmptySet[PlanIssue]]) extends PlanCheckResult {
+      override def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]] = Some(cause)
+      override def maybeErrorMessage: Option[String] = Some(message)
     }
   }
 
@@ -108,10 +110,10 @@ object PlanCheck {
     var effectiveConfig = "unknown, failed too early"
     var effectiveLoadedPlugins = LoadedPlugins.empty
 
-    def handlePlanError(t: Throwable, plan: Option[OrderedPlan]): PlanCheckResult.Incorrect = {
+    def returnPlanCheckError(cause: Either[Throwable, NonEmptySet[PlanIssue]]): PlanCheckResult.Incorrect = {
       val message = {
-        cutoffMacroTrace(t)
-        val confiStr = if (checkConfig) {
+        val errorMsg = cause.fold(_.toString, _.toSet.niceList())
+        val configStr = if (checkConfig) {
           s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
         } else {
           ""
@@ -121,15 +123,15 @@ object PlanCheck {
            |  roles               = $chosenRoles (effective: $effectiveRoles)
            |  excludedActivations = ${excludedActivations.mkString(" ")}
            |  plugins             = $effectivePlugins
-           |  checkConfig         = $checkConfig$confiStr
+           |  checkConfig         = $checkConfig$configStr
            |
            |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
            |
-           |${t.stackTrace}
+           |$errorMsg
            |""".stripMargin
       }
 
-      PlanCheckResult.Incorrect(effectiveLoadedPlugins, new InvalidPlanException(message, plan, omitClassName = true, captureStackTrace = false))
+      PlanCheckResult.Incorrect(effectiveLoadedPlugins, message, cause)
     }
 
     try {
@@ -174,7 +176,8 @@ object PlanCheck {
           }
 
           val bindings = bootloader.input.bindings
-          val reachableKeys: Set[DIKey] = {
+
+          val PlanVerifierResult(issues, reachableKeys) = {
             // need to ignore bsModule,  Injector parent, defaults
             val veryBadInjectorContext = {
               bootloader
@@ -186,7 +189,7 @@ object PlanCheck {
                   )
                 ).injector.produceGet[LocatorRef](Module.empty).use(_.get.allInstances.map(_.key)).toSet
             }
-            val PlanVerifierResult(issues, reachableKeys) = PlanVerifier().verify(
+            PlanVerifier().verify(
               bindings = bindings,
               roots = Roots(rolesInfo.requiredComponents),
               planVerifierConfig = PlanVerifierConfig(
@@ -198,33 +201,39 @@ object PlanCheck {
                 excludedActivations = excludedActivations,
               ),
             )
-            if (issues.nonEmpty) {
-              throw new InvalidPlanException(issues.niceList(), None, false, false)
-            } else {
-              reachableKeys
-            }
           }
 
-          if (checkConfig) {
+          val configIssues = if (checkConfig) {
             val realAppConfig = configLoader.loadConfig()
-            effectiveConfig = s"* (effective: `${realAppConfig.config.origin()}`)"
+            effectiveConfig = realAppConfig.config.origin().toString
             // FIXME: does not consider bsModule for reachability [must test it]
-            val parsers = bindings.iterator
+            bindings.iterator
               .filter(reachableKeys contains _.key)
-              .flatMap(_.tags.iterator.collect { case c: ConfTag => c.parser })
-              .toArray
-            parsers.foreach(_.apply(realAppConfig))
+              .flatMap(b => b.tags.iterator.collect { case c: ConfTag => (b, c.parser) })
+              .flatMap {
+                case (b, parser) =>
+                  try { parser(realAppConfig); None }
+                  catch {
+                    case t: Throwable =>
+                      cutoffMacroTrace(t)
+                      Some(PlanIssue.UnparseableConfigBinding(b.key, OperationOrigin.UserBinding(b), t))
+                  }
+              }.toList
+          } else {
+            Nil
           }
 
-          PlanCheckResult.Correct(loadedPlugins)
+          NonEmptySet.from(issues ++ configIssues) match {
+            case Some(allIssues) =>
+              returnPlanCheckError(Right(allIssues))
+            case None =>
+              PlanCheckResult.Correct(loadedPlugins)
+          }
       })
     } catch {
       case t: Throwable =>
-        val plan = t match {
-          case t: InvalidPlanException => t.plan
-          case _ => None
-        }
-        handlePlanError(t, plan)
+        cutoffMacroTrace(t)
+        returnPlanCheckError(Left(t))
     }
   }
 

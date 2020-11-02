@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Modu
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.functional.bio.BIOExit
+import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
@@ -75,11 +75,11 @@ object ModuleProvider {
     make[FailureHandler].from {
       logger: IzLogger =>
         FailureHandler.Custom {
-          case BIOExit.Error(error, trace) =>
+          case Exit.Error(error, trace) =>
             logger.warn(s"Fiber errored out due to unhandled $error $trace")
-          case BIOExit.Termination(interrupt, (_: InterruptedException) :: _, trace) =>
+          case Exit.Interruption(interrupt, trace) =>
             logger.trace(s"Fiber interrupted with $interrupt $trace")
-          case BIOExit.Termination(defect, _, trace) =>
+          case Exit.Termination(defect, _, trace) =>
             logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
         }
     }
