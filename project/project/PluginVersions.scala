@@ -2,7 +2,7 @@ object PV {
   val sbt_mdoc = "2.2.11"
   val sbt_paradox_material_theme = "0.6.0"
   val sbt_ghpages = "0.6.3"
-  val sbt_site = "1.4.1"
+  val sbt_site = "1.3.3"
   val sbt_unidoc = "0.4.3"
   val sbt_scoverage = "1.6.1"
   val sbt_pgp = "2.0.1"
