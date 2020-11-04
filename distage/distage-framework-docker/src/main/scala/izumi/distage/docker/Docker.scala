@@ -109,6 +109,9 @@ object Docker {
     * @param cwd      Working directory to use inside the docker container
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
+    *
+    * @param alwaysPull Pull the image before starting the container
+    *                   default: true
     */
   final case class ContainerConfig[T](
     image: String,
@@ -128,6 +131,7 @@ object Docker {
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.portCheck[T],
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
+    alwaysPull: Boolean = true,
   ) {
     def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
     def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
