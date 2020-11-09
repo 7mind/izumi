@@ -9,7 +9,7 @@ object V {
   val silencer = "1.7.1"
   val neme_plugin = "0.0.5"
 
-  val scalatest = "3.2.2"
+  val scalatest = "3.2.3"
 
   val cats = "2.2.0"
   val cats_effect = "2.2.0"
