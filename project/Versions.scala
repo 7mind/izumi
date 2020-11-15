@@ -21,7 +21,7 @@ object V {
   val zio_interop_cats = "2.2.0.1"
 
   val monix = "3.3.0"
-  val monix_bio = "1.0.0"
+  val monix_bio = "1.1.0"
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
