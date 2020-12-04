@@ -3,9 +3,9 @@ object V {
   val izumi_reflect = "1.0.0-M11"
 
   // foundation
-  val collection_compat = "2.3.0"
+  val collection_compat = "2.3.1"
 
-  val kind_projector = "0.11.0"
+  val kind_projector = "0.11.2"
   val silencer = "1.7.1"
   val neme_plugin = "0.0.5"
 
@@ -21,7 +21,7 @@ object V {
   val zio_interop_cats = "2.2.0.1"
 
   val monix = "3.3.0"
-  val monix_bio = "1.0.0"
+  val monix_bio = "1.1.0"
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
@@ -37,11 +37,11 @@ object V {
   val scalamock = "5.0.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.90"
+  val classgraph = "4.8.93"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val docker_java = "3.2.5"
+  val docker_java = "3.2.6"
 }
