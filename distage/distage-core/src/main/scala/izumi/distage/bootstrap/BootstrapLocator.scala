@@ -1,11 +1,8 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.AbstractLocator
 import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
-import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model._
 import izumi.distage.model.definition._
-import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
@@ -14,7 +11,6 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
-import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
 import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, SanityCheckerDefaultImpl}
@@ -24,60 +20,44 @@ import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
 
-import scala.collection.immutable
-
-final class BootstrapLocator(bindings0: BootstrapContextModule, bootstrapActivation: Activation) extends AbstractLocator {
-  override val parent: Option[AbstractLocator] = None
-  override val plan: OrderedPlan = {
-    // BootstrapModule & bootstrap plugins cannot modify `Activation` after 0.11.0,
-    // it's solely under control of `PlannerInput` now.
+object BootstrapLocator {
+  /**
+    * Create an initial bootstrap locator from a module with recipes for `Planner`, `PlanInterpreter` & `BootstrapModule`
+    *
+    * Workings of the `Injector` can be customized by changing the bootstrap module,
+    * e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
+    *
+    * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
+    *
+    * @param bootstrapBase Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
+    * @param bootstrapActivation A map of axes of configuration to choices along these axes
+    * @param overrides Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
+    *                  They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
+    */
+  def bootstrap(
+    bootstrapBase: BootstrapContextModule,
+    bootstrapActivation: Activation,
+    overrides: Seq[BootstrapModule],
+    parent: Option[Locator],
+  ): Locator = {
+    val bindings0 = bootstrapBase overriddenBy overrides.merge
+    // BootstrapModule & bootstrap plugins cannot modify `Activation` after 1.0, it's solely under control of `PlannerInput` now.
     // Please open an issue if you need the ability to override Activation using BootstrapModule
-    val bindings = bindings0 ++ new BootstrapModuleDef {
-      make[Activation].fromValue(bootstrapActivation)
-      make[BootstrapModule].fromValue(bindings0)
-    }
+    val bindings = bindings0 ++ BootstrapLocator.selfReflectionModule(bindings0, bootstrapActivation)
 
-    BootstrapLocator
-      .bootstrapPlanner
-      .plan(PlannerInput.noGC(bindings, bootstrapActivation))
-  }
+    val plan: OrderedPlan =
+      BootstrapLocator.bootstrapPlanner
+        .plan(bindings, bootstrapActivation, Roots.Everything)
 
-  override lazy val index: Map[DIKey, Any] = instances.map(i => i.key -> i.value).toMap
+    val resource =
+      BootstrapLocator.bootstrapProducer
+        .instantiate[Identity](plan, parent.getOrElse(Locator.empty), FinalizerFilter.all)
 
-  private[this] val bootstrappedContext: Locator = {
-    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.unsafeGet().throwOnFailure()
   }
 
-  private[this] val _instances: immutable.Seq[IdentifiedRef] = bootstrappedContext.instances
-
-  override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
-
-  override def meta: LocatorMeta = LocatorMeta.empty
-
-  override def instances: immutable.Seq[IdentifiedRef] = {
-    val instances = _instances
-    if (instances ne null) {
-      instances
-    } else {
-      throw new SanityCheckFailedException(s"Injector bootstrap tried to enumerate instances from root locator, something is terribly wrong")
-    }
-  }
-
-  override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
-    val instances = _instances
-    if (instances ne null) {
-      index.get(key)
-    } else {
-      throw new MissingInstanceException(s"Injector bootstrap tried to perform a lookup from root locator, bootstrap plan in incomplete! Missing key: $key", key)
-    }
-  }
-
-}
-
-object BootstrapLocator {
   private[this] final val mirrorProvider = MirrorProvider.Impl
   private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
   private[this] final val initProxiesAsap = izumi.distage.DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true)
@@ -87,7 +67,7 @@ object BootstrapLocator {
 
     val bootstrapObserver = new PlanningObserverAggregate(
       Set(
-        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator](izumi.distage.DebugProperties.`izumi.distage.debug.bootstrap`.name))
+        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator.type](izumi.distage.DebugProperties.`izumi.distage.debug.bootstrap`.name))
         //new GraphObserver(analyzer, Set.empty),
       )
     )
@@ -113,7 +93,6 @@ object BootstrapLocator {
   }
 
   private final val bootstrapProducer: PlanInterpreter = {
-    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider)
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
@@ -123,7 +102,7 @@ object BootstrapLocator {
       effectStrategy = new EffectStrategyDefaultImpl,
       resourceStrategy = new ResourceStrategyDefaultImpl,
       failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
-      verifier = verifier,
+      verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
     )
   }
@@ -145,14 +124,17 @@ object BootstrapLocator {
 
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
+
     make[Planner].from[PlannerDefaultImpl]
+    make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
+
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
-    make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
+
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptor.DefaultImpl]
 
     many[PlanningObserver]
@@ -170,5 +152,19 @@ object BootstrapLocator {
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }
 
-  final val defaultBootstrapActivation: Activation = Activation(Cycles -> Cycles.Proxy)
+  final val defaultBootstrapActivation: Activation = Activation(
+    Cycles -> Cycles.Proxy
+  )
+
+  private def selfReflectionModule(bindings0: BootstrapContextModule, bootstrapActivation: Activation): BootstrapModuleDef = {
+    new BootstrapModuleDef {
+      make[Activation].named("bootstrapActivation").fromValue(bootstrapActivation)
+      make[BootstrapModule].fromValue(bindings0)
+    }
+  }
+
+  lazy val selfReflectionKeys: Set[DIKey] = {
+    // passing nulls to prevent key list getting out of sync
+    selfReflectionModule(null, null.asInstanceOf[Activation]).keys
+  }
 }

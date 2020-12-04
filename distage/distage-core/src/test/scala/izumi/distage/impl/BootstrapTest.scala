@@ -11,7 +11,7 @@ class BootstrapTest extends AnyWordSpec {
 
   "Bootstrap Context" should {
     "contain expected definitions" in {
-      val context = new BootstrapLocator(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Byname))
+      val context = BootstrapLocator.bootstrap(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Byname), Nil, None)
 
       val maybeRef = context.find[PlanAnalyzer]
       val ref = context.lookupLocal[PlanAnalyzer](DIKey.get[PlanAnalyzer])

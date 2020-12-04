@@ -114,12 +114,14 @@ import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 package object bio extends Syntax3 with Syntax2 {
 
   /**
-    * A convenient dependent summoner for BIO* hierarchy.
+    * A convenient dependent summoner for BIO hierarchy.
     * Auto-narrows to the most powerful available class:
     *
     * {{{
-    *   def y[F[+_, +_]: BIOTemporal] = {
-    *     F.timeout(5.seconds)(F.forever(F.unit))
+    *   import izumi.functional.bio.{F, Temporal2}
+    *
+    *   def y[F[+_, +_]: Temporal2] = {
+    *     F.timeout(5.seconds)(F.unit)
     *   }
     * }}}
     */

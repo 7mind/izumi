@@ -3,7 +3,7 @@ package izumi.functional.bio.data
 import scala.language.implicitConversions
 
 /**
-  * Note: if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with FunctionKK,
+  * @note if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with Morphism3,
   * you must enable `-Xsource:2.13` compiler option. BIO does not work without this option on 2.12.
   */
 object Morphism3 {

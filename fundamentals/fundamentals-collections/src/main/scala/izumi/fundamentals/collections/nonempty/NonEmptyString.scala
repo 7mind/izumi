@@ -512,10 +512,9 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     */
   def groupBy[K](f: Char => K): Map[K, NonEmptyString] = {
     val mapKToString = theString.iterator.toSeq.groupBy(f)
-    mapKToString
-      .view.mapValues {
-        list => new NonEmptyString(list.mkString)
-      }.toMap
+    mapKToString.view.mapValues {
+      list => new NonEmptyString(list.mkString)
+    }.toMap
   }
 
   /**
@@ -786,7 +785,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * The length of this <code>NonEmptyString</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of characters in this <code>NonEmptyString</code>.
@@ -1024,7 +1023,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * An iterator yielding characters in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyString.reverseIterator</code> is the same as <code>nonEmptyString.reverse.iterator</code>, but might be more efficient.
+    * @note <code>nonEmptyString.reverseIterator</code> is the same as <code>nonEmptyString.reverse.iterator</code>, but might be more efficient.
     * </p>
     *
     * @return an iterator yielding the characters of this <code>NonEmptyString</code> in reversed order
@@ -1035,7 +1034,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Builds a new <code>Iterable</code> by applying a function to all characters of this <code>NonEmptyString</code> and collecting the results in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyString.reverseMap(f)</code> is the same as <code>nonEmptyString.reverse.map(f)</code>, but might be more efficient.
+    * @note <code>nonEmptyString.reverseMap(f)</code> is the same as <code>nonEmptyString.reverse.map(f)</code>, but might be more efficient.
     * </p>
     *
     * @tparam U the element type of the returned <code>Iterable</code>.
@@ -1076,7 +1075,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * Computes a prefix scan of the characters of this <code>NonEmptyString</code>.
     *
     * <p>
-    * Note: The neutral character z may be applied more than once.
+    * @note The neutral character z may be applied more than once.
     * </p>
     *
     * <p>
@@ -1170,7 +1169,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * The size of this <code>NonEmptyString</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of characters in this <code>NonEmptyString</code>.

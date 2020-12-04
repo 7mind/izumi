@@ -6,7 +6,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
 
 /**
-  * Note: default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker,
+  * @note default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker,
   * however, this cannot work if `resources` folder is virtual, inside the JAR, i.e. this module will only work
   * in development mode when resources are files on the filesystem.
   * If you need to use [[PostgresFlyWayDocker]] with JARs, please instantiate class [[PostgresFlyWayDocker]]

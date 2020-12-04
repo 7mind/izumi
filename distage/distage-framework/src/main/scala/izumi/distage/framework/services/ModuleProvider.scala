@@ -5,8 +5,9 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Module, ModuleDef}
+import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
 import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.Exit
@@ -17,6 +18,22 @@ import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.{LogIOModule, LogstageModule}
 import izumi.reflect.TagK
 
+/**
+  * This component is responsible for passing-through selected components from the outer [[izumi.distage.roles.MainAppModule]]
+  * context into DI scope of the started application.
+  *
+  * The application doesn't outright [[distage.Injector.inherit inherit]] the outer context because that would
+  * bring in way too many unrelated components into scope.
+  *
+  * This will also add some other useful components:
+  *
+  *   - GraphViz dump hook will be enabled if [[PlanningOptions#addGraphVizDump]] is enabled (via `--debug-dump-graph` commandline parameter)
+  *   - `IzLogger` will be passed in from the outer context
+  *   - `LogIO[F]` will be available with the application's effect type
+  *   - `LocatorRef @Id("roleapp")` allows accessing components from outer context if needed
+  *
+  * @see [[https://izumi.7mind.io/distage/debugging#graphviz-rendering GraphViz Rendering]]
+  */
 trait ModuleProvider {
   def bootstrapModules(): Seq[BootstrapModule]
   def appModules(): Seq[Module]
@@ -26,11 +43,13 @@ object ModuleProvider {
 
   class Impl[F[_]: TagK](
     logRouter: LogRouter,
+    options: PlanningOptions,
+    // pass-through
     config: AppConfig,
     roles: RolesInfo,
-    options: PlanningOptions,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
+    roleAppLocator: Option[LocatorRef] @Id("roleapp"),
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -64,9 +83,15 @@ object ModuleProvider {
 
     def appModules(): Seq[Module] = {
       Seq(
-        LogIOModule[F](),
+        LogIOModule[F](), // reuse IzLogger from BootstrapModule
         LogstageFailureHandlerModule,
-      )
+      ) ++ roleAppLocator.map {
+        outerLocator =>
+          new ModuleDef {
+            make[LocatorRef].named("roleapp").fromValue(outerLocator)
+            make[RoleAppPlanner].from((_: LocatorRef @Id("roleapp")).get.get[RoleAppPlanner])
+          }
+      }
     }
 
   }

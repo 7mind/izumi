@@ -223,7 +223,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ClassResourceCase._
 
       val definition = PlannerInput.noGC(new ModuleDef {
-        make[Res].fromResource[SimpleResource] // FIXME: syntax
+        make[Res].fromResource[SimpleResource]
       })
 
       val injector = mkInjector()

@@ -7,15 +7,16 @@ import zio.{Has, IO, ZEnv, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule
 
-/** `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
+/**
+  * `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds [[izumi.functional.bio]] typeclass instances for ZIO
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
-  * Note: by default this module will add the following components:
-  *   - `ThreadPoolExecutor @Id("zio.cpu")` for CPU-bound tasks (used by default in [[zio.Runtime]])
-  *   - `ThreadPoolExecutor @Id("zio.io")` and blocking IO tasks (designated via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
-  *   - [[scala.concurrent.ExecutionContext]] bindings with the same `@Id`
+  * @note Will also add the following components:
+  *   - `ThreadPoolExecutor @Id("zio.cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
+  *   - `ThreadPoolExecutor @Id("zio.io")` and blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
+  *   - `ExecutionContext @Id("zio.cpu")` & `ExecutionContext @Id("zio.io")` respectively
   *   - [[zio.internal.tracing.TracingConfig]] will be set to [[zio.internal.tracing.TracingConfig.enabled]] by default
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.

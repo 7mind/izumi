@@ -1,21 +1,22 @@
 package izumi.distage.framework
 
 import com.typesafe.config.ConfigFactory
-import distage.{DefaultModule, Injector}
+import distage.Injector
+import izumi.distage.InjectorFactory
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
+import izumi.distage.framework.exceptions.PlanCheckException
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition._
-import izumi.distage.model.exceptions.PlanCheckException
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.recursive.{BootConfig, Bootloader, LocatorRef}
-import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.reflection.SafeType
+import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierConfig, PlanVerifierResult}
+import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.launcher.RoleProvider
@@ -23,279 +24,333 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.language.Quirks.{Discarder, discard}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
-import izumi.reflect.{Tag, TagK}
+import izumi.reflect.TagK
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 
 object PlanCheck {
+
+  def checkApp[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+    app: AppMain,
+    cfg: Cfg = PlanCheckConfig.empty,
+  )(implicit planCheckResult: PlanCheckMaterializer[AppMain, Cfg]
+  ): planCheckResult.type = {
+    discard(app, cfg)
+
+    planCheckResult
+  }
+
+  class Main[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+    app: AppMain,
+    cfg: Cfg = PlanCheckConfig.empty,
+  )(implicit val planCheck: PlanCheckMaterializer[AppMain, Cfg]
+  ) {
+    def rerunAtRuntime(): Unit = {
+      planCheck.checkAtRuntime().throwOnError()
+    }
+
+    def main(args: Array[String]): Unit = {
+      rerunAtRuntime()
+    }
+
+    discard(app, cfg)
+  }
+
   final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
+  final val defaultPrintBindings = DebugProperties.`izumi.distage.plancheck.print-bindings`.boolValue(false)
 
   sealed trait PlanCheckResult {
-    def loadedPlugins: LoadedPlugins
+    def checkedPlugins: LoadedPlugins
     def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]]
     def maybeErrorMessage: Option[String]
 
-    final def throwOnError(): LoadedPlugins = this match {
-      case PlanCheckResult.Correct(loadedPlugins) => loadedPlugins
-      case PlanCheckResult.Incorrect(_, message, _) => throw new PlanCheckException(message)
+    final def throwOnError(): Unit = this match {
+      case PlanCheckResult.Correct(_) =>
+      case PlanCheckResult.Incorrect(loadedPlugins, message, cause) => throw new PlanCheckException(message, loadedPlugins, cause)
     }
   }
   object PlanCheckResult {
-    final case class Correct(loadedPlugins: LoadedPlugins) extends PlanCheckResult {
-      override def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]] = None
-      override def maybeErrorMessage: Option[String] = None
+    final case class Correct(checkedPlugins: LoadedPlugins) extends PlanCheckResult {
+      override def maybeError: None.type = None
+      override def maybeErrorMessage: None.type = None
     }
-    final case class Incorrect(loadedPlugins: LoadedPlugins, message: String, cause: Either[Throwable, NonEmptySet[PlanIssue]]) extends PlanCheckResult {
-      override def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]] = Some(cause)
-      override def maybeErrorMessage: Option[String] = Some(message)
+    final case class Incorrect(checkedPlugins: LoadedPlugins, message: String, cause: Either[Throwable, NonEmptySet[PlanIssue]]) extends PlanCheckResult {
+      override def maybeError: Some[Either[Throwable, NonEmptySet[PlanIssue]]] = Some(cause)
+      override def maybeErrorMessage: Some[String] = Some(message)
     }
   }
 
-  /**
-    * @param roleAppMain ...
-    *
-    * @param roles "*" to check all roles,
-    *
-    *              "role1 role2" to check specific roles,
-    *
-    *              "* -role1 -role2" to check all roles _except_ specific roles.
-    *
-    * @param excludeActivations "repo:dummy" to ignore missing implementations or other issues in `repo:dummy` axis choice.
-    *
-    *                           "repo:dummy | scene:managed" to ignore missing implementations or other issues in `repo:dummy` axis choice and in `scene:managed` axis choice.
-    *
-    *                           "repo:dummy mode:test | scene:managed" to ignore missing implementations or other issues in `repo:dummy mode:test` activation and in `scene:managed` activation.
-    *                           This will ignore parts of the graph accessible through these activations and larger activations that include them.
-    *                           That is, anything involving `scene:managed` or the combination of both `repo:dummy mode:test` will not be checked.
-    *                           but activations `repo:prod mode:test scene:provided` and `repo:dummy mode:prod scene:provided` are not excluded and will be checked.
-    *
-    *                           Allows the check to pass even if some axis choices or combinations of choices are (wilfully) left invalid,
-    *                           e.g. if you do have `repo:prod` components, but no counterpart `repo:dummy` components,
-    *                                and don't want to add them, then you may exclude "repo:dummy" from being checked.
-    *
-    * @param config      Config resource file name, e.g. "application.conf" or "*" if using the same config settings as `roleAppMain`
-    *
-    * @param checkConfig Try to parse config file checking all the config bindings added using [[izumi.distage.config.ConfigModuleDef]]
-    */
-  def checkRoleApp(
-    roleAppMain: PlanHolder,
-    roles: String = "*",
-    excludeActivations: String = "",
-    config: String = "*",
-    checkConfig: Boolean = defaultCheckConfig,
-    logger: TrivialLogger = makeDefaultLogger(),
-  ): PlanCheckResult = {
-    val chosenRoles = parseRoles(roles)
-    val chosenActivations = parseActivations(excludeActivations)
-    val chosenConfig = if (config == "*") None else Some(config)
+  object runtime {
+    def checkApp(
+      app: PlanHolder,
+      roles: String = "*",
+      excludeActivations: String = "",
+      config: String = "*",
+      checkConfig: Boolean = defaultCheckConfig,
+      printBindings: Boolean = defaultPrintBindings,
+      logger: TrivialLogger = makeDefaultLogger(),
+    ): PlanCheckResult = {
+      val chosenRoles = parseRoles(roles)
+      val chosenActivations = parseActivations(excludeActivations)
+      val chosenConfig = if (config == "*") None else Some(config)
 
-    checkRoleAppParsed(roleAppMain, chosenRoles, chosenActivations, chosenConfig, checkConfig, logger)
-  }
-
-  def checkRoleAppParsed(
-    roleAppMain: PlanHolder,
-    chosenRoles: RoleSelection,
-    excludedActivations: Set[NonEmptySet[AxisPoint]],
-    chosenConfig: Option[String],
-    checkConfig: Boolean,
-    logger: TrivialLogger = makeDefaultLogger(),
-  ): PlanCheckResult = {
-
-    var effectiveRoles = "unknown, failed too early"
-    var effectivePlugins = "unknown, failed too early"
-    var effectiveConfig = "unknown, failed too early"
-    var effectiveLoadedPlugins = LoadedPlugins.empty
-
-    def returnPlanCheckError(cause: Either[Throwable, NonEmptySet[PlanIssue]]): PlanCheckResult.Incorrect = {
-      val message = {
-        val errorMsg = cause.fold(_.toString, _.toSet.niceList())
-        val configStr = if (checkConfig) {
-          s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
-        } else {
-          ""
-        }
-        s"""Found a problem with your DI wiring, when checking application=${roleAppMain.getClass.getName.split('.').last.split('$').last}, with parameters:
-           |
-           |  roles               = $chosenRoles (effective: $effectiveRoles)
-           |  excludedActivations = ${excludedActivations.mkString(" ")}
-           |  plugins             = $effectivePlugins
-           |  checkConfig         = $checkConfig$configStr
-           |
-           |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
-           |
-           |$errorMsg
-           |""".stripMargin
-      }
-
-      PlanCheckResult.Incorrect(effectiveLoadedPlugins, message, cause)
+      checkAppParsed[app.AppEffectType](app, chosenRoles, chosenActivations, chosenConfig, checkConfig, printBindings, logger)
     }
 
-    try {
-      val baseModule = roleAppMain.finalAppModule
-      val allKeysProvidedByBaseModule = baseModule.keys
-      import roleAppMain.AppEffectType
-      def combine[F[_]: TagK]: Tag[DefaultModule[F]] = Tag[DefaultModule[F]]
-      // FIXME: remove defaultmoudle
-      implicit val tg: Tag[DefaultModule[AppEffectType]] = combine[AppEffectType](roleAppMain.tagK)
-      object xa {
-        type T <: DefaultModule[AppEffectType]
-      }
-      @nowarn implicit val t: Tag[xa.T] = tg.asInstanceOf[Tag[xa.T]]
+    def checkAppParsed[F[_]](
+      app: PlanHolder.Aux[F],
+      chosenRoles: RoleSelection,
+      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      chosenConfig: Option[String],
+      checkConfig: Boolean,
+      printBindings: Boolean,
+      logger: TrivialLogger = makeDefaultLogger(),
+    ): PlanCheckResult = {
 
-      Injector[Identity]().produceRun(
-        baseModule overriddenBy mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map((roleAppMain.getClass.getClassLoader, _)))
-      )(Functoid {
-        (
-          bootloader: Bootloader @Id("roleapp"),
-          bsModule: BootstrapModule @Id("roleapp"),
-          appPlugins: LoadedPlugins @Id("main"),
-          bsPlugins: LoadedPlugins @Id("bootstrap"),
-          configLoader: ConfigLoader,
-          locatorRef: LocatorRef,
-          // fixme:
-          rolesInfo: RolesInfo,
-          // fixme:
-          defaultModule: xa.T,
-        ) =>
-          logger.log(s"RoleAppMain boot-up plan was: ${locatorRef.get.plan}")
-          logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=$excludedActivations chosenConfig=$chosenConfig")
+      var effectiveRoles = "unknown, failed too early"
+      var effectiveConfig = "unknown, failed too early"
+      var effectivePlugins = LoadedPlugins.empty
 
-          val loadedPlugins = appPlugins ++ bsPlugins
-
-          effectiveLoadedPlugins = loadedPlugins
-          effectiveRoles = rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")
-          effectivePlugins = appPlugins.toString
-
-          val allKeysFromRoleAppMainModule = {
-            val keysUsedInBaseModule = locatorRef.get.allInstances.iterator.map(_.key).toSet
-            keysUsedInBaseModule ++ allKeysProvidedByBaseModule
-          }
-
-          val bindings = bootloader.input.bindings
-
-          val PlanVerifierResult(issues, reachableKeys) = {
-            // need to ignore bsModule,  Injector parent, defaults
-            val veryBadInjectorContext = {
-              bootloader
-                .boot(
-                  BootConfig(
-                    bootstrap = _ => BootstrapModule.empty,
-                    appModule = _ => Module.empty,
-                    roots = _ => Roots.Everything,
-                  )
-                ).injector.produceGet[LocatorRef](Module.empty).use(_.get.allInstances.map(_.key)).toSet
-            }
-            PlanVerifier().verify(
-              bindings = bindings,
-              roots = Roots(rolesInfo.requiredComponents),
-              planVerifierConfig = PlanVerifierConfig(
-                providedKeys = allKeysFromRoleAppMainModule ++
-                  bsModule.keys ++
-                  defaultModule.module.keys ++
-                  veryBadInjectorContext +
-                  DIKey[LocatorRef],
-                excludedActivations = excludedActivations,
-              ),
-            )
-          }
-
-          val configIssues = if (checkConfig) {
-            val realAppConfig = configLoader.loadConfig()
-            effectiveConfig = realAppConfig.config.origin().toString
-            // FIXME: does not consider bsModule for reachability [must test it]
-            bindings.iterator
-              .filter(reachableKeys contains _.key)
-              .flatMap(b => b.tags.iterator.collect { case c: ConfTag => (b, c.parser) })
-              .flatMap {
-                case (b, parser) =>
-                  try { parser(realAppConfig); None }
-                  catch {
-                    case t: Throwable =>
-                      cutoffMacroTrace(t)
-                      Some(PlanIssue.UnparseableConfigBinding(b.key, OperationOrigin.UserBinding(b), t))
-                  }
-              }.toList
+      def returnPlanCheckError(cause: Either[Throwable, NonEmptySet[PlanIssue]]): PlanCheckResult.Incorrect = {
+        val message = {
+          val errorMsg = cause.fold(_.stackTrace, _.toSet.niceList())
+          val configStr = if (checkConfig) {
+            s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
-            Nil
+            ""
           }
+          val plugins = effectivePlugins.result
+          val pluginStr = {
+            val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
+            if (pluginClasses.isEmpty) {
+              "<none>"
+            } else if (pluginClasses.size > 7) {
+              val otherPlugins = plugins.drop(7)
+              val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
+              (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted> ($otherBindingsSize bindings)").mkString(", ")
+            } else {
+              pluginClasses.mkString(", ")
+            }
+          }
+          val printedBindings = if (printBindings) {
+            s"""Bindings were:
+               |
+               |${plugins.flatMap(_.iterator.map(_.toString)).mkString("\n")}
+               |""".stripMargin
+          } else ""
 
-          NonEmptySet.from(issues ++ configIssues) match {
-            case Some(allIssues) =>
-              returnPlanCheckError(Right(allIssues))
-            case None =>
-              PlanCheckResult.Correct(loadedPlugins)
-          }
-      })
-    } catch {
-      case t: Throwable =>
-        cutoffMacroTrace(t)
-        returnPlanCheckError(Left(t))
-    }
-  }
-
-  def mainAppModulePlanCheckerOverrides(
-    chosenRoles: RoleSelection,
-    chosenConfigResource: Option[(ClassLoader, String)],
-  ): ModuleDef = new ModuleDef {
-    make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-    make[IzLogger].fromValue(IzLogger.NullLogger)
-    make[AppConfig].fromValue(AppConfig.empty)
-    make[RawAppArgs].fromValue(RawAppArgs.empty)
-
-    make[RoleProvider].from {
-      def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
-        @impl trait NamePredicateRoleProvider extends RoleProvider.Impl {
-          override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
-            f(b.descriptor.id)
-          }
-          override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-            requiredRoles.discard()
-            super.getInfo(bindings, Set.empty, roleType)
-          }
+          s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
+             |
+             |  roles               = $chosenRoles (effective: $effectiveRoles)
+             |  excludedActivations = ${excludedActivations.map(_.mkString(" ")).mkString(" | ")}
+             |  plugins             = $pluginStr
+             |  checkConfig         = $checkConfig$configStr
+             |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for bindings printout" else ""}
+             |
+             |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
+             |
+             |$printedBindings$errorMsg
+             |""".stripMargin
         }
-        TraitConstructor[NamePredicateRoleProvider]
+
+        PlanCheckResult.Incorrect(effectivePlugins, message, cause)
       }
 
-      chosenRoles match {
-        case RoleSelection.Everything => namePredicateRoleProvider(_ => true)
-        case RoleSelection.AllExcluding(excluded) => namePredicateRoleProvider(!excluded(_))
-        case RoleSelection.OnlySelected(selection) =>
-          @impl trait SelectedRoleProvider extends RoleProvider.Impl {
+      val baseModuleOverrides = mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map(app.getClass.getClassLoader -> _))
+      val baseModuleWithOverrides = app.mainAppModule.overriddenBy(baseModuleOverrides)
+
+      try {
+        import app.tagK
+
+        Injector[Identity]().produceRun(baseModuleWithOverrides)(Functoid {
+          (
+            // module
+            bsModule: BootstrapModule @Id("roleapp"),
+            appModule: Module @Id("roleapp"),
+            defaultModule: DefaultModule[F],
+            // roots
+            rolesInfo: RolesInfo,
+            // config
+            configLoader: ConfigLoader,
+            // providedKeys
+            injectorFactory: InjectorFactory,
+            // effectivePlugins
+            appPlugins: LoadedPlugins @Id("main"),
+            bsPlugins: LoadedPlugins @Id("bootstrap"),
+          ) =>
+            logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=$excludedActivations chosenConfig=$chosenConfig")
+
+            sdfg(
+              excludedActivations,
+              checkConfig,
+            )(
+              effectivePlugins = _,
+              effectiveRoles = _,
+              effectiveConfig = _,
+              returnPlanCheckError,
+            )(
+              bsModule,
+              appModule,
+              defaultModule,
+              rolesInfo,
+              configLoader,
+              injectorFactory,
+              appPlugins ++ bsPlugins,
+            )
+        })
+      } catch {
+        case t: Throwable =>
+          cutoffMacroTrace(t)
+          returnPlanCheckError(Left(t))
+      }
+    }
+
+    private[this] def sdfg[F[_]: TagK](
+      //    logger: IzLogger,
+      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      checkConfig: Boolean,
+    )(reportEffectivePlugins: LoadedPlugins => Unit,
+      reportEffectiveRoles: String => Unit,
+      reportEffectiveConfig: String => Unit,
+      returnPlanCheckError: Right[Nothing, NonEmptySet[PlanIssue]] => PlanCheckResult,
+    )(bsModule: BootstrapModule,
+      appModule: Module,
+      defaultModule: DefaultModule[F],
+      rolesInfo: RolesInfo,
+      configLoader: ConfigLoader,
+      injectorFactory: InjectorFactory,
+      loadedPlugins: LoadedPlugins,
+    ): PlanCheckResult = {
+
+      locally {
+        reportEffectivePlugins(loadedPlugins)
+        reportEffectiveRoles(rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" "))
+      }
+
+      val providedKeys = {
+        injectorFactory.providedKeys(bsModule) ++
+        defaultModule.module.keys
+      }
+      val PlanVerifierResult(issues, reachableAppKeys) = {
+        PlanVerifier().verify[F](
+          bindings = appModule,
+          roots = Roots(rolesInfo.requiredComponents),
+          providedKeys = providedKeys,
+          excludedActivations = excludedActivations,
+        )
+      }
+      val reachableKeys = providedKeys ++ reachableAppKeys
+
+      val configIssues = if (checkConfig) {
+        val realAppConfig = configLoader.loadConfig()
+        locally {
+          reportEffectiveConfig(realAppConfig.config.origin().toString)
+        }
+        bsModule.iterator
+          .++(defaultModule.module.iterator)
+          .++(appModule.iterator)
+          .filter(reachableKeys contains _.key)
+          .flatMap(
+            b =>
+              b.tags.iterator.collect {
+                case c: ConfTag => (b, c.parser)
+              }
+          )
+          .flatMap {
+            case (b, parser) =>
+              try {
+                parser(realAppConfig)
+                None
+              } catch {
+                case t: Throwable =>
+                  cutoffMacroTrace(t)
+                  Some(PlanIssue.UnparseableConfigBinding(b.key, OperationOrigin.UserBinding(b), t))
+              }
+          }.toList
+      } else {
+        Nil
+      }
+
+      NonEmptySet.from(issues ++ configIssues) match {
+        case Some(allIssues) =>
+          returnPlanCheckError(Right(allIssues))
+        case None =>
+          PlanCheckResult.Correct(loadedPlugins)
+      }
+    }
+
+    def mainAppModulePlanCheckerOverrides(
+      chosenRoles: RoleSelection,
+      chosenConfigResource: Option[(ClassLoader, String)],
+    ): ModuleDef = {
+      new ModuleDef {
+        make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
+        make[IzLogger].fromValue(IzLogger.NullLogger)
+
+        make[AppConfig].fromValue(AppConfig.empty)
+        make[RawAppArgs].fromValue(RawAppArgs.empty)
+
+        make[RoleProvider].from {
+          chosenRoles match {
+            case RoleSelection.Everything => namePredicateRoleProvider(_ => true)
+            case RoleSelection.AllExcluding(excluded) => namePredicateRoleProvider(!excluded(_))
+            case RoleSelection.OnlySelected(selection) =>
+              @impl trait SelectedRoleProvider extends RoleProvider.Impl {
+                override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
+                  requiredRoles.discard()
+                  super.getInfo(bindings, selection, roleType)
+                }
+              }
+              TraitConstructor[SelectedRoleProvider]
+          }
+        }
+
+        chosenConfigResource match {
+          case Some((classLoader, resourceName)) =>
+            make[ConfigLoader].fromValue(specificResourceConfigLoader(classLoader, resourceName))
+          case None => // keep original ConfigLoader
+        }
+
+        private[this] def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
+          // use Auto-Traits feature to override just the few specific methods of a class succinctly
+          @impl trait NamePredicateRoleProvider extends RoleProvider.Impl {
+            override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
+              f(b.descriptor.id)
+            }
             override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
               requiredRoles.discard()
-              super.getInfo(bindings, selection, roleType)
+              super.getInfo(bindings, Set.empty, roleType)
             }
           }
-          TraitConstructor[SelectedRoleProvider]
-      }
-    }
 
-    chosenConfigResource match {
-      case Some((classLoader, resourceName)) =>
-        make[ConfigLoader].fromValue[ConfigLoader] {
+          TraitConstructor[NamePredicateRoleProvider]
+        }
+
+        private[this] def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
           () =>
-            AppConfig {
+            {
               val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
               if (cfg.origin().resource() eq null) {
                 throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
               }
-              cfg
+              AppConfig(cfg)
             }
         }
-      case None =>
-      // do not override original ConfigLoader
+      }
     }
+
   }
 
   sealed trait RoleSelection {
     override final def toString: String = this match {
       case RoleSelection.Everything => "*"
       case RoleSelection.OnlySelected(selection) => selection.mkString(" ")
-      case RoleSelection.AllExcluding(excluded) => excluded.map(x => s"-$x").mkString(" ")
+      case RoleSelection.AllExcluding(excluded) => excluded.map("-" + _).mkString(" ")
     }
   }
   object RoleSelection {

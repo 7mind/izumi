@@ -8,23 +8,25 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.functional.Identity
 
-object Fixture {
+object Fixture2 {
 
-  object TestRoleAppMain2 extends RoleAppMain.LauncherIdentity {
+  object TestRoleAppMain extends RoleAppMain.LauncherIdentity {
     override protected def pluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test2.plugins")
   }
 
-  final class TestPlugin2 extends PluginDef with RoleModuleDef {
-    make[Dep1].tagged(Mode.Prod, Repo.Prod).from[Dep1Good]
-    make[Dep1].tagged(Mode.Prod, Repo.Dummy).from[Dep1Good]
-    make[Dep1].tagged(Mode.Test, Repo.Prod).from[Dep1Bad]
-    make[Dep1].tagged(Mode.Test, Repo.Dummy).from[Dep1Bad]
+  final class TestPlugin extends PluginDef with RoleModuleDef {
+    make[Dep].tagged(Mode.Prod, Repo.Prod).from[DepGood]
+    make[Dep].tagged(Mode.Prod, Repo.Dummy).from[DepGood]
 
-    makeRole[TargetRole]
+    make[Dep].tagged(Mode.Test, Repo.Prod).from[DepBad]
+    make[Dep].tagged(Mode.Test, Repo.Dummy).from[DepBad]
+
+    makeRole[TargetRole].tagged(Repo.Prod)
+    makeRole[TargetRole].tagged(Repo.Dummy)
   }
 
   class TargetRole(
-    val dep1: Dep1
+    val dep: Dep
   ) extends RoleTask[Identity] {
     override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Unit = ()
   }
@@ -33,11 +35,11 @@ object Fixture {
     final val id = "target"
   }
 
-  trait Dep1
-  class Dep1Good extends Dep1
-  class Dep1Bad(
+  trait Dep
+  class DepGood extends Dep
+  class DepBad(
     val missingDep: MissingDep
-  ) extends Dep1
+  ) extends Dep
 
   trait MissingDep
 

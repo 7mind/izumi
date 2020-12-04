@@ -3,8 +3,10 @@ package izumi.distage.roles.test.fixtures
 import java.util.concurrent.ExecutorService
 
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.model.definition.Lifecycle
+import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
+import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
@@ -124,7 +126,7 @@ class TestRole03[F[_]: QuasiIO](
   }
 }
 object TestRole03 extends RoleDescriptor {
-  val expectedError = "bad axisComponent"
+  final val expectedError = "bad axisComponent"
   override final val id = "testrole03"
 }
 
@@ -144,4 +146,24 @@ class TestRole04[F[_]: QuasiIO](
 }
 object TestRole04 extends RoleDescriptor {
   override final val id = "testrole04"
+}
+
+class FailingRole01[F[_]: QuasiIO](
+  val integrationChecker: IntegrationChecker[F]
+) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.unit
+}
+object FailingRole01 extends RoleDescriptor {
+  final val expectedError = "Instance is not available in the object graph: {type.izumi.distage.framework.services.IntegrationChecker[=λ %0 → IO[+0]]}"
+  override final val id = "failingrole01"
+}
+
+class FailingRole02[F[_]: QuasiIO](
+  val roleAppPlanner: RoleAppPlanner,
+  val outerLocator: LocatorRef @Id("roleapp"),
+) extends RoleService[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.unit
+}
+object FailingRole02 extends RoleDescriptor {
+  override final val id = "failingrole02"
 }

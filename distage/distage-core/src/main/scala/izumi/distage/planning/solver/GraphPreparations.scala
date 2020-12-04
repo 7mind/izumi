@@ -26,12 +26,10 @@ class GraphPreparations(
   ): Set[WeakEdge[DIKey]] = {
     import izumi.fundamentals.collections.IzCollections._
 
-    val indexed = matrix
-      .links.map {
-        case (successor, node) =>
-          (successor.key, node.meta)
-      }
-      .toMultimapMut
+    val indexed = matrix.links.map {
+      case (successor, node) =>
+        (successor.key, node.meta)
+    }.toMultimapMut
 
     sets
       .collect {
@@ -58,7 +56,7 @@ class GraphPreparations(
       case Roots.Of(roots) =>
         roots.toSet
       case Roots.Everything =>
-        allOps.map(_._1.key).toSet
+        allOps.iterator.map(_._1.key).toSet
     }
   }
 
@@ -77,8 +75,7 @@ class GraphPreparations(
   }
 
   def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    bindings
-      .iterator
+    bindings.iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
       //.filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
@@ -108,8 +105,7 @@ class GraphPreparations(
   }
 
   def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Iterator[(DIKey, (CreateSet, Set[DIKey]))] = {
-    allOps
-      .view
+    allOps.view
       .collect { case (target, op: CreateSet) => (target, op) }
       .groupBy {
         case (a, _) =>
@@ -122,11 +118,10 @@ class GraphPreparations(
       .mapValues {
         ops =>
           val firstOp = ops.head
-          val potentialMembers = ops
-            .tail.foldLeft(ops.head.members) {
-              case (acc, op) =>
-                acc ++ op.members
-            }
+          val potentialMembers = ops.tail.foldLeft(ops.head.members) {
+            case (acc, op) =>
+              acc ++ op.members
+          }
           (firstOp, potentialMembers)
       }
       .iterator

@@ -1,17 +1,17 @@
 package izumi.distage.planning.solver
 
+import distage.{Injector, TagK}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.exceptions.MissingInstanceException
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
-import izumi.distage.model.recursive.LocatorRef
-import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierConfig, PlanVerifierResult}
+import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.ImmutableMultiMap
@@ -28,10 +28,11 @@ class PlanVerifier(
 ) {
   import scala.collection.compat._
 
-  def verify(
+  def verify[F[_]: TagK](
     bindings: ModuleBase,
     roots: Roots,
-    planVerifierConfig: PlanVerifierConfig = PlanVerifierConfig.empty,
+    providedKeys: DIKey => Boolean = Injector.providedKeys,
+    excludedActivations: Set[NonEmptySet[AxisPoint]] = Set.empty,
   ): PlanVerifierResult = {
     val ops = preps.computeOperationsUnsafe(bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
@@ -58,16 +59,16 @@ class PlanVerifier(
 
     val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
 
-    val matrixToTrace: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
-    val justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])] = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+    val matrixToTrace = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+    val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
     val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, rootKeys)
 
     val mutVisited: mutable.HashSet[DIKey] = mutable.HashSet.empty[DIKey]
-    val PlanVerifierConfig(providedKeys, excludedActivations) = planVerifierConfig
-    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys)
+    val effectType = SafeType.getK[F]
 
+    val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
     PlanVerifierResult(issues, mutVisited.toSet)
   }
 
@@ -80,6 +81,7 @@ class PlanVerifier(
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NonEmptySet[AxisPoint]],
     rootKeys: Set[DIKey],
+    effectType: SafeType,
   ): Set[PlanIssue] = {
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
@@ -99,8 +101,8 @@ class PlanVerifier(
             case None =>
               reportMissingIfNotProvided(key, dependee)(Right(Iterator.empty))
 
-            case Some(ops0) =>
-              val ops = ops0.filterNot(t => isIgnoredActivation(excludedActivations)(t._2))
+            case Some(allOps) =>
+              val ops = allOps.filterNot(o => isIgnoredActivation(excludedActivations)(o._2))
               val ac = ActivationChoices(currentActivation)
 
               val withoutCurrentActivations = {
@@ -113,7 +115,7 @@ class PlanVerifier(
 
               for {
                 // we ignore activations for set definitions
-                withMergedSets <- {
+                opsWithMergedSets <- {
                   val (setOps, otherOps) = withoutCurrentActivations.partitionMap {
                     case (s: CreateSet, _, _) => Left(s)
                     case a => Right(a)
@@ -140,7 +142,7 @@ class PlanVerifier(
                   } yield otherOps ++ mergedSets
                 }
                 _ <-
-                  if (withMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
+                  if (opsWithMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
                     val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
                     val probablyUnsaturatedAxis = allDefinedPoints.iterator.flatMap {
                       case (axis, definedPoints) =>
@@ -157,7 +159,7 @@ class PlanVerifier(
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, withMergedSets, weakSetMembers, excludedActivations)
+                next <- checkConflicts(allAxis, opsWithMergedSets, weakSetMembers, excludedActivations, effectType)
               } yield {
                 allVisited.add(key)
 
@@ -168,7 +170,7 @@ class PlanVerifier(
                     () =>
                       go(
                         visited = visited + key,
-                        current = (nextDeps ++ mutators).map((_, key)),
+                        current = (nextDeps ++ mutators).map(_ -> key),
                         currentActivation = currentActivation ++ nextActivation,
                       )
                 }
@@ -229,14 +231,15 @@ class PlanVerifier(
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     weakSetMembers: Set[WeakEdge[DIKey]],
     excludedActivations: Set[NonEmptySet[AxisPoint]],
+    effectType: SafeType,
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
-    val issues = {
+    val issues =
       checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, excludedActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
       checkForConflictingAxisChoices(withoutCurrentActivations) ++
       checkForDuplicateActivations(withoutCurrentActivations) ++
-      checkForUnsolvableConflicts(withoutCurrentActivations)
-    }
+      checkForUnsolvableConflicts(withoutCurrentActivations) ++
+      checkForIncompatibleEffectType(effectType, withoutCurrentActivations)
 
     if (issues.nonEmpty) {
       Left(issues)
@@ -363,7 +366,17 @@ class PlanVerifier(
     }.toList
   }
 
-  def isIgnoredActivation(excludedActivations: Set[NonEmptySet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
+  protected[this] def checkForIncompatibleEffectType(
+    effectType: SafeType,
+    ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+  ): List[IncompatibleEffectType] = {
+    ops.iterator.collect {
+      case (op: MonadicOp, _, _) if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) =>
+        IncompatibleEffectType(op.target, op, effectType, op.effectHKTypeCtor)
+    }.toList
+  }
+
+  protected[this] def isIgnoredActivation(excludedActivations: Set[NonEmptySet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
     excludedActivations.exists(_ subsetOf activation)
   }
 
@@ -375,18 +388,12 @@ object PlanVerifier {
 
   private[this] object Default extends PlanVerifier(new GraphPreparations(new BindingTranslator.Impl))
 
-  final case class PlanVerifierConfig(
-    providedKeys: DIKey => Boolean = _ == DIKey[LocatorRef],
-    excludedActivations: Set[NonEmptySet[AxisPoint]] = Set.empty,
-  )
-  object PlanVerifierConfig {
-    def empty: PlanVerifierConfig = PlanVerifierConfig()
-  }
-
   final case class PlanVerifierResult(
     issues: Set[PlanIssue],
     reachableKeys: Set[DIKey],
-  )
+  ) {
+    def verificationFailed: Boolean = issues.nonEmpty
+  }
 
   sealed abstract class PlanIssue {
     def key: DIKey
@@ -422,15 +429,13 @@ object PlanVerifier {
 
     /**
       * A config binding (from `distage-extension-config` module) could not be parsed from the reference config using configured binding.
-      * Note: [[PlanVerifier]] will not detect this issue, but it may be returned by [[izumi.distage.framework.PlanCheck]]
+      * @note [[PlanVerifier]] will not detect this issue, but it may be returned by [[izumi.distage.framework.PlanCheck]]
       */
     final case class UnparseableConfigBinding(key: DIKey, op: OperationOrigin, exception: Throwable) extends PlanIssue
 
     /** A distage bug, should never happen (bindings machinery guarantees a unique key for each set member, they cannot have the same key by construction) */
     final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue
 
-    //
-//    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
-    //
+    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
   }
 }

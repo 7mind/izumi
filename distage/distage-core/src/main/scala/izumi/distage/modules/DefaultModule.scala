@@ -16,9 +16,9 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
-  * - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
+  *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
   * Currently provides instances for
   *   - `zio`
@@ -32,7 +32,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[_]` with [[izumi.distage.model.effect.QuasiIO]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
-  @inline def of[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
+  @inline def to[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
 }
 
 object DefaultModule extends LowPriorityDefaultModulesInstances1 {
@@ -66,6 +66,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * only IFF you have zio as a dependency without REQUIRING a zio dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    *
+    * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
   implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
     DefaultModule(ZIOSupportModule)
@@ -77,12 +79,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * Note: by default this module will implement
-    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
-    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
-    *   - [[monix.bio.IO.Options]] using [[monix.bio.IO.defaultOptions]]
-    *
-    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
+    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
     */
   implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
     DefaultModule(MonixBIOSupportModule)
@@ -94,12 +91,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * Note: by default this module will implement
-    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
-    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
-    *   - [[monix.eval.Task.Options]] using [[monix.eval.Task.defaultOptions]]
-    *
-    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
+    * @see [[izumi.distage.modules.support.MonixSupportModule]]
     */
   implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
     DefaultModule(MonixSupportModule)
@@ -110,6 +102,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    *
+    * @see [[izumi.distage.modules.support.CatsIOSupportModule]]
     */
   implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
     DefaultModule(CatsIOSupportModule)
@@ -123,12 +117,14 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
+  /** @see [[izumi.distage.modules.support.AnyBIO2SupportModule]] */
   implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
-    DefaultModule(AnyBIOSupportModule.withImplicits[F])
+    DefaultModule(AnyBIO2SupportModule.withImplicits[F])
   }
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
+  /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
   implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](
     implicit tagBIO: TagKK[F[Any, +?, +?]]
   ): DefaultModule3[F] = {

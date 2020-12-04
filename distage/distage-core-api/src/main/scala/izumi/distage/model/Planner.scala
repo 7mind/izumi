@@ -11,9 +11,9 @@ trait Planner extends PlanSplittingOps {
   def planNoRewrite(input: PlannerInput): OrderedPlan
   def rewrite(bindings: ModuleBase): ModuleBase
 
-  final def plan(bindings: ModuleBase, activation: Activation, roots: Roots): OrderedPlan =
+  @inline final def plan(bindings: ModuleBase, activation: Activation, roots: Roots): OrderedPlan =
     plan(PlannerInput(bindings, activation, roots))
 
-  final def plan(bindings: ModuleBase, roots: Roots): OrderedPlan =
+  @inline final def plan(bindings: ModuleBase, roots: Roots): OrderedPlan =
     plan(bindings, Activation.empty, roots)
 }

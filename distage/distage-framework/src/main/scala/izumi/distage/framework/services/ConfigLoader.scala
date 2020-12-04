@@ -89,8 +89,7 @@ object ConfigLoader {
     ): ConfigLoader.Args = {
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
       val emptyRoleConfigs = rolesInfo.requiredRoleNames.map(_ -> None).toMap
-      val specifiedRoleConfigs = parameters
-        .roles.iterator
+      val specifiedRoleConfigs = parameters.roles.iterator
         .map(roleParams => roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile)
         .toMap
       ConfigLoader.Args(maybeGlobalConfig, (emptyRoleConfigs ++ specifiedRoleConfigs).view.filterKeys(rolesInfo.requiredRoleNames).toMap)

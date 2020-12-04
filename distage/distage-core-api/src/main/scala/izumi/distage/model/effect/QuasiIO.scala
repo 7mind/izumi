@@ -45,7 +45,7 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
 
   /** `definitelyRecover`, but the second argument is a callback that when called,
     * will return another Throwable, possible enhanced with the effect's own debugging information.
-    * NOTE: the callback may perform side-effects to the original Throwable argument on the left,
+    * @note the callback may perform side-effects to the original Throwable argument on the left,
     * the left throwable should be DISCARDED after calling the callback.
     * (e.g. in case of `ZIO`, the callback will mutate the throwable and attach a ZIO Trace to it.)
     */

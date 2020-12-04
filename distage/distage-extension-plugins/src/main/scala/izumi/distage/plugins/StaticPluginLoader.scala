@@ -2,6 +2,7 @@ package izumi.distage.plugins
 
 import scala.language.experimental.macros
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
+import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
@@ -28,10 +29,21 @@ object StaticPluginLoader {
       }
     }
 
-    def staticallyAvailablePlugins(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[List[PluginBase]] = {
-      import c.universe._
+    def staticallyAvailablePluginConfigThisPkg(c: blackbox.Context): c.Expr[PluginConfig] = {
+      val plugins = staticallyAvailablePluginsImpl(c)(SourcePackageMaterializerMacro.getSourcePackageString(c))
+      c.universe.reify {
+        PluginConfig.const(plugins.splice)
+      }
+    }
 
+    def staticallyAvailablePlugins(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[List[PluginBase]] = {
       val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
+
+      staticallyAvailablePluginsImpl(c)(pluginPath)
+    }
+
+    def staticallyAvailablePluginsImpl(c: blackbox.Context)(pluginPath: String): c.Expr[List[PluginBase]] = {
+      import c.universe._
 
       val loadedPlugins = if (pluginPath == "") {
         LoadedPlugins.empty
@@ -46,20 +58,16 @@ object StaticPluginLoader {
 
     def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[PluginBase]): List[c.Tree] = {
       import c.universe._
+      val runtimeMirror = ru.runtimeMirror(this.getClass.getClassLoader)
       loadedPlugins.map {
         plugin =>
-          val clazz = plugin.getClass
-          val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
-          val runtimeClassSymbol = runtimeMirror.classSymbol(clazz)
-
-          val macroMirror: Mirror = c.mirror
-
+          val runtimeClassSymbol = runtimeMirror.classSymbol(plugin.getClass)
           if (runtimeClassSymbol.isModuleClass) {
-            val tgt = macroMirror.staticModule(runtimeClassSymbol.module.fullName)
-            q"$tgt"
+            val obj = c.mirror.staticModule(runtimeClassSymbol.module.fullName)
+            q"$obj"
           } else {
-            val tgt = macroMirror.staticClass(runtimeClassSymbol.fullName)
-            q"new $tgt"
+            val cls = c.mirror.staticClass(runtimeClassSymbol.fullName)
+            q"new $cls"
           }
       }.toList
     }

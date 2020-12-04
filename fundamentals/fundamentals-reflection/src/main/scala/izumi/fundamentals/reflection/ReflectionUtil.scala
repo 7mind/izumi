@@ -34,10 +34,10 @@ object ReflectionUtil {
     * So we just strip it when we get it.
     */
   @tailrec
-  final def normSingleton[U <: SingletonUniverse](x: U#Type): U#Type = {
+  final def norm0[U <: SingletonUniverse](x: U#Type): U#Type = {
     x match {
-      case r: U#RefinedTypeApi if (r.parents.drop(1) eq Nil) && r.decls.isEmpty => normSingleton[U](r.asInstanceOf[U#Type])
-      case a: U#AnnotatedTypeApi => normSingleton[U](a.underlying)
+      case r: U#RefinedTypeApi if (r.parents.drop(1) eq Nil) && r.decls.isEmpty => norm0[U](r.asInstanceOf[U#Type])
+      case a: U#AnnotatedTypeApi => norm0[U](a.underlying)
       case _ => x
     }
   }
@@ -112,7 +112,7 @@ object ReflectionUtil {
   def deepIntersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
     def go(tpe: U#Type): List[U#Type] = {
       tpe match {
-        case r: U#RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers[U](normSingleton[U](t.dealias): U#Type))
+        case r: U#RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers[U](norm0[U](t.dealias): U#Type))
         case _ => List(tpe)
       }
     }

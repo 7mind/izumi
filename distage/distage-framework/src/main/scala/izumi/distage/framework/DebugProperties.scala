@@ -12,12 +12,19 @@ object DebugProperties extends properties.DebugProperties {
   final val `izumi.distage.plancheck.check-config` = BoolProperty("izumi.distage.plancheck.check-config")
 
   /**
+    * Print all the bindings loaded from plugins when a problem is found during plan checking.
+    *
+    * Default: `false`, due to noisiness of binding printouts
+    */
+  final val `izumi.distage.plancheck.print-bindings` = BoolProperty("izumi.distage.plancheck.print-bindings")
+
+  /**
     * Prevent compile-time plan checks from failing the build and print warnings instead.
     *
     * Default: `false`
     */
   final val `izumi.distage.plancheck.onlywarn` = BoolProperty("izumi.distage.plancheck.onlywarn")
 
-  /** Print debug messages during plan checking. Default: `false` */
+  /** Print debug me∑ssages during plan checking. Default: `false` */
   final val `izumi.debug.macro.distage.plancheck` = BoolProperty("izumi.debug.macro.distage.plancheck")
 }

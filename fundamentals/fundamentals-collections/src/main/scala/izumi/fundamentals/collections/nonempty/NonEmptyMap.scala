@@ -423,10 +423,9 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def groupBy(f: ((K, V)) => K): Map[K, NonEmptyMap[K, V]] = {
     val mapKToMap = toMap.groupBy(f)
-    mapKToMap
-      .view.mapValues {
-        list => new NonEmptyMap(list)
-      }.toMap
+    mapKToMap.view.mapValues {
+      list => new NonEmptyMap(list)
+    }.toMap
   }
 
   /**
@@ -661,7 +660,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * Computes a prefix scan of the entries of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once.
+    * @note The neutral element z may be applied more than once.
     * </p>
     *
     * @param z a neutral element for the scan operation; may be added to the result an arbitrary number of
@@ -696,7 +695,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * The size of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of elements in this <code>NonEmptyMap</code>.

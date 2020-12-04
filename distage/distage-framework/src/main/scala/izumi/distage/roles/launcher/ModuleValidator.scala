@@ -1,6 +1,7 @@
 package izumi.distage.roles.launcher
 
 import distage.ModuleBase
+import izumi.distage.model.definition.Id
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
@@ -20,7 +21,7 @@ object ModuleValidator {
   )
 
   final class ModuleValidatorImpl(
-    logger: IzLogger
+    logger: IzLogger @Id("early")
   ) extends ModuleValidator {
     override def validate(
       strategy: PluginMergeStrategy,

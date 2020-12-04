@@ -2,6 +2,7 @@ package izumi.distage.roles
 
 import cats.effect.LiftIO
 import distage.Injector
+import izumi.distage.framework.{PlanCheck, PlanCheckConfig, PlanCheckMaterializer}
 import izumi.distage.model.definition.Module
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.plugins.PluginConfig
@@ -19,29 +20,25 @@ import izumi.reflect.{TagK, TagKK}
 
 import scala.concurrent.ExecutionContext
 
-trait PlanHolder {
-  // FIXME: remove if unnecessary
-  type AppEffectType[_]
-  implicit def tagK: TagK[AppEffectType]
-  def finalAppModule: Module
-}
-
 abstract class RoleAppMain[F[_]](
   implicit
   val tagK: TagK[F],
   val defaultModule: DefaultModule[F],
   val artifact: IzArtifactMaterializer,
-) extends PlanHolder {
+) extends PlanHolder { self =>
+
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
-  override final type AppEffectType[A] = F[A]
+  abstract class WiringTest[Cfg <: PlanCheckConfig.Any: PlanCheckMaterializer[self.type, ?]](
+    cfg: Cfg = PlanCheckConfig.empty
+  ) extends PlanCheck.Main[self.type, Cfg](self, cfg)
 
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
-      Injector.NoProxies[Identity]().produceRun(finalAppModule(argv)) {
+      Injector.NoProxies[Identity]().produceRun(mainAppModule(argv)) {
         appResource: AppResource[F] =>
           appResource.runApp()
       }
@@ -51,15 +48,17 @@ abstract class RoleAppMain[F[_]](
     }
   }
 
-  override final def finalAppModule: Module = finalAppModule(ArgV.empty)
+  override final def mainAppModule: Module = {
+    mainAppModule(ArgV.empty)
+  }
 
-  def finalAppModule(argv: ArgV): Module = {
-    val mainModule = appModule(argv, AdditionalRoles(requiredRoles(argv)))
+  def mainAppModule(argv: ArgV): Module = {
+    val mainModule = mainAppModule(argv, AdditionalRoles(requiredRoles(argv)))
     val overrideModule = appModuleOverrides(argv)
     mainModule overriddenBy overrideModule
   }
 
-  protected def appModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
+  def mainAppModule(argv: ArgV, additionalRoles: AdditionalRoles): Module = {
     new MainAppModule[F](
       args = argv,
       additionalRoles = additionalRoles,
@@ -70,7 +69,11 @@ abstract class RoleAppMain[F[_]](
     )
   }
 
-  /** Overrides and mutators applied to [[MainAppModule]] (result of [[appModule]]) */
+  /**
+    * Overrides and mutators applied to [[mainAppModule]]
+    *
+    * @note The components added here are visible during the creation of the app, not *inside* the app
+    */
   protected def appModuleOverrides(@unused argv: ArgV): Module = {
     Module.empty
   }
@@ -83,6 +86,8 @@ abstract class RoleAppMain[F[_]](
   protected def createEarlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
     AppFailureHandler.TerminatingHandler
   }
+
+  override final type AppEffectType[A] = F[A]
 }
 
 object RoleAppMain {

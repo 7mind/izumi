@@ -321,7 +321,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     * formed by the elements of the nested <code>NonEmptySet</code>s.
     *
     * <p>
-    * Note: You cannot use this <code>flatten</code> method on a <code>NonEmptySet</code> that contains a <code>GenTraversableOnce</code>s, because
+    * @note You cannot use this <code>flatten</code> method on a <code>NonEmptySet</code> that contains a <code>GenTraversableOnce</code>s, because
     * if all the nested <code>GenTraversableOnce</code>s were empty, you'd end up with an empty <code>NonEmptySet</code>.
     * </p>
     *
@@ -416,10 +416,9 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def groupBy[K](f: T => K): Map[K, NonEmptySet[T]] = {
     val mapKToSet = toSet.groupBy(f)
-    mapKToSet
-      .view.mapValues {
-        Set => new NonEmptySet(Set)
-      }.toMap
+    mapKToSet.view.mapValues {
+      Set => new NonEmptySet(Set)
+    }.toMap
   }
 
   /**
@@ -663,7 +662,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     * Computes a prefix scan of the elements of this <code>NonEmptySet</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once.
+    * @note The neutral element z may be applied more than once.
     * </p>
     *
     * <p>
@@ -748,7 +747,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     * The size of this <code>NonEmptySet</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of elements in this <code>NonEmptySet</code>.

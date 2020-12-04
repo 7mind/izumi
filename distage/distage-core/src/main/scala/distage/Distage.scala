@@ -21,6 +21,8 @@ trait Distage {
   val Roots: model.plan.Roots.type = model.plan.Roots
 
   type Locator = model.Locator
+  val Locator: model.Locator.type = model.Locator
+
   type LocatorRef = model.recursive.LocatorRef
 
   type PlanVerifier = solver.PlanVerifier
@@ -68,6 +70,9 @@ trait Distage {
 
   type Functoid[+A] = model.providers.Functoid[A]
   val Functoid: model.providers.Functoid.type = model.providers.Functoid
+
+  type AnyConstructor[T] = constructors.AnyConstructor[T]
+  val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   type ClassConstructor[T] = constructors.ClassConstructor[T]
   val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor

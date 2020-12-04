@@ -17,12 +17,13 @@ package object distage extends Distage {
   override val Roots: model.plan.Roots.type = model.plan.Roots
 
   override type Locator = model.Locator
+  override val Locator: model.Locator.type = model.Locator
+
   override type LocatorRef = model.recursive.LocatorRef
 
   override type PlanVerifier = solver.PlanVerifier
   override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
-  override type DefaultModule[F[_]] = modules.DefaultModule[F]
   override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
   override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
@@ -64,6 +65,9 @@ package object distage extends Distage {
 
   override type Functoid[+A] = model.providers.Functoid[A]
   override val Functoid: model.providers.Functoid.type = model.providers.Functoid
+
+  override type AnyConstructor[T] = constructors.AnyConstructor[T]
+  override val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   override type ClassConstructor[T] = constructors.ClassConstructor[T]
   override val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor

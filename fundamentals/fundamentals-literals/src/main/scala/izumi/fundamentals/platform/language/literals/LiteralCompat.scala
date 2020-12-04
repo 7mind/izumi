@@ -1,10 +1,10 @@
-package izumi.fundamentals.platform.language
+package izumi.fundamentals.platform.language.literals
 
 import scala.language.dynamics
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
-/** To compile code with literal types with 2.12, rewrite a literal like `mytype["abc"]` to `mytype[LiteralCompat.`"abc"`.T]` */
+/** To compile code with literal types using Scala 2.12, rewrite a literal like `mytype["abc"]` to `mytype[LiteralCompat.`"abc"`.T]` */
 object LiteralCompat extends Dynamic {
   def selectDynamic(literal: String): { type T } = macro constantType
 

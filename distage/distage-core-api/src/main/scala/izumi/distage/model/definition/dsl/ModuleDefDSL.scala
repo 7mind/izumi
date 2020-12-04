@@ -12,7 +12,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.Quirks.discard
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
@@ -80,15 +80,14 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   override final def iterator: Iterator[Binding] = freezeIterator()
 
   private[this] final def freeze(): Set[Binding] = {
-    HashSet
-      .newBuilder.++= {
+    HashSet.newBuilder
+      .++= {
         freezeIterator()
       }.result()
   }
   private[this] final def freezeIterator(): Iterator[Binding] = {
     val frozenTags0 = frozenTags
-    retaggedIncludes
-      .iterator
+    retaggedIncludes.iterator
       .++(frozenState.iterator)
       .map(_.addTags(frozenTags0))
       .++(asIsIncludes.iterator)
@@ -103,8 +102,8 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
     *
     * Useful for prototyping.
     */
-  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
-    _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = {
+    _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos))).discard()
   }
 }
 

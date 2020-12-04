@@ -4,7 +4,6 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import distage._
-import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
@@ -75,9 +74,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): Map[MemoizationEnv, MemoizationTree[F]] = {
 
-    // FIXME: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
-    val unstableKeys = {
-      val activationKeys = Set(DIKey[Activation], DIKey[ActivationInfo])
+    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
+    val allowVariationKeys = {
+      val activationKeys = Set(DIKey[Activation]("bootstrapActivation"), DIKey[ActivationInfo])
       val recursiveKeys = Set(DIKey[BootstrapModule])
       // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
       val hackyKeys = Set(DIKey[LogRouter])
@@ -89,11 +88,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     distageTests.groupBy(_.environment.getExecParams).flatMap {
       case (envExec, grouped) =>
         val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
-        val memoizationEnvs = QuasiAsync
-          .quasiAsyncIdentity.parTraverse(grouped.groupBy(_.environment)) {
+        val memoizationEnvs = QuasiAsync.quasiAsyncIdentity
+          .parTraverse(grouped.groupBy(_.environment)) {
             case (env, tests) =>
               withRecoverFromFailedExecution(tests) {
-                Option(prepareGroupPlans(unstableKeys, envExec, configLoadLogger, env, tests))
+                Option(prepareGroupPlans(allowVariationKeys, envExec, configLoadLogger, env, tests))
               }(None)
           }.flatten
         // merge environments together by equality of their shared & runtime plans
@@ -127,7 +126,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   private def prepareGroupPlans(
-    unstableKeys: Set[DIKey],
+    variableBsKeys: Set[DIKey],
     envExec: EnvExecutionParams,
     configLoadLogger: IzLogger,
     env: TestEnvironment,
@@ -138,32 +137,31 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
 
     // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-    val provider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
+    val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
 
-    val finalBsModule = {
-      val bsModule = provider.bootstrapModules().merge overriddenBy env.bsModule
-      BootstrapLocator.defaultBootstrap overriddenBy bsModule
+    val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
+    val appModule = {
+      // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
+      IdentitySupportModule ++ DefaultModule[F] overriddenBy
+      moduleProvider.appModules().merge overriddenBy env.appModule
     }
 
-    val appModule = IdentitySupportModule ++ DefaultModule[F] overriddenBy provider.appModules().merge overriddenBy env.appModule
-
-    val (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner) = {
+    val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
       //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
 
-      // FIXME: We're also removing & re-injecting Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
+      // FIXME: We're also removing here & re-injecting later Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
       //  (planner holds activations & the rest is for Bootloader self-introspection)
 
-      // create bsLocator separately because we can't retrieve Plan & Module from Injector
-      // fixme: adding Cycles.Proxy manually here
-      val bsLocator = new BootstrapLocator(finalBsModule, Activation(Cycles -> Cycles.Proxy) ++ env.activation)
+      val injector = Injector[Identity](bootstrapActivation = env.activation, overrides = Seq(bsModule))
 
-      val bsPlanMinusUnstable = bsLocator.plan.steps.filterNot(unstableKeys contains _.target)
-      val bsModuleMinusUnstable = bsLocator.get[BootstrapModule].drop(unstableKeys)
+      val injectorEnv = injector.providedEnvironment
 
-      val injector = Injector.inherit(bsLocator)
-      val planner = bsLocator.get[Planner]
-      (bsPlanMinusUnstable, bsModuleMinusUnstable, injector, planner)
+      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.steps.filterNot(variableBsKeys contains _.target)
+      val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
+      val planner = injectorEnv.planner
+
+      (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner)
     }
 
     // runtime plan with `runtimeGcRoots`
@@ -195,8 +193,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // we need to create plans for each level of memoization
       // every duplicated key will be removed
       // every empty memoization level (after keys filtering) will be removed
-      env
-        .memoizationRoots.keys.toList.sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
+      env.memoizationRoots.keys.toList
+        .sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
             val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
@@ -211,7 +209,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule) :: Nil
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusUnstable, bsModuleMinusUnstable, runtimePlan)
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
 
     val memoEnvHashCode = envMergeCriteria.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
@@ -498,13 +496,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   protected[this] def loadConfig(env: TestEnvironment, envLogger: IzLogger): AppConfig = {
-    DistageTestRunner
-      .memoizedConfig
+    DistageTestRunner.memoizedConfig
       .computeIfAbsent(
         (env.configBaseName, env.bootstrapFactory, env.configOverrides),
         _ => {
-          val configLoader = env
-            .bootstrapFactory
+          val configLoader = env.bootstrapFactory
             .makeConfigLoader(env.configBaseName, envLogger)
             .map {
               appConfig =>

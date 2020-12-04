@@ -2,7 +2,7 @@ package izumi.distage.testkit.scalatest
 
 import distage.{DefaultModule3, TagK3, TagKK}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.{DSWordSpecStringWrapper, DSWordSpecStringWrapper3}
+import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper3
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
@@ -44,12 +44,12 @@ import scala.language.implicitConversions
   * {{{
   *   "test purchase pets" in {
   *     (store: PetStore[IO]) =>
-  *     for {
-  *       _    <- store.purchasePet("Zab", 213)
-  *       pets <- pets.myPets
-  *       _    <- assertIO(pets.contains("Zab"))
-  *     } yield ()
-  *     // : ZIO[PetsEnv, Throwable, Unit]
+  *       for {
+  *         _    <- store.purchasePet("Zab", 213)
+  *         pets <- pets.myPets
+  *         _    <- assertIO(pets.contains("Zab"))
+  *       } yield ()
+  *       // : ZIO[PetsEnv, Throwable, Unit]
   *   }
   * }}}
   */
@@ -57,10 +57,8 @@ abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, ?]]
   with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
 
-  protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper3[FR] = {
+  protected implicit def convertToWordSpecStringWrapperDS3(s: String): DSWordSpecStringWrapper3[FR] = {
     new DSWordSpecStringWrapper3(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 
-  // disable single-parameter syntax by removing `implicit`
-  override protected def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[FR[Any, Throwable, ?]] = super.convertToWordSpecStringWrapperDS(s)
 }

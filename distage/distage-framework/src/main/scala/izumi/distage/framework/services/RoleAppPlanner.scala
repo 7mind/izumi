@@ -4,7 +4,7 @@ import distage.Injector
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.plan.{OrderedPlan, Roots, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
@@ -48,36 +48,29 @@ object RoleAppPlanner {
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-      val selfReflectionModule = new ModuleDef {
-        make[RoleAppPlanner].fromValue(self)
-        make[PlanningOptions].fromValue(options)
-      }
-      val bootstrappedApp = bootloader.boot(
+      val runtimeBsApp = bootloader.boot(
         BootConfig(
           bootstrap = _ => bsModule,
-          appModule = _ overriddenBy selfReflectionModule,
           activation = _ => activation,
           roots = _ => Roots(runtimeGcRoots),
         )
       )
-      val runtimeKeys = bootstrappedApp.plan.keys
+      val runtimeKeys = runtimeBsApp.plan.keys
 
-      val appPlan = bootstrappedApp.injector.trisectByKeys(activation, bootstrappedApp.module.drop(runtimeKeys), appMainRoots) {
+      val appPlan = runtimeBsApp.injector.trisectByKeys(activation, runtimeBsApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)
-      check.verify(bootstrappedApp.plan)
+      check.verify(runtimeBsApp.plan)
       check.verify(appPlan.shared)
       check.verify(appPlan.side)
       check.verify(appPlan.primary)
 
-      val out = AppStartupPlans(bootstrappedApp.plan, appPlan, bootstrappedApp.injector)
       logger.info(
-        s"Planning finished. ${out.app.primary.keys.size -> "main ops"}, ${out.app.side.keys.size -> "integration ops"}, ${out
-          .app.shared.keys.size -> "shared ops"}, ${out.runtime.keys.size -> "runtime ops"}"
+        s"Planning finished. ${appPlan.primary.keys.size -> "main ops"}, ${appPlan.side.keys.size -> "integration ops"}, ${appPlan.shared.keys.size -> "shared ops"}, ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
       )
-      out
+      AppStartupPlans(runtimeBsApp.plan, appPlan, runtimeBsApp.injector)
     }
 
   }

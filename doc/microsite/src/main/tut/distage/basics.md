@@ -292,7 +292,7 @@ unsafeRun {
 - @scaladoc[World](izumi.distage.model.definition.StandardAxis$$World$) axis, with `Real`/`Mock` choices, describes third-party integrations which are not controlled by the application and provided "as is". e.g. Facebook API, Google API, etc. those may contact a `Real` external integration or a `Mock` one with predefined responses.
   
 - @scaladoc[Scene](izumi.distage.model.definition.StandardAxis$$Scene$) axis with `Managed`/`Provided` choices, describes whether external services required by the application should be set-up on the fly by an orchestrator library such as @ref[`distage-framework-docker`](distage-framework-docker.md) (`Scene.Managed`), or whether the application should try to connect to external services as if they already exist in the environment (`Scene.Provided`). 
-  We call a set of external services required by the application a `Scene`, etymology being that the running external services required by the application are like a "scene" that the "theatre staff" (the orchestrator) must prepare for the "actor" (the application) to enter.
+  We call a set of external services required by the application a `Scene`, etymology being that the running external services required by the application are like a "scene" that the "staff" (the orchestrator) must prepare for the "actor" (the application) to enter.
 
 In `distage-framework`'s @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), you can choose axes using the `-u` command-line parameter:
 
@@ -360,13 +360,13 @@ runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Test))
 
 ### Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
-[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle)
-values that specify the allocation and finalization actions for an object.
+You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
+[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+values specifying the allocation and finalization actions of an object.
 
-Injector itself only returns a `Lifecycle` value that can be used to create and finalize the object graph, this value is
-pure and can be reused multiple times. A `Lifecycle` is consumed using its `.use` method, the function passed to `use` will
-receive an allocated resource and when the function exits the resource will be deallocated. 
+When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
+
+A `Lifecycle` is executed using its `.use` method, the function passed to `use` will receive an allocated resource and when the function exits the resource will be deallocated. `Lifecycle` is generally not invalidated after `.use` and may be executed multiple times.
 
 Example with `cats.effect.Resource`:
 
@@ -378,9 +378,9 @@ class DBConnection
 class MessageQueueConnection
 
 val dbResource = Resource.make(
-  acquire = IO { 
+  acquire = IO {
     println("Connecting to DB!")
-    new DBConnection 
+    new DBConnection
 })(release = _ => IO(println("Disconnecting DB")))
 
 val mqResource = Resource.make(
@@ -389,8 +389,13 @@ val mqResource = Resource.make(
    new MessageQueueConnection 
 })(release = _ => IO(println("Disconnecting Message Queue")))
 
-class MyApp(db: DBConnection, mq: MessageQueueConnection) {
-  val run = IO(println("Hello World!"))
+class MyApp(
+  db: DBConnection,
+  mq: MessageQueueConnection,
+) {
+  val run = {
+    IO(println("Hello World!"))
+  }
 }
 
 def module = new ModuleDef {

@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.64`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.65`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -260,6 +260,7 @@ object Izumi {
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
       final val orphans = ArtifactId("fundamentals-orphans")
+      final val literals = ArtifactId("fundamentals-literals")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
@@ -355,7 +356,9 @@ object Izumi {
         libs = Seq(
           scala_reflect in Scope.Provided.all
         ),
-        depends = Seq.empty,
+        depends = Seq(
+          Projects.fundamentals.literals
+        ),
         settings = crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
@@ -397,6 +400,14 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional,
+        depends = Seq.empty,
+        platforms = Targets.cross,
+      ),
+      Artifact(
+        name = Projects.fundamentals.literals,
+        libs = Seq(
+          scala_reflect in Scope.Provided.all
+        ),
         depends = Seq.empty,
         platforms = Targets.cross,
       ),

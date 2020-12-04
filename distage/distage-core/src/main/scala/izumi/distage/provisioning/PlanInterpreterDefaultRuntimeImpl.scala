@@ -44,12 +44,12 @@ class PlanInterpreterDefaultRuntimeImpl(
 
   override def instantiate[F[_]: TagK](
     plan: OrderedPlan,
-    parentContext: Locator,
+    parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   )(implicit F: QuasiIO[F]
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
     Lifecycle.make(
-      acquire = instantiateImpl(plan, parentContext)
+      acquire = instantiateImpl(plan, parentLocator)
     )(release = {
       resource =>
         val finalizers = resource match {

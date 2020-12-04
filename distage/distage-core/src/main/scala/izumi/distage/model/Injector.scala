@@ -1,16 +1,20 @@
 package izumi.distage.model
 
+import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.planning.solver.PlanVerifier
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
+import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
-  * Injector can create an object graph ([[Locator]]) from a [[izumi.distage.model.definition.ModuleDef]] or an [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector creates object graphs ([[Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.OrderedPlan]]
   *
   * @see [[izumi.distage.model.Planner]]
   * @see [[izumi.distage.model.Producer]]
@@ -186,11 +190,14 @@ trait Injector[F[_]] extends Planner with Producer {
     produceCustomF[F](plan(PlannerInput(bindings, activation, roots)))
   }
 
+  /** Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
+    * allocation and cleanup of an object graph described by an existing `plan`
+    */
   final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
 
-  /** Produce [[Locator]] interpreting effect- and resource-bindings into the provided `F` */
+  /** Produce [[Locator]] interpreting effect and resource bindings into the provided effect type */
   final def produceCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Locator] = {
     produceCustomF[G](plan(plannerInput))
   }
@@ -198,7 +205,7 @@ trait Injector[F[_]] extends Planner with Producer {
     produceDetailedCustomF[G](plan(plannerInput))
   }
 
-  /** Produce [[Locator]], supporting only effect- and resource-bindings in `Identity` */
+  /** Produce [[Locator]], supporting only effect and resource bindings in `Identity` */
   final def produceCustomIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Locator] = {
     produceCustomF[Identity](plan(plannerInput))
   }
@@ -234,6 +241,36 @@ trait Injector[F[_]] extends Planner with Producer {
   final def produceF(plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
+
+  /**
+    * Efficiently check all possible paths for the given module to the given `roots`,
+    *
+    * This is a "raw" version of [[izumi.distage.framework.PlanCheck]] API, please use `PlanCheck` for all non-exotic needs.
+    *
+    * This method executes at runtime, to check correctness at compile-time use `PlanCheck` API from `distage-framework` module.
+    *
+    * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
+    *
+    * @return Set of issues if any.
+    *         Does not throw on issues, use a separate assertion.
+    */
+  final def verify(
+    bindings: ModuleBase,
+    roots: Roots,
+    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+  ): PlanVerifierResult = {
+    PlanVerifier().verify[F](
+      bindings = bindings,
+      roots = roots,
+      providedKeys = providedKeys,
+      excludedActivations = excludedActivations.map(_.map(_.toAxisPoint)),
+    )
+  }
+
+  /** Keys that will be available to the module interpreted by this Injector, includes parent Locator keys, [[izumi.distage.modules.DefaultModule]] & Injector's self-reference keys */
+  def providedKeys: Set[DIKey]
+
+  def providedEnvironment: InjectorProvidedEnv
 
   protected[this] implicit def tagK: TagK[F]
   protected[this] implicit def F: QuasiIO[F]

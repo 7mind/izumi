@@ -13,12 +13,6 @@ trait ProvisionOperationVerifier {
 
 object ProvisionOperationVerifier {
 
-  object Null extends ProvisionOperationVerifier {
-    override def verify(target: DIKey, keys: collection.Set[DIKey], value: Any, clue: String): Unit = {
-      Quirks.discard(target, keys, value, clue)
-    }
-  }
-
   class Default(
     mirror: MirrorProvider
   ) extends ProvisionOperationVerifier {
@@ -53,4 +47,11 @@ object ProvisionOperationVerifier {
     }
 
   }
+
+  object Null extends ProvisionOperationVerifier {
+    override def verify(target: DIKey, keys: collection.Set[DIKey], value: Any, clue: String): Unit = {
+      Quirks.discard(target, keys, value, clue)
+    }
+  }
+
 }

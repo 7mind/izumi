@@ -49,6 +49,7 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
+        roleAppLocator = None,
       )
     }
   }

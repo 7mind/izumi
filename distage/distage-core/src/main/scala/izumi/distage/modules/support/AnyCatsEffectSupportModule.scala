@@ -7,12 +7,13 @@ import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiI
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.mono.SyncSafe
 
-/** Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
+/**
+  * Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
   *
-  * For any `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
+  * For all `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for `F[_]`
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for `F[_]`
   *
   * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
   */

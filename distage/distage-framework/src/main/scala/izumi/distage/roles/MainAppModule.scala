@@ -8,7 +8,7 @@ import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.framework.services._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition._
-import izumi.distage.model.recursive.Bootloader
+import izumi.distage.model.recursive.{Bootloader, LocatorRef}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
@@ -182,6 +182,8 @@ class MainAppModule[F[_]: TagK: DefaultModule](
       )
   }
 
+  make[Option[LocatorRef]].named("roleapp").from(Some(_: LocatorRef))
+
   make[ModuleProvider].from[ModuleProvider.Impl[F]]
 
   make[Module].named("roleapp").from {
@@ -197,21 +199,21 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   make[Bootloader].named("roleapp").from {
     (
       injectorFactory: InjectorFactory,
-//      activation: Activation @Id("roleapp"),
-      finalAppModule: Module @Id("roleapp"),
-      finalBsModule: BootstrapModule @Id("roleapp"),
+      bsActivation: Activation @Id("bootstrapActivation"),
+      activation: Activation @Id("roleapp"),
+      bsModule: BootstrapModule @Id("roleapp"),
+      appModule: Module @Id("roleapp"),
       roots: Set[DIKey] @Id("distage.roles.roots"),
       defaultModule: DefaultModule[F],
     ) =>
-      // // `activation` is set to empty because it's always overridden to `BootstrapModule @Id("roleapp")` by `RoleAppPlanner#makePlan`
-      injectorFactory.bootloader(PlannerInput(finalAppModule, Activation.empty, roots), finalBsModule, defaultModule)
+      injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, activation, roots))
   }
 
   make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]
 
   make[AppStartupPlans].from {
-    (planner: RoleAppPlanner, roots: Set[DIKey] @Id("distage.roles.roots")) =>
-      planner.makePlan(roots)
+    (roleAppPlanner: RoleAppPlanner, roots: Set[DIKey] @Id("distage.roles.roots")) =>
+      roleAppPlanner.makePlan(roots)
   }
 
   make[IntegrationChecker[F]].from[IntegrationChecker.Impl[F]]

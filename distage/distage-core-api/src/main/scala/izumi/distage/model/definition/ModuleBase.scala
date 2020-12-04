@@ -11,7 +11,7 @@ import izumi.fundamentals.platform.language.unused
 trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
   def iterator: Iterator[Binding] = bindings.iterator
-  final def keys: Set[DIKey] = bindings.map(_.key)
+  final def keys: Set[DIKey] = iterator.map(_.key).toSet
 
   override final def hashCode(): Int = bindings.hashCode()
   override final def equals(obj: Any): Boolean = obj match {
@@ -142,6 +142,9 @@ object ModuleBase {
   }
 
   private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {
+    if (overridingIterator.isEmpty) return existingIterator
+    if (existingIterator.isEmpty) return overridingIterator
+
     val existingIndex = existingIterator.map(b => (b.key, b.isMutator) -> b).toMultimapMut
     val newIndex = overridingIterator.map(b => (b.key, b.isMutator) -> b).toMultimapMut
     val mergedKeys = existingIndex.keySet ++ newIndex.keySet

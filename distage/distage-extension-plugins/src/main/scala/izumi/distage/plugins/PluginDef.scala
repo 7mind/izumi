@@ -14,10 +14,10 @@ import izumi.fundamentals.platform.language.unused
   *   }
   * }}}
   *
-  * NOTE: Since this is an abstract class, you cannot mix it with other classes or use it as a mixin.
-  *       You may inherit from [[PluginBase]], which is a trait, instead – but compile-time will not re-run if the class is updated then.
-  *       Alternatively, you may use [[izumi.distage.model.definition.dsl.IncludesDSL#include]] method to compose
-  *       modules as values instead of using inheritance.
+  * @note Since this is an abstract class, you cannot mix it with other classes or use it as a mixin.
+  *       Instead, you may inherit from [[PluginBase]], which is a trait – but in that case compile-time checks will not
+  *       re-run when the class is updated in that case. Alternatively, you may use [[izumi.distage.model.definition.dsl.IncludesDSL#include]]
+  *       to compose modules as values instead of using inheritance.
   *
   * @param recompilationToken Makes compile-time checks re-run when the source code of this `PluginDef` is changed, if it's used in the checked role.
   *

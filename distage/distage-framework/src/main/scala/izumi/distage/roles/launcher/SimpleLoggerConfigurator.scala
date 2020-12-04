@@ -36,7 +36,7 @@ class SimpleLoggerConfigurator(
     val levels = logconf.levels.flatMap {
       case (stringLevel, pack) =>
         val level = Log.Level.parseLetter(stringLevel)
-        pack.map((_, LoggerPathConfig(level, sinks)))
+        pack.map(_ -> LoggerPathConfig(level, sinks))
     }
 
     // TODO: here we may read log configuration from config file
@@ -51,9 +51,8 @@ class SimpleLoggerConfigurator(
   }
 
   private[this] def readConfig(config: Config): SinksConfig = {
-    Try(config.getConfig("logger"))
-      .toEither
-      .left.map(_ => Message("No `logger` section in config. Using defaults."))
+    Try(config.getConfig("logger")).toEither.left
+      .map(_ => Message("No `logger` section in config. Using defaults."))
       .flatMap {
         config =>
           SinksConfig.configReader.decodeConfigValue(config.root).toEither.left.map {

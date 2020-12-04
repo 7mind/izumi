@@ -94,6 +94,17 @@ Videos:
 * [Hyper-pragmatic Pure FP Testing with distage-testkit, Functional Scala, London](https://www.youtube.com/watch?v=CzpvjkUukAs)
 * [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
+Credits
+=======
+
+![YourKit](https://www.yourkit.com/images/yklogo.png)
+
+YourKit supports open source projects with innovative and intelligent tools 
+for monitoring and profiling Java and .NET applications.
+YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/) 
+[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
+[YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
+
 @@toc { depth=2 }
 
 @@@ index
@@ -107,14 +118,3 @@ Videos:
 * [PPER](pper/00_pper.md)
 
 @@@
-
-Credits
-=======
-
-![YourKit](https://www.yourkit.com/images/yklogo.png)
-
-YourKit supports open source projects with innovative and intelligent tools 
-for monitoring and profiling Java and .NET applications.
-YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/) 
-[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
-[YourKit YouMonitor](https://www.yourkit.com/youmonitor/).

@@ -39,6 +39,8 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole02[F]]
   make[TestRole03[F]]
   make[TestRole04[F]]
+  makeRole[FailingRole01[F]]
+  makeRole[FailingRole02[F]]
 
   make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck[F]]

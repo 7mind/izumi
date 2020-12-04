@@ -5,14 +5,77 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.WeakTag
 
 import scala.language.experimental.{macros => enableMacros}
 
-sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T]
+/**
+  * An implicitly summonable constructor for a type `T`, can generate constructors for:
+  *
+  *   - concrete classes (using [[ClassConstructor]])
+  *   - traits and abstract classes ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]], using [[TraitConstructor]])
+  *   - "factory-like" traits and abstract classes ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]], using [[FactoryConstructor]])
+  *   - `zio.Has` heterogeneous map values for use by ZIO or other Reader-like effects ([[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]], using [[HasConstructor]])
+  *
+  * @example
+  * {{{
+  *  import distage.{AnyConstructor, Functoid, Injector, ModuleDef}
+  *
+  *  class A(val i: Int)
+  *
+  *  val constructor: Functoid[A] = AnyConstructor[A]
+  *
+  *  val lifecycle = Injector().produceGet[A](new ModuleDef {
+  *    make[A].from(constructor)
+  *    make[Int].fromValue(5)
+  *  })
+  *
+  *  lifecycle.use {
+  *    (a: A) =>
+  *      println(a.i)
+  *  }
+  * }}}
+  *
+  * @return [[izumi.distage.model.providers.Functoid]][T] value
+  */
+sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T] {
+  def provider: Functoid[T]
+}
+
+/**
+  * An implicitly summonable constructor for a concrete class `T`
+  *
+  * @see [[AnyConstructor]]
+  */
 final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+
+/**
+  * An implicitly summonable constructor for a traits or abstract class `T`
+  *
+  * @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]]
+  * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[TraitConstructor]]
+  * @see [[AnyConstructor]]
+  */
 final class TraitConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+
+/**
+  * An implicitly summonable constructor for a "factory-like" trait or abstract class `T`
+  *
+  * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
+  * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[FactoryConstructor]]
+  * @see [[AnyConstructor]]
+  */
 final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+
+/**
+  * An implicitly summonable constructor for a `T <: zio.Has[A] with zio.Has[B] with zio.Has[C]`
+  *
+  * `zio.Has` heterogeneous map values may be used by ZIO or other Reader-like effects
+  *
+  * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+  * @see [[AnyConstructor]]
+  */
 final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
 
 object AnyConstructor {
@@ -59,6 +122,7 @@ object HasConstructor {
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {
   def provider: Functoid[T]
 }
+
 object AnyConstructorOptionalMakeDSL {
   private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
 
@@ -71,7 +135,6 @@ object AnyConstructorOptionalMakeDSL {
   }
 
   def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {
-    import izumi.fundamentals.platform.strings.IzString._
 
     throw new UnsupportedDefinitionException(
       s"""`make[$tpe]` DSL failure: Called an empty error constructor, because constructor for $tpe WAS NOT generated.

@@ -139,27 +139,17 @@ import scala.reflect.macros.blackbox
   *
   * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
   *
-  * - [[Lifecycle.Of]]
-  *
-  * - [[Lifecycle.OfInner]]
-  *
-  * - [[Lifecycle.OfCats]]
-  *
-  * - [[Lifecycle.OfZIO]]
-  *
-  * - [[Lifecycle.LiftF]]
-  *
-  * - [[Lifecycle.Make]]
-  *
-  * - [[Lifecycle.Make_]]
-  *
-  * - [[Lifecycle.MakePair]]
-  *
-  * - [[Lifecycle.FromAutoCloseable]]
-  *
-  * - [[Lifecycle.SelfOf]]
-  *
-  * - [[Lifecycle.MutableOf]]
+  *  - [[Lifecycle.Of]]
+  *  - [[Lifecycle.OfInner]]
+  *  - [[Lifecycle.OfCats]]
+  *  - [[Lifecycle.OfZIO]]
+  *  - [[Lifecycle.LiftF]]
+  *  - [[Lifecycle.Make]]
+  *  - [[Lifecycle.Make_]]
+  *  - [[Lifecycle.MakePair]]
+  *  - [[Lifecycle.FromAutoCloseable]]
+  *  - [[Lifecycle.SelfOf]]
+  *  - [[Lifecycle.MutableOf]]
   *
   * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
   * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
@@ -199,19 +189,13 @@ import scala.reflect.macros.blackbox
   *
   * The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
   *
-  * - [[Lifecycle.Basic]]
-  *
-  * - [[Lifecycle.Simple]]
-  *
-  * - [[Lifecycle.Mutable]]
-  *
-  * - [[Lifecycle.MutableNoClose]]
-  *
-  * - [[Lifecycle.Self]]
-  *
-  * - [[Lifecycle.SelfNoClose]]
-  *
-  * - [[Lifecycle.NoClose]]
+  *  - [[Lifecycle.Basic]]
+  *  - [[Lifecycle.Simple]]
+  *  - [[Lifecycle.Mutable]]
+  *  - [[Lifecycle.MutableNoClose]]
+  *  - [[Lifecycle.Self]]
+  *  - [[Lifecycle.SelfNoClose]]
+  *  - [[Lifecycle.NoClose]]
   *
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
@@ -223,7 +207,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   /**
     * The action in `F` used to acquire the resource.
     *
-    * Note: the `acquire` action is performed *uninterruptibly*,
+    * @note the `acquire` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def acquire: F[InnerResource]
@@ -232,7 +216,7 @@ trait Lifecycle[+F[_], +OuterResource] {
     * The action in `F` used to release, close or deallocate the resource
     * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
     *
-    * Note: the `release` action is performed *uninterruptibly*,
+    * @note the `release` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def release(resource: InnerResource): F[Unit]
@@ -486,18 +470,17 @@ object Lifecycle extends LifecycleCatsInstances {
     /** Convert [[Lifecycle]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
       ZManaged.makeReserve(
-        resource
-          .acquire.map(
-            r =>
-              Reservation(
-                ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
-                _ =>
-                  resource.release(r).orDieWith {
-                    case e: Throwable => e
-                    case any: Any => new RuntimeException(s"Lifecycle finalizer: $any")
-                  },
-              )
-          )
+        resource.acquire.map(
+          r =>
+            Reservation(
+              ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
+              _ =>
+                resource.release(r).orDieWith {
+                  case e: Throwable => e
+                  case any: Any => new RuntimeException(s"Lifecycle finalizer: $any")
+                },
+            )
+        )
       )
     }
   }
@@ -552,7 +535,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * Note: when the expression passed to [[Lifecycle.Of]] defines many local methods
+    * @note when the expression passed to [[Lifecycle.Of]] defines many local methods
     *       it can hit a Scalac bug https://github.com/scala/bug/issues/11969
     *       and fail to compile, in that case you may switch to [[Lifecycle.OfInner]]
     */
@@ -673,7 +656,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * Note: `acquire` is performed interruptibly, unlike in [[Make]]
+    * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
   @open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
@@ -719,7 +702,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * NOTE: This class may be used instead of [[Lifecycle.Of]] to
+    * @note This class may be used instead of [[Lifecycle.Of]] to
     * workaround scalac bug https://github.com/scala/bug/issues/11969
     * when defining local methods
     */
@@ -798,7 +781,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * NOTE: binding a cats Resource[F, A] will add a
+    * @note binding a cats Resource[F, A] will add a
     *       dependency on `Sync[F]` for your corresponding `F` type
     *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */
@@ -1051,7 +1034,7 @@ private[definition] object AdaptFunctoidImpl {
     *   }
     * }}}
     *
-    * NOTE: binding a cats Resource[F, A] will add a
+    * @note binding a cats Resource[F, A] will add a
     *       dependency on `Sync[F]` for your corresponding `F` type
     *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */

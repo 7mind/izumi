@@ -91,7 +91,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
   final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
     val effectType = SafeType.getK[F]
     val badSteps = steps.iterator.collect {
-      case op: MonadicOp if !(op.effectHKTypeCtor <:< effectType || op.effectHKTypeCtor <:< SafeType.identityEffectType) => op
+      case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
     }.toList
     NonEmptyList.from(badSteps)
   }
@@ -101,7 +101,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
     *
-    * Note: this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
+    * @note this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
     *       by deleting the `keys` from bindings: `module -- keys`
     */
   final def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {

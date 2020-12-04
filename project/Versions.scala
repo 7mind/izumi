@@ -1,9 +1,9 @@
 object V {
   // izumi
-  val izumi_reflect = "1.0.0-M9"
+  val izumi_reflect = "1.0.0-M11"
 
   // foundation
-  val collection_compat = "2.2.0"
+  val collection_compat = "2.3.0"
 
   val kind_projector = "0.11.0"
   val silencer = "1.7.1"
@@ -11,8 +11,8 @@ object V {
 
   val scalatest = "3.2.2"
 
-  val cats = "2.2.0"
-  val cats_effect = "2.2.0"
+  val cats = "2.3.0"
+  val cats_effect = "2.3.0"
 
   val discipline = "1.0.3"
   val discipline_scalatest = "2.0.0"
@@ -25,13 +25,12 @@ object V {
 
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
-  val circe_derivation = "0.13.0-M4"
+  val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.14.0"
   val magnolia = "0.17.0"
   val jawn = "1.0.0"
 
-  val http4s = "0.21.4"
-  val doobie = "0.9.2"
+  val doobie = "0.9.4"
 
   // good to drop - scala
   val scala_java_time = "2.0.0-RC5"

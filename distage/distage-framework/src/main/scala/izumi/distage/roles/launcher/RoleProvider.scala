@@ -21,7 +21,7 @@ trait RoleProvider {
 object RoleProvider {
 
   class Impl(
-    logger: IzLogger,
+    logger: IzLogger @Id("early"),
     reflectionEnabled: Boolean @Id("distage.roles.reflection"),
     parameters: RawAppArgs,
   ) extends RoleProvider {
@@ -71,8 +71,7 @@ object RoleProvider {
     }
 
     protected def instantiateRoleBindings(bindsings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
-      bindsings
-        .iterator
+      bindsings.iterator
         .flatMap {
           case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) =>
             s.tags.collect {

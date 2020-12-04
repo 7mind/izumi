@@ -30,10 +30,10 @@ object RoleAppActivationParser {
       Activation(usedChoices.toMap)
     }
 
-    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisValue)] = {
+    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisChoice)] = {
       def options: String = {
-        activationInfo
-          .availableChoices.map {
+        activationInfo.availableChoices
+          .map {
             case (axis, members) =>
               s"$axis:${members.niceList().shift(2)}"
           }.niceList()
@@ -65,7 +65,7 @@ object RoleAppActivationParser {
       }
     }
 
-    protected def validateAllChoices(choices: Iterable[(Axis, Axis.AxisValue)]): Unit = {
+    protected def validateAllChoices(choices: Iterable[(Axis, Axis.AxisChoice)]): Unit = {
       import izumi.fundamentals.collections.IzCollections._
 
       val badChoices = choices.toMultimap.filter(_._2.size > 1)

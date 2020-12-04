@@ -18,7 +18,7 @@ object Exit {
 
     /** Unsafely Mutate the contained Throwable to attach this Trace's debugging information to it.
       *
-      * NOTE: may mutate arbitrary Throwables contained in the trace, discard all throwables that came from the same source
+      * @note may mutate arbitrary Throwables contained in the trace, discard all throwables that came from the same source
       * @param conv convert any contained typed errors into a Throwable
       */
     def unsafeAttachTrace(conv: E => Throwable): Throwable

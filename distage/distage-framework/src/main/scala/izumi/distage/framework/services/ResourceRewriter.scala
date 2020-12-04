@@ -40,12 +40,12 @@ class ResourceRewriter(
   import ResourceRewriter._
   import RewriteResult._
 
-  override def hookDefinition(defn: ModuleBase): ModuleBase = {
+  override def hookDefinition(definition: ModuleBase): ModuleBase = {
     if (rules.applyRewrites) {
-      defn
+      definition
         .flatMap(rewrite[AutoCloseable](fromAutoCloseable(logger, _)))
         .flatMap(rewrite[ExecutorService](fromExecutorService(logger, _)))
-    } else defn
+    } else definition
   }
 
   private def rewrite[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {

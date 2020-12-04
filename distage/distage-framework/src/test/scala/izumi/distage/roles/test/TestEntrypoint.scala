@@ -2,8 +2,7 @@ package izumi.distage.roles.test
 
 import cats.effect.IO
 import distage.plugins.PluginConfig
-import izumi.distage.model.definition
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
@@ -14,8 +13,12 @@ object TestEntrypoint extends TestEntrypointBase
 
 // for `CompTimePlanCheckerTest`
 object TestEntrypointPatchedLeak extends TestEntrypointBase {
-  override protected def appModuleOverrides(argv: RoleAppMain.ArgV): definition.Module = super.appModuleOverrides(argv) ++ new ModuleDef {
-    todo[XXX_LocatorLeak]
+  override protected def appModuleOverrides(argv: RoleAppMain.ArgV): Module = super.appModuleOverrides(argv) ++ new ModuleDef {
+    modify[Module].named("roleapp") {
+      _ ++ new ModuleDef {
+        todo[XXX_LocatorLeak]
+      }
+    }
   }
 }
 

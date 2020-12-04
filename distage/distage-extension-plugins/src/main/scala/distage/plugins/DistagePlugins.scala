@@ -13,7 +13,7 @@ trait DistagePlugins {
   type BootstrapPlugin = plugins.BootstrapPlugin
   val BootstrapPlugin: plugins.BootstrapPlugin.type = plugins.BootstrapPlugin
 
-  type BootstrapPluginDef = plugins.BootstrapPluginDef
+  type BootstrapPluginDef[T] = plugins.BootstrapPluginDef[T]
 
   type PluginLoader = load.PluginLoader
   val PluginLoader: load.PluginLoader.type = load.PluginLoader
