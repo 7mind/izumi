@@ -3,11 +3,10 @@ package izumi.distage.provisioning.strategies
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
+import izumi.distage.model.exceptions.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
@@ -20,17 +19,11 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
     op: MonadicOp.AllocateResource,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
-    val provisionerEffectType = SafeType.getK[F]
-    val actionEffectType = op.effectHKTypeCtor
-
-    val isEffect = actionEffectType != SafeType.identityEffectType
-    if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
-      throw new IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType)
-    }
+    op.throwOnIncompatibleEffectType[F]()
 
     val resourceKey = op.effectKey
     context.fetchKey(resourceKey, makeByName = false) match {
-      case Some(resource0) if isEffect =>
+      case Some(resource0) if op.isEffect[F] =>
         val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
         // FIXME: make uninterruptible / safe register finalizer sooner than now
         resource.acquire.flatMap {

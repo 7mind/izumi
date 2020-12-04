@@ -2,11 +2,10 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingRefException}
+import izumi.distage.model.exceptions.{DIBugException, MissingRefException}
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
@@ -18,17 +17,11 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
     op: MonadicOp.ExecuteEffect,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
-    val provisionerEffectType = SafeType.getK[F]
-    val actionEffectType = op.effectHKTypeCtor
-
-    val isEffect = actionEffectType != SafeType.identityEffectType
-    if (isEffect && !(actionEffectType <:< provisionerEffectType)) {
-      throw new IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType)
-    }
+    op.throwOnIncompatibleEffectType[F]()
 
     val effectKey = op.effectKey
     context.fetchKey(effectKey, makeByName = false) match {
-      case Some(action0) if isEffect =>
+      case Some(action0) if op.isEffect[F] =>
         val action = action0.asInstanceOf[F[Any]]
         action.map(newInstance => Seq(NewObjectOp.NewInstance(op.target, newInstance)))
       case Some(newInstance) =>

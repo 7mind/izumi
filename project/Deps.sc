@@ -193,14 +193,22 @@ object Izumi {
         enabled = Seq(Plugin("SbtgenVerificationPlugin")),
         disabled = Seq(Plugin("AssemblyPlugin")),
       )
-      final val settings = Seq()
 
-      final val sharedAggSettings = Seq(
+      final val outOfSource = Seq(
+//        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve(baseDirectory.in(LocalProject("${Projects
+//          .root.id.value}")).value.toPath().relativize(baseDirectory.value.toPath)).toFile""".raw
+      )
+
+      final val topLevelSettings = Seq()
+
+      final val sharedAggSettings = outOfSource ++ Seq(
         "crossScalaVersions" := Targets.targetScala.map(_.value),
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
       final val rootSettings = Defaults.SharedOptions ++ Seq(
+//        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
+//          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
@@ -214,7 +222,8 @@ object Izumi {
             |    Some(Opts.resolver.sonatypeSnapshots)
             |})
             |""".stripMargin.raw,
-        "credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
+        //"credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
+        "credentials" in SettingScope.Build += """Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties")""".raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
         "developers" in SettingScope.Build :=
@@ -223,11 +232,12 @@ object Izumi {
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
         "scalacOptions" in SettingScope.Build ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw
+          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
+          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
       )
 
-      final val sharedSettings = Defaults.SbtMetaOptions ++ Seq(
+      final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
@@ -681,7 +691,7 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    topLevelSettings = Projects.root.settings,
+    topLevelSettings = Projects.root.topLevelSettings,
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
     rootSettings = Projects.root.rootSettings,

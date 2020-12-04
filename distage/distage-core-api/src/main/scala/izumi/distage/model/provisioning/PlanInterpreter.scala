@@ -3,7 +3,7 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.{DIException, ProvisioningException}
+import izumi.distage.model.exceptions.{DIException, IncompatibleEffectTypesException, MissingImport, MissingInstanceException, ProvisioningException}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -11,6 +11,7 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection._
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.reflect.TagK
+import izumi.fundamentals.platform.strings.IzString._
 
 import scala.concurrent.duration.Duration
 
@@ -48,27 +49,62 @@ object PlanInterpreter {
     fullStackTraces: Boolean,
   ) {
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
-      val repr = failures.map {
-        case ProvisioningFailure(op, f) =>
-          val pos = OpFormatter.formatBindingPosition(op.origin)
-          val name = f match {
-            case di: DIException => di.getClass.getSimpleName
-            case o => o.getClass.getName
-          }
-          val trace = if (fullStackTraces) f.stackTrace else f.getMessage
-          s"${op.target} $pos, $name: $trace"
-      }
+      val repr = failures
+        .map {
+          case AggregateFailure(failures) =>
+            val messages = failures
+              .map {
+                case MissingImport(op) =>
+                  MissingInstanceException.format(op.target, op.references)
+                case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
+                  IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
+              }
+              .niceMultilineList("[!]")
+            s"Unsatisfied preconditions:\n$messages"
+          case StepProvisioningFailure(op, f) =>
+            val pos = OpFormatter.formatBindingPosition(op.origin)
+            val name = f match {
+              case di: DIException => di.getClass.getSimpleName
+              case o => o.getClass.getName
+            }
+            val trace = if (fullStackTraces) f.stackTrace else f.getMessage
+            s"${op.target} $pos, $name: $trace"
+        }
 
-      val ccFailed = repr.size
+      val ccFailed = failures
+        .flatMap {
+          case AggregateFailure(failures) =>
+            failures.flatMap {
+              case f: MissingImport =>
+                f.op.references
+              case f: IncompatibleEffectTypesException =>
+                Seq(f.op.target)
+            }
+          case op: StepProvisioningFailure =>
+            Seq(op.op.target)
+        }.toSet.size
+
       val ccDone = failed.instances.size
       val ccTotal = plan.steps.size
 
       import izumi.fundamentals.platform.exceptions.IzThrowable._
       import izumi.fundamentals.platform.strings.IzString._
 
+      val exceptions = failures.flatMap {
+        case _: AggregateFailure =>
+          Seq.empty
+        case f: StepProvisioningFailure =>
+          Seq(f.failure)
+      }
+
       F.fail {
-        new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed:${repr.niceList()}", null)
-          .addAllSuppressed(failures.map(_.failure))
+        new ProvisioningException(
+          s"""Provisioner failed on $ccFailed of $ccTotal required operations, just $ccDone succeeded:
+             |${repr.niceMultilineList()}
+             |""".stripMargin,
+          null,
+        )
+          .addAllSuppressed(exceptions)
       }
     }
   }

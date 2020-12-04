@@ -51,10 +51,15 @@ object IncidenceMatrix {
   }
 
   def apply[N](links: Map[N, Set[N]]): IncidenceMatrix[N] = {
-    val allKeys = links.keySet ++ links.values.flatten
-    val missing = allKeys -- links.keySet
+    val missing = missingKeys(links)
     val normalized = links ++ missing.map(m => (m, Set.empty[N])).toMap
     new IncidenceMatrix(links ++ normalized)
+  }
+
+  def missingKeys[N](links: Map[N, Set[N]]): Set[N] = {
+    val allKeys = links.keySet ++ links.values.flatten
+    val missing = allKeys -- links.keySet
+    missing
   }
 
   def linear[N](ordered: Seq[N]): IncidenceMatrix[N] = {

@@ -20,6 +20,8 @@ import scala.language.experimental.macros
   *
   *   s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}",
   *   s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}",
+  *
+  *   s"-Xmacro-settings:is-ci=${insideCI.value}",
   * )
   * }}}
   *
@@ -52,6 +54,9 @@ object MacroParameters {
   def gitBranch(): Option[String] = macro MacroParametersImpl.gitBranch
   def gitHeadCommit(): Option[String] = macro MacroParametersImpl.gitHeadCommit
   def gitDescribedVersion(): Option[String] = macro MacroParametersImpl.gitHeadCommit
+
+  def sbtIsInsideCI(): Option[Boolean] = macro MacroParametersImpl.sbtIsInsideCI
+
 
   def macroSetting(name: String): Option[String] = macro MacroParametersImpl.extractAttrMacro
 

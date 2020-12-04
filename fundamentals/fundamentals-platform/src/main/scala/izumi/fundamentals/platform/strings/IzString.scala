@@ -185,6 +185,24 @@ final class IzIterable[A](private val s: IterableOnce[A]) extends AnyVal {
       "ø"
     }
   }
+
+  def niceMultilineList(prefix: String = "-"): String = {
+    val iterator = s.iterator
+    val sz = prefix.length
+    val fst = s"$prefix" + " "
+    val fwd = "\n" + " " * (sz + 1)
+    if (iterator.nonEmpty) {
+      iterator
+        .map(_.toString)
+        .map {
+          s =>
+            s.split('\n').mkString(fst, fwd, "")
+        }
+        .mkString("\n")
+    } else {
+      "ø"
+    }
+  }
 }
 
 final class IzStringIterable[A](private val ss: Iterable[String]) extends AnyVal {

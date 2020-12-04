@@ -9,18 +9,18 @@ object V {
   val silencer = "1.7.1"
   val neme_plugin = "0.0.5"
 
-  val scalatest = "3.2.2"
+  val scalatest = "3.2.3"
 
   val cats = "2.3.0"
   val cats_effect = "2.3.0"
 
-  val discipline = "1.0.3"
+  val discipline = "1.1.2"
   val discipline_scalatest = "2.0.0"
 
   val zio = "1.0.3"
   val zio_interop_cats = "2.2.0.1"
 
-  val monix = "3.2.2"
+  val monix = "3.3.0"
   val monix_bio = "1.0.0"
 
   val circe = "0.13.0"

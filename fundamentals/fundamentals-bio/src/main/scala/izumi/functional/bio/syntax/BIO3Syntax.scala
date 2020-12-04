@@ -360,10 +360,10 @@ object BIO3Syntax {
     @inline final def BIOProfunctor[FR[-_, +_, +_]: Profunctor3]: Profunctor3[FR] = implicitly
   }
   trait BIOImplicitPuns20 {
-    @deprecated("Use BIOError3", "1.0")
+    @deprecated("Use Error3", "0.11")
     @inline implicit final def BIOMonadError3[FR[-_, +_, +_]: Error3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOError3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOError3Ops[FR, R, E, A](self)
-    @deprecated("Use BIOError3", "1.0")
+    @deprecated("Use Error3", "0.11")
     @inline final def BIOMonadError3[FR[-_, +_, +_]: Error3]: Error3[FR] = implicitly
   }
 

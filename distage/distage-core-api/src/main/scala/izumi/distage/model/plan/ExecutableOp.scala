@@ -1,10 +1,12 @@
 package izumi.distage.model.plan
 
+import izumi.distage.model.exceptions.DIBugException
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.reflect.TagK
 
 import scala.annotation.tailrec
 
@@ -24,7 +26,8 @@ object ExecutableOp {
     }
   }
 
-  sealed trait InstantiationOp extends SemiplanOp {
+  sealed trait NonImportOp extends ExecutableOp
+  sealed trait InstantiationOp extends SemiplanOp with NonImportOp {
     def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp
   }
   final case class CreateSet(target: DIKey, members: Set[DIKey], origin: EqualizedOperationOrigin) extends InstantiationOp {
@@ -74,9 +77,29 @@ object ExecutableOp {
         this.copy(target = targets(this.target), effectKey = parameters(this.effectKey))
       }
     }
+
+    implicit final class MonadicOpExt(private val op: MonadicOp) extends AnyVal {
+      @inline def actionEffectType: SafeType = op.effectHKTypeCtor
+      @inline def provisionerEffectType[F[_]: TagK]: SafeType = SafeType.getK[F]
+
+      @inline def isEffect[F[_]: TagK]: Boolean = {
+        actionEffectType != SafeType.identityEffectType
+      }
+      @inline def isIncompatibleEffectType[F[_]: TagK]: Boolean = {
+        isEffect && !(actionEffectType <:< provisionerEffectType[F])
+      }
+
+      @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Unit = {
+        if (isIncompatibleEffectType[F]) {
+          throw DIBugException(
+            s"Incompatible effect type in operation ${op.target}: $actionEffectType !<:< ${SafeType.identityEffectType}; this had to be handled before"
+          )
+        }
+      }
+    }
   }
 
-  sealed trait ProxyOp extends ExecutableOp
+  sealed trait ProxyOp extends NonImportOp
   object ProxyOp {
     final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: EqualizedOperationOrigin, byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
@@ -94,6 +117,7 @@ object ExecutableOp {
 
   implicit final class ExecutableOpExt(private val op: ExecutableOp) extends AnyVal {
     @inline def instanceType: SafeType = opInstanceType(op)
+
   }
 
   @tailrec

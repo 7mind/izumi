@@ -65,6 +65,7 @@ Videos:
 * [Scala, Functional Programming and Team Productivity (an overview of distage, distage-framework-docker & distage-testkit)](https://www.youtube.com/watch?v=QbdeVoL4hBk)
 * [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs)
 * [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+* [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
 
 Slides:
 

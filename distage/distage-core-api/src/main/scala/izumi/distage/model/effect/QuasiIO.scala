@@ -235,6 +235,10 @@ trait QuasiApplicative[F[_]] extends QuasiFunctor[F] {
   def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
 
   final val unit: F[Unit] = pure(())
+
+  final def when(cond: Boolean)(ifTrue: => F[Unit]): F[Unit] = if (cond) ifTrue else unit
+  final def unless(cond: Boolean)(ifFalse: => F[Unit]): F[Unit] = if (cond) unit else ifFalse
+  final def ifThenElse[A](cond: Boolean)(ifTrue: => F[A], ifFalse: => F[A]): F[A] = if (cond) ifTrue else ifFalse
 }
 
 object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {

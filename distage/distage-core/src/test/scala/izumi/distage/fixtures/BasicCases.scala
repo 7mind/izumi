@@ -60,7 +60,6 @@ object BasicCases {
     class Impl3 extends JustTrait
 
     case class LocatorDependent(ref: LocatorRef)
-
   }
 
   object BasicCase2 {

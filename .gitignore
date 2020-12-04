@@ -5,6 +5,7 @@
 .secrets*
 /config
 .agg
+.vscode
 
 # we cannot exclude build.sbt - scala steward wouldn't work without it
 #build.sbt

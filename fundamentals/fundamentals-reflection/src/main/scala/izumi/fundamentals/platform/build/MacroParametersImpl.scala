@@ -17,6 +17,8 @@ object MacroParametersImpl {
 
   def gitRepoClean(c: blackbox.Context)(): c.Expr[Option[Boolean]] = attrBool(c, "git-repo-clean")
 
+  def sbtIsInsideCI(c: blackbox.Context)(): c.Expr[Option[Boolean]] = attrBool(c, "is-ci")
+
   def gitBranch(c: blackbox.Context)(): c.Expr[Option[String]] = attr(c, "git-branch")
 
   def gitHeadCommit(c: blackbox.Context)(): c.Expr[Option[String]] = attr(c, "git-head-commit")
