@@ -477,7 +477,7 @@ object Lifecycle extends LifecycleCatsInstances {
               _ =>
                 resource.release(r).orDieWith {
                   case e: Throwable => e
-                  case any: Any => new RuntimeException(s"Lifecycle finalizer: $any")
+                  case any => new RuntimeException(s"Lifecycle finalizer: $any")
                 },
             )
         )
