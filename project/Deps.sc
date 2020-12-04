@@ -231,10 +231,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        "scalacOptions" in SettingScope.Build ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
-          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
-        ),
       )
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
@@ -244,6 +240,10 @@ object Izumi {
           SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
           ),
           SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
+          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), Some(true)) := Seq(
