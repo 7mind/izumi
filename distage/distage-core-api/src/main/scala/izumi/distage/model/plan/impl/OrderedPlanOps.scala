@@ -17,7 +17,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
   /**
     * Check for any unresolved dependencies,
     * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
-    * or for any other issue that would cause [[izumi.distage.model.Injector#produce(plan:OrderedPlan)* Injector.produce]] to fail
+    * or for any other issue that would cause [[izumi.distage.model.Injector#produce Injector.produce]] to fail
     *
     * If this returns `F.unit` then the wiring is generally correct,
     * modulo runtime exceptions in user code,

@@ -1,18 +1,15 @@
 package izumi.distage.model.definition
 
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{ExecutorService, TimeUnit}
-
 import cats.effect.Resource.{Allocate, Bind, Suspend}
-import cats.effect.{ExitCase, Resource, Sync, concurrent}
+import cats.effect.{ExitCase, Resource, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.{Functor2, Functor3, Local3}
-import izumi.fundamentals.orphans.{`cats.Functor`, _}
+import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
+import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{open, unused}
@@ -20,6 +17,8 @@ import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.ZManaged.ReleaseMap
 import zio._
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -214,7 +213,7 @@ trait Lifecycle[+F[_], +OuterResource] {
 
   /**
     * The action in `F` used to release, close or deallocate the resource
-    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
+    * after it has been acquired and used through [[izumi.distage.model.definition.Lifecycle.SyntaxUse#use]].
     *
     * @note the `release` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
@@ -256,7 +255,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
-  final def void[G[x] >: F[x]: QuasiApplicative]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+  final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
   @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
@@ -283,30 +282,6 @@ object Lifecycle extends LifecycleCatsInstances {
 
     override final def extract[B >: A](resource: A): Right[Nothing, A] = Right(resource)
     override final type InnerResource = A
-  }
-
-  import cats.effect.Resource
-
-  implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a =>
-          F.suspendF(resource.extract(a) match {
-            case Left(effect) => F.flatMap(effect)(use)
-            case Right(value) => use(value)
-          })
-      )
-    }
-  }
-
-  implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
-    def useEffect(implicit F: QuasiIO[F]): F[A] =
-      resource.use(identity)
-  }
-
-  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
-      resource.use(_.run(function))
   }
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
@@ -341,6 +316,31 @@ object Lifecycle extends LifecycleCatsInstances {
     liftF(effect).flatten
   }
 
+  /**
+    * Fork the specified action into a new fiber.
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber3#interrupt]]
+    *
+    * @return The [[izumi.functional.bio.Fiber3 fiber]] running `f` action
+    */
+  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Fiber2[F, E, A]] = {
+    Lifecycle.make(f.fork)(_.interrupt)
+  }
+
+  /** @see [[fork]] */
+  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Unit] = {
+    Lifecycle.fork(f).void
+  }
+
+  /**
+    * Fork the specified action into a new fiber.
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[cats.effect.Fiber#cancel]]
+    *
+    * @return The fiber running `f` action
+    */
+  def forkCats[F[_], A](f: F[A])(implicit F: cats.effect.Concurrent[F]): Lifecycle[F, cats.effect.Fiber[F, A]] = {
+    Lifecycle.make(F.start(f))(_.cancel)
+  }
+
   def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
@@ -361,6 +361,7 @@ object Lifecycle extends LifecycleCatsInstances {
         }
     }
   }
+
   def fromExecutorService[A <: ExecutorService](acquire: => A): Lifecycle[Identity, A] = {
     fromExecutorService[Identity, A](acquire)
   }
@@ -371,6 +372,55 @@ object Lifecycle extends LifecycleCatsInstances {
 
   def unit[F[_]](implicit F: QuasiApplicative[F]): Lifecycle[F, Unit] = {
     Lifecycle.liftF(F.unit)
+  }
+
+  implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
+      F.bracket(acquire = resource.acquire)(release = resource.release)(
+        use = a =>
+          F.suspendF(resource.extract(a) match {
+            case Left(effect) => F.flatMap(effect)(use)
+            case Right(value) => use(value)
+          })
+      )
+    }
+  }
+
+  implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
+    def useEffect(implicit F: QuasiIO[F]): F[A] =
+      resource.use(identity)
+  }
+
+  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
+    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
+      resource.use(_.run(function))
+  }
+
+  implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
+    def toEffect[F[_]: QuasiIO]: Lifecycle[F, A] = {
+      new Lifecycle[F, A] {
+        override type InnerResource = resource.InnerResource
+        override def acquire: F[InnerResource] = QuasiIO[F].maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): F[Unit] = QuasiIO[F].maybeSuspend(resource.release(res))
+        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
+      }
+    }
+  }
+
+  implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
+    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
+  }
+
+  implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    /** Unsafely acquire the resource and throw away the finalizer,
+      * this will leak the resource and cause it to never be cleaned up.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[SyntaxUse#use]] instead!
+      */
+    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
+      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    }
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
@@ -482,33 +532,6 @@ object Lifecycle extends LifecycleCatsInstances {
             )
         )
       )
-    }
-  }
-
-  implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
-    def toEffect[F[_]: QuasiIO]: Lifecycle[F, A] = {
-      new Lifecycle[F, A] {
-        override type InnerResource = resource.InnerResource
-        override def acquire: F[InnerResource] = QuasiIO[F].maybeSuspend(resource.acquire)
-        override def release(res: InnerResource): F[Unit] = QuasiIO[F].maybeSuspend(resource.release(res))
-        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
-      }
-    }
-  }
-
-  implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
-    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
-  }
-
-  implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    /** Unsafely acquire the resource and throw away the finalizer,
-      * this will leak the resource and cause it to never be cleaned up.
-      *
-      * This function only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] instead!
-      */
-    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
-      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
     }
   }
 
@@ -1046,7 +1069,7 @@ private[definition] object AdaptFunctoidImpl {
         import tag.tagFull
         implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
 
-        a.zip(Functoid.identity[Sync[F]])
+        a.zip(Functoid.identity[cats.effect.Sync[F]])
           .map { case (resource, sync) => fromCats(resource)(sync) }
       }
     }

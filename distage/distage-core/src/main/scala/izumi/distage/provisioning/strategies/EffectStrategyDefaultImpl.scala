@@ -2,7 +2,7 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.{DIBugException, MissingRefException}
+import izumi.distage.model.exceptions.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}

@@ -24,7 +24,7 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
     * `Locator`, by BootstrapContext, or they may be materialized by
     * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
     *
-    * @see [[izumi.distage.model.plan.impl.OrderedPlanOps#unresolvedImports]] for a check you can use in tests
+    * @see [[izumi.distage.model.plan.impl.OrderedPlanOps#assertValidOrThrow]] for a check you can use in tests
     */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
@@ -65,10 +65,9 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
 
   final def collectChildrenKeys[T: Tag]: Set[DIKey] = {
     val tpe = SafeType.get[T]
-    steps
-      .iterator.collect {
-        case op if op.instanceType <:< tpe => op.target
-      }.toSet
+    steps.iterator.collect {
+      case op if op.instanceType <:< tpe => op.target
+    }.toSet
   }
 
   final def collectChildrenKeysSplit[T1, T2](implicit t1: Tag[T1], t2: Tag[T2]): (Set[DIKey], Set[DIKey]) = {

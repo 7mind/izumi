@@ -101,7 +101,7 @@ import izumi.functional.bio.Monad2
 
 def loop[F[+_, +_]: Monad2]: F[Nothing, Nothing] = {
   val unitEffect: F[Nothing, Unit] = Monad2[F].unit
-  unitEffect.flatMap(loop)
+  unitEffect.flatMap(_ => loop)
 }
 ```
 

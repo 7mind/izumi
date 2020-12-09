@@ -38,11 +38,11 @@ class StaticLogRouter extends LogRouter {
 
   override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = {
     proxied.get() match {
-      case p if p != null =>
-        p.acceptable(id, messageLevel)
-
       case null =>
         messageLevel >= fallbackThreshold
+
+      case p =>
+        p.acceptable(id, messageLevel)
     }
   }
 

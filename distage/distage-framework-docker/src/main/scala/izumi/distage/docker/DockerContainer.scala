@@ -39,7 +39,7 @@ object DockerContainer {
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
     /**
-      * Allows you to modify [[izumi.distage.docker.Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[Functoid]].
+      * Allows you to modify [[izumi.distage.docker.Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[izumi.distage.model.providers.Functoid]].
       *
       * Example:
       *

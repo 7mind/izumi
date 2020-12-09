@@ -19,7 +19,7 @@ Singleton bindings:
   - `make[X].from[XImpl].modifyBy(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = Create X using XImpl's constructor and modify its `Functoid` using the provided lambda - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
 
 Set bindings:
-  - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
+  - `many[X].add[X1].add[X2]` = bind a `Set` of X, and add subtypes X1 and X2 created via their constructors to it.
                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
   - `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[izumi.distage.model.providers.Functoid Provider]] function

@@ -11,7 +11,7 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
   def steps: Seq[OpType]
   def index: Map[DIKey, OpType]
 
-  /** A longer-form rendering of the Plan, compared to [[izumi.distage.model.plan.impl.OrderedPlanExtensions.OrderedPlanRenderOps#render()]] */
+  /** A longer-form rendering of the Plan, compared to [[izumi.distage.model.plan.impl.OrderedPlanExtensions.OrderedPlanRenderOps]] */
   final def repr: String = steps.iterator.map(_.toString).mkString("\n", "\n", "")
 }
 

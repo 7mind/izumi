@@ -54,7 +54,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
     * @param activation A map of axes of configuration to choices along these axes
-    * @param function   N-ary [[Functoid]] function for which arguments will be designated as roots and provided from the object graph
+    * @param function   N-ary [[izumi.distage.model.providers.Functoid]] function for which arguments will be designated as roots and provided from the object graph
     */
   final def produceRun[A](
     bindings: ModuleBase,
@@ -102,7 +102,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @param bindings   Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
     * @param activation A map of axes of configuration to choices along these axes
-    * @param function   N-ary [[Functoid]] function for which arguments will be designated as roots and provided from the object graph
+    * @param function   N-ary [[izumi.distage.model.providers.Functoid]] function for which arguments will be designated as roots and provided from the object graph
     */
   final def produceEval[A](
     bindings: ModuleBase,
@@ -190,8 +190,33 @@ trait Injector[F[_]] extends Planner with Producer {
     produceCustomF[F](plan(PlannerInput(bindings, activation, roots)))
   }
 
-  /** Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
+  /**
+    * Create an effectful [[izumi.distage.model.definition.Lifecycle]] value that encapsulates the
     * allocation and cleanup of an object graph described by an existing `plan`
+    *
+    * {{{
+    *   class HelloWorld {
+    *     def hello() = println("hello world")
+    *   }
+    *
+    *   val injector = Injector()
+    *
+    *   val plan = injector.plan(PlannerInput(
+    *       bindings = new ModuleDef {
+    *         make[HelloWorld]
+    *       },
+    *       activation = Activation.empty,
+    *       roots = Roots.target[HelloWorld],
+    *     ))
+    *
+    *   injector
+    *     .produce(plan)
+    *     .use(_.get[HelloWorld].hello())
+    * }}}
+    *
+    * @param plan Computed wiring plan, may be produced by calling the [[plan]] method
+    *
+    * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
   final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)

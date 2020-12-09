@@ -9,8 +9,8 @@ import izumi.fundamentals.reflection.TypeUtil
 import scala.jdk.CollectionConverters._
 
 class PluginLoaderDefaultImpl extends PluginLoader {
+  /** Will disable scanning if no packages are specified (add `"_root_"` package if you want to scan everything) */
   override def load(config: PluginConfig): LoadedPlugins = {
-    /** Disable scanning if no packages are specified (enable `_root_` package if you really want to scan everything) */
     val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
       Seq.empty
     } else {
@@ -70,8 +70,7 @@ object PluginLoaderDefaultImpl {
 
     try {
       val implementors = scanResult.getClassesImplementing(base)
-      implementors
-        .asScala
+      implementors.asScala
         .filterNot(c => c.isAbstract || c.isSynthetic || c.isAnonymousInnerClass)
         .flatMap {
           classInfo =>

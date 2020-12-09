@@ -4,7 +4,7 @@ import izumi.distage.model.reflection.IdContract
 import scala.language.implicitConversions
 
 /**
-  * Type of a name for a named instance, which can be any type that implements [[izumi.distage.model.reflection.IdContract]] typeclass, e.g. [[String]]
+  * Type of a name for a named instance, which can be any type that implements [[izumi.distage.model.reflection.IdContract]] typeclass, e.g. `String`
   *
   * Example:
   * {{{

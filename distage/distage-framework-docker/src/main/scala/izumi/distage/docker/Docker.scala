@@ -24,7 +24,7 @@ object Docker {
     override def toString: String = name
   }
 
-  trait DockerPort {
+  sealed trait DockerPort {
     def protocol: String
     def toEnvVariable: String
     def portLabel(parts: String*): String
@@ -82,7 +82,7 @@ object Docker {
     *
     * @param networks Docker networks to connect this container to
     *
-    * @param reuse    If true and [[ClientConfig#allowReuse]] is also true, keeps container alive after tests.
+    * @param reuse    If true and [[ClientConfig#globalReuse]] is also true, keeps container alive after tests.
     *                 If false, the container will be shut down.
     *                 default: true
     *
@@ -174,8 +174,8 @@ object Docker {
     implicit val diConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.deriveFromPureconfigConfigReader
 
     val defaultReusePolicy: DockerReusePolicy = {
-      DebugProperties
-        .`izumi.distage.docker.reuse`.strValue()
+      DebugProperties.`izumi.distage.docker.reuse`
+        .strValue()
         .fold[DockerReusePolicy](DockerReusePolicy.ReuseEnabled)(parseReusePolicy)
     }
 

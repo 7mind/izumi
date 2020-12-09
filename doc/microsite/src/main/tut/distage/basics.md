@@ -246,8 +246,8 @@ class AllCapsGreeter extends Greeter {
 // declare a configuration axis for our components
 
 object Style extends Axis {
-  case object AllCaps extends AxisValueDef
-  case object Normal extends AxisValueDef
+  case object AllCaps extends AxisChoiceDef
+  case object Normal extends AxisChoiceDef
 }
 
 // Declare a module with several implementations of Greeter
@@ -305,9 +305,9 @@ In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.test
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+import izumi.distage.testkit.scalatest.Spec2
 
-class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
+class AxisTest extends Spec2[zio.IO] {
 
   // choose implementations `.tagged` as `Repo.Dummy` over those tagged `Repo.Prod`
   override def config: TestConfig = super.config.copy(
@@ -654,7 +654,7 @@ Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
 import distage.{ModuleDef, Injector}
-import izumi.functional.bio.{BIOError, Primitives2, F}
+import izumi.functional.bio.{Error2, Primitives2, F}
 import zio.{Task, IO}
 
 trait KVStore[F[_, _]] {
@@ -662,7 +662,7 @@ trait KVStore[F[_, _]] {
   def put(key: String, value: String): F[Nothing, Unit]
 }
 
-def dummyKVStore[F[+_, +_]: BIOError: Primitives2]: F[Nothing, KVStore[F]] = {
+def dummyKVStore[F[+_, +_]: Error2: Primitives2]: F[Nothing, KVStore[F]] = {
   for {
     ref <- F.mkRef(Map.empty[String, String])
   } yield new KVStore[F] {
@@ -1193,7 +1193,7 @@ val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
 
-objectsResource.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
+objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
 
 #### Out-of-the-box typeclass instances

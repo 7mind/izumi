@@ -23,10 +23,10 @@ import scala.language.implicitConversions
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *                              Components specified in `memoizationRoots` will be memoized only for the tests in the same memoization environment.
   *
-  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[BootstrapModule]].
+  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[izumi.distage.model.definition.BootstrapModule]].
   *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
-  * @param activation            Chosen activation axes. Changes in [[Activation]] that alter implementations of components in [[memoizationRoots]]
+  * @param activation            Chosen activation axes. Changes in [[izumi.distage.model.definition.Activation]] that alter implementations of components in [[memoizationRoots]]
   *                              OR their dependencies will cause the test to execute in a new memoization environment,
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *

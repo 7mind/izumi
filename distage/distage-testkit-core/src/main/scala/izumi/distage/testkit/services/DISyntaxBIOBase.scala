@@ -14,7 +14,7 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
         (effect, F) =>
           F.leftMap(effect) {
             case t: Throwable => t
-            case otherError: Any => TypedError("Test failed, unexpectedly got bad branch. ", otherError)
+            case otherError => TypedError("Test failed, unexpectedly got bad branch. ", otherError)
           }
       }
 

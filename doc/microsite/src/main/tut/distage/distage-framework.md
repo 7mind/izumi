@@ -5,8 +5,37 @@ distage-framework
 
 ### Roles
 
-A "Role" is an entrypoint for a specific application hosted in a larger software suite.
-Bundling multiple roles in a single `.jar` file can simplify deployment and operations.
+Many software suites have more than one entrypoint. For example Scalac provides a REPL and a Compiler. A typical distributed application may provide both server and client code, as well as a host of utility applications for maintenance. 
+
+In `distage` such entrypoints are called "roles". Role-based applications may contain roles of different types:
+
+- @scaladoc[`RoleService[F]`](izumi.distage.roles.model.RoleService) – service roles 
+  
+
+```scala mdoc:to-string
+import distage.Lifecycle
+import izumi.distage.roles.model.RoleService
+import izumi.functional.bio.{F, Fork2, IO2}
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import logstage.LogIO2
+import logstage.LogIO2.log
+
+final class HelloService[F[+_, +_]: IO2: Fork2: LogIO2] extends RoleService[F[Nothing, ?]] {
+  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F[Nothing, ?], Unit] = {
+    Lifecycle.fork_(helloServer).void
+  }
+
+  val helloServer: F[Throwable, Unit] = {
+    (for {
+      name <- F.syncThrowable { Console.in.readLine() }
+      _    <- log.info(s"Hello $name!")
+    } yield ()).forever
+  }
+}
+```
+
+  
+- @scaladoc[`RoleTask[F]`](izumi.distage.roles.model.RoleTask) - oneshot roles
 
 Add `distage-framework` library for Roles API:
 
@@ -16,11 +45,11 @@ Add `distage-framework` library for Roles API:
   version="$izumi.version$"
 }
 
-With default @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), roles to launch are specified on the command-line:
+For apps using @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), specify roles to launch on the command-line:
 
 ```
 ./launcher :rolename1 :rolename2`
-```
+``` 
 
 Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[Dependency Pruning](advanced-features.md#dependency-pruning))
 
@@ -29,7 +58,7 @@ Only the components required by the specified roles will be created, everything 
 - @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help` 
 - @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by roles (includes only parts of the config used by the application)
 
-Further reading: 
+Further reading:
 - [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
 ### Typesafe Config
