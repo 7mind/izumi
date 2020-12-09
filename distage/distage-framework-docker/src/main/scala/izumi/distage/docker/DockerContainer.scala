@@ -1,10 +1,12 @@
 package izumi.distage.docker
 
+import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
@@ -75,28 +77,20 @@ object DockerContainer {
     }
 
     def connectToNetwork[T2](
-      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+      @unused networkDecl: ContainerNetworkDef.Aux[T2]
+    )(implicit tag1: distage.Tag[ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
-    ): Functoid[ContainerResource[F, T]] = {
-      tag1.discard()
-      tag3.discard()
-      modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
-          old.copy(networks = old.networks + net)
-      }
-    }
+    ): Functoid[ContainerResource[F, T]] = connectToNetwork[T2]
 
-    def connectToNetwork(
-      networkDecl: ContainerNetworkDef
-    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+    def connectToNetwork[T2](
+      implicit tag1: distage.Tag[ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
-      tag1.discard()
-      tag3.discard()
+      discard(tag1, tag3)
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
+        net: ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
           old.copy(networks = old.networks + net)
       }
     }

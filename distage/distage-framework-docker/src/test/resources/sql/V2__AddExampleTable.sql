@@ -1,0 +1,1 @@
+-- create table if not exists example_table ();

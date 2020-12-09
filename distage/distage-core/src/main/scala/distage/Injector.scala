@@ -97,6 +97,7 @@ object Injector extends InjectorFactory {
     (bootstrapBase.keys.iterator ++
     overrides.iterator.flatMap(_.keys) ++
     BootstrapLocator.selfReflectionKeys.iterator ++
+    IdentitySupportModule.keys.iterator ++
     InjectorDefaultImpl.providedKeys.iterator).toSet
   }
 

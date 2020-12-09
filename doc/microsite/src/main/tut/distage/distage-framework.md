@@ -1,5 +1,4 @@
-distage-framework
-=======================
+# distage-framework
 
 @@toc { depth=2 }
 

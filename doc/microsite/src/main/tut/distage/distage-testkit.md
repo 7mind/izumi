@@ -472,7 +472,7 @@ See also:
 - [Memoization](#resource-reuse-memoization)
 - [Execution Order](#execution-order)
 
-### Syntax Summary
+### Syntax Reference
 
 For `F[_]`, including `Identity`:
 

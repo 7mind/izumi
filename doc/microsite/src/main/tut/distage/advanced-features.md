@@ -1,5 +1,4 @@
-Advanced Features
-==============
+# Advanced Features
 
 @@toc { depth=2 }
 

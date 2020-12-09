@@ -1,12 +1,12 @@
 package izumi.functional.mono
 
-@deprecated("Use izumi.functional.bio.UnsafeRun2")
+@deprecated("Use izumi.functional.bio.UnsafeRun2", "1.0")
 trait CIORunner[CIO[_]] {
   def unsafeRun[A](cio: CIO[A]): A
   def unsafeRunAsync[A](cio: CIO[A])(cb: Either[Throwable, A] => Unit): Unit
 }
 
-@deprecated("Use izumi.functional.bio.UnsafeRun2")
+@deprecated("Use izumi.functional.bio.UnsafeRun2", "1.0")
 object CIORunner {
   def apply[CIO[_]: CIORunner]: CIORunner[CIO] = implicitly
 

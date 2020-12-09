@@ -1,5 +1,4 @@
-distage-framework-docker
-========================
+# distage-framework-docker
 
 @@toc { depth=2 }
 

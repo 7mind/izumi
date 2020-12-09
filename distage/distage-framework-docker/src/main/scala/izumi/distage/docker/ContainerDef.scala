@@ -5,11 +5,16 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 
-trait ContainerDef { self =>
+trait ContainerDef {
+  // `ContainerDef`s must be top-level objects, otherwise `.Container` and `.Config` won't be referencable in ModuleDef
+  self: Singleton =>
+
   type Tag
+
   final type Container = DockerContainer[Tag]
+
   final type Config = Docker.ContainerConfig[Tag]
-  final val Config = Docker.ContainerConfig
+  final lazy val Config = Docker.ContainerConfig
 
   def config: Config
 
@@ -40,10 +45,11 @@ trait ContainerDef { self =>
 
   final def copy(config: Config): ContainerDef.Aux[self.Tag] = {
     @inline def c = config
-    new ContainerDef {
+    object copy extends ContainerDef {
       override type Tag = self.Tag
       override def config: Config = c
     }
+    copy
   }
 }
 

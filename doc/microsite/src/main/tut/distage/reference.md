@@ -1,5 +1,4 @@
-Syntax Summary
-==============
+# Syntax Reference
 
 @scaladoc[ModuleDefDSL](izumi.distage.model.definition.ModuleDefDSL) syntax:
 

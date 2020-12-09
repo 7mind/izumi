@@ -42,14 +42,14 @@ class DockerClientWrapper[F[_]](
           rawClient
             .stopContainerCmd(containerId.name)
             .exec()
-            .discard()
         } finally {
           rawClient
             .removeContainerCmd(containerId.name)
             .withForce(true)
             .exec()
-            .discard()
         }
+
+        logger.info(s"Destroyed $containerId ($context)")
       }
     } {
       failure => F.maybeSuspend(logger.warn(s"Got failure during container destroy $failure"))
@@ -121,8 +121,7 @@ object DockerClientWrapper {
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
         containers <- F.maybeSuspend {
-          resource
-            .rawClient
+          resource.rawClient
             .listContainersCmd()
             .withStatusFilter(List(DockerConst.State.exited, DockerConst.State.running).asJava)
             .withLabelFilter(resource.labels.asJava)
