@@ -3,8 +3,9 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO2InstancesModule
-import izumi.functional.bio.{Applicative2, Async2, Fork2, IO2, Primitives2, SyncSafe2, Temporal2, UnsafeRun2}
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{Applicative2, Async2, Clock2, Entropy2, Fork2, IO2, Primitives2, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.mono.{Clock, Entropy, SyncSafe}
+import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
 
 /**
@@ -34,6 +35,12 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   }
   make[SyncSafe2[F]].from {
     SyncSafe.fromBIO(_: IO2[F])
+  }
+  make[Clock2[F]].from {
+    Clock.fromImpure(_: Clock[Identity])(_: SyncSafe2[F])
+  }
+  make[Entropy2[F]].from {
+    Entropy.fromImpure(_: Entropy[Identity])(_: SyncSafe2[F])
   }
 }
 

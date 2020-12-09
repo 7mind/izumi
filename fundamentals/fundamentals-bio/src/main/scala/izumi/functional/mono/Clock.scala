@@ -26,8 +26,12 @@ object Clock {
     override def now(accuracy: ClockAccuracy): ZonedDateTime = {
       ClockAccuracy.applyAccuracy(ZonedDateTime.now(TZ_UTC), accuracy)
     }
-    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = now(accuracy).toLocalDateTime
-    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = now(accuracy).toOffsetDateTime
+    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = {
+      now(accuracy).toLocalDateTime
+    }
+    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = {
+      now(accuracy).toOffsetDateTime
+    }
   }
 
   class Constant(time: ZonedDateTime) extends Clock[Identity] {

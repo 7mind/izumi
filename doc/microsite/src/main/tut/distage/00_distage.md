@@ -5,8 +5,7 @@ out: index.html
 distage: Staged Dependency Injection
 ====================================
 
-`distage` is a pragmatic module system for pure-FP Scala & Scala.js. It combines simplicity and expressiveness of pure FP
-with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
+`distage` is a pragmatic module system for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
 
 `distage` is suitable for wiring @ref[Tagless Final Style](basics.md#tagless-final-style),
 @ref[ZIO ZLayer-based applications](basics.md#zio-has-bindings), and ordinary FP, actor-based or imperative Scala applications.

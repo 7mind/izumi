@@ -5,7 +5,8 @@ import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
-import izumi.functional.mono.SyncSafe
+import izumi.functional.mono.{Clock, Entropy, SyncSafe}
+import izumi.fundamentals.platform.functional.Identity
 
 /**
   * Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
@@ -38,6 +39,12 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   }
   make[SyncSafe[F]].from {
     implicit F: Sync[F] => SyncSafe.fromSync
+  }
+  make[Clock[F]].from {
+    Clock.fromImpure(_: Clock[Identity])(_: SyncSafe[F])
+  }
+  make[Entropy[F]].from {
+    Entropy.fromImpure(_: Entropy[Identity])(_: SyncSafe[F])
   }
 }
 

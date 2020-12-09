@@ -14,8 +14,8 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
 
   /**
     * Returns a [[izumi.distage.model.definition.Lifecycle]] with the start/shutdown of a service described
-    * by its `acquire`/`release` actions. The acquired service will be kept alive until the application is interrupted externally or
-    * is otherwise finished, then the specified `release` action of the Lifecycle will run for clean up.
+    * by its `acquire`/`release` actions. The acquired service will be kept alive until the application is interrupted or
+    * is otherwise finished, then the specified `release` action of the Lifecycle will run for cleanup.
     *
     * Often [[start]] is implemented using the [[izumi.distage.model.definition.Lifecycle.fork_]] method
     * to spawn a daemon fiber running the service in background.
