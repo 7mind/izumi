@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import cats.effect.IO
+import com.github.pshirshov.test.plugins.{StaticTestMain2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
@@ -17,6 +18,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
+import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -373,6 +375,17 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "read config in bootstrap plugins" in {
       Fixture3.TestRoleAppMain.main(Array(":fixture3"))
+    }
+
+    "LogIO2 binding is available in LauncherBIO for ZIO & MonixBIO" in {
+      withProperties(
+        DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
+        DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
+      ) {
+        val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
+        new StaticTestMain2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        new StaticTestMain2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+      }
     }
   }
 

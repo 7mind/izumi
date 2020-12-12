@@ -276,25 +276,50 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
     *
+    * @throws PlanCheckException on found issues
+    */
+  final def assert(
+    bindings: ModuleBase,
+    roots: Roots,
+    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+  ): Unit = {
+    PlanVerifier()
+      .verify[F](
+        bindings = bindings,
+        roots = roots,
+        providedKeys = providedKeys,
+        excludedActivations = excludedActivations.map(_.map(_.toAxisPoint)),
+      ).throwOnError()
+  }
+
+  /**
+    * Efficiently check all possible paths for the given module to the given `roots`,
+    *
+    * This is a "raw" version of [[izumi.distage.framework.PlanCheck]] API, please use `PlanCheck` for all non-exotic needs.
+    *
+    * This method executes at runtime, to check correctness at compile-time use `PlanCheck` API from `distage-framework` module.
+    *
+    * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
+    *
     * @return Set of issues if any.
-    *         Does not throw on issues, use a separate assertion.
+    *         Does not throw.
     */
   final def verify(
     bindings: ModuleBase,
     roots: Roots,
     excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
   ): PlanVerifierResult = {
-    PlanVerifier().verify[F](
-      bindings = bindings,
-      roots = roots,
-      providedKeys = providedKeys,
-      excludedActivations = excludedActivations.map(_.map(_.toAxisPoint)),
-    )
+    PlanVerifier()
+      .verify[F](
+        bindings = bindings,
+        roots = roots,
+        providedKeys = providedKeys,
+        excludedActivations = excludedActivations.map(_.map(_.toAxisPoint)),
+      )
   }
 
   /** Keys that will be available to the module interpreted by this Injector, includes parent Locator keys, [[izumi.distage.modules.DefaultModule]] & Injector's self-reference keys */
   def providedKeys: Set[DIKey]
-
   def providedEnvironment: InjectorProvidedEnv
 
   protected[this] implicit def tagK: TagK[F]

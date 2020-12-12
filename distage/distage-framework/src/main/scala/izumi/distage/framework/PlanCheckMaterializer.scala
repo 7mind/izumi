@@ -120,9 +120,9 @@ object PlanCheckMaterializer {
           printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
           logger = logger,
         ) match {
-          case PlanCheckResult.Correct(loadedPlugins) =>
+          case PlanCheckResult.Correct(loadedPlugins, _) =>
             true -> loadedPlugins
-          case PlanCheckResult.Incorrect(loadedPlugins, message, _) =>
+          case PlanCheckResult.Incorrect(loadedPlugins, _, message, _) =>
             val warn = onlyWarn.getOrElse(sysPropOnlyWarn)
             if (warn) {
               c.warning(c.enclosingPosition, message)

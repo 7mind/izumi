@@ -36,10 +36,11 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[SyncSafe2[F]].from {
     SyncSafe.fromBIO(_: IO2[F])
   }
-  make[Clock2[F]].from {
+  make[SyncSafe[F[Throwable, ?]]].from((_: SyncSafe2[F]).widen[F[Throwable, ?]])
+  make[Clock2[F]].aliased[Clock[F[Throwable, ?]]].from {
     Clock.fromImpure(_: Clock[Identity])(_: SyncSafe2[F])
   }
-  make[Entropy2[F]].from {
+  make[Entropy2[F]].aliased[Entropy[F[Throwable, ?]]].from {
     Entropy.fromImpure(_: Entropy[Identity])(_: SyncSafe2[F])
   }
 }

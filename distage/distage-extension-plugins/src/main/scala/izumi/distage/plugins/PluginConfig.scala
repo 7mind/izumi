@@ -55,7 +55,7 @@ object PluginConfig {
     * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
     *       (similarly to how you cannot call Scala macros defined in the current module)
     */
-  def static(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
+  def compileTime(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
 
   /** Scan the the current source file's package *at compile-time* for classes and objects that inherit [[PluginBase]]
     *
@@ -63,7 +63,7 @@ object PluginConfig {
     * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
     *       (similarly to how you cannot call Scala macros defined in the current module)
     */
-  def staticThisPkg: PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfigThisPkg
+  def compileTimeThisPkg: PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfigThisPkg
 
   /** Create a [[PluginConfig]] that simply returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false, plugins, Nil)
@@ -76,6 +76,8 @@ object PluginConfig {
 
   private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)
 
-  @deprecated("renamed to `.static`", "1.0")
-  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.staticallyAvailablePluginConfig
+  @deprecated("Renamed to `compileTime`", "1.0")
+  def static(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
+  @deprecated("renamed to `.compileTime`", "1.0")
+  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
 }

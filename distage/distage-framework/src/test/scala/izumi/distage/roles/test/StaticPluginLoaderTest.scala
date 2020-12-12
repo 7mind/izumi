@@ -10,7 +10,7 @@ class StaticPluginLoaderTest extends AnyWordSpec {
   "Static plugin scanner" should {
 
     "Prepopulate plugins list in compile time" in {
-      val plugins = StaticPluginLoader.staticallyAvailablePlugins("com.github.pshirshov.test.plugins")
+      val plugins = StaticPluginLoader.scanCompileTime("com.github.pshirshov.test.plugins")
       assert(plugins.size == 6)
       assert(
         plugins.map(_.getClass).toSet == Set(
@@ -25,7 +25,7 @@ class StaticPluginLoaderTest extends AnyWordSpec {
     }
 
     "Prepopulate plugins list in compile time (PluginConfig)" in {
-      val plugins = PluginLoader().load(PluginConfig.static("com.github.pshirshov.test.plugins"))
+      val plugins = PluginLoader().load(PluginConfig.compileTime("com.github.pshirshov.test.plugins"))
       assert(plugins.size == 6)
       assert(
         plugins.result.map(_.getClass).toSet == Set(

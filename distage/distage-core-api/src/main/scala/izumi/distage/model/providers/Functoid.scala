@@ -1,5 +1,6 @@
 package izumi.distage.model.providers
 
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.LinkedParameter
@@ -102,7 +103,8 @@ final case class Functoid[+A](get: Provider) {
   }
 
   /** Add `B` as an unused dependency of this Provider */
-  def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey.get[B])
+  def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey[B])
+  def addDependency[B: Tag](name: Identifier): Functoid[A] = addDependency(DIKey[B](name))
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
   def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 

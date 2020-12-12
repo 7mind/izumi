@@ -17,7 +17,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * by its `acquire`/`release` actions. The acquired service will be kept alive until the application is interrupted or
     * is otherwise finished, then the specified `release` action of the Lifecycle will run for cleanup.
     *
-    * Often [[start]] is implemented using the [[izumi.distage.model.definition.Lifecycle.fork_]] method
+    * @example Often [[start]] is implemented using the [[izumi.distage.model.definition.Lifecycle.fork_]] method
     * to spawn a daemon fiber running the service in background.
     *
     * {{{
@@ -40,7 +40,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * }
     * }}}
     *
-    * @note Resource initialization must be finite  application startup won't progress until the `acquire` phase of the returned Lifecycle is finished.
+    * @note Resource initialization must be finite. Application startup won't progress until the `acquire` phase of the returned Lifecycle is finished.
     * You may start a separate thread / fiber, etc during resource initialization.
     * All the shutdown logic has to be implemented in the resource finalizer.
     */

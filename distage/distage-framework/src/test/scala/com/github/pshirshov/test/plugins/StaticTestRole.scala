@@ -8,6 +8,7 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.mono.Clock
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.functional.Identity
+import logstage.LogIO
 
 class StaticTestRole[F[_]](
   val testService: TestService,
@@ -16,6 +17,7 @@ class StaticTestRole[F[_]](
   val planner: Planner,
   val clock: Clock[F],
   val clockId: Clock[Identity],
+  val log: LogIO[F],
 )(implicit F: QuasiApplicative[F]
 ) extends RoleTask[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = F.unit

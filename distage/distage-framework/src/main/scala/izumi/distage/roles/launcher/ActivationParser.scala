@@ -59,6 +59,8 @@ object ActivationParser {
              |    }
              |  }
              |  ```
+             |
+             |You may disable this warning by setting system property `-D${DebugProperties.`izumi.distage.roles.activation.warn-unset`.name}=false`
              |""".stripMargin
         }
       }

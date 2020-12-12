@@ -34,9 +34,18 @@ import izumi.reflect.TagK
   *
   * @see [[https://izumi.7mind.io/distage/debugging#graphviz-rendering GraphViz Rendering]]
   */
-trait ModuleProvider {
+trait ModuleProvider { self =>
   def bootstrapModules(): Seq[BootstrapModule]
   def appModules(): Seq[Module]
+
+  final def mapBootstrap(f: Seq[BootstrapModule] => Seq[BootstrapModule]): ModuleProvider = new ModuleProvider {
+    override def bootstrapModules(): Seq[BootstrapModule] = f(self.bootstrapModules())
+    override def appModules(): Seq[Module] = self.appModules()
+  }
+  final def mapApp(f: Seq[Module] => Seq[Module]): ModuleProvider = new ModuleProvider {
+    override def bootstrapModules(): Seq[BootstrapModule] = self.bootstrapModules()
+    override def appModules(): Seq[Module] = f(self.appModules())
+  }
 }
 
 object ModuleProvider {

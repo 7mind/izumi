@@ -13,7 +13,7 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.SafeType
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
@@ -66,26 +66,48 @@ object PlanCheck {
 
   sealed trait PlanCheckResult {
     def checkedPlugins: LoadedPlugins
-    def maybeError: Option[Either[Throwable, NonEmptySet[PlanIssue]]]
+    def visitedKeys: Set[DIKey]
+
+    def maybeError: Option[Either[Throwable, PlanVerifierResult.Incorrect]]
     def maybeErrorMessage: Option[String]
 
     final def throwOnError(): Unit = this match {
-      case PlanCheckResult.Correct(_) =>
-      case PlanCheckResult.Incorrect(loadedPlugins, message, cause) => throw new PlanCheckException(message, loadedPlugins, cause)
+      case _: PlanCheckResult.Correct =>
+      case PlanCheckResult.Incorrect(loadedPlugins, visitedKeys, message, cause) => throw new PlanCheckException(message, cause, loadedPlugins, visitedKeys)
     }
   }
   object PlanCheckResult {
-    final case class Correct(checkedPlugins: LoadedPlugins) extends PlanCheckResult {
+    final case class Correct(checkedPlugins: LoadedPlugins, visitedKeys: Set[DIKey]) extends PlanCheckResult {
       override def maybeError: None.type = None
       override def maybeErrorMessage: None.type = None
     }
-    final case class Incorrect(checkedPlugins: LoadedPlugins, message: String, cause: Either[Throwable, NonEmptySet[PlanIssue]]) extends PlanCheckResult {
-      override def maybeError: Some[Either[Throwable, NonEmptySet[PlanIssue]]] = Some(cause)
+    final case class Incorrect(checkedPlugins: LoadedPlugins, visitedKeys: Set[DIKey], message: String, cause: Either[Throwable, PlanVerifierResult.Incorrect])
+      extends PlanCheckResult {
+      override def maybeError: Some[Either[Throwable, PlanVerifierResult.Incorrect]] = Some(cause)
       override def maybeErrorMessage: Some[String] = Some(message)
     }
   }
 
   object runtime {
+    /**
+      * @throws PlanCheckException on found issues
+      */
+    def assertApp(
+      app: PlanHolder,
+      roles: String = "*",
+      excludeActivations: String = "",
+      config: String = "*",
+      checkConfig: Boolean = defaultCheckConfig,
+      printBindings: Boolean = defaultPrintBindings,
+      logger: TrivialLogger = makeDefaultLogger(),
+    ): Unit = {
+      checkApp(app, roles, excludeActivations, config, checkConfig, printBindings, logger).throwOnError()
+    }
+
+    /**
+      * @return a list of issues, if any.
+      *         Does not throw.
+      */
     def checkApp(
       app: PlanHolder,
       roles: String = "*",
@@ -102,6 +124,10 @@ object PlanCheck {
       checkAppParsed[app.AppEffectType](app, chosenRoles, chosenActivations, chosenConfig, checkConfig, printBindings, logger)
     }
 
+    /**
+      * @return a list of issues, if any.
+      *         Does not throw.
+      */
     def checkAppParsed[F[_]](
       app: PlanHolder.Aux[F],
       chosenRoles: RoleSelection,
@@ -116,9 +142,10 @@ object PlanCheck {
       var effectiveConfig = "unknown, failed too early"
       var effectivePlugins = LoadedPlugins.empty
 
-      def returnPlanCheckError(cause: Either[Throwable, NonEmptySet[PlanIssue]]): PlanCheckResult.Incorrect = {
+      def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
+        val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
         val message = {
-          val errorMsg = cause.fold(_.stackTrace, _.toSet.niceList())
+          val errorMsg = cause.fold(_.stackTrace, _.issues.fromNonEmptySet.niceList())
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
@@ -132,7 +159,7 @@ object PlanCheck {
             } else if (pluginClasses.size > 7) {
               val otherPlugins = plugins.drop(7)
               val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
-              (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted> ($otherBindingsSize bindings)").mkString(", ")
+              (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
             } else {
               pluginClasses.mkString(", ")
             }
@@ -140,7 +167,11 @@ object PlanCheck {
           val printedBindings = if (printBindings) {
             s"""Bindings were:
                |
-               |${plugins.flatMap(_.iterator.map(_.toString)).mkString("\n")}
+               |${plugins.flatMap(_.iterator.map(_.toString)).niceList()}
+               |
+               |Visited keys:
+               |
+               |$visitedKeys
                |""".stripMargin
           } else ""
 
@@ -150,15 +181,15 @@ object PlanCheck {
              |  excludedActivations = ${excludedActivations.map(_.mkString(" ")).mkString(" | ")}
              |  plugins             = $pluginStr
              |  checkConfig         = $checkConfig$configStr
-             |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for bindings printout" else ""}
+             |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |
-             |You may ignore this error by setting system property `-D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
+             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
              |
              |$printedBindings$errorMsg
              |""".stripMargin
         }
 
-        PlanCheckResult.Incorrect(effectivePlugins, message, cause)
+        PlanCheckResult.Incorrect(effectivePlugins, visitedKeys, message, cause)
       }
 
       val baseModuleOverrides = mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map(app.getClass.getClassLoader -> _))
@@ -192,7 +223,7 @@ object PlanCheck {
               effectivePlugins = _,
               effectiveRoles = _,
               effectiveConfig = _,
-              returnPlanCheckError,
+              r => returnPlanCheckError(Right(r)),
             )(
               bsModule,
               appModule,
@@ -217,7 +248,7 @@ object PlanCheck {
     )(reportEffectivePlugins: LoadedPlugins => Unit,
       reportEffectiveRoles: String => Unit,
       reportEffectiveConfig: String => Unit,
-      returnPlanCheckError: Right[Nothing, NonEmptySet[PlanIssue]] => PlanCheckResult,
+      returnPlanCheckError: PlanVerifierResult.Incorrect => PlanCheckResult,
     )(bsModule: BootstrapModule,
       appModule: Module,
       defaultModule: DefaultModule[F],
@@ -236,21 +267,18 @@ object PlanCheck {
         injectorFactory.providedKeys(bsModule) ++
         defaultModule.module.keys
       }
-      val PlanVerifierResult(issues, reachableAppKeys) = {
-        PlanVerifier().verify[F](
-          bindings = appModule,
-          roots = Roots(rolesInfo.requiredComponents),
-          providedKeys = providedKeys,
-          excludedActivations = excludedActivations,
-        )
-      }
-      val reachableKeys = providedKeys ++ reachableAppKeys
+      val planVerifierResult = PlanVerifier().verify[F](
+        bindings = appModule,
+        roots = Roots(rolesInfo.requiredComponents),
+        providedKeys = providedKeys,
+        excludedActivations = excludedActivations,
+      )
+      val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {
         val realAppConfig = configLoader.loadConfig()
-        locally {
-          reportEffectiveConfig(realAppConfig.config.origin().toString)
-        }
+        reportEffectiveConfig(realAppConfig.config.origin().toString)
+
         bsModule.iterator
           .++(defaultModule.module.iterator)
           .++(appModule.iterator)
@@ -276,11 +304,11 @@ object PlanCheck {
         Nil
       }
 
-      NonEmptySet.from(issues ++ configIssues) match {
+      NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
         case Some(allIssues) =>
-          returnPlanCheckError(Right(allIssues))
+          returnPlanCheckError(PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys))
         case None =>
-          PlanCheckResult.Correct(loadedPlugins)
+          PlanCheckResult.Correct(loadedPlugins, planVerifierResult.visitedKeys)
       }
     }
 

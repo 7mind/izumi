@@ -1855,6 +1855,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+      "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )

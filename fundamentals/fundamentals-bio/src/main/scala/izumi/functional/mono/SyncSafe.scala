@@ -9,6 +9,8 @@ import scala.language.implicitConversions
 trait SyncSafe[F[_]] {
   /** Suspend an _exception-safe_ side-effect, e.g. random numbers, simple mutation, etc. */
   def syncSafe[A](unexceptionalEff: => A): F[A]
+
+  def widen[G[x] >: F[x]]: SyncSafe[G] = this
 }
 
 object SyncSafe extends LowPrioritySyncSafeInstances0 {

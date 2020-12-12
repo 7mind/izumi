@@ -4,7 +4,6 @@ import distage.{Id, ModuleDef, TagK}
 import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
-import izumi.fundamentals.platform.language.Quirks.Discarder
 
 object PostgresFlyWayDocker extends ContainerDef {
   /** @param flyWaySqlPath path to the migrations directory, by default `/sql` in current resource directory if exists */

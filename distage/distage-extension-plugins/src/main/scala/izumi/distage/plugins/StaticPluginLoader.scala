@@ -14,35 +14,35 @@ import scala.reflect.runtime.{universe => ru}
   * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
   *       (similarly to how you cannot call Scala macros defined in the current module)
   *
-  * @see [[PluginConfig.static]]
+  * @see [[PluginConfig.compileTime]]
   */
 object StaticPluginLoader {
 
-  def staticallyAvailablePlugins(pluginsPackage: String): List[PluginBase] = macro StaticPluginLoaderMacro.staticallyAvailablePlugins
+  def scanCompileTime(pluginsPackage: String): List[PluginBase] = macro StaticPluginLoaderMacro.scanCompileTime
 
   object StaticPluginLoaderMacro {
 
-    def staticallyAvailablePluginConfig(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[PluginConfig] = {
-      val plugins = staticallyAvailablePlugins(c)(pluginsPackage)
+    def scanCompileTimeConfig(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[PluginConfig] = {
+      val plugins = scanCompileTime(c)(pluginsPackage)
       c.universe.reify {
         PluginConfig.const(plugins.splice)
       }
     }
 
-    def staticallyAvailablePluginConfigThisPkg(c: blackbox.Context): c.Expr[PluginConfig] = {
-      val plugins = staticallyAvailablePluginsImpl(c)(SourcePackageMaterializerMacro.getSourcePackageString(c))
+    def scanCompileTimeConfigThisPkg(c: blackbox.Context): c.Expr[PluginConfig] = {
+      val plugins = scanCompileTimeImpl(c)(SourcePackageMaterializerMacro.getSourcePackageString(c))
       c.universe.reify {
         PluginConfig.const(plugins.splice)
       }
     }
 
-    def staticallyAvailablePlugins(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[List[PluginBase]] = {
+    def scanCompileTime(c: blackbox.Context)(pluginsPackage: c.Expr[String]): c.Expr[List[PluginBase]] = {
       val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
 
-      staticallyAvailablePluginsImpl(c)(pluginPath)
+      scanCompileTimeImpl(c)(pluginPath)
     }
 
-    def staticallyAvailablePluginsImpl(c: blackbox.Context)(pluginPath: String): c.Expr[List[PluginBase]] = {
+    def scanCompileTimeImpl(c: blackbox.Context)(pluginPath: String): c.Expr[List[PluginBase]] = {
       import c.universe._
 
       val loadedPlugins = if (pluginPath == "") {

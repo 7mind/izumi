@@ -1018,4 +1018,7 @@ object NonEmptySet {
     new NonEmptySet(set)
   }
 
+  implicit final class OptionOps[A](private val option: Option[NonEmptySet[A]]) extends AnyVal {
+    @inline def fromNonEmptySet: Set[A] = if (option.isEmpty) Set.empty else option.get.toSet
+  }
 }

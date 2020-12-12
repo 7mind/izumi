@@ -1,7 +1,6 @@
 package izumi.distage.docker
 
 import java.util.UUID
-
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.api.model.Container
@@ -14,7 +13,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.IzLogger
 
 import scala.annotation.nowarn
@@ -47,6 +46,7 @@ class DockerClientWrapper[F[_]](
             .removeContainerCmd(containerId.name)
             .withForce(true)
             .exec()
+            .discard()
         }
 
         logger.info(s"Destroyed $containerId ($context)")

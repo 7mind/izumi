@@ -31,13 +31,11 @@ object RoleAppActivationParser {
     }
 
     protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisChoice)] = {
-      def options: String = {
-        activationInfo.availableChoices
-          .map {
-            case (axis, members) =>
-              s"$axis:${members.niceList().shift(2)}"
-          }.niceList()
-      }
+      def options: String = activationInfo.availableChoices
+        .map {
+          case (axis, members) =>
+            s"$axis:${members.niceList().shift(2)}"
+        }.niceList()
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {
         case Some((base, members)) =>
@@ -45,22 +43,26 @@ object RoleAppActivationParser {
             case Some(member) =>
               Some(base -> member)
             case None =>
-              logger.crit(s"Unknown choice: $choiceName")
-              logger.crit(s"Available $options")
+              logger.warn(s"Unknown choice: $choiceName")
+              logger.warn(s"Available $options")
               if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
                 None
               } else {
-                throw new DIAppBootstrapException(s"Unknown choice: $choiceName")
+                throw new DIAppBootstrapException(
+                  s"Unknown choice: $choiceName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue"
+                )
               }
           }
 
         case None =>
-          logger.crit(s"Unknown axis: $axisName")
-          logger.crit(s"Available $options")
+          logger.warn(s"Unknown axis: $axisName")
+          logger.warn(s"Available $options")
           if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
             None
           } else {
-            throw new DIAppBootstrapException(s"Unknown axis: $axisName")
+            throw new DIAppBootstrapException(
+              s"Unknown axis: $axisName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue "
+            )
           }
       }
     }

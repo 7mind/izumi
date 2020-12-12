@@ -1,9 +1,9 @@
 package izumi.distage.framework.exceptions
 
-import izumi.distage.model.exceptions.DIException
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue
+import izumi.distage.model.exceptions.PlanVerificationException
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.fundamentals.collections.nonempty.NonEmptySet
 
-class PlanCheckException(message: String, val loadedPlugins: LoadedPlugins, val cause: Either[Throwable, NonEmptySet[PlanIssue]])
-  extends DIException(message, cause.left.toOption.orNull)
+class PlanCheckException(message: String, cause: Either[Throwable, PlanVerifierResult.Incorrect], val loadedPlugins: LoadedPlugins, val visitedKeys: Set[DIKey])
+  extends PlanVerificationException(message, cause)

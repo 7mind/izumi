@@ -2,39 +2,39 @@
 
 @@toc { depth=2 }
 
-### Roles
+## Roles
 
 Many software suites have more than one entrypoint. For example Scalac provides a REPL and a Compiler. A typical distributed application may provide both server and client code, as well as a host of utility applications for maintenance. 
 
 In `distage` such entrypoints are called "roles". Role-based applications may contain roles of different types:
 
-- @scaladoc[`RoleService[F]`](izumi.distage.roles.model.RoleService) – service roles 
+- @scaladoc[`RoleService[F]`](izumi.distage.roles.model.RoleService), for persistent services and daemons
+- @scaladoc[`RoleTask[F]`](izumi.distage.roles.model.RoleTask), for one-off tasks and applications
+
+
+### Tutorial: implementing roles
+
+
+```scala
+import izumi.functional.bio.IO2
+ 
+/** A server listening on stdin */
+final class HotelService[F[+_, +_]: IO2] {
   
-
-```scala mdoc:to-string
-import distage.Lifecycle
-import izumi.distage.roles.model.RoleService
-import izumi.functional.bio.{F, Fork2, IO2}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import logstage.LogIO2
-import logstage.LogIO2.log
-
-final class HelloService[F[+_, +_]: IO2: Fork2: LogIO2] extends RoleService[F[Nothing, ?]] {
-  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F[Nothing, ?], Unit] = {
-    Lifecycle.fork_(helloServer).void
-  }
-
-  val helloServer: F[Throwable, Unit] = {
-    (for {
-      name <- F.syncThrowable { Console.in.readLine() }
-      _    <- log.info(s"Hello $name!")
-    } yield ()).forever
-  }
 }
+
 ```
 
-  
-- @scaladoc[`RoleTask[F]`](izumi.distage.roles.model.RoleTask) - oneshot roles
+
+#### Service role
+
+
+#### Task role
+
+
+### Using roles
+
+
 
 Add `distage-framework` library for Roles API:
 
@@ -60,7 +60,52 @@ Only the components required by the specified roles will be created, everything 
 Further reading:
 - [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
-### Typesafe Config
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+Returns a `izumi.distage.model.definition.Lifecycle` with the start/shutdown of a service described
+by its `acquire`/`release` actions. The acquired service will be kept alive until the application is interrupted or
+is otherwise finished, then the specified `release` action of the Lifecycle will run for cleanup.
+
+Note: Resource initialization must be finite  application startup won't progress until the `acquire` phase of the returned Lifecycle is finished.
+You may start a separate thread / fiber, etc during resource initialization.
+All the shutdown logic has to be implemented in the resource finalizer.
+
+Example: Often `start` is implemented using the `izumi.distage.model.definition.Lifecycle.fork_` method
+to spawn a daemon fiber running the service in background.
+service roles.
+
+```scala
+```
+
+
+
+
+## Typesafe Config
 
 `distage-extension-config` library allows parsing case classes and sealed traits from `typesafe-config` configuration files.
 
@@ -162,7 +207,7 @@ Here configs will be loaded in the following order, with higher priority earlier
   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
 
-### Plugins
+## Plugins
 
 `distage-extension-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`.
 Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time with new `Plugin` classes
@@ -221,7 +266,7 @@ Injector()
   .use(_.run())
 ```
 
-### Compile-time checks
+## Compile-time checks
 
 WIP on current `1.0.0-M1`. Version`1.0.0` will have finalized API.
 

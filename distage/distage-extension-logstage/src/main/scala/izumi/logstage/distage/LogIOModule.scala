@@ -7,21 +7,11 @@ import izumi.reflect.{TagK, TagK3, TagKK}
 import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
 
 /**
-  * @param maybeRouter if `Some`, include a new [[LogstageModule]] based on the passed [[izumi.logstage.api.logger.LogRouter]]
-  *                    if `None`, just add a [[logstage.LogIO]] binding
+  * Add a `LogIO[F]` component and others, depending on an existing `IzLogger`
   *
-  * @param setupStaticLogRouter if `true`, register the passed [[izumi.logstage.api.logger.LogRouter]] in [[izumi.logstage.api.routing.StaticLogRouter]]
-  *                             (required for slf4j support)
+  * To setup `IzLogger` at the same time, use `apply` with parameters
   */
-class LogIOModule[F[_]: TagK](
-  maybeRouter: Option[LogRouter],
-  setupStaticLogRouter: Boolean,
-) extends ModuleDef {
-  maybeRouter.foreach {
-    router =>
-      include(LogstageModule(router, setupStaticLogRouter))
-  }
-
+class LogIOModule[F[_]: TagK] extends ModuleDef {
   make[LogIO[F]]
     .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe[F]))
     .aliased[UnsafeLogIO[F]]
@@ -29,28 +19,34 @@ class LogIOModule[F[_]: TagK](
 }
 
 object LogIOModule {
-  @inline def apply[F[_]: TagK](router: LogRouter, setupStaticLogRouter: Boolean): LogIOModule[F] = new LogIOModule(Some(router), setupStaticLogRouter)
-  @inline def apply[F[_]: TagK](): LogIOModule[F] = new LogIOModule(None, setupStaticLogRouter = false)
+  @inline def apply[F[_]: TagK](): LogIOModule[F] = new LogIOModule
+  /**
+    * Setup `IzLogger` component based on the passed `router` and add a `LogIO` wrapper for it
+    *
+    * @param setupStaticLogRouter if `true`, register the passed [[izumi.logstage.api.logger.LogRouter]]
+    *                             in [[izumi.logstage.api.routing.StaticLogRouter]] (required for slf4j support)
+    */
+  @inline def apply[F[_]: TagK](router: LogRouter, setupStaticLogRouter: Boolean): LogIOModule[F] = new LogIOModule {
+    include(LogstageModule(router, setupStaticLogRouter))
+  }
 }
 
 /** [[LogIOModule]] for bifunctors */
-class LogIO2Module[F[_, _]: TagKK](
-  maybeRouter: Option[LogRouter],
-  setupStaticLogRouter: Boolean,
-) extends LogIOModule[F[Nothing, ?]](maybeRouter, setupStaticLogRouter)
+class LogIO2Module[F[_, _]: TagKK] extends LogIOModule[F[Nothing, ?]]
 
 object LogIO2Module {
-  @inline def apply[F[_, _]: TagKK](router: LogRouter, setupStaticLogRouter: Boolean): LogIO2Module[F] = new LogIO2Module(Some(router), setupStaticLogRouter)
-  @inline def apply[F[_, _]: TagKK](): LogIO2Module[F] = new LogIO2Module(None, setupStaticLogRouter = false)
+  @inline def apply[F[_, _]: TagKK](): LogIO2Module[F] = new LogIO2Module
+  @inline def apply[F[_, _]: TagKK](router: LogRouter, setupStaticLogRouter: Boolean): LogIO2Module[F] = new LogIO2Module {
+    include(LogstageModule(router, setupStaticLogRouter))
+  }
 }
 
 /** [[LogIOModule]] for trifunctors */
-class LogIO3Module[F[_, _, _]: TagK3](
-  maybeRouter: Option[LogRouter],
-  setupStaticLogRouter: Boolean,
-) extends LogIOModule[F[Any, Nothing, ?]](maybeRouter, setupStaticLogRouter)
+class LogIO3Module[F[_, _, _]: TagK3] extends LogIOModule[F[Any, Nothing, ?]]
 
 object LogIO3Module {
-  @inline def apply[F[_, _, _]: TagK3](router: LogRouter, setupStaticLogRouter: Boolean): LogIO3Module[F] = new LogIO3Module(Some(router), setupStaticLogRouter)
-  @inline def apply[F[_, _, _]: TagK3](): LogIO3Module[F] = new LogIO3Module(None, setupStaticLogRouter = false)
+  @inline def apply[F[_, _, _]: TagK3](): LogIO3Module[F] = new LogIO3Module
+  @inline def apply[F[_, _, _]: TagK3](router: LogRouter, setupStaticLogRouter: Boolean): LogIO3Module[F] = new LogIO3Module {
+    include(LogstageModule(router, setupStaticLogRouter))
+  }
 }

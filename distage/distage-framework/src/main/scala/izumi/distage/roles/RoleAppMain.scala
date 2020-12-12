@@ -2,21 +2,23 @@ package izumi.distage.roles
 
 import cats.effect.LiftIO
 import distage.Injector
+import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig, PlanCheckMaterializer}
-import izumi.distage.model.definition.Module
-import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import izumi.distage.model.definition.{Module, ModuleDef}
+import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy._
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
-import izumi.functional.bio.Async2
+import izumi.functional.bio.{Async2, Async3}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
-import izumi.reflect.{TagK, TagKK}
+import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
+import izumi.reflect.{TagK, TagK3, TagKK}
 
 import scala.concurrent.ExecutionContext
 
@@ -54,7 +56,7 @@ abstract class RoleAppMain[F[_]](
 
   def mainAppModule(argv: ArgV): Module = {
     val mainModule = mainAppModule(argv, AdditionalRoles(requiredRoles(argv)))
-    val overrideModule = appModuleOverrides(argv)
+    val overrideModule = mainAppModuleOverrides(argv)
     mainModule overriddenBy overrideModule
   }
 
@@ -72,9 +74,19 @@ abstract class RoleAppMain[F[_]](
   /**
     * Overrides and mutators applied to [[mainAppModule]]
     *
-    * @note The components added here are visible during the creation of the app, not *inside* the app
+    * @note The components added here are visible during the creation of the app, not *inside* the app,
+    *       to add components *inside* the app, add a mutator for the component `Module @Id("roleapp")`,
+    *       example:
+    *
+    *       {{{
+    *       override def mainAppModuleOverrides(@unused argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+    *         modify[Module].named("roleapp")(_ ++ new ModuleDef {
+    *           make[MyComponentX](
+    *         })
+    *       }
+    *       }}}
     */
-  protected def appModuleOverrides(@unused argv: ArgV): Module = {
+  protected def mainAppModuleOverrides(@unused argv: ArgV): Module = {
     Module.empty
   }
 
@@ -92,8 +104,22 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
+  abstract class LauncherBIO2[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+
+    // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, ?]]
+    override protected def mainAppModuleOverrides(argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+      modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
+    }
+  }
+
+  abstract class LauncherBIO3[F[-_, +_, +_]: TagK3: Async3: DefaultModule3](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Any, Throwable, ?]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, ?]] = new BIOShutdownStrategy[F[Any, +?, +?]]
+
+    // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, ?]]
+    override protected def mainAppModuleOverrides(argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+      modify[ModuleProvider](_.mapApp(LogIO3Module[F]() +: _))
+    }
   }
 
   abstract class LauncherCats[F[_]: TagK: LiftIO: DefaultModule](

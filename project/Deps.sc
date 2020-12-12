@@ -487,7 +487,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allCatsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),

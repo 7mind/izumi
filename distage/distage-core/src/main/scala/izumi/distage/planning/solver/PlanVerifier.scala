@@ -3,7 +3,7 @@ package izumi.distage.planning.solver
 import distage.{Injector, TagK}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.exceptions.{MissingInstanceException, PlanVerificationException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
@@ -18,10 +18,12 @@ import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.graphs.WeakEdge
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import scala.annotation.{nowarn, tailrec}
 import scala.collection.mutable
 
+/** @see [[izumi.distage.model.Injector.assert]] */
 @nowarn("msg=Unused import")
 class PlanVerifier(
   preps: GraphPreparations
@@ -69,7 +71,10 @@ class PlanVerifier(
     val effectType = SafeType.getK[F]
 
     val issues = trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
-    PlanVerifierResult(issues, mutVisited.toSet)
+    NonEmptySet.from(issues) match {
+      case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, mutVisited.toSet)
+      case None => PlanVerifierResult.Correct(mutVisited.toSet)
+    }
   }
 
   protected[this] def trace(
@@ -383,16 +388,37 @@ class PlanVerifier(
 }
 
 object PlanVerifier {
-  def apply(preps: GraphPreparations): PlanVerifier = new PlanVerifier(preps)
   def apply(): PlanVerifier = Default
+  def apply(preps: GraphPreparations): PlanVerifier = new PlanVerifier(preps)
 
   private[this] object Default extends PlanVerifier(new GraphPreparations(new BindingTranslator.Impl))
 
-  final case class PlanVerifierResult(
-    issues: Set[PlanIssue],
-    reachableKeys: Set[DIKey],
-  ) {
-    def verificationFailed: Boolean = issues.nonEmpty
+  sealed abstract class PlanVerifierResult {
+    def issues: Option[NonEmptySet[PlanIssue]]
+    def visitedKeys: Set[DIKey]
+
+    final def verificationPassed: Boolean = issues.isEmpty
+    final def verificationFailed: Boolean = issues.nonEmpty
+
+    final def throwOnError(): Unit = this match {
+      case incorrect: PlanVerifierResult.Incorrect =>
+        throw new PlanVerificationException(
+          s"""Plan verification failed, issues were:
+             |
+             |${incorrect.issues.fromNonEmptySet.niceList()}
+             |
+             |Visited keys:
+             |
+             |${incorrect.visitedKeys.niceList()}
+             |""".stripMargin,
+          Right(incorrect),
+        )
+      case _: PlanVerifierResult.Correct => ()
+    }
+  }
+  object PlanVerifierResult {
+    final case class Incorrect(issues: Some[NonEmptySet[PlanIssue]], visitedKeys: Set[DIKey]) extends PlanVerifierResult
+    final case class Correct(visitedKeys: Set[DIKey]) extends PlanVerifierResult { override def issues: None.type = None }
   }
 
   sealed abstract class PlanIssue {

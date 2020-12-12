@@ -1,6 +1,6 @@
 package izumi.distage.testkit.distagesuite.compiletime
 
-import com.github.pshirshov.test.plugins.{StaticTestMain, StaticTestMainBadEffect}
+import com.github.pshirshov.test.plugins.{StaticTestMain, StaticTestMain2, StaticTestMainBadEffect}
 import com.github.pshirshov.test2.plugins.Fixture2
 import com.github.pshirshov.test2.plugins.Fixture2.{Dep, MissingDep}
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.BasicConfig
@@ -14,6 +14,7 @@ import izumi.distage.planning.solver.PlanVerifier.PlanIssue.UnsaturatedAxis
 import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.language.literals.{LiteralBoolean, LiteralString}
+import logstage.LogIO2
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -99,9 +100,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       PlanCheck.runtime.checkApp(Fixture2.TestRoleAppMain).throwOnError()
     }
     assert(err.cause.isRight)
-    assert(err.cause.toOption.get.toSet.forall(_.isInstanceOf[PlanIssue.MissingImport]))
-    assert(err.cause.toOption.get.toSet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[MissingDep])
-    assert(err.cause.toOption.get.toSet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[Dep])
+    assert(err.cause.toOption.get.issues.fromNonEmptySet.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+    assert(err.cause.toOption.get.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[MissingDep])
+    assert(err.cause.toOption.get.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[Dep])
   }
 
   "Check config for config bindings in bootstrap plugins" in {
@@ -118,7 +119,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       PlanCheck.runtime.checkApp(Fixture3.TestRoleAppMain, config = "common-reference.conf").throwOnError()
     }
     assert(err.getMessage contains "basicConfig")
-    assert(err.cause.toOption.get.toSet.head.asInstanceOf[PlanIssue.UnparseableConfigBinding].key == DIKey[BasicConfig])
+    assert(err.cause.toOption.get.issues.get.head.asInstanceOf[PlanIssue.UnparseableConfigBinding].key == DIKey[BasicConfig])
   }
 
   "role app configwriter role passes check" in {
@@ -166,20 +167,6 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           checkConfig = false,
         ).throwOnError()
     }
-  }
-
-  "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
-    val res = PlanCheck.runtime.checkApp(
-      TestEntrypointPatchedLeak,
-      roles = "* -failingrole01 -failingrole02",
-      excludeActivations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
-    )
-    assert(res.maybeError.isDefined)
-    assert(res.maybeError.get.isRight)
-    assert(res.maybeError.get.toOption.get.forall {
-      case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NonEmptySet(AxisPoint("mode" -> "test"))
-      case _ => false
-    })
   }
 
   "role app fails config check if config file with insufficient configs is passed" in {
@@ -261,9 +248,28 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
 
     val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, "statictestrole", checkConfig = false)
     assert(
-      result.maybeError.toList.flatMap(_.toSeq.flatMap(_.toSeq.map(_.getClass))) ==
+      result.maybeError.toList.flatMap(_.toSeq.flatMap(_.issues.fromNonEmptySet.map(_.getClass))) ==
       List(classOf[PlanIssue.IncompatibleEffectType])
     )
+  }
+
+  "StaticTestMain2 check passes with a LogIO2 dependency" in {
+    val res = PlanCheck.runtime.checkApp(new StaticTestMain2[zio.IO], config = "check-test-good.conf")
+    assert(res.visitedKeys.contains(DIKey[LogIO2[zio.IO]]))
+  }
+
+  "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
+    val res = PlanCheck.runtime.checkApp(
+      TestEntrypointPatchedLeak,
+      roles = "* -failingrole01 -failingrole02",
+      excludeActivations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
+    )
+    assert(res.maybeError.isDefined)
+    assert(res.maybeError.get.isRight)
+    assert(res.maybeError.get.toOption.get.issues.fromNonEmptySet.forall {
+      case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NonEmptySet(AxisPoint("mode" -> "test"))
+      case _ => false
+    })
   }
 
 }

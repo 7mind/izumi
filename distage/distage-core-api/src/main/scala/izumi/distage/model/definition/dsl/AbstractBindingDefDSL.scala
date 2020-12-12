@@ -158,7 +158,11 @@ object AbstractBindingDefDSL {
     }
 
     def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey.get[B]))
+      by(_.addDependency(DIKey[B]))
+    }
+
+    def addDependency[B: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey[B](name)))
     }
 
     def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
@@ -180,7 +184,11 @@ object AbstractBindingDefDSL {
     }
 
     def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey.get[B]))
+      by(_.addDependency(DIKey[B]))
+    }
+
+    def addDependency[B: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey[B](name)))
     }
 
     def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
@@ -244,12 +252,6 @@ object AbstractBindingDefDSL {
           b = b.withTarget(key)
         case SetIdFromImplName() =>
           b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longName.toLowerCase))
-        case AliasTo(key, pos) =>
-          // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
-          // `b` properties must come before first `aliased` call
-          // after first `aliased` no more changes are possible
-          val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
-          refs = newRef :: refs
         case Modify(functoidModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
@@ -263,6 +265,12 @@ object AbstractBindingDefDSL {
               }
             case _ => ()
           }
+        case AliasTo(key, pos) =>
+          // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
+          // `b` properties must come before first `aliasTo` operation in sorted ops set
+          // when `aliased` is interpreted no more changes are going to happen
+          val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
+          refs = newRef :: refs
       }
 
       b :: refs.reverse
@@ -365,8 +373,8 @@ object AbstractBindingDefDSL {
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
     final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
-    final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
     final case class Modify[T](functoidModifier: Functoid[T] => Functoid[T]) extends SingletonInstruction
+    final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
   }
 
   sealed trait SetInstruction
