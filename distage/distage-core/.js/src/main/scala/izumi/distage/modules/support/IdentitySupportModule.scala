@@ -2,6 +2,7 @@ package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.{QuasiApplicative, QuasiIO, QuasiIORunner}
+import izumi.functional.mono.{Clock, Entropy}
 import izumi.fundamentals.platform.functional.Identity
 
 object IdentitySupportModule extends IdentitySupportModule
@@ -15,4 +16,6 @@ trait IdentitySupportModule extends ModuleDef {
   addImplicit[QuasiIO[Identity]]
   addImplicit[QuasiIORunner[Identity]]
 //  addImplicit[QuasiAsync[Identity]] // No QuasiAsync for Identity on JS
+  make[Clock[Identity]].fromValue(Clock.Standard)
+  make[Entropy[Identity]].fromValue(Entropy.Standard)
 }
