@@ -245,7 +245,10 @@ object Izumi {
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
         // ignore warnings triggered by scaladoc
-        "scalacOptions" += "-Wconf:cat=scaladoc:warning",
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala213), None) := Seq("-Wconf:cat=scaladoc:warning"),
+          SettingKey.Default := Const.EmptySeq,
+        ),
         // ignore warnings triggered in mdoc
         "scalacOptions" in SettingScope.Raw("mdoc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
