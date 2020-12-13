@@ -1,6 +1,6 @@
 package izumi.distage.framework
 
-import izumi.distage.framework.PlanCheck.PlanCheckResult
+import izumi.distage.framework.model.PlanCheckResult
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.distage.roles.PlanHolder
@@ -26,25 +26,30 @@ import scala.reflect.runtime.{universe => ru}
   * @see [[izumi.distage.framework.PlanCheckConfig Configuration Options]]
   */
 final case class PlanCheckMaterializer[AppMain <: PlanHolder, -Cfg <: PlanCheckConfig.Any](
+  checkPassed: Boolean,
+  checkedPlugins: Seq[PluginBase],
   app: AppMain,
   roles: String,
   excludeActivations: String,
   config: String,
   checkConfig: Option[Boolean],
-  onlyWarn: Option[Boolean],
   printBindings: Option[Boolean],
-  checkPassed: Boolean,
-  checkedPlugins: Seq[PluginBase],
+  onlyWarn: Option[Boolean],
 ) {
-  def checkAtRuntime(): PlanCheckResult =
-    PlanCheck.runtime.checkApp(
-      app = app,
-      roles = roles,
-      excludeActivations = excludeActivations,
-      config = config,
-      checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-      printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
-    )
+  /** @throws izumi.distage.framework.model.exceptions.PlanCheckException on found issues */
+  def assertAtRuntime(): Unit = PlanCheck.runtime.assertApp(app, makeCfg)
+
+  /** @return a list of issues, if any. Does not throw. */
+  def checkAtRuntime(): PlanCheckResult = PlanCheck.runtime.checkApp(app, makeCfg)
+
+  def makeCfg: PlanCheckConfig.Any = new PlanCheckConfig(
+    roles,
+    excludeActivations,
+    config,
+    checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
+    printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
+    onlyWarn = onlyWarn.getOrElse(PlanCheck.defaultOnlyWarn),
+  )
 }
 
 object PlanCheckMaterializer {
@@ -55,24 +60,22 @@ object PlanCheckMaterializer {
     ExcludeActivations <: String,
     Config <: String,
     CheckConfig <: Boolean,
-    OnlyWarn <: Boolean,
     PrintBindings <: Boolean,
-  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn, PrintBindings]] =
-    macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, OnlyWarn, PrintBindings]
+    OnlyWarn <: Boolean,
+  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]] =
+    macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
 
   object PlanCheckMaterializerMacro {
-    private[this] final val sysPropOnlyWarn = DebugProperties.`izumi.distage.plancheck.onlywarn`.boolValue(false)
-
     def impl[
       AppMain <: PlanHolder: c.WeakTypeTag,
       Roles <: String: c.WeakTypeTag,
       Activations <: String: c.WeakTypeTag,
       Config <: String: c.WeakTypeTag,
       CheckConfig <: Boolean: c.WeakTypeTag,
-      OnlyWarn <: Boolean: c.WeakTypeTag,
       PrintBindings <: Boolean: c.WeakTypeTag,
+      OnlyWarn <: Boolean: c.WeakTypeTag,
     ](c: blackbox.Context
-    ): c.Expr[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, OnlyWarn, PrintBindings]]] = {
+    ): c.Expr[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]] = {
       import c.universe._
 
       def getConstantType0[S](tpe: Type): S = {
@@ -81,7 +84,7 @@ object PlanCheckMaterializer {
           case tpe =>
             c.abort(
               c.enclosingPosition,
-              s"""When materializing ${weakTypeOf[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, OnlyWarn, PrintBindings]]]},
+              s"""When materializing ${weakTypeOf[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]]},
                  |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
                """.stripMargin,
             )
@@ -104,26 +107,30 @@ object PlanCheckMaterializer {
       val activations = getConstantType[Activations]
       val config = getConstantType[Config]
       val checkConfig = noneIfUnset[CheckConfig]
-      val onlyWarn = noneIfUnset[OnlyWarn]
       val printBindings = noneIfUnset[PrintBindings]
+      val onlyWarn = noneIfUnset[OnlyWarn]
 
       val maybeMain = instantiateObject[AppMain](c.universe)
 
       val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
-      val (checkPassed, checkedLoadedPlugins) =
+
+      val (checkPassed, checkedLoadedPlugins) = {
+        val warn = onlyWarn.getOrElse(PlanCheck.defaultOnlyWarn)
         PlanCheck.runtime.checkApp(
           app = maybeMain,
-          roles = roles,
-          excludeActivations = activations,
-          config = config,
-          checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-          printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
+          cfg = new PlanCheckConfig(
+            roles = roles,
+            excludeActivations = activations,
+            config = config,
+            checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
+            printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
+            onlyWarn = warn,
+          ),
           logger = logger,
         ) match {
           case PlanCheckResult.Correct(loadedPlugins, _) =>
             true -> loadedPlugins
           case PlanCheckResult.Incorrect(loadedPlugins, _, message, _) =>
-            val warn = onlyWarn.getOrElse(sysPropOnlyWarn)
             if (warn) {
               c.warning(c.enclosingPosition, message)
               false -> loadedPlugins
@@ -131,6 +138,7 @@ object PlanCheckMaterializer {
               c.abort(c.enclosingPosition, message)
             }
         }
+      }
 
       // filter out anonymous classes that can't be referred in code
       // & retain only those that are suitable for being loaded by PluginLoader (objects / zero-arg classes) -
@@ -156,16 +164,16 @@ object PlanCheckMaterializer {
 
       reify {
         val referencedPlugins = referenceStmt.splice
-        new PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, OnlyWarn, PrintBindings]](
-          roleAppMain.splice,
-          lit[Roles](roles).splice,
-          lit[Activations](activations).splice,
-          lit[Config](config).splice,
-          opt[CheckConfig](checkConfig).splice,
-          opt[OnlyWarn](onlyWarn).splice,
-          opt[PrintBindings](printBindings).splice,
-          checkPassedExpr.splice,
-          referencedPlugins,
+        new PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]](
+          checkPassed = checkPassedExpr.splice,
+          checkedPlugins = referencedPlugins,
+          app = roleAppMain.splice,
+          roles = lit[Roles](roles).splice,
+          excludeActivations = lit[Activations](activations).splice,
+          config = lit[Config](config).splice,
+          checkConfig = opt[CheckConfig](checkConfig).splice,
+          printBindings = opt[PrintBindings](printBindings).splice,
+          onlyWarn = opt[OnlyWarn](onlyWarn).splice,
         )
       }
     }

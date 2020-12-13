@@ -5,7 +5,7 @@ import com.github.pshirshov.test2.plugins.Fixture2
 import com.github.pshirshov.test2.plugins.Fixture2.{Dep, MissingDep}
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.BasicConfig
 import com.github.pshirshov.test3.plugins.Fixture3
-import izumi.distage.framework.exceptions.PlanCheckException
+import izumi.distage.framework.model.exceptions.PlanCheckException
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig}
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
@@ -22,36 +22,45 @@ import org.scalatest.wordspec.AnyWordSpec
 final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
 
   "Check without config" in {
-    PlanCheck.checkApp(StaticTestMain, PlanCheckConfig("statictestrole", checkConfig = false)).checkAtRuntime().throwOnError()
+    PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
     PlanCheck
-      .checkApp(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:y", checkConfig = false)).checkAtRuntime().throwOnError()
+      .assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:y", checkConfig = false)).assertAtRuntime()
   }
 
   "Check when config & requirements are valid" in {
     PlanCheck
-      .checkApp(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:y", config = "check-test-good.conf")).checkAtRuntime().throwOnError()
+      .assertAppCompileTime(
+        StaticTestMain,
+        PlanCheckConfig("statictestrole", excludeActivations = "test:y", config = "check-test-good.conf"),
+      ).assertAtRuntime()
   }
 
   "Check depending plugin with plugins" in {
     PlanCheck
-      .checkApp(StaticTestMain, PlanCheckConfig("dependingrole", excludeActivations = "test:y", config = "check-test-good.conf")).checkAtRuntime().throwOnError()
+      .assertAppCompileTime(
+        StaticTestMain,
+        PlanCheckConfig("dependingrole", excludeActivations = "test:y", config = "check-test-good.conf"),
+      ).assertAtRuntime()
     PlanCheck
-      .checkApp(StaticTestMain, PlanCheckConfig("dependingrole", excludeActivations = "test:y", checkConfig = false)).checkAtRuntime().throwOnError()
+      .assertAppCompileTime(StaticTestMain, PlanCheckConfig("dependingrole", excludeActivations = "test:y", checkConfig = false)).assertAtRuntime()
   }
 
   "Check with different activation" in {
     PlanCheck
-      .checkApp(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:x", config = "check-test-good.conf")).checkAtRuntime().throwOnError()
+      .assertAppCompileTime(
+        StaticTestMain,
+        PlanCheckConfig("statictestrole", excludeActivations = "test:x", config = "check-test-good.conf"),
+      ).assertAtRuntime()
   }
 
   "regression test: can again check when config is false after 1.0" in {
     PlanCheck.runtime
-      .checkApp(StaticTestMain, "statictestrole", "test:y", "check-test-bad.conf")
+      .checkApp(StaticTestMain, PlanCheckConfig("statictestrole", "test:y", "check-test-bad.conf"))
       .maybeErrorMessage.exists(_.contains("Expected type NUMBER. Found STRING instead"))
 
     val err = intercept[TestFailedException] {
       assertCompiles("""
-      PlanCheck.checkApp(StaticTestMain, PlanCheckConfig("statictestrole", "test:y", "check-test-bad.conf"))
+      PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", "test:y", "check-test-bad.conf"))
       """)
     }
     assert(err.getMessage.contains("Expected type NUMBER. Found STRING instead"))
@@ -60,44 +69,44 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "Check with invalid role produces error" in {
     assert {
       PlanCheck.runtime
-        .checkApp(StaticTestMain, "unknownrole")
+        .checkApp(StaticTestMain, PlanCheckConfig("unknownrole"))
         .maybeErrorMessage.exists(_.contains("Unknown roles:"))
     }
 
     val err = intercept[Throwable](assertCompiles("""
-      PlanCheck.checkApp(StaticTestMain, PlanCheckConfig("unknownrole"))
+      PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("unknownrole"))
       """.stripMargin))
     assert(err.getMessage.contains("Unknown roles:"))
   }
 
   "onlyWarn mode does not fail compilation on errors" in {
     assertThrows[PlanCheckException] {
-      PlanCheck.runtime.checkApp(StaticTestMain, "statictestrole", config = "check-test-bad.conf").throwOnError()
+      PlanCheck.runtime.assertApp(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf"))
     }
     assertTypeError(
       """
-      PlanCheck.checkApp(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = false))
+      PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = false))
       """
     )
     assertCompiles(
       """
-      PlanCheck.checkApp(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = true))
+      PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = true))
       """
     )
   }
 
   "Do not report errors for parts of the graph only accessible via excluded activations" in {
-    PlanCheck.checkApp(Fixture2.TestRoleAppMain, PlanCheckConfig(excludeActivations = "mode:test"))
-    PlanCheck.runtime.checkApp(Fixture2.TestRoleAppMain, excludeActivations = "mode:test").throwOnError()
+    PlanCheck.assertAppCompileTime(Fixture2.TestRoleAppMain, PlanCheckConfig(excludeActivations = "mode:test"))
+    PlanCheck.runtime.assertApp(Fixture2.TestRoleAppMain, PlanCheckConfig(excludeActivations = "mode:test"))
 
     And("fail without exclusion")
     assertTypeError(
       """
-      PlanCheck.checkApp(Fixture2.TestRoleAppMain)
+      PlanCheck.assertAppCompileTime(Fixture2.TestRoleAppMain)
       """
     )
     val err = intercept[PlanCheckException] {
-      PlanCheck.runtime.checkApp(Fixture2.TestRoleAppMain).throwOnError()
+      PlanCheck.runtime.assertApp(Fixture2.TestRoleAppMain)
     }
     assert(err.cause.isRight)
     assert(err.cause.toOption.get.issues.fromNonEmptySet.forall(_.isInstanceOf[PlanIssue.MissingImport]))
@@ -106,24 +115,24 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "Check config for config bindings in bootstrap plugins" in {
-    PlanCheck.checkApp(Fixture3.TestRoleAppMain)
-    PlanCheck.runtime.checkApp(Fixture3.TestRoleAppMain).throwOnError()
+    PlanCheck.assertAppCompileTime(Fixture3.TestRoleAppMain)
+    PlanCheck.runtime.assertApp(Fixture3.TestRoleAppMain)
 
     And("fail on bad config")
     assertTypeError(
       """
-      PlanCheck.checkApp(Fixture3.TestRoleAppMain, config = "common-reference.conf")
+      PlanCheck.assertAppCompileTime(Fixture3.TestRoleAppMain, config = "common-reference.conf")
       """
     )
     val err = intercept[PlanCheckException] {
-      PlanCheck.runtime.checkApp(Fixture3.TestRoleAppMain, config = "common-reference.conf").throwOnError()
+      PlanCheck.runtime.assertApp(Fixture3.TestRoleAppMain, PlanCheckConfig(config = "common-reference.conf"))
     }
     assert(err.getMessage contains "basicConfig")
     assert(err.cause.toOption.get.issues.get.head.asInstanceOf[PlanIssue.UnparseableConfigBinding].key == DIKey[BasicConfig])
   }
 
   "role app configwriter role passes check" in {
-    PlanCheck.runtime.checkApp(TestEntrypointPatchedLeak, "configwriter help").throwOnError()
+    PlanCheck.runtime.assertApp(TestEntrypointPatchedLeak, PlanCheckConfig("configwriter help"))
   }
 
   "role app passes check if `mode:test` activation is excluded and XXX_LocatorLeak is provided in RoleAppMain object" in {
@@ -134,7 +143,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
         "mode:test",
         checkConfig = true,
       ),
-    ).planCheck.checkAtRuntime().throwOnError()
+    ).planCheck.assertAtRuntime()
 
     class b
       extends PlanCheck.Main(
@@ -145,7 +154,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           checkConfig = LiteralBoolean(false),
         ),
       )
-    new b() {}.planCheck.checkAtRuntime().throwOnError()
+    new b() {}.planCheck.assertAtRuntime()
 
     assertTypeError(
       """
@@ -160,12 +169,10 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     )
 
     intercept[PlanCheckException] {
-      PlanCheck.runtime
-        .checkApp(
-          TestEntrypointPatchedLeak,
-          roles = "* -failingrole01 -failingrole02",
-          checkConfig = false,
-        ).throwOnError()
+      PlanCheck.runtime.assertApp(
+        TestEntrypointPatchedLeak,
+        PlanCheckConfig(roles = "* -failingrole01 -failingrole02", checkConfig = false),
+      )
     }
   }
 
@@ -182,13 +189,10 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(errCompile.getMessage.contains("DIConfigReadException"))
 
     val errRuntime = intercept[PlanCheckException] {
-      PlanCheck.runtime
-        .checkApp(
-          TestEntrypointPatchedLeak,
-          config = "testrole04-reference.conf",
-          excludeActivations = "mode:test",
-        )
-        .throwOnError()
+      PlanCheck.runtime.assertApp(
+        TestEntrypointPatchedLeak,
+        PlanCheckConfig(config = "testrole04-reference.conf", excludeActivations = "mode:test"),
+      )
     }
     assert(errRuntime.getMessage.contains("DIConfigReadException"))
   }
@@ -207,12 +211,13 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(errCompile.getMessage.contains("XXX_LocatorLeak"))
 
     val errRuntime = intercept[PlanCheckException](
-      PlanCheck.runtime
-        .checkApp(
-          TestEntrypoint,
+      PlanCheck.runtime.assertApp(
+        TestEntrypoint,
+        PlanCheckConfig(
           config = "checker-test-good.conf",
           excludeActivations = "mode:test",
-        ).throwOnError()
+        ),
+      )
     )
     assert(errRuntime.getMessage.contains("Required by refs:"))
     assert(errRuntime.getMessage.contains("XXX_LocatorLeak"))
@@ -221,9 +226,11 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "role app check reports checking the same plugins at runtime as at compile-time" in {
     val result = PlanCheck.runtime.checkApp(
       TestEntrypointPatchedLeak,
-      roles = "* -failingrole01 -failingrole02",
-      config = "checker-test-good.conf",
-      excludeActivations = "mode:test",
+      PlanCheckConfig(
+        roles = "* -failingrole01 -failingrole02",
+        config = "checker-test-good.conf",
+        excludeActivations = "mode:test",
+      ),
     )
     val runtimePlugins = result.checkedPlugins
     result.throwOnError()
@@ -242,11 +249,11 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
 
   "report error on invalid effect type" in {
     val err = intercept[TestFailedException](assertCompiles("""
-      PlanCheck.checkApp(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).checkAtRuntime().throwOnError()
+      PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
       """))
     assert(err.getMessage.contains("IncompatibleEffectType"))
 
-    val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, "statictestrole", checkConfig = false)
+    val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false))
     assert(
       result.maybeError.toList.flatMap(_.toSeq.flatMap(_.issues.fromNonEmptySet.map(_.getClass))) ==
       List(classOf[PlanIssue.IncompatibleEffectType])
@@ -254,15 +261,17 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "StaticTestMain2 check passes with a LogIO2 dependency" in {
-    val res = PlanCheck.runtime.checkApp(new StaticTestMain2[zio.IO], config = "check-test-good.conf")
-    assert(res.visitedKeys.contains(DIKey[LogIO2[zio.IO]]))
+    val res = PlanCheck.runtime.checkApp(new StaticTestMain2[zio.IO], PlanCheckConfig(config = "check-test-good.conf"))
+    assert(res.visitedKeys contains DIKey[LogIO2[zio.IO]])
   }
 
   "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
     val res = PlanCheck.runtime.checkApp(
       TestEntrypointPatchedLeak,
-      roles = "* -failingrole01 -failingrole02",
-      excludeActivations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
+      PlanCheckConfig(
+        roles = "* -failingrole01 -failingrole02",
+        excludeActivations = "mode:test axiscomponentaxis:correct | mode:test axiscomponentaxis:incorrect",
+      ),
     )
     assert(res.maybeError.isDefined)
     assert(res.maybeError.get.isRight)

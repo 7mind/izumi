@@ -100,7 +100,11 @@ object Entropy {
     override def nextLong(max: Long): Long = random.self.nextLong() % max
     override def nextPrintableChar(): Identity[Char] = random.nextPrintableChar()
     override def nextString(length: Int): String = random.nextString(length)
-    override def nextBytes(length: Int): Identity[Array[Byte]] = random.nextBytes(length)
+    override def nextBytes(length: Int): Array[Byte] = {
+      val bytes = new Array[Byte](0 max length)
+      random.nextBytes(bytes)
+      bytes
+    }
     override def writeRandomBytes(bytes: Array[Byte]): Unit = random.nextBytes(bytes)
     override def setSeed(seed: Long): Identity[Unit] = random.setSeed(seed)
   }

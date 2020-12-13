@@ -21,7 +21,10 @@ object LiteralBoolean {
   object LiteralBooleanMacro {
     def createBool(c: whitebox.Context)(b: c.Expr[Boolean]): c.Tree = {
       import c.universe._
-      val bool = b.tree.asInstanceOf[LiteralApi].value.value.asInstanceOf[Boolean]
+      val bool = b.tree match {
+        case l: LiteralApi => l.value.value.asInstanceOf[Boolean]
+        case o => c.abort(c.enclosingPosition, s"Not a literal Boolean: `${showCode(o)}`, only `true` or `false` are allowed here")
+      }
       val methodName = TermName(bool.toString.capitalize)
       q"${reify(LiteralBoolean)}.$methodName"
     }

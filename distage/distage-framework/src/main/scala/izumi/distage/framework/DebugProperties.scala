@@ -8,6 +8,8 @@ object DebugProperties extends properties.DebugProperties {
     * during plan checking. This will ensure that default configs are well-formed.
     *
     * Default: `true`
+    *
+    * @note To affect compile-time, the system property must be set in sbt, `sbt -Dprop=true`, or by adding the option to `.jvmopts` in project root.
     */
   final val `izumi.distage.plancheck.check-config` = BoolProperty("izumi.distage.plancheck.check-config")
 
@@ -15,6 +17,8 @@ object DebugProperties extends properties.DebugProperties {
     * Print all the bindings loaded from plugins when a problem is found during plan checking.
     *
     * Default: `false`, due to noisiness of binding printouts
+    *
+    * @note To affect compile-time, the system property must be set in sbt, `sbt -Dprop=true`, or by adding the option to `.jvmopts` in project root.
     */
   final val `izumi.distage.plancheck.print-bindings` = BoolProperty("izumi.distage.plancheck.print-bindings")
 
@@ -22,9 +26,17 @@ object DebugProperties extends properties.DebugProperties {
     * Prevent compile-time plan checks from failing the build and print warnings instead.
     *
     * Default: `false`
+    *
+    * @note To affect compile-time, the system property must be set in sbt, `sbt -Dprop=true`, or by adding the option to `.jvmopts` in project root.
     */
-  final val `izumi.distage.plancheck.onlywarn` = BoolProperty("izumi.distage.plancheck.onlywarn")
+  final val `izumi.distage.plancheck.only-warn` = BoolProperty("izumi.distage.plancheck.only-warn")
 
-  /** Print debug me∑ssages during plan checking. Default: `false` */
+  /**
+    *  Print debug me∑ssages during plan checking.
+    *
+    *  Default: `false`
+    *
+    *  @note To affect compile-time, the system property must be set in sbt, `sbt -Dprop=true`, or by adding the option to `.jvmopts` in project root.
+    */
   final val `izumi.debug.macro.distage.plancheck` = BoolProperty("izumi.debug.macro.distage.plancheck")
 }

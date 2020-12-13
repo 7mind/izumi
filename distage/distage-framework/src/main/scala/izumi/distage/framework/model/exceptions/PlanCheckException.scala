@@ -1,4 +1,4 @@
-package izumi.distage.framework.exceptions
+package izumi.distage.framework.model.exceptions
 
 import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.reflection.DIKey

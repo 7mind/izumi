@@ -6,7 +6,7 @@ import izumi.distage.InjectorFactory
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.constructors.TraitConstructor
-import izumi.distage.framework.exceptions.PlanCheckException
+import izumi.distage.framework.model.PlanCheckResult
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition._
 import izumi.distage.model.plan.Roots
@@ -27,6 +27,7 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.{Discarder, discard}
+import izumi.fundamentals.platform.language.{open, unused}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
@@ -35,99 +36,54 @@ import scala.annotation.tailrec
 
 object PlanCheck {
 
-  def checkApp[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
-    app: AppMain,
-    cfg: Cfg = PlanCheckConfig.empty,
-  )(implicit planCheckResult: PlanCheckMaterializer[AppMain, Cfg]
-  ): planCheckResult.type = {
-    discard(app, cfg)
-
-    planCheckResult
-  }
-
-  class Main[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+  @open class Main[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
     app: AppMain,
     cfg: Cfg = PlanCheckConfig.empty,
   )(implicit val planCheck: PlanCheckMaterializer[AppMain, Cfg]
   ) {
-    def rerunAtRuntime(): Unit = {
-      planCheck.checkAtRuntime().throwOnError()
-    }
-
-    def main(args: Array[String]): Unit = {
-      rerunAtRuntime()
-    }
-
     discard(app, cfg)
+
+    def main(@unused args: Array[String]): Unit = {
+      assertAtRuntime()
+    }
+
+    def assertAtRuntime(): Unit = planCheck.assertAtRuntime()
+    def checkAtRuntime(): PlanCheckResult = planCheck.checkAtRuntime()
   }
 
-  final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
-  final val defaultPrintBindings = DebugProperties.`izumi.distage.plancheck.print-bindings`.boolValue(false)
-
-  sealed trait PlanCheckResult {
-    def checkedPlugins: LoadedPlugins
-    def visitedKeys: Set[DIKey]
-
-    def maybeError: Option[Either[Throwable, PlanVerifierResult.Incorrect]]
-    def maybeErrorMessage: Option[String]
-
-    final def throwOnError(): Unit = this match {
-      case _: PlanCheckResult.Correct =>
-      case PlanCheckResult.Incorrect(loadedPlugins, visitedKeys, message, cause) => throw new PlanCheckException(message, cause, loadedPlugins, visitedKeys)
-    }
-  }
-  object PlanCheckResult {
-    final case class Correct(checkedPlugins: LoadedPlugins, visitedKeys: Set[DIKey]) extends PlanCheckResult {
-      override def maybeError: None.type = None
-      override def maybeErrorMessage: None.type = None
-    }
-    final case class Incorrect(checkedPlugins: LoadedPlugins, visitedKeys: Set[DIKey], message: String, cause: Either[Throwable, PlanVerifierResult.Incorrect])
-      extends PlanCheckResult {
-      override def maybeError: Some[Either[Throwable, PlanVerifierResult.Incorrect]] = Some(cause)
-      override def maybeErrorMessage: Some[String] = Some(message)
-    }
+  def assertAppCompileTime[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+    app: AppMain,
+    cfg: Cfg = PlanCheckConfig.empty,
+  )(implicit planCheckResult: PlanCheckMaterializer[AppMain, Cfg]
+  ): PlanCheckMaterializer[AppMain, Cfg] = {
+    discard(app, cfg)
+    planCheckResult
   }
 
   object runtime {
-    /**
-      * @throws PlanCheckException on found issues
-      */
+    /** @throws izumi.distage.framework.model.exceptions.PlanCheckException on found issues */
     def assertApp(
       app: PlanHolder,
-      roles: String = "*",
-      excludeActivations: String = "",
-      config: String = "*",
-      checkConfig: Boolean = defaultCheckConfig,
-      printBindings: Boolean = defaultPrintBindings,
-      logger: TrivialLogger = makeDefaultLogger(),
+      cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
+      logger: TrivialLogger = defaultLogger(),
     ): Unit = {
-      checkApp(app, roles, excludeActivations, config, checkConfig, printBindings, logger).throwOnError()
+      checkApp(app, cfg, logger).throwOnError()
     }
 
-    /**
-      * @return a list of issues, if any.
-      *         Does not throw.
-      */
+    /** @return a list of issues, if any. Does not throw. */
     def checkApp(
       app: PlanHolder,
-      roles: String = "*",
-      excludeActivations: String = "",
-      config: String = "*",
-      checkConfig: Boolean = defaultCheckConfig,
-      printBindings: Boolean = defaultPrintBindings,
-      logger: TrivialLogger = makeDefaultLogger(),
+      cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
+      logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
-      val chosenRoles = parseRoles(roles)
-      val chosenActivations = parseActivations(excludeActivations)
-      val chosenConfig = if (config == "*") None else Some(config)
+      val chosenRoles = parseRoles(cfg.roles)
+      val chosenActivations = parseActivations(cfg.excludeActivations)
+      val chosenConfig = if (cfg.config == "*") None else Some(cfg.config)
 
-      checkAppParsed[app.AppEffectType](app, chosenRoles, chosenActivations, chosenConfig, checkConfig, printBindings, logger)
+      checkAppParsed[app.AppEffectType](app, chosenRoles, chosenActivations, chosenConfig, cfg.checkConfig, cfg.printBindings, cfg.onlyWarn, logger)
     }
 
-    /**
-      * @return a list of issues, if any.
-      *         Does not throw.
-      */
+    /** @return a list of issues, if any. Does not throw. */
     def checkAppParsed[F[_]](
       app: PlanHolder.Aux[F],
       chosenRoles: RoleSelection,
@@ -135,7 +91,8 @@ object PlanCheck {
       chosenConfig: Option[String],
       checkConfig: Boolean,
       printBindings: Boolean,
-      logger: TrivialLogger = makeDefaultLogger(),
+      onlyWarn: Boolean = false,
+      logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
 
       var effectiveRoles = "unknown, failed too early"
@@ -145,7 +102,7 @@ object PlanCheck {
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
         val message = {
-          val errorMsg = cause.fold(_.stackTrace, _.issues.fromNonEmptySet.niceList())
+          val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.niceList())
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
@@ -166,12 +123,11 @@ object PlanCheck {
           }
           val printedBindings = if (printBindings) {
             s"""Bindings were:
-               |
                |${plugins.flatMap(_.iterator.map(_.toString)).niceList()}
                |
-               |Visited keys:
+               |Keys visited:
+               |${visitedKeys.niceList()}
                |
-               |$visitedKeys
                |""".stripMargin
           } else ""
 
@@ -182,10 +138,13 @@ object PlanCheck {
              |  plugins             = $pluginStr
              |  checkConfig         = $checkConfig$configStr
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
+             |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
              |
-             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.onlywarn`.name}=true`
+             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.only-warn`.name}=true`
+             |Or by adding the option to `.jvmopts` in project root.
              |
-             |$printedBindings$errorMsg
+             |${printedBindings}Error was:
+             |$errorMsg
              |""".stripMargin
         }
 
@@ -216,7 +175,7 @@ object PlanCheck {
           ) =>
             logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=$excludedActivations chosenConfig=$chosenConfig")
 
-            sdfg(
+            checkRoleApp(
               excludedActivations,
               checkConfig,
             )(
@@ -241,7 +200,11 @@ object PlanCheck {
       }
     }
 
-    private[this] def sdfg[F[_]: TagK](
+    def checkCoreApp = {
+      ???
+    }
+
+    private[this] def checkRoleApp[F[_]: TagK](
       //    logger: IzLogger,
       excludedActivations: Set[NonEmptySet[AxisPoint]],
       checkConfig: Boolean,
@@ -372,67 +335,71 @@ object PlanCheck {
       }
     }
 
-  }
-
-  sealed trait RoleSelection {
-    override final def toString: String = this match {
-      case RoleSelection.Everything => "*"
-      case RoleSelection.OnlySelected(selection) => selection.mkString(" ")
-      case RoleSelection.AllExcluding(excluded) => excluded.map("-" + _).mkString(" ")
+    sealed trait RoleSelection {
+      override final def toString: String = this match {
+        case RoleSelection.Everything => "*"
+        case RoleSelection.OnlySelected(selection) => selection.mkString(" ")
+        case RoleSelection.AllExcluding(excluded) => excluded.map("-" + _).mkString(" ")
+      }
     }
-  }
-  object RoleSelection {
-    case object Everything extends RoleSelection
-    final case class OnlySelected(selection: Set[String]) extends RoleSelection
-    final case class AllExcluding(excluded: Set[String]) extends RoleSelection
-  }
-
-  private[this] def parseRoles(s: String): RoleSelection = {
-    val tokens = s.split(" ").iterator.filter(_.nonEmpty).toList
-    tokens match {
-      case "*" :: Nil =>
-        RoleSelection.Everything
-      case "*" :: exclusions if exclusions.forall(_.startsWith("-")) =>
-        RoleSelection.AllExcluding(exclusions.iterator.map(_.stripPrefix("-")).toSet)
-      case inclusions if !inclusions.exists(_.startsWith("-")) =>
-        RoleSelection.OnlySelected(inclusions.iterator.map(_.stripPrefix(":")).toSet)
-      case _ =>
-        throwInvalidRoleSelectionError(s)
+    object RoleSelection {
+      case object Everything extends RoleSelection
+      final case class OnlySelected(selection: Set[String]) extends RoleSelection
+      final case class AllExcluding(excluded: Set[String]) extends RoleSelection
     }
+
+    private[this] def parseRoles(s: String): RoleSelection = {
+      val tokens = s.split(" ").iterator.filter(_.nonEmpty).toList
+      tokens match {
+        case "*" :: Nil =>
+          RoleSelection.Everything
+        case "*" :: exclusions if exclusions.forall(_.startsWith("-")) =>
+          RoleSelection.AllExcluding(exclusions.iterator.map(_.stripPrefix("-")).toSet)
+        case inclusions if !inclusions.exists(_.startsWith("-")) =>
+          RoleSelection.OnlySelected(inclusions.iterator.map(_.stripPrefix(":")).toSet)
+        case _ =>
+          throwInvalidRoleSelectionError(s)
+      }
+    }
+
+    private[this] def throwInvalidRoleSelectionError(s: String): Nothing = {
+      throw new IllegalArgumentException(
+        s"""Invalid role selection syntax in `$s`.
+           |
+           |Valid syntaxes:
+           |
+           |  - "*" to check all roles,
+           |  - "role1 role2" to check specific roles,
+           |  - "* -role1 -role2" to check all roles _except_ specific roles.
+           |""".stripMargin
+      )
+    }
+
+    private[this] def parseActivations(s: String): Set[NonEmptySet[AxisPoint]] = {
+      s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
+          NonEmptySet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+        }.toSet
+    }
+
+    private[this] def defaultLogger(): TrivialLogger = {
+      TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
+    }
+
+    @tailrec private[this] def cutoffMacroTrace(t: Throwable): Unit = {
+      val trace = t.getStackTrace
+      val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
+      t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
+      val suppressed = t.getSuppressed
+      suppressed.foreach(cutSuppressed)
+      if (t.getCause ne null) cutoffMacroTrace(t.getCause)
+    }
+    // indirection for tailrec
+    private[this] def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
+
   }
 
-  private[this] def throwInvalidRoleSelectionError(s: String): Nothing = {
-    throw new IllegalArgumentException(
-      s"""Invalid role selection syntax in `$s`.
-         |
-         |Valid syntaxes:
-         |
-         |  - "*" to check all roles,
-         |  - "role1 role2" to check specific roles,
-         |  - "* -role1 -role2" to check all roles _except_ specific roles.
-         |""".stripMargin
-    )
-  }
-
-  private[this] def parseActivations(s: String): Set[NonEmptySet[AxisPoint]] = {
-    s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-        NonEmptySet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
-      }.toSet
-  }
-
-  private[this] def makeDefaultLogger(): TrivialLogger = {
-    TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
-  }
-
-  @tailrec private[this] def cutoffMacroTrace(t: Throwable): Unit = {
-    val trace = t.getStackTrace
-    val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
-    t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
-    val suppressed = t.getSuppressed
-    suppressed.foreach(cutSuppressed)
-    if (t.getCause ne null) cutoffMacroTrace(t.getCause)
-  }
-  // indirection for tailrec
-  private[this] def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
+  final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
+  final val defaultPrintBindings = DebugProperties.`izumi.distage.plancheck.print-bindings`.boolValue(false)
+  final val defaultOnlyWarn = DebugProperties.`izumi.distage.plancheck.only-warn`.boolValue(false)
 
 }
