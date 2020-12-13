@@ -1,7 +1,6 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.distage.framework.{PlanCheck, PlanCheckConfig, PlanCheckMaterializer}
-import izumi.distage.roles.PlanHolder
+import izumi.distage.framework.{PlanCheck, PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
 import org.scalatest.Assertions
 
 trait WiringAssertions { this: Assertions =>

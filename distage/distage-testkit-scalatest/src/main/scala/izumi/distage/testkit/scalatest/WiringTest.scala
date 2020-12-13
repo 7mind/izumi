@@ -1,8 +1,7 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer}
+import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
 import izumi.distage.modules.DefaultModule
-import izumi.distage.roles.PlanHolder
 
 abstract class WiringTest[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
   val app: AppMain with PlanHolder.Aux[AppMain#AppEffectType],

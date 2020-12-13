@@ -3,7 +3,7 @@ package izumi.distage.roles
 import cats.effect.LiftIO
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
-import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer}
+import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig

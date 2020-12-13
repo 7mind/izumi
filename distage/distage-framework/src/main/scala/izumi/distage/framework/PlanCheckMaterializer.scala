@@ -3,7 +3,6 @@ package izumi.distage.framework
 import izumi.distage.framework.model.PlanCheckResult
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
-import izumi.distage.roles.PlanHolder
 import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
 
 import scala.language.experimental.macros
@@ -132,7 +131,12 @@ object PlanCheckMaterializer {
             true -> loadedPlugins
           case PlanCheckResult.Incorrect(loadedPlugins, _, message, _) =>
             if (warn) {
-              c.warning(c.enclosingPosition, message)
+              val fatalWarnings = c.compilerSettings.exists(s => s == "-Wconf:any:error" || s == "-Xfatal-warnings")
+              if (fatalWarnings) {
+                c.info(c.enclosingPosition, message, force = true)
+              } else {
+                c.warning(c.enclosingPosition, message)
+              }
               false -> loadedPlugins
             } else {
               c.abort(c.enclosingPosition, message)

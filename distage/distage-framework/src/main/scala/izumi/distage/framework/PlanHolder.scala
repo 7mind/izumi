@@ -1,4 +1,4 @@
-package izumi.distage.roles
+package izumi.distage.framework
 
 import distage.Injector
 import izumi.distage.InjectorFactory

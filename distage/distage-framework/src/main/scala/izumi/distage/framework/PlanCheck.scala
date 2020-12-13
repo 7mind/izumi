@@ -18,7 +18,6 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.distage.roles.PlanHolder
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
@@ -131,6 +130,14 @@ object PlanCheck {
                |""".stripMargin
           } else ""
 
+          val onlyWarnAdvice = if (onlyWarn) {
+            ""
+          } else {
+            s"""
+               |You may may turn this error into a warning by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.only-warn`.name}=true` or by adding the option to `.jvmopts` in project root.
+               |""".stripMargin
+          }
+
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
              |  roles               = $chosenRoles (effective: $effectiveRoles)
@@ -139,9 +146,7 @@ object PlanCheck {
              |  checkConfig         = $checkConfig$configStr
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
-             |
-             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.only-warn`.name}=true` or by adding the option to `.jvmopts` in project root.
-             |
+             |$onlyWarnAdvice
              |${printedBindings}Error was:
              |$errorMsg
              |""".stripMargin
