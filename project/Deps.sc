@@ -237,14 +237,17 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
-          ),
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
+        // ignore warnings triggered by scaladoc
+        "scalacOptions" += "-Wconf:cat=scaladoc:warning",
+        // ignore warnings triggered in mdoc
+        "scalacOptions" in SettingScope.Raw("mdoc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), Some(true)) := Seq(
             "-opt:l:inline",

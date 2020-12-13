@@ -14,7 +14,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
-  * Injector creates object graphs ([[Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.OrderedPlan]]
   *
   * @see [[izumi.distage.model.Planner]]
   * @see [[izumi.distage.model.Producer]]
@@ -222,7 +222,7 @@ trait Injector[F[_]] extends Planner with Producer {
     produceCustomF[F](plan)
   }
 
-  /** Produce [[Locator]] interpreting effect and resource bindings into the provided effect type */
+  /** Produce [[izumi.distage.model.Locator]] interpreting effect and resource bindings into the provided effect type */
   final def produceCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Locator] = {
     produceCustomF[G](plan(plannerInput))
   }
@@ -230,7 +230,7 @@ trait Injector[F[_]] extends Planner with Producer {
     produceDetailedCustomF[G](plan(plannerInput))
   }
 
-  /** Produce [[Locator]], supporting only effect and resource bindings in `Identity` */
+  /** Produce [[izumi.distage.model.Locator]], supporting only effect and resource bindings in `Identity` */
   final def produceCustomIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Locator] = {
     produceCustomF[Identity](plan(plannerInput))
   }
