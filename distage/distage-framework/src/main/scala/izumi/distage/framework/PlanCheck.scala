@@ -47,8 +47,8 @@ object PlanCheck {
       assertAtRuntime()
     }
 
-    def assertAtRuntime(): Unit = planCheck.assertAtRuntime()
-    def checkAtRuntime(): PlanCheckResult = planCheck.checkAtRuntime()
+    def assertAtRuntime(): Unit = planCheck.assertAgainAtRuntime()
+    def checkAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
   }
 
   def assertAppCompileTime[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
@@ -140,8 +140,7 @@ object PlanCheck {
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
              |
-             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.only-warn`.name}=true`
-             |Or by adding the option to `.jvmopts` in project root.
+             |You may ignore this error by setting system property in sbt, `sbt -D${DebugProperties.`izumi.distage.plancheck.only-warn`.name}=true` or by adding the option to `.jvmopts` in project root.
              |
              |${printedBindings}Error was:
              |$errorMsg

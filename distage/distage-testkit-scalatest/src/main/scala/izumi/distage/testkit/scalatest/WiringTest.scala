@@ -21,7 +21,7 @@ abstract class WiringTest[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
 
     if (checkAgainAtRuntime) {
       "Pass at runtime" in {
-        planCheck.checkAtRuntime().throwOnError()
+        planCheck.checkAgainAtRuntime().throwOnError()
       }
     }
   }

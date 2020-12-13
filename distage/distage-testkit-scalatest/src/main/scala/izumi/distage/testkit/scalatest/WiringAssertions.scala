@@ -14,7 +14,7 @@ trait WiringAssertions { this: Assertions =>
   ): Unit = {
     assert(planCheckResult.checkPassed)
     if (checkAgainAtRuntime) {
-      planCheckResult.checkAtRuntime().throwOnError()
+      planCheckResult.checkAgainAtRuntime().throwOnError()
     }
   }
 

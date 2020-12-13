@@ -57,7 +57,6 @@ object MacroParameters {
 
   def sbtIsInsideCI(): Option[Boolean] = macro MacroParametersImpl.sbtIsInsideCI
 
-
   def macroSetting(name: String): Option[String] = macro MacroParametersImpl.extractAttrMacro
 
   def macroSettingBool(name: String): Option[Boolean] = macro MacroParametersImpl.extractAttrBoolMacro

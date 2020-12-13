@@ -22,9 +22,8 @@ import org.scalatest.wordspec.AnyWordSpec
 final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
 
   "Check without config" in {
-    PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
-    PlanCheck
-      .assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:y", checkConfig = false)).assertAtRuntime()
+    PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", checkConfig = false)).assertAgainAtRuntime()
+    PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", excludeActivations = "test:y", checkConfig = false)).assertAgainAtRuntime()
   }
 
   "Check when config & requirements are valid" in {
@@ -32,7 +31,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       .assertAppCompileTime(
         StaticTestMain,
         PlanCheckConfig("statictestrole", excludeActivations = "test:y", config = "check-test-good.conf"),
-      ).assertAtRuntime()
+      ).assertAgainAtRuntime()
   }
 
   "Check depending plugin with plugins" in {
@@ -40,9 +39,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       .assertAppCompileTime(
         StaticTestMain,
         PlanCheckConfig("dependingrole", excludeActivations = "test:y", config = "check-test-good.conf"),
-      ).assertAtRuntime()
+      ).assertAgainAtRuntime()
     PlanCheck
-      .assertAppCompileTime(StaticTestMain, PlanCheckConfig("dependingrole", excludeActivations = "test:y", checkConfig = false)).assertAtRuntime()
+      .assertAppCompileTime(StaticTestMain, PlanCheckConfig("dependingrole", excludeActivations = "test:y", checkConfig = false)).assertAgainAtRuntime()
   }
 
   "Check with different activation" in {
@@ -50,7 +49,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       .assertAppCompileTime(
         StaticTestMain,
         PlanCheckConfig("statictestrole", excludeActivations = "test:x", config = "check-test-good.conf"),
-      ).assertAtRuntime()
+      ).assertAgainAtRuntime()
   }
 
   "regression test: can again check when config is false after 1.0" in {
@@ -143,7 +142,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
         "mode:test",
         checkConfig = true,
       ),
-    ).planCheck.assertAtRuntime()
+    ).planCheck.assertAgainAtRuntime()
 
     class b
       extends PlanCheck.Main(
@@ -154,7 +153,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           checkConfig = LiteralBoolean(false),
         ),
       )
-    new b() {}.planCheck.assertAtRuntime()
+    new b() {}.planCheck.assertAgainAtRuntime()
 
     assertTypeError(
       """

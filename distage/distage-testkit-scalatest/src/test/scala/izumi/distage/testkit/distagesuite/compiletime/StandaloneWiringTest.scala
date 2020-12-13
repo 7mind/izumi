@@ -17,7 +17,7 @@ class StandaloneWiringTest
   ) {
 
   "And again" in {
-    planCheck.checkAtRuntime().throwOnError().discard()
+    planCheck.checkAgainAtRuntime().throwOnError().discard()
   }
 
   "And again 2" in {

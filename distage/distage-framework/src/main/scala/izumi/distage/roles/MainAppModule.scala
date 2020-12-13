@@ -14,7 +14,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.RoleAppMain.{AdditionalRoles, ArgV}
+import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.launcher._
@@ -47,7 +47,7 @@ import izumi.reflect.TagK
   */
 class MainAppModule[F[_]: TagK: DefaultModule](
   args: ArgV,
-  additionalRoles: AdditionalRoles,
+  requiredRoles: RequiredRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
   bootstrapPluginConfig: PluginConfig,
@@ -57,7 +57,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   addImplicit[DefaultModule[F]]
 
   make[ArgV].fromValue(args)
-  make[AdditionalRoles].fromValue(additionalRoles)
+  make[RequiredRoles].fromValue(requiredRoles)
 
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
@@ -70,12 +70,12 @@ class MainAppModule[F[_]: TagK: DefaultModule](
   make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]
 
   make[RawAppArgs].from {
-    (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: AdditionalRoles) =>
+    (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: RequiredRoles) =>
       parser.parse(args.args) match {
-        case Left(value) =>
-          handler.onParserError(value)
-        case Right(value) =>
-          interceptor.rolesToLaunch(value, additionalRoles)
+        case Left(error) =>
+          handler.onParserError(error)
+        case Right(args) =>
+          interceptor.rolesToLaunch(args, additionalRoles)
       }
   }
 

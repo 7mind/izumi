@@ -37,10 +37,10 @@ final case class PlanCheckMaterializer[AppMain <: PlanHolder, -Cfg <: PlanCheckC
   onlyWarn: Option[Boolean],
 ) {
   /** @throws izumi.distage.framework.model.exceptions.PlanCheckException on found issues */
-  def assertAtRuntime(): Unit = PlanCheck.runtime.assertApp(app, makeCfg)
+  def assertAgainAtRuntime(): Unit = PlanCheck.runtime.assertApp(app, makeCfg)
 
   /** @return a list of issues, if any. Does not throw. */
-  def checkAtRuntime(): PlanCheckResult = PlanCheck.runtime.checkApp(app, makeCfg)
+  def checkAgainAtRuntime(): PlanCheckResult = PlanCheck.runtime.checkApp(app, makeCfg)
 
   def makeCfg: PlanCheckConfig.Any = new PlanCheckConfig(
     roles,

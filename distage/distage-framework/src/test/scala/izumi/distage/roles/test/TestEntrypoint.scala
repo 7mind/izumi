@@ -31,7 +31,7 @@ class TestEntrypointBase extends RoleAppMain.LauncherCats[IO] {
     new ImmediateExitShutdownStrategy()
   }
 
-  override protected def createEarlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {
+  override protected def earlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {
     AppFailureHandler.NullHandler
   }
 }

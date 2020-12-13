@@ -7,9 +7,17 @@ import scala.annotation.nowarn
 
 @nowarn("msg=early initializers are deprecated")
 object StandaloneWiringTestMain extends {
-  val cfg =
+  private val cfg =
     PlanCheckConfig(
       "* -failingrole01 -failingrole02",
       "mode:test",
     )
 } with PlanCheck.Main(TestEntrypointPatchedLeak, cfg)
+
+@nowarn("msg=early initializers are deprecated")
+object StandaloneWiringTestMain2 extends {
+  private val cfg = PlanCheckConfig(
+    "* -failingrole01 -failingrole02",
+    "mode:test",
+  )
+} with TestEntrypointPatchedLeak.PlanCheck(cfg)
