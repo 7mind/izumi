@@ -7,7 +7,7 @@ import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 
-sealed trait PlanCheckResult {
+sealed abstract class PlanCheckResult {
   def checkedPlugins: LoadedPlugins
   def visitedKeys: Set[DIKey]
 

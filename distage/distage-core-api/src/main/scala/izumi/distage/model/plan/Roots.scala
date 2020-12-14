@@ -18,9 +18,9 @@ import izumi.reflect.Tag
   * distage-testkit's test cases designate their parameters as roots and instantiate only the sub-graph
   * required for the test case.
   *
-  * @see Garbage Collection https://izumi.7mind.io/distage/advanced-features.html#garbage-collection
-  * @see distage Roles      https://izumi.7mind.io/distage/distage-framework.html#roles
-  * @see distage-testkit    https://izumi.7mind.io/distage/distage-testkit.html
+  * @see [[https://izumi.7mind.io/distage/advanced-features#garbage-collection Garbage Collection]]
+  * @see [[https://izumi.7mind.io/distage/distage-framework#roles              Roles             ]]
+  * @see [[https://izumi.7mind.io/distage/distage-testkit                      Testkit           ]]
   */
 sealed trait Roots {
   final def ++(that: Roots): Roots = {

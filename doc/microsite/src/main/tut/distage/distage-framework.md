@@ -11,32 +11,7 @@ In `distage` such entrypoints are called "roles". Role-based applications may co
 - @scaladoc[`RoleService[F]`](izumi.distage.roles.model.RoleService), for persistent services and daemons
 - @scaladoc[`RoleTask[F]`](izumi.distage.roles.model.RoleTask), for one-off tasks and applications
 
-
-### Tutorial: implementing roles
-
-
-```scala
-import izumi.functional.bio.IO2
- 
-/** A server listening on stdin */
-final class HotelService[F[+_, +_]: IO2] {
-  
-}
-
-```
-
-
-#### Service role
-
-
-#### Task role
-
-
-### Using roles
-
-
-
-Add `distage-framework` library for Roles API:
+To use roles, add `distage-framework` library:
 
 @@dependency[sbt,Maven,Gradle] {
   group="io.7mind.izumi"
@@ -59,51 +34,6 @@ Only the components required by the specified roles will be created, everything 
 
 Further reading:
 - [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-Returns a `izumi.distage.model.definition.Lifecycle` with the start/shutdown of a service described
-by its `acquire`/`release` actions. The acquired service will be kept alive until the application is interrupted or
-is otherwise finished, then the specified `release` action of the Lifecycle will run for cleanup.
-
-Note: Resource initialization must be finite  application startup won't progress until the `acquire` phase of the returned Lifecycle is finished.
-You may start a separate thread / fiber, etc during resource initialization.
-All the shutdown logic has to be implemented in the resource finalizer.
-
-Example: Often `start` is implemented using the `izumi.distage.model.definition.Lifecycle.fork_` method
-to spawn a daemon fiber running the service in background.
-service roles.
-
-```scala
-```
-
-
-
 
 ## Typesafe Config
 
@@ -264,6 +194,23 @@ val appModule = appModules.result.merge
 Injector()
   .produceGet[PetStoreController](appModule)
   .use(_.run())
+```
+
+### Compile-time scanning
+
+Plugin scan can be performed at compile-time, this is mainly useful for deployment on platforms with reduced runtime reflection
+capabilities compared to the JVM, such as Graal Native Image, Scala.js and Scala Native. Use `PluginConfig.compileTime` to perform a compile-time scan.
+
+Be warned though, for compile-time scanning to find plugins, they must be placed in a separate module from the one in which scan is performed. When placed in the same module, scanning will fail.
+
+Example:
+
+```scala mdoc:override:fakepackage:to-string
+"fakepackage com.example.petstore.another.module": Unit
+
+val HACK_OVERRIDE_pluginConfig = PluginConfig.compileTime("com.example.petstore")
+
+val loadedPlugins = PluginLoader().load(HACK_OVERRIDE_pluginConfig)
 ```
 
 ## Compile-time checks

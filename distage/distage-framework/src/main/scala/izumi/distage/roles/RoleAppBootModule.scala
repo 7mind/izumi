@@ -45,7 +45,7 @@ import izumi.reflect.TagK
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-class MainAppModule[F[_]: TagK: DefaultModule](
+class RoleAppBootModule[F[_]: TagK: DefaultModule](
   args: ArgV,
   requiredRoles: RequiredRoles,
   shutdownStrategy: AppShutdownStrategy[F],
@@ -96,7 +96,7 @@ class MainAppModule[F[_]: TagK: DefaultModule](
     .from[PluginLoaderDefaultImpl]
 
   make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
-  make[ConfigLoader.ConfigLocation].from[ConfigLoader.ConfigLocation.Impl]
+  make[ConfigLoader.ConfigLocation].from(ConfigLoader.ConfigLocation.Default)
   make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderArgs _)
   make[AppConfig].from {
     configLoader: ConfigLoader =>

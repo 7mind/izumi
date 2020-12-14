@@ -1,10 +1,10 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
+import izumi.distage.framework.{CheckableApp, PlanCheckConfig, PlanCheckMaterializer}
 import izumi.distage.modules.DefaultModule
 
-abstract class WiringTest[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
-  val app: AppMain with PlanHolder.Aux[AppMain#AppEffectType],
+abstract class SpecWiring[AppMain <: CheckableApp, Cfg <: PlanCheckConfig.Any](
+  val app: AppMain with CheckableApp.Aux[AppMain#AppEffectType],
   val planCheckConfig: Cfg = PlanCheckConfig.empty,
   val checkAgainAtRuntime: Boolean = true,
 )(implicit

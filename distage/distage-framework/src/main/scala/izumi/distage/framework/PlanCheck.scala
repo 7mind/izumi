@@ -1,42 +1,50 @@
 package izumi.distage.framework
 
-import com.typesafe.config.ConfigFactory
-import distage.Injector
-import izumi.distage.InjectorFactory
-import izumi.distage.config.model.exceptions.DIConfigReadException
-import izumi.distage.config.model.{AppConfig, ConfTag}
-import izumi.distage.constructors.TraitConstructor
-import izumi.distage.framework.model.PlanCheckResult
-import izumi.distage.framework.services.ConfigLoader
-import izumi.distage.model.definition._
+import izumi.distage.config.model.ConfTag
+import izumi.distage.framework.model.{PlanCheckInput, PlanCheckResult}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
-import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.distage.modules.DefaultModule
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.distage.roles.launcher.RoleProvider
-import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable._
-import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks.{Discarder, discard}
+import izumi.fundamentals.platform.language.Quirks.discard
 import izumi.fundamentals.platform.language.{open, unused}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
-import izumi.logstage.api.IzLogger
-import izumi.reflect.TagK
 
 import scala.annotation.tailrec
 
+/**
+  * API for performing compile-time and runtime checks of correctness for `distage` applications.
+  *
+  * The easiest way to add compile-time safety to your application is to add
+  * an object inheriting [[PlanCheck.Main]] in __test scope__ of the same module
+  * where you define your [[izumi.distage.roles.RoleAppMain Role Launcher]]
+  *
+  * @example
+  *
+  * {{{
+  *   import izumi.distage.framework.PlanCheck
+  *   import com.example.myapp.MainLauncher
+  *
+  *   object WiringCheck extends PlanCheck.Main(MainLauncher)
+  * }}}
+  *
+  * The object will emit compile-time errors for any issues or omissions in your `ModuleDef`s
+  *
+  * @see [[izumi.distage.framework.PlanCheckConfig Configuration Options]]
+  * @see [[izumi.distage.framework.CheckableApp Support for checking not role-based applications]]
+  * @see [[izumi.distage.framework.PlanCheckMaterializer Implicit-based API]]
+  * @see [[izumi.distage.framework.DebugProperties Configuration options in system properties]]
+  */
 object PlanCheck {
 
-  @open class Main[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+  @open class Main[AppMain <: CheckableApp, Cfg <: PlanCheckConfig.Any](
     app: AppMain,
     cfg: Cfg = PlanCheckConfig.empty,
   )(implicit val planCheck: PlanCheckMaterializer[AppMain, Cfg]
@@ -51,7 +59,7 @@ object PlanCheck {
     def checkAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
   }
 
-  def assertAppCompileTime[AppMain <: PlanHolder, Cfg <: PlanCheckConfig.Any](
+  def assertAppCompileTime[AppMain <: CheckableApp, Cfg <: PlanCheckConfig.Any](
     app: AppMain,
     cfg: Cfg = PlanCheckConfig.empty,
   )(implicit planCheckResult: PlanCheckMaterializer[AppMain, Cfg]
@@ -60,10 +68,14 @@ object PlanCheck {
     planCheckResult
   }
 
+  final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
+  final val defaultPrintBindings = DebugProperties.`izumi.distage.plancheck.print-bindings`.boolValue(false)
+  final val defaultOnlyWarn = DebugProperties.`izumi.distage.plancheck.only-warn`.boolValue(false)
+
   object runtime {
     /** @throws izumi.distage.framework.model.exceptions.PlanCheckException on found issues */
     def assertApp(
-      app: PlanHolder,
+      app: CheckableApp,
       cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
       logger: TrivialLogger = defaultLogger(),
     ): Unit = {
@@ -72,7 +84,7 @@ object PlanCheck {
 
     /** @return a list of issues, if any. Does not throw. */
     def checkApp(
-      app: PlanHolder,
+      app: CheckableApp,
       cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
       logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
@@ -85,7 +97,7 @@ object PlanCheck {
 
     /** @return a list of issues, if any. Does not throw. */
     def checkAppParsed[F[_]](
-      app: PlanHolder.Aux[F],
+      app: CheckableApp.Aux[F],
       chosenRoles: RoleSelection,
       excludedActivations: Set[NonEmptySet[AxisPoint]],
       chosenConfig: Option[String],
@@ -95,11 +107,15 @@ object PlanCheck {
       logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
 
-      var effectiveRoles = "unknown, failed too early"
+      var effectiveRoots = "unknown, failed too early"
       var effectiveConfig = "unknown, failed too early"
       var effectiveBsPlugins = LoadedPlugins.empty
       var effectiveAppPlugins = LoadedPlugins.empty
       var effectivePlugins = LoadedPlugins.empty
+
+      def continue: PlanCheckInput[F] => PlanVerifierResult = {
+        checkAnyApp[F](excludedActivations, checkConfig, effectiveConfig = _)
+      }
 
       def renderPlugins(plugins: Seq[PluginBase]): String = {
         val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
@@ -155,7 +171,7 @@ object PlanCheck {
 
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
-             |  roles               = $chosenRoles (effective: $effectiveRoles)
+             |  roles               = $chosenRoles (effective: $effectiveRoots)
              |  excludedActivations = ${NonEmptySet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
              |  bootstrapPlugins    = $bsPluginsStr
              |  plugins             = $appPluginsStr
@@ -171,64 +187,24 @@ object PlanCheck {
         PlanCheckResult.Incorrect(effectivePlugins, visitedKeys, message, cause)
       }
 
-      val baseModuleOverrides = mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map(app.getClass.getClassLoader -> _))
-      val baseModuleWithOverrides = app.mainAppModule.overriddenBy(baseModuleOverrides)
+      logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=`$excludedActivations` chosenConfig=`$chosenConfig`")
+
       try {
-        import app.tagK
+        val data = app.preparePlanCheckInput(chosenRoles, chosenConfig)
 
-        Injector[Identity]().produceRun(baseModuleWithOverrides)(Functoid {
-          (
-            // module
-            bsModule: BootstrapModule @Id("roleapp"),
-            appModule: Module @Id("roleapp"),
-            defaultModule: DefaultModule[F],
-            // roots
-            rolesInfo: RolesInfo,
-            // config
-            configLoader: ConfigLoader,
-            // providedKeys
-            injectorFactory: InjectorFactory,
-            // effectivePlugins
-            appPlugins: LoadedPlugins @Id("main"),
-            bsPlugins: LoadedPlugins @Id("bootstrap"),
-          ) =>
-            logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=`$excludedActivations` chosenConfig=`$chosenConfig`")
+        effectiveRoots = data.roots match {
+          case Roots.Of(roots) => roots.mkString(", ")
+          case Roots.Everything => "<Roots.Everything>"
+        }
+        effectiveAppPlugins = data.appPlugins
+        effectiveBsPlugins = data.bsPlugins
+        val loadedPlugins = data.appPlugins ++ data.bsPlugins
+        effectivePlugins = loadedPlugins
 
-            effectiveRoles = rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")
-
-            effectiveAppPlugins = appPlugins
-            effectiveBsPlugins = bsPlugins
-            val loadedPlugins = appPlugins ++ bsPlugins
-            effectivePlugins = loadedPlugins
-
-            checkRoleApp(
-              excludedActivations,
-              checkConfig,
-            )(effectiveConfig = _)(
-              PData[F](
-                module = ModuleBase.make(
-                  ModuleBase
-                    .overrideImpl(
-                      ModuleBase.overrideImpl(bsModule.iterator, defaultModule.module.iterator),
-                      appModule.iterator,
-                    )
-                    .toSet
-                ),
-                providedKeys = injectorFactory.providedKeys(bsModule) ++
-                  defaultModule.module.keys,
-                roots = Roots(
-                  // bootstrap is produced with Roots.Everything, so each bootstrap component is effectively a root
-                  bsModule.keys ++
-                  rolesInfo.requiredComponents
-                ),
-                configLoader = configLoader,
-                loadedPlugins = loadedPlugins,
-              )
-            ) match {
-              case incorrect: PlanVerifierResult.Incorrect => returnPlanCheckError(Right(incorrect))
-              case PlanVerifierResult.Correct(visitedKeys) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
-            }
-        })
+        continue(data) match {
+          case incorrect: PlanVerifierResult.Incorrect => returnPlanCheckError(Right(incorrect))
+          case PlanVerifierResult.Correct(visitedKeys) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
+        }
       } catch {
         case t: Throwable =>
           cutoffMacroTrace(t)
@@ -236,38 +212,20 @@ object PlanCheck {
       }
     }
 
-    def checkCoreApp = {
-      ???
-    }
-
-    final case class PData[F[_]](
-      module: ModuleBase,
-      providedKeys: Set[DIKey],
-      roots: Roots,
-      configLoader: ConfigLoader,
-      loadedPlugins: LoadedPlugins,
-    )
-// no need
-//    abstract class RoleBasedPData[F[_]] extends PData[F] {
-//      val rolesInfo: RolesInfo
-//
-//      override final val roots: Roots = Roots(rolesInfo.requiredComponents)
-//    }
-
-    private[this] def checkRoleApp[F[_]: TagK](
+    private[this] def checkAnyApp[F[_]](
       excludedActivations: Set[NonEmptySet[AxisPoint]],
       checkConfig: Boolean,
-    )(reportEffectiveConfig: String => Unit
-    )(ph: PData[F]
+      reportEffectiveConfig: String => Unit,
+    )(ph: PlanCheckInput[F]
     ): PlanVerifierResult = {
-      import ph._
+      val PlanCheckInput(effectType, module, roots, providedKeys, configLoader, _, _) = ph
 
       val planVerifierResult = PlanVerifier().verify[F](
         bindings = module,
         roots = roots,
         providedKeys = providedKeys,
         excludedActivations = excludedActivations,
-      )
+      )(effectType)
       val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {
@@ -302,66 +260,6 @@ object PlanCheck {
           PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys)
         case None =>
           planVerifierResult
-      }
-    }
-
-    def mainAppModulePlanCheckerOverrides(
-      chosenRoles: RoleSelection,
-      chosenConfigResource: Option[(ClassLoader, String)],
-    ): ModuleDef = {
-      new ModuleDef {
-        make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-        make[IzLogger].fromValue(IzLogger.NullLogger)
-
-        make[AppConfig].fromValue(AppConfig.empty)
-        make[RawAppArgs].fromValue(RawAppArgs.empty)
-
-        make[RoleProvider].from {
-          chosenRoles match {
-            case RoleSelection.Everything => namePredicateRoleProvider(_ => true)
-            case RoleSelection.AllExcluding(excluded) => namePredicateRoleProvider(!excluded(_))
-            case RoleSelection.OnlySelected(selection) =>
-              @impl trait SelectedRoleProvider extends RoleProvider.Impl {
-                override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-                  requiredRoles.discard()
-                  super.getInfo(bindings, selection, roleType)
-                }
-              }
-              TraitConstructor[SelectedRoleProvider]
-          }
-        }
-
-        chosenConfigResource match {
-          case Some((classLoader, resourceName)) =>
-            make[ConfigLoader].fromValue(specificResourceConfigLoader(classLoader, resourceName))
-          case None => // keep original ConfigLoader
-        }
-
-        private[this] def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
-          // use Auto-Traits feature to override just the few specific methods of a class succinctly
-          @impl trait NamePredicateRoleProvider extends RoleProvider.Impl {
-            override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
-              f(b.descriptor.id)
-            }
-            override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-              requiredRoles.discard()
-              super.getInfo(bindings, Set.empty, roleType)
-            }
-          }
-
-          TraitConstructor[NamePredicateRoleProvider]
-        }
-
-        private[this] def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
-          () =>
-            {
-              val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
-              if (cfg.origin().resource() eq null) {
-                throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
-              }
-              AppConfig(cfg)
-            }
-        }
       }
     }
 
@@ -427,9 +325,5 @@ object PlanCheck {
     private[this] def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
 
   }
-
-  final val defaultCheckConfig = DebugProperties.`izumi.distage.plancheck.check-config`.boolValue(true)
-  final val defaultPrintBindings = DebugProperties.`izumi.distage.plancheck.print-bindings`.boolValue(false)
-  final val defaultOnlyWarn = DebugProperties.`izumi.distage.plancheck.only-warn`.boolValue(false)
 
 }

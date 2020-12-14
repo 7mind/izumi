@@ -25,26 +25,23 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
     * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
     */
   final def apply(threshold: Log.Level = Log.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): Logger = {
-    val r = ConfigurableLogRouter(threshold, sink, levels)
-    make(r)
+    make(ConfigurableLogRouter(threshold, sink, levels))
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink]): Logger = {
-    val r = ConfigurableLogRouter(threshold, sinks)
-    make(r)
+    make(ConfigurableLogRouter(threshold, sinks))
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): Logger = {
-    val r = ConfigurableLogRouter(threshold, sinks, levels)
-    make(r)
+    make(ConfigurableLogRouter(threshold, sinks, levels))
   }
 
-  final def apply(receiver: LogRouter): Logger = {
-    make(receiver)
+  final def apply(router: LogRouter): Logger = {
+    make(router)
   }
 
-  final def apply(receiver: LogRouter, customContext: CustomContext): Logger = {
-    make(receiver, customContext)
+  final def apply(router: LogRouter, customContext: CustomContext): Logger = {
+    make(router, customContext)
   }
 
   /**
@@ -57,6 +54,5 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
     */
   final lazy val DebugLogger = make(LogRouter.debugRouter)
 
-  private[this] final def make(r: LogRouter): Logger = make(r, CustomContext.empty)
-  protected def make(r: LogRouter, context: CustomContext): Logger
+  protected[this] def make(r: LogRouter, context: CustomContext = CustomContext.empty): Logger
 }

@@ -85,19 +85,16 @@ object Injector extends InjectorFactory {
     inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
   }
 
-  override lazy val providedKeys: Set[DIKey] = {
-    providedKeys(defaultBootstrap)
+  override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
+    providedKeys[F](defaultBootstrap, overrides: _*)
   }
 
-  override def providedKeys(overrides: BootstrapModule*): Set[DIKey] = {
-    providedKeys(defaultBootstrap, overrides: _*)
-  }
-
-  override def providedKeys(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
+  override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
     (bootstrapBase.keysIterator ++
     overrides.iterator.flatMap(_.keysIterator) ++
     BootstrapLocator.selfReflectionKeys.iterator ++
     IdentitySupportModule.keysIterator ++
+    DefaultModule[F].keysIterator ++
     InjectorDefaultImpl.providedKeys.iterator).toSet
   }
 
@@ -145,16 +142,12 @@ object Injector extends InjectorFactory {
       inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
     }
 
-    override final def providedKeys: Set[DIKey] = {
-      Injector.providedKeys
+    override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
+      Injector.providedKeys[F](overrides: _*)
     }
 
-    override final def providedKeys(overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys(overrides: _*)
-    }
-
-    override final def providedKeys(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys(bootstrapBase, overrides: _*)
+    override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
+      Injector.providedKeys[F](bootstrapBase, overrides: _*)
     }
 
     override protected[this] final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap

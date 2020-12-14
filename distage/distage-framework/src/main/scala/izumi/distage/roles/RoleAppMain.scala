@@ -3,7 +3,7 @@ package izumi.distage.roles
 import cats.effect.LiftIO
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
-import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
+import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
 import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
@@ -22,12 +22,33 @@ import izumi.reflect.{TagK, TagK3, TagKK}
 
 import scala.concurrent.ExecutionContext
 
+/**
+  * Create a launcher for role-based applications by extending this in a top-level object
+  *
+  * @example
+  *
+  * {{{
+  * import izumi.distage.framework.RoleAppMain
+  * import izumi.distage.plugins.PluginConfig
+  *
+  * object RoleLauncher extends RoleAppMain.LauncherBIO[zio.IO] {
+  *
+  *   override def pluginConfig: PluginConfig = {
+  *     PluginConfig.cached(pluginsPackage = "my.example.app.plugins")
+  *   }
+  *
+  * }
+  * }}}
+  *
+  * @see [[https://izumi.7mind.io/distage/distage-framework#roles Roles]]
+  * @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]]
+  */
 abstract class RoleAppMain[F[_]](
   implicit
-  val tagK: TagK[F],
+  override val tagK: TagK[F],
   val defaultModule: DefaultModule[F],
   val artifact: IzArtifactMaterializer,
-) extends PlanHolder { self =>
+) extends RoleCheckableApp[F] { self =>
 
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
@@ -39,26 +60,22 @@ abstract class RoleAppMain[F[_]](
     *       example:
     *
     *       {{{
-    *       override def mainAppModuleOverrides(@unused argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+    *       override def roleAppBootOverrides(@unused argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
     *         modify[Module].named("roleapp")(_ ++ new ModuleDef {
     *           make[MyComponentX](
     *         })
     *       }
     *       }}}
     */
-  protected def mainAppModuleOverrides(@unused argv: ArgV): Module = {
-    Module.empty
-  }
+  protected def roleAppBootOverrides(@unused argv: ArgV): Module = Module.empty
 
   /** Roles always enabled in this [[RoleAppMain]] */
-  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = {
-    Vector.empty
-  }
+  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = Vector.empty
 
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
-      Injector.NoProxies[Identity]().produceRun(mainAppModule(argv)) {
+      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
         appResource: AppResource[F] =>
           appResource.runApp()
       }
@@ -80,18 +97,18 @@ abstract class RoleAppMain[F[_]](
     izumi.distage.framework.PlanCheck.assertAppCompileTime[self.type, Cfg](self, cfg)
   }
 
-  override final def mainAppModule: Module = {
-    mainAppModule(ArgV.empty)
+  override final def roleAppBootModule: Module = {
+    roleAppBootModule(ArgV.empty)
   }
 
-  def mainAppModule(argv: ArgV): Module = {
-    val mainModule = mainAppModule(argv, RequiredRoles(requiredRoles(argv)))
-    val overrideModule = mainAppModuleOverrides(argv)
+  def roleAppBootModule(argv: ArgV): Module = {
+    val mainModule = roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
+    val overrideModule = roleAppBootOverrides(argv)
     mainModule overriddenBy overrideModule
   }
 
-  def mainAppModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
-    new MainAppModule[F](
+  def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
+    new RoleAppBootModule[F](
       args = argv,
       requiredRoles = additionalRoles,
       shutdownStrategy = shutdownStrategy,
@@ -104,8 +121,6 @@ abstract class RoleAppMain[F[_]](
   protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
     AppFailureHandler.TerminatingHandler
   }
-
-  override final type AppEffectType[A] = F[A]
 }
 
 object RoleAppMain {
@@ -114,7 +129,7 @@ object RoleAppMain {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
 
     // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, ?]]
-    override protected def mainAppModuleOverrides(argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
     }
   }
@@ -123,7 +138,7 @@ object RoleAppMain {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, ?]] = new BIOShutdownStrategy[F[Any, +?, +?]]
 
     // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, ?]]
-    override protected def mainAppModuleOverrides(argv: ArgV): Module = super.mainAppModuleOverrides(argv) ++ new ModuleDef {
+    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO3Module[F]() +: _))
     }
   }

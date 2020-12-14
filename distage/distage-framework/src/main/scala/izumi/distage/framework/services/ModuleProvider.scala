@@ -19,7 +19,7 @@ import izumi.logstage.distage.{LogIOModule, LogstageModule}
 import izumi.reflect.TagK
 
 /**
-  * This component is responsible for passing-through selected components from the outer [[izumi.distage.roles.MainAppModule]]
+  * This component is responsible for passing-through selected components from the outer [[izumi.distage.roles.RoleAppBootModule]]
   * context into DI scope of the started application.
   *
   * The application doesn't outright [[distage.Injector.inherit inherit]] the outer context because that would

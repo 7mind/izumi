@@ -12,14 +12,16 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 /**
-  * Config reader that uses pureconfig.ConfigReader instance for a type
-  * to decode Typesafe Config.
+  * Config reader that uses a [[pureconfig.ConfigReader pureconfig.ConfigReader]] implicit instance for a type
+  * to decode it from Typesafe Config.
   *
   * Always automatically derives a codec if it's not available.
   *
-  * Automatic derivation will use **`camelCase`** fields, not `kebab-case` fields,
-  * as in default pureconfig. It also override pureconfig's default `type` field
-  * type discriminator for sealed traits. Instead, using `circe`-like format with a single-key object. Example:
+  * Automatic derivation will use **`camelCase`** fields, NOT `kebab-case` fields,
+  * as in default pureconfig. It also overrides pureconfig's default `type` field
+  * type discriminator for sealed traits, instead using a `circe`-like format with a single-key object.
+  *
+  * Example:
   *
   * {{{
   *   sealed trait AorB
@@ -29,23 +31,27 @@ import scala.util.{Failure, Success, Try}
   *   final case class Config(values: List[AorB])
   * }}}
   *
-  * in config:
+  * In config:
   *
   * {{{
   *   config {
-  *     values = [{ A { a = 5 } }, { B { b = cba } }]
+  *     values = [
+  *       { A { a = 123 } },
+  *       { B { b = cba } }
+  *     ]
   *   }
   * }}}
   *
-  * It will also work without importing `pureconfig.generic.auto._`
+  * Auto-derivation will work without importing `pureconfig.generic.auto._` and without any other imports
   *
-  * If you want to use it to recursively derive a pureconfig codec,
-  * you may use `PureconfigAutoDerive[T]`:
+  * You may use [[izumi.distage.config.codec.PureconfigAutoDerive]] f you want to use `DIConfigReader`'s deriving strategy to derive a standalone `pureconfig` codec:
   *
   * {{{
   *   final case class Abc(a: Duration, b: Regex, c: URL)
+  *
   *   object Abc {
-  *     implicit val configReader: pureconfig.ConfigReader[Abc] = PureconfigAutoDerive[Abc]
+  *     implicit val configReader: pureconfig.ConfigReader[Abc] =
+  *       PureconfigAutoDerive[Abc]
   *   }
   * }}}
   */

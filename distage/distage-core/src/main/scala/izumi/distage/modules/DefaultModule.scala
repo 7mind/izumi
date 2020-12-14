@@ -40,6 +40,13 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
 
   def empty[F[_]]: DefaultModule[F] = DefaultModule(Module.empty)
 
+  /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
+  implicit final def forIdentity: DefaultModule[Identity] = {
+    DefaultModule.empty
+  }
+}
+
+sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModulesInstances2 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect & zio as a dependency without REQUIRING a cats-effect/zio dependency.
@@ -56,11 +63,9 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
   ): DefaultModule2[ZIO[R, ?, ?]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
   }
-
 }
 
-sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModulesInstances2 {
-
+sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have zio as a dependency without REQUIRING a zio dependency.
@@ -108,22 +113,16 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
   implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
     DefaultModule(CatsIOSupportModule)
   }
-
-  /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
-  implicit final def forIdentity: DefaultModule[Identity] = {
-    DefaultModule.empty
-  }
-
 }
 
-sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
+sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
   /** @see [[izumi.distage.modules.support.AnyBIO2SupportModule]] */
-  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
+  implicit final def fromBIO2[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
     DefaultModule(AnyBIO2SupportModule.withImplicits[F])
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
+sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
   /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
   implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](
     implicit tagBIO: TagKK[F[Any, +?, +?]]
@@ -132,7 +131,7 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
+sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModulesInstances6 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -159,7 +158,7 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances5 {
+sealed trait LowPriorityDefaultModulesInstances6 {
   implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[QuasiIO[F]]

@@ -1,5 +1,6 @@
 package izumi.distage.planning.solver
 
+import distage.Injector
 import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
@@ -42,7 +43,7 @@ object PlanSolver {
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
       if (enableDebugVerify) {
-        val res = PlanVerifier(preps).verify[Identity](input.bindings, input.roots)
+        val res = PlanVerifier(preps).verify[Identity](input.bindings, input.roots, Injector.providedKeys(), Set.empty)
         if (res.issues.nonEmpty) {
           System.err.println(res.issues.fromNonEmptySet.niceList())
         }

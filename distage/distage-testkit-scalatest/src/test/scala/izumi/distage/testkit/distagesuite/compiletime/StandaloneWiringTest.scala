@@ -2,12 +2,12 @@ package izumi.distage.testkit.distagesuite.compiletime
 
 import com.github.pshirshov.test.plugins.StaticTestMain
 import izumi.distage.framework.PlanCheckConfig
-import izumi.distage.testkit.scalatest.WiringTest
+import izumi.distage.testkit.scalatest.SpecWiring
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.literals.LiteralString
 
 class StandaloneWiringTest
-  extends WiringTest(
+  extends SpecWiring(
     StaticTestMain,
     PlanCheckConfig(
       roles = LiteralString("statictestrole"),
@@ -21,7 +21,7 @@ class StandaloneWiringTest
   }
 
   "And again 2" in {
-    assertWiring(
+    assertWiringCompileTime(
       StaticTestMain,
       planCheckConfig,
     )

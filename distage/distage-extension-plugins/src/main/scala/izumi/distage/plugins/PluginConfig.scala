@@ -5,6 +5,7 @@ import izumi.fundamentals.platform.language.SourcePackageMaterializer
 
 import scala.language.experimental.macros
 
+/** @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]] */
 final case class PluginConfig(
   packagesEnabled: Seq[String],
   packagesDisabled: Seq[String],

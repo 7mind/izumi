@@ -32,7 +32,7 @@ import scala.util.{Failure, Success, Try}
   *   - `common-reference-dev.conf`
   *
   * NOTE: You can change default config locations by overriding `make[ConfigLocation]`
-  * binding in [[izumi.distage.roles.RoleAppMain#moduleOverrides]] (defaults defined in [[izumi.distage.roles.MainAppModule]])
+  * binding in [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]] (defaults defined in [[izumi.distage.roles.RoleAppBootModule]])
   *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
   * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
@@ -49,6 +49,7 @@ import scala.util.{Failure, Success, Try}
   *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
   *
   * @see [[ConfigLoader.ConfigLocation]]
+  * @see [[ConfigLoader.LocalFSImpl]]
   */
 trait ConfigLoader {
   def loadConfig(): AppConfig
@@ -57,6 +58,8 @@ trait ConfigLoader {
 }
 
 object ConfigLoader {
+  def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty())
+
   import scala.collection.compat._
 
   trait ConfigLocation {
@@ -65,7 +68,7 @@ object ConfigLoader {
     def defaultBaseConfigs: Seq[String] = ConfigLocation.defaultBaseConfigs
   }
   object ConfigLocation {
-    final class Impl extends ConfigLocation
+    object Default extends ConfigLocation
 
     def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
@@ -94,6 +97,8 @@ object ConfigLoader {
         .toMap
       ConfigLoader.Args(maybeGlobalConfig, (emptyRoleConfigs ++ specifiedRoleConfigs).view.filterKeys(rolesInfo.requiredRoleNames).toMap)
     }
+
+    def empty: ConfigLoader.Args = ConfigLoader.Args(None, Map.empty)
   }
 
   @open class LocalFSImpl(

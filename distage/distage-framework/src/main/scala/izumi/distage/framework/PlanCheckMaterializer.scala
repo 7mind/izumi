@@ -24,7 +24,7 @@ import scala.reflect.runtime.{universe => ru}
   * @see [[izumi.distage.framework.PlanCheck User API]]
   * @see [[izumi.distage.framework.PlanCheckConfig Configuration Options]]
   */
-final case class PlanCheckMaterializer[AppMain <: PlanHolder, -Cfg <: PlanCheckConfig.Any](
+final case class PlanCheckMaterializer[AppMain <: CheckableApp, -Cfg <: PlanCheckConfig.Any](
   checkPassed: Boolean,
   checkedPlugins: Seq[PluginBase],
   app: AppMain,
@@ -54,7 +54,7 @@ final case class PlanCheckMaterializer[AppMain <: PlanHolder, -Cfg <: PlanCheckC
 object PlanCheckMaterializer {
 
   implicit def materialize[
-    AppMain <: PlanHolder,
+    AppMain <: CheckableApp,
     Roles <: String,
     ExcludeActivations <: String,
     Config <: String,
@@ -66,7 +66,7 @@ object PlanCheckMaterializer {
 
   object PlanCheckMaterializerMacro {
     def impl[
-      AppMain <: PlanHolder: c.WeakTypeTag,
+      AppMain <: CheckableApp: c.WeakTypeTag,
       Roles <: String: c.WeakTypeTag,
       Activations <: String: c.WeakTypeTag,
       Config <: String: c.WeakTypeTag,

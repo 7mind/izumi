@@ -1,12 +1,12 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.distage.framework.{PlanCheck, PlanCheckConfig, PlanCheckMaterializer, PlanHolder}
+import izumi.distage.framework.{CheckableApp, PlanCheck, PlanCheckConfig, PlanCheckMaterializer}
 import org.scalatest.Assertions
 
 trait WiringAssertions { this: Assertions =>
 
-  def assertWiring(
-    app: PlanHolder,
+  def assertWiringCompileTime(
+    app: CheckableApp,
     cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
     checkAgainAtRuntime: Boolean = true,
   )(implicit planCheckResult: PlanCheckMaterializer[app.type, cfg.type]
@@ -17,7 +17,7 @@ trait WiringAssertions { this: Assertions =>
     }
   }
 
-  def assertWiringRuntime(app: PlanHolder, cfg: PlanCheckConfig.Any): Unit = {
+  def assertWiringRuntime(app: CheckableApp, cfg: PlanCheckConfig.Any): Unit = {
     PlanCheck.runtime.assertApp(app, cfg)
   }
 

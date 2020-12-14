@@ -54,7 +54,8 @@ object ActivationParser {
              |  override def appModuleOverrides(argv: ArgV): Module = new ModuleDef {
              |    make[Activation].named("additional").from {
              |      Activation(
-             |        ???
+             |        Repo -> Repo.Dummy,
+             |        ...
              |      )
              |    }
              |  }

@@ -1,6 +1,6 @@
 package izumi.distage.planning.solver
 
-import distage.{Injector, TagK}
+import distage.TagK
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.exceptions.{MissingInstanceException, PlanVerificationException}
@@ -33,8 +33,8 @@ class PlanVerifier(
   def verify[F[_]: TagK](
     bindings: ModuleBase,
     roots: Roots,
-    providedKeys: DIKey => Boolean = Injector.providedKeys,
-    excludedActivations: Set[NonEmptySet[AxisPoint]] = Set.empty,
+    providedKeys: DIKey => Boolean,
+    excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): PlanVerifierResult = {
     val ops = preps.computeOperationsUnsafe(bindings).toSeq
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
