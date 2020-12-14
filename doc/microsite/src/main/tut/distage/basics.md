@@ -651,7 +651,7 @@ Mutators provide a way to do partial overrides or slight modifications of some e
 Example:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Id}
+import distage.{ModuleDef, Id, Injector}
 
 def startingModule = new ModuleDef {
   make[Int].fromValue(1)
@@ -668,18 +668,16 @@ def incrementWithDep = new ModuleDef {
   
   // mutators may use other components and add additional dependencies
   modify[Int].by(_.flatAp {
-    (s: String, few: Int @Id("a-few") => i: Int =>
+    (s: String, few: Int @Id("a-few")) => i: Int =>
       s.length + few + i
   })
 }
 
-Injector.produceRun(
+Injector().produceRun(
   startingModule ++
   increment2 ++
   incrementWithDep
-){ i: Int => 
-  println(s"Got int=$i")
-}: Int
+){ i: Int => i }: Int
 ```
 
 ## Effect Bindings
