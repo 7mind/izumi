@@ -64,7 +64,7 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+  if [[ ! -f ~/.sbt/secrets/credentials.sonatype-nexus.properties ]] ; then
     return 0
   fi
 
@@ -129,6 +129,8 @@ function secrets {
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
         ln -s .secrets/local.sbt local.sbt
+        mkdir -p ~/.sbt/secrets/
+        ln -s .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties || true
     fi
 }
 
