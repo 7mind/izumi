@@ -240,6 +240,8 @@ object Izumi {
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq,
         ),
+        // disable fatal-warnings to make sure publish goes through
+        "scalacOptions" -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
