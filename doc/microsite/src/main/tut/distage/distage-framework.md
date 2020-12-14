@@ -108,7 +108,7 @@ object RolesPlugin extends PluginDef {
 
 Further reading:
 
-- [distage-example](https://github.io/7mind/distage-example) - Example web service using roles
+- [distage-example](https://github.com/7mind/distage-example) - Example web service using roles
 - [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
 ## Compile-time checks
