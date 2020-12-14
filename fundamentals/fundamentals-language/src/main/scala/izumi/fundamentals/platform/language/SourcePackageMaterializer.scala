@@ -15,20 +15,25 @@ object SourcePackageMaterializer {
     // copypaste from lihaoyi 'sourcecode' https://github.com/lihaoyi/sourcecode/blob/d32637de59d5ecdd5040d1ef06a9370bc46a310f/sourcecode/shared/src/main/scala/sourcecode/SourceContext.scala
     def getSourcePackage(c: blackbox.Context): c.Expr[SourcePackageMaterializer] = {
       import c.universe._
+      val renderedPath: String = getSourcePackageString(c)
+      val pathExpr = c.Expr[String](q"$renderedPath")
+
+      reify {
+        SourcePackageMaterializer(SourcePackage(pathExpr.splice))
+      }
+    }
+
+    def getSourcePackageString(c: blackbox.Context): String = {
       var current = c.internal.enclosingOwner
       var path = List.empty[String]
-      while (current != NoSymbol && current.toString != "package <root>") {
+      while (current != c.universe.NoSymbol && current.toString != "package <root>") {
         if (current.isPackage) {
           path = current.name.decodedName.toString.trim :: path
         }
         current = current.owner
       }
       val renderedPath = path.mkString(".")
-      val pathExpr = c.Expr[String](q"$renderedPath")
-
-      reify {
-        SourcePackageMaterializer(SourcePackage(pathExpr.splice))
-      }
+      renderedPath
     }
   }
 }

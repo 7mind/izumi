@@ -19,28 +19,28 @@ final case class BootConfig(
   bootstrap: BootstrapModule => BootstrapModule = identity,
   appModule: ModuleBase => ModuleBase = identity,
   activation: Activation => Activation = identity,
+  bootstrapActivation: Activation => Activation = identity,
   roots: Roots => Roots = identity,
 )
 
 class Bootloader(
-  val bootstrapModule: BootstrapModule,
-  val input: PlannerInput,
   val injectorFactory: InjectorFactory,
+  val bootstrapModule: BootstrapModule,
+  val bootstrapActivation: Activation @Id("bootstrapActivation"),
   val defaultModule: Module @Id("defaultModule"),
+  val input: PlannerInput,
 ) {
   def boot(config: BootConfig): BootstrappedApp = {
-    // FIXME: incorrect
     val activation = config.activation(input.activation)
     val bootstrap = config.bootstrap(bootstrapModule)
-    val injector = injectorFactory
-      .withBootstrapActivation[Identity](
-        activation = activation,
-        overrides = bootstrap,
-      )(
-        QuasiIO[Identity],
-        TagK[Identity],
-        DefaultModule(defaultModule),
-      )
+    val injector = injectorFactory[Identity](
+      bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
+      overrides = Seq(bootstrap),
+    )(
+      QuasiIO[Identity],
+      TagK[Identity],
+      DefaultModule[Identity](defaultModule),
+    )
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
     val plan = injector.plan(PlannerInput(module, activation, roots))

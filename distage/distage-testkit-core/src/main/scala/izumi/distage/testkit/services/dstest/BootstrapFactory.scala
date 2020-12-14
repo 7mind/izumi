@@ -27,13 +27,15 @@ trait BootstrapFactory {
 
 object BootstrapFactory {
   object Impl extends BootstrapFactory {
-    override def makeConfigLocation(configBaseName: String): ConfigLocation = new ConfigLocation.Impl
-
-    def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      new ConfigLoader.LocalFSImpl(logger, ConfigLoader.Args(None, Map(configBaseName -> None)), makeConfigLocation(configBaseName))
+    override def makeConfigLocation(configBaseName: String): ConfigLocation = {
+      ConfigLocation.Default
     }
 
-    def makeModuleProvider[F[_]: TagK](
+    override def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
+      new ConfigLoader.LocalFSImpl(logger, makeConfigLocation(configBaseName), ConfigLoader.Args(None, Map(configBaseName -> None)))
+    }
+
+    override def makeModuleProvider[F[_]: TagK](
       options: PlanningOptions,
       config: AppConfig,
       logRouter: LogRouter,
@@ -49,6 +51,7 @@ object BootstrapFactory {
         options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
+        roleAppLocator = None,
       )
     }
   }

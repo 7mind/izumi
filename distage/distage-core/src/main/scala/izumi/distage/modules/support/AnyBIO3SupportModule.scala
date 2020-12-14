@@ -8,18 +8,19 @@ import izumi.reflect.{TagK3, TagKK}
 
 import scala.annotation.unchecked.{uncheckedVariance => v}
 
-/** Any `BIO` effect type support for `distage` resources, effects, roles & tests.
+/**
+  * Any `BIO` effect type support for `distage` resources, effects, roles & tests.
   *
-  * For any `F[-_, +_, +_]` with available `make[Async3[F]]`, `make[Temporal3[F]]` and `make[UnsafeRun3[F]]` bindings.
+  * For all `F[-_, +_, +_]` with available `make[Async3[F]]`, `make[Temporal3[F]]` and `make[UnsafeRun3[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
   * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
   */
 class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +?, +?]]) extends ModuleDef {
   // QuasiIO & bifunctor bio instances
-  include(AnyBIOSupportModule[F[Any, +?, +?]])
+  include(AnyBIO2SupportModule[F[Any, +?, +?]])
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
   addConverted3To2[F[Any, +?, +?]]

@@ -7,13 +7,19 @@ import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
 import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, UnsafeRun2, UnsafeRun3}
 import zio.blocking.Blocking
+import zio.clock.Clock
+import zio.console.Console
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform}
-import zio.{Has, IO, Runtime, ZIO}
+import zio.random.Random
+import zio.system.System
+import zio.{Has, IO, Runtime, ZEnv, ZIO}
 
 import scala.concurrent.ExecutionContext
 
 private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
+  make[ZEnv].from(Has.allOf(_: Clock.Service, _: Console.Service, _: System.Service, _: Random.Service, _: Blocking.Service))
+
   make[UnsafeRun3[ZIO]].using[ZIORunner]
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
@@ -40,7 +46,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
   make[TracingConfig].fromValue(TracingConfig.enabled)
   make[FailureHandler].fromValue(FailureHandler.Default)
   make[Runtime[Any]].from((_: ZIORunner).runtime)
-  make[Platform].from((_: ZIORunner).platform)
+  make[Platform].from((_: Runtime[Any]).platform)
 
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
     () =>

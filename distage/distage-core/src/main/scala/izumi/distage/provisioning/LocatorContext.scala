@@ -17,14 +17,10 @@ final case class LocatorContext(
 
   override def fetchKey(key: DIKey, byName: Boolean): Option[Any] = {
     fetchUnsafe(key).map {
-      case dep: ByNameDispatcher if !byName =>
-        dep.apply()
-      case dep if !byName =>
-        dep
-      case dep: ByNameDispatcher if byName =>
-        dep
-      case dep if byName =>
-        () => dep
+      case dep: ByNameDispatcher =>
+        if (byName) dep else dep.apply()
+      case dep =>
+        if (byName) () => dep else dep
     }
   }
 

@@ -1,7 +1,6 @@
 package izumi.distage.docker
 
 import java.util.UUID
-
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.api.model.Container
@@ -14,7 +13,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.IzLogger
 
 import scala.annotation.nowarn
@@ -42,7 +41,6 @@ class DockerClientWrapper[F[_]](
           rawClient
             .stopContainerCmd(containerId.name)
             .exec()
-            .discard()
         } finally {
           rawClient
             .removeContainerCmd(containerId.name)
@@ -50,6 +48,8 @@ class DockerClientWrapper[F[_]](
             .exec()
             .discard()
         }
+
+        logger.info(s"Destroyed $containerId ($context)")
       }
     } {
       failure => F.maybeSuspend(logger.warn(s"Got failure during container destroy $failure"))
@@ -121,8 +121,7 @@ object DockerClientWrapper {
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
         containers <- F.maybeSuspend {
-          resource
-            .rawClient
+          resource.rawClient
             .listContainersCmd()
             .withStatusFilter(List(DockerConst.State.exited, DockerConst.State.running).asJava)
             .withLabelFilter(resource.labels.asJava)

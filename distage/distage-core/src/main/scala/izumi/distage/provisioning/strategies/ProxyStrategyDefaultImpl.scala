@@ -17,8 +17,8 @@ import izumi.reflect.TagK
 
 /**
   * Limitations:
-  * - Will not work for any class which performs any operations on forwarding refs within constructor
-  * - Untested on constructors accepting primitive values, will fail most likely
+  *  - Will not work for any class which performs any operations on forwarding refs within constructor
+  *  - Untested on constructors accepting primitive values, will fail most likely
   */
 class ProxyStrategyDefaultImpl(
   proxyProvider: ProxyProvider,

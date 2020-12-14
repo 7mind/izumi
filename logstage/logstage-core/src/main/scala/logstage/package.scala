@@ -1,14 +1,27 @@
-import izumi.functional.bio.{SyncSafe2, SyncSafe3}
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.rendering.AnyEncoded
 import izumi.logstage.{api, sink}
 import zio.Has
 
 package object logstage extends LogStage {
+
+  type LogIO2[F[_, _]] = LogIO[F[Nothing, ?]]
+  type LogIO3[F[_, _, _]] = LogIO[F[Any, Nothing, ?]]
+  type LogIO3Ask[F[_, _, _]] = LogIO2[F[Has[LogIO3[F]], ?, ?]]
+  type LogZIO = Has[LogZIO.Service]
+
+  type LogCreateIO2[F[_, _]] = LogCreateIO[F[Nothing, ?]]
+  type LogCreateIO3[F[_, _, _]] = LogCreateIO[F[Any, Nothing, ?]]
+
+  type UnsafeLogIO2[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
+  type UnsafeLogIO3[F[_, _, _]] = UnsafeLogIO[F[Any, Nothing, ?]]
+
   override type IzLogger = api.IzLogger
   override final val IzLogger: api.IzLogger.type = api.IzLogger
 
   override type ConsoleSink = sink.ConsoleSink
   override final val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
+
+  override type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
 
   override type QueueingSink = sink.QueueingSink
   override final val QueueingSink: sink.QueueingSink.type = sink.QueueingSink
@@ -38,35 +51,4 @@ package object logstage extends LogStage {
   override final val Error: api.Log.Level.Error.type = api.Log.Level.Error
   override final val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
 
-  type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
-  type LogBIO3[F[_, _, _]] = LogIO[F[Any, Nothing, ?]]
-  type LogBIOEnv[F[_, _, _]] = LogBIO[F[Has[LogBIO3[F]], ?, ?]]
-
-  type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
-  object LogCreateBIO {
-    def apply[F[_, _]: LogCreateBIO]: LogCreateBIO[F] = implicitly
-  }
-
-  type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
-  object UnsafeLogBIO {
-    def apply[F[_, _]: UnsafeLogBIO]: UnsafeLogBIO[F] = implicitly
-
-    def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogBIO[F] = {
-      UnsafeLogIO.fromLogger(logger)
-    }
-  }
-
-  type LogCreateBIO3[F[_, _, _]] = LogCreateIO[F[Any, Nothing, ?]]
-  object LogCreateBIO3 {
-    def apply[F[_, _, _]: LogCreateBIO3]: LogCreateBIO3[F] = implicitly
-  }
-
-  type UnsafeLogBIO3[F[_, _, _]] = UnsafeLogIO[F[Any, Nothing, ?]]
-  object UnsafeLogBIO3 {
-    def apply[F[_, _, _]: UnsafeLogBIO3]: UnsafeLogBIO3[F] = implicitly
-
-    def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): UnsafeLogBIO3[F] = {
-      UnsafeLogIO.fromLogger(logger)
-    }
-  }
 }

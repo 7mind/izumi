@@ -14,8 +14,6 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
-import scala.collection.immutable.Set
-
 trait RoleProvider {
   def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo
 }
@@ -23,7 +21,7 @@ trait RoleProvider {
 object RoleProvider {
 
   class Impl(
-    logger: IzLogger,
+    logger: IzLogger @Id("early"),
     reflectionEnabled: Boolean @Id("distage.roles.reflection"),
     parameters: RawAppArgs,
   ) extends RoleProvider {
@@ -43,15 +41,19 @@ object RoleProvider {
 
     protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
       val availableRoleBindings = instantiateRoleBindings(bindings, roleType)
-      val enabledRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
+      val requiredRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
+
       val roleNames = availableRoleBindings.map(_.descriptor.id).toSet
+      val requiredRoleNames = requiredRoleBindings.iterator.map(_.descriptor.id).toSet
+      val unrequiredRoleNames = roleNames.diff(requiredRoleNames)
 
       val rolesInfo = RolesInfo(
-        requiredComponents = enabledRoleBindings.iterator.map(_.binding.key).toSet,
-        requiredRoleBindings = enabledRoleBindings,
+        requiredComponents = requiredRoleBindings.iterator.map(_.binding.key).toSet,
+        requiredRoleBindings = requiredRoleBindings,
+        requiredRoleNames = requiredRoleNames,
         availableRoleNames = roleNames,
         availableRoleBindings = availableRoleBindings,
-        unrequiredRoleNames = roleNames.diff(enabledRoleBindings.iterator.map(_.descriptor.id).toSet),
+        unrequiredRoleNames = unrequiredRoleNames,
       )
 
       val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id).toSet)
@@ -59,7 +61,7 @@ object RoleProvider {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
         throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
       }
-      if (enabledRoleBindings.isEmpty) {
+      if (requiredRoleBindings.isEmpty) {
         throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
                                              |
                                              |Available roles:${rolesInfo.render()}""".stripMargin)
@@ -68,8 +70,8 @@ object RoleProvider {
       rolesInfo
     }
 
-    protected def instantiateRoleBindings(bb: Set[Binding], roleType: SafeType): Seq[RoleBinding] = {
-      bb.iterator
+    protected def instantiateRoleBindings(bindsings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
+      bindsings.iterator
         .flatMap {
           case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) =>
             s.tags.collect {
@@ -105,7 +107,7 @@ object RoleProvider {
               throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no RoleDescriptor, companion reflection is disabled")
             }
         }
-        .toSeq
+        .toSet
     }
 
     protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {

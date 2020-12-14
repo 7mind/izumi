@@ -16,8 +16,10 @@ object ZIOCatsEffectInstancesModule extends ZIOCatsEffectInstancesModule
 /**
   * Adds `cats-effect` typeclass instances for ZIO
   *
-  * Depends on `make[zio.Runtime[Any]]` and `make[ThreadPoolExecutor].named("zio.io")`
-  * (both may be found in [[izumi.distage.modules.support.ZIOSupportModule]])
+  * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
+  *
+  * @note Will also add the following components:
+  *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("zio.io")`
   */
 trait ZIOCatsEffectInstancesModule extends ModuleDef {
   include(CatsEffectInstancesModule[Task])

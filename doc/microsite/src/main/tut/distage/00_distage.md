@@ -2,17 +2,14 @@
 out: index.html
 ---
 
-distage: Staged Dependency Injection
-====================================
+# distage: Staged Dependency Injection
 
-`distage` is a pragmatic module system for pure-FP Scala & Scala.js. It combines simplicity and expressiveness of pure FP
-with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
+`distage` is a pragmatic module system for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with object-oriented dependency injection frameworks, such as Guice.
 
 `distage` is suitable for wiring @ref[Tagless Final Style](basics.md#tagless-final-style),
 @ref[ZIO ZLayer-based applications](basics.md#zio-has-bindings), and ordinary FP, actor-based or imperative Scala applications.
 
-Getting started
----------------
+## Getting started
 
 The best way get started is to clone [`distage-example`](https://github.com/7mind/distage-example) sample project and play around with it.
 
@@ -21,7 +18,7 @@ It shows how to write an idiomatic `distage` application from scratch and how to
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
 - setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
-- enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
+- enable @ref[compile-time checks](distage-framework.md#compile-time-checks) for fast-feedback on wiring errors
 
 ```scala mdoc:invisible
 /**
@@ -32,8 +29,7 @@ add to distage-example
 */
 ```
 
-Why distage?
-------------
+## Why distage?
 
 1. **Faster applications and tests**:
     `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup. `distage` itself is very fast, in part due to not relying on any sort of runtime reflection.
@@ -96,7 +92,7 @@ Documentation
 - @ref[distage-framework](distage-framework.md)
 - @ref[distage-framework-docker](distage-framework-docker.md)
 - @ref[distage-testkit](distage-testkit.md)
-- @ref[Syntax summary](reference.md)
+- @ref[Syntax Reference](reference.md)
 
 Further reading
 ---------------
@@ -132,6 +128,6 @@ Videos:
 * [distage-framework](distage-framework.md)
 * [distage-framework-docker](distage-framework-docker.md)
 * [distage-testkit](distage-testkit.md)
-* [Syntax summary](reference.md)
+* [Syntax Reference](reference.md)
 
 @@@

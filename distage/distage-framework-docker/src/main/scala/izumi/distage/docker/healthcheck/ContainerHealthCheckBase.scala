@@ -12,16 +12,14 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
   override final def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult = {
 
     val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
-      container
-        .connectivity.dockerPorts
+      container.connectivity.dockerPorts
         .collect {
           case (port: DockerPort.TCPBase, bindings) =>
             (port, bindings)
         }
 
     val udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]] =
-      container
-        .connectivity.dockerPorts
+      container.connectivity.dockerPorts
         .collect {
           case (port: DockerPort.UDP, bindings) =>
             (port, bindings)
@@ -44,7 +42,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
     ports.toSeq.flatMap {
       case (mappedPort, _) =>
         // if we have dynamic port then we will try find mapped port number in container labels
-        val portNumber = mappedPort match {
+        val portNumber = (mappedPort: DockerPort) match {
           case dynamic: DockerPort.Dynamic => labels.get(dynamic.portLabel()).flatMap(_.asInt())
           case static: DockerPort.Static => Some(static.number)
         }
@@ -61,8 +59,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
   protected def findDockerHostCandidates[T <: DockerPort](container: DockerContainer[Tag], ports: Map[T, NonEmptyList[ServicePort]]): Seq[PortCandidate[T]] = {
     ports.toSeq.flatMap {
       case (mappedPort, internalBindings) =>
-        internalBindings
-          .toList
+        internalBindings.toList
           .flatMap {
             ib =>
               List(

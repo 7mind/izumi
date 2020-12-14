@@ -130,7 +130,7 @@ object BIO3Syntax {
     extends BIOBracket3Ops(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "0.11")
+    @deprecated("renamed to sandboxExit", "1.0")
     @inline final def sandboxBIOExit = sandboxExit
 
     /**

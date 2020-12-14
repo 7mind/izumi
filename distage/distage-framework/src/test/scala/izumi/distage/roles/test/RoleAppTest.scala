@@ -6,6 +6,8 @@ import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import cats.effect.IO
+import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
+import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
@@ -16,6 +18,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
+import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -108,7 +111,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "be able to read activations from config" in {
-      new TestEntrypointBase()
+      TestEntrypoint
         .main(
           Array(
             "-ll",
@@ -120,7 +123,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "override config activations from command-line" in {
       try {
-        new TestEntrypointBase()
+        TestEntrypoint
           .main(
             Array(
               "-ll",
@@ -135,7 +138,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         case err: Throwable =>
           assert(err.getMessage.contains(TestRole03.expectedError))
       }
-
     }
 
     "be able to override list configs using system properties" in {
@@ -144,7 +146,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         "listconf.ints.1" -> "2",
         "listconf.ints.2" -> "1",
       ) {
-        new TestEntrypointBase()
+        TestEntrypoint
           .main(
             Array(
               "-ll",
@@ -163,13 +165,15 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         make[TestResource[IO]].from[IntegrationResource0[IO]]
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ probe ++ DefaultModule[IO]
+      } ++
+        probe ++
+        DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -200,13 +204,15 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         }
         many[TestResource[IO]]
           .ref[TestResource[IO]]
-      } ++ probe ++ DefaultModule[IO]
+      } ++
+        probe ++
+        DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -240,14 +246,16 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           .ref[TestResource[Identity] with AutoCloseable]
         make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
-      } ++ DefaultModule[Identity] ++ DefaultModule[IO]
+      } ++
+        DefaultModule[Identity] ++
+        DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](PlannerInput(definition, Activation.empty, roots), BootstrapModule.empty, DefaultModule.empty),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[IO](logger)
@@ -337,6 +345,48 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role4CfgMinParsed.hasPath("activation"))
     }
 
+    "roles do not have access to components from MainAppModule" in {
+      try {
+        TestEntrypoint
+          .main(
+            Array(
+              "-ll",
+              logLevel,
+              ":" + FailingRole01.id,
+            )
+          )
+        fail("The app is expected to fail")
+      } catch {
+        case err: Throwable =>
+          assert(err.getMessage.contains(FailingRole01.expectedError))
+      }
+    }
+
+    "roles do have access to selected components from MainAppModule" in {
+      TestEntrypoint
+        .main(
+          Array(
+            "-ll",
+            logLevel,
+            ":" + FailingRole02.id,
+          )
+        )
+    }
+
+    "read config in bootstrap plugins" in {
+      Fixture3.TestRoleAppMain.main(Array(":fixture3"))
+    }
+
+    "LogIO2 binding is available in LauncherBIO for ZIO & MonixBIO" in {
+      withProperties(
+        DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
+        DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
+      ) {
+        val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
+        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+      }
+    }
   }
 
   private def cfg(role: String, version: ArtifactVersion): File = {

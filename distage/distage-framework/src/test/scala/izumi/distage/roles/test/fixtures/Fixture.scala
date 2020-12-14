@@ -75,8 +75,8 @@ object Fixture {
   object AxisComponentCorrect extends AxisComponent
 
   object AxisComponentAxis extends Axis {
-    case object Incorrect extends AxisValueDef
-    case object Correct extends AxisValueDef
+    case object Incorrect extends AxisChoiceDef
+    case object Correct extends AxisChoiceDef
   }
 
   case class ListConf(ints: List[Int])

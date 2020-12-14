@@ -1,5 +1,6 @@
 package logstage
 
+import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log.{Entry, LoggerId}
@@ -49,6 +50,18 @@ object UnsafeLogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: UnsafeLogBIO[F]): UnsafeLogIO[F[E, ?]] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: UnsafeLogIO2[F]): UnsafeLogIO[F[E, ?]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[_] <:< G[_]): UnsafeLogIO[G] = log.widen
+}
+
+object UnsafeLogIO2 {
+  @inline def apply[F[_, _]: UnsafeLogIO2]: UnsafeLogIO2[F] = implicitly
+
+  @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogIO2[F] = UnsafeLogIO.fromLogger(logger)
+}
+
+object UnsafeLogIO3 {
+  @inline def apply[F[_, _, _]: UnsafeLogIO3]: UnsafeLogIO3[F] = implicitly
+
+  @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): UnsafeLogIO3[F] = UnsafeLogIO.fromLogger(logger)
 }

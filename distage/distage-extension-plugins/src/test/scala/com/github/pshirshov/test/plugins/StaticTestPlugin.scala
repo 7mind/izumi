@@ -6,8 +6,8 @@ import izumi.distage.config.ConfigModuleDef
 import izumi.fundamentals.platform.build.ExposedTestScope
 
 object Test extends Axis {
-  case object X extends AxisValueDef
-  case object Y extends AxisValueDef
+  case object X extends AxisChoiceDef
+  case object Y extends AxisChoiceDef
 }
 
 @ExposedTestScope

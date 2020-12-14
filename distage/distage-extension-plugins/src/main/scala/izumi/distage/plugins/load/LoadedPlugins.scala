@@ -19,5 +19,7 @@ final case class LoadedPlugins(
 }
 
 object LoadedPlugins {
+  def const(merges: Seq[PluginBase]): LoadedPlugins = LoadedPlugins(Nil, merges, Nil)
+
   def empty: LoadedPlugins = LoadedPlugins(Nil, Nil, Nil)
 }

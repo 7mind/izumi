@@ -11,7 +11,8 @@ import scala.collection.{Map, Seq, immutable, mutable}
 trait Provision[+F[_]] {
   /**
     * This is an ordered collection!
-    * There is [[scala.collection.SeqMap]] interface in Scala 2.13 but we need to stick to generic one because of 2.12
+    *
+    * @note There is a [[scala.collection.SeqMap]] interface in Scala 2.13 but we need to stick to generic one because of 2.12
     */
   def instances: Map[DIKey, Any]
   def imports: Map[DIKey, Any]

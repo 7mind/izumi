@@ -18,7 +18,7 @@ import scala.concurrent.duration.Duration
 trait PlanInterpreter {
   def instantiate[F[_]: TagK: QuasiIO](
     plan: OrderedPlan,
-    parentContext: Locator,
+    parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   ): Lifecycle[F, Either[FailedProvision[F], Locator]]
 }

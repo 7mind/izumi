@@ -13,10 +13,16 @@ import zio.IO
 // this tests needed to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends Spec2[IO] {
 
-  if (!MacroParameters.sbtIsInsideCI().contains(true)) {
+  private val maybeBoolean: Option[Boolean] = MacroParameters.sbtIsInsideCI()
+
+  println(s"$maybeBoolean -> env CI: ${System.getenv("CI")}")
+
+  if (!maybeBoolean.getOrElse(false)) {
 
     "distage test runner should start only one container for reusable" should {
       "support docker resources" in {
+        // FIXME: verifier exit code is not checked, the test isn't reliable
+        // TODO: additionally check flyway outcome with doobie
         (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
           for {
             _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
@@ -35,13 +41,12 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
 
   }
 
-  override protected def config: TestConfig = super
-    .config.copy(
-      memoizationRoots = Set(DIKey.get[PgSvcExample]),
-      parallelTests = ParallelLevel.Unlimited,
-      parallelEnvs = ParallelLevel.Unlimited,
-      logLevel = Log.Level.Info,
-    )
+  override protected def config: TestConfig = super.config.copy(
+    memoizationRoots = Set(DIKey[PgSvcExample]),
+    parallelTests = ParallelLevel.Unlimited,
+    parallelEnvs = ParallelLevel.Unlimited,
+    logLevel = Log.Level.Info,
+  )
 
 }
 

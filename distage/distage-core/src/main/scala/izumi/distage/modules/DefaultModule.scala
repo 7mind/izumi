@@ -16,9 +16,9 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
-  * - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
+  *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
   * Currently provides instances for
   *   - `zio`
@@ -32,7 +32,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[_]` with [[izumi.distage.model.effect.QuasiIO]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
-  @inline def of[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
+  @inline def to[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
 }
 
 object DefaultModule extends LowPriorityDefaultModulesInstances1 {
@@ -40,6 +40,13 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
 
   def empty[F[_]]: DefaultModule[F] = DefaultModule(Module.empty)
 
+  /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
+  implicit final def forIdentity: DefaultModule[Identity] = {
+    DefaultModule.empty
+  }
+}
+
+sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModulesInstances2 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect & zio as a dependency without REQUIRING a cats-effect/zio dependency.
@@ -56,16 +63,16 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
   ): DefaultModule2[ZIO[R, ?, ?]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
   }
-
 }
 
-sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModulesInstances2 {
-
+sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have zio as a dependency without REQUIRING a zio dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    *
+    * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
   implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
     DefaultModule(ZIOSupportModule)
@@ -77,12 +84,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * Note: by default this module will implement
-    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
-    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
-    *   - [[monix.bio.IO.Options]] using [[monix.bio.IO.defaultOptions]]
-    *
-    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
+    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
     */
   implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
     DefaultModule(MonixBIOSupportModule)
@@ -94,12 +96,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * Note: by default this module will implement
-    *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
-    *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
-    *   - [[monix.eval.Task.Options]] using [[monix.eval.Task.defaultOptions]]
-    *
-    * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
+    * @see [[izumi.distage.modules.support.MonixSupportModule]]
     */
   implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
     DefaultModule(MonixSupportModule)
@@ -110,25 +107,23 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    *
+    * @see [[izumi.distage.modules.support.CatsIOSupportModule]]
     */
   implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
     DefaultModule(CatsIOSupportModule)
   }
-
-  /** Empty since [[izumi.distage.modules.support.IdentitySupportModule]] is always available, even for non-Identity effects */
-  implicit final def forIdentity: DefaultModule[Identity] = {
-    DefaultModule.empty
-  }
-
-}
-
-sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModulesInstances3 {
-  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
-    DefaultModule(AnyBIOSupportModule.withImplicits[F])
-  }
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
+  /** @see [[izumi.distage.modules.support.AnyBIO2SupportModule]] */
+  implicit final def fromBIO2[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2]: DefaultModule2[F] = {
+    DefaultModule(AnyBIO2SupportModule.withImplicits[F])
+  }
+}
+
+sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
+  /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
   implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](
     implicit tagBIO: TagKK[F[Any, +?, +?]]
   ): DefaultModule3[F] = {
@@ -136,19 +131,20 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
+sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModulesInstances6 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_]: TagK, ConcurrentEffect[_[_]], Timer[_[_]], Parallel[_[_]], ContextShift[_[_]]](
-    implicit
-    @unused l1: `cats.effect.ConcurrentEffect`[ConcurrentEffect],
-    @unused l2: `cats.effect.Timer`[Timer],
-    @unused l3: `cats.Parallel`[Parallel],
-    @unused l4: `cats.effect.ContextShift`[Parallel],
+  implicit final def fromCats[
+    F[_]: TagK,
+    ConcurrentEffect[_[_]]: `cats.effect.ConcurrentEffect`,
+    Timer[_[_]]: `cats.effect.Timer`,
+    Parallel[_[_]]: `cats.Parallel`,
+    ContextShift[_[_]]: `cats.effect.ContextShift`,
+  ](implicit
     F0: ConcurrentEffect[F],
     T0: Timer[F],
     P0: Parallel[F],
@@ -162,7 +158,7 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances5 {
+sealed trait LowPriorityDefaultModulesInstances6 {
   implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[QuasiIO[F]]

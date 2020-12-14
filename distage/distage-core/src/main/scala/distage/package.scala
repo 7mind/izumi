@@ -1,5 +1,5 @@
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.planning.extensions
+import izumi.distage.planning.{extensions, solver}
 import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
@@ -17,9 +17,13 @@ package object distage extends Distage {
   override val Roots: model.plan.Roots.type = model.plan.Roots
 
   override type Locator = model.Locator
+  override val Locator: model.Locator.type = model.Locator
+
   override type LocatorRef = model.recursive.LocatorRef
 
-  override type DefaultModule[F[_]] = modules.DefaultModule[F]
+  override type PlanVerifier = solver.PlanVerifier
+  override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
+
   override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
   override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
@@ -61,6 +65,9 @@ package object distage extends Distage {
 
   override type Functoid[+A] = model.providers.Functoid[A]
   override val Functoid: model.providers.Functoid.type = model.providers.Functoid
+
+  override type AnyConstructor[T] = constructors.AnyConstructor[T]
+  override val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   override type ClassConstructor[T] = constructors.ClassConstructor[T]
   override val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor
@@ -126,23 +133,5 @@ package object distage extends Distage {
 
   override type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   override val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
-
-  @deprecated("Use distage.Lifecycle.Basic", "0.11")
-  override type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "0.11")
-  override val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
-
-  @deprecated("Use distage.Lifecycle", "0.11")
-  override type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
-
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
-  override type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
-  override val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
-
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
-  override type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
-  override val GCMode: model.plan.Roots.type = model.plan.Roots
 
 }

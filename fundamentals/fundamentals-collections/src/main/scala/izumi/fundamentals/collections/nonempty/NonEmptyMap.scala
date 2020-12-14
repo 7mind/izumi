@@ -86,6 +86,8 @@ import scala.collection.compat._
   */
 final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
 
+  def keySet: NonEmptySet[K] = NonEmptySet.unsafeFrom(toMap.keySet)
+
   /**
     * Returns a new <code>NonEmptyMap</code> containing the entries of this <code>NonEmptyMap</code> and the entries of the passed <code>NonEmptyMap</code>.
     * The entry type of the resulting <code>NonEmptyMap</code> is the most specific superclass encompassing the entry types of this and the passed <code>NonEmptyMap</code>.
@@ -421,10 +423,9 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     */
   def groupBy(f: ((K, V)) => K): Map[K, NonEmptyMap[K, V]] = {
     val mapKToMap = toMap.groupBy(f)
-    mapKToMap
-      .view.mapValues {
-        list => new NonEmptyMap(list)
-      }.toMap
+    mapKToMap.view.mapValues {
+      list => new NonEmptyMap(list)
+    }.toMap
   }
 
   /**
@@ -659,7 +660,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * Computes a prefix scan of the entries of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once.
+    * @note The neutral element z may be applied more than once.
     * </p>
     *
     * @param z a neutral element for the scan operation; may be added to the result an arbitrary number of
@@ -694,7 +695,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * The size of this <code>NonEmptyMap</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of elements in this <code>NonEmptyMap</code>.
@@ -900,6 +901,10 @@ object NonEmptyMap {
   @inline def unsafeFrom[K, V](set: scala.collection.immutable.Map[K, V]): NonEmptyMap[K, V] = {
     require(set.nonEmpty)
     new NonEmptyMap(set)
+  }
+
+  implicit final class OptionOps[K, +V](private val option: Option[NonEmptyMap[K, V]]) extends AnyVal {
+    @inline def fromNonEmptyMap: Map[K, V] = if (option.isEmpty) Map.empty else option.get.toMap
   }
 
 }

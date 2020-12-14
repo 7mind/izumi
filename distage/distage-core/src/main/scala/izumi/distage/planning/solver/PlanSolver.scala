@@ -1,16 +1,18 @@
 package izumi.distage.planning.solver
 
+import distage.Injector
 import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.Axis.AxisPoint
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
+import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
@@ -41,8 +43,10 @@ object PlanSolver {
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
       if (enableDebugVerify) {
-        val res = PlanVerifier(preps).verify(input.bindings, input.roots)
-        if (res.issues.nonEmpty) System.err.println(res.issues.niceList())
+        val res = PlanVerifier(preps).verify[Identity](input.bindings, input.roots, Injector.providedKeys(), Set.empty)
+        if (res.issues.nonEmpty) {
+          System.err.println(res.issues.fromNonEmptySet.niceList())
+        }
       }
 
       for {
@@ -50,13 +54,11 @@ object PlanSolver {
         resolution <- resolver.resolve(problem.matrix, problem.roots, problem.activations, problem.weakSetMembers)
         retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
         membersToDrop =
-          resolution
-            .graph.meta.nodes
-            .collect {
-              case (k, RemappedValue(ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _), _))
-                  if !retainedKeys.contains(referenced) && !problem.roots.contains(k.key) =>
-                k
-            }.toSet
+          resolution.graph.meta.nodes.collect {
+            case (k, RemappedValue(ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _), _))
+                if !retainedKeys.contains(referenced) && !problem.roots.contains(k.key) =>
+              k
+          }.toSet
         keysToDrop = membersToDrop.map(_.key)
         filteredWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
           case (k, RemappedValue(set: CreateSet, remaps)) =>
@@ -66,12 +68,11 @@ object PlanSolver {
             (k, o)
         }
         resolved =
-          resolution
-            .graph.copy(
-              meta = GraphMeta(filteredWeakMembers),
-              successors = resolution.graph.successors.without(membersToDrop),
-              predcessors = resolution.graph.predcessors.without(membersToDrop),
-            )
+          resolution.graph.copy(
+            meta = GraphMeta(filteredWeakMembers),
+            successors = resolution.graph.successors.without(membersToDrop),
+            predcessors = resolution.graph.predcessors.without(membersToDrop),
+          )
       } yield resolved
     }
 
@@ -133,8 +134,7 @@ object PlanSolver {
 
     private def computeSets(ac: ActivationChoices, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
       val setMembersUnsafe = preps.computeSetsUnsafe(allOps)
-      val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps
-        .view
+      val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps.view
         .filter(_._1.mut.isEmpty)
         .map {
           case (a, _) =>

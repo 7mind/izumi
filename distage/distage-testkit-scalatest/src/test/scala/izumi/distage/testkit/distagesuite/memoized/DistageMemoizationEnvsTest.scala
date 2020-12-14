@@ -15,18 +15,18 @@ import zio.{IO, ZIO}
 import scala.collection.mutable
 
 object MemoizationEnv {
-  case class MemoizedInstance(uuid: UUID)
-  case class TestInstance(uuid: UUID)
+  final case class MemoizedInstance(uuid: UUID)
+  final case class TestInstance(uuid: UUID)
   final val anotherTestInstance: TestInstance = TestInstance(UUID.randomUUID())
   final val memoizedInstance: mutable.HashSet[MemoizedInstance] = mutable.HashSet.empty
 
-  case class MemoizedLevel1(UUID: UUID)
+  final case class MemoizedLevel1(UUID: UUID)
   final val memoizedLevel1: mutable.HashSet[MemoizedLevel1] = mutable.HashSet.empty
 
-  case class MemoizedLevel2(UUID: UUID)
+  final case class MemoizedLevel2(UUID: UUID)
   final val memoizedLevel2: mutable.HashSet[MemoizedLevel2] = mutable.HashSet.empty
 
-  case class MemoizedLevel3(UUID: UUID)
+  final case class MemoizedLevel3(UUID: UUID)
   final val memoizedLevel3: mutable.HashSet[MemoizedLevel3] = mutable.HashSet.empty
 
   def makeInstance[T](set: mutable.HashSet[T])(ctor: UUID => T): T = {
@@ -40,8 +40,8 @@ object MemoizationEnv {
 
 abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
+    super.config
+      .copy(
         memoizationRoots = Map(
           1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1]),
           2 -> Set(DIKey.get[MemoizedLevel2]),
@@ -94,16 +94,15 @@ class SameLevel_1_2_Second extends DistageMemoizationEnvsTest {
 
 class SameLevel_1_WithoutLastMemoizationLevel extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        memoizationRoots = Map(
-          1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1])
-        ),
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
-        },
-        activation = distage.Activation(Repo -> Repo.Prod),
-      )
+    super.config.copy(
+      memoizationRoots = Map(
+        1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1])
+      ),
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      },
+      activation = distage.Activation(Repo -> Repo.Prod),
+    )
   }
 
   "should have the same memoized instance" in assertion
@@ -116,11 +115,10 @@ class SameLevel_1_WithoutLastMemoizationLevel extends DistageMemoizationEnvsTest
 
 class SameLevel_1_2_WithAdditionalLevel3 extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        memoizationRoots = super.config.memoizationRoots ++ Map(10000 -> Set(DIKey.get[MemoizedLevel3])),
-        activation = distage.Activation(Repo -> Repo.Prod),
-      )
+    super.config.copy(
+      memoizationRoots = super.config.memoizationRoots ++ Map(10000 -> Set(DIKey.get[MemoizedLevel3])),
+      activation = distage.Activation(Repo -> Repo.Prod),
+    )
   }
 
   "should have the same memoized instance" in assertion
@@ -133,12 +131,11 @@ class SameLevel_1_2_WithAdditionalLevel3 extends DistageMemoizationEnvsTest {
 
 class SameLevel_1_WithModuleOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[TestInstance].from(MemoizationEnv.anotherTestInstance)
-        }
-      )
+    super.config.copy(
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[TestInstance].from(MemoizationEnv.anotherTestInstance)
+      }
+    )
   }
   "should have the same memoized instance even if module was overriden" in {
     (memoized: MemoizedInstance, test: TestInstance) =>
@@ -156,14 +153,13 @@ class SameLevel_1_WithActivationsOverride extends DistageMemoizationEnvsTest {
 
 trait DifferentLevelsWithLevel1 extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
-          make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
-          make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
-        }
-      )
+    super.config.copy(
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
+        make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      }
+    )
   }
 }
 
@@ -176,12 +172,11 @@ class DifferentLevelsWithLevel1InstanceOverride1 extends DifferentLevelsWithLeve
 
 class DifferentLevelsWithLevel1InstanceOverride2 extends DifferentLevelsWithLevel1 {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
-        }
-      )
+    super.config.copy(
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      }
+    )
   }
   "should have different memoized instance" in {
     (memoized: MemoizedInstance, _: MemoizedLevel2) =>
@@ -191,22 +186,20 @@ class DifferentLevelsWithLevel1InstanceOverride2 extends DifferentLevelsWithLeve
 
 class SameLevel_1_WithLevel2InstanceOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
-          make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
-        }
-      )
+    super.config.copy(
+      pluginConfig = super.config.pluginConfig overriddenBy new PluginDef {
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
+      }
+    )
   }
   "should have the same memoized instance of level 1 if the next levels instances have been changed" in assertion
 }
 
 class SameLevel_1_WithAdditionalButNotUsedMemoizedRoots extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        memoizationRoots = super.config.memoizationRoots ++ Set(DIKey.get[TestInstance])
-      )
+    super.config.copy(
+      memoizationRoots = super.config.memoizationRoots ++ Set(DIKey.get[TestInstance])
+    )
   }
   "should have the same memoized instance if memoized roots differs, but plan is similar" in assertion
 }

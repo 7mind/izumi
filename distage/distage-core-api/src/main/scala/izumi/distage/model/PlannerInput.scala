@@ -11,7 +11,7 @@ import izumi.reflect.Tag
   * @param bindings Bindings. Can be created using [[izumi.distage.model.definition.ModuleDef]] DSL
   *
   * @param roots    Garbage collection [[izumi.distage.model.plan.Roots roots]]. distage will ignore all bindings that aren't transitive dependencies
-  *                 of the chosen Root [[DIKey keys]] from the plan - they will never be instantiated.
+  *                 of the chosen Root [[izumi.distage.model.reflection.DIKey keys]] from the plan - they will never be instantiated.
   *
   *                 Effectively, the choice of roots selects a *sub-graph* of the largest possible object graph
   *                 that can be described by `bindings` - the sub-graph that only includes components designated as `roots`

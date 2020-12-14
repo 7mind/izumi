@@ -1,6 +1,6 @@
 package izumi.distage.planning
 
-import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
@@ -145,21 +145,19 @@ class PlannerDefaultImpl(
   protected[this] def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
     import scala.collection.compat._
 
-    val imports = plan
-      .successors.links.view
+    val imports = plan.successors.links.view
       .filterKeys(k => !plan.meta.nodes.contains(k))
       .map {
         case (missing, refs) =>
           val maybeFirstOrigin = refs.headOption.flatMap(key => plan.meta.nodes.get(key)).map(_.origin.value.toSynthetic)
-          val origin = EqualizedOperationOrigin.make(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
+          val origin = EqualizedOperationOrigin(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
           (missing, ImportDependency(missing, refs, origin))
       }
       .toMap
 
     val missingRoots = roots match {
       case Roots.Of(roots) =>
-        roots
-          .toSet
+        roots.toSet
           .diff(plan.meta.nodes.keySet)
           .diff(imports.keySet)
           .map {
@@ -233,21 +231,19 @@ class PlannerDefaultImpl(
 
   protected[this] def conflictingAxisTagsHint(
     key: MutSel[DIKey],
-    activeChoices: Set[AxisValue],
+    activeChoices: Set[AxisChoice],
     ops: Set[OperationOrigin],
   ): String = {
     val keyMinimizer = KeyMinimizer(
       ops.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
       + key.key
     )
-    val axisValuesInBindings = ops
-      .iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }
-      .flatten.collect { case AxisTag(t) => t }.toSet
+    val axisValuesInBindings = ops.iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }.flatten.collect { case AxisTag(t) => t }.toSet
     val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
-    val candidates = ops
-      .iterator.map {
+    val candidates = ops.iterator
+      .map {
         op =>
-          val bindingTags = op.fold(Set.empty[AxisValue], _.tags.collect { case AxisTag(t) => t })
+          val bindingTags = op.fold(Set.empty[AxisChoice], _.tags.collect { case AxisTag(t) => t })
           val conflicting = axisValuesInBindings.diff(bindingTags)
           val implTypeStr = op.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
           s"$implTypeStr ${op.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags

@@ -12,7 +12,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.Quirks.discard
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
@@ -51,7 +51,7 @@ import scala.collection.immutable.HashSet
   *   - `make[X].from[XImpl].modifyBy(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = Create X using XImpl's constructor and modify its `Functoid` using the provided lambda - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
   *
   * Set bindings:
-  *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
+  *   - `many[X].add[X1].add[X2]` = bind a `Set` of X, and add subtypes X1 and X2 created via their constructors to it.
   *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
   *   - `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
   *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[izumi.distage.model.providers.Functoid Provider]] function
@@ -78,17 +78,17 @@ import scala.collection.immutable.HashSet
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
   override final def bindings: Set[Binding] = freeze()
   override final def iterator: Iterator[Binding] = freezeIterator()
+  override final def keysIterator: Iterator[DIKey] = freezeIterator().map(_.key)
 
   private[this] final def freeze(): Set[Binding] = {
-    HashSet
-      .newBuilder.++= {
+    HashSet.newBuilder
+      .++= {
         freezeIterator()
       }.result()
   }
   private[this] final def freezeIterator(): Iterator[Binding] = {
     val frozenTags0 = frozenTags
-    retaggedIncludes
-      .iterator
+    retaggedIncludes.iterator
       .++(frozenState.iterator)
       .map(_.addTags(frozenTags0))
       .++(asIsIncludes.iterator)
@@ -103,8 +103,8 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
     *
     * Useful for prototyping.
     */
-  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
-    _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = {
+    _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos))).discard()
   }
 }
 

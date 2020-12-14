@@ -1,22 +1,60 @@
-Overview
-============
+# Overview
 
 @@toc { depth=2 }
 
-### Quick Start
+## Quick Start
 
-#### Dependencies
+```scala mdoc:reset:invisible:to-string
+// ##### New overview
+// (sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
+// 
+// ###### Concepts
+// ####### ModuleDef
+// ######## Activation axis
+// ######## Functoid
+// ####### Injector
+// ######## Object graph
+// ######## Planning
+// ######## Verification
+// ######### Roots
+// ####### Lifecycle
+// ####### Roles
+// ####### Plugins
+// ####### Compile-time verification
+// ####### Testing with injected components
+// 
+// ##### Binding Types
+// ###### Singleton Bindings
+// ###### Named bindings
+// ###### Set bindings
+// ####### Weak Set bindings
+// ###### Lifecycle / Resource bindings
+// ###### Effect bindings
+// ###### ZIO Environment / Reader bindings
+// ###### Config bindings
+// ###### Role bindings
+// ###### Docker bindings
+// 
+// ##### Auto-generated things
+// ###### Effect support modules
+// ###### Auto-Traits
+// ###### Auto-Factories
+// ###### Class constructors
+// ###### Circular dependency resolution
+```
+
+### Dependencies
 
 Add the `distage-core` library:
 
-@@dependency[sbt,Maven,Gradle] {
+@@dependency[sbt] {
   group="io.7mind.izumi"
-  artifact="distage-framework-docker_2.13"
+  artifact="distage-core_2.13"
   version="$izumi.version$"
 }
 
 
-#### Hello World example
+### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
 
@@ -74,7 +112,7 @@ We will not do it directly. First we'll only declare the component interfaces we
 ```scala mdoc:to-string
 import distage.ModuleDef
 
-val HelloByeModule = new ModuleDef {
+def HelloByeModule = new ModuleDef {
   make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
   make[HelloByeApp] // `.from` is not required for concrete classes 
@@ -120,7 +158,7 @@ unsafeRun(effect)
 
 `distage` always creates components exactly once, even if multiple other objects depend on them. Coming from other DI frameworks, you may think of it as if there's only a "Singleton" scope. It's impossible to create non-singletons in `distage`.
 
-#### Named instances
+### Named instances
 
 If you need multiple singleton instances of the same type, you may create "named" instances and disambiguate between them using @scaladoc[`@distage.Id`](izumi.distage.model.definition.Id) annotation. (`javax.inject.Named` is also supported)
 
@@ -164,7 +202,7 @@ object Ids {
 }
 ```
 
-#### Non-singleton components
+### Non-singleton components
 
 To create new non-singleton instances you must use explicit factories. `distage`'s @ref[Auto-Factories](#auto-factories) can generate implementations for your factories, removing the associated boilerplate.
 
@@ -173,7 +211,7 @@ if you absolutely must wire a new non-trivial subgraph in a dynamic scope you'll
 
 You may use `Injector.inherit` to obtain access to your outer object graph in your new sub-graph. It's safe to run `Injector` multiple times in nested scopes, as it's extremely fast, not least due to total absence of runtime reflection. See @ref[Injector Inheritance](advanced-features.md#injector-inheritance)
 
-#### Real-world example
+### Real-world example
 
 Check out [`distage-example`](https://github.com/7mind/distage-example) sample project for a complete example built using `distage`, @ref[bifunctor tagless final](../bio/00_bio.md), `http4s`, `doobie` and `zio` libraries.
 
@@ -182,7 +220,7 @@ It shows how to write an idiomatic `distage`-style from scratch and how to:
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
 - setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
-- enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
+- enable @ref[compile-time checks](distage-framework.md#compile-time-checks) for fast-feedback on wiring errors
 
 ```scala mdoc:invisible
 /**
@@ -193,7 +231,7 @@ add to distage-example
 */
 ```
 
-### Activation Axis
+## Activation Axis
 
 You can choose between different implementations of a component using "Activation axis":
 
@@ -208,8 +246,8 @@ class AllCapsGreeter extends Greeter {
 // declare a configuration axis for our components
 
 object Style extends Axis {
-  case object AllCaps extends AxisValueDef
-  case object Normal extends AxisValueDef
+  case object AllCaps extends AxisChoiceDef
+  case object Normal extends AxisChoiceDef
 }
 
 // Declare a module with several implementations of Greeter
@@ -254,7 +292,7 @@ unsafeRun {
 - @scaladoc[World](izumi.distage.model.definition.StandardAxis$$World$) axis, with `Real`/`Mock` choices, describes third-party integrations which are not controlled by the application and provided "as is". e.g. Facebook API, Google API, etc. those may contact a `Real` external integration or a `Mock` one with predefined responses.
   
 - @scaladoc[Scene](izumi.distage.model.definition.StandardAxis$$Scene$) axis with `Managed`/`Provided` choices, describes whether external services required by the application should be set-up on the fly by an orchestrator library such as @ref[`distage-framework-docker`](distage-framework-docker.md) (`Scene.Managed`), or whether the application should try to connect to external services as if they already exist in the environment (`Scene.Provided`). 
-  We call a set of external services required by the application a `Scene`, etymology being that the running external services required by the application are like a "scene" that the "theatre staff" (the orchestrator) must prepare for the "actor" (the application) to enter.
+  We call a set of external services required by the application a `Scene`, etymology being that the running external services required by the application are like a "scene" that the "staff" (the orchestrator) must prepare for the "actor" (the application) to enter.
 
 In `distage-framework`'s @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain), you can choose axes using the `-u` command-line parameter:
 
@@ -267,9 +305,9 @@ In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.test
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+import izumi.distage.testkit.scalatest.Spec2
 
-class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
+class AxisTest extends Spec2[zio.IO] {
 
   // choose implementations `.tagged` as `Repo.Dummy` over those tagged `Repo.Prod`
   override def config: TestConfig = super.config.copy(
@@ -279,7 +317,7 @@ class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
 }
 ```
 
-#### Multi-dimensionality
+### Multi-dimensionality
 
 There may be many configuration axes in an application and components can specify multiple axis choices at once:
 
@@ -293,7 +331,7 @@ class TestPrintGreeter extends Greeter {
 
 // declare 3 possible implementations
 
-val TestModule = new ModuleDef {
+def TestModule = new ModuleDef {
   make[Greeter].tagged(Style.Normal, Mode.Prod).from[PrintGreeter]
   make[Greeter].tagged(Style.Normal, Mode.Test).from[TestPrintGreeter]
   make[Greeter].tagged(Style.AllCaps).from[AllCapsGreeter]
@@ -320,15 +358,15 @@ runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Prod))
 runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Test))
 ```
 
-### Resource Bindings, Lifecycle
+## Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
-[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle)
-values that specify the allocation and finalization actions for an object.
+You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
+[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+values specifying the allocation and finalization actions of an object.
 
-Injector itself only returns a `Lifecycle` value that can be used to create and finalize the object graph, this value is
-pure and can be reused multiple times. A `Lifecycle` is consumed using its `.use` method, the function passed to `use` will
-receive an allocated resource and when the function exits the resource will be deallocated. 
+When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
+
+A `Lifecycle` is executed using its `.use` method, the function passed to `use` will receive an allocated resource and when the function exits the resource will be deallocated. `Lifecycle` is generally not invalidated after `.use` and may be executed multiple times.
 
 Example with `cats.effect.Resource`:
 
@@ -340,9 +378,9 @@ class DBConnection
 class MessageQueueConnection
 
 val dbResource = Resource.make(
-  acquire = IO { 
+  acquire = IO {
     println("Connecting to DB!")
-    new DBConnection 
+    new DBConnection
 })(release = _ => IO(println("Disconnecting DB")))
 
 val mqResource = Resource.make(
@@ -351,11 +389,16 @@ val mqResource = Resource.make(
    new MessageQueueConnection 
 })(release = _ => IO(println("Disconnecting Message Queue")))
 
-class MyApp(db: DBConnection, mq: MessageQueueConnection) {
-  val run = IO(println("Hello World!"))
+class MyApp(
+  db: DBConnection,
+  mq: MessageQueueConnection,
+) {
+  val run = {
+    IO(println("Hello World!"))
+  }
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
   make[MyApp]
@@ -394,7 +437,7 @@ class InitResource extends Lifecycle.Simple[Init] {
   }
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[Init].fromResource[InitResource]
 }
 
@@ -414,7 +457,7 @@ println(closedInit.initialized)
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods, 
 and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
-#### Inheritance helpers
+### Inheritance helpers
 
 The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
 
@@ -481,7 +524,7 @@ The following helpers ease defining `Lifecycle` sub-classes using traditional in
 - @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
 - @scaladoc[Lifecycle.NoClose](izumi.distage.model.definition.Lifecycle$$NoClose)
 
-### Set Bindings
+## Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
 Everywhere where a collection of components is required, a Set Binding is appropriate.
@@ -599,7 +642,45 @@ Further reading:
 
 - Guice calls the same concept ["Multibindings"](https://github.com/google/guice/wiki/Multibindings).
 
-### Effect Bindings
+## Mutator bindings
+
+Mutations can be attached to any component using `modify[X]` keyword, if present, they will be applied in an undefined order after the component has been created, but _before_ it is visible to any other component.
+
+Mutators provide a way to do partial overrides or slight modifications of some existing component reusing its existing wiring and only adding an adjustment.
+
+Example:
+
+```scala mdoc:reset:to-string
+import distage.{ModuleDef, Id, Injector}
+
+def startingModule = new ModuleDef {
+  make[Int].fromValue(1)
+}
+
+def increment2 = new ModuleDef {
+  modify[Int](_ + 1)
+  modify[Int](_ + 1)
+}
+
+def incrementWithDep = new ModuleDef {
+  make[String].fromValue("hello")
+  make[Int].named("a-few").fromValue(2)
+  
+  // mutators may use other components and add additional dependencies
+  modify[Int].by(_.flatAp {
+    (s: String, few: Int @Id("a-few")) => i: Int =>
+      s.length + few + i
+  })
+}
+
+Injector().produceRun(
+  startingModule ++
+  increment2 ++
+  incrementWithDep
+){ i: Int => i }: Int
+```
+
+## Effect Bindings
 
 Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
 An example might be a global `Semaphore` to limit the parallelism of the entire application based on configuration,
@@ -611,7 +692,7 @@ Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
 import distage.{ModuleDef, Injector}
-import izumi.functional.bio.{BIOError, Primitives2, F}
+import izumi.functional.bio.{Error2, Primitives2, F}
 import zio.{Task, IO}
 
 trait KVStore[F[_, _]] {
@@ -619,7 +700,7 @@ trait KVStore[F[_, _]] {
   def put(key: String, value: String): F[Nothing, Unit]
 }
 
-def dummyKVStore[F[+_, +_]: BIOError: Primitives2]: F[Nothing, KVStore[F]] = {
+def dummyKVStore[F[+_, +_]: Error2: Primitives2]: F[Nothing, KVStore[F]] = {
   for {
     ref <- F.mkRef(Map.empty[String, String])
   } yield new KVStore[F] {
@@ -659,7 +740,7 @@ zio.Runtime.default.unsafeRun(io)
 
 You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
 
-### ZIO Has Bindings
+## ZIO Has Bindings
 
 You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
@@ -767,7 +848,7 @@ val main = Injector[Task]()
 zio.Runtime.default.unsafeRun(main)
 ```
 
-#### Converting ZIO environment dependencies to parameters
+### Converting ZIO environment dependencies to parameters
 
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
 the dependency in each method using `.provide`.
@@ -841,7 +922,7 @@ Injector()
   }.fold(_ => 1, _ => 0)
 ```
 
-### Auto-Traits
+## Auto-Traits
 
 distage can instantiate traits and structural types. All unimplemented fields in a trait, or a refinement are filled in from the object graph.
 
@@ -923,7 +1004,7 @@ Injector().produceRun(module) {
 }
 ```
 
-#### @impl annotation
+### @impl annotation
 
 Abstract classes or traits without obvious concrete subclasses
 may hinder the readability of a codebase, to mitigate that you may use an optional @scaladoc[@impl](izumi.distage.model.definition.impl) 
@@ -941,7 +1022,7 @@ import distage.impl
 }
 ```
 
-#### Avoiding constructors even further
+### Avoiding constructors even further
 
 When overriding behavior of a class, you may avoid writing a repeat of its constructor in your sub-class by inheriting
 it with a trait instead. Example:
@@ -975,7 +1056,7 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 }
 ```
 
-### Auto-Factories
+## Auto-Factories
 
 `distage` can instantiate 'factory' classes from suitable traits. This feature is especially useful with `Akka`.
 All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
@@ -1016,7 +1097,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
-#### @With annotation
+### @With annotation
 
 `@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
@@ -1042,7 +1123,7 @@ object Actor {
   final case class Configuration(allCaps: Boolean)
 }
 
-val factoryModule = new ModuleDef {
+def factoryModule = new ModuleDef {
   make[Actor.Factory]
   make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
@@ -1058,7 +1139,7 @@ Factory implementations are derived at compile-time by
 @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro
 and can be summoned at need.
 
-### Tagless Final Style
+## Tagless Final Style
 
 Tagless Final is one of the popular patterns for structuring purely-functional applications.
 
@@ -1144,16 +1225,16 @@ def SyncInterpreters[F[_]: TagK: Sync] = {
 
 def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 
-// create object graph Resource
+// create object graph Lifecycle
 
-val objectsResource = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
+val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
 
-objectsResource.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
+objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
 
-#### Out-of-the-box typeclass instances
+### Out-of-the-box typeclass instances
 
 Note: we did not have to include either `Monad[IO]` or `Sync[IO]` instances for our program to run,
 despite the fact that `SyncInteraction` depends on `Sync[F]`.
@@ -1163,7 +1244,7 @@ In general whenever `cats-effect` is on the classpath and your effect type has `
 For ZIO, `monix-bio` and any other implementors of @ref[BIO](../bio/00_bio.md), instances of bifunctor @ref[BIO](../bio/00_bio.md) effect hierarchy will also be included.
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) for more details.
 
-#### Effect-type polymorphism
+### Effect-type polymorphism
 
 The program module is polymorphic over effect type. It can be instantiated by a different effect:
 
@@ -1186,7 +1267,7 @@ object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
   def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
-val RealInterpretersZIO = {
+def RealInterpretersZIO = {
   SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
     make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
   }
@@ -1195,7 +1276,7 @@ val RealInterpretersZIO = {
 def chooseInterpreters(isDummy: Boolean) = {
   val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
                      else         RealInterpretersZIO
-  val module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  def module = ProgramModule[RIO[Console, ?]] ++ interpreters
   
   Injector[RIO[Console, ?]]()
     .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
@@ -1206,7 +1287,7 @@ def chooseInterpreters(isDummy: Boolean) = {
 chooseInterpreters(true)
 ```
 
-#### Kind polymorphism
+### Kind polymorphism
 
 Modules can be polymorphic over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
@@ -1230,7 +1311,7 @@ class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends Modu
 
 consult [izumi.reflect.HKTag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/latest/izumi/reflect/HKTag.html) docs for more details.
 
-### Cats & ZIO Integration
+## Cats & ZIO Integration
 
 Cats & ZIO instances and syntax are available automatically in `distage-core`, without wildcard imports, if your project depends on `cats-core`, `cats-effect` or `zio`.
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.

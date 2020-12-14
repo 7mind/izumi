@@ -17,8 +17,6 @@ import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
 import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
 
-import scala.language.implicitConversions
-
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
@@ -45,10 +43,6 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
       registerBranch(left, verb, f)
     }
-  }
-
-  protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
-    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 
   protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
@@ -108,16 +102,6 @@ object DistageAbstractScalatestSpec {
   ) extends DISyntaxBase[F]
     with LowPriorityIdentityOverloads[F] {
 
-    override protected def takeIO(function: Functoid[F[_]], pos: SourceFilePosition): Unit = {
-      val id = TestId(
-        context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
-      )
-      reg.registerTest(function, env, pos, id)
-    }
-
     def in(function: Functoid[F[Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
@@ -133,6 +117,16 @@ object DistageAbstractScalatestSpec {
     def in(value: => F[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(() => value, pos.get)
     }
+
+    override protected def takeIO(function: Functoid[F[_]], pos: SourceFilePosition): Unit = {
+      val id = TestId(
+        context.fold(testname)(_.toName(testname)),
+        suiteName,
+        suiteId,
+        suiteId,
+      )
+      reg.registerTest(function, env, pos, id)
+    }
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
@@ -146,16 +140,6 @@ object DistageAbstractScalatestSpec {
     implicit override val tagMonoIO: TagK[F[Throwable, ?]],
   ) extends DISyntaxBIOBase[F]
     with LowPriorityIdentityOverloads[F[Throwable, ?]] {
-
-    override protected def takeIO(fAsThrowable: Functoid[F[Throwable, _]], pos: SourceFilePosition): Unit = {
-      val id = TestId(
-        context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
-      )
-      reg.registerTest(fAsThrowable, env, pos, id)
-    }
 
     def in(function: Functoid[F[_, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
@@ -172,6 +156,16 @@ object DistageAbstractScalatestSpec {
     def in(value: => F[_, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
     }
+
+    override protected def takeIO(fAsThrowable: Functoid[F[Throwable, _]], pos: SourceFilePosition): Unit = {
+      val id = TestId(
+        context.fold(testname)(_.toName(testname)),
+        suiteName,
+        suiteId,
+        suiteId,
+      )
+      reg.registerTest(fAsThrowable, env, pos, id)
+    }
   }
 
   class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
@@ -185,16 +179,6 @@ object DistageAbstractScalatestSpec {
     implicit override val tagMonoIO: TagK[F[Any, Throwable, ?]],
   ) extends DISyntaxBIOBase[F[Any, +?, +?]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
-
-    override protected def takeIO(fAsThrowable: Functoid[F[Any, Throwable, _]], pos: SourceFilePosition): Unit = {
-      val id = TestId(
-        context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
-      )
-      reg.registerTest(fAsThrowable, env, pos, id)
-    }
 
     def in[R: HasConstructor](function: Functoid[F[R, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
@@ -236,6 +220,16 @@ object DistageAbstractScalatestSpec {
 
     def in(value: => F[Any, _, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
+    }
+
+    override protected def takeIO(fAsThrowable: Functoid[F[Any, Throwable, _]], pos: SourceFilePosition): Unit = {
+      val id = TestId(
+        context.fold(testname)(_.toName(testname)),
+        suiteName,
+        suiteId,
+        suiteId,
+      )
+      reg.registerTest(fAsThrowable, env, pos, id)
     }
   }
 

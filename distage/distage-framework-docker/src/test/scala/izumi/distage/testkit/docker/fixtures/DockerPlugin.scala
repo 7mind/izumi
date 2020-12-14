@@ -40,7 +40,7 @@ object DockerPlugin extends PluginDef {
   include(KafkaDockerModule[Task])
   include(ElasticMQDockerModule[Task])
   include(CmdContainerModule[Task])
-  include(PostgresFlyWayDockerModule[Task])
+  include(PostgresFlyWayDockerModule[Task]())
 
   make[AvailablePort].named("mq").tagged(Mode.Test).from {
     cs: ElasticMQDocker.Container =>

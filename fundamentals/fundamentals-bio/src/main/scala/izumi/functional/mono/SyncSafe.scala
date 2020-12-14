@@ -1,6 +1,6 @@
 package izumi.functional.mono
 
-import izumi.functional.bio.{F, IO2, SyncSafe2}
+import izumi.functional.bio.{F, IO2, IO3, SyncSafe2}
 import izumi.fundamentals.orphans.`cats.effect.Sync`
 
 import scala.language.implicitConversions
@@ -9,6 +9,8 @@ import scala.language.implicitConversions
 trait SyncSafe[F[_]] {
   /** Suspend an _exception-safe_ side-effect, e.g. random numbers, simple mutation, etc. */
   def syncSafe[A](unexceptionalEff: => A): F[A]
+
+  def widen[G[x] >: F[x]]: SyncSafe[G] = this
 }
 
 object SyncSafe extends LowPrioritySyncSafeInstances0 {
@@ -29,13 +31,20 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
+  implicit final def fromBIO3[F[-_, +_, +_]: IO3]: SyncSafe[F[Any, Nothing, ?]] =
+    new SyncSafe[F[Any, Nothing, ?]] {
+      override def syncSafe[A](f: => A): F[Any, Nothing, A] = F.sync(f)
+    }
+}
+
+trait LowPrioritySyncSafeInstances1 extends LowPrioritySyncSafeInstances2 {
   implicit final def fromBIO[F[+_, +_]: IO2]: SyncSafe[F[Nothing, ?]] =
     new SyncSafe[F[Nothing, ?]] {
       override def syncSafe[A](f: => A): F[Nothing, A] = F.sync(f)
     }
 }
 
-trait LowPrioritySyncSafeInstances1 {
+trait LowPrioritySyncSafeInstances2 {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make SyncSafe covariant, because covariant implicits

@@ -54,8 +54,8 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-  override def hookDefinition(defn: ModuleBase): ModuleBase = {
-    val setMembers: Set[Binding.ImplBinding] = defn.bindings.flatMap {
+  override def hookDefinition(definition: ModuleBase): ModuleBase = {
+    val setMembers: Set[Binding.ImplBinding] = definition.bindings.flatMap {
       case i: ImplBinding =>
         i.implementation match {
           case implDef: ImplDef.DirectImplDef =>
@@ -79,7 +79,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
     }
 
     if (setMembers.isEmpty) {
-      defn
+      definition
     } else {
       val position = pos.get.position
 
@@ -91,7 +91,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
           SetElementBinding(SetElementKey(setKey, b.key, None), impl, Set.empty, position)
       }
       val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, position))
-      defn ++ ModuleBase.make(ops ++ elementOps)
+      definition ++ ModuleBase.make(ops ++ elementOps)
     }
 
   }

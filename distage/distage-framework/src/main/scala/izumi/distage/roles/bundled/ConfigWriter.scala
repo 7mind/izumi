@@ -35,12 +35,15 @@ final class ConfigWriter[F[_]](
 ) extends RoleTask[F] {
 
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
-  //  After https://github.com/7mind/izumi/issues/779 this will no longer be necessary
+  //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
+  //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
   private[this] val _HackyMandatorySection = ConfigPath("activation")
 
-  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = F.maybeSuspend {
-    val config = ConfigWriter.parse(roleParameters)
-    writeReferenceConfig(config)
+  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+    F.maybeSuspend {
+      val config = ConfigWriter.parse(roleParameters)
+      writeReferenceConfig(config)
+    }
   }
 
   private[this] def writeReferenceConfig(options: WriteReference): Unit = {

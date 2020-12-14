@@ -1,5 +1,4 @@
-distage-framework-docker
-========================
+# distage-framework-docker
 
 @@toc { depth=2 }
 
@@ -13,7 +12,7 @@ distage-framework-docker
 
 Add the `distage-framework-docker` library:
 
-@@dependency[sbt,Maven,Gradle] {
+@@dependency[sbt] {
   group="io.7mind.izumi"
   artifact="distage-framework-docker_2.13"
   version="$izumi.version$"
@@ -321,10 +320,10 @@ object PostgresUsingDockerModule extends ModuleDef {
 Using `distage-testkit` the test would be written like this:
 
 ```scala mdoc:silent
-import izumi.distage.testkit.scalatest.{AssertCIO, DistageSpecScalatest}
+import izumi.distage.testkit.scalatest.{AssertCIO, Spec1}
 import distage.DIKey
 
-class PostgresExampleAppIntegrationTest extends DistageSpecScalatest[IO] with AssertCIO {
+class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
       include(TransactorFromConfigModule)
@@ -559,7 +558,7 @@ example, in this integration test the container resource is not reconstructed fo
 resource is not reconstructed there is no repeated inspection of the Docker system.
 
 ```scala mdoc:to-string
-class NoReuseByMemoizationExampleTest extends DistageSpecScalatest[IO] {
+class NoReuseByMemoizationExampleTest extends Spec1[IO] {
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
       include(DistageFrameworkModules)

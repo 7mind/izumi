@@ -119,16 +119,16 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
         tpe match {
           case m: MethodTypeApi => m
           case p: PolyTypeApi => instantiatedMethod(p.resultType)
+          case _ => throw new RuntimeException(s"Impossible case, a method type that is neither a `MethodType` nor a `PolyType` - $tpe (class: ${tpe.getClass})")
         }
       }
-      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass)
-        .paramLists.map(_.map {
-          argSymbol =>
-            val tpe = argSymbol.typeSignature
-            val name = argSymbol.asTerm.name
-            val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
-            expr -> (tpe -> name)
-        })
+      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
+        argSymbol =>
+          val tpe = argSymbol.typeSignature
+          val name = argSymbol.asTerm.name
+          val expr = if (argSymbol.isImplicit) q"implicit val $name: $tpe" else q"val $name: $tpe"
+          expr -> (tpe -> name)
+      })
       paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
     }
 
@@ -149,8 +149,8 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
               param.key,
               c.abort(
                 c.enclosingPosition,
-                s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap
-                  .keys.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}",
+                s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap.keys
+                  .map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}",
               ),
             )
           case multiple =>
@@ -245,10 +245,9 @@ abstract class ConstructorMacrosBase {
     def asTraitMethod(c: CtorArgument): (u.Association.Parameter, Tree, Tree) = (c.parameter, c.ctorArgument, c.traitMethodExpr)
 
     def unzipLists(ls: List[List[CtorArgument]]): (List[u.Association.Parameter], List[Tree], List[List[Tree]]) = {
-      val (associations, ctorArgs) = ls
-        .flatten.map {
-          case CtorArgument(p, a, _) => (p, a)
-        }.unzip
+      val (associations, ctorArgs) = ls.flatten.map {
+        case CtorArgument(p, a, _) => (p, a)
+      }.unzip
       val ctorArgNamesLists = ls.map(_.map(_.ctorArgumentName))
       (associations, ctorArgs, ctorArgNamesLists)
     }

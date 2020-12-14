@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.64`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.66`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -138,7 +138,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.12")
-  final val scala213 = ScalaVersion("2.13.3")
+  final val scala213 = ScalaVersion("2.13.4")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -231,19 +231,20 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        "scalacOptions" in SettingScope.Build ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
-          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
-        ),
       )
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq(
-          ),
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq,
+        ),
+        // disable fatal-warnings to make sure publish goes through
+        "scalacOptions" -= "-Wconf:any:error",
+        "scalacOptions" ++= Seq(
+          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
+          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), Some(true)) := Seq(
@@ -270,6 +271,7 @@ object Izumi {
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
       final val orphans = ArtifactId("fundamentals-orphans")
+      final val literals = ArtifactId("fundamentals-literals")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
@@ -365,7 +367,9 @@ object Izumi {
         libs = Seq(
           scala_reflect in Scope.Provided.all
         ),
-        depends = Seq.empty,
+        depends = Seq(
+          Projects.fundamentals.literals
+        ),
         settings = crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
@@ -407,6 +411,14 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional,
+        depends = Seq.empty,
+        platforms = Targets.cross,
+      ),
+      Artifact(
+        name = Projects.fundamentals.literals,
+        libs = Seq(
+          scala_reflect in Scope.Provided.all
+        ),
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
@@ -476,7 +488,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allCatsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -561,6 +573,7 @@ object Izumi {
         libs = (cats_all ++ zio_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
+          "scalacOptions" -= "-Wconf:any:error",
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=

@@ -7,28 +7,30 @@ import izumi.reflect.TagK3
 /**
   * Adds `bio` typeclass instances for any effect type `F[-_, +_, +_]` with an available `make[Async3[F]` binding
   *
-  * Depends on `make[Async3[F]]` & `make[Local3[F]]`
+  * Depends on `Async3[F]` and `Local3[F]`
   *
-  * Note: doesn't add bifunctor variants from [[BIOInstancesModule]]
+  * @note doesn't add bifunctor variants from [[BIO2InstancesModule]]
+  *
+  * @see [[izumi.functional.bio]]
   */
 class BIO3InstancesModule[F[-_, +_, +_]: TagK3] extends ModuleDef {
-  make[BIOFunctor3[F]].using[Async3[F]]
-  make[BIOBifunctor3[F]].using[Async3[F]]
+  make[Functor3[F]].using[Async3[F]]
+  make[Bifunctor3[F]].using[Async3[F]]
   make[Applicative3[F]].using[Async3[F]]
-  make[BIOGuarantee3[F]].using[Async3[F]]
+  make[Guarantee3[F]].using[Async3[F]]
   make[ApplicativeError3[F]].using[Async3[F]]
-  make[BIOMonad3[F]].using[Async3[F]]
-  make[BIOError3[F]].using[Async3[F]]
-  make[BIOBracket3[F]].using[Async3[F]]
-  make[BIOPanic3[F]].using[Async3[F]]
-  make[BIO3[F]].using[Async3[F]]
-  make[BIOParallel3[F]].using[Async3[F]]
-  make[BIOConcurrent3[F]].using[Async3[F]]
+  make[Monad3[F]].using[Async3[F]]
+  make[Error3[F]].using[Async3[F]]
+  make[Bracket3[F]].using[Async3[F]]
+  make[Panic3[F]].using[Async3[F]]
+  make[IO3[F]].using[Async3[F]]
+  make[Parallel3[F]].using[Async3[F]]
+  make[Concurrent3[F]].using[Async3[F]]
 
-  make[BIOAsk[F]].using[Local3[F]]
+  make[Ask3[F]].using[Local3[F]]
   make[MonadAsk3[F]].using[Local3[F]]
-  make[BIOProfunctor[F]].using[Local3[F]]
-  make[BIOArrow[F]].using[Local3[F]]
+  make[Profunctor3[F]].using[Local3[F]]
+  make[Arrow3[F]].using[Local3[F]]
 }
 
 object BIO3InstancesModule {

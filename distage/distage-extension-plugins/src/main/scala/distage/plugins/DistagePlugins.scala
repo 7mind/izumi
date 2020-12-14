@@ -1,7 +1,7 @@
 package distage.plugins
 
 import izumi.distage.plugins
-import izumi.distage.plugins.load
+import izumi.distage.plugins.{StaticPluginLoader, load}
 
 trait DistagePlugins {
 
@@ -13,15 +13,17 @@ trait DistagePlugins {
   type BootstrapPlugin = plugins.BootstrapPlugin
   val BootstrapPlugin: plugins.BootstrapPlugin.type = plugins.BootstrapPlugin
 
-  type BootstrapPluginDef = plugins.BootstrapPluginDef
+  type BootstrapPluginDef[T] = plugins.BootstrapPluginDef[T]
 
   type PluginLoader = load.PluginLoader
   val PluginLoader: load.PluginLoader.type = load.PluginLoader
 
+  val StaticPlugingLoader: StaticPluginLoader.type = plugins.StaticPluginLoader
+
   type PluginLoaderDefaultImpl = load.PluginLoaderDefaultImpl
   val PluginLoaderDefaultImpl: load.PluginLoaderDefaultImpl.type = load.PluginLoaderDefaultImpl
 
-  type PluginConfig = izumi.distage.plugins.PluginConfig
-  val PluginConfig: izumi.distage.plugins.PluginConfig.type = izumi.distage.plugins.PluginConfig
+  type PluginConfig = plugins.PluginConfig
+  val PluginConfig: plugins.PluginConfig.type = plugins.PluginConfig
 
 }

@@ -70,9 +70,7 @@ Most likely you’ll also need to add [Kind Projector](https://github.com/typele
 addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
 ```
 
-
-Overview
---------
+## Overview
 
 The following graphic shows the current `BIO` hierarchy. Note that all the trifunctor typeclasses ending in `*3` typeclasses have bifunctor counterparts ending in `*2`.
 
@@ -91,3 +89,30 @@ Raw inheritance hierarchy:
 ![BIO-inheritance-hierarchy](media/bio-hierarchy.svg)
 
 [(image)](media/bio-hierarchy.svg)
+
+## Syntax, Implicit Punning
+
+All implicit syntax in BIO is available automatically without wildcard imports
+with the help of so-called "implicit punning", as in the following example:
+
+
+```scala mdoc:to-string
+import izumi.functional.bio.Monad2
+
+def loop[F[+_, +_]: Monad2]: F[Nothing, Nothing] = {
+  val unitEffect: F[Nothing, Unit] = Monad2[F].unit
+  unitEffect.flatMap(_ => loop)
+}
+```
+
+Note: a `.flatMap` method is available on the `unitEffect` value of an abstract type parameter `F`,
+even though we did not import any syntax implicits using a wildcard import.
+
+The `flatMap` method was added by the implicit punning on the `Monad2` name.
+ In short, implicit punning just means that instead of creating a companion object for a type with the same name as the type,
+we create "companion" implicit conversions with the same name. So that whenever you import the type,
+you are also always importing the syntax-providing implicit conversions.
+
+This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the used typeclasses.
+
+Implicit Punning for typeclass syntax relieves the programmer from having to manually import syntax implicits in every file in their codebase.

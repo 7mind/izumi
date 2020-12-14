@@ -1,18 +1,15 @@
 package izumi.distage.model.definition
 
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{ExecutorService, TimeUnit}
-
 import cats.effect.Resource.{Allocate, Bind, Suspend}
-import cats.effect.{ExitCase, Resource, Sync, concurrent}
+import cats.effect.{ExitCase, Resource, concurrent}
 import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.{Functor2, Functor3, Local3}
-import izumi.fundamentals.orphans.{`cats.Functor`, _}
+import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
+import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{open, unused}
@@ -20,6 +17,8 @@ import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.ZManaged.ReleaseMap
 import zio._
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -139,27 +138,17 @@ import scala.reflect.macros.blackbox
   *
   * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
   *
-  * - [[Lifecycle.Of]]
-  *
-  * - [[Lifecycle.OfInner]]
-  *
-  * - [[Lifecycle.OfCats]]
-  *
-  * - [[Lifecycle.OfZIO]]
-  *
-  * - [[Lifecycle.LiftF]]
-  *
-  * - [[Lifecycle.Make]]
-  *
-  * - [[Lifecycle.Make_]]
-  *
-  * - [[Lifecycle.MakePair]]
-  *
-  * - [[Lifecycle.FromAutoCloseable]]
-  *
-  * - [[Lifecycle.SelfOf]]
-  *
-  * - [[Lifecycle.MutableOf]]
+  *  - [[Lifecycle.Of]]
+  *  - [[Lifecycle.OfInner]]
+  *  - [[Lifecycle.OfCats]]
+  *  - [[Lifecycle.OfZIO]]
+  *  - [[Lifecycle.LiftF]]
+  *  - [[Lifecycle.Make]]
+  *  - [[Lifecycle.Make_]]
+  *  - [[Lifecycle.MakePair]]
+  *  - [[Lifecycle.FromAutoCloseable]]
+  *  - [[Lifecycle.SelfOf]]
+  *  - [[Lifecycle.MutableOf]]
   *
   * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
   * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
@@ -199,19 +188,13 @@ import scala.reflect.macros.blackbox
   *
   * The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
   *
-  * - [[Lifecycle.Basic]]
-  *
-  * - [[Lifecycle.Simple]]
-  *
-  * - [[Lifecycle.Mutable]]
-  *
-  * - [[Lifecycle.MutableNoClose]]
-  *
-  * - [[Lifecycle.Self]]
-  *
-  * - [[Lifecycle.SelfNoClose]]
-  *
-  * - [[Lifecycle.NoClose]]
+  *  - [[Lifecycle.Basic]]
+  *  - [[Lifecycle.Simple]]
+  *  - [[Lifecycle.Mutable]]
+  *  - [[Lifecycle.MutableNoClose]]
+  *  - [[Lifecycle.Self]]
+  *  - [[Lifecycle.SelfNoClose]]
+  *  - [[Lifecycle.NoClose]]
   *
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
@@ -223,16 +206,16 @@ trait Lifecycle[+F[_], +OuterResource] {
   /**
     * The action in `F` used to acquire the resource.
     *
-    * Note: the `acquire` action is performed *uninterruptibly*,
+    * @note the `acquire` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def acquire: F[InnerResource]
 
   /**
     * The action in `F` used to release, close or deallocate the resource
-    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
+    * after it has been acquired and used through [[izumi.distage.model.definition.Lifecycle.SyntaxUse#use]].
     *
-    * Note: the `release` action is performed *uninterruptibly*,
+    * @note the `release` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def release(resource: InnerResource): F[Unit]
@@ -272,7 +255,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
-  final def void[G[x] >: F[x]: QuasiApplicative]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+  final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
   @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
@@ -299,30 +282,6 @@ object Lifecycle extends LifecycleCatsInstances {
 
     override final def extract[B >: A](resource: A): Right[Nothing, A] = Right(resource)
     override final type InnerResource = A
-  }
-
-  import cats.effect.Resource
-
-  implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a =>
-          F.suspendF(resource.extract(a) match {
-            case Left(effect) => F.flatMap(effect)(use)
-            case Right(value) => use(value)
-          })
-      )
-    }
-  }
-
-  implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
-    def useEffect(implicit F: QuasiIO[F]): F[A] =
-      resource.use(identity)
-  }
-
-  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
-      resource.use(_.run(function))
   }
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
@@ -357,6 +316,31 @@ object Lifecycle extends LifecycleCatsInstances {
     liftF(effect).flatten
   }
 
+  /**
+    * Fork the specified action into a new fiber.
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber3#interrupt]]
+    *
+    * @return The [[izumi.functional.bio.Fiber3 fiber]] running `f` action
+    */
+  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Fiber2[F, E, A]] = {
+    Lifecycle.make(f.fork)(_.interrupt)
+  }
+
+  /** @see [[fork]] */
+  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Unit] = {
+    Lifecycle.fork(f).void
+  }
+
+  /**
+    * Fork the specified action into a new fiber.
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[cats.effect.Fiber#cancel]]
+    *
+    * @return The fiber running `f` action
+    */
+  def forkCats[F[_], A](f: F[A])(implicit F: cats.effect.Concurrent[F]): Lifecycle[F, cats.effect.Fiber[F, A]] = {
+    Lifecycle.make(F.start(f))(_.cancel)
+  }
+
   def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
@@ -377,6 +361,7 @@ object Lifecycle extends LifecycleCatsInstances {
         }
     }
   }
+
   def fromExecutorService[A <: ExecutorService](acquire: => A): Lifecycle[Identity, A] = {
     fromExecutorService[Identity, A](acquire)
   }
@@ -387,6 +372,55 @@ object Lifecycle extends LifecycleCatsInstances {
 
   def unit[F[_]](implicit F: QuasiApplicative[F]): Lifecycle[F, Unit] = {
     Lifecycle.liftF(F.unit)
+  }
+
+  implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
+      F.bracket(acquire = resource.acquire)(release = resource.release)(
+        use = a =>
+          F.suspendF(resource.extract(a) match {
+            case Left(effect) => F.flatMap(effect)(use)
+            case Right(value) => use(value)
+          })
+      )
+    }
+  }
+
+  implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
+    def useEffect(implicit F: QuasiIO[F]): F[A] =
+      resource.use(identity)
+  }
+
+  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
+    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
+      resource.use(_.run(function))
+  }
+
+  implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
+    def toEffect[F[_]: QuasiIO]: Lifecycle[F, A] = {
+      new Lifecycle[F, A] {
+        override type InnerResource = resource.InnerResource
+        override def acquire: F[InnerResource] = QuasiIO[F].maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): F[Unit] = QuasiIO[F].maybeSuspend(resource.release(res))
+        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
+      }
+    }
+  }
+
+  implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
+    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
+  }
+
+  implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    /** Unsafely acquire the resource and throw away the finalizer,
+      * this will leak the resource and cause it to never be cleaned up.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[SyntaxUse#use]] instead!
+      */
+    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
+      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    }
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
@@ -486,46 +520,18 @@ object Lifecycle extends LifecycleCatsInstances {
     /** Convert [[Lifecycle]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
       ZManaged.makeReserve(
-        resource
-          .acquire.map(
-            r =>
-              Reservation(
-                ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
-                _ =>
-                  resource.release(r).orDieWith {
-                    case e: Throwable => e
-                    case any: Any => new RuntimeException(s"Lifecycle finalizer: $any")
-                  },
-              )
-          )
+        resource.acquire.map(
+          r =>
+            Reservation(
+              ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
+              _ =>
+                resource.release(r).orDieWith {
+                  case e: Throwable => e
+                  case any => new RuntimeException(s"Lifecycle finalizer: $any")
+                },
+            )
+        )
       )
-    }
-  }
-
-  implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
-    def toEffect[F[_]: QuasiIO]: Lifecycle[F, A] = {
-      new Lifecycle[F, A] {
-        override type InnerResource = resource.InnerResource
-        override def acquire: F[InnerResource] = QuasiIO[F].maybeSuspend(resource.acquire)
-        override def release(res: InnerResource): F[Unit] = QuasiIO[F].maybeSuspend(resource.release(res))
-        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
-      }
-    }
-  }
-
-  implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
-    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
-  }
-
-  implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    /** Unsafely acquire the resource and throw away the finalizer,
-      * this will leak the resource and cause it to never be cleaned up.
-      *
-      * This function only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] instead!
-      */
-    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
-      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
     }
   }
 
@@ -552,7 +558,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * Note: when the expression passed to [[Lifecycle.Of]] defines many local methods
+    * @note when the expression passed to [[Lifecycle.Of]] defines many local methods
     *       it can hit a Scalac bug https://github.com/scala/bug/issues/11969
     *       and fail to compile, in that case you may switch to [[Lifecycle.OfInner]]
     */
@@ -673,7 +679,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * Note: `acquire` is performed interruptibly, unlike in [[Make]]
+    * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
   @open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
@@ -719,7 +725,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * NOTE: This class may be used instead of [[Lifecycle.Of]] to
+    * @note This class may be used instead of [[Lifecycle.Of]] to
     * workaround scalac bug https://github.com/scala/bug/issues/11969
     * when defining local methods
     */
@@ -798,7 +804,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     *
-    * NOTE: binding a cats Resource[F, A] will add a
+    * @note binding a cats Resource[F, A] will add a
     *       dependency on `Sync[F]` for your corresponding `F` type
     *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */
@@ -968,22 +974,20 @@ object Lifecycle extends LifecycleCatsInstances {
   @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
   lazy val TrifunctorHasResourceTag: TrifunctorHasLifecycleTagImpl.type = TrifunctorHasLifecycleTagImpl
 
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   type DIResourceBase[+F[_], +A] = Lifecycle[F, A]
   object DIResourceBase {
-    @deprecated("Use distage.Lifecycle.NoCloseBase", "0.11")
+    @deprecated("Use distage.Lifecycle.NoCloseBase", "1.0")
     type NoClose[+F[_], +A] = NoCloseBase[F, A]
   }
 
-  @deprecated("renamed to fromAutoCloseable", "0.11")
+  @deprecated("renamed to fromAutoCloseable", "1.0")
   def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
 }
 
 private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
-  implicit final def catsMonadForLifecycle[Monad[_[_]], F[_]](
-    implicit
-    @unused l1: `cats.Monad`[Monad],
-    F: QuasiIO[F],
+  implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
+    implicit F: QuasiIO[F]
   ): Monad[Lifecycle[F, ?]] = {
     new cats.StackSafeMonad[Lifecycle[F, ?]] {
       override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F, A](x)
@@ -991,9 +995,8 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
     }.asInstanceOf[Monad[Lifecycle[F, ?]]]
   }
 
-  implicit final def catsMonoidForLifecycle[Monoid[_], F[_], A](
+  implicit final def catsMonoidForLifecycle[Monoid[_]: `cats.kernel.Monoid`, F[_], A](
     implicit
-    @unused l2: `cats.kernel.Monoid`[Monoid],
     F: QuasiIO[F],
     A0: Monoid[A],
   ): Monoid[Lifecycle[F, A]] = {
@@ -1011,10 +1014,8 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
 }
 
 private[definition] sealed trait LifecycleCatsInstancesLowPriority {
-  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]](
-    implicit
-    @unused l: `cats.Functor`[Functor],
-    F: QuasiFunctor[F],
+  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]: `cats.Functor`](
+    implicit F: QuasiFunctor[F]
   ): Functor[Lifecycle[F, ?]] = {
     new cats.Functor[Lifecycle[F, ?]] {
       override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
@@ -1056,7 +1057,7 @@ private[definition] object AdaptFunctoidImpl {
     *   }
     * }}}
     *
-    * NOTE: binding a cats Resource[F, A] will add a
+    * @note binding a cats Resource[F, A] will add a
     *       dependency on `Sync[F]` for your corresponding `F` type
     *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */
@@ -1068,7 +1069,7 @@ private[definition] object AdaptFunctoidImpl {
         import tag.tagFull
         implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
 
-        a.zip(Functoid.identity[Sync[F]])
+        a.zip(Functoid.identity[cats.effect.Sync[F]])
           .map { case (resource, sync) => fromCats(resource)(sync) }
       }
     }

@@ -91,6 +91,7 @@ function init {
         export CI_PULL_REQUEST=true
     fi
 
+    export CI=true
     export CI_BRANCH=${BUILD_SOURCEBRANCHNAME}
     export CI_TAG=`git describe --contains | grep v | grep -v '~' | head -n 1 || true`
     export CI_BUILD_NUMBER=${BUILD_BUILDID}

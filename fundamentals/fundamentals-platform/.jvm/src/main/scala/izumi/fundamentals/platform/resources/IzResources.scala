@@ -149,7 +149,7 @@ object IzResourcesDirty {
       .enumerateClasspath(sourcePath)
   }
 
-  final case class ContentIterator(files: Iterable[FileContent])
+  final case class ContentIterator(files: Iterable[FileContent]) extends AnyVal
 }
 
 object IzResources {
@@ -166,20 +166,20 @@ object IzResources {
     } catch { case _: Throwable => None }
   }
 
-  def jarResource[C: ClassTag](name: String): ResourceLocation = {
+  def jarResource[C: ClassTag](fileName: String): ResourceLocation = {
     classLocationUrl[C]()
       .flatMap {
         url =>
           try {
             val location = Paths.get(url.toURI)
             val locFile = location.toFile
-            val resolved = location.resolve(name)
+            val resolved = location.resolve(fileName)
             val resolvedFile = resolved.toFile
 
             if (locFile.exists() && locFile.isFile) { // read from jar
               val jar = new JarFile(locFile)
 
-              Option(jar.getEntry(name)) match {
+              Option(jar.getEntry(fileName)) match {
                 case Some(entry) =>
                   Some(ResourceLocation.Jar(locFile, jar, entry))
                 case None =>

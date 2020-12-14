@@ -19,20 +19,27 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 trait ContainerNetworkDef {
+  // `ContainerNetworkDef`s must be top-level objects, otherwise `.Network` and `.Config` won't be referencable in ModuleDef
+  self: Singleton =>
+
   type Tag
+
   final type Network = ContainerNetwork[Tag]
+
   final type Config = ContainerNetworkConfig[Tag]
-  final val Config = ContainerNetworkConfig
+  final lazy val Config = ContainerNetworkConfig
 
   def config: Config
 
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Network]): Functoid[Lifecycle[F, Network]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[self.Tag]): Functoid[Lifecycle[F, Network]] = {
     tag.discard()
     ContainerNetworkDef.resource[F](this, this.getClass.getSimpleName)
   }
 }
 
 object ContainerNetworkDef {
+  type Aux[T] = ContainerNetworkDef { type Tag = T }
+
   def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F]) => Lifecycle[F, conf.Network] = {
     new NetworkResource(conf.config, _, prefix, _)(_, _)
   }

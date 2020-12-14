@@ -27,7 +27,6 @@ object LogstageCats {
   )(F: SyncSafe[F]
   ) extends UnsafeLogIOSyncSafeInstance[F](logger)(F)
     with LogIO[F] {
-
     protected[this] def wrap[A](f: AbstractLogger => A): F[A]
 
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))

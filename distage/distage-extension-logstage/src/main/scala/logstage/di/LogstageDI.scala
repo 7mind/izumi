@@ -3,8 +3,6 @@ package logstage.di
 import izumi.logstage.distage
 
 trait LogstageDI {
+  @deprecated("renamed to `izumi.logstage.distage.LogstageModule", "1.0")
   type LogstageModule = distage.LogstageModule
-  type LogIOModule[F[_]] = distage.LogIOModule[F]
-  type LogBIOModule[F[_, _]] = distage.LogBIOModule[F]
-  type LogBIO3Module[F[_, _, _]] = distage.LogBIO3Module[F]
 }

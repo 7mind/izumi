@@ -7,18 +7,18 @@ object PlanVerifierCases {
   object PlanVerifierCase1 {
 
     object Axis1 extends Axis {
-      case object A extends AxisValueDef
-      case object B extends AxisValueDef
+      case object A extends AxisChoiceDef
+      case object B extends AxisChoiceDef
     }
 
     object Axis2 extends Axis {
-      case object C extends AxisValueDef
-      case object D extends AxisValueDef
+      case object C extends AxisChoiceDef
+      case object D extends AxisChoiceDef
     }
 
     object Axis3 extends Axis {
-      case object E extends AxisValueDef
-      case object F extends AxisValueDef
+      case object E extends AxisChoiceDef
+      case object F extends AxisChoiceDef
     }
 
     trait Fork1
@@ -56,8 +56,8 @@ object PlanVerifierCases {
     class BadDepImplB extends BadDep
 
     object Axis extends Axis {
-      case object A extends AxisValueDef
-      case object B extends AxisValueDef
+      case object A extends AxisChoiceDef
+      case object B extends AxisChoiceDef
     }
   }
 

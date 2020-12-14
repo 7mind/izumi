@@ -14,10 +14,12 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISafeT
 
     def asParameter: Association.Parameter
 
-    /** - never by-name for methods, - may be by-name for parameters */
+    /** never by-name for methods, - may be by-name for parameters */
     final def tpe: TypeNative = symbol.finalResultType
+
     final def nonBynameTpe: TypeNative = symbol.nonByNameFinalResultType
-    /** - always by-name for methods, - may be by-name for parameters */
+
+    /** always by-name for methods, - may be by-name for parameters */
     def asParameterTpe: TypeNative
 
     final def ctorArgumentExpr(c: blackbox.Context): (u.Tree, u.Tree) = {

@@ -33,7 +33,6 @@ sealed trait PlanTopology {
 }
 
 object PlanTopology {
-
   def empty: PlanTopologyImmutable = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required))
 
   final case class PlanTopologyImmutable(

@@ -49,16 +49,17 @@ object IzEither extends IzEither {
   final class EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](private val result: Col[T]) extends AnyVal {
     /** `traverse` with error accumulation */
     @inline def biMapAggregate[L, A](f: T => Either[List[L], A])(implicit b: Factory[A, Col[A]]): Either[List[L], Col[A]] = {
-      biMapAggregateTo(b)(f)
+      biMapAggregateTo(f)(b)
     }
 
     /** `traverse` with error accumulation */
-    def biMapAggregateTo[L, A, CC](b: Factory[A, CC])(f: T => Either[List[L], A]): Either[List[L], CC] = {
+    def biMapAggregateTo[L, A, CC](f: T => Either[List[L], A])(b: Factory[A, CC]): Either[List[L], CC] = {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      result.iterator.foreach {
-        f(_) match {
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        f(iterator.next()) match {
           case Left(e) => bad ++= e
           case Right(v) => good += v
         }
@@ -76,8 +77,9 @@ object IzEither extends IzEither {
     def biMapAggregateVoid[L, A](f: T => Either[List[L], A]): Either[List[L], Unit] = {
       val bad = List.newBuilder[L]
 
-      result.iterator.foreach {
-        f(_) match {
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        f(iterator.next()) match {
           case Left(e) => bad ++= e
           case _ =>
         }
@@ -103,8 +105,9 @@ object IzEither extends IzEither {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      result.iterator.foreach {
-        f(_) match {
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        f(iterator.next()) match {
           case Left(e) => bad ++= e
           case Right(v) => good ++= v
         }
@@ -125,9 +128,12 @@ object IzEither extends IzEither {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      result.iterator.foreach {
-        case Left(e) => bad ++= e
-        case Right(v) => good += v
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        iterator.next() match {
+          case Left(e) => bad ++= e
+          case Right(v) => good += v
+        }
       }
 
       val badList = bad.result()
@@ -142,9 +148,12 @@ object IzEither extends IzEither {
     def biAggregateVoid: Either[List[L], Unit] = {
       val bad = List.newBuilder[L]
 
-      result.iterator.foreach {
-        case Left(e) => bad ++= e
-        case _ =>
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        iterator.next() match {
+          case Left(e) => bad ++= e
+          case _ =>
+        }
       }
 
       val badList = bad.result()
@@ -162,9 +171,12 @@ object IzEither extends IzEither {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      result.iterator.foreach {
-        case Left(e) => bad ++= e
-        case Right(v) => good ++= v
+      val iterator = result.iterator
+      while (iterator.hasNext) {
+        iterator.next() match {
+          case Left(e) => bad ++= e
+          case Right(v) => good ++= v
+        }
       }
 
       val badList = bad.result()

@@ -2,13 +2,14 @@ package izumi.distage.roles.launcher
 
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.{Activation, Axis, Id}
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 trait RoleAppActivationParser {
-  def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation
+  def parseActivation(rawActivations: Iterable[AxisPoint], activationInfo: ActivationInfo): Activation
 }
 
 object RoleAppActivationParser {
@@ -19,9 +20,9 @@ object RoleAppActivationParser {
     ignoreUnknownActivations: Boolean @Id("distage.roles.activation.ignore-unknown"),
   ) extends RoleAppActivationParser {
 
-    override def parseActivation(rawActivations: Iterable[(String, String)], activationInfo: ActivationInfo): Activation = {
+    override def parseActivation(rawActivations: Iterable[AxisPoint], activationInfo: ActivationInfo): Activation = {
       val usedChoices = rawActivations.flatMap {
-        case (axisName, choiceName) =>
+        case AxisPoint(axisName, choiceName) =>
           validateAxisChoice(activationInfo)(axisName, choiceName)
       }
       validateAllChoices(usedChoices)
@@ -29,14 +30,12 @@ object RoleAppActivationParser {
       Activation(usedChoices.toMap)
     }
 
-    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisValue)] = {
-      def options: String = {
-        activationInfo
-          .availableChoices.map {
-            case (axis, members) =>
-              s"$axis:${members.niceList().shift(2)}"
-          }.niceList()
-      }
+    protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisChoice)] = {
+      def options: String = activationInfo.availableChoices
+        .map {
+          case (axis, members) =>
+            s"$axis:${members.niceList().shift(2)}"
+        }.niceList()
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {
         case Some((base, members)) =>
@@ -44,27 +43,31 @@ object RoleAppActivationParser {
             case Some(member) =>
               Some(base -> member)
             case None =>
-              logger.crit(s"Unknown choice: $choiceName")
-              logger.crit(s"Available $options")
+              logger.warn(s"Unknown choice: $choiceName")
+              logger.warn(s"Available $options")
               if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
                 None
               } else {
-                throw new DIAppBootstrapException(s"Unknown choice: $choiceName")
+                throw new DIAppBootstrapException(
+                  s"Unknown choice: $choiceName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue"
+                )
               }
           }
 
         case None =>
-          logger.crit(s"Unknown axis: $axisName")
-          logger.crit(s"Available $options")
+          logger.warn(s"Unknown axis: $axisName")
+          logger.warn(s"Available $options")
           if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
             None
           } else {
-            throw new DIAppBootstrapException(s"Unknown axis: $axisName")
+            throw new DIAppBootstrapException(
+              s"Unknown axis: $axisName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue "
+            )
           }
       }
     }
 
-    protected def validateAllChoices(choices: Iterable[(Axis, Axis.AxisValue)]): Unit = {
+    protected def validateAllChoices(choices: Iterable[(Axis, Axis.AxisChoice)]): Unit = {
       import izumi.fundamentals.collections.IzCollections._
 
       val badChoices = choices.toMultimap.filter(_._2.size > 1)

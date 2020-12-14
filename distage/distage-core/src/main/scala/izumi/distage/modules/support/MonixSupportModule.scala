@@ -9,15 +9,17 @@ import monix.execution.Scheduler
 
 object MonixSupportModule extends MonixSupportModule
 
-/** `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
+/**
+  * `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for `monix`
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for `monix`
   *
-  * Note: by default this module will implement
-  *   - [[monix.execution.Scheduler Scheduler]] using [[monix.execution.Scheduler.global]]
-  *   - `Scheduler @Id("io")` using [[monix.execution.Scheduler.io]]
-  *   - [[monix.eval.Task.Options]] using [[monix.eval.Task.defaultOptions]]
+  * @note Will also add the following components:
+  *   - [[monix.execution.Scheduler Scheduler]] by using [[monix.execution.Scheduler.global]]
+  *   - [[monix.execution.Scheduler Scheduler @Id("io")]] by using [[monix.execution.Scheduler.io]]
+  *   - [[monix.eval.Task.Options]] by using [[monix.eval.Task.defaultOptions]]
+  *   - [[cats.effect.Blocker]] by using `Scheduler @Id("io")`
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */

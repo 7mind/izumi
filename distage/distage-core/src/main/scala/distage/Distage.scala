@@ -4,6 +4,8 @@ import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.planning.extensions
 import izumi.distage.{constructors, model, modules, planning}
 
+import izumi.distage.planning.solver
+
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
@@ -19,7 +21,12 @@ trait Distage {
   val Roots: model.plan.Roots.type = model.plan.Roots
 
   type Locator = model.Locator
+  val Locator: model.Locator.type = model.Locator
+
   type LocatorRef = model.recursive.LocatorRef
+
+  type PlanVerifier = solver.PlanVerifier
+  val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
   type DefaultModule[F[_]] = modules.DefaultModule[F]
   val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
@@ -63,6 +70,9 @@ trait Distage {
 
   type Functoid[+A] = model.providers.Functoid[A]
   val Functoid: model.providers.Functoid.type = model.providers.Functoid
+
+  type AnyConstructor[T] = constructors.AnyConstructor[T]
+  val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   type ClassConstructor[T] = constructors.ClassConstructor[T]
   val ClassConstructor: constructors.ClassConstructor.type = constructors.ClassConstructor
@@ -129,22 +139,22 @@ trait Distage {
   type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
 
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
   type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "0.11.0")
+  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
   val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
 
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
   type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 0.11.1")
+  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
   val GCMode: model.plan.Roots.type = model.plan.Roots
 
-  @deprecated("Use distage.Lifecycle.Basic", "0.11")
+  @deprecated("Use distage.Lifecycle.Basic", "1.0")
   type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  @deprecated("Use distage.Lifecycle", "0.11")
+  @deprecated("Use distage.Lifecycle", "1.0")
   type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
 
 }

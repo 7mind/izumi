@@ -17,6 +17,6 @@ package izumi.distage.model.definition
   *   }
   * }}}
   *
-  * Note: `javax.inject.Named` annotation is also supported
+  * @note `javax.inject.Named` annotation is also supported
   */
 final class Id(val name: String) extends DIStageAnnotation

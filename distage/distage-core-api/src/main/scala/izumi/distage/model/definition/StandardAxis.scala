@@ -6,8 +6,8 @@ object StandardAxis {
   object Mode extends Axis {
     override def name: String = "mode"
 
-    case object Prod extends AxisValueDef
-    case object Test extends AxisValueDef
+    case object Prod extends AxisChoiceDef
+    case object Test extends AxisChoiceDef
   }
 
   /**
@@ -20,8 +20,8 @@ object StandardAxis {
   object Repo extends Axis {
     override def name: String = "repo"
 
-    case object Prod extends AxisValueDef
-    case object Dummy extends AxisValueDef
+    case object Prod extends AxisChoiceDef
+    case object Dummy extends AxisChoiceDef
   }
 
   /**
@@ -33,8 +33,8 @@ object StandardAxis {
   object World extends Axis {
     override def name: String = "world"
 
-    case object Real extends AxisValueDef
-    case object Mock extends AxisValueDef
+    case object Real extends AxisChoiceDef
+    case object Mock extends AxisChoiceDef
   }
 
   /**
@@ -45,14 +45,14 @@ object StandardAxis {
     *
     * We call a set of external services required by the application a `Scene`,
     * etymology being that the running external services required by the application
-    * are like a "scene" that the "theatre staff" (the orchestrator) must prepare
+    * are like a "scene" that the "staff" (the orchestrator) must prepare
     * for the "actor" (the application) to enter.
     */
   object Scene extends Axis {
     override def name: String = "scene"
 
-    case object Managed extends AxisValueDef
-    case object Provided extends AxisValueDef
+    case object Managed extends AxisChoiceDef
+    case object Provided extends AxisChoiceDef
   }
 
   def prodActivation: Activation = {
@@ -82,10 +82,10 @@ object StandardAxis {
     )
   }
 
-  @deprecated("Use `distage.StandardAxis.Mode` instead", "0.11")
+  @deprecated("Use `distage.StandardAxis.Mode` instead", "1.0")
   lazy val Env: Mode.type = Mode
 
-  @deprecated("Use `distage.StandardAxis.World` instead", "0.11")
+  @deprecated("Use `distage.StandardAxis.World` instead", "1.0")
   lazy val ExternalApi: World.type = World
 
 }

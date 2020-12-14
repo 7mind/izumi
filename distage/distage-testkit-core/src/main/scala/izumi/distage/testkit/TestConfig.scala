@@ -3,7 +3,7 @@ package izumi.distage.testkit
 import distage._
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig.PriorAxisDIKeys.MaxLevel
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
@@ -23,10 +23,10 @@ import scala.language.implicitConversions
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *                              Components specified in `memoizationRoots` will be memoized only for the tests in the same memoization environment.
   *
-  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[BootstrapModule]].
+  * @param bootstrapPluginConfig Same as [[pluginConfig]], but for [[izumi.distage.model.definition.BootstrapModule]].
   *                              Every distinct `bootstrapPluginConfig` will create a distinct memoization environment.
   *
-  * @param activation            Chosen activation axes. Changes in [[Activation]] that alter implementations of components in [[memoizationRoots]]
+  * @param activation            Chosen activation axes. Changes in [[izumi.distage.model.definition.Activation]] that alter implementations of components in [[memoizationRoots]]
   *                              OR their dependencies will cause the test to execute in a new memoization environment,
   *                              check the initial log output in tests for information about the memoization environments in your tests.
   *
@@ -110,7 +110,7 @@ object TestConfig {
     )
   }
 
-  final case class AxisDIKeys(keyMap: Map[Set[AxisValue], Set[DIKey]]) extends AnyVal {
+  final case class AxisDIKeys(keyMap: Map[Set[AxisChoice], Set[DIKey]]) extends AnyVal {
     /**
       * Consider a section to be activated if for each Axis, one of the Axis Choices in the section is present in the Activation
       *
@@ -121,10 +121,10 @@ object TestConfig {
       *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
       *  you cannot specify multiple axis values for _the same_ axis on bindings.
       *
-      *  @see [[izumi.distage.planning.solver.ActivationChoices#allValid]]
+      *  @see [[izumi.distage.model.planning.ActivationChoices#allValid]]
       */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
-      def activatedSection(axisValues: Set[AxisValue], activation: Activation): Boolean = {
+      def activatedSection(axisValues: Set[AxisChoice], activation: Activation): Boolean = {
         axisValues
           .groupBy(_.axis)
           .forall {
@@ -132,11 +132,10 @@ object TestConfig {
               activation.activeChoices.get(axis).exists(axisValues.contains)
           }
       }
-      keyMap
-        .iterator.flatMap {
-          case (axisValues, keys) if activatedSection(axisValues, activation) => keys
-          case _ => Nil
-        }.toSet
+      keyMap.iterator.flatMap {
+        case (axisValues, keys) if activatedSection(axisValues, activation) => keys
+        case _ => Nil
+      }.toSet
     }
 
     def ++(that: AxisDIKeys): AxisDIKeys = {
@@ -148,10 +147,10 @@ object TestConfig {
     def +(key: DIKey): AxisDIKeys = {
       this ++ Set(key)
     }
-    def +(axisKey: (AxisValue, DIKey)): AxisDIKeys = {
+    def +(axisKey: (AxisChoice, DIKey)): AxisDIKeys = {
       this ++ Map(axisKey)
     }
-    def +(setAxisKey: (Set[AxisValue], DIKey))(implicit d: DummyImplicit): AxisDIKeys = {
+    def +(setAxisKey: (Set[AxisChoice], DIKey))(implicit d: DummyImplicit): AxisDIKeys = {
       this ++ Map(setAxisKey)
     }
   }
@@ -161,17 +160,17 @@ object TestConfig {
     @inline implicit def fromSet(set: Set[_ <: DIKey]): AxisDIKeys =
       AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
 
-    @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisValue], Set[_ <: DIKey])]): AxisDIKeys =
-      AxisDIKeys(map.toMap[Set[_ <: AxisValue], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisValue], Set[DIKey]]])
+    @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisChoice], Set[_ <: DIKey])]): AxisDIKeys =
+      AxisDIKeys(map.toMap[Set[_ <: AxisChoice], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisChoice], Set[DIKey]]])
 
-    @inline implicit def fromSingleMap(map: Iterable[(AxisValue, DIKey)]): AxisDIKeys =
+    @inline implicit def fromSingleMap(map: Iterable[(AxisChoice, DIKey)]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
 
-    @inline implicit def fromSingleToSetMap(map: Iterable[(AxisValue, Set[_ <: DIKey])]): AxisDIKeys =
+    @inline implicit def fromSingleToSetMap(map: Iterable[(AxisChoice, Set[_ <: DIKey])]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> v.toSet[DIKey] }.toMap)
 
-    @inline implicit def fromSetToSingleMap(map: Iterable[(Set[_ <: AxisValue], DIKey)]): AxisDIKeys =
-      AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisValue] -> Set(v) }.toMap)
+    @inline implicit def fromSetToSingleMap(map: Iterable[(Set[_ <: AxisChoice], DIKey)]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisChoice] -> Set(v) }.toMap)
   }
 
   final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys]) extends AnyVal {

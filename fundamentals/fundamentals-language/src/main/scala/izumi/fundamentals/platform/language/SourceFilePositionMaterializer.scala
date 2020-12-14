@@ -59,6 +59,10 @@ object SourceFilePositionMaterializer {
       setType(sourceFilePosition, posTpe)
     }
 
+    def getSourceFilePositionValue(c: blackbox.Context): SourceFilePosition = {
+      SourceFilePosition(c.enclosingPosition.source.file.name, c.enclosingPosition.line)
+    }
+
   }
 
 }

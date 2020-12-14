@@ -356,7 +356,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * formed by the elements of the nested <code>NonEmptyList</code>s.
     *
     * <p>
-    * Note: You cannot use this <code>flatten</code> method on a <code>NonEmptyList</code> that contains a <code>GenTraversableOnce</code>s, because
+    * @note You cannot use this <code>flatten</code> method on a <code>NonEmptyList</code> that contains a <code>GenTraversableOnce</code>s, because
     * if all the nested <code>GenTraversableOnce</code>s were empty, you'd end up with an empty <code>NonEmptyList</code>.
     * </p>
     *
@@ -451,10 +451,9 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def groupBy[K](f: T => K): Map[K, NonEmptyList[T]] = {
     val mapKToList = toList.groupBy(f)
-    mapKToList
-      .view.mapValues {
-        list => new NonEmptyList(list)
-      }.toMap
+    mapKToList.view.mapValues {
+      list => new NonEmptyList(list)
+    }.toMap
   }
 
   /**
@@ -722,7 +721,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * The length of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of elements in this <code>NonEmptyList</code>.
@@ -958,7 +957,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * An iterator yielding elements in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyList.reverseIterator</code> is the same as <code>nonEmptyList.reverse.iterator</code>, but might be more efficient.
+    * @note <code>nonEmptyList.reverseIterator</code> is the same as <code>nonEmptyList.reverse.iterator</code>, but might be more efficient.
     * </p>
     *
     * @return an iterator yielding the elements of this <code>NonEmptyList</code> in reversed order
@@ -969,7 +968,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Builds a new <code>NonEmptyList</code> by applying a function to all elements of this <code>NonEmptyList</code> and collecting the results in reverse order.
     *
     * <p>
-    * Note: <code>nonEmptyList.reverseMap(f)</code> is the same as <code>nonEmptyList.reverse.map(f)</code>, but might be more efficient.
+    * @note <code>nonEmptyList.reverseMap(f)</code> is the same as <code>nonEmptyList.reverse.map(f)</code>, but might be more efficient.
     * </p>
     *
     * @tparam U the element type of the returned <code>NonEmptyList</code>.
@@ -1011,7 +1010,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * Computes a prefix scan of the elements of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: The neutral element z may be applied more than once.
+    * @note The neutral element z may be applied more than once.
     * </p>
     *
     * <p>
@@ -1106,7 +1105,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * The size of this <code>NonEmptyList</code>.
     *
     * <p>
-    * Note: <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
+    * @note <code>length</code> and <code>size</code> yield the same result, which will be <code>&gt;</code>= 1.
     * </p>
     *
     * @return the number of elements in this <code>NonEmptyList</code>.
@@ -1502,7 +1501,7 @@ object NonEmptyList {
     new NonEmptyList(list)
   }
 
-  implicit final class OptionOps[A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
+  implicit final class OptionOps[+A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
     @inline def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
   }
 }

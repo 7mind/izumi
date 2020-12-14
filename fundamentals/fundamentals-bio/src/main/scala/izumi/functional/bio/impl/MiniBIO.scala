@@ -133,7 +133,8 @@ object MiniBIO {
       Redeem[E, A, E2, B](
         r,
         {
-          case Exit.Termination(t, e, c) => Fail.halt(Exit.Termination(t, e, c))
+          case e @ Exit.Interruption(_, _) => Fail.halt(e)
+          case e @ Exit.Termination(_, _, _) => Fail.halt(e)
           case Exit.Error(e, _) => err(e)
         },
         succ,
@@ -146,7 +147,8 @@ object MiniBIO {
       Redeem[E, A, E2, A](
         r,
         {
-          case Exit.Termination(t, e, c) => Fail.halt(Exit.Termination(t, e, c))
+          case e @ Exit.Interruption(_, _) => Fail.halt(e)
+          case e @ Exit.Termination(_, _, _) => Fail.halt(e)
           case exit @ Exit.Error(e, _) => f.applyOrElse(e, (_: E) => Fail.halt(exit))
         },
         pure,

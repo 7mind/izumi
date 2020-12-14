@@ -1,10 +1,11 @@
 package izumi.distage.injector
 
+import distage.ModuleDef
 import izumi.distage.fixtures.ImplicitCases.{ImplicitCase1, ImplicitCase2}
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.language.Quirks.discard
-import distage.ModuleDef
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.annotation.nowarn
 
 class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
 
@@ -51,8 +52,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     import ImplicitCase2._
 
     val definition = PlannerInput.noGC(new ModuleDef {
-      implicit val testDependency3: TestDependency3 = new TestDependency3
-      discard(testDependency3)
+      @nowarn implicit val testDependency3: TestDependency3 = new TestDependency3
 
       make[TestDependency1]
       make[TestDependency2]

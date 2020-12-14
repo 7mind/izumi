@@ -1,5 +1,6 @@
 package izumi.distage.docker
 
+import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
@@ -39,7 +40,7 @@ object DockerContainer {
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
     /**
-      * Allows you to modify [[izumi.distage.docker.Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[Functoid]].
+      * Allows you to modify [[izumi.distage.docker.Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[izumi.distage.model.providers.Functoid]].
       *
       * Example:
       *
@@ -75,28 +76,23 @@ object DockerContainer {
     }
 
     def connectToNetwork[T2](
-      implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[T2]],
+      networkDecl: ContainerNetworkDef.Aux[T2]
+    )(implicit tag1: distage.Tag[ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
-      tag1.discard()
-      tag3.discard()
-      modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
-          old.copy(networks = old.networks + net)
-      }
+      networkDecl.discard()
+      connectToNetwork[T2]
     }
 
-    def connectToNetwork(
-      networkDecl: ContainerNetworkDef
-    )(implicit tag1: distage.Tag[ContainerNetworkDef.ContainerNetwork[networkDecl.Tag]],
+    def connectToNetwork[T2](
+      implicit tag1: distage.Tag[ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
-      tag1.discard()
-      tag3.discard()
+      discard(tag1, tag3)
       modifyConfig {
-        net: ContainerNetworkDef.ContainerNetwork[networkDecl.Tag] => old: Docker.ContainerConfig[T] =>
+        net: ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
           old.copy(networks = old.networks + net)
       }
     }

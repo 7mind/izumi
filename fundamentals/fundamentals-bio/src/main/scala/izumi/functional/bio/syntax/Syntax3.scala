@@ -9,12 +9,45 @@ import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unu
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
+/**
+  * All implicit syntax in BIO is available automatically without wildcard imports
+  * with the help of so-called "implicit punning", as in the following example:
+  *
+  * {{{
+  *   import izumi.functional.bio.Monad2
+  *
+  *   def loop[F[+_, +_]: Monad2]: F[Nothing, Nothing] = {
+  *     val unitEffect: F[Nothing, Unit] = Monad2[F].unit
+  *     unitEffect.flatMap(loop)
+  *   }
+  * }}}
+  *
+  * Note that a `.flatMap` method is available on the `unitEffect` value of an abstract type parameter `F`,
+  * even though we did not import any syntax implicits using a wildcard import.
+  *
+  * The `flatMap` method was added by the implicit punning on the `Monad2` name.
+  * In short, implicit punning just means that instead of creating a companion object for a type with the same name as the type,
+  * we create "companion" implicit conversions with the same name. So that whenever you import the type,
+  * you are also always importing the syntax-providing implicit conversions.
+  *
+  * This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the used typeclasses.
+  *
+  * Implicit Punning for typeclass syntax relieves the programmer from having to manually import syntax implicits in every file in their codebase.
+  *
+  * @note The order of conversions is such to allow otherwise conflicting type classes to not conflict,
+  *       e.g. code using constraints such as `def x[F[+_, +_]: Functor2: Applicative2: Monad2]` will compile and run
+  *       normally when using syntax, despite ambiguity of implicits caused by all 3 implicits inheriting from Functor2.
+  *       This is because, due to the priority order being from most-specific to least-specific, the `Monad2` syntax
+  *       will be used in such a case, where the `Monad2[F]` implicit is actually unambiguous.
+  */
 trait Syntax3 extends ImplicitPuns {
   /**
-    * A convenient dependent summoner for BIO* hierarchy.
+    * A convenient dependent summoner for BIO hierarchy.
     * Auto-narrows to the most powerful available class:
     *
     * {{{
+    *   import izumi.functional.bio.{F, Temporal2}
+    *
     *   def y[F[+_, +_]: Temporal2] = {
     *     F.timeout(5.seconds)(F.forever(F.unit))
     *   }
@@ -144,7 +177,7 @@ object Syntax3 {
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "0.11")
+    @deprecated("renamed to sandboxExit", "1.0")
     @inline final def sandboxBIOExit = sandboxExit
 
     /**

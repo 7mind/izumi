@@ -8,7 +8,7 @@ import izumi.distage.model.definition.ModuleDef
 /**
   * Adds `cats-effect` typeclass instances for any effect type `F[_]` with an available `make[ConcurrentEffect[F]` binding
   *
-  * Depends on `make[ConcurrentEffect[F]]`.
+  * Depends on `ConcurrentEffect[F]`.
   */
 class CatsEffectInstancesModule[F[_]: TagK] extends ModuleDef {
   make[Invariant[F]].using[ConcurrentEffect[F]]

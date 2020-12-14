@@ -26,7 +26,10 @@ import scala.reflect.macros.blackbox
   *
   * {{{
   *   config {
-  *     values = [{ A { a = 5 } }, { B { b = cba } }]
+  *     values = [
+  *       { A { a = 123 } },
+  *       { B { b = cba } }
+  *     ]
   *   }
   * }}}
   */

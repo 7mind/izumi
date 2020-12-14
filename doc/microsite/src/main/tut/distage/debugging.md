@@ -1,5 +1,4 @@
-Debugging
-=========
+# Debugging
 
 @@toc { depth=2 }
 

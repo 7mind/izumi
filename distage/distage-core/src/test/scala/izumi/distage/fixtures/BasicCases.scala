@@ -171,8 +171,8 @@ Forest fire, climbin' higher, real life, it can wait""")
   }
 
   object Mutations01 {
-    case class SomethingUseful(v: String)
-    case class Mutable(a: Int, b: Option[SomethingUseful])
+    final case class SomethingUseful(v: String)
+    final case class Mutable(a: Int, b: Option[SomethingUseful])
   }
 
   object BasicCase7 {

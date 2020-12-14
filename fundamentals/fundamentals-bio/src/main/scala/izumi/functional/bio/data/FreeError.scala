@@ -29,7 +29,7 @@ sealed abstract class FreeError[+S[_, _], +E, +A] {
   @inline final def void: FreeError[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreeError[T, E, A] = {
-    foldMap[S1, FreeError[T, +?, +?]](FunctionKK(FreeError lift f(_)))
+    foldMap[S1, FreeError[T, +?, +?]](Morphism2(FreeError lift f(_)))
   }
 
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Error2[G]): G[E, A] = {

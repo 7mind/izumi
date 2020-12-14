@@ -1,5 +1,6 @@
 package izumi.distage.model.providers
 
+import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.LinkedParameter
@@ -59,14 +60,14 @@ import scala.language.implicitConversions
   * Prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
   *
   * {{{
-  *   case class X(i: Int @Id("special"))
+  *   final case class X(i: Int @Id("special"))
   *
   *   make[X].from(X.apply _) // summons special Int
   * }}}
   *
   * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
   *
-  * Note: `javax.inject.Named` annotation is also supported
+  * @note `javax.inject.Named` annotation is also supported
   *
   * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
   * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
@@ -102,7 +103,8 @@ final case class Functoid[+A](get: Provider) {
   }
 
   /** Add `B` as an unused dependency of this Provider */
-  def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey.get[B])
+  def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey[B])
+  def addDependency[B: Tag](name: Identifier): Functoid[A] = addDependency(DIKey[B](name))
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
   def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 

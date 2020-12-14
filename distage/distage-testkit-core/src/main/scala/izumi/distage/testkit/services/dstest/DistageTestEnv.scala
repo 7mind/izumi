@@ -65,7 +65,7 @@ trait DistageTestEnv {
 
   protected def loadRoles(): RolesInfo = {
     // For all normal scenarios we don't need roles to setup a test
-    RolesInfo(Set.empty, Seq.empty, Set.empty, Seq.empty, Set.empty)
+    RolesInfo(Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
   }
 
   protected def makeMergeStrategy(): PluginMergeStrategy = {

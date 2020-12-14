@@ -11,7 +11,7 @@ object PostgresDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
-      image = "library/postgres:12.2",
+      image = "library/postgres:12.3",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
       healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),

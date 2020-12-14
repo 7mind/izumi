@@ -7,8 +7,8 @@ final class PlanningHookAggregate(
   hooks: Set[PlanningHook]
 ) extends PlanningHook {
 
-  override def hookDefinition(defn: ModuleBase): ModuleBase = {
-    hooks.foldLeft(defn) {
+  override def hookDefinition(definition: ModuleBase): ModuleBase = {
+    hooks.foldLeft(definition) {
       case (acc, hook) =>
         hook.hookDefinition(acc)
     }

@@ -5,14 +5,16 @@ import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
-import izumi.functional.mono.SyncSafe
+import izumi.functional.mono.{Clock, Entropy, SyncSafe}
+import izumi.fundamentals.platform.functional.Identity
 
-/** Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
+/**
+  * Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
   *
-  * For any `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
+  * For all `F[_]` with available `make[ConcurrentEffect[F]]`, `make[Parallel[F]]` and `make[Timer[F]]` bindings.
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for `F[_]`
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for `F[_]`
   *
   * Depends on `make[ConcurrentEffect[F]]`, `make[Parallel[F]]`, `make[Timer[F]]`.
   */
@@ -37,6 +39,12 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   }
   make[SyncSafe[F]].from {
     implicit F: Sync[F] => SyncSafe.fromSync
+  }
+  make[Clock[F]].from {
+    Clock.fromImpure(_: Clock[Identity])(_: SyncSafe[F])
+  }
+  make[Entropy[F]].from {
+    Entropy.fromImpure(_: Entropy[Identity])(_: SyncSafe[F])
   }
 }
 

@@ -126,8 +126,8 @@ case class ContainerResource[F[_], T](
                 }
 
                 if (unavailablePorts.unavailablePorts.nonEmpty) {
-                  val errored = unavailablePorts
-                    .unavailablePorts.flatMap {
+                  val errored = unavailablePorts.unavailablePorts
+                    .flatMap {
                       case (port, attempts) =>
                         attempts.map {
                           case (tested, cause) =>
@@ -165,16 +165,16 @@ case class ContainerResource[F[_], T](
     ) {
       F.suspendF {
         val containers = {
-          /**
-            * We will filter out containers by "running" status if container exposes any ports to be mapped
-            * and by "exited" status also if there are no exposed ports.
-            * We don't need to consider "exited" containers with exposed ports, because they will always fail port check.
-            *
-            * Filtering containers like this allows us to reuse "oneshot" containers that were started and exited eventually.
-            * When reusing containers we usually assume that a container runs as a daemon, but if a container exited successfully
-            * we can't understand whether that container's run belonged to one of the previous test runs, or to the current one.
-            * So containers that exit will be reused only in the scope of the current test run.
-            */
+          /*
+           * We will filter out containers by "running" status if container exposes any ports to be mapped
+           * and by "exited" status also if there are no exposed ports.
+           * We don't need to consider "exited" containers with exposed ports, because they will always fail port check.
+           *
+           * Filtering containers like this allows us to reuse "oneshot" containers that were started and exited eventually.
+           * When reusing containers we usually assume that a container runs as a daemon, but if a container exited successfully
+           * we can't understand whether that container's run belonged to one of the previous test runs, or to the current one.
+           * So containers that exit will be reused only in the scope of the current test run.
+           */
           val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
           val statusFilter = DockerConst.State.running :: exitedOpt
           // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)

@@ -1,6 +1,6 @@
 package izumi.distage.model.definition
 
-import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.Axis.AxisChoice
 
 import scala.language.implicitConversions
 
@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 trait BindingTag
 
 object BindingTag {
-  implicit def apply(tag: AxisValue): BindingTag = AxisTag(tag)
+  implicit def apply(tag: AxisChoice): BindingTag = AxisTag(tag)
 
-  final case class AxisTag(choice: AxisValue) extends BindingTag
+  final case class AxisTag(choice: AxisChoice) extends BindingTag
 }

@@ -6,10 +6,11 @@ import izumi.distage.model.definition.ModuleDef
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
-/** `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
+/**
+  * `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
-  * - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
-  * - Adds `cats-effect` typeclass instances for `cats.effect.IO`
+  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
   */
 trait CatsIOSupportModule extends ModuleDef {
   // QuasiIO & cats-effect instances

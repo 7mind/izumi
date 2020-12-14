@@ -62,10 +62,10 @@ final case class IzArtifactMaterializer(get: IzArtifact) extends AnyVal
 object IzArtifactMaterializer {
   @inline def currentArtifact(implicit ev: IzArtifactMaterializer): IzArtifact = ev.get
 
-  implicit def materialize: IzArtifactMaterializer = macro SourceFilePositionMaterializerImpl.make
+  implicit def materialize: IzArtifactMaterializer = macro IzArtifactMaterializerMacro.make
 }
 
-object SourceFilePositionMaterializerImpl {
+object IzArtifactMaterializerMacro {
   def make(c: blackbox.Context): c.Expr[IzArtifactMaterializer] = {
     import c.universe._
 

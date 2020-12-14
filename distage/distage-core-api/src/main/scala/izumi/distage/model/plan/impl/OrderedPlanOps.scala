@@ -17,7 +17,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
   /**
     * Check for any unresolved dependencies,
     * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
-    * or for any other issue that would cause [[izumi.distage.model.Injector#produce(plan:OrderedPlan)* Injector.produce]] to fail
+    * or for any other issue that would cause [[izumi.distage.model.Injector#produce Injector.produce]] to fail
     *
     * If this returns `F.unit` then the wiring is generally correct,
     * modulo runtime exceptions in user code,
@@ -43,7 +43,6 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
     */
-  @throws[InvalidPlanException]
   final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
     isValid(ignoredImports).fold(())(throw _)
   }
@@ -74,10 +73,9 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     */
   final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
     val locatorRefKey = DIKey[LocatorRef]
-    val nonMagicImports = steps
-      .iterator.collect {
-        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
-      }.toList
+    val nonMagicImports = steps.iterator.collect {
+      case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
+    }.toList
     NonEmptyList.from(nonMagicImports)
   }
   final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
@@ -92,10 +90,9 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     */
   final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
     val effectType = SafeType.getK[F]
-    val badSteps = steps
-      .iterator.collect {
-        case op: MonadicOp if !(op.effectHKTypeCtor <:< effectType || op.effectHKTypeCtor <:< SafeType.identityEffectType) => op
-      }.toList
+    val badSteps = steps.iterator.collect {
+      case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
+    }.toList
     NonEmptyList.from(badSteps)
   }
 
@@ -104,7 +101,7 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     *
     * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
     *
-    * Note: this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
+    * @note this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
     *       by deleting the `keys` from bindings: `module -- keys`
     */
   final def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
@@ -164,11 +161,11 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
     SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
 
-  @deprecated("Renamed to `assertValidOrThrow`", "0.11")
+  @deprecated("Renamed to `assertValidOrThrow` and somewhat obsoleted by `Injector().assert` & new compile-time checks in `izumi.distage.framework.PlanCheck`!", "1.0")
   final def assertImportsResolvedOrThrow[F[_]: TagK](): Unit = assertValidOrThrow[F]()
 
   /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  @deprecated("Renamed to `isValid`", "0.11")
+  @deprecated("Renamed to `isValid` and somewhat obsoleted by `Injector().verify` & new compile-time checks in `izumi.distage.framework.PlanCheck`!", "1.0")
   final def assertImportsResolved[F[_]: TagK]: Option[InvalidPlanException] = isValid[F]()
 
 }

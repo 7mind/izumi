@@ -1,24 +1,23 @@
 package izumi.distage.model.definition
 
-import izumi.distage.model.definition.Axis.AxisValue
-import izumi.fundamentals.platform.strings.IzString.toRichString
+import izumi.distage.model.definition.Axis.AxisChoice
+import izumi.distage.model.planning.AxisPoint
 
 trait Axis { self =>
   def name: String = getClass.getName.toLowerCase.split('.').last.split('$').last
   override final def toString: String = s"$name"
 
-  abstract class AxisValueDef extends AxisValue {
+  abstract class AxisChoiceDef extends AxisChoice {
     override val axis: Axis = self
   }
+
+  @deprecated("Renamed to AxisChoiceDef", "1.0")
+  final type AxisValueDef = AxisChoiceDef
 }
 
 object Axis {
 
-  final case class AxisPoint(axis: String, value: String) {
-    override def toString: String = s"$axis:$value"
-  }
-
-  trait AxisValue {
+  trait AxisChoice {
     def axis: Axis
     def value: String = getClass.getName.toLowerCase.split('.').last.split('$').last
 
@@ -29,9 +28,7 @@ object Axis {
     @deprecated("Renamed to `value`", "1.0")
     final def id: String = value
   }
-  object AxisValue {
-    def splitAxisValue(s: String): (String, String) = {
-      s.split2(':')
-    }
-  }
+
+  @deprecated("Renamed to AxisChoice", "1.0")
+  type AxisValue = AxisChoice
 }
