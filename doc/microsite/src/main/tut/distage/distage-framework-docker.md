@@ -12,7 +12,7 @@
 
 Add the `distage-framework-docker` library:
 
-@@dependency[sbt,Maven,Gradle] {
+@@dependency[sbt] {
   group="io.7mind.izumi"
   artifact="distage-framework-docker_2.13"
   version="$izumi.version$"

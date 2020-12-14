@@ -2,58 +2,59 @@
 
 @@toc { depth=2 }
 
-### Quick Start
+## Quick Start
 
+```scala mdoc:reset:invisible:to-string
+// ##### New overview
+// (sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
+// 
+// ###### Concepts
+// ####### ModuleDef
+// ######## Activation axis
+// ######## Functoid
+// ####### Injector
+// ######## Object graph
+// ######## Planning
+// ######## Verification
+// ######### Roots
+// ####### Lifecycle
+// ####### Roles
+// ####### Plugins
+// ####### Compile-time verification
+// ####### Testing with injected components
+// 
+// ##### Binding Types
+// ###### Singleton Bindings
+// ###### Named bindings
+// ###### Set bindings
+// ####### Weak Set bindings
+// ###### Lifecycle / Resource bindings
+// ###### Effect bindings
+// ###### ZIO Environment / Reader bindings
+// ###### Config bindings
+// ###### Role bindings
+// ###### Docker bindings
+// 
+// ##### Auto-generated things
+// ###### Effect support modules
+// ###### Auto-Traits
+// ###### Auto-Factories
+// ###### Class constructors
+// ###### Circular dependency resolution
+```
 
-##### New overview
-(sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
-
-###### Concepts
-####### ModuleDef
-######## Activation axis
-######## Functoid
-####### Injector
-######## Object graph
-######## Planning
-######## Verification
-######### Roots
-####### Lifecycle
-####### Roles
-####### Plugins
-####### Compile-time verification
-####### Testing with injected components
-
-##### Binding Types
-###### Singleton Bindings
-###### Named bindings
-###### Set bindings
-####### Weak Set bindings
-###### Lifecycle / Resource bindings
-###### Effect bindings
-###### ZIO Environment / Reader bindings
-###### Config bindings
-###### Role bindings
-###### Docker bindings
-
-##### Auto-generated things
-###### Effect support modules
-###### Auto-Traits
-###### Auto-Factories
-###### Class constructors
-###### Circular dependency resolution
-
-#### Dependencies
+### Dependencies
 
 Add the `distage-core` library:
 
-@@dependency[sbt,Maven,Gradle] {
+@@dependency[sbt] {
   group="io.7mind.izumi"
   artifact="distage-core_2.13"
   version="$izumi.version$"
 }
 
 
-#### Hello World example
+### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
 
@@ -157,7 +158,7 @@ unsafeRun(effect)
 
 `distage` always creates components exactly once, even if multiple other objects depend on them. Coming from other DI frameworks, you may think of it as if there's only a "Singleton" scope. It's impossible to create non-singletons in `distage`.
 
-#### Named instances
+### Named instances
 
 If you need multiple singleton instances of the same type, you may create "named" instances and disambiguate between them using @scaladoc[`@distage.Id`](izumi.distage.model.definition.Id) annotation. (`javax.inject.Named` is also supported)
 
@@ -201,7 +202,7 @@ object Ids {
 }
 ```
 
-#### Non-singleton components
+### Non-singleton components
 
 To create new non-singleton instances you must use explicit factories. `distage`'s @ref[Auto-Factories](#auto-factories) can generate implementations for your factories, removing the associated boilerplate.
 
@@ -210,7 +211,7 @@ if you absolutely must wire a new non-trivial subgraph in a dynamic scope you'll
 
 You may use `Injector.inherit` to obtain access to your outer object graph in your new sub-graph. It's safe to run `Injector` multiple times in nested scopes, as it's extremely fast, not least due to total absence of runtime reflection. See @ref[Injector Inheritance](advanced-features.md#injector-inheritance)
 
-#### Real-world example
+### Real-world example
 
 Check out [`distage-example`](https://github.com/7mind/distage-example) sample project for a complete example built using `distage`, @ref[bifunctor tagless final](../bio/00_bio.md), `http4s`, `doobie` and `zio` libraries.
 
@@ -230,7 +231,7 @@ add to distage-example
 */
 ```
 
-### Activation Axis
+## Activation Axis
 
 You can choose between different implementations of a component using "Activation axis":
 
@@ -316,7 +317,7 @@ class AxisTest extends Spec2[zio.IO] {
 }
 ```
 
-#### Multi-dimensionality
+### Multi-dimensionality
 
 There may be many configuration axes in an application and components can specify multiple axis choices at once:
 
@@ -357,7 +358,7 @@ runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Prod))
 runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Test))
 ```
 
-### Resource Bindings, Lifecycle
+## Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
 [zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
@@ -456,7 +457,7 @@ println(closedInit.initialized)
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods, 
 and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
-#### Inheritance helpers
+### Inheritance helpers
 
 The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
 
@@ -523,7 +524,7 @@ The following helpers ease defining `Lifecycle` sub-classes using traditional in
 - @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
 - @scaladoc[Lifecycle.NoClose](izumi.distage.model.definition.Lifecycle$$NoClose)
 
-### Set Bindings
+## Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
 Everywhere where a collection of components is required, a Set Binding is appropriate.
@@ -641,7 +642,7 @@ Further reading:
 
 - Guice calls the same concept ["Multibindings"](https://github.com/google/guice/wiki/Multibindings).
 
-### Effect Bindings
+## Effect Bindings
 
 Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
 An example might be a global `Semaphore` to limit the parallelism of the entire application based on configuration,
@@ -701,7 +702,7 @@ zio.Runtime.default.unsafeRun(io)
 
 You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
 
-### ZIO Has Bindings
+## ZIO Has Bindings
 
 You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
@@ -809,7 +810,7 @@ val main = Injector[Task]()
 zio.Runtime.default.unsafeRun(main)
 ```
 
-#### Converting ZIO environment dependencies to parameters
+### Converting ZIO environment dependencies to parameters
 
 Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
 the dependency in each method using `.provide`.
@@ -883,7 +884,7 @@ Injector()
   }.fold(_ => 1, _ => 0)
 ```
 
-### Auto-Traits
+## Auto-Traits
 
 distage can instantiate traits and structural types. All unimplemented fields in a trait, or a refinement are filled in from the object graph.
 
@@ -965,7 +966,7 @@ Injector().produceRun(module) {
 }
 ```
 
-#### @impl annotation
+### @impl annotation
 
 Abstract classes or traits without obvious concrete subclasses
 may hinder the readability of a codebase, to mitigate that you may use an optional @scaladoc[@impl](izumi.distage.model.definition.impl) 
@@ -983,7 +984,7 @@ import distage.impl
 }
 ```
 
-#### Avoiding constructors even further
+### Avoiding constructors even further
 
 When overriding behavior of a class, you may avoid writing a repeat of its constructor in your sub-class by inheriting
 it with a trait instead. Example:
@@ -1017,7 +1018,7 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 }
 ```
 
-### Auto-Factories
+## Auto-Factories
 
 `distage` can instantiate 'factory' classes from suitable traits. This feature is especially useful with `Akka`.
 All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
@@ -1058,7 +1059,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
-#### @With annotation
+### @With annotation
 
 `@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
@@ -1100,7 +1101,7 @@ Factory implementations are derived at compile-time by
 @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro
 and can be summoned at need.
 
-### Tagless Final Style
+## Tagless Final Style
 
 Tagless Final is one of the popular patterns for structuring purely-functional applications.
 
@@ -1195,7 +1196,7 @@ val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
 
-#### Out-of-the-box typeclass instances
+### Out-of-the-box typeclass instances
 
 Note: we did not have to include either `Monad[IO]` or `Sync[IO]` instances for our program to run,
 despite the fact that `SyncInteraction` depends on `Sync[F]`.
@@ -1205,7 +1206,7 @@ In general whenever `cats-effect` is on the classpath and your effect type has `
 For ZIO, `monix-bio` and any other implementors of @ref[BIO](../bio/00_bio.md), instances of bifunctor @ref[BIO](../bio/00_bio.md) effect hierarchy will also be included.
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) for more details.
 
-#### Effect-type polymorphism
+### Effect-type polymorphism
 
 The program module is polymorphic over effect type. It can be instantiated by a different effect:
 
@@ -1248,7 +1249,7 @@ def chooseInterpreters(isDummy: Boolean) = {
 chooseInterpreters(true)
 ```
 
-#### Kind polymorphism
+### Kind polymorphism
 
 Modules can be polymorphic over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
@@ -1272,7 +1273,7 @@ class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends Modu
 
 consult [izumi.reflect.HKTag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/latest/izumi/reflect/HKTag.html) docs for more details.
 
-### Cats & ZIO Integration
+## Cats & ZIO Integration
 
 Cats & ZIO instances and syntax are available automatically in `distage-core`, without wildcard imports, if your project depends on `cats-core`, `cats-effect` or `zio`.
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.

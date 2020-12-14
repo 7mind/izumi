@@ -23,7 +23,7 @@ class StandaloneWiringTest
   "And again 2" in {
     assertWiringCompileTime(
       StaticTestMain,
-      planCheckConfig,
+      cfg,
     )
   }
 

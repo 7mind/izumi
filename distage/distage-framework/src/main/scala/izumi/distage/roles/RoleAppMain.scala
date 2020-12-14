@@ -85,7 +85,19 @@ abstract class RoleAppMain[F[_]](
     }
   }
 
-  /** @see [[izumi.distage.framework.PlanCheck.Main]] */
+  /**
+    * Shortcut for [[izumi.distage.framework.PlanCheck.Main]]
+    *
+    * {{{
+    * object WiringTest extends MyApp.PlanCheck(PlanCheckConfig(...))
+    * }}}
+    *
+    * same as
+    *
+    * {{{
+    * object WiringTest extends PlanCheck.Main(MyApp, PlanCheckConfig(...))
+    * }}}
+    */
   @open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[self.type, Cfg])
     extends izumi.distage.framework.PlanCheck.Main[self.type, Cfg](self, cfg)
 

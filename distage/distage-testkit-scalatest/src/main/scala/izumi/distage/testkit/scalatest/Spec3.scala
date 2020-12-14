@@ -1,8 +1,10 @@
 package izumi.distage.testkit.scalatest
 
 import distage.{DefaultModule3, TagK3, TagKK}
+import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper3
+import izumi.logstage.distage.LogIO2Module
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
@@ -61,4 +63,7 @@ abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3
     new DSWordSpecStringWrapper3(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = LogIO2Module[FR[Any, ?, ?]]()(tagBIO)
+  )
 }
