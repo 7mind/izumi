@@ -136,7 +136,7 @@ function secrets {
         tar xvf secrets.tar
         ln -s .secrets/local.sbt local.sbt
         mkdir -p ~/.sbt/secrets || true
-        ln -s .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties || true
+        mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
         echo "Secrets unpacked"
     else
         echo "Skipping secrets"
