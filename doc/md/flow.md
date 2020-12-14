@@ -14,7 +14,6 @@ Secrets
 Before you may perform a release, you need to create `.secrets` directory with the following structure:
 
     .secrets
-    ├── credentials.sonatype-nexus.properties
     ├── gnupg
     │   ├── pubring.gpg
     │   └── secring.gpg
@@ -23,19 +22,22 @@ Before you may perform a release, you need to create `.secrets` directory with t
     └── travis-deploy-key.pub
 
 
+And also you must have a credentials file in `~/.sbt`:
+
+    ~/.sbt/secrets/credentials.sonatype-nexus.properties
+
 - Credentials file contains your Sonatype credentials 
 - `local.sbt` contains PGP secrets 
 - GnuPG keys are required to sign artifacts before publishing to Central.
 - OpenSSH key is required to push sbt-site back to the repo during travis build.
-
 
 `/keys.sh` generates GPG keys and corresponding `local.sbt` file
 
 So, the whole sequence to setup the project for publishing is:
     
     ./keys.sh
-    cp doc/samples/credentials.sonatype-nexus.properties .secrets/
-    nano .secrets/credentials.sonatype-nexus.properties
+    cp doc/samples/credentials.sonatype-nexus.properties ~/.sbt/secrets/
+    nano ~/.sbt/secrets/credentials.sonatype-nexus.properties
 
 Openssl notes
 -------------

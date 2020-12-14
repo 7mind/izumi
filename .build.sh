@@ -61,22 +61,27 @@ function site {
 function publishScala {
   #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
+    echo "Skipping publish on pull request"
     return 0
   fi
 
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+  if [[ ! -f ~/.sbt/secrets/credentials.sonatype-nexus.properties ]] ; then
+    echo "Skipping publish on missing credentials"
     return 0
   fi
 
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+    echo "Skipping publish on non-tag / non-develop branch"
     return 0
   fi
 
   echo "PUBLISH SCALA LIBRARIES..."
 
   if [[ "$CI_BRANCH" == "develop" ]] ; then
+    echo "PUBLISH SNAPSHOT"
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   else
+    echo "PUBLISH RELEASE"
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   fi
 }
@@ -126,9 +131,15 @@ function init {
 
 function secrets {
     if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
+        echo "Unpacking secrets"
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
         ln -s .secrets/local.sbt local.sbt
+        mkdir -p ~/.sbt/secrets || true
+        mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
+        echo "Secrets unpacked"
+    else
+        echo "Skipping secrets"
     fi
 }
 

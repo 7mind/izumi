@@ -222,7 +222,6 @@ object Izumi {
             |    Some(Opts.resolver.sonatypeSnapshots)
             |})
             |""".stripMargin.raw,
-        //"credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
         "credentials" in SettingScope.Build += """Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties")""".raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
