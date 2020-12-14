@@ -903,4 +903,8 @@ object NonEmptyMap {
     new NonEmptyMap(set)
   }
 
+  implicit final class OptionOps[K, +V](private val option: Option[NonEmptyMap[K, V]]) extends AnyVal {
+    @inline def fromNonEmptyMap: Map[K, V] = if (option.isEmpty) Map.empty else option.get.toMap
+  }
+
 }

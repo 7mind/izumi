@@ -78,7 +78,7 @@ trait InjectorFactory {
     */
   def inheritWithNewDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F]
 
-  /** Keys summonable by default in DI, *excluding* those added additionally by [[izumi.distage.modules.DefaultModule]] */
+  /** Keys summonable by default in DI, *except* those added additionally by [[izumi.distage.modules.DefaultModule]] */
   def providedKeys: Set[DIKey]
   def providedKeys(overrides: BootstrapModule*): Set[DIKey]
   def providedKeys(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey]

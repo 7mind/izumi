@@ -29,7 +29,7 @@ object PlanCheckConfig {
     PrintBindings <: LiteralBoolean,
     OnlyWarn <: LiteralBoolean,
   ](roles: Roles with LiteralString = LiteralString("*"),
-    excludeActivations: ExcludeActivations with LiteralString = LiteralString("*"),
+    excludeActivations: ExcludeActivations with LiteralString = LiteralString(""),
     config: Config with LiteralString = LiteralString("*"),
     checkConfig: CheckConfig with LiteralBoolean = unset(PlanCheck.defaultCheckConfig),
     printBindings: PrintBindings with LiteralBoolean = unset(PlanCheck.defaultPrintBindings),

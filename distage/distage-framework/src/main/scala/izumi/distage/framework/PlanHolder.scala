@@ -24,10 +24,11 @@ trait PlanHolder {
   }
 
   case class Stuff[F[_]](
-    // module (planVerifier + config bindings)
+    // module, configBindings
     appModule: Module @Id("roleapp"),
-    // module (providedKeys + config bindings)
+    // providedKeys, configBindings
     bsModule: BootstrapModule @Id("roleapp"), // can(should?) verify as well / [append? vs. injectorfactory]
+    // providedKeys, configBindings
     defaultModule: DefaultModule[F], // can(should?) append it to `appModule` for verifier purposes
     // roots
     rolesInfo: RolesInfo,
@@ -41,5 +42,11 @@ trait PlanHolder {
 }
 
 object PlanHolder {
+  trait RoleApp {}
+  trait CoreApp {
+    def bsModule: BootstrapModule
+    def module: Module
+  }
+
   type Aux[F[_]] = PlanHolder { type AppEffectType[A] = F[A] }
 }

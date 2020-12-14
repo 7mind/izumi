@@ -6,7 +6,7 @@ import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import cats.effect.IO
-import com.github.pshirshov.test.plugins.{StaticTestMain2, StaticTestRole}
+import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
@@ -383,8 +383,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
       ) {
         val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
-        new StaticTestMain2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
-        new StaticTestMain2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
       }
     }
   }

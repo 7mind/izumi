@@ -17,6 +17,7 @@ import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
+import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
@@ -96,33 +97,47 @@ object PlanCheck {
 
       var effectiveRoles = "unknown, failed too early"
       var effectiveConfig = "unknown, failed too early"
+      var effectiveBsPlugins = LoadedPlugins.empty
+      var effectiveAppPlugins = LoadedPlugins.empty
       var effectivePlugins = LoadedPlugins.empty
+
+      def renderPlugins(plugins: Seq[PluginBase]): String = {
+        val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
+        if (pluginClasses.isEmpty) {
+          "ø"
+        } else if (pluginClasses.size > 7) {
+          val otherPlugins = plugins.drop(7)
+          val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
+          (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
+        } else {
+          pluginClasses.mkString(", ")
+        }
+      }
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
+        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.niceList())
         val message = {
-          val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.niceList())
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
             ""
           }
-          val plugins = effectivePlugins.result
-          val pluginStr = {
-            val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
-            if (pluginClasses.isEmpty) {
-              "<none>"
-            } else if (pluginClasses.size > 7) {
-              val otherPlugins = plugins.drop(7)
-              val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
-              (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
-            } else {
-              pluginClasses.mkString(", ")
-            }
-          }
+          val bsPlugins = effectiveBsPlugins.result
+          val appPlugins = effectiveAppPlugins.result
+          val bsPluginsStr = renderPlugins(bsPlugins)
+          val appPluginsStr = renderPlugins(appPlugins)
           val printedBindings = if (printBindings) {
+            (if (bsPlugins.nonEmpty)
+               s"""
+                  |Bootstrap bindings were:
+                  |
+                  |${bsPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
+                  |""".stripMargin
+             else "") ++
             s"""Bindings were:
-               |${plugins.flatMap(_.iterator.map(_.toString)).niceList()}
+               |
+               |${appPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
                |
                |Keys visited:
                |${visitedKeys.niceList()}
@@ -141,8 +156,9 @@ object PlanCheck {
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
              |  roles               = $chosenRoles (effective: $effectiveRoles)
-             |  excludedActivations = ${excludedActivations.map(_.mkString(" ")).mkString(" | ")}
-             |  plugins             = $pluginStr
+             |  excludedActivations = ${NonEmptySet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
+             |  bootstrapPlugins    = $bsPluginsStr
+             |  plugins             = $appPluginsStr
              |  checkConfig         = $checkConfig$configStr
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
@@ -157,7 +173,6 @@ object PlanCheck {
 
       val baseModuleOverrides = mainAppModulePlanCheckerOverrides(chosenRoles, chosenConfig.map(app.getClass.getClassLoader -> _))
       val baseModuleWithOverrides = app.mainAppModule.overriddenBy(baseModuleOverrides)
-
       try {
         import app.tagK
 
@@ -177,25 +192,42 @@ object PlanCheck {
             appPlugins: LoadedPlugins @Id("main"),
             bsPlugins: LoadedPlugins @Id("bootstrap"),
           ) =>
-            logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=$excludedActivations chosenConfig=$chosenConfig")
+            logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=`$excludedActivations` chosenConfig=`$chosenConfig`")
+
+            effectiveRoles = rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" ")
+
+            effectiveAppPlugins = appPlugins
+            effectiveBsPlugins = bsPlugins
+            val loadedPlugins = appPlugins ++ bsPlugins
+            effectivePlugins = loadedPlugins
 
             checkRoleApp(
               excludedActivations,
               checkConfig,
-            )(
-              effectivePlugins = _,
-              effectiveRoles = _,
-              effectiveConfig = _,
-              r => returnPlanCheckError(Right(r)),
-            )(
-              bsModule,
-              appModule,
-              defaultModule,
-              rolesInfo,
-              configLoader,
-              injectorFactory,
-              appPlugins ++ bsPlugins,
-            )
+            )(effectiveConfig = _)(
+              PData[F](
+                module = ModuleBase.make(
+                  ModuleBase
+                    .overrideImpl(
+                      ModuleBase.overrideImpl(bsModule.iterator, defaultModule.module.iterator),
+                      appModule.iterator,
+                    )
+                    .toSet
+                ),
+                providedKeys = injectorFactory.providedKeys(bsModule) ++
+                  defaultModule.module.keys,
+                roots = Roots(
+                  // bootstrap is produced with Roots.Everything, so each bootstrap component is effectively a root
+                  bsModule.keys ++
+                  rolesInfo.requiredComponents
+                ),
+                configLoader = configLoader,
+                loadedPlugins = loadedPlugins,
+              )
+            ) match {
+              case incorrect: PlanVerifierResult.Incorrect => returnPlanCheckError(Right(incorrect))
+              case PlanVerifierResult.Correct(visitedKeys) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
+            }
         })
       } catch {
         case t: Throwable =>
@@ -208,35 +240,31 @@ object PlanCheck {
       ???
     }
 
+    final case class PData[F[_]](
+      module: ModuleBase,
+      providedKeys: Set[DIKey],
+      roots: Roots,
+      configLoader: ConfigLoader,
+      loadedPlugins: LoadedPlugins,
+    )
+// no need
+//    abstract class RoleBasedPData[F[_]] extends PData[F] {
+//      val rolesInfo: RolesInfo
+//
+//      override final val roots: Roots = Roots(rolesInfo.requiredComponents)
+//    }
+
     private[this] def checkRoleApp[F[_]: TagK](
-      //    logger: IzLogger,
       excludedActivations: Set[NonEmptySet[AxisPoint]],
       checkConfig: Boolean,
-    )(reportEffectivePlugins: LoadedPlugins => Unit,
-      reportEffectiveRoles: String => Unit,
-      reportEffectiveConfig: String => Unit,
-      returnPlanCheckError: PlanVerifierResult.Incorrect => PlanCheckResult,
-    )(bsModule: BootstrapModule,
-      appModule: Module,
-      defaultModule: DefaultModule[F],
-      rolesInfo: RolesInfo,
-      configLoader: ConfigLoader,
-      injectorFactory: InjectorFactory,
-      loadedPlugins: LoadedPlugins,
-    ): PlanCheckResult = {
+    )(reportEffectiveConfig: String => Unit
+    )(ph: PData[F]
+    ): PlanVerifierResult = {
+      import ph._
 
-      locally {
-        reportEffectivePlugins(loadedPlugins)
-        reportEffectiveRoles(rolesInfo.requiredRoleBindings.map(_.descriptor.id).mkString(" "))
-      }
-
-      val providedKeys = {
-        injectorFactory.providedKeys(bsModule) ++
-        defaultModule.module.keys
-      }
       val planVerifierResult = PlanVerifier().verify[F](
-        bindings = appModule,
-        roots = Roots(rolesInfo.requiredComponents),
+        bindings = module,
+        roots = roots,
         providedKeys = providedKeys,
         excludedActivations = excludedActivations,
       )
@@ -246,9 +274,7 @@ object PlanCheck {
         val realAppConfig = configLoader.loadConfig()
         reportEffectiveConfig(realAppConfig.config.origin().toString)
 
-        bsModule.iterator
-          .++(defaultModule.module.iterator)
-          .++(appModule.iterator)
+        module.iterator
           .filter(reachableKeys contains _.key)
           .flatMap(
             b =>
@@ -273,9 +299,9 @@ object PlanCheck {
 
       NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
         case Some(allIssues) =>
-          returnPlanCheckError(PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys))
+          PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys)
         case None =>
-          PlanCheckResult.Correct(loadedPlugins, planVerifierResult.visitedKeys)
+          planVerifierResult
       }
     }
 

@@ -94,10 +94,10 @@ object Injector extends InjectorFactory {
   }
 
   override def providedKeys(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
-    (bootstrapBase.keys.iterator ++
-    overrides.iterator.flatMap(_.keys) ++
+    (bootstrapBase.keysIterator ++
+    overrides.iterator.flatMap(_.keysIterator) ++
     BootstrapLocator.selfReflectionKeys.iterator ++
-    IdentitySupportModule.keys.iterator ++
+    IdentitySupportModule.keysIterator ++
     InjectorDefaultImpl.providedKeys.iterator).toSet
   }
 

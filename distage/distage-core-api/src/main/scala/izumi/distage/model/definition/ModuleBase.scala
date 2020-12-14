@@ -11,7 +11,9 @@ import izumi.fundamentals.platform.language.unused
 trait ModuleBase extends ModuleBaseInstances {
   def bindings: Set[Binding]
   def iterator: Iterator[Binding] = bindings.iterator
-  final def keys: Set[DIKey] = iterator.map(_.key).toSet
+
+  final def keys: Set[DIKey] = keysIterator.toSet
+  def keysIterator: Iterator[DIKey] = iterator.map(_.key)
 
   override final def hashCode(): Int = bindings.hashCode()
   override final def equals(obj: Any): Boolean = obj match {

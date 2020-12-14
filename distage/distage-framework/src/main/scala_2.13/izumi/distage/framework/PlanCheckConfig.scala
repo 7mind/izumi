@@ -46,7 +46,7 @@ object PlanCheckConfig {
     PrintBindings <: Boolean with Singleton,
     OnlyWarn <: Boolean with Singleton,
   ](roles: Roles = "*",
-    excludeActivations: ExcludeActivations = "*",
+    excludeActivations: ExcludeActivations = "",
     config: Config = "*",
     checkConfig: CheckConfig = unset(PlanCheck.defaultCheckConfig),
     printBindings: PrintBindings = unset(PlanCheck.defaultPrintBindings),
@@ -62,7 +62,7 @@ object PlanCheckConfig {
     )
   }
 
-  def empty: PlanCheckConfig["*", "*", "*", Unset, Unset, Unset] = PlanCheckConfig()
+  def empty: PlanCheckConfig["*", "", "*", Unset, Unset, Unset] = PlanCheckConfig()
 
   type Any = PlanCheckConfig[_ <: String, _ <: String, _ <: String, _ <: Boolean, _ <: Boolean, _ <: Boolean]
 

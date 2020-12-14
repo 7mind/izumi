@@ -1501,7 +1501,7 @@ object NonEmptyList {
     new NonEmptyList(list)
   }
 
-  implicit final class OptionOps[A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
+  implicit final class OptionOps[+A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
     @inline def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
   }
 }

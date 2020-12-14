@@ -78,6 +78,7 @@ import scala.collection.immutable.HashSet
 trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL] with IncludesDSL with TagsDSL { this: ModuleBase =>
   override final def bindings: Set[Binding] = freeze()
   override final def iterator: Iterator[Binding] = freezeIterator()
+  override final def keysIterator: Iterator[DIKey] = freezeIterator().map(_.key)
 
   private[this] final def freeze(): Set[Binding] = {
     HashSet.newBuilder
