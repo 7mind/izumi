@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.65`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.66`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -244,13 +244,6 @@ object Izumi {
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
         ),
-        // ignore warnings triggered by scaladoc
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala213), None) := Seq("-Wconf:cat=scaladoc:warning"),
-          SettingKey.Default := Const.EmptySeq,
-        ),
-        // ignore warnings triggered in mdoc
-        "scalacOptions" in SettingScope.Raw("mdoc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), Some(true)) := Seq(
             "-opt:l:inline",
@@ -578,6 +571,7 @@ object Izumi {
         libs = (cats_all ++ zio_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
+          "scalacOptions" -= "-Wconf:any:error",
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=

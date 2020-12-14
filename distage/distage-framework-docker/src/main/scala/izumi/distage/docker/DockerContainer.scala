@@ -6,7 +6,6 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerCo
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
 final case class DockerContainer[Tag](
@@ -77,11 +76,14 @@ object DockerContainer {
     }
 
     def connectToNetwork[T2](
-      @unused networkDecl: ContainerNetworkDef.Aux[T2]
+      networkDecl: ContainerNetworkDef.Aux[T2]
     )(implicit tag1: distage.Tag[ContainerNetwork[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
-    ): Functoid[ContainerResource[F, T]] = connectToNetwork[T2]
+    ): Functoid[ContainerResource[F, T]] = {
+      networkDecl.discard()
+      connectToNetwork[T2]
+    }
 
     def connectToNetwork[T2](
       implicit tag1: distage.Tag[ContainerNetwork[T2]],
