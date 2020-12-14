@@ -5,7 +5,7 @@ object PV {
   val sbt_site = "1.3.3"
   val sbt_unidoc = "0.4.3"
   val sbt_scoverage = "1.6.1"
-  val sbt_pgp = "2.0.2"
+  val sbt_pgp = "2.1.1"
   val sbt_assembly = "0.14.9"
 
   val scala_js_version = "1.3.1"
