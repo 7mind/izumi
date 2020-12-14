@@ -220,7 +220,7 @@ It shows how to write an idiomatic `distage`-style from scratch and how to:
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
 - setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
-- enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
+- enable @ref[compile-time checks](distage-framework.md#compile-time-checks) for fast-feedback on wiring errors
 
 ```scala mdoc:invisible
 /**
@@ -641,6 +641,46 @@ Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
 Further reading:
 
 - Guice calls the same concept ["Multibindings"](https://github.com/google/guice/wiki/Multibindings).
+
+## Mutator bindings
+
+Mutations can be attached to any component using `modify[X]` keyword, if present, they will be applied in an undefined order after the component has been created, but _before_ it is visible to any other component.
+
+Mutators provide a way to do partial overrides or slight modifications of some existing component reusing its existing wiring and only adding an adjustment.
+
+Example:
+
+```scala mdoc:reset:to-string
+import distage.{ModuleDef, Id}
+
+def startingModule = new ModuleDef {
+  make[Int].fromValue(1)
+}
+
+def increment2 = new ModuleDef {
+  modify[Int](_ + 1)
+  modify[Int](_ + 1)
+}
+
+def incrementWithDep = new ModuleDef {
+  make[String].fromValue("hello")
+  make[Int].named("a-few").fromValue(2)
+  
+  // mutators may use other components and add additional dependencies
+  modify[Int].by(_.flatAp {
+    (s: String, few: Int @Id("a-few") => i: Int =>
+      s.length + few + i
+  })
+}
+
+Injector.produceRun(
+  startingModule ++
+  increment2 ++
+  incrementWithDep
+){ i: Int => 
+  println(s"Got int=$i")
+}: Int
+```
 
 ## Effect Bindings
 

@@ -18,7 +18,7 @@ It shows how to write an idiomatic `distage` application from scratch and how to
 - write tests using @ref[`distage-testkit`](distage-testkit.md)
 - setup portable test environments using @ref[`distage-framework-docker`](distage-framework-docker.md)
 - create @ref[role-based applications](distage-framework.md#roles)
-- enable @ref[compile-time checks](distage-framework.md) for fast-feedback on wiring errors
+- enable @ref[compile-time checks](distage-framework.md#compile-time-checks) for fast-feedback on wiring errors
 
 ```scala mdoc:invisible
 /**
