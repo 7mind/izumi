@@ -122,7 +122,7 @@ version="$izumi.version$"
 
 The easiest way to add full compile-time safety to your application is to add an object inheriting
 @scaladoc[PlanCheck](izumi.distage.framework.PlanCheck$)@scaladoc[.Main](izumi.distage.framework.PlanCheck$$Main) in __
-test scope__ kof the same module where you define your @scaladoc[Role Launcher](izumi.distage.roles.RoleAppMain)
+test scope__ of the same module where you define your @scaladoc[Role Launcher](izumi.distage.roles.RoleAppMain)
 
 ```scala mdoc:to-string
 import izumi.distage.framework.PlanCheck
