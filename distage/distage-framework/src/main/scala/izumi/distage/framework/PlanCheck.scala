@@ -203,7 +203,7 @@ object PlanCheck {
 
         continue(data) match {
           case incorrect: PlanVerifierResult.Incorrect => returnPlanCheckError(Right(incorrect))
-          case PlanVerifierResult.Correct(visitedKeys) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
+          case PlanVerifierResult.Correct(visitedKeys, _) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
         }
       } catch {
         case t: Throwable =>
@@ -257,7 +257,7 @@ object PlanCheck {
 
       NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
         case Some(allIssues) =>
-          PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys)
+          PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys, planVerifierResult.time)
         case None =>
           planVerifierResult
       }
