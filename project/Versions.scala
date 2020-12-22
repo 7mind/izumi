@@ -14,7 +14,7 @@ object V {
   val cats = "2.3.1"
   val cats_effect = "2.3.1"
 
-  val discipline = "1.1.2"
+  val discipline = "1.1.3"
   val discipline_scalatest = "2.0.0"
 
   val zio = "1.0.3"
