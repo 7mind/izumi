@@ -3,7 +3,7 @@ object V {
   val izumi_reflect = "1.0.0-M11"
 
   // foundation
-  val collection_compat = "2.3.1"
+  val collection_compat = "2.3.2"
 
   val kind_projector = "0.11.1"
   val silencer = "1.7.1"
@@ -34,7 +34,7 @@ object V {
   val scala_java_time = "2.0.0-RC5"
 
   // java-only dependencies below
-  val classgraph = "4.8.95"
+  val classgraph = "4.8.97"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
