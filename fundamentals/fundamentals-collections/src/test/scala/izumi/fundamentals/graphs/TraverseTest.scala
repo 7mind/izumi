@@ -37,7 +37,7 @@
 //    }
 //
 //    override def canContinue(state: TraverseState[IO, Int, NodeStatus.NodeDone, NodeStatus.NodeProgress]): Boolean = {
-//      state.active.nonEmpty || state.predcessors.links.keySet.diff(state.marking.trace.keySet).nonEmpty
+//      state.active.nonEmpty || state.predecessors.links.keySet.diff(state.marking.trace.keySet).nonEmpty
 //    }
 //  }
 //

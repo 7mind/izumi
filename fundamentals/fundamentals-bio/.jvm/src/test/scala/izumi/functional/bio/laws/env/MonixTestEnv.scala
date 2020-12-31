@@ -163,7 +163,8 @@ trait ArbitraryInstancesBase extends ArbitraryInstances0 {
 
     def genContextSwitch: Gen[IO[E, A]] =
       for (t <- genSimpleTask) yield {
-        t <* IO.shift
+        ???
+        //t <* IO.shift
       }
 
     def genFlatMap: Gen[IO[E, A]] =

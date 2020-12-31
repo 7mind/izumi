@@ -32,7 +32,7 @@
 //
 //    val samples: Seq[(Either[GraphError[Int], IncidenceMatrix[Int]], String)] = Seq(
 //      Right(collectableCyclic) -> "original",
-//      new GC.GCTracer[Int].collect(GCInput(collectableCyclic.transposed, Set(6), Set.empty)).map(_.predcessorMatrix.transposed) -> "collected",
+//      new GC.GCTracer[Int].collect(GCInput(collectableCyclic.transposed, Set(6), Set.empty)).map(_.predecessorMatrix.transposed) -> "collected",
 //      Right(RandomGraph.makeDAG[Int](10, 5)) -> "random dag",
 //      Right(maybeCyclic) -> "random dg",
 //      withoutLoops -> "no loops",

@@ -71,7 +71,7 @@ object PlanSolver {
           resolution.graph.copy(
             meta = GraphMeta(filteredWeakMembers),
             successors = resolution.graph.successors.without(membersToDrop),
-            predcessors = resolution.graph.predcessors.without(membersToDrop),
+            predecessors = resolution.graph.predecessors.without(membersToDrop),
           )
       } yield resolved
     }

@@ -14,12 +14,12 @@ final case class Linearized[N, +M](
   with DirectedGraphPred[N, M] {
   override lazy val successors: IncidenceMatrix[N] = IncidenceMatrix.linear(nodes)
 
-  override lazy val predcessors: IncidenceMatrix[N] = IncidenceMatrix.linear(nodes.reverse)
+  override lazy val predecessors: IncidenceMatrix[N] = IncidenceMatrix.linear(nodes.reverse)
 }
 
 object Linearized {
   def fromDag[N, M](dag: DAG[N, M]): Linearized[N, M] = {
-    Toposort.cycleBreaking(dag.predcessors, ToposortLoopBreaker.dontBreak) match {
+    Toposort.cycleBreaking(dag.predecessors, ToposortLoopBreaker.dontBreak) match {
       case Left(value) =>
         throw new IllegalStateException(s"Non-linerizable DAG, this can't be. Error: $value; $dag")
       case Right(value) =>
@@ -29,7 +29,7 @@ object Linearized {
 
   def from[N, M](dg: DG[N, M], breaker: ToposortLoopBreaker[N]): Either[ToposortError[N], Linearized[N, M]] = {
     for {
-      sorted <- Toposort.cycleBreaking(dg.predcessors, breaker)
+      sorted <- Toposort.cycleBreaking(dg.predecessors, breaker)
     } yield {
       Linearized(sorted, dg.meta)
     }

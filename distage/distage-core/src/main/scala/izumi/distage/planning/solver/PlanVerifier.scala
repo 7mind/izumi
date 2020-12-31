@@ -8,6 +8,7 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
+import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
@@ -45,6 +46,7 @@ class PlanVerifier(
     }
     val (mutators, defns) = ops.partition(_._3.isMutator)
     val justOps = defns.map { case (k, op, _) => k -> op }
+
     val setOps = preps
       .computeSetsUnsafe(justOps)
       .map {
@@ -57,7 +59,7 @@ class PlanVerifier(
           val members = v.flatMap(_.deps).toSet
           (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
       }
-      .toMap
+      .toSeq
 
     val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
 
@@ -67,7 +69,7 @@ class PlanVerifier(
     val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
-    val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps, matrix, rootKeys)
+    val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps.toMap, matrix, rootKeys)
 
     val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
     val effectType = SafeType.getK[F]
@@ -266,7 +268,6 @@ class PlanVerifier(
         case (op, activations, _) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
           val deps = depsOf(weakSetMembers)(op)
-
           val acts = op match {
             case _: ExecutableOp.CreateSet =>
               Set.empty[AxisPoint]
@@ -282,7 +283,13 @@ class PlanVerifier(
   protected[this] final def depsOf(weakSetMembers: Set[WeakEdge[DIKey]])(op: InstantiationOp): Set[DIKey] = {
     op match {
       case cs: CreateSet =>
-        val members = cs.members.filterNot(m => weakSetMembers.contains(WeakEdge(m, cs.target)))
+        // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
+        val members = cs.members.filter {
+          case m: SetElementKey =>
+            !weakSetMembers.contains(WeakEdge(m.reference, m))
+          case _ =>
+            true
+        }
         members
       case op: ExecutableOp.WiringOp =>
         preps.toDep(op).deps
@@ -340,8 +347,9 @@ class PlanVerifier(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): List[UnsaturatedAxis] = {
-    val currentAxes: List[String] = ops.iterator.flatMap(_._2.iterator.map(_.axis)).toList
-    val opFilteredActivations: Set[Set[AxisPoint]] = ops.map(_._2)
+    val withoutSetMembers = ops.filterNot(_._1.target.isInstanceOf[SetElementKey])
+    val currentAxes: List[String] = withoutSetMembers.iterator.flatMap(_._2.iterator.map(_.axis)).toList
+    val opFilteredActivations: Set[Set[AxisPoint]] = withoutSetMembers.map(_._2)
     val opAxisSets: Set[Set[String]] = opFilteredActivations.iterator.map(_.map(_.axis)).toSet
 
     currentAxes.flatMap {
@@ -352,7 +360,7 @@ class PlanVerifier(
         if (unsaturatedChoices.nonEmpty && !isIgnoredActivation(excludedActivations)(unsaturatedChoices)) {
           // TODO: quadratic
           if (opAxisSets.forall(_ contains currentAxis)) {
-            Some(UnsaturatedAxis(ops.head._1.target, currentAxis, NonEmptySet.unsafeFrom(unsaturatedChoices)))
+            Some(UnsaturatedAxis(withoutSetMembers.head._1.target, currentAxis, NonEmptySet.unsafeFrom(unsaturatedChoices)))
           } else None
         } else None
     }

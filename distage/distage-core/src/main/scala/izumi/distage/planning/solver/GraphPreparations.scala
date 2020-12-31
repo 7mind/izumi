@@ -31,24 +31,24 @@ class GraphPreparations(
         (successor.key, node.meta)
     }.toMultimapMut
 
-    sets
+    val setDefs = sets
       .collect {
         case (target, Node(_, s: CreateSet)) =>
           (target, s.members)
       }
-      .flatMap {
-        case (_, members) =>
-          members
-            .diff(roots)
-            .flatMap {
-              member =>
-                indexed.get(member).toSeq.flatten.collect {
-                  case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
-                    WeakEdge(referenced, member)
-                }
-            }
-      }
-      .toSet
+
+    setDefs.flatMap {
+      case (_, members) =>
+        members
+          .diff(roots)
+          .flatMap {
+            member =>
+              indexed.get(member).toSeq.flatten.collect {
+                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+                  WeakEdge(referenced, member)
+              }
+          }
+    }.toSet
   }
 
   def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
@@ -122,7 +122,7 @@ class GraphPreparations(
             case (acc, op) =>
               acc ++ op.members
           }
-          (firstOp, potentialMembers)
+          (firstOp.copy(members = potentialMembers), potentialMembers)
       }
       .iterator
   }

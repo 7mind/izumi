@@ -2,11 +2,11 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Injector, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
-import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
@@ -258,7 +258,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(
-      result.issues.get == NonEmptySet(DuplicateActivations(DIKey[Fork1], NonEmptyMap(Set.empty -> NonEmptySet.unsafeFrom(definition.bindings.map(UserBinding)))))
+      result.issues.contains(NonEmptySet(DuplicateActivations(DIKey[Fork1], NonEmptyMap(Set.empty -> NonEmptySet.unsafeFrom(definition.bindings.map(UserBinding))))))
     )
   }
 
@@ -481,4 +481,60 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result2.issues.isEmpty)
   }
 
+  "Verifier handles sets" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork2]
+        .add[ImplC].tagged(Axis1.A)
+        .add[ImplD].tagged(Axis1.B)
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
+  "Verifier handles weak sets: basic case" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork2]
+        .weak[ImplC].tagged(Axis1.A)
+        .weak[ImplD].tagged(Axis1.B)
+      make[ImplC]
+      make[ImplD]
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
+  "Verifier handles weak sets: tagged referenced members" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork2]
+        .weak[ImplC].tagged(Axis1.A)
+        .weak[ImplD].tagged(Axis1.B)
+      make[ImplC].tagged(Axis1.A)
+      make[ImplD].tagged(Axis1.B)
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
+  "Verifier handles weak sets: missing original member" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork2]
+        .weak[ImplC].tagged(Axis1.A)
+        .weak[ImplD].tagged(Axis1.B)
+      make[ImplD]
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
 }
