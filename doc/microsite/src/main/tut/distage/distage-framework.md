@@ -398,10 +398,14 @@ which scan is performed. When placed in the same module, scanning will fail.
 
 Example:
 
-```scala mdoc:override:fakepackage:to-string
+```scala mdoc:invisible
+import distage.plugins.{PluginConfig, PluginLoader}
+```
+
+```scala mdoc:fakepackage:to-string
 "fakepackage com.example.petstore.another.module": Unit
 
-val HACK_OVERRIDE_pluginConfig = PluginConfig.compileTime("com.example.petstore")
+val pluginConfig = PluginConfig.compileTime("com.example.petstore")
 
-val loadedPlugins = PluginLoader().load(HACK_OVERRIDE_pluginConfig)
+val loadedPlugins = PluginLoader().load(pluginConfig)
 ```
