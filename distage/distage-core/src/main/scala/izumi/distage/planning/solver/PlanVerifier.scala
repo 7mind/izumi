@@ -19,7 +19,7 @@ import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.graphs.WeakEdge
-import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichStringIterable}
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.{nowarn, tailrec}
@@ -106,7 +106,7 @@ class PlanVerifier(
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
       case (key, dependee) =>
-        if (visited.contains(key) || allVisited.contains(key, currentActivation)) {
+        if (visited.contains(key) || allVisited.contains((key, currentActivation))) {
           Right(Iterator.empty)
         } else {
           @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[List[MissingImport], Nothing] = {
