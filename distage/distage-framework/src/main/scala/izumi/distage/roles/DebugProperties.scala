@@ -13,4 +13,19 @@ object DebugProperties extends properties.DebugProperties {
     * Default: `true`
     */
   final val `izumi.distage.roles.activation.warn-unset` = BoolProperty("izumi.distage.roles.activation.warn-unset")
+
+  /**
+    * Discover any component that inherits from [[izumi.distage.roles.model.AbstractRole]] and has a companion object that inherits [[izumi.distage.roles.model.RoleDescriptor]]
+    * as a role, not only those additionally added using [[izumi.distage.roles.model.definition.RoleModuleDef#makeRole]],
+    * companions of such components will be instantiated reflectively, unlike ones from `RoleModuleDef`.
+    *
+    * Default: `true`, for the sake of keeping compatibility with code written before [[izumi.distage.roles.model.definition.RoleModuleDef]],
+    *          however, reflective instantiation of role companions is deprecated and will be removed in the future,
+    *          you are advised to use `RoleModuleDef` instead.
+    *
+    * @note Flipping this or corresponding `Boolean @Id("distage.roles.reflection")` component to `false` will speed up launch times
+    *
+    * @deprecated since 1.0.1
+    */
+  final val `izumi.distage.roles.reflection` = BoolProperty("izumi.distage.roles.reflection")
 }

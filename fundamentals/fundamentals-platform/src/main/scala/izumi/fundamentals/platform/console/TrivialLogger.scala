@@ -31,7 +31,13 @@ object AbstractStringTrivialSink {
   }
 }
 
-final class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErrors: Boolean, loggerLevel: Int) extends TrivialLogger {
+final class TrivialLoggerImpl(
+  config: Config,
+  id: String,
+  logMessages: Boolean,
+  logErrors: Boolean,
+  loggerLevel: Int,
+) extends TrivialLogger {
   override def log(s: => String): Unit = {
     flush(Level.Info, format(s))
   }

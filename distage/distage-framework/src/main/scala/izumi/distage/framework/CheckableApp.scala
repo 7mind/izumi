@@ -44,7 +44,6 @@ trait CheckableApp {
     chosenConfigFile: Option[String],
   ): PlanCheckInput[AppEffectType]
 }
-
 object CheckableApp {
   type Aux[F[_]] = CheckableApp { type AppEffectType[A] = F[A] }
 }
@@ -62,7 +61,7 @@ abstract class CoreCheckableAppSimple[F[_]: TagK: DefaultModule] extends CoreChe
   }
 }
 
-abstract class RoleCheckableApp[F[_]](implicit val tagK: TagK[F]) extends CheckableApp {
+abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) extends CheckableApp {
   def roleAppBootModule: Module
 
   override final type AppEffectType[A] = F[A]
@@ -128,8 +127,12 @@ abstract class RoleCheckableApp[F[_]](implicit val tagK: TagK[F]) extends Checka
 
       make[RoleProvider].from {
         chosenRoles match {
-          case RoleSelection.Everything => namePredicateRoleProvider(_ => true)
-          case RoleSelection.AllExcluding(excluded) => namePredicateRoleProvider(!excluded(_))
+          case RoleSelection.Everything =>
+            namePredicateRoleProvider(_ => true)
+
+          case RoleSelection.AllExcluding(excluded) =>
+            namePredicateRoleProvider(!excluded(_))
+
           case RoleSelection.OnlySelected(selection) =>
             @impl trait SelectedRoleProvider extends RoleProvider.Impl {
               override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
