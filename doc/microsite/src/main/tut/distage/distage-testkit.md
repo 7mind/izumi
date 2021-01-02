@@ -30,12 +30,9 @@ Usage of `distage-testkit` generally follows these steps:
    dependencies:
     - No effect type / `Identity` -
       @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
-    -
-    @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
-    -
-    @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
-    -
-    @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+    - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
+    - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
+    - @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -115,11 +112,13 @@ for defined Plugin modules. See the @ref:[`distage-extension-plugins`](./distage
 more information. For our demonstration the module will be provided using explicit `moduleOverrides` instead of
 classpath scanning, like so:
 
+```scala mdoc:invisible
+```
+
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
 import com.typesafe.config.ConfigFactory
-import distage.config.AppConfigModule
 import distage.ModuleDef
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 
@@ -133,13 +132,53 @@ abstract class Test extends Spec3[ZIO] with AssertZIO {
   override def config = super
     .config.copy(
       moduleOverrides = new ModuleDef {
-        include(AppConfigModule(ConfigFactory.defaultApplication()))
-
         make[Config].from(defaultConfig)
-        make[Console.Service].fromHas(Console.live)
       },
       debugOutput = true,
     )
+}
+```
+
+```scala mdoc:invisible
+
+// The goal is to demonstrate testkit plugin integration. `package` is not
+// currently supported in mdoc code. To hack around this the `package app` code
+// blocks are not interpreted and the actual test tested is the one below.
+
+import izumi.distage.plugins.PluginConfig
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+
+trait MdocTest extends Test {
+  def name: String
+  override final def suiteName = name
+  override def config = super.config.copy(
+    pluginConfig = PluginConfig.const(BonusServicePlugin)
+  )
+}
+
+object MdocTest {
+  def preRunSetup(): Unit = {
+    DistageTestsRegistrySingleton.resetRegistry()
+  }
+}
+
+final case class SuiteCtor(construct: () => org.scalatest.Suite)
+implicit def suiteCtor(s: => org.scalatest.Suite) = SuiteCtor(() => s)
+
+def __runTest__(suiteCtors: SuiteCtor*) = {
+  // remove all previous tests from registry
+  DistageTestsRegistrySingleton.resetRegistry()
+
+  // run constructors to add the tests to registry
+  val suites = suiteCtors.map(_.construct())
+
+  println("```")
+  suites.foreach {
+    s =>
+      org.scalatest.nostacks.nocolor.run(s)
+      println("\n")
+  }
+  println("```")
 }
 ```
 
@@ -179,6 +218,7 @@ Let's now create a simple test for our demonstration application:
 "fakepackage app": Unit
 
 class ScoreSimpleTest extends Test {
+
   "Score" should {
 
     "increase by config star value" in {
@@ -191,38 +231,20 @@ class ScoreSimpleTest extends Test {
       assert(actual == expected)
     }
 
-    // Use Config is from the module in the `Test` class above
-    "increase by config start value from DI" in {
+    // Use `Config` from the module in the `Test` class above
+    "increase by config star value from DI" in {
       config: Config =>
         val expected = Score(defaultConfig.starValue)
         val actual = Score.addStar(config, Score.zero)
         assert(actual == expected)
     }
+
   }
 }
 ```
 
 ```scala mdoc:passthrough
-// change this block to `passthrough` instead of `invisible` to view test results.
-// The goal is to demonstrate testkit plugin integration. `package` is not
-// currently supported in mdoc code. To hack around this the `package app` code
-// blocks are not interpreted and the actual test tested is the one below.
-import izumi.distage.plugins.PluginConfig
-
-trait MdocTest extends DummyTest {
-  override def config = super.config.copy(
-    pluginConfig = PluginConfig.cached(Seq(getClass.getPackage.getName))
-  )
-}
-
-object MdocTest {
-  def preRunSetup() = {
-    izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.resetRegistry()
-  }
-}
-
-MdocTest.preRunSetup()
-org.scalatest.shortstacks.nocolor.run(new ScoreSimpleTest with MdocTest)
+__runTest__(new ScoreSimpleTest with MdocTest { def name = "ScoreSimpleTest" })
 ```
 
 #### Assertions with Effects
@@ -239,8 +261,8 @@ The different effect types fix the `F[_]` argument for this syntax:
 - `Spec3`: `F[Any, Throwable, _]`
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method. The `Config` required is from
-the `distage` object graph defined in `moduleOverrides`. By using a function from `Config`, the required argument will
-be injected by `distage-testkit`.
+the `distage` object graph defined in `moduleOverrides`. By using a function with a `Config` argument in `in`, the
+required argument will be injected by `distage-testkit`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -248,27 +270,28 @@ be injected by `distage-testkit`.
 class ScoreEffectsTest extends Test {
   "testkit operations with effects" should {
 
-    "assertions in effects" in {
+    "support assertions in effects" in {
       (config: Config) =>
         for {
           actual <- Score.echoConfig(config)
-          _ <- assertIO(actual == config)
+          _      <- assertIO(actual == config)
         } yield ()
     }
 
-    "assertions from effects" in {
+    "support assertions outside of effect" in {
       (config: Config) =>
-        Score.echoConfig(config) map {
-          actual => assert(actual == config)
+        for {
+          actual <- Score.echoConfig(config)
+        } yield {
+          assert(actual == config)
         }
     }
   }
 }
 ```
 
-```scala mdoc:invisible
-MdocTest.preRunSetup()
-org.scalatest.shortstacks.nocolor.run(new ScoreEffectsTest with MdocTest)
+```scala mdoc:passthrough
+__runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" })
 ```
 
 #### Assertions with Effects with Environments
@@ -283,61 +306,73 @@ A test that verifies the `BonusService` in our demonstration would be:
 
 abstract class BonusServiceTest extends Test {
   "BonusService" should {
+
     "initially use default bonus as current" in {
       for {
         bonusService <- ZIO.service[BonusService]
         currentBonus <- bonusService.queryCurrentBonus
-        _ <- putStrLn(s"currentBonus = $currentBonus")
-        _ <- assertIO(currentBonus == defaultConfig.defaultBonus)
+        _            <- putStrLn(s"currentBonus = $currentBonus")
+        _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
 
     "increment by delta" in {
-      val delta = util.Random.nextInt()
       for {
+        delta        <- zio.random.nextInt
         bonusService <- ZIO.service[BonusService]
         initialBonus <- bonusService.queryCurrentBonus
-        actualBonus <- bonusService.increaseCurrentBonus(delta)
+        actualBonus  <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = initialBonus + delta
-        _ <- assertIO(actualBonus == expectedBonus)
+        _            <- assertIO(actualBonus == expectedBonus)
       } yield ()
     }
+
   }
 }
 ```
 
-While this compiles this test cannot be run without the object graph containing a `BonusService`
-resource. For `ZIO[-R, +E, +A]`, the `Has` bindings are injected from `ZLayer`, `ZManaged` `ZIO` or
-any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses). See
-@ref[here for details on ZIO Has injection ](basics.md#zio-has-bindings).
+The @ref[ZIO Has injection](basics.md#zio-has-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
 
-Our demonstration application has a dummy and production implementation of the `BonusService`. For each implementation,
-a `ZManaged` is provided. With the `ZManaged` resources added to the object graph test cases can
-inject `Has[BonusService]`.
+- `BonusService` - is requested by `ZIO.service[BonusService]`
+- `zio.Random.Service` - is requested by `zio.random.nextInt`
+
+While this compiles just fine, this test cannot be run without the object graph containing a `BonusService` component!
+
+Our demonstration application includes `dummy` and `production` implementations for `BonusService`.
+For each implementation, we define a `ZManaged` value describing how to create and finalize it.
+After adding implementations for `BonusService` component using these `ZManaged`'s as constructors, our test cases will be able to use the component `BonusService`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
 object DummyBonusService {
-  class Impl(var bonusValue: Int) extends BonusService {
-    override def queryCurrentBonus = UIO(bonusValue)
-    override def increaseCurrentBonus(delta: Int) = UIO {
-        bonusValue += delta
-        bonusValue
+
+  class Impl(
+     bonusState: Ref[Int]
+  ) extends BonusService {
+
+    override def queryCurrentBonus: UIO[Int] = {
+      bonusState.get
+    }
+
+    override def increaseCurrentBonus(delta: Int): UIO[Int] = {
+      bonusState.updateAndGet(_ + delta)
     }
   }
 
-  val acquire = Task {
-    new Impl(10)
-  }
+  val acquire: Task[DummyBonusService.Impl] = for {
+    ref <- Ref.make(10)
+    impl = new Impl(ref)
+  } yield impl
 
-  def release: UIO[Unit] = UIO.unit
+  val release: UIO[Unit] = UIO.unit
 
-  val managed = acquire.toManaged(_ => release)
+  val managed: TaskManaged[DummyBonusService.Impl] =
+    acquire.toManaged(_ => release)
 }
 ```
 
-This small implementation is useful for verification in both automated tests as well as functional prototypes.
+This dummy implementation is useful for verification in both automated tests and functional prototypes.
 
 For a real system we might build a production implementation like the following. This hypothetical implementation would
 perform an HTTP request to a REST service. We'll introduce a production service, but this actual query will be
@@ -347,27 +382,33 @@ unimplemented for our demonstration:
 "fakepackage app": Unit
 
 object ProdBonusService {
-  class Impl(console: Console.Service, url: String) extends BonusService {
+
+  class Impl(
+    console: Console.Service,
+    url: String,
+  ) extends BonusService {
+
     override def queryCurrentBonus = for {
       _ <- console.putStrLn(s"querying $url")
     } yield ???
+
     override def increaseCurrentBonus(delta: Int) = for {
       _ <- console.putStrLn(s"post to $url")
     } yield ???
   }
 
-  val acquire = for {
+  val acquire: RIO[Has[Console.Service], ProdBonusService.Impl] = for {
     console <- ZIO.service[Console.Service]
-    impl <- Task(new Impl(console, "https://my-bonus-server/current-bonus.json"))
+    impl      = new Impl(console, "https://my-bonus-server/current-bonus.json")
   } yield impl
 
-  def release: UIO[Unit] = UIO {
-    ()
-  }
+  val release: UIO[Unit] = UIO.unit
 
-  val managed = acquire.toManaged(_ => release)
+  val managed: RManaged[Has[Console.Service], ProdBonusService.Impl] =
+    acquire.toManaged(_ => release)
 }
 ```
+
 
 #### Pattern: Dual Test Tactic
 
@@ -375,14 +416,14 @@ The testing of `BonusService` in our demonstration application will follow the D
 post [Unit, Functional, Integration? You are doing it wrong](https://blog.7mind.io/constructive-test-taxonomy.html) for
 a discussion of test taxonomy and the value of this tactic.
 
-A `ZIO` resource for `BonusService` must be in the `distage` object graph for a `Has[BonusService]` to be injected into
-the `ZIO` environment. One option is to define separate modules for the dummy and production implementations. One module
-would be referenced by tests and the other only by production. However, this is not as useful as both implementations in
-the same object graph but different activations.
+A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `Has[BonusService]` to inject into the `ZIO` environment of the test.
 
-Our demonstration application will use the
-@scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod`
-tags:
+But note that we have two implementations, to use both one option is to define separate modules for the dummy and production implementations.
+One module would be used by tests and the other only by production.
+
+However, this is not as declaring both implementations in our modules at the same time but with different activations.
+
+Our demonstration application will use the @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod` axis tags:
 
 ```scala mdoc:invisible
 implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.distage.plugins.ForcedRecompilationToken["abc"] = null
@@ -406,11 +447,15 @@ object BonusServicePlugin extends PluginDef {
 }
 ```
 
-Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
-This `PluginDef` is in the same package as the test, namely `app`. By default the `pluginConfig` for the test will
-include the test's package, which will be scanned by `distage` for `PluginDef` instances.
+Here we used @ref[ZIO Has injection](basics.md#zio-has-bindings) `.fromHas` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
+(Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
+`.fromHas` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
 
-Continuing with the pattern, a trait will control which repo is activated:
+Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
+But, this `PluginDef` class is defined in the same package as the test, namely in `app`. By default the `pluginConfig`
+for the test will include the test's package, which will be scanned by `distage` for `PluginDef` instances.
+
+Continuing with the pattern, a trait will control which implementation is activated:
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -430,28 +475,23 @@ trait ProdTest extends Test {
 }
 ```
 
-With these a production test and a dummy test can be introduced for the demonstration game score application. Note how
-these are the same scenario, `BonusServiceTest`, but differ in activations.
+With these, a production test and a dummy test can be introduced for the demonstration game score application. Note how
+these share the same test code, in `BonusServiceTest` and differ only in activations.
 
 When extended beyond this small example, this pattern simplifies system level tests, sanity checks, and even a pragmatic
-form of
-[N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming):
+form of [N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming):
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-final class ProdBonusServiceTest extends BonusServiceTest with ProdTest
+class ProdBonusServiceTest extends BonusServiceTest with ProdTest
 
-final class DummyBonusServiceTest extends BonusServiceTest with DummyTest
+class DummyBonusServiceTest extends BonusServiceTest with DummyTest
 ```
 
-<pre>
-```scala mdoc:invisible
-
-val mdocBonusServiceTest = new BonusServiceTest with MdocTest
-org.scalatest.shortstacks.nocolor.run(mdocBonusServiceTest)
+```scala mdoc:passthrough
+__runTest__(new DummyBonusServiceTest with MdocTest { def name = "DummyBonusServiceTest"})
 ```
-</pre>
 
 #### Test Case Context
 
@@ -463,8 +503,9 @@ The `testkit` ScalaTest base classes include the following verbs for establishin
 
 #### Configuration
 
-The test suite class for your application should override the `def config: TestConfig` attributed. The config defines
-the plugin configuration, memoization, module overrides and other options.
+The test suite class for your application should override the `def config: TestConfig` attribute.
+
+`config` defines plugin configuration, memoization, module overrides and other options.
 
 See also:
 
@@ -519,8 +560,8 @@ Provided by trait @scaladoc[AssertSync](izumi.distage.testkit.scalatest.AssertSy
 
 ### Execution Order
 
-By default, tests are executed in parallel. This includes tests using `ZIO`, `monix`, `cats.effect.IO`, and any effect
-type with `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclass instances.
+By default, tests are executed in parallel.
+This includes tests using `ZIO`, `monix`, `cats.effect.IO`, or any effect type with @ref[BIO](../bio/00_bio.md) or `cats-effect` typeclass instances.
 `Identity` is treated as an effect type for imperative code.
 
 Interoperability with all existing Scala effect types is provided by implicit instances of
@@ -605,24 +646,30 @@ class NotUsingMemoTest extends DummyTest {
     )
 
   "Not memoizing BonusService" should {
-    "should use a new instance in the first case" in {
+    "use a new instance in the first case" in {
       val delta = util.Random.nextInt()
 
       for {
         bonusService <- ZIO.service[BonusService]
+        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = defaultConfig.defaultBonus + delta
-        _ <- assertIO(currentBonus == expectedBonus)
+
+        _            <- assertIO(currentBonus == expectedBonus)
       } yield ()
     }
 
-    "and use a new instance in the second case" in {
+    "use a new instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
+        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+
         currentBonus <- bonusService.queryCurrentBonus
+
         // verify the state is unchanged from default
-        _ <- assertIO(currentBonus == defaultConfig.defaultBonus)
+        _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
   }
@@ -633,14 +680,9 @@ These two tests will run sequentially. There is no memoization configured for th
 acquire a fresh instance from the object graph. For our demonstration this results in a new `BonusService` instance for
 each test case.
 
-<pre>
-```scala mdoc:invisible
-// change this block to `passthrough` instead of `invisible` to view test results.
-MdocTest.preRunSetup()
-val mdocNotUsingMemoTest = new NotUsingMemoTest with MdocTest
-org.scalatest.shortstacks.nocolor.run(mdocNotUsingMemoTest)
+```scala mdoc:passthrough
+__runTest__(new NotUsingMemoTest with MdocTest { def name = "NotUsingMemoTest" })
 ```
-</pre>
 
 Configuring the test to memoize `BonusService` will result in the same instance being used for both test cases:
 
@@ -660,25 +702,29 @@ class UsingMemoTest extends DummyTest {
   val delta = util.Random.nextInt()
 
   "Memoizing BonusService" should {
-    "should use a new instance in the first case" in {
+    "use a new instance in the first case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _ <- console.putStrLn(s"bonusService = ${bonusService}")
+        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = defaultConfig.defaultBonus + delta
-        _ <- assertIO(currentBonus == expectedBonus)
+
+        _            <- assertIO(currentBonus == expectedBonus)
       } yield ()
     }
 
-    "and use the same instance in the second case" in {
+    "use the same instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _ <- console.putStrLn(s"bonusService = ${bonusService}")
+        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+
         currentBonus <- bonusService.queryCurrentBonus
         expectedBonus = defaultConfig.defaultBonus + delta
+
         // verify the change in the first case modified this bonusService
-        _ <- assertIO(currentBonus == expectedBonus)
+        _            <- assertIO(currentBonus == expectedBonus)
       } yield ()
     }
   }
@@ -687,15 +733,16 @@ class UsingMemoTest extends DummyTest {
 
 The memoization roots include `BonusService`. This results in the same `BonusService` instance for each test case.
 
-This test requires the effect of the first test case to occur prior to the second test case. As
-discussed [Execution Order section](#execution-order): Without configuring test cases for sequential parallel level this
-order would not be guaranteed.
+This test requires the effect of the first test case to occur prior to the second test case.
+As discussed [Execution Order section](#execution-order): Without configuring test cases for sequential execution this order would not be guaranteed.
 
-Note that the test did *not* use the same `BonusService` instance as `NotUsingMemoTest`. The config for each test has
-different memoization roots. This results in different [memoization environments](#memoization-environments).
+Note that this test will *not* use the same `BonusService` instance as `NotUsingMemoTest`.
+The configs for these test have different memoization roots.
+This results in different [memoization environments](#memoization-environments).
 
-If the memoization environments are equal then the components will be shared. For our example, any other test with the
-same memoization environment would use the same `BonusService` instance.
+If the memoization environments are equal then the components will be shared.
+
+For our example, any other test suite with the same memoization environment will share the same `BonusService` instance:
 
 ```scala mdoc:fakepackage
 "fakepackage app": Unit
@@ -713,38 +760,23 @@ class AnotherUsingMemoTest extends DummyTest {
     "use the same instance" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _ <- console.putStrLn(s"bonusService = ${bonusService}")
+        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
         currentBonus <- bonusService.queryCurrentBonus
-        _ <- console.putStrLn(s"currentBonus = ${currentBonus}")
+        _            <- console.putStrLn(s"currentBonus = ${currentBonus}")
       } yield ()
     }
   }
 }
 ```
 
-Both tests, all three test cases, will use same memoization environment and `bonusService` instance:
+Both tests suites, all three test cases, will use same memoization environment and the same `bonusService` instance:
 
+```scala mdoc:passthrough
+__runTest__(
+  new UsingMemoTest with MdocTest { def name = "UsingMemoTest" },
+  new AnotherUsingMemoTest with MdocTest { def name = "AnotherUsingMemoTest" },
+)
 ```
-<from logging>
-[info] phase=late, memoEnv=407164314 Memoization environment with suites=1 tests=2 test_suites=
-<from console>
-bonusService = repl.MdocSession$App$DummyBonusService$Impl@2843b83b
-bonusService = repl.MdocSession$App$DummyBonusService$Impl@2843b83b
-bonusService = repl.MdocSession$App$DummyBonusService$Impl@2843b83b
-```
-
-<pre>
-```scala mdoc:invisible
-// change this block to `passthrough` instead of `invisible` to view test results.
-MdocTest.preRunSetup()
-val mdocUsingMemoTest = new UsingMemoTest with MdocTest
-val mdocAnotherUsingMemoTest = new AnotherUsingMemoTest with MdocTest
-// while this looks to only run one test this will run both.
-org.scalatest.shortstacks.nocolor.run(mdocUsingMemoTest)
-// this only outputs the trace of the second tests run
-org.scalatest.shortstacks.nocolor.run(mdocAnotherUsingMemoTest)
-```
-</pre>
 
 #### Pseudocode
 
@@ -772,35 +804,37 @@ for each test case
 
 ### Forced Roots
 
-The `forcedRoots` of `TestConfig` specifies components added to the dependencies of every test within this memoization
-environment. Without memoization these are acquired and release each test case. With memoization these are acquired
-before all and released after all tests within this memoization environment.
+`forcedRoots` field of `TestConfig` specifies components to synthetically add to the dependencies of every test within this test suite / memoization environment.
+
+If forced root components are not memoized, they will be acquired and released for each test case.
+
+If memoized, they will be acquired and released once, before all and after all the tests within this memoization environment.
+
+They provide an alternative to ScalaTest's native `beforeEach/beforeAll` that can use functional effects instead of mutability (However, `All` here includes the entire memoization environment, not the enclosing test suite)
 
 ### Test Selection
 
 #### Using `IntegrationCheck`
 
-Implementation classes that inherit from
-@scaladoc[`izumi.distage.framework.model.IntegrationCheck`](izumi.distage.framework.model.IntegrationCheck)
-will implement a `resourceCheck()` method that will be called before the test instantiation to check if external test
-dependencies (such as Docker containers in
-@ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources)) are available for the test (or role, when in main scope).
+Implementation classes that inherit from @scaladoc[`izumi.distage.framework.model.IntegrationCheck`](izumi.distage.framework.model.IntegrationCheck)
+will have their `resourceCheck()` method called before the test instantiation to check if external test dependencies —
+such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources) —
+are available for the test (or for the role when in main scope).
+
 If not, the test will be canceled/ignored.
 
-This feature allows you to therefore selectively run only the fast in-memory tests that have no external dependencies.
-Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s
-@ref[Roles](distage-framework.md#roles).
+This feature therefore allows you to selectively run only the fast in-memory tests that have no external dependencies
+by shutting down the docker daemon (or another source of external dependencies).
+
+Integration checks are executed only in `distage-testkit` tests and `distage-framework` @ref[roles](distage-framework.md#roles).
 
 ### References
 
+- [distage Example Project](https://github.com/7mind/distage-example) project shows how to use `distage`, `distage-testkit` & `distage-framework-docker`
+- Video for [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs) – is an overview of the concepts, design and usage.
 - Slides for [Hyper-pragmatic Pure FP testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
-- Slides for [Scala, Functional Programming and Team Productivity
-  ](https://www.slideshare.net/7mind/scala-functional-programming-and-team-productivity)
-- [distage Example Project](https://github.com/7mind/distage-example) project shows how to use
-  `distage`, `distage-testkit` & `distage-framework-docker`
-- The [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs) talk is an
-  overview of the concepts, design and usage.
-- 7mind's blog [Constructive Test Taxonomy](https://blog.7mind.io/constructive-test-taxonomy.html)
+- Slides for [Scala, Functional Programming and Team Productivity](https://www.slideshare.net/7mind/scala-functional-programming-and-team-productivity)
+- 7mind blog [Constructive Test Taxonomy](https://blog.7mind.io/constructive-test-taxonomy.html)
 - [N-Version Programming](https://en.wikipedia.org/wiki/N-version_programming)
 
 ## Extended Example

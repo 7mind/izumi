@@ -413,7 +413,10 @@ Will produce the following output:
 ```scala mdoc:to-string
 import distage.DIKey
 
-val objectGraphResource = Injector[IO]().produce(module, Roots(root = DIKey[MyApp]))
+val objectGraphResource = {
+  Injector[IO]()
+    .produce(module, Roots.target[MyApp])
+}
 
 objectGraphResource
   .use(_.get[MyApp].run)
@@ -524,6 +527,50 @@ The following helpers ease defining `Lifecycle` sub-classes using traditional in
 - @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle$$Self)
 - @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
 - @scaladoc[Lifecycle.NoClose](izumi.distage.model.definition.Lifecycle$$NoClose)
+
+## Out-of-the-box typeclass instances
+
+Typeclass instances for popular typeclass hierarchies are included by default for the effect type in which `distage` is running.
+
+Whenever your effect type implements @ref[BIO](../bio/00_bio.md) or [cats-effect](https://typelevel.org/cats-effect/) typeclasses, their instances will be summonable without adding them into modules.
+This applies for `ZIO`, `cats.effect.IO`, `monix`, `monix-bio` and any other effect type with relevant typeclass instances in implicit scope.
+
+- For `ZIO`, `monix-bio` and any other implementors of @ref[BIO](../bio/00_bio.md) typeclasses, `BIO` hierarchy instances will be included.
+- For `ZIO`, `cats-effect` instances will be included only if ZIO [`interop-cats`](https://github.com/zio/interop-cats/) library is on the classpath.
+
+Example usage:
+
+```scala mdoc:reset:to-string
+import cats.effect.{IO, Sync}
+import distage.{Activation, DefaultModule, Injector, Module, TagK}
+import izumi.distage.model.effect.QuasiIO
+
+def polymorphicHelloWorld[F[_]: TagK: QuasiIO: DefaultModule]: F[Unit] = {
+  Injector[F]().produceRun(
+    Module.empty, // we do not define _any_ components
+    Activation.empty,
+  ) {
+      (F: Sync[F]) => // cats.effect.Sync[F] is available anyway
+        F.delay(println("Hello world!"))
+  }
+}
+
+val catsEffectHello = polymorphicHelloWorld[cats.effect.IO]
+
+val monixHello = polymorphicHelloWorld[monix.eval.Task]
+
+val zioHello = polymorphicHelloWorld[zio.IO[Throwable, ?]]
+
+val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, ?]]
+```
+
+See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for implementation details. For details on
+what exact components are available for each effect type, see
+@scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule),
+@scaladoc[CatsIOSupportModule](izumi.distage.modules.support.CatsIOSupportModule),
+@scaladoc[MonixSupportModule](izumi.distage.modules.support.MonixSupportModule),
+@scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
+@scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
 ## Set Bindings
 
@@ -747,48 +794,58 @@ You need to specify your effect type when constructing `Injector`, as in `Inject
 
 You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
-```scala mdoc:reset:invisible
-class Dep1
-class Dep2
-class Arg1
-class Arg2
-
-class X
-object X extends X {
-  def apply(a: Arg1, b: Arg2, d: Dep1): X = X
-}
-```
-
 ```scala mdoc:to-string
 import zio._
-import distage._
+import zio.console.{Console, putStrLn}
+import distage.ModuleDef
 
-def zioEnvCtor: URIO[Has[Dep1] with Has[Dep2], X] = ZIO.succeed(X)
-def zmanagedEnvCtor: URManaged[Has[Dep1] with Has[Dep2], X] = ZManaged.succeed(X)
-def zlayerEnvCtor: URLayer[Has[Dep1] with Has[Dep2], Has[X]] = ZLayer.succeed(X)
+class Dependency
+
+class X(dependency: Dependency)
+
+def makeX: URIO[Console with Has[Dependency], X] = {
+  for {
+    dep <- ZIO.service[Dependency]
+    _   <- putStrLn(s"Obtained environment dependency = $dep")
+  } yield new X(dep)
+}
+
+def makeXManaged: URManaged[Console with Has[Dependency], X] = makeX.toManaged_
+
+def makeXLayer: URLayer[Console with Has[Dependency], Has[X]] = makeX.toLayer
 
 def module1 = new ModuleDef {
-  make[X].fromHas(zioEnvCtor)
+  make[Dependency]
+
+  make[X].fromHas(makeX)
   // or
-  make[X].fromHas(zmanagedEnvCtor)
+  make[X].fromHas(makeXManaged)
   // or
-  make[X].fromHas(zlayerEnvCtor)
+  make[X].fromHas(makeXLayer)
 }
 ```
 
 You can also mix environment and parameter dependencies at the same time in one constructor:
 
 ```scala mdoc:to-string
-def zioArgEnvCtor(a: Arg1, b: Arg2): URLayer[Has[Dep1], Has[X]] = ZLayer.fromService(dep1 => X(a, b, dep1))
+def zioArgEnvCtor(
+  dependency: Dependency
+): URLayer[Console, Has[X]] = {
+  ZLayer.succeed(dependency) ++
+  ZLayer.identity[Console] >>>
+  makeX.toLayer
+}
 
 def module2 = new ModuleDef {
+  make[Dependency]
+
   make[X].fromHas(zioArgEnvCtor _)
 }
 ```
 
 `zio.Has` values are derived at compile-time by @scaladoc[HasConstructor](izumi.distage.constructors.HasConstructor) macro and can be summoned at need.
 
-Example:
+Another example:
 
 ```scala mdoc:reset:to-string
 import distage.{ModuleDef, Injector}
@@ -841,7 +898,6 @@ val turboFunctionalHelloWorld: URIO[Has[Hello] with Has[World] with Has[Console.
 def module = new ModuleDef {
   make[Hello].fromHas(makeHello)
   make[World].fromHas(makeWorld)
-  make[Console.Service].fromHas(Console.live)
   make[Unit].fromHas(turboFunctionalHelloWorld)
 }
 
@@ -1158,8 +1214,8 @@ Advantages of `distage` as a driver for TF compared to implicits:
 - extremely easy & scalable @ref[test](distage-testkit.md#testkit) context setup due to the above
 - multiple different implementations for a type using disambiguation by `@Id`
 
-For example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-and make it safer and more flexible by replacing dependencies on global `import`ed implementations from with explicit modules.
+For example, let's take [`freestyle`'s tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+and make it better by replacing dependencies on global `import`ed implementations with explicit modules.
 
 First, the program we want to write:
 
@@ -1236,16 +1292,6 @@ val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
-
-### Out-of-the-box typeclass instances
-
-Note: we did not have to include either `Monad[IO]` or `Sync[IO]` instances for our program to run,
-despite the fact that `SyncInteraction` depends on `Sync[F]`.
-
-This is because `distage` includes all the relevant typeclass instances for the provided effect type by default, using implicits.
-In general whenever `cats-effect` is on the classpath and your effect type has `cats-effect` instances, they will be included, this is valid for `ZIO`, `cats.effect.IO`, `monix`, `monix-bio` and any other type with cats-effect instances.
-For ZIO, `monix-bio` and any other implementors of @ref[BIO](../bio/00_bio.md), instances of bifunctor @ref[BIO](../bio/00_bio.md) effect hierarchy will also be included.
-See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) for more details.
 
 ### Effect-type polymorphism
 

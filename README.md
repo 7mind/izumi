@@ -127,7 +127,7 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 
 Projects powered by Izumi
 ==========================
-- [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely functional way.
+- [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely-functional way.
 
 Credits
 =======
