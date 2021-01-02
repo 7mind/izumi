@@ -8,9 +8,9 @@ import izumi.fundamentals.platform.properties
   * @see [[DebugProperties]]
   */
 object DebugProperties extends properties.DebugProperties {
-  /** Print debug messages, `false` by default */
+  /** Print debug messages, default: `false` */
   final val `izumi.distage.testkit.debug` = BoolProperty("izumi.distage.testkit.debug")
 
-  /** Cache created [[izumi.distage.testkit.services.dstest.TestEnvironment]], `true` by default */
+  /** Cache [[izumi.distage.testkit.services.dstest.TestEnvironment]], default: `true` */
   final val `izumi.distage.testkit.environment.cache` = BoolProperty("izumi.distage.testkit.environment.cache")
 }

@@ -1,6 +1,8 @@
 package izumi.distage.framework
 
 /**
+  * Options to alter the behavior of [[izumi.distage.framework.PlanCheck]]
+  *
   * @param roles              "*" to check all roles,
   *
   *                           "role1 role2" to check specific roles,
@@ -22,19 +24,19 @@ package izumi.distage.framework
   *
   * @param config             Config resource file name, e.g. "application.conf" or "*" if using the same config settings as `roleAppMain`
   *
-  * @param checkConfig        Try to parse config file checking all the config bindings added using [[izumi.distage.config.ConfigModuleDef]] default: `true`
+  * @param checkConfig        Try to parse config file checking all the config bindings added using [[izumi.distage.config.ConfigModuleDef]]. Default: `true`
   *
-  * @param printBindings      Print all the bindings loaded from plugins when a problem is found during plan checking. default: `false`
+  * @param printBindings      Print all the bindings loaded from plugins when a problem is found during plan checking. Default: `false`
   *
-  * @param onlyWarn           Do not abort compilation when errors are found, just print a warning instead. Does not affect plan checks performed at runtime. default: `false`
+  * @param onlyWarn           Do not abort compilation when errors are found, just print a warning instead. Does not affect plan checks performed at runtime. Default: `false`
   */
-final class PlanCheckConfig[Roles <: String, ExcludeActivations <: String, Config <: String, CheckConfig <: Boolean, PrintBindings <: Boolean, OnlyWarn <: Boolean](
-  val roles: Roles,
-  val excludeActivations: ExcludeActivations,
-  val config: Config,
-  val checkConfig: CheckConfig,
-  val printBindings: PrintBindings,
-  val onlyWarn: OnlyWarn,
+final case class PlanCheckConfig[Roles <: String, ExcludeActivations <: String, Config <: String, CheckConfig <: Boolean, PrintBindings <: Boolean, OnlyWarn <: Boolean](
+  roles: Roles,
+  excludeActivations: ExcludeActivations,
+  config: Config,
+  checkConfig: CheckConfig,
+  printBindings: PrintBindings,
+  onlyWarn: OnlyWarn,
 )
 
 object PlanCheckConfig {

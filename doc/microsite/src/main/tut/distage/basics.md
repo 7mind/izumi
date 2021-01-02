@@ -701,7 +701,7 @@ Mutators provide a way to do partial overrides or slight modifications of some e
 Example:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Id, Injector}
+import distage.{Id, Injector, ModuleDef}
 
 def startingModule = new ModuleDef {
   make[Int].fromValue(1) // 1
@@ -730,6 +730,45 @@ Injector().produceRun(
 )((currentInt: Int) => currentInt): Int
 ```
 
+Another example: Suppose you're using a config case class in your @ref[`distage-testkit`](distage-testkit.md) tests, and for one of the test you want to use a modified value for one of the fields in it. Before 1.0 you'd have to duplicate the config binding into a new key and apply the modifying function to it:
+
+```scala mdoc:reset:invisible
+import scala.Predef.{identity => modifyingFunction, _}
+
+final case class Config(a: Int, b: Int, z: Int)
+```
+
+```scala mdoc:to-string
+import distage.{Id, ModuleDef}
+import distage.config.ConfigModuleDef
+import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.scalatest.SpecIdentity
+
+class HACK_OVERRIDE0_MyTest extends SpecIdentity {
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = new ConfigModuleDef {
+      makeConfig[Config]("config.myconfig").named("duplicate")
+      make[Config].from {
+        (thatConfig: Config @Id("duplicate")) =>
+          modifyingFunction(thatConfig)
+      }
+    }
+  )
+}
+```
+
+Now instead of overriding the entire binding, we may use a mutator:
+
+```scala mdoc:override:to-string
+class HACK_OVERRIDE1_MyTest extends SpecIdentity {
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      modify[Config](modifyingFunction(_))
+    }
+  )
+}
+```
+
 ## Effect Bindings
 
 Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
@@ -741,7 +780,7 @@ In these cases we can use `.fromEffect` to create a value using an effectful con
 Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector}
+import distage.{Injector, ModuleDef}
 import izumi.functional.bio.{Error2, Primitives2, F}
 import zio.{Task, IO}
 
@@ -848,7 +887,7 @@ def module2 = new ModuleDef {
 Another example:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector}
+import distage.{Injector, ModuleDef}
 import zio.console.{putStrLn, Console}
 import zio.{UIO, URIO, Ref, Task, Has}
 
@@ -1161,7 +1200,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 `@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector, With}
+import distage.{Injector, ModuleDef, With}
 
 trait Actor {
   def receive(msg: Any): Unit

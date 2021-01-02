@@ -3,6 +3,8 @@ package izumi.distage.framework
 import izumi.fundamentals.platform.language.literals.{LiteralBoolean, LiteralString}
 
 /**
+  * Options to alter the behavior of [[izumi.distage.framework.PlanCheck]]
+  *
   * If on Scala `2.12` you're getting errors such as
   *
   * {{{

@@ -48,7 +48,7 @@ abstract class RoleAppMain[F[_]](
   override val tagK: TagK[F],
   val defaultModule: DefaultModule[F],
   val artifact: IzArtifactMaterializer,
-) extends RoleCheckableApp[F] { self =>
+) extends RoleCheckableApp[F] {
 
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
@@ -102,15 +102,15 @@ abstract class RoleAppMain[F[_]](
     * object WiringTest extends PlanCheck.Main(MyApp, PlanCheckConfig(...))
     * }}}
     */
-  @open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[self.type, Cfg])
-    extends izumi.distage.framework.PlanCheck.Main[self.type, Cfg](self, cfg)
+  @open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[this.type, Cfg])
+    extends izumi.distage.framework.PlanCheck.Main[this.type, Cfg](this, cfg)
 
   /** @see [[izumi.distage.framework.PlanCheck.assertAppCompileTime]] */
   def assertAppCompileTime[Cfg <: PlanCheckConfig.Any](
     cfg: Cfg = PlanCheckConfig.empty
-  )(implicit planCheck: PlanCheckMaterializer[self.type, Cfg]
-  ): PlanCheckMaterializer[self.type, Cfg] = {
-    izumi.distage.framework.PlanCheck.assertAppCompileTime[self.type, Cfg](self, cfg)
+  )(implicit planCheck: PlanCheckMaterializer[this.type, Cfg]
+  ): PlanCheckMaterializer[this.type, Cfg] = {
+    izumi.distage.framework.PlanCheck.assertAppCompileTime[this.type, Cfg](this, cfg)
   }
 
   override final def roleAppBootModule: Module = {

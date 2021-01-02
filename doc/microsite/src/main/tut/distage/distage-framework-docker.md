@@ -238,15 +238,15 @@ health check.
 
 ### Usage in Integration Tests
 
-A common use case is using Docker containers to provide service implementations for integration test, such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
-`distage` container resources are easy to integrate as providers.
+A common use case is using Docker containers to provide service implementations for integration test,
+such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
 
 Consider the example application below. This application is written to depend on a
 [doobie](https://tpolecat.github.io/doobie/) `Transactor`, which is constructed from a
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
-import cats.effect.ContextShift
+import cats.effect.{Async, ContextShift}
 import doobie.Transactor
 import doobie.syntax.connectionio._
 import doobie.syntax.string._
@@ -277,24 +277,22 @@ final case class PostgresServerConfig(
 
 object TransactorFromConfigModule extends ModuleDef {
   make[Transactor[IO]].from {
-    (config: PostgresServerConfig, contextShift: ContextShift[IO]) =>
-      implicit val CS = contextShift
+    (config: PostgresServerConfig, async: Async[IO], contextShift: ContextShift[IO]) =>
 
       Transactor.fromDriverManager[IO](
         driver = "org.postgresql.Driver",
         url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
         user   = config.username,
         pass   = config.password,
-      )
+      )(async, contextShift)
   }
 }
 ```
 
-Note that the above code is agnostic of environment. Provided a `PostgresServerConfig`, the
-`Transactor` needed by `PostgresExampleApp` can be constructed.
+Note that the above code is agnostic of environment.
+Provided a `PostgresServerConfig`, the `Transactor` needed by `PostgresExampleApp` can be constructed.
 
-An integration test would use a module that provides the `PostgresServerConfig` from a
-`PostgresDocker.Container`:
+An integration test would use a module that provides the `PostgresServerConfig` from a `PostgresDocker.Container`:
 
 ```scala mdoc:to-string
 object PostgresUsingDockerModule extends ModuleDef {
