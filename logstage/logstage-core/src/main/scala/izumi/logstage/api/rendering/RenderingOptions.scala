@@ -10,5 +10,6 @@ final case class RenderingOptions(
 )
 object RenderingOptions {
   def default: RenderingOptions = RenderingOptions(withExceptions = true, colored = true)
+  def colorless: RenderingOptions = RenderingOptions(withExceptions = true, colored = false)
   def simple: RenderingOptions = RenderingOptions(withExceptions = false, colored = false)
 }
