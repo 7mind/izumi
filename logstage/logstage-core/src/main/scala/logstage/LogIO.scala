@@ -68,7 +68,7 @@ object LogIO {
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
-    def failWithLog(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {
+    def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {
       val renderingPolicy = RenderingPolicy.colorlessPolicy()
       for {
         entry <- log.createEntry(Log.Level.Crit, msg)
@@ -77,7 +77,7 @@ object LogIO {
       } yield ()
     }
 
-    def terminateWithLog(msg: Message)(implicit F: Panic2[F], pos: CodePositionMaterializer): F[Nothing, Nothing] = {
+    def terminate(msg: Message)(implicit F: Panic2[F], pos: CodePositionMaterializer): F[Nothing, Nothing] = {
       val renderingPolicy = RenderingPolicy.colorlessPolicy()
       for {
         entry <- log.createEntry(Log.Level.Crit, msg)
@@ -86,6 +86,7 @@ object LogIO {
       } yield ()
     }
   }
+
 }
 
 object LogIO2 {
