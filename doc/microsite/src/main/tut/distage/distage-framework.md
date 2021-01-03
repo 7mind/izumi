@@ -398,7 +398,7 @@ which scan is performed. When placed in the same module, scanning will fail.
 
 Example:
 
-```scala mdoc:invisible
+```scala mdoc:reset:invisible
 import distage.plugins.{PluginConfig, PluginLoader}
 ```
 
