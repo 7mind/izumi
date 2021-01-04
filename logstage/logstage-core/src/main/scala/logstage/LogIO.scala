@@ -1,12 +1,12 @@
 package logstage
 
-import izumi.functional.bio.{Error2, F, MonadAsk3, Panic2, SyncSafe2, SyncSafe3}
+import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
-import izumi.logstage.api.rendering.{AnyEncoded, RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
 import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
@@ -70,20 +70,20 @@ object LogIO {
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
     def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {
       val renderingPolicy = RenderingPolicy.colorlessPolicy()
-      for {
-        entry <- log.createEntry(Log.Level.Crit, msg)
-        _ <- log.log(entry)
-        _ <- F.fail(new RuntimeException(renderingPolicy.render(entry)))
-      } yield ()
+      log.createEntry(Log.Level.Crit, msg).flatMap {
+        entry =>
+          log.log(entry) *>
+          F.fail(new RuntimeException(renderingPolicy.render(entry)))
+      }
     }
 
     def terminate(msg: Message)(implicit F: Panic2[F], pos: CodePositionMaterializer): F[Nothing, Nothing] = {
       val renderingPolicy = RenderingPolicy.colorlessPolicy()
-      for {
-        entry <- log.createEntry(Log.Level.Crit, msg)
-        _ <- log.log(entry)
-        _ <- F.terminate(new RuntimeException(renderingPolicy.render(entry)))
-      } yield ()
+      log.createEntry(Log.Level.Crit, msg).flatMap {
+        entry =>
+          log.log(entry) *>
+          F.terminate(new RuntimeException(renderingPolicy.render(entry)))
+      }
     }
   }
 
