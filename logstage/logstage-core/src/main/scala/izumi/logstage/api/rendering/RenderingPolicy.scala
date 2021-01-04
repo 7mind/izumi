@@ -11,6 +11,9 @@ object RenderingPolicy {
   def coloringPolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
     new StringRenderingPolicy(RenderingOptions.default, renderingLayout)
   }
+  def colorlessPolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
+    new StringRenderingPolicy(RenderingOptions.colorless, renderingLayout)
+  }
   def simplePolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
     new StringRenderingPolicy(RenderingOptions.simple, renderingLayout)
   }
