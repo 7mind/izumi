@@ -30,7 +30,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
        |4) Named expression, hidden name:
        |   logger.info(s"My message: $${Some.expression -> "argname" -> null}")
        |5) De-camelcased name:
-       |   logger.info($${camelCaseName-> ' '})
+       |   logger.info($${camelCaseName -> ' '})
        |""".stripMargin
 
   private[macros] def recoverArgNames(args: Seq[Tree]): c.Expr[List[LogArg]] = {

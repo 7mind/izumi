@@ -81,33 +81,38 @@ Note:
 1. JSON formatter is type aware!
 2. Each JSON message contains `@class` field with holds a unique `event class` identifier.
    All events produced by the same source code line will share the same `event class`.
-   
+
 ## Syntax Reference
 
-1. Simple variable:
-   ```scala
-   logger.info(s"My message: $argument")
-   ```
+1) Simple variable:
 
-2. Chain:
-   ```scala
-   logger.info(s"My message: ${call.method} ${access.value}")
-   ```
+```scala
+logger.info(s"My message: $argument")
+```
 
-3. Named expression:
-   ```scala
-   logger.info(s"My message: ${Some.expression -> "argname"}")
-   ```
+2) Chain:
 
-4. Invisible named expression:
-   ```scala
-   logger.info(s"My message: ${Some.expression -> "argname" -> null}")
-   ```
+```scala
+logger.info(s"My message: ${call.method} ${access.value}")
+```
+
+3) Named expression:
+
+```scala
+logger.info(s"My message: ${Some.expression -> "argname"}")
+```
+
+4) Invisible named expression:
+
+```scala
+logger.info(s"My message: ${Some.expression -> "argname" -> null}")
+```
 
 5) De-camelcased name:
-   ```scala
-   logger.info(${camelCaseName-> ' '})
-   ```
+
+```scala
+logger.info(${camelCaseName -> ' '})
+```
 
 ## Basic setup
 
@@ -125,7 +130,7 @@ val contextLogger: IzLogger = logger("key" -> "value")
 
 logger.info("Hey")
 
-contextLogger.info(s"Hey")
+contextLogger.info("Hey")
 ```
 
 ## Log algebras
@@ -296,7 +301,7 @@ When not configured, `logstage-adapter-slf4j` will log messages with level `>= I
 
 Due to the global mutable nature of `slf4j`, to configure slf4j logging you'll
 have to mutate a global singleton `StaticLogRouter`. Replace its `LogRouter`
-with the same one you use elsewhere in your application to use the same configuration for Slf4j. 
+with the same one you use elsewhere in your application to use the same configuration for Slf4j.
 
 ```scala mdoc:to-string:reset
 import logstage.IzLogger

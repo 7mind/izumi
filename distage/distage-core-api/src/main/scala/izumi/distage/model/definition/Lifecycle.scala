@@ -150,16 +150,14 @@ import scala.reflect.macros.blackbox
   *  - [[Lifecycle.SelfOf]]
   *  - [[Lifecycle.MutableOf]]
   *
-  * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion whereby when converting a method to a function value,
-  * Scala would always try to fulfill implicit parameters eagerly instead of making them parameters in the function value,
+  * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion — when converting a method to a function value,
+  * Scala always tries to fulfill implicit parameters eagerly instead of making them parameters of the function value,
   * this limitation makes it harder to inject implicits using `distage`.
   *
-  * However, if instead of eta-expanding manually as in `make[A].fromResource(A.resource[F] _)`,
-  * you use `distage`'s type-based constructor syntax: `make[A].fromResource[A.Resource[F]]`,
-  * this limitation is lifted, injecting the implicit parameters of class `A.Resource` from
-  * the object graph instead of summoning them in-place.
+  * However, when using `distage`'s type-based syntax: `make[A].fromResource[A.Resource[F]]` —
+  * this limitation does not apply and implicits inject successfully.
   *
-  * Therefore you can convert an expression based resource-constructor such as:
+  * So to workaround the limitation you can convert an expression based resource-constructor such as:
   *
   * {{{
   *   import distage.Lifecycle, cats.Monad
@@ -170,7 +168,7 @@ import scala.reflect.macros.blackbox
   *   }
   * }}}
   *
-  * Into class-based form:
+  * Into a class-based form:
   *
   * {{{
   *   import distage.Lifecycle, cats.Monad

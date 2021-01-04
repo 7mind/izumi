@@ -24,7 +24,7 @@ def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
 // update ref from the environment and return result
 def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] =
   F.access {
-    ref => 
+    ref =>
       for {
         _   <- ref.update(_ + i)
         res <- ref.get

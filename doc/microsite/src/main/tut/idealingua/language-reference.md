@@ -19,10 +19,10 @@ Keyword     | Aliases                | Explanation                              
 
 ## Inheritance operators
 
-Keyword     | Aliases                | Explanation                                           | Example                       |  
+Keyword     | Aliases                | Explanation                                           | Example                       |
 ------------| ---------------------- | ----------------------------------------------------- | ------------------------------|
 `+`         | `+++`, `...`           | Inherit structure (copy fields)                       | `+ Mixin`                     |
-`&`         | `&&&`                  | Inherit interface                                     | `& Mixin`                     | 
+`&`         | `&&&`                  | Inherit interface                                     | `& Mixin`                     |
 `-`         | `---`                  | Drop structure or field (doesn't work for interfaces) | `- Mixin`, `- field: str`     |
 
 # Built-in types
@@ -52,7 +52,7 @@ Type name   | Aliases                | Explanation                              
 
 ## Collections
 
-Type name    | Explanation                                          | Scala mapping  | 
+Type name    | Explanation                                          | Scala mapping  |
 ------------ | ---------------------------------------------------- | -------------- |
 `list[T]`    | List                                                 | `List`         |
 `map[K, V]`  | Map (only scalar and `id` keys are supported)        | `Map`          |

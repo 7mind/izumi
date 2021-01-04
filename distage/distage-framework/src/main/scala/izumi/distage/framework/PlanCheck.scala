@@ -35,7 +35,7 @@ import scala.annotation.tailrec
   *   object WiringCheck extends PlanCheck.Main(MainLauncher)
   * }}}
   *
-  * The object will emit compile-time errors for any issues or omissions in your `ModuleDef`s
+  * This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`
   *
   * @see [[izumi.distage.framework.PlanCheckConfig Configuration Options]]
   * @see [[izumi.distage.framework.CheckableApp Support for checking not role-based applications]]

@@ -73,13 +73,13 @@ Then try this snippet:
 
 ```bash
 export COMPILER="io.7mind.izumi:idealingua-v1-compiler_2.12:$izumi.version$"
-export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots 
+export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
 export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 
 # create sample project in `testproject` directory
-coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject 
+coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject
 
-cd testproject 
+cd testproject
 
 # compile Scala and Typescript projects using all the defaults
 coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :scala :typescript
@@ -120,8 +120,8 @@ addSbtPlugin("io.7mind.izumi" % "sbt-idealingua" % izumi_version)
 
 @@@
 
-Place your domain definitions into `/src/main/izumi` directory, then enable the plugin for that project. 
-For the generated code to compile, you will also need to add dependencies on the Idealingua RTS modules: 
+Place your domain definitions into `/src/main/izumi` directory, then enable the plugin for that project.
+For the generated code to compile, you will also need to add dependencies on the Idealingua RTS modules:
 
 ```scala
 val izumi = prop
@@ -175,7 +175,7 @@ coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ i
 Commandline examples:
 
 ```
-# compile sources in ./src and output generated code to ./target/scala and ./target/typescript 
+# compile sources in ./src and output generated code to ./target/scala and ./target/typescript
 # all compiler plugins for Scala and TypeScript are enabled by * pattern
 
 ./idlc -s src -t target -L scala=* -L typescript=*
@@ -196,7 +196,7 @@ addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersi
 
 // Only for Scala 2.12, not required on 2.13+
 scalacOptions += "-Ypartial-unification"
-``` 
+```
 
 You may find the test suite for the http4s backend [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
 

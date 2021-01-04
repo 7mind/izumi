@@ -103,7 +103,7 @@ Inherited Test Scopes
 
 You need to activate `DefaultItSettingsGroup` on your projects (see "Setting Groups" below) in order to make this working on `it` scope.
 
-Example: 
+Example:
 
 ```scala
 lazy val myLibrary = ...
@@ -149,7 +149,7 @@ Notes:
 - Intellij IDEA doesn't support overriden classpaths so when you run your tests under IDEA the whole test scopes are visible in dependencies,
 - At the moment the implementation of `@ExposedTestScope` (substring presence check) is imperfect and has to be improved,
 - **Transitive dependencies are not checked**, so in case you expose a class but do not expose it's dependencies your build will
-  work under IDEA, but you will a classloading exception under sbt. 
+  work under IDEA, but you will a classloading exception under sbt.
   This is going to be [improved](https://github.com/7mind/izumi/issues/6) in the future.
 
 ### Test Scope Publishing
@@ -179,7 +179,7 @@ lazy val petstoreApp = In("app").as.module
 expands to
 
     lazy val petstoreApp = project.in("app/petstore-app")
-    
+
 You can attach settings and dependencies to the `In` part, that way you can apply common settings to all the projects in a directory:
 
 ```scala
@@ -218,7 +218,7 @@ but it would happen *later* than evaluation  of aggregation list so the project 
 When you invoke `transitiveAggregate` or `transitiveAggregateSeq` on your root project it checks
 if the accumulated set of known project is the same as the set of all projects loaded by sbt.
 
-In case module is missing you'll get a warning. This makes it unlikely for you to accidentally forget 
+In case module is missing you'll get a warning. This makes it unlikely for you to accidentally forget
 to aggregate a module in multi-module project.
 
 Build Descriptors
@@ -228,7 +228,7 @@ Build Descriptors
 
 Izumi brings [Bill of Materials](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) concept to SBT.
 
-#### Izumi BOM 
+#### Izumi BOM
 
 You can import Izumi libraries and transitive dependencies without specifying their version or even _artifact names_. To do that
 add `sbt-izumi-deps` SBT plugin:
@@ -250,7 +250,7 @@ libraryDependencies += IzumiDeps.T.scalatest // Import a dependency of izumi in 
 
 R is for Runtime artifacts and T is for Test scope artifacts
 
-#### Create a BOM for your projects 
+#### Create a BOM for your projects
 
 `sbt-izumi-deps` allows you to a create BOMs for your own projects. Just add the following snippet into your project settings:
 
@@ -324,15 +324,15 @@ ConvenienceTasksPlugin.Keys.defaultStubPackage     | Default stub package. By de
 `ConvenienceTasksPlugin` provides you command
 
     addVersionSuffix SUFFIX
-    
+
 This command updates project version defined in `version.sbt` with qualifier `SUFFIX-SNAPSHOT`
 
-- Existing qualifiers will be removed. 
+- Existing qualifiers will be removed.
 - `1.0.0` would become `1.0.0-SUFFIX-SNAPSHOT`
 - `1.0.0-SNAPSHOT` would become `1.0.0-SUFFIX-SNAPSHOT`
 
-You may need this command while setting up a build for feature branches and wish to 
-avoid situation when different branches publishes artifacts with the same names. 
+You may need this command while setting up a build for feature branches and wish to
+avoid situation when different branches publishes artifacts with the same names.
 
 ### `target` preservation
 
@@ -342,8 +342,8 @@ avoid situation when different branches publishes artifacts with the same names.
 
 This command recursively enumerates all the directories named `target` and recursively copies them using name `target.SUFFIX`.
 
-You may need this command while setting up a build where you wish to perform `clean` several times 
-but want to preserve intermediate build artifacts stored in `target` directories. The most frequent case is 
+You may need this command while setting up a build where you wish to perform `clean` several times
+but want to preserve intermediate build artifacts stored in `target` directories. The most frequent case is
 coverage build followed by tests and then by production build. In this case you would like to use a command sequence like
 
     ;clean;coverage;test;coverageOff;coverageReport;preserveTargets coverage;clean;publish
@@ -353,15 +353,15 @@ coverage build followed by tests and then by production build. In this case you 
 `ConvenienceTasksPlugin` provides you command
 
     rmDirs target.coverage
-    
+
 This command recursively removes all the directories named `target.coverage` across the project.
 
 You may need this command to cleanup preserved target directories, or destroy some build artifacts, like `rmDirs scala-2.11`
 
 ### Property Readers
 
-`IzumiPropertiesPlugin` provides you implicit classes allowing you to convert 
-Strings into Integers or Booleans exceptions-safe and do the same for system properties: 
+`IzumiPropertiesPlugin` provides you implicit classes allowing you to convert
+Strings into Integers or Booleans exceptions-safe and do the same for system properties:
 
 ```scala
 "true".asBoolean(default = false) // true

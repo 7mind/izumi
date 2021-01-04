@@ -1,6 +1,6 @@
-# Code generator reference 
+# Code generator reference
 
-We support the following concepts: 
+We support the following concepts:
 
 1. Enumerations
 2. Algebraic Data Types
@@ -14,9 +14,9 @@ We support the following concepts:
 
 1. We support two forms of inheritance: interface inheritance (`&` modifier) and structural mixins (`*` modifier)
 2. The only difference between structural inheritance and interface inheritance is presence/absence of the base interface in the list of supertypes
-3. Both Data Classes and Mixins support both forms of inheritance 
+3. Both Data Classes and Mixins support both forms of inheritance
 4. Services, ADTs, Type Aliases, Identifiers and Enumerations does not support inheritance
-5. We provide widening narrowing implicit functions as well as copy constructors for all the generated entities   
+5. We provide widening narrowing implicit functions as well as copy constructors for all the generated entities
 
 ### Example
 
@@ -62,8 +62,8 @@ trait PointLike extends Metadata {
   def x: Int
   def name: String
   def id: String
-}      
-``` 
+}
+```
 
 # Constructs
 
@@ -87,15 +87,15 @@ trait PointLike extends Metadata {
 trait Person {
   def name: String
   def surname: String
-}      
-``` 
+}
+```
 
 ## `data`: Data Class
 
 Differences between Mixins and Data Classes:
 
 1. Data classes cannot be subclassed
-2. Data classes are always rendered as case classes, Mixins are always rendered as pair of Interface and Implementation  
+2. Data classes are always rendered as case classes, Mixins are always rendered as pair of Interface and Implementation
 
 ```idealingua
  data HumanUser {
@@ -108,7 +108,7 @@ Differences between Mixins and Data Classes:
 
 ```scala
 final case class HumanUser(name: String, surname: String, id: UserId) extends IdentifiedUser with Person
-``` 
+```
 
 ## `adt`: Algebraic Data Type
 
@@ -116,11 +116,11 @@ final case class HumanUser(name: String, surname: String, id: UserId) extends Id
  mixin Success {
    values: map[str, str]
  }
- 
+
  mixin Failure {
    message: str
  }
- 
+
  adt Result {
    Success
    Failure
@@ -134,16 +134,16 @@ trait Failure extends Any { def message: String }
 
 trait Success extends Any { def values: scala.collection.immutable.Map[String, String] }
 
-sealed trait Result 
+sealed trait Result
 
 object Result {
   type Element = Result
-  
+
   case class Success(value: Success) extends Result
   case class Failure(value: Failure) extends Result
 }
-       
-``` 
+
+```
 
 ## `alias`: Type Alias
 
@@ -157,7 +157,7 @@ alias UserId = str
 package object domain01 {
 type UserId = String
 }
-``` 
+```
 
 ## `enum`: Enumeration
 
@@ -165,7 +165,7 @@ type UserId = String
 enum Gender {
   MALE
   FEMALE
-}        
+}
 ```
 
 ### Scala output
@@ -182,15 +182,15 @@ object Gender {
   }
   case object MALE extends Gender { override def toString: String = "MALE" }
   case object FEMALE extends Gender { override def toString: String = "FEMALE" }
-}     
-``` 
+}
+```
 
 
 ## `id`: Identifier
 
 Notes:
 
-1. You can use only scalar builtin types for identifier fields 
+1. You can use only scalar builtin types for identifier fields
 2. We provide both parser and sane `.toString` implementation
 3. `.toString` uses the following format: `Name#urlencoded(part1):urlencoded(part2):...`
 4. Fields are sorted by name before using in parser and `.toString`
@@ -221,7 +221,7 @@ object UserId {
     UserId(parsePart[java.util.UUID](parts(0), classOf[java.util.UUID]), parsePart[java.util.UUID](parts(1), classOf[java.util.UUID]))
   }
 }
-``` 
+```
 
 ## `service`: Service
 
@@ -253,7 +253,7 @@ service UserService {
 
 ```
 
-Notes: 
+Notes:
 
 1. Service signature cannot accept anything except of Mixins (improvements planned)
 2. `ServerDispatcher` allows you to route wrapped result type to an appropriate method of an abstract implementation
@@ -310,16 +310,16 @@ trait UserService[R[_]] extends izumi.idealingua.runtime.model.IDLService[R] {
   import UserService._
   override type InputType = UserService.InUserService
   override type OutputType = UserService.OutUserService
-  
+
   override def inputClass: Class[UserService.InUserService] = classOf[UserService.InUserService]
   override def outputClass: Class[UserService.OutUserService] = classOf[UserService.OutUserService]
-  
+
   def deleteUser(input: UserService.InDeleteUser): Result[UserService.OutDeleteUser]
   def createUser(input: UserService.InCreateUser): Result[UserService.OutCreateUser]
 }
 
 object UserService {
-  sealed trait InUserService extends Any 
+  sealed trait InUserService extends Any
   sealed trait OutUserService extends Any
 
   case class InDeleteUser(id: RecordId) extends UserService.InUserService with WithRecordId
@@ -327,5 +327,5 @@ object UserService {
   case class InCreateUser(balance: Double, email: String) extends UserService.InUserService with UserData with PrivateUserData
   case class OutCreateUser(result: shared.rpc.Result, id: RecordId) extends UserService.OutUserService with WithRecordId with WithResult
 }
-             
-``` 
+
+```

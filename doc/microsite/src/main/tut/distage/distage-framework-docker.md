@@ -146,7 +146,7 @@ class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
   make[PostgresDocker.Container].fromResource {
     PostgresDocker
       .make[F]
-      .modifyConfig { 
+      .modifyConfig {
         () => (old: PostgresDocker.Config) =>
           old.copy(user = Some("admin"))
       }
@@ -337,7 +337,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
   )
 
   "distage docker" should {
-  
+
     "support integration tests using containers" in {
       app: PostgresExampleApp =>
         for {
@@ -345,7 +345,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
           _ <- assertIO(v == 2)
         } yield ()
     }
-    
+
   }
 }
 ```
@@ -359,7 +359,7 @@ def postgresDockerIntegrationExample = {
     include(TransactorFromConfigModule)
     include(PostgresUsingDockerModule)
     include(DistageFrameworkModules)
-   
+
     make[PostgresExampleApp]
   }
 

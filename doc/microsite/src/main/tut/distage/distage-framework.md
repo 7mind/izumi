@@ -33,7 +33,7 @@ import zio.UIO
 
 object AppPlugin extends PluginDef {
   include(roleModule)
-  
+
   def roleModule = new RoleModuleDef {
     makeRole[ExampleRoleTask]
   }
@@ -56,7 +56,7 @@ Create a Role Launcher, @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain),
 import distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import zio.IO
- 
+
 object ExampleLauncher extends RoleAppMain.LauncherBIO2[IO] {
   override def pluginConfig = {
     PluginConfig.const(
@@ -131,32 +131,27 @@ import com.example.myapp.MainLauncher
 object WiringCheck extends PlanCheck.Main(MainLauncher)
 ```
 
-The object will emit compile-time errors for any issues or omissions in your `ModuleDef`s, it will be recompiled as
-necessary to provide instant feedback during development.
+This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`, it will be recompiled as
+necessary to provide feedback during development.
 
-You may use @scaladoc[PlanCheckConfig](izumi.distage.framework.PlanCheckConfig) to customize `PlanCheck` behavior. By
-default, all possible combinations of roles and activations will be checked efficiently, you may override this
-using `PlanCheckConfig` to, e.g. exclude a role or a combination of activations from the check if you want to
-intentionally leave some configurations incomplete.
+By default, all possible roles and activations are checked efficiently.
 
-Most options in `PlanCheckConfig` can also be set using system properties, described in
-@scaladoc[DebugProperties](izumi.distage.framework.DebugProperties$)
+You may exclude specific roles or activations from the check by passing a @scaladoc[PlanCheckConfig](izumi.distage.framework.PlanCheckConfig) case class to PlanCheck API. Most options in `PlanCheckConfig` can also be set using system properties, see @scaladoc[DebugProperties](izumi.distage.framework.DebugProperties$).
 
 ### Checking default config
 
-By default `PlanCheck` will attempt to check if the config bindings defined using
-@ref[distage-extension-config](distage-framework.md#typesafe-config) parse correctly against a config file loaded using
-the same settings as the role launcher.
+By default `PlanCheck` will check parsing of config bindings (from @ref[distage-extension-config](distage-framework.md#typesafe-config))
+using configs loaded with the same settings as the role launcher.
 
-This allows you to check the correctness of your default config files during development, without writing tests for it.
+This allows you to ensure correctness of default configs during development without writing tests.
 
-However, if you need to disable this check, you may do so by setting `PlanCheckConfig#checkConfig` option to `false`.
+If you need to disable this check, set `checkConfig` option of `PlanCheckConfig` to `false`.
 
 ### Using with `distage-teskit`
 
-Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also acts as an
-actuator for compile-time checks.
-`SpecWiring` will check the passed application when compiled, then perform the check again when run.
+Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
+
+`SpecWiring` will check the passed application when compiled, then perform the check again at runtime when ran as a test.
 
 ```scala mdoc:reset:to-string
 import izumi.distage.framework.PlanCheckConfig
@@ -172,23 +167,22 @@ object WiringCheck extends SpecWiring(
 
 ### Checking `distage-core` apps
 
-While Role-based applications can be checked out of the box, applications assembled directly by `distage.Injector` APIs
-need to implement the @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) interface to provide all the data
-necessary for the checks.
+`distage-framework`'s Role-based applications are checkable out of the box, but applications assembled directly via `distage-core`'s `distage.Injector` APIs
+must implement the @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) trait to provide all the data necessary for the checks. You may use @scaladoc[CoreCheckableAppSimple](izumi.distage.framework.CoreCheckableAppSimple) implementation for applications definable by a single collection of modules.
 
 ### Low-Level APIs
 
 @scaladoc[PlanCheckMaterializer](izumi.distage.framework.PlanCheckMaterializer),
 @scaladoc[ForcedRecompilationToken](izumi.distage.plugins.ForcedRecompilationToken) and
-@scaladoc[PlanCheck.runtime](izumi.distage.framework.PlanCheck$$runtime$) provide the low-level APIs for
-invoking `distage`'s compile-time checks, they can be used to wrap the capability in other APIs or implement similar
-functionality. @scaladoc[PlanVerifier](izumi.distage.planning.solver.PlanVerifier) hosts the multi-graph traversal doing
-the actual checking and can be invoked at runtime / in macro, additionally it can also be invoked
-using `Injector().assert` method.
+@scaladoc[PlanCheck.runtime](izumi.distage.framework.PlanCheck$$runtime$) provide the low-level APIs behind
+`distage` compile-time checks, they can be used to wrap the capability in other APIs or implement similar functionality.
+
+@scaladoc[PlanVerifier](izumi.distage.planning.solver.PlanVerifier) hosts the multi-graph traversal doing
+the actual checking and can be invoked at runtime or in macro. It can also be invoked using `Injector#assert` and `Injector#verify` methods.
 
 ### Scala 2.12
 
-If on Scala `2.12` you're getting errors such as
+If you're using Scala `2.12` and get compilation errors such as
 
 ```scalak
 [error]  type mismatch;
@@ -197,7 +191,7 @@ If on Scala `2.12` you're getting errors such as
 ```
 
 Then you'll have to refactor your instance of `PlanCheck.Main` (or similar) to make sure that `PlanCheckConfig` is
-defined in a separate val. You may do this by moving it from constructor parameter to early initializer.
+defined in a separate `val`. You may do this by moving it from a constructor parameter to an early initializer.
 
 Example:
 
@@ -214,11 +208,10 @@ Fix:
 ```scala
 object WiringTest extends {
   val config = PlanCheckConfig(... )
-}
-with PlanCheck.Main(MyApp, config)k
+} with PlanCheck.Main(MyApp, config)
 ```
 
-Note that such an issue does not exist on 2.13+, it is caused by a bug in Scala 2.12's treatment of implicits in class-parameter scope.
+Note that this issue does not exist on Scala `2.13+`, it is caused by a bug in Scala 2.12's treatment of implicits in class parameter position.
 
 ## Typesafe Config
 

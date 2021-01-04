@@ -134,7 +134,7 @@ abstract class Test extends Spec3[ZIO] with AssertZIO {
     .config.copy(
       moduleOverrides = new ModuleDef {
         include(AppConfigModule(ConfigFactory.defaultApplication()))
-        
+
         make[Config].from(defaultConfig)
         make[Console.Service].fromHas(Console.live)
       },

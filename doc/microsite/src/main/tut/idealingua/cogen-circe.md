@@ -4,7 +4,7 @@
 
 Notes:
 
-1. Data classes cannot be polymorphic 
+1. Data classes cannot be polymorphic
 
 The following example demonstrates how polymorphism and time values are handled:
 
@@ -73,7 +73,7 @@ def test(t: Polymorphic): Unit = {
 
 test(TestPayload())
 test(AnotherPayload("hi"))
-```  
+```
 
 This example produces the following output:
 
@@ -120,7 +120,7 @@ Notes:
 
 1. Works same way as polymorphic types
 2. Use short names instead of fully qualified names
-3. You may introduce a local alias for an algebraic type member: `adt MyAdt { domain1.A as A1 | A}`. This allows you to resolve name conflicts 
+3. You may introduce a local alias for an algebraic type member: `adt MyAdt { domain1.A as A1 | A}`. This allows you to resolve name conflicts
 
 Cogen example for ADTs:
 
@@ -177,7 +177,7 @@ test(NS2.AnotherPayload("hi"))
 ```
 
 Output:
- 
+
 ```
 Encoded:
 {"Payload":{"localTime":"18:13:31.942072"}}
