@@ -88,10 +88,10 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   }
   private[this] final def freezeIterator(): Iterator[Binding] = {
     val frozenTags0 = frozenTags
-    retaggedIncludes.iterator
-      .++(frozenState.iterator)
+    retaggedIncludes
+      .++(frozenState)
       .map(_.addTags(frozenTags0))
-      .++(asIsIncludes.iterator)
+      .++(asIsIncludes)
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
