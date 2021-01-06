@@ -10,11 +10,11 @@ trait IncludesDSL {
   final private[this] val mutableRetaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
   final private[this] val mutableAsIsIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
-  final private[dsl] def retaggedIncludes: List[Binding] = mutableRetaggedIncludes.flatMap(_.bindings).toList
-  final private[dsl] def asIsIncludes: List[Binding] = mutableAsIsIncludes.flatMap(_.bindings).toList
-
   protected[this] def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
   protected[this] def _initialTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = mutable.ArrayBuffer.empty
+
+  final private[dsl] def retaggedIncludes: Iterator[Binding] = mutableRetaggedIncludes.iterator.flatMap(_.bindings.iterator)
+  final private[dsl] def asIsIncludes: Iterator[Binding] = mutableAsIsIncludes.iterator.flatMap(_.bindings.iterator)
 
   /** Add all bindings in `that` module into `this` module
     *
@@ -35,6 +35,6 @@ trait IncludesDSL {
 
 object IncludesDSL {
   sealed trait IncludeRef
-  final case class IncludeApplyTags(bindings: Set[Binding]) extends IncludeRef
-  final case class Include(bindings: Set[Binding]) extends IncludeRef
+  final case class IncludeApplyTags(bindings: ModuleBase) extends IncludeRef
+  final case class Include(bindings: ModuleBase) extends IncludeRef
 }
