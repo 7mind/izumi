@@ -24,8 +24,8 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
   private[definition] def _bindDSLAfterFrom[T](ref: SingletonRef): BindDSLAfterFrom[T]
   private[definition] def _setDSL[T](ref: SetRef): SetDSL[T]
 
-  private[definition] def frozenState: collection.Seq[Binding] = {
-    mutableState.flatMap(_.interpret)
+  private[definition] def frozenState: Iterator[Binding] = {
+    mutableState.iterator.flatMap(_.interpret)
   }
 
   protected[this] def _registered[T <: BindingRef](bindingRef: T): T = {
