@@ -98,6 +98,16 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
   }
 
   /**
+    * Create a dummy binding that throws an exception with an error message when it's created.
+    *
+    * Useful for prototyping.
+    */
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
+    _bindDSLAfterFrom(ref)
+  }
+
+  /**
     * Modify a value bound at `T`. Modifiers stack and are all
     * applied before `T` is added to the object graph;
     * only the final instance is observable.

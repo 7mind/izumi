@@ -12,7 +12,6 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
 
@@ -97,15 +96,6 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
   override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): MakeDSLUnnamedAfterFrom[T] = new MakeDSLUnnamedAfterFrom[T](ref, ref.key)
   override private[definition] final def _setDSL[T](ref: SetRef): SetDSL[T] = new SetDSL[T](ref)
-
-  /**
-    * Create a dummy binding that throws an exception with an error message when it's created.
-    *
-    * Useful for prototyping.
-    */
-  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = {
-    _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos))).discard()
-  }
 }
 
 object ModuleDefDSL {
