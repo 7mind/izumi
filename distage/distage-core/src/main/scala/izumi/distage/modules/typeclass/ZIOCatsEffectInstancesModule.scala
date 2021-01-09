@@ -5,7 +5,6 @@ import java.util.concurrent.ThreadPoolExecutor
 import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
 import cats.{Parallel, effect}
 import distage.{Id, ModuleDef}
-import zio.interop.catz
 import zio.{IO, Runtime, Task}
 
 import scala.concurrent.ExecutionContext
@@ -26,12 +25,16 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
 
   make[ConcurrentEffect[Task]].from {
     r: Runtime[Any] =>
-      catz.taskEffectInstance(r)
+      zio.interop.catz.taskEffectInstance(r)
   }
-  make[Parallel[Task]].from(catz.parallelInstance[Any, Throwable])
+  make[Parallel[Task]].from {
+    zio.interop.catz.parallelInstance[Any, Throwable]
+  }
   make[Timer[Task]].from[ZIOClockTimer[Throwable]]
 
-  make[ContextShift[Task]].from(catz.zioContextShift[Any, Throwable])
+  make[ContextShift[Task]].from {
+    zio.interop.catz.zioContextShift[Any, Throwable]
+  }
   make[Blocker].from {
     pool: ThreadPoolExecutor @Id("zio.io") =>
       Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(pool))

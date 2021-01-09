@@ -58,7 +58,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     */
   implicit def forZIOPlusCats[K[_], ZIO[_, _, _], R](
     implicit
-    @unused ensureCatsEffectOnClasspath: `cats.effect.IO`[K],
+    @unused ensureInteropCatsOnClasspath: `cats.effect.IO`[K],
     @unused l: `zio.ZIO`[ZIO],
   ): DefaultModule2[ZIO[R, ?, ?]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)

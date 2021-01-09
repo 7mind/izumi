@@ -409,7 +409,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
-        libs = allMonadsOptional,
+        libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
         platforms = Targets.cross,
       ),

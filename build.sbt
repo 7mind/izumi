@@ -847,7 +847,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "io.monix" %% "monix" % V.monix % Optional,
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
     )
   )
   .settings(
