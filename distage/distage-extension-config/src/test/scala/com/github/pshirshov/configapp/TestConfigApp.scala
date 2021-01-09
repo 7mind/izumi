@@ -46,7 +46,7 @@ class HttpServer2(val listenOn: HostPort @Id("HttpServer2.HostPort.listenOn")) e
 }
 
 object TestConfigApp {
-  final val definition = PlannerInput.noGC(new ConfigModuleDef {
+  final val definition = PlannerInput.everything(new ConfigModuleDef {
     make[HttpServer1]
     make[HttpServer2]
     makeConfigNamed[HostPort]("HttpServer1.HostPort")

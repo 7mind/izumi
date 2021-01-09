@@ -15,7 +15,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "handle factory injections" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Factory]
       make[Dependency]
       make[OverridingFactory]
@@ -55,7 +55,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     FactoryConstructor[GenericAssistedFactory]
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
@@ -74,7 +74,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "handle named assisted dependencies in cglib factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[NamedAssistedFactory]
       make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
@@ -98,7 +98,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "handle factories with mixed assisted and non-assisted methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[MixedAssistendNonAssisted]
       make[Dependency]
     })
@@ -119,7 +119,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "handle assisted abstract factories with multiple parameters of the same type" in {
     import FactoryCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[AssistedAbstractFactory]
       make[Dependency]
     })
@@ -140,7 +140,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
     import FactoryCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[AssistedAbstractFactoryF[Identity]]
       make[Identity[Dependency]]
     })
@@ -166,7 +166,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       }
     ]
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[{
           def makeConcreteDep(): Dependency @With[ConcreteDep]
         }
@@ -209,7 +209,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "cglib factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
       make[Factory]
@@ -228,7 +228,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "can handle factory methods with implicit parameters" in {
     import FactoryCase3._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dep1]
       make[Dep2]
       make[TC[Any]].fromValue(TC1)
@@ -257,7 +257,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   "can handle abstract classes" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
       make[AbstractClassFactory]

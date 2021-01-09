@@ -73,7 +73,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     }
 
     val injector = Injector[Identity]()
-    val plan = injector.plan(PlannerInput.noGC(definition ++ new ModuleDef {
+    val plan = injector.plan(PlannerInput.everything(definition ++ new ModuleDef {
       addImplicit[Sync[IO]]
     }))
 
@@ -101,8 +101,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()
 
-    ctxResource
-      .toCats
+    ctxResource.toCats
       .use(assert1)
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()

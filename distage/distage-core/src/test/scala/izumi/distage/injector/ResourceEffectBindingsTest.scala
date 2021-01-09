@@ -68,7 +68,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "execute effects again in reference bindings" in {
       val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
 
         make[Fn[Int]].from(execIncrement)
@@ -107,7 +107,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     }
 
     "work with set bindings" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
 
         many[Char]
@@ -222,7 +222,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "work in a basic case in Identity monad" in {
       import ClassResourceCase._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Res].fromResource[SimpleResource]
       })
 
@@ -242,7 +242,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "work in a basic case in Suspend2 monad" in {
       import ClassResourceCase._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Res].fromResource[SuspendResource]
       })
 
@@ -263,7 +263,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "work with set bindings" in {
       import izumi.distage.fixtures.ResourceCases.ClassResourceCase._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         many[Res]
           .addResource[SimpleResource]
           .addResource[SuspendResource]
@@ -292,7 +292,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "incompatible effects error aborts interpreter before any work is done" in {
       import BasicCase1._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[NotInContext]
         make[TestClass]
         make[TestDependency3]
@@ -334,7 +334,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "deallocate correctly in case of exceptions" in {
       import ResourceCase1._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[mutable.Queue[Ops]].fromEffect(queueEffect)
         make[X].fromResource[XResource]
         make[Y].fromResource[YResource]

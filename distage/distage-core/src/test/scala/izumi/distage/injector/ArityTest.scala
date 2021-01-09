@@ -10,7 +10,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support classes with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       make[Bop[Int]]
     })
@@ -23,7 +23,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support traits with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       make[BopTrait[Int]]
     })
@@ -37,7 +37,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support abstract classes with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       make[BopAbstractClass[Int]]
     })
@@ -52,7 +52,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support factories with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       make[BopFactory[Int]]
     })
@@ -68,7 +68,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support types with no parameters" in {
     import BasicCase8._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[NoArgClass]
       make[NoArgTrait]
       make[NoArgAbstractClass]

@@ -17,7 +17,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "support generics" in {
     import TypesCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[List[Dep]].named("As").from(List(DepA()))
       make[List[Dep]].named("Bs").from(List(DepB()))
       make[List[DepA]].from(List(DepA(), DepA(), DepA()))
@@ -37,7 +37,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "support classes with typealiases" in {
     import TypesCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
       make[TestClass2[TypeAliasDepA]]
     })
@@ -52,7 +52,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "support traits with typealiases" in {
     import TypesCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
       make[TestTrait]
     })
@@ -67,7 +67,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "type annotations in di keys do not result in different keys" in {
     import TraitCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency1 @Id("special")]
       make[Trait1]
     })
@@ -85,7 +85,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "handle `with` types" in {
     import TypesCase3._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait2 with Trait1].from[Trait6]
@@ -103,7 +103,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "light type tags can handle refinement & structural types" in {
     import TypesCase3._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
@@ -137,7 +137,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(PlannerInput.noGC(new Definition[Dep2]))
+    val plan = injector.plan(PlannerInput.everything(new Definition[Dep2]))
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait1[Dep, Dep2]]
@@ -155,7 +155,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
       make[T { def dep: Dep }].from[G]
     }
 
-    val definition = PlannerInput.noGC(new Definition[Trait1, Trait1])
+    val definition = PlannerInput.everything(new Definition[Trait1, Trait1])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -176,7 +176,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
       make[T with Trait1].from[G]
     }
 
-    val definition = PlannerInput.noGC(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
+    val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -202,7 +202,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
       make[Trait3[T] with K].from[Trait5[T]]
     }
 
-    val definition = PlannerInput.noGC(new Definition[Dep, Trait4])
+    val definition = PlannerInput.everything(new Definition[Dep, Trait4])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -215,7 +215,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "support newtypes" in {
     import TypesCase5._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[WidgetId].from(WidgetId(1))
       make[Dep]
     })
@@ -231,7 +231,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   "empty refinements are supported in class strategy" in {
     import TypesCase4._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Dep {}]
     })
 

@@ -77,15 +77,14 @@ class DSLTest extends AnyWordSpec with MkInjector {
       }
 
       assert(
-        Module
-          .bindings.find(_.key.tpe == DIKey[TestClass].tpe).exists {
-            case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _, _) =>
-              function.diKeys.exists {
-                case DIKey.IdKey(tpe, id, _) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
-                case _ => false
-              }
-            case _ => false
-          }
+        Module.bindings.find(_.key.tpe == DIKey[TestClass].tpe).exists {
+          case Binding.SingletonBinding(_, ImplDef.ProviderImpl(_, function), _, _, _) =>
+            function.diKeys.exists {
+              case DIKey.IdKey(tpe, id, _) => DIKey[TestDependency0].tpe == tpe && id == "test_param"
+              case _ => false
+            }
+          case _ => false
+        }
       )
     }
 
@@ -487,27 +486,27 @@ class DSLTest extends AnyWordSpec with MkInjector {
     "support bindings to multiple interfaces (injector test)" in {
       import BasicCase6._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[ImplXYZ]
           .named("my-impl")
           .aliased[TraitX]
           .aliased[TraitY]("Y")
       })
 
-      val defWithoutSugar = PlannerInput.noGC(new ModuleDef {
+      val defWithoutSugar = PlannerInput.everything(new ModuleDef {
         make[ImplXYZ].named("my-impl")
         make[TraitX].using[ImplXYZ]("my-impl")
         make[TraitY].named("Y").using[ImplXYZ]("my-impl")
       })
 
-      val defWithTags = PlannerInput.noGC(new ModuleDef {
+      val defWithTags = PlannerInput.everything(new ModuleDef {
         make[ImplXYZ]
           .named("my-impl").tagged("tag1")
           .aliased[TraitX]
           .aliased[TraitY]
       })
 
-      val defWithTagsWithoutSugar = PlannerInput.noGC(new ModuleDef {
+      val defWithTagsWithoutSugar = PlannerInput.everything(new ModuleDef {
         make[ImplXYZ].named("my-impl").tagged("tag1")
         make[TraitX].tagged("tag1").using[ImplXYZ]("my-impl")
         make[TraitY].tagged("tag1").using[ImplXYZ]("my-impl")
