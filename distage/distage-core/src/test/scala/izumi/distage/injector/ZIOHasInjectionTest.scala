@@ -74,7 +74,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       assert(error.getMessage contains "Int")
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGC(definition))
+      val plan = injector.plan(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
@@ -101,7 +101,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       }
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGC(definition))
+      val plan = injector.plan(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
@@ -120,7 +120,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
         value: Has[Dep @Id("B")] => ZIO(TestClass2(value.get))
       }
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dep].named("A").from[DepA]
         make[Dep].named("B").from[DepB]
         make[TestClass2[Dep]].named("A").fromHas(ctorA)
@@ -147,7 +147,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       def getDep1 = ZIO.access[Has[Dependency1]](_.get)
       def getDep2 = ZIO.access[Has[Dependency2]](_.get)
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
@@ -216,7 +216,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "polymorphic ZIOHas injection" in {
       import TraitCase2._
 
-      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.noGC(new ModuleDef {
+      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.everything(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
@@ -269,7 +269,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "can handle AnyVals" in {
       import TraitCase6._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dep]
         make[AnyValDep]
         make[TestTrait].fromHas(

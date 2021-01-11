@@ -74,7 +74,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -103,8 +103,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
       unsafeRun {
         import izumi.functional.bio.catz.BIOToBracket
-        ctxResource
-          .toCats
+        ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
       }
@@ -179,7 +178,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -208,8 +207,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
       unsafeRun {
         import izumi.functional.bio.catz.BIOToBracket
-        ctxResource
-          .toCats
+        ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
       }

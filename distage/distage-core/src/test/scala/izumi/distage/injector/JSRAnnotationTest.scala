@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
   "JSR330 @Named anno" should {
     "work with combined annos when no functoid is involved" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -27,7 +27,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with field annos when no functoid is involved" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
         make[ServerConfigWithFieldAnnos]
@@ -40,7 +40,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with alias annos when no functoid is involved" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[ServerConfigWithTypeAnnos]
@@ -52,7 +52,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with param annos when no functoid is involved" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -70,7 +70,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with field annos when functoid takes .apply" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
         make[ServerConfigWithFieldAnnos].from(ServerConfigWithFieldAnnos.apply _)
@@ -83,7 +83,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with alias annos when functoid takes .apply" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[ServerConfigWithTypeAnnos].from(ServerConfigWithTypeAnnos.apply _)
@@ -95,7 +95,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with combined annos when functoid takes .apply" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -113,7 +113,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with param annos when functoid takes .apply" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -131,7 +131,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with field annos when functoid takes overriden companion as function" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
         make[ServerConfigWithFieldAnnos].from(ServerConfigWithFieldAnnos)
@@ -144,7 +144,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with alias annos when functoid takes companion as function" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[ServerConfigWithTypeAnnos].from(ServerConfigWithTypeAnnos)
@@ -156,7 +156,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with combined annos when functoid takes companion as function" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -174,7 +174,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with param annos when functoid takes companion as function" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
@@ -192,7 +192,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
     }
 
     "work with param annos when functoid takes overriden companion as function" in {
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
