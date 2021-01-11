@@ -2817,6 +2817,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
+      "io.monix" %% "monix" % V.monix,
+      "io.monix" %% "monix-bio" % V.monix_bio,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect
     )
   )

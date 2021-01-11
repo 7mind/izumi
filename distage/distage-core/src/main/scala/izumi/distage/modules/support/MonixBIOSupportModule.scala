@@ -18,12 +18,13 @@ object MonixBIOSupportModule extends MonixBIOSupportModule
   *  - Adds [[izumi.functional.bio]] typeclass instances for `monix-bio`
   *  - Adds `cats-effect` typeclass instances for `monix-bio`
   *
-  * @note Will also add the following components:
+  * Will also add the following components:
   *   - [[monix.execution.Scheduler Scheduler]] by using [[monix.execution.Scheduler.global]]
   *   - [[monix.execution.Scheduler Scheduler @Id("io")]] by using [[monix.execution.Scheduler.io]]
   *   - [[monix.bio.IO.Options]] by using [[monix.bio.IO.defaultOptions]]
   *   - [[cats.effect.Blocker]] by using `Scheduler @Id("io")`
   *
+  * Added into scope by [[izumi.distage.modules.DefaultModule]].
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupportModule {

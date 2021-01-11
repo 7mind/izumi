@@ -80,7 +80,10 @@ object ForcedRecompilationToken {
 //      UniqueRecompilationTokenMacro.synchronized {
 //        if (cachedTypedTree eq null) {
 //          val uuidStrConstantType = internal.constantType(Constant(compilerLaunchId))
-//          val tree = c.typecheck(q"null : _root_.izumi.distage.plugins.ForcedRecompilationToken[$uuidStrConstantType]")
+////          val tree = c.typecheck(q"null : _root_.izumi.distage.plugins.ForcedRecompilationToken[$uuidStrConstantType]")
+//          val tree = q"null"
+//          import c.internal.reificationSupport._
+//          setType(tree, appliedType(typeOf[ForcedRecompilationToken[_]].typeConstructor, uuidStrConstantType))
 //          cachedTypedTree = tree
 //        }
 //        cachedTypedTree.asInstanceOf[c.Tree]
