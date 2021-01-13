@@ -22,6 +22,7 @@ object MonixSupportModule extends MonixSupportModule
   *   - [[cats.effect.Blocker]] by using `Scheduler @Id("io")`
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
+  *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportModule {
