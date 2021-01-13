@@ -21,6 +21,10 @@ object ZIOSupportModule extends ZIOSupportModule
   *   - Standard ZIO services: [[zio.console.Console]], [[zio.clock.Clock]], [[zio.system.System]], [[zio.random.Random]] and corresponding `.Service` types
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
+  * If [[https://github.com/zio/interop-cats/ interop-cats]] library is on the classpath during compilation,
+  * implicit [[izumi.distage.modules.DefaultModule.forZIOPlusCats]] will be picked up instead of [[izumi.distage.modules.DefaultModule.forZIO]]
+  * and will add a module with `cats-effect` instances [[izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule]]
+  *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule {
