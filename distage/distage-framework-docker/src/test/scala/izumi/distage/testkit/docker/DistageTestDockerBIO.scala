@@ -15,8 +15,6 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
 
   private val maybeBoolean: Option[Boolean] = MacroParameters.sbtIsInsideCI()
 
-  println(s"$maybeBoolean -> env CI: ${System.getenv("CI")}")
-
   if (!maybeBoolean.getOrElse(false)) {
 
     "distage test runner should start only one container for reusable" should {
