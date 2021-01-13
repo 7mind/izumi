@@ -1,13 +1,14 @@
 package izumi.distage.model.definition
 
+import cats.Applicative
 import cats.effect.Resource.{Allocate, Bind, Suspend}
 import cats.effect.{ExitCase, Resource, concurrent}
-import cats.{Applicative, ~>}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
+import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
@@ -494,15 +495,8 @@ object Lifecycle extends LifecycleCatsInstances {
     }
   }
 
-  implicit final class SyntaxLifecycleCats[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    /** Convert [[Lifecycle]] to [[cats.effect.Resource]] */
-    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
-      Resource
-        .make[G, resource.InnerResource](resource.acquire)(resource.release)
-        .evalMap[G, A](resource.extract(_).fold(identity, Applicative[G].pure))
-    }
-
-    def mapK[G[x] >: F[x], H[_]](f: G ~> H): Lifecycle[H, A] = {
+  implicit final class SyntaxLifecycleMapK[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    def mapK[G[x] >: F[x], H[_]](f: Morphism1[G, H]): Lifecycle[H, A] = {
       new Lifecycle[H, A] {
         override type InnerResource = resource.InnerResource
         override def acquire: H[InnerResource] = f(resource.acquire)
@@ -511,6 +505,15 @@ object Lifecycle extends LifecycleCatsInstances {
           fa: F[A] => f(fa.asInstanceOf[G[B]])
         }
       }
+    }
+  }
+
+  implicit final class SyntaxLifecycleCats[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    /** Convert [[Lifecycle]] to [[cats.effect.Resource]] */
+    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
+      Resource
+        .make[G, resource.InnerResource](resource.acquire)(resource.release)
+        .evalMap[G, A](resource.extract(_).fold(identity, Applicative[G].pure))
     }
   }
 
