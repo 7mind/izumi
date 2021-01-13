@@ -1,5 +1,6 @@
 package izumi.distage.compat
 
+import cats.arrow.FunctionK
 import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
 import izumi.distage.compat.CatsResourcesTest._
@@ -101,7 +102,10 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()
 
-    ctxResource.toCats
+    ctxResource
+      .mapK(FunctionK.id[IO])
+      .toCats
+      .mapK(FunctionK.id[IO])
       .use(assert1)
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()

@@ -4,21 +4,23 @@ import scala.language.implicitConversions
 
 /**
   * @note if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with Morphism2,
-  * you must enable `-Xsource:2.13` compiler option. BIO does not work without this option on 2.12.
+  * you must enable `-Xsource:2.13` compiler option.
+  *
+  * BIO does not work without `-Xsource:2.13` option on 2.12.
   */
 object Morphism2 {
   private[data] type Morphism2[-F[_, _], +G[_, _]]
-
-  @inline def apply[F[_, _], G[_, _]](polyFunction: F[UnknownE, UnknownA] => G[UnknownE, UnknownA]): Morphism2[F, G] = polyFunction.asInstanceOf[Morphism2[F, G]]
-
-  @inline implicit def identity[F[_, _]]: Morphism2[F, F] = (Predef.identity[Any] _).asInstanceOf[Morphism2[F, F]]
-
   implicit final class Ops[-F[_, _], +G[_, _]](private val self: Morphism2[F, G]) extends AnyVal {
     @inline def apply[E, A](f: F[E, A]): G[E, A] = self.asInstanceOf[F[E, A] => G[E, A]](f)
 
     @inline def compose[F1[_, _]](f: Morphism2[F1, F]): Morphism2[F1, G] = Morphism2(g => apply(f(g)))
     @inline def andThen[H[_, _]](f: Morphism2[G, H]): Morphism2[F, H] = f.compose(self)
   }
+
+  @inline def apply[F[_, _], G[_, _]](polyFunction: F[UnknownE, UnknownA] => G[UnknownE, UnknownA]): Morphism2[F, G] = polyFunction.asInstanceOf[Morphism2[F, G]]
+
+  /** If requested implicitly, an identity morphism is always available */
+  @inline implicit def identity[F[_, _]]: Morphism2[F, F] = (Predef.identity[Any] _).asInstanceOf[Morphism2[F, F]]
 
   /**
     * When it's more convenient to write a polymorphic function using a class or kind-projector's lambda syntax:
@@ -43,5 +45,4 @@ object Morphism2 {
 
   private[Morphism2] type UnknownE
   private[Morphism2] type UnknownA
-
 }
