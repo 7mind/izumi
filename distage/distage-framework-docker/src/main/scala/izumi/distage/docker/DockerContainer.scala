@@ -2,11 +2,13 @@ package izumi.distage.docker
 
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker._
+import izumi.distage.docker.bundled.{KafkaDocker, ZookeeperDocker}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
+import izumi.reflect.Tag
 
 final case class DockerContainer[Tag](
   id: ContainerId,
@@ -73,6 +75,23 @@ object DockerContainer {
 
     def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[T2]]
+    }
+
+    def exposeDependencyPorts[OT <: DockerContainer[_]](
+      ports: (Int, String)*
+    )(implicit tag: distage.Tag[T],
+      tag1: distage.Tag[ContainerResource[F, T]],
+      tag2: distage.Tag[OT],
+    ): Functoid[ContainerResource[F, T]] = {
+      modifyConfig {
+        original: OT => old: Docker.ContainerConfig[T] =>
+          val mapping = ports.map {
+            case (port, envvar) =>
+              (envvar, s"${original.hostName}:$port")
+          }
+          val newEnv = old.env ++ mapping
+          old.copy(env = newEnv)
+      }
     }
 
     def connectToNetwork[T2](
