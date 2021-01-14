@@ -28,6 +28,11 @@ including the following components:
 
 ---------------------------------------
 
+
+We are excited to announce the release of Scala.js 1.4.0!
+
+This release complements the module splitting support, introduced in Scala.js 1.3.0, with support for dynamic module loading. It is now possible to structure an application such that specific features are only loaded if necessary, the first time they are used.
+
 [comment]: <> (Welcome to 1.0 release of Izumi. There's a number of major additions that make it into this release.)
 
 [comment]: <> (Major changes across Izumi libraries.)
