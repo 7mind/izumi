@@ -28,20 +28,12 @@ including the following components:
 
 ---------------------------------------
 
+We're happy to present Izumi 1.0 release! There are a lot of features included this release that we have not anticipated that we'd be able to include in 1.0,
+and even some that we did not consider possible to actually implement in Scala. It happened to be quite delayed because of that, but we believe that in the end it was worth the wait.
 
-We are excited to announce the release of Scala.js 1.4.0!
+Compatibilty note: there are multiple renames for all kinds of entities in this release, old names are preserved as deprecated aliases to ease migration from 1.0.
 
-This release complements the module splitting support, introduced in Scala.js 1.3.0, with support for dynamic module loading. It is now possible to structure an application such that specific features are only loaded if necessary, the first time they are used.
-
-[comment]: <> (Welcome to 1.0 release of Izumi. There's a number of major additions that make it into this release.)
-
-[comment]: <> (Major changes across Izumi libraries.)
-
-Below you may find description of the major changes that occurred since 0.10.18
-
-[comment]: <> (You may also find a general, non-technical overview of the release in the talk [Izumi 1.0: Your Next Scala Stack]&#40;https:&#41;)
-
-We're proud
+Thanks to all our contributors and especially @Caparow, @CoreyOConnor and @VladPodilnyk!
 
 # Major Features since 0.10.18
 
