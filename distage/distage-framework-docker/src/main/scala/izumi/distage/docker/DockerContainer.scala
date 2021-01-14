@@ -75,14 +75,41 @@ object DockerContainer {
       self.addDependency[DockerContainer[T2]]
     }
 
-    def exposeDependencyPorts[OT <: DockerContainer[_]](
-      ports: (Int, String)*
-    )(implicit tag: distage.Tag[T],
-      tag1: distage.Tag[ContainerResource[F, T]],
-      tag2: distage.Tag[OT],
+    /**
+      * Export as environment variables inside the container the randomized values of ports of the argument running docker container
+      *
+      * @example
+      * {{{
+      * class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
+      *   make[KafkaDocker.Container].fromResource {
+      *     KafkaDocker
+      *       .make[F]
+      *       .connectToNetwork(KafkaZookeeperNetwork)
+      *       .useDependencyPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
+      *   }
+      * }
+      * }}}
+      */
+    def useDependencyPorts(
+      containerDecl: ContainerDef
+    )(ports: (Int, String)*
+    )(implicit tag1: distage.Tag[DockerContainer[containerDecl.Tag]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
+      containerDecl.discard()
+      useDependencyPorts[containerDecl.Tag](ports: _*)
+    }
+
+    def useDependencyPorts[T2](
+      ports: (Int, String)*
+    )(implicit tag1: distage.Tag[DockerContainer[T2]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
+    ): Functoid[ContainerResource[F, T]] = {
+      discard(tag1, tag3)
       modifyConfig {
-        original: OT => old: Docker.ContainerConfig[T] =>
+        original: DockerContainer[T2] => old: Docker.ContainerConfig[T] =>
           val mapping = ports.map {
             case (port, envvar) =>
               (envvar, s"${original.hostName}:$port")
@@ -92,14 +119,14 @@ object DockerContainer {
       }
     }
 
-    def connectToNetwork[T2](
-      networkDecl: ContainerNetworkDef.Aux[T2]
-    )(implicit tag1: distage.Tag[ContainerNetwork[T2]],
+    def connectToNetwork(
+      networkDecl: ContainerNetworkDef
+    )(implicit tag1: distage.Tag[ContainerNetwork[networkDecl.Tag]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
       networkDecl.discard()
-      connectToNetwork[T2]
+      connectToNetwork[networkDecl.Tag]
     }
 
     def connectToNetwork[T2](
