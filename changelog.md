@@ -31,6 +31,8 @@ including the following components:
 We're happy to present Izumi 1.0 release! There are a lot of features included this release that we have not anticipated that we'd be able to include in 1.0,
 and even some that we did not consider possible to actually implement in Scala. It happened to be quite delayed because of that, but we believe that in the end it was worth the wait.
 
+Key highlights: Compile-time checks, GraalVM/Native Image support and a massive improvement of BIO hierarchy.
+
 Compatibilty note: there are multiple renames for all kinds of entities in this release, old names are preserved as deprecated aliases to ease migration from 1.0.
 
 Thanks to all our contributors and especially @Caparow, @CoreyOConnor and @VladPodilnyk!
@@ -48,7 +50,8 @@ The new compile-time checks provide fast feedback during development and remove 
 For users of `distage-extension-config`, config parsing will be verified at compile-time against the default config files in resource folder.
 There is an option to disable config checking or check against a specific resource file instead of defaults.
 
-Checking is not enabled out-of-the-box, you must enable it by adding a “trigger” object in test scope. This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`. It will recompile itself as necessary to provide feedback during development.
+Checking is not enabled out-of-the-box, you must enable it by adding a “trigger” object in test scope. This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`.
+It will recompile itself as necessary to provide feedback during development.
 
 See [“Compile-time checks” chapter](https://izumi.7mind.io/distage/distage-framework#compile-time-checks) for details.
 
