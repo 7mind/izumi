@@ -44,13 +44,6 @@ class PluginLoaderDefaultImpl extends PluginLoader {
       }
     }
   }
-
-  protected[this] def applyOverrides(loadedPlugins: Seq[PluginBase], config: PluginConfig): Seq[PluginBase] = {
-    val merged = loadedPlugins ++ config.merges
-    if (config.overrides.nonEmpty) {
-      Seq((merged.merge +: config.overrides).overrideLeft)
-    } else merged
-  }
 }
 
 object PluginLoaderDefaultImpl {

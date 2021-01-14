@@ -55,6 +55,10 @@ abstract class RoleAppMain[F[_]](
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   /**
+    * Overrides applied to [[roleAppBootModule]]
+    *
+    * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
+    *
     * @note The components added here are visible during the creation of the app, not *inside* the app,
     *       to add components *inside* the app, add a mutator for the component `Module @Id("roleapp")`,
     *       example:
@@ -119,6 +123,7 @@ abstract class RoleAppMain[F[_]](
     mainModule overriddenBy overrideModule
   }
 
+  /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
   def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
     new RoleAppBootModule[F](
       args = argv,
