@@ -147,6 +147,10 @@ See ["Memoization Levels" chapter](https://izumi.7mind.io/distage/distage-testki
 
 @CoreyOConnor has contributed a brand new, shining microsite page for `distage-testkit`! It contains both reference material and a tutorial to get started, so check it out on ["distage-testkit" section](https://izumi.7mind.io/distage/distage-testkit)!
 
+## distage-framework-docker
+
+You can now set `Docker.ContainerConfig` `alwaysPull` field to `false` to disable pulling docker images for the container by @vilunov (#1300)
+
 ## BIO
 
 `BIO` is an hierarchy of typeclasses for tagless final style with bifunctor and trifunctor effects. In 1.0 it has been majorly restructured.
@@ -173,6 +177,8 @@ The new hierarchy is visualized as follows:
 See ["BIO Hierarchy" chapter](https://izumi.7mind.io/bio/) for details.
 
 ## LogStage
+
+@an-tex has contributed a fix for `LogstageCodec[Throwable]` instance (#1206)
 
 Classes were renamed to follow the new `BIO` naming convention, e.g. `LogBIO` has been renamed to `LogIO2`. When using old names, deprecation warnings will guide towards the new names.
 
@@ -243,6 +249,7 @@ When using old names, deprecation warnings will guide towards the new names.
 # Pull Requests merged since 0.10.18
 
   * Fix #1226 Finalize static plan checker API (#1296)
+  * Add a docker container config flag to control explicit image pulling (#1300)
   * Fix #1226 New compile-time checker API (#1285)
   * Remove 2.12 compat from FunctionK/FunctionKK (you need `-Xsource:2.13` for the rest of the library anyway and it enables correct implicit scopes for abstract types) (#1293)
   * Add cats/bio instances for `Lifecycle` (#1280)
