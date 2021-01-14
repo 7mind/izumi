@@ -43,8 +43,8 @@ abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
     super.config
       .copy(
         memoizationRoots = Map(
-          1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1]),
-          2 -> Set(DIKey.get[MemoizedLevel2]),
+          1 -> Set(DIKey[MemoizedInstance], DIKey.get[MemoizedLevel1]),
+          2 -> Set(DIKey[MemoizedLevel2]),
         ),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
           make[MemoizedInstance].from {
@@ -116,7 +116,8 @@ class SameLevel_1_WithoutLastMemoizationLevel extends DistageMemoizationEnvsTest
 class SameLevel_1_2_WithAdditionalLevel3 extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super.config.copy(
-      memoizationRoots = super.config.memoizationRoots ++ Map(10000 -> Set(DIKey.get[MemoizedLevel3])),
+      memoizationRoots = super.config.memoizationRoots ++
+        Set(DIKey[MemoizedLevel3]),
       activation = distage.Activation(Repo -> Repo.Prod),
     )
   }

@@ -5,7 +5,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
-import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleDef}
+import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.exceptions.{BadSetAxis, ConflictResolutionException}
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
@@ -230,4 +230,62 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(definition.bindings.size == 3)
     assert(instance.x ne null)
   }
+
+  "choose according to specificity rules" in {
+    object Style extends Axis {
+      case object AllCaps extends AxisChoiceDef
+      case object Normal extends AxisChoiceDef
+    }
+
+    sealed trait Color
+    case object RED extends Color
+    case object Blue extends Color
+    case object Green extends Color
+
+    def DefaultsModule = new ModuleDef {
+      make[Color].from(Green)
+      make[Color].tagged(Style.AllCaps).from(RED)
+    }
+
+    assert(
+      Injector().produceRun(DefaultsModule, Activation(Style -> Style.AllCaps))(identity(_: Color))
+      == RED
+    )
+
+    assert(
+      Injector().produceRun(DefaultsModule, Activation(Style -> Style.Normal))(identity(_: Color))
+      == Green
+    )
+
+    assertThrows[ConflictResolutionException](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
+
+    def SpecificityModule = new ModuleDef {
+      make[Color].tagged(Mode.Test).from(Blue)
+      make[Color].tagged(Mode.Prod).from(Green)
+      make[Color].tagged(Mode.Prod, Style.AllCaps).from(RED)
+    }
+
+    assert(
+      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.AllCaps))(identity(_: Color))
+      == RED
+    )
+
+    assert(
+      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test, Style -> Style.AllCaps))(identity(_: Color))
+      == Blue
+    )
+
+    assert(
+      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.Normal))(identity(_: Color))
+      == Green
+    )
+
+    assert(
+      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))(identity(_: Color))
+      == Blue
+    )
+
+    assertThrows[ConflictResolutionException](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(identity(_: Color)))
+  }
+
 }

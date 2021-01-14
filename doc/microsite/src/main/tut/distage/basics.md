@@ -361,6 +361,57 @@ runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Prod))
 runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Test))
 ```
 
+#### Specificity and defaults
+
+When multiple dimensions are attached to a binding, bindings with less specified dimensions will be considered less specific
+and will be overridden by bindings with more dimensions, if all of those dimensions are explicitly set.
+
+A binding with no attached dimensions is considered a "default" vs. a binding with attached dimensions. A default will be chosen only if all other bindings are explicitly contradicted by passed activations. If the dimensions for other bindings are merely unset, it will cause an ambiguity error.
+
+Example of these rules:
+
+```scala mdoc:to-string
+import scala.util.Try
+
+sealed trait Color
+case object RED extends Color
+case object Blue extends Color
+case object Green extends Color
+
+// Defaults:
+
+def DefaultsModule = new ModuleDef {
+  make[Color].from(Green)
+  make[Color].tagged(Style.AllCaps).from(RED)
+}
+
+Injector().produceRun(DefaultsModule, Activation(Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(DefaultsModule, Activation(Style -> Style.Normal))(println(_: Color))
+
+// ERROR Ambiguous without Style
+Try { Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)) }.isFailure
+
+// Specificity
+
+def SpecificityModule = new ModuleDef {
+  make[Color].tagged(Mode.Test).from(Blue)
+  make[Color].tagged(Mode.Prod).from(Green)
+  make[Color].tagged(Mode.Prod, Style.AllCaps).from(RED)
+}
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test, Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.Normal))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))(println(_: Color))
+
+// ERROR Ambiguous without Mode
+Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(println(_: Color)) }.isFailure
+```
+
 ## Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
@@ -572,6 +623,8 @@ what exact components are available for each effect type, see
 @scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
 @scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
+DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.
+
 ## Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
@@ -767,6 +820,22 @@ class HACK_OVERRIDE1_MyTest extends SpecIdentity {
     }
   )
 }
+```
+
+Mutators are subject to configuration using @ref[Activation Axis](#activation-axis) and will be applied conditionally, if tagged:
+
+```scala mdoc:to-string
+import distage.{Activation, Injector, Mode}
+
+def axisIncrement = new ModuleDef {
+  make[Int].fromValue(1)
+  modify[Int](_ + 10).tagged(Mode.Test)
+  modify[Int](_ + 1).tagged(Mode.Prod)
+}
+
+Injector().produceRun(axisIncrement, Activation(Mode -> Mode.Test))((currentInt: Int) => currentInt): Int
+
+Injector().produceRun(axisIncrement, Activation(Mode -> Mode.Prod))((currentInt: Int) => currentInt): Int
 ```
 
 ## Effect Bindings

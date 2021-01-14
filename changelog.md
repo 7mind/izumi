@@ -28,8 +28,6 @@ including the following components:
 
 ---------------------------------------
 
-# Major Features since 0.10.18
-
 [comment]: <> (Welcome to 1.0 release of Izumi. There's a number of major additions that make it into this release.)
 
 [comment]: <> (Major changes across Izumi libraries.)
@@ -38,7 +36,9 @@ Below you may find description of the major changes that occurred since 0.10.18
 
 [comment]: <> (You may also find a general, non-technical overview of the release in the talk [Izumi 1.0: Your Next Scala Stack]&#40;https:&#41;)
 
-description: motivation: details of the change
+We're proud
+
+# Major Features since 0.10.18
 
 ## distage
 
@@ -54,18 +54,6 @@ There is an option to disable config checking or check against a specific resour
 Checking is not enabled out-of-the-box, you must enable it by adding a “trigger” object in test scope. This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`. It will recompile itself as necessary to provide feedback during development.
 
 See [“Compile-time checks” chapter](https://izumi.7mind.io/distage/distage-framework#compile-time-checks) for details.
-
-### Other additions
-
-#### Compile-time plugin discovery
-
-`distage` supports classpath discovery of modules through an extension. Before 1.0, this extension was hard to use in Graal Native Image applications due to reliance on runtime reflection in the implementation.
-
-Since 1.0 you can perform plugin scanning at compile-time using [`PluginConfig.compileTime`](https://izumi.7mind.io/api/izumi/distage/plugins/PluginConfig$.html#compileTime(pluginsPackage:String):izumi.distage.plugins.PluginConfig).
-
-Compile-time scanning enables plugin-based development workflow on platforms without runtime reflection, such as Graal Native, however the runtime extension aspect of plugins is lost.
-
-See ["Compile-time scanning" chapter](https://izumi.7mind.io/distage/distage-framework#compile-time-scanning) for details.
 
 ### Mutators
 
@@ -108,67 +96,149 @@ See [“Mutator Bindings” chapter](https://izumi.7mind.io/distage/basics#mutat
 
 ### Out-of-the-box typeclass instances
 
+Before 1.0, it was a major chore to have to add bindings for typeclass instances such as `Sync[F]` and `ContextShift[F]` for your effect type to use them in DI. While pre-made modules existed in `distage-framework` library, they were hard to discover and had to be manually included into your own modules.
+
+Since 1.0, instances for [BIO](https://izumi.7mind.io/bio/) & [cats-effect](https://typelevel.org/cats-effect/) typeclass hierarchies are added automatically when you specify the effect type for your wiring and are can be summoned in the object graph without adding them manually, out of the box.
+
+See [“Out-of-the-box typeclass instances” chapter](https://izumi.7mind.io/distage/basics#out-of-the-box-typeclass-instances) for details.
+
+## distage-testkit
+
+### Multi-Level Memoization
+
+`distage-testkit`'s memoization mechanism allows you to share heavy components, such as docker containers managed by [`distage-framework-docker`](https://izumi.7mind.io/distage/distage-framework-docker), globally across all test suites, or across a defined subset of test suites. The scope of sharing is derived implicitly from parameters set in test suite's `TestConfig`, test suites with compatible `TestConfig`'s — compatible in a way that executing them will result in identical memoized components — will acquire those memoized components only once and share them.
+
+This scheme had a weakness in that incompatible `TestConfig`s would cause a re-creation of all memoized instances, even very heavy ones.
+
+Since 1.0, memoization has been generalized to support unlimited nesting, with new strategy, the memoization environment may be manually partitioned into levels and if a change in `TestConfig` does not cause a divergence at one of the levels, the nested levels may then fully reuse the object sub-graph of all parent levels that do not diverge.
+
+For clarity, the memoization tree structure is printed before test runs. For example, a memoization tree of a project with the following test suites:
+
+```scala
+class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+  override protected def config: TestConfig = {
+    super.config.copy(
+        memoizationRoots = Map(
+          1 -> Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
+          2 -> Set(DIKey[MemoizedLevel2]),
+        ),
+    )
+  }
+}
+
+class SameLevel_1_2_WithAdditionalLevel3 extends SameLevel_1_WithActivationsOverride {
+  override protected def config: TestConfig = {
+    super.config.copy(
+      memoizationRoots =
+        super.config.memoizationRoots ++
+        Set(DIKey[MemoizedLevel3]),
+    )
+  }
+}
+```
+
+May be visualized as follows:
+
+![Memoization Tree Log during tests](https://izumi.7mind.io/distage/media/memoization-tree.png)
+
+See ["Memoization Levels" chapter](https://izumi.7mind.io/distage/distage-testkit#multi-level-memoization) for details.
+
+### distage-testkit documentation
+
+@CoreyOConnor has contributed a brand new, shining microsite page for `distage-testkit`! It contains both reference material and a tutorial to get started, so check it out on ["distage-testkit" section](https://izumi.7mind.io/distage/distage-testkit)!
+
+## BIO
+
+`BIO` is an hierarchy of typeclasses for tagless final style with bifunctor and trifunctor effects. In 1.0 it has been majorly restructured.
+
+First, all classes have been renamed according to a new naming convention:
+
+* Bifunctor class naming pattern has changed from `BIO<name>` to `<name>2`. e.g. `BIOFunctor` is now `Functor2`, `BIO` class is now `IO2`
+* Trifunctor class naming pattern has changed from `BIO<name>3` to `<name>3`, e.g. `BIOMonadAsk3` is now `MonadAsk3`, `BIO3` is now `IO3`
+
+When using old names, deprecation warnings will guide towards the new names.
+
+Second, `Parallel*`, `Concurrent*` and `Temporal*` capabilities now do not require `IO*` (an analogue of `cats-effect`'s Sync), enabling you to use concurrency and parallelism without inviting side-effects in.
+
+Third, compatibility with `cats-effect` has been improved. @VladPodilnyk has contributed Discipline laws (#1249) which allowed extending cats conversions' support to cover `ConcurrentEffect` whereas before BIO could only convert up to `Concurrent`. Now you can run `http4s` and all the other cats-effect libraries with just BIO typeclasses, without requiring any cats-effect typeclasses.
+
+Forth, new primitives were added, bifunctor `Free` monad, as well as `FreeError` and `FreePanic` data types were contributed by @Caparow, they provide building blocks for DSLs when combined with a DSL describing functor. `Morphism1/2/3` provide unboxed natural transformations for functors with 1,2,3-arity respectively, with `Isomorphism1/2/3` modeling two-way transformations.
+
+And last, instances of BIO for `monix-bio` have been added to default implicit scope, also contributed by @VladPodilnyk. (these do not force a `monix-bio` dependency)
+
+The new hierarchy is visualized as follows:
+
+![BIO Hierarchy](https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg)
+
+See ["BIO Hierarchy" chapter](https://izumi.7mind.io/bio/) for details.
+
+## LogStage
+
+Classes were renamed to follow the new `BIO` naming convention, e.g. `LogBIO` has been renamed to `LogIO2`. When using old names, deprecation warnings will guide towards the new names.
+
+## Other changes
+
+### Reworked Role Launcher
+
+`distage` roles are a generalization of application entrypoints. An application may have many roles, which can be either one-shot tasks or persistent services.
+
+Roles come with default command-line parsing and config reading behavior. Before `1.0`, these and other aspects of `distage-framework`'s Role Launcher have been hard to customize or override. Since 1.0 Role Launcher has been rewritten to be configured using `distage` itself and all of its behavior can now be customized or
+overridden using custom modules.
+
+See ["Roles" chapter](https://izumi.7mind.io/distage/distage-framework.html#roles) for details.
+
+### Compile-time plugin discovery
+
+`distage` supports classpath discovery of modules through an extension. Before 1.0, this extension was hard to use in Graal Native Image applications due to reliance on runtime reflection in the implementation.
+
+Since 1.0 you can perform plugin scanning at compile-time using [`PluginConfig.compileTime`](https://izumi.7mind.io/api/izumi/distage/plugins/PluginConfig$.html#compileTime(pluginsPackage:String):izumi.distage.plugins.PluginConfig).
+
+Compile-time scanning enables plugin-based development workflow on platforms without runtime reflection, such as Graal Native, however the runtime extension aspect of plugins is lost.
+
+See ["Compile-time scanning" chapter](https://izumi.7mind.io/distage/distage-framework#compile-time-scanning) for details.
+
+### IntegrationCheck[F]
+
+Contributed by @Caparow, `IntegrationCheck`'s may now be parameterized by `F[_]` and use effects.
+
+See ["Using IntegrationCheck" chapter](https://izumi.7mind.io/distage/distage-testkit#using-integrationcheck) for details.
+
+### Lifecycle instances
+
+Contributed by @VladPodilnyk, `distage.Lifecycle` now has typeclass instances for `cats` `Monad`, `Monoid` and `BIO` `Functor2`, `Functor3` in default implicit scope. (these do not force a `cats` dependency)
+
 #### Changes in Activation behavior
 
-In general:
+Configuring the object graph using `Activation` changed in 1.0, namely:
 
-For Sets:
+1. Opposite activations now prune. Before, a sole binding with an activation such as `make[MyRepo].tagged(Repo.Dummy)` would be accessible in the object graph even if a contradictory activation such as `Repo.Prod` was activated. This is fixed now, and `MyRepo` is removed in such a case, it can only be made available again in an opposite axis by defining a binding with `.tagged(Repo.Prod)`
 
-<pre>
-    3. DefaultModule
-    4. Reworked Role Launcher
-    6. Other core breaking changes
+2. Set elements and mutators are now subject to configuration. Before, a declarations such as
+  ```scala
+  many[Int]
+    .add(1).tagged(Mode.Test)
+    .add(3).tagged(Mode.Prod)
+  ```
+  would not have the intended effect, with _both_ integers remaining in `Set[Int]`. Since 1.0, activations apply to set elements too, so `Set[Int]` would contain either `Set(1)` or `Set(3)` depending on the value of `Mode`.
+  For mutators, individual mutations can be tagged, and will be applied according to activation:
+  ```scala
+  modify[Int](_ + 10).tagged(Mode.Test)
+  modify[Int](_ + 1).tagged(Mode.Prod)
+  ```
 
-    ## distage-testkit
+3. Semantics for multi-dimensional activations have been cleaned up, when used, they now behave according to "specificity rules". Bindings with no assigned activations can now behave as "defaults" in cases where all other bindings are definitely unapplicable. See ["Specificity and defaults" chapter](https://izumi.7mind.io/distage/basics#specificity-and-defaults) for details
 
-    1. Multi-Level Memoization
-    2. Documentation by CoreyOConnor
+See ["Activation Axis" chapter](https://izumi.7mind.io/distage/basics#activation-axis) for details
 
-    ## BIO
+#### Renames
 
-    1. BIO changes
+Multiple entities in `distage` have been renamed, including the following:
 
-    ## logstage
+* `DIResource`, `DIResourceBase` -> `Lifecycle`
+* `DIEffect` -> `QuasiIO`
+* `ProviderMagnet` -> `Functoid`
 
-    1. renames to follow BIO
-
-    ## Contributions
-
-    1. other pull requests,
-
-    ### Memoization Levels
-
-    (PR #1251, Fix for #1188)
-
-    # Other Changes
-
-    ### distage-framework
-
-    * Fix #1056 Allow effects in`IntegrationCheck` by @Caparow (https://github.com/7mind/izumi/pull/1152, https://github.com/7mind/izumi/pull/1157)
-
-    ### distage-framework-docker
-
-    ### distage-testkit
-
-    ### distage-core
-
-    Nth, the distage API changes:
-        Injector: always requires [F] parameter, Activations are passed in PlannerInput
-        renames: ProviderMagnet->Functoid, DIResource->Lifecycle
-        DefaultModule
-        PlanVerifier
-
-    * Fix #1196 Cats/BIO instances for `Lifecycle` by @VladPodilnyk (#1280)
-
-    ### BIO
-
-    * Add `Free`, `FreeError`, `FreePanic` data types, free structures for Monad/Error/Panic typeclasses respectively, by @Caparow (#1278)
-    * Fix #1245 Discipline Law Tests by @VladPodilnyk (#1249)
-
-
-    ## LogStage
-
-</pre>
+When using old names, deprecation warnings will guide towards the new names.
 
 # Pull Requests merged since 0.10.18
 

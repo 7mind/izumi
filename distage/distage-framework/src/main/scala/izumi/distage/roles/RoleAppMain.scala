@@ -59,15 +59,14 @@ abstract class RoleAppMain[F[_]](
     *
     * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
     *
-    * @note The components added here are visible during the creation of the app, not *inside* the app,
-    *       to add components *inside* the app, add a mutator for the component `Module @Id("roleapp")`,
-    *       example:
+    * @note The components added here are visible during the creation of the app, but *not inside* the app,
+    *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
     *
     *       {{{
-    *       override def roleAppBootOverrides(@unused argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
-    *         modify[Module].named("roleapp")(_ ++ new ModuleDef {
-    *           make[MyComponentX](
-    *         })
+    *       override def pluginConfig: PluginConfig = {
+    *         super.pluginConfig overriddenBy new PluginDef {
+    *           make[MyComponentX]]
+    *         }
     *       }
     *       }}}
     */
