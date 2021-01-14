@@ -27,7 +27,7 @@ class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
     KafkaDocker
       .make[F]
       .connectToNetwork(KafkaZookeeperNetwork)
-      .useDependencyPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
+      .dependOnContainerPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
   }
 }
 

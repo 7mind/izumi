@@ -67,11 +67,11 @@ object DockerContainer {
       }
     }
 
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] = {
+    def dependOnContainer(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
 
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
+    def dependOnContainer[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[T2]]
     }
 
@@ -85,12 +85,12 @@ object DockerContainer {
       *     KafkaDocker
       *       .make[F]
       *       .connectToNetwork(KafkaZookeeperNetwork)
-      *       .useDependencyPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
+      *       .dependOnContainerPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
       *   }
       * }
       * }}}
       */
-    def useDependencyPorts(
+    def dependOnContainerPorts(
       containerDecl: ContainerDef
     )(ports: (Int, String)*
     )(implicit tag1: distage.Tag[DockerContainer[containerDecl.Tag]],
@@ -98,10 +98,10 @@ object DockerContainer {
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
       containerDecl.discard()
-      useDependencyPorts[containerDecl.Tag](ports: _*)
+      dependOnContainerPorts[containerDecl.Tag](ports: _*)
     }
 
-    def useDependencyPorts[T2](
+    def dependOnContainerPorts[T2](
       ports: (Int, String)*
     )(implicit tag1: distage.Tag[DockerContainer[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
@@ -140,6 +140,13 @@ object DockerContainer {
           old.copy(networks = old.networks + net)
       }
     }
+
+    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
+    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] =
+      dependOnContainer[containerDecl.Tag]
+
+    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
+    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = dependOnContainer[T2]
   }
 
 }

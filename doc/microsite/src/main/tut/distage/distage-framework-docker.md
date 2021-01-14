@@ -173,14 +173,14 @@ class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-#### dependOnDocker
+#### dependOnContainer
 
-@scaladoc[`dependOnDocker`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnDocker)
-adds a dependency on a given Docker container. `distage` ensures the requested container is available
-before the dependent is provided.
+@scaladoc[`dependOnContainer`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnContainer)
+adds a dependency on a given Docker container.
+`distage` ensures the requested container is available before the dependent.
 
 For example, suppose a system under test requires both PostgreSQL and Elasticsearch. One option is to
-use `dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
+use `dependOnContainer` to declare the Elasticsearch container depends on the PostgreSQL container:
 
 ```scala mdoc:to-string
 object ElasticSearchDocker extends ContainerDef {
@@ -201,7 +201,7 @@ class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
   }
 
   make[ElasticSearchDocker.Container].fromResource {
-    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker)
+    ElasticSearchDocker.make[F].dependOnContainer(PostgresDocker)
   }
 }
 ```
@@ -440,7 +440,7 @@ class TestClusterNetworkModule[F[_]: TagK] extends ModuleDef {
     PostgresDocker.make[F].connectToNetwork(TestClusterNetwork)
   }
   make[ElasticSearchDocker.Container].fromResource {
-    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker).connectToNetwork(TestClusterNetwork)
+    ElasticSearchDocker.make[F].dependOnContainer(PostgresDocker).connectToNetwork(TestClusterNetwork)
   }
 }
 ```
