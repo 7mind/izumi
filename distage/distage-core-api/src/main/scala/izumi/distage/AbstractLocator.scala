@@ -13,7 +13,7 @@ trait AbstractLocator extends Locator {
     lookupLocalUnsafe(key)
       .map {
         value =>
-          assert(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
+          require(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
           TypedRef(value.asInstanceOf[T], key.tpe, isByName = false)
       }
   }
@@ -54,6 +54,6 @@ trait AbstractLocator extends Locator {
   private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
     locator
       .lookupLocal[T](key)
-      .orElse(locator.parent.flatMap(p => recursiveLookup(key, p)))
+      .orElse(locator.parent.flatMap(p => recursiveLookup[T](key, p)))
   }
 }

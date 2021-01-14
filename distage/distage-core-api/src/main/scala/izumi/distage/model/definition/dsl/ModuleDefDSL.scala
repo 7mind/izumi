@@ -11,6 +11,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedA
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.Local3
+import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio._
@@ -625,12 +626,7 @@ object ModuleDefDSL {
   }
 
   @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, ?], A], r: R): Lifecycle[F[Any, E, ?], A] = {
-    new Lifecycle[F[Any, E, ?], A] {
-      override type InnerResource = resource.InnerResource
-      override def acquire: F[Any, E, InnerResource] = F.provide(resource.acquire)(r)
-      override def release(rr: InnerResource): F[Any, E, Unit] = F.provide(resource.release(rr))(r)
-      override def extract[B >: A](rr: InnerResource): Either[F[Any, E, A], A] = resource.extract(rr).left.map(F.provide(_)(r))
-    }
+    resource.mapK(Morphism1[F[R, E, ?], F[Any, E, ?]](F.provide(_)(r)))
   }
 
   // DSL state machine

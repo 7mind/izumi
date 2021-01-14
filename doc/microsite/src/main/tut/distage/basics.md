@@ -361,6 +361,57 @@ runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Prod))
 runWith(Activation(Style -> Style.AllCaps, Mode -> Mode.Test))
 ```
 
+#### Specificity and defaults
+
+When multiple dimensions are attached to a binding, bindings with less specified dimensions will be considered less specific
+and will be overridden by bindings with more dimensions, if all of those dimensions are explicitly set.
+
+A binding with no attached dimensions is considered a "default" vs. a binding with attached dimensions. A default will be chosen only if all other bindings are explicitly contradicted by passed activations. If the dimensions for other bindings are merely unset, it will cause an ambiguity error.
+
+Example of these rules:
+
+```scala mdoc:to-string
+import scala.util.Try
+
+sealed trait Color
+case object RED extends Color
+case object Blue extends Color
+case object Green extends Color
+
+// Defaults:
+
+def DefaultsModule = new ModuleDef {
+  make[Color].from(Green)
+  make[Color].tagged(Style.AllCaps).from(RED)
+}
+
+Injector().produceRun(DefaultsModule, Activation(Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(DefaultsModule, Activation(Style -> Style.Normal))(println(_: Color))
+
+// ERROR Ambiguous without Style
+Try { Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)) }.isFailure
+
+// Specificity
+
+def SpecificityModule = new ModuleDef {
+  make[Color].tagged(Mode.Test).from(Blue)
+  make[Color].tagged(Mode.Prod).from(Green)
+  make[Color].tagged(Mode.Prod, Style.AllCaps).from(RED)
+}
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test, Style -> Style.AllCaps))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.Normal))(println(_: Color))
+
+Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))(println(_: Color))
+
+// ERROR Ambiguous without Mode
+Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(println(_: Color)) }.isFailure
+```
+
 ## Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
@@ -572,6 +623,8 @@ what exact components are available for each effect type, see
 @scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
 @scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
+DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.
+
 ## Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
@@ -701,7 +754,7 @@ Mutators provide a way to do partial overrides or slight modifications of some e
 Example:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Id, Injector}
+import distage.{Id, Injector, ModuleDef}
 
 def startingModule = new ModuleDef {
   make[Int].fromValue(1) // 1
@@ -730,6 +783,61 @@ Injector().produceRun(
 )((currentInt: Int) => currentInt): Int
 ```
 
+Another example: Suppose you're using a config case class in your @ref[`distage-testkit`](distage-testkit.md) tests, and for one of the test you want to use a modified value for one of the fields in it. Before 1.0 you'd have to duplicate the config binding into a new key and apply the modifying function to it:
+
+```scala mdoc:reset:invisible
+import scala.Predef.{identity => modifyingFunction, _}
+
+final case class Config(a: Int, b: Int, z: Int)
+```
+
+```scala mdoc:to-string
+import distage.{Id, ModuleDef}
+import distage.config.ConfigModuleDef
+import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.scalatest.SpecIdentity
+
+class HACK_OVERRIDE0_MyTest extends SpecIdentity {
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = new ConfigModuleDef {
+      makeConfig[Config]("config.myconfig").named("duplicate")
+      make[Config].from {
+        (thatConfig: Config @Id("duplicate")) =>
+          modifyingFunction(thatConfig)
+      }
+    }
+  )
+}
+```
+
+Now instead of overriding the entire binding, we may use a mutator:
+
+```scala mdoc:override:to-string
+class HACK_OVERRIDE1_MyTest extends SpecIdentity {
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      modify[Config](modifyingFunction(_))
+    }
+  )
+}
+```
+
+Mutators are subject to configuration using @ref[Activation Axis](#activation-axis) and will be applied conditionally, if tagged:
+
+```scala mdoc:to-string
+import distage.{Activation, Injector, Mode}
+
+def axisIncrement = new ModuleDef {
+  make[Int].fromValue(1)
+  modify[Int](_ + 10).tagged(Mode.Test)
+  modify[Int](_ + 1).tagged(Mode.Prod)
+}
+
+Injector().produceRun(axisIncrement, Activation(Mode -> Mode.Test))((currentInt: Int) => currentInt): Int
+
+Injector().produceRun(axisIncrement, Activation(Mode -> Mode.Prod))((currentInt: Int) => currentInt): Int
+```
+
 ## Effect Bindings
 
 Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
@@ -741,7 +849,7 @@ In these cases we can use `.fromEffect` to create a value using an effectful con
 Example with a `Ref`-based Tagless Final `KVStore`:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector}
+import distage.{Injector, ModuleDef}
 import izumi.functional.bio.{Error2, Primitives2, F}
 import zio.{Task, IO}
 
@@ -848,7 +956,7 @@ def module2 = new ModuleDef {
 Another example:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector}
+import distage.{Injector, ModuleDef}
 import zio.console.{putStrLn, Console}
 import zio.{UIO, URIO, Ref, Task, Has}
 
@@ -1161,7 +1269,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 `@With` annotation can be used to specify the implementation class, to avoid leaking the implementation type in factory method result:
 
 ```scala mdoc:reset:to-string
-import distage.{ModuleDef, Injector, With}
+import distage.{Injector, ModuleDef, With}
 
 trait Actor {
   def receive(msg: Any): Unit

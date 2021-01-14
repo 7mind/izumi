@@ -251,8 +251,7 @@ __runTest__(new ScoreSimpleTest with MdocTest { def name = "ScoreSimpleTest" })
 
 All of the base classes support test cases that are effects with assertions. Functions returning effects will have
 arguments provided from the object graph. These test cases are supported by
-@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
-.
+@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper).
 
 The different effect types fix the `F[_]` argument for this syntax:
 
@@ -261,8 +260,8 @@ The different effect types fix the `F[_]` argument for this syntax:
 - `Spec3`: `F[Any, Throwable, _]`
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method. The `Config` required is from
-the `distage` object graph defined in `moduleOverrides`. By using a function with a `Config` argument in `in`, the
-required argument will be injected by `distage-testkit`.
+the `distage` object graph defined in `moduleOverrides`.
+By using a function with a `Config` argument in `in`, the required argument will be injected by `distage-testkit`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -572,62 +571,117 @@ user bindings if different behavior or support for custom effect types is requir
 
 The execution of tests is grouped into:
 
-- [memoization environments](#resource-reuse-memoization).
+- [memoization levels](#resource-reuse-memoization).
 - test suite
 - test cases
 
-The default is to run all of these in parallel. The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has
-options to change the behavior for each of these groups. The default is
-@scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not
-constrain the number of parallel tests. `ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test cases.
+The default is to run all of these in parallel.
+
+The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each of these groups.
+The default is @scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not constrain the number of parallel tests.
+`ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test cases.
 While `ParallelLevel.Sequential` executes the test cases one at a time.
 
-- `parallelEnvs` - Parallel level for distinct memoization environments.
-- `parallelSuites` - Parallel level for test suites.
-- `parallelTests` - Parallel level for test cases.
+- `parallelEnvs` - Parallelism level for distinct memoization environments.
+- `parallelSuites` - Parallelism level for test suites.
+- `parallelTests` - Parallelism level for test cases.
 
 If a group is configured to execute sequentially this will execute after the parallel tests.
 
-For example, the `BonusServiceTest` above consists of two test cases and one test suite. Both test cases will be
-executed in parallel using the async behavior of the effect type. The
-`NotUsingMemoTest` and `UsingMemoTest` below demonstrate executing the test cases sequentially for each test suite.
-However, the test suites will execute in parallel as they use the same memoization environment.
+For example, the `BonusServiceTest` above consists of two test cases and one test suite.
+Both test cases will be executed in parallel using the capabilities of the effect type.
+
+The `NotUsingMemoTest` and `UsingMemoTest` test suites below demonstrate executing the test cases sequentially for each test suite.
+However, the two suites themselves will execute in parallel as they are in the same memoization environment.
 
 ### Resource Reuse - Memoization
 
-Injected values are summoned from the object graph for each test. Without using memoization, the components will be
-acquired and released for each test. This may be unwanted. For example, a single PostgreSQL container may be required
-for a sequence of test cases. In which case the PostgreSQL component should be memoized for the duration of those test
-cases. Configuring memoization enables changing whether instantiating a component results in a fresh component or reuses
-an existing, memoized, instance.
+For each test, a new object graph with injected values is created.
+Without using memoization, all components will be created, acquired and released anew for each test case.
+This may be unwanted.
+For example, you may wish to reuse a single PostgreSQL container for a sequence of test cases.
+In which case the PostgreSQL component should be memoized for the duration of those test cases.
 
-Further, the memoization environment determines how the test cases are scheduled for execution. See
-[the execution order section for further information.](#execution-order)
+Configuring memoization determines whether summoning a component results in a fresh component or reuses an existing, memoized, instance.
+
+Further, the memoization environment determines how the test cases are scheduled for execution.
+See [the execution order section for further information.](#execution-order)
 
 #### Memoization Environments
 
-The memoization applied when an component is summoned is defined by the *memoization environment*. Each distinct
+Memoization strategy applied when a component is summoned is defined by the *memoization environment*. Each distinct
 memoization environment uses a distinct memoization store. When a component instance is memoized that instance is shared
-across all tests that use the same memoization environment. The
+across all tests that use the same memoization environment.
 @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) contains the options that define the memoization environment:
 
 1. `memoizationRoots` - These components will be acquired once and shared across all tests that used the same
    memoization environment.
-2. `activation` - Chosen activation axis. Changes in Activation that alter implementations of components in
-   memoizationRoots OR their dependencies will cause the test to execute in a new memoization environment.
+2. `activation` - Chosen activation axis. Differences in Activation that affect the memoized part of the graph (that
+   alter implementations of components in `memoizationRoots` *or* their transitive dependencies) will
+   cause the test to execute in a new memoization environment.
 3. `pluginConfig` - Defines the plugins to source module definitions.
-4. `forcedRoots` - Components treated as a dependency of every test. A component added to this and
-   `memoizationRoots` will be acquired at the start of all tests and released at the end of all tests.
+4. `forcedRoots` - Components treated as a dependency of every test. A component added both to `forcedRoots` and
+   `memoizationRoots` will be acquired at the start of all tests and released at the end of all tests in the memoization
+   environment.
 5. `moduleOverrides` - Overrides the modules from `pluginConfig`.
 
-The module environment depends on instantiation of the `memoizationRoots` and `forcedRoots` components. Changes to the
+The module environment depends on instantiation of the `memoizationRoots` components. Changes to the
 config that alter implementations of these components *or* their dependencies will change the memoization environment
-used. This includes, but is not limited to, changes to
-`activation`, `pluginConfig` and `moduleOverrides`.
+used. This includes, but is not limited to, changes to `activation`, `pluginConfig` and `moduleOverrides`.
 
-When the `TestConfig` option @scaladoc[`debugOutput`](izumi.distage.testkit.TestConfig)
-is true the debug output will include memoization environment diagnostics. This can also be controlled using
-the `izumi.distage.testkit.debug` system property.
+When the `TestConfig` option @scaladoc[`debugOutput`](izumi.distage.testkit.TestConfig) is true the debug output will include memoization environment diagnostics.
+This can also be controlled using the [`izumi.distage.testkit.debug`](izumi.distage.testkit.DebugProperties$) system property.
+
+#### Memoization Levels
+
+Since version `1.0` the above memoization environments scheme has been generalized to support unlimited nesting of memoization environments.
+
+Nested memoization levels allow more and better sharing of heavy components among test suites. With previous strategy of single-level memoization environments, any change in `TestConfig` that forces a new memoization environment would cause every single memoized component to be recreated in a new environment.
+
+With new strategy, the memoization environment may be manually partitioned into levels and if a change in `TestConfig` does not cause a divergence at one of the levels, the nested levels may then fully reuse the object sub-graph of all parent levels that do not diverge.
+
+For clarity, the memoization tree structure is printed before test runs. For example, a memoization tree of a project with the following test suites:
+
+```scala mdoc:invisible
+import distage.DIKey
+import izumi.distage.testkit.TestConfig
+
+class MemoizedInstance
+class MemoizedLevel1
+class MemoizedLevel2
+class MemoizedLevel3
+```
+
+```scala mdoc:to-string
+class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+  override protected def config: TestConfig = {
+    super.config.copy(
+        memoizationRoots = Map(
+          1 -> Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
+          2 -> Set(DIKey[MemoizedLevel2]),
+        ),
+    )
+  }
+}
+
+class SameLevel_1_2_WithAdditionalLevel3 extends SameLevel_1_WithActivationsOverride {
+  override protected def config: TestConfig = {
+    super.config.copy(
+      memoizationRoots =
+        super.config.memoizationRoots ++
+        Set(DIKey[MemoizedLevel3]),
+    )
+  }
+}
+```
+
+May be visualized as follows:
+
+![Memoization Tree Log during tests](media/memoization-tree.png)
+
+Technical note: divergence of memoization levels is calculated based on equality of @ref[recipes of future object graphs](debugging.md#pretty-printing-plans), not equality of allocated/existing object graphs.
+
+Note: [original github ticket](https://github.com/7mind/izumi/issues/1188)
 
 #### Examples
 
@@ -811,6 +865,8 @@ If forced root components are not memoized, they will be acquired and released f
 If memoized, they will be acquired and released once, before all and after all the tests within this memoization environment.
 
 They provide an alternative to ScalaTest's native `beforeEach/beforeAll` that can use functional effects instead of mutability (However, `All` here includes the entire memoization environment, not the enclosing test suite)
+
+Forced roots may be configured per-activation / combination of activations, e.g. you may force postgres table setup to happen only in test environments with `Repo -> Repo.Prod` activation.
 
 ### Test Selection
 

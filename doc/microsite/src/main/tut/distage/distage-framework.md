@@ -131,7 +131,7 @@ import com.example.myapp.MainLauncher
 object WiringCheck extends PlanCheck.Main(MainLauncher)
 ```
 
-This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`, it will be recompiled as
+This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`. It will recompile itself as
 necessary to provide feedback during development.
 
 By default, all possible roles and activations are checked efficiently.
@@ -325,18 +325,19 @@ values in later configs:
 ## Plugins
 
 `distage-extension-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`.
-Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time with new `Plugin` classes
-on the classpath. Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as
-long as they're defined in a separate module.
 
-To use plugins, first add the `distage-extension-plugins` library:
+Plugins reduce friction in adding new components, a programmer needs only to define new plugins and does not also have to stop to add a new plugin to a central wiring point. Plugins also enable extreme late-binding: they allow a program to extend itself at launch time with new `Plugin` classes on the classpath.
+
+Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long as they're defined in a separate module.
+
+To use plugins, add the `distage-extension-plugins` library:
 
 @@dependency[sbt] { group="io.7mind.izumi"
 artifact="distage-extension-plugins_2.13"
 version="$izumi.version$"
 }
 
-Create a module extending the `PluginDef` trait instead of `ModuleDef`:
+To declare a plugin, create a top-level object extending the `PluginDef` trait instead of `ModuleDef`:
 
 ```scala mdoc:reset:invisible
 import com.example.petstore._
@@ -355,7 +356,7 @@ object PetStorePlugin extends PluginDef {
 }
 ```
 
-Collect all the `PluginDef` classes and objects in a package:
+Use `PluginLoader` to find all the `PluginDef` objects in a specific package or its subpackages:
 
 ```scala mdoc:to-string
 val pluginConfig = PluginConfig.cached(
@@ -366,10 +367,10 @@ val pluginConfig = PluginConfig.cached(
 val appModules = PluginLoader().load(pluginConfig)
 ```
 
-Wire the collected modules as usual:
+You may then pass plugins to `Injector` as ordinary modules:
 
 ```scala mdoc:to-string
-// combine all modules into one
+// combine all plugins into one
 
 val appModule = appModules.result.merge
 

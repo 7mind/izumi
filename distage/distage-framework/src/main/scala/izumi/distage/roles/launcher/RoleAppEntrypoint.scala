@@ -81,7 +81,7 @@ object RoleAppEntrypoint {
       }
     }
 
-    protected def runTasks(index: Map[String, Object])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F]): F[Unit] = {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -117,16 +117,15 @@ object RoleAppEntrypoint {
     }
 
     private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRole[F]] = {
-      roles
-        .availableRoleBindings.flatMap {
-          b =>
-            rolesLocator.index.get(b.binding.key) match {
-              case Some(value: AbstractRole[F]) =>
-                Seq(b.descriptor.id -> value)
-              case _ =>
-                Seq.empty
-            }
-        }.toMap
+      roles.availableRoleBindings.flatMap {
+        b =>
+          rolesLocator.lookupInstance[AbstractRole[F]](b.binding.key) match {
+            case Some(value) =>
+              Seq(b.descriptor.id -> value)
+            case _ =>
+              Seq.empty
+          }
+      }.toMap
     }
 
   }

@@ -161,7 +161,7 @@ object TestConfig {
       AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
 
     @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisChoice], Set[_ <: DIKey])]): AxisDIKeys =
-      AxisDIKeys(map.toMap[Set[_ <: AxisChoice], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisChoice], Set[DIKey]]])
+      AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisChoice] -> v.toSet[DIKey] }.toMap)
 
     @inline implicit def fromSingleMap(map: Iterable[(AxisChoice, DIKey)]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
