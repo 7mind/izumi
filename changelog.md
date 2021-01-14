@@ -1,5 +1,3 @@
-`1.0.0`
-
 <p align="center">
   <a href="https://izumi.7mind.io/">
   <img width="40%" src="https://github.com/7mind/izumi/blob/develop/doc/microsite/src/main/tut/media/izumi-logo-full-purple.png?raw=true" alt="Izumi"/>
