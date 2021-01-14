@@ -791,7 +791,7 @@ import scala.Predef.{identity => modifyingFunction, _}
 final case class Config(a: Int, b: Int, z: Int)
 ```
 
-```scala mdoc:to-string
+```scala mdoc:override:to-string
 import distage.{Id, ModuleDef}
 import distage.config.ConfigModuleDef
 import izumi.distage.testkit.TestConfig
