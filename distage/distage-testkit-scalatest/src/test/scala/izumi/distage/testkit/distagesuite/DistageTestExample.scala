@@ -22,13 +22,12 @@ import zio.{Has, Task, ZIO}
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        memoizationRoots = Map(
-          1 -> Set(DIKey.get[MockCache[F]]),
-          2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
-        )
+    super.config.copy(
+      memoizationRoots = Map(
+        1 -> Set(DIKey.get[MockCache[F]]),
+        2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
       )
+    )
   }
 }
 
@@ -94,31 +93,30 @@ object DistageTestExampleBase {
 
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
-  override protected def config: TestConfig = super
-    .config.copy(
-      pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
-        make[SetCounter]
+  override protected def config: TestConfig = super.config.copy(
+    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
+      make[SetCounter]
 
-        make[SetElement1]
-        make[SetElement2]
-        make[SetElement3]
-        make[SetElement4]
-        make[SetElementRetainer]
+      make[SetElement1]
+      make[SetElement2]
+      make[SetElement3]
+      make[SetElement4]
+      make[SetElementRetainer]
 
-        many[SetElement]
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
-          .weak[SetElement4]
+      many[SetElement]
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
+        .weak[SetElement4]
 
-        many[SetElement]
-          .named("unmemoized-set")
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
-          .weak[SetElement4]
-      }
-    )
+      many[SetElement]
+        .named("unmemoized-set")
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
+        .weak[SetElement4]
+    }
+  )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
 
@@ -217,7 +215,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
 
     "test 6 (should be ignored)" in {
       _: MockCachedUserService[F] =>
-        assume(false, "xxx")
+        assert(false, "xxx")
     }
   }
 
@@ -300,14 +298,13 @@ final class ActivationTestTask extends ActivationTest[Task]
 final class ActivationTestIdentity extends ActivationTest[Identity]
 
 abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] {
-  override protected def config: TestConfig = super
-    .config.copy(
-      moduleOverrides = new ModuleDef {
-        make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
-        make[ForcedRootProbe]
-      },
-      forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
-    )
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
+      make[ForcedRootProbe]
+    },
+    forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
+  )
 
   "forced root was attached and the acquire effect has been executed" in {
     locatorRef: LocatorRef =>
