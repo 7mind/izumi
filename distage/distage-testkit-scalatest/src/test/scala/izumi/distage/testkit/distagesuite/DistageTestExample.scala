@@ -213,9 +213,9 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         assert(false)
     }
 
-    "test 6 (should be ignored)" in {
+    "test 6 (should be ignored due to `assume`)" in {
       _: MockCachedUserService[F] =>
-        assert(false, "xxx")
+        assume(false, "xxx")
     }
   }
 
