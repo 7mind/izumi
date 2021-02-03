@@ -4,11 +4,11 @@ import scala.annotation.nowarn
 import scala.collection.compat._
 import scala.collection.mutable
 
-@nowarn("msg=deprecated")
 @nowarn("msg=Unused import")
 final class IzMappings[A, B](private val list: IterableOnce[(A, B)]) extends AnyVal {
   import scala.collection.compat._
 
+  @nowarn("msg=deprecated")
   def toMultimapMut: MutableMultiMap[A, B] = {
     list.iterator.foldLeft(new mutable.HashMap[A, mutable.Set[B]] with mutable.MultiMap[A, B]) {
       (acc, pair) =>
