@@ -8,7 +8,6 @@ object Izumi {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
-    val silencer = Version.VExpr("V.silencer")
     val scalatest = Version.VExpr("V.scalatest")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
@@ -111,8 +110,6 @@ object Izumi {
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
 
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
-      .more(LibSetting.Raw("cross CrossVersion.full"))
-    final val silencer_plugin = Library("com.github.ghik", "silencer-plugin", V.silencer, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
@@ -700,7 +697,6 @@ object Izumi {
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
-      ScopedLibrary(silencer_plugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,
     ),
