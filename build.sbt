@@ -21,7 +21,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -37,7 +37,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -101,7 +101,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -153,7 +153,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -169,7 +169,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -233,7 +233,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -264,7 +264,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -280,7 +280,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -344,7 +344,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -397,7 +397,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -413,7 +413,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -477,7 +477,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -524,7 +524,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -540,7 +540,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -604,7 +604,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -646,7 +646,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -662,7 +662,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -726,7 +726,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -762,7 +762,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -778,7 +778,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -842,7 +842,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -876,7 +876,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -892,7 +892,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -956,7 +956,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -984,7 +984,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1000,7 +1000,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1064,7 +1064,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1105,7 +1105,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1121,7 +1121,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1185,7 +1185,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1216,7 +1216,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1232,7 +1232,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1296,7 +1296,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1335,7 +1335,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1351,7 +1351,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1415,7 +1415,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1449,7 +1449,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1465,7 +1465,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1529,7 +1529,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1584,7 +1584,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1600,7 +1600,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1664,7 +1664,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1697,7 +1697,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1713,7 +1713,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1777,7 +1777,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1808,7 +1808,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1824,7 +1824,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1888,7 +1888,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1932,7 +1932,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -1948,7 +1948,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2012,7 +2012,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2072,7 +2072,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2088,7 +2088,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2152,7 +2152,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2182,7 +2182,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2198,7 +2198,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2262,7 +2262,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2303,7 +2303,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2319,7 +2319,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2383,7 +2383,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2419,7 +2419,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2435,7 +2435,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2499,7 +2499,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2530,7 +2530,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2546,7 +2546,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2610,7 +2610,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2641,7 +2641,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2657,7 +2657,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2721,7 +2721,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2756,7 +2756,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2772,7 +2772,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2836,7 +2836,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2898,7 +2898,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
@@ -2914,7 +2914,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2978,7 +2978,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3065,7 +3065,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.12"
+      "2.12.13"
     ),
     coverageEnabled := false,
     organization := "io.7mind.izumi",
@@ -3082,7 +3082,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
+      case (_, "2.12.13") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3146,7 +3146,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3166,7 +3166,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3188,7 +3188,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3210,7 +3210,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3234,7 +3234,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3258,7 +3258,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3275,7 +3275,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3292,7 +3292,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3306,7 +3306,7 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3340,7 +3340,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
     skip in publish := true,
     crossScalaVersions := Seq(
       "2.13.4",
-      "2.12.12"
+      "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
