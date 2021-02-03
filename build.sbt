@@ -41,6 +41,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -80,6 +81,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -94,7 +96,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -174,6 +175,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -213,6 +215,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -227,7 +230,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -286,6 +288,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -325,6 +328,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -339,7 +343,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -420,6 +423,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -459,6 +463,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -473,7 +478,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -548,6 +552,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -587,6 +592,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -601,7 +607,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -671,6 +676,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -710,6 +716,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -724,7 +731,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -788,6 +794,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -827,6 +834,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -841,7 +849,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -903,6 +910,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -942,6 +950,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -956,7 +965,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1012,6 +1020,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1051,6 +1060,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1065,7 +1075,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1134,6 +1143,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1173,6 +1183,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1187,7 +1198,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1246,6 +1256,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1285,6 +1296,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1299,7 +1311,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1366,6 +1377,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1405,6 +1417,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1419,7 +1432,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1481,6 +1493,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1520,6 +1533,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1534,7 +1548,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1617,6 +1630,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1656,6 +1670,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1670,7 +1685,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1731,6 +1745,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1770,6 +1785,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1784,7 +1800,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1843,6 +1858,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1882,6 +1898,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -1896,7 +1913,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -1968,6 +1984,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2007,6 +2024,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2021,7 +2039,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2109,6 +2126,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2148,6 +2166,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2162,7 +2181,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2220,6 +2238,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2259,6 +2278,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2273,7 +2293,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2342,6 +2361,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2381,6 +2401,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2395,7 +2416,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2459,6 +2479,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2498,6 +2519,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2512,7 +2534,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2571,6 +2592,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2610,6 +2632,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2624,7 +2647,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2683,6 +2705,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2722,6 +2745,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2736,7 +2760,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2799,6 +2822,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2838,6 +2862,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2852,7 +2877,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -2942,6 +2966,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2981,6 +3006,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -2995,7 +3021,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
@@ -3111,6 +3136,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -3150,6 +3176,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Wconf:msg=kind-projector:silent",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
@@ -3164,7 +3191,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions += "-Wconf:cat=other-match-analysis:error",
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(

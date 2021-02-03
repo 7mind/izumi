@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.67`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.68`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -237,7 +237,6 @@ object Izumi {
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq,
         ),
-        "scalacOptions" += "-Wconf:cat=other-match-analysis:error",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         // disable fatal-warnings to make sure publish goes through
         "scalacOptions" -= "-Wconf:any:error",
