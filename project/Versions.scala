@@ -5,7 +5,7 @@ object V {
   // foundation
   val collection_compat = "2.4.1"
 
-  val kind_projector = "0.11.1"
+  val kind_projector = "0.11.3"
   val silencer = "1.7.1"
   val neme_plugin = "0.0.5"
 
