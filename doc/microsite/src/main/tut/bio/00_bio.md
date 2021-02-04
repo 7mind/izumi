@@ -137,3 +137,9 @@ With `Primitiives*[F]` in implicit scope, use `F.mkRef`/`F.mkPromise`/`F.mkSemap
 `Entropy1/2/3` models random numbers.
 
 `UnsafeRun2/3` allows executing effects (it is required for conversion to cats' `ConcurrentEffect` which also allows unsafe running)
+
+## Examples
+
+[distage-example](https://github.com/7mind/distage-example) is a full example application written in Tagless Final Style using BIO typeclasses.
+
+You may also find a video walkthrough of using BIO on Youtube by [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
