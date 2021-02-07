@@ -409,4 +409,31 @@ class SyntaxTest extends AnyWordSpec {
       )
     }
   }
+
+  "BIO.iterateUntil/iterateWhile are callable" in {
+    import izumi.functional.bio.Monad2
+
+    def x[F[+_, +_]: Monad2](a: F[Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    x[zio.IO](zio.UIO.succeed(()))
+  }
+
+  "BIO.retryUntil/retryUntilM/retryWhile/retryWhileM/someOrElse/someOrElseM/someOrFail are callable" in {
+    import izumi.functional.bio.{Error2, F}
+
+    def x[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Unit]]) = {
+      a.retryUntil(_ => true)
+      a.retryUntilM(_ => F.pure(false))
+      a.retryWhile(_ => false)
+      a.retryWhileM(_ => F.pure(true))
+      aOpt.someOrElse(())
+      aOpt.someOrElseM(F.unit)
+      aOpt.someOrFail("ooops")
+    }
+
+    x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
 }
