@@ -40,8 +40,8 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
     retryWhileF(r)(e => pure(f(e)))
   }
   /** Retries this effect while its error satisfies the specified effectful predicate. */
-  def retryWhileF[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] = {
-    catchAll(r)(e => flatMap(f(e))(if (_) retryWhileF(r)(f) else fail(e)))
+  def retryWhileF[R, R1 <: R, E, A](r: F[R, E, A])(f: E => F[R1, Nothing, Boolean]): F[R1, E, A] = {
+    catchAll(r: F[R1, E, A])(e => flatMap(f(e))(if (_) retryWhileF(r)(f) else fail(e)))
   }
 
   /** Retries this effect until its error satisfies the specified predicate. */
@@ -49,8 +49,8 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
     retryUntilF(r)(e => pure(f(e)))
   }
   /** Retries this effect until its error satisfies the specified effectful predicate. */
-  def retryUntilF[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] = {
-    catchAll(r)(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
+  def retryUntilF[R, R1 <: R, E, A](r: F[R, E, A])(f: E => F[R1, Nothing, Boolean]): F[R1, E, A] = {
+    catchAll(r: F[R1, E, A])(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
   }
 
   /** for-comprehensions sugar:

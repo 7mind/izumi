@@ -63,10 +63,10 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def redeemPure[R, E, A, B](r: ZIO[R, E, A])(err: E => B, succ: A => B): ZIO[R, Nothing, B] = r.fold(err, succ)
 
   @inline override final def retryWhile[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] = r.retryWhile(f)
-  @inline override final def retryWhileF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] = r.retryWhileM(f)
+  @inline override final def retryWhileF[R, R1 <: R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R1, Nothing, Boolean]): ZIO[R1, E, A] = r.retryWhileM(f)
 
   @inline override final def retryUntil[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] = r.retryUntil(f)
-  @inline override final def retryUntilF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] = r.retryUntilM(f)
+  @inline override final def retryUntilF[R, R1 <: R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R1, Nothing, Boolean]): ZIO[R1, E, A] = r.retryUntilM(f)
 
   @inline override final def fromOptionOr[R, E, A](valueOnNone: => A, r: ZIO[R, E, Option[A]]): ZIO[R, E, A] = r.someOrElse(valueOnNone)
 

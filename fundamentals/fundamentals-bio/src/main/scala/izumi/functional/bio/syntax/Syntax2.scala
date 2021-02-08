@@ -107,7 +107,7 @@ object Syntax2 {
     @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.fromOption(errorOnNone, r.widen)
 
     @inline final def retryWhile(f: E => Boolean): F[E, A] = F.retryWhile(r)(f)
-    @inline final def retryWhileF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryWhileF[Any, E, A](r)(f)
+    @inline final def retryWhileF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryWhileF(r)(f)
 
     @inline final def retryUntil(f: E => Boolean): F[E, A] = F.retryUntil(r)(f)
     @inline final def retryUntilF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryUntilF(r)(f)

@@ -40,7 +40,16 @@ class AsyncMonix extends Async2[IO] {
   @inline override final def retryWhile[R, E, A](r: IO[E, A])(f: E => Boolean): IO[E, A] = r.onErrorRestartIf(f)
   @inline override final def retryUntil[R, E, A](r: IO[E, A])(f: E => Boolean): IO[E, A] = r.onErrorRestartIf(!f(_))
 
-  @inline override final def retryUntilF[R, E, A](r: IO[E, A])(f: E => IO[Nothing, Boolean]): IO[E, A] = {
+  @inline override final def retryWhileF[R, R1 <: R, E, A](r: IO[E, A])(f: E => IO[Nothing, Boolean]): IO[E, A] = {
+    r.onErrorHandleWith {
+      e =>
+        f(e).flatMap {
+          if (_) retryUntilF(r)(f)
+          else IO.raiseError(e)
+        }
+    }
+  }
+  @inline override final def retryUntilF[R, R1 <: R, E, A](r: IO[E, A])(f: E => IO[Nothing, Boolean]): IO[E, A] = {
     r.onErrorHandleWith {
       e =>
         f(e).flatMap {
@@ -50,16 +59,6 @@ class AsyncMonix extends Async2[IO] {
         }
     }
   }
-  @inline override final def retryWhileF[R, E, A](r: IO[E, A])(f: E => IO[Nothing, Boolean]): IO[E, A] = {
-    r.onErrorHandleWith {
-      e =>
-        f(e).flatMap {
-          if (_) retryUntilF(r)(f)
-          else IO.raiseError(e)
-        }
-    }
-  }
-
   override final def flatMap[R, E, A, B](r: IO[E, A])(f: A => IO[E, B]): IO[E, B] = r.flatMap(f)
   override final def tap[R, E, A](r: IO[E, A], f: A => IO[E, Unit]): IO[E, A] = r.flatMap(a => f(a).map(_ => a))
 
