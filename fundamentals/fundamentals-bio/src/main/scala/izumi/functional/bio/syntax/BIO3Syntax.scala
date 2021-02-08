@@ -54,12 +54,6 @@ object BIO3Syntax {
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.flatMap[R1, E1, A, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
-
-    @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] =
-      F.iterateWhile(r)(p)
-
-    @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] =
-      F.iterateUntil(r)(p)
   }
 
   class BIOApplicativeError3Ops[FR[-_, +_, +_], -R, +E, +A](
@@ -101,27 +95,6 @@ object BIO3Syntax {
     @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R1, E1, A, A1](r)(F.fromEither[E1, A1](_))
     @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
       F.flatMap[R1, E1, A, A1](r)(F.fromOption(errorOnNone)(_))
-
-    @inline final def retryUntil(f: E => Boolean): FR[R, E, A] =
-      F.retryUntil(r)(f)
-
-    @inline final def retryUntilM[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
-      F.retryUntilM[R1, E, A](r)(f)
-
-    @inline final def retryWhile(f: E => Boolean): FR[R, E, A] =
-      F.retryWhile(r)(f)
-
-    @inline final def retryWhileM[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
-      F.retryWhileM[R1, E, A](r)(f)
-
-    @inline final def someOrElse[B](default: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] =
-      F.someOrElse[R, E, B](r.widen)(default)
-
-    @inline final def someOrElseM[R1 <: R, E1 >: E, B](default: FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
-      F.someOrElseM[R1, E1, B](r.widen)(default)
-
-    @inline final def someOrFail[B, E1 >: E](e: => E1)(implicit ev: A <:< Option[B]): FR[R, E1, B] =
-      F.someOrFail[R, E1, B](r.widen)(e)
 
     /** for-comprehensions sugar:
       *

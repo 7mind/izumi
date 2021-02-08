@@ -35,7 +35,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     */
   @inline def iterateWhile[R, E, A](f: F[R, E, A])(p: A => Boolean): F[R, E, A] =
     flatMap(f) { i =>
-      iterateWhileM(i)(_ => f)(p)
+      iterateWhileF(i)(_ => f)(p)
     }
 
   /**
@@ -44,14 +44,14 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     */
   @inline def iterateUntil[R, E, A](f: F[R, E, A])(p: A => Boolean): F[R, E, A] =
     flatMap(f) { i =>
-      iterateUntilM(i)(_ => f)(p)
+      iterateUntilF(i)(_ => f)(p)
     }
 
   /**
     * Apply a monadic function iteratively until its result fails
     * to satisfy the given predicate and return that result.
     */
-  @inline def iterateWhileM[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] =
+  @inline def iterateWhileF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] =
     tailRecM(init) {
       a =>
         if (p(a)) {
@@ -65,8 +65,8 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     * Apply a monadic function iteratively until its result satisfies
     * the given predicate and return that result.
     */
-  @inline def iterateUntilM[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] =
-    iterateWhileM(init)(f)(!p(_))
+  @inline def iterateUntilF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] =
+    iterateWhileF(init)(f)(!p(_))
 
   // defaults
   override def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B] = flatMap(r)(a => pure(f(a)))

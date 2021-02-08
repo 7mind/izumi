@@ -68,23 +68,20 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def retryUntil[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] =
     r.retryUntil(f)
 
-  @inline override final def retryUntilM[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
+  @inline override final def retryUntilF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
     r.retryUntilM(f)
 
   @inline override final def retryWhile[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] =
     r.retryWhile(f)
 
-  @inline override final def retryWhileM[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
+  @inline override final def retryWhileF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
     r.retryWhileM(f)
 
-  @inline override final def someOrElse[R, E, A](r: ZIO[R, E, Option[A]])(default: => A): ZIO[R, E, A] =
+  @inline override final def fromOptionOr[R, E, A](r: ZIO[R, E, Option[A]])(default: => A): ZIO[R, E, A] =
     r.someOrElse(default)
 
-  @inline override final def someOrElseM[R, E, A](r: ZIO[R, E, Option[A]])(default: ZIO[R, E, A]): ZIO[R, E, A] =
+  @inline override final def fromOptionF[R, E, A](r: ZIO[R, E, Option[A]])(default: ZIO[R, E, A]): ZIO[R, E, A] =
     r.someOrElseM(default)
-
-  @inline override final def someOrFail[R, E, A](r: ZIO[R, E, Option[A]])(e: => E): ZIO[R, E, A] =
-    r.someOrFail(e)
 
   @inline override final def bracket[R, E, A, B](acquire: ZIO[R, E, A])(release: A => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
     ZIO.bracket(acquire)(release)(use)

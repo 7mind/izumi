@@ -103,6 +103,10 @@ object Syntax3 {
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
 
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
+
+    @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] = F.iterateWhile(r)(p)
+
+    @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] = F.iterateUntil(r)(p)
   }
 
   class ApplicativeErrorOps[FR[-_, +_, +_], -R, +E, +A](
@@ -144,6 +148,24 @@ object Syntax3 {
     @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R1, E1, A, A1](r)(F.fromEither[E1, A1](_))
     @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
       F.flatMap[R1, E1, A, A1](r)(F.fromOption(errorOnNone)(_))
+
+    @inline final def fromOptionOr[B](default: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] =
+      F.fromOptionOr[R, E, B](r.widen)(default)
+
+    @inline final def fromOptionF[R1 <: R, E1 >: E, B](default: FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
+      F.fromOptionF[R1, E1, B](r.widen)(default)
+
+    @inline final def retryUntil(f: E => Boolean): FR[R, E, A] =
+      F.retryUntil(r)(f)
+
+    @inline final def retryUntilF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
+      F.retryUntilF[R1, E, A](r)(f)
+
+    @inline final def retryWhile(f: E => Boolean): FR[R, E, A] =
+      F.retryWhile(r)(f)
+
+    @inline final def retryWhileF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
+      F.retryWhileF[R1, E, A](r)(f)
 
     /** for-comprehensions sugar:
       *

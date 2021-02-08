@@ -31,12 +31,12 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
     * Retries this effect until its error satisfies the specified predicate.
     */
   def retryUntil[R, E, A](r: F[R, E, A])(f: E => Boolean): F[R, E, A] =
-    retryUntilM(r)(e => pure(f(e)))
+    retryUntilF(r)(e => pure(f(e)))
 
   /**
     * Retries this effect until its error satisfies the specified effectful predicate.
     */
-  def retryUntilM[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] =
+  def retryUntilF[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] =
     catchAll(r) {
       e =>
         flatMap(f(e)) {
@@ -44,7 +44,7 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
             if (b) {
               fail(e)
             } else {
-              retryUntilM(r)(f)
+              retryUntilF(r)(f)
             }
         }
     }
@@ -53,36 +53,27 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
     * Retries this effect while its error satisfies the specified predicate.
     */
   def retryWhile[R, E, A](r: F[R, E, A])(f: E => Boolean): F[R, E, A] =
-    retryWhileM(r)(e => pure(f(e)))
+    retryWhileF(r)(e => pure(f(e)))
 
   /**
     * Retries this effect while its error satisfies the specified effectful predicate.
     */
-  def retryWhileM[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] =
-    retryUntilM(r)(e => map(f(e))(!_))
+  def retryWhileF[R, E, A](r: F[R, E, A])(f: E => F[R, Nothing, Boolean]): F[R, E, A] =
+    retryUntilF(r)(e => map(f(e))(!_))
 
   /**
     * Extracts the optional value, or returns the given 'default'.
     */
-  def someOrElse[R, E, A](r: F[R, E, Option[A]])(default: => A): F[R, E, A] =
+  def fromOptionOr[R, E, A](r: F[R, E, Option[A]])(default: => A): F[R, E, A] =
     map(r)(_.getOrElse(default))
 
   /**
     * Extracts the optional value, or executes the effect 'default'.
     */
-  def someOrElseM[R, E, A](r: F[R, E, Option[A]])(default: F[R, E, A]): F[R, E, A] =
+  def fromOptionF[R, E, A](r: F[R, E, Option[A]])(default: F[R, E, A]): F[R, E, A] =
     flatMap(r) {
       case Some(value) => pure(value)
       case None => default
-    }
-
-  /**
-    * Extracts the optional value, or fails with the given error 'e'.
-    */
-  def someOrFail[R, E, A](r: F[R, E, Option[A]])(e: => E): F[R, E, A] =
-    flatMap(r) {
-      case Some(value) => pure(value)
-      case None => fail(e)
     }
   /** for-comprehensions sugar:
     *
