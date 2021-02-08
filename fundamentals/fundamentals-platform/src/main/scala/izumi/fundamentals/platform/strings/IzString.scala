@@ -133,7 +133,7 @@ final class IzString(private val s: String) extends AnyVal {
     if (s.isEmpty) {
       s
     } else {
-      s.head.toLower + "[A-Z\\d]".r.replaceAllIn(s.tail, m => "_" + m.group(0).toLowerCase())
+      s"${s.head.toLower}${"[A-Z\\d]".r.replaceAllIn(s.tail, m => "_" + m.group(0).toLowerCase())}"
     }
   }
 
@@ -141,7 +141,7 @@ final class IzString(private val s: String) extends AnyVal {
     if (s.isEmpty) {
       s
     } else {
-      s.head.toUpper + "_([a-z\\d])".r.replaceAllIn(s.tail, m => m.group(1).toUpperCase())
+      s"${s.head.toUpper}${"_([a-z\\d])".r.replaceAllIn(s.tail, m => m.group(1).toUpperCase())}"
     }
   }
 
@@ -183,8 +183,7 @@ final class IzString(private val s: String) extends AnyVal {
     }
 
     import IzString._
-    lines
-      .zipWithIndex
+    lines.zipWithIndex
       .map {
         case (l, i) =>
           s"${(i + 1).toString.leftPad(pad)}: $l"

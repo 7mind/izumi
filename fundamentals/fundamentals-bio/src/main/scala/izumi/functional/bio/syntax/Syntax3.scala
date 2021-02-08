@@ -64,6 +64,8 @@ object Syntax3 {
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
     @inline final def void: FR[R, E, Unit] = F.void(r)
     @inline final def widen[A1](implicit @unused ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
+
+    @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
   final class BifunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Bifunctor3[FR]) {
@@ -105,8 +107,10 @@ object Syntax3 {
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
 
     @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] = F.iterateWhile(r)(p)
-
     @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[R1 <: R, E1 >: E, B](fallbackOnNone: => FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
+      F.fromOptionF(fallbackOnNone, r.widen)
   }
 
   class ApplicativeErrorOps[FR[-_, +_, +_], -R, +E, +A](
@@ -125,10 +129,18 @@ object Syntax3 {
 
   class ErrorOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Error3[FR])
     extends ApplicativeErrorOps(r) {
+    // duplicated from MonadOps
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R1, E1, A, B](r)(f0)
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
 
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
+
+    @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] = F.iterateWhile(r)(p)
+    @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[R1 <: R, E1 >: E, B](fallbackOnNone: => FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
+      F.fromOptionF(fallbackOnNone, r.widen)
+    // duplicated from MonadOps
 
     @inline final def catchAll[R1 <: R, E2, A2 >: A](h: E => FR[R1, E2, A2]): FR[R1, E2, A2] = F.catchAll[R1, E, A2, E2](r)(h)
     @inline final def catchSome[R1 <: R, E1 >: E, A2 >: A](h: PartialFunction[E, FR[R1, E1, A2]]): FR[R1, E1, A2] = F.catchSome[R1, E, A2, E1](r)(h)
@@ -146,26 +158,13 @@ object Syntax3 {
     @inline final def tapBoth[R1 <: R, E1 >: E, E2 >: E1](err: E => FR[R1, E1, Unit])(succ: A => FR[R1, E2, Unit]): FR[R1, E2, A] = F.tapBoth[R1, E, A, E2](r)(err, succ)
 
     @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R1, E1, A, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
-      F.flatMap[R1, E1, A, A1](r)(F.fromOption(errorOnNone)(_))
+    @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] = F.fromOption(errorOnNone, r.widen)
 
-    @inline final def fromOptionOr[B](default: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] =
-      F.fromOptionOr[R, E, B](r.widen)(default)
+    @inline final def retryWhile(f: E => Boolean): FR[R, E, A] = F.retryWhile(r)(f)
+    @inline final def retryWhileF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] = F.retryWhileF[R1, E, A](r)(f)
 
-    @inline final def fromOptionF[R1 <: R, E1 >: E, B](default: FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
-      F.fromOptionF[R1, E1, B](r.widen)(default)
-
-    @inline final def retryUntil(f: E => Boolean): FR[R, E, A] =
-      F.retryUntil(r)(f)
-
-    @inline final def retryUntilF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
-      F.retryUntilF[R1, E, A](r)(f)
-
-    @inline final def retryWhile(f: E => Boolean): FR[R, E, A] =
-      F.retryWhile(r)(f)
-
-    @inline final def retryWhileF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] =
-      F.retryWhileF[R1, E, A](r)(f)
+    @inline final def retryUntil(f: E => Boolean): FR[R, E, A] = F.retryUntil(r)(f)
+    @inline final def retryUntilF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] = F.retryUntilF[R1, E, A](r)(f)
 
     /** for-comprehensions sugar:
       *
