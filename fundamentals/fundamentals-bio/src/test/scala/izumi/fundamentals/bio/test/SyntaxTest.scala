@@ -409,4 +409,47 @@ class SyntaxTest extends AnyWordSpec {
       )
     }
   }
+
+  "BIO.iterateUntil/iterateWhile are callable" in {
+    import izumi.functional.bio.Monad2
+
+    def x[F[+_, +_]: Monad2](a: F[Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    x[zio.IO](zio.UIO.succeed(()))
+  }
+
+  "BIO.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
+    import izumi.functional.bio.{Error2, F}
+
+    def x[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Unit]]) = {
+      a.retryUntil(_ => true)
+      a.retryUntilF(_ => F.pure(false))
+      a.retryWhile(_ => false)
+      a.retryWhileF(_ => F.pure(true))
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+      aOpt.fromOption("ooops")
+    }
+
+    x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
+
+  "Trio.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
+    import izumi.functional.bio.{Error3, F}
+
+    def x[F[-_, +_, +_]: Error3](a: F[Any, String, Unit], aOpt: F[Any, String, Option[Unit]]) = {
+      a.retryUntil(_ => true)
+      a.retryUntilF(_ => F.pure(false))
+      a.retryWhile(_ => false)
+      a.retryWhileF(_ => F.pure(true))
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+      aOpt.fromOption("ooops")
+    }
+
+    x[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
 }

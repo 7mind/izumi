@@ -46,6 +46,12 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def <*[R, E, A, B](f: ZIO[R, E, A], next: => ZIO[R, E, B]): ZIO[R, E, A] = f <* next
   @inline override final def map2[R, E, A, B, C](r1: ZIO[R, E, A], r2: => ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = r1.zipWith(r2)(f)
 
+  @inline override final def iterateWhile[R, E, A](f: ZIO[R, E, A])(p: A => Boolean): ZIO[R, E, A] =
+    f.repeatWhile(p)
+
+  @inline override final def iterateUntil[R, E, A](f: ZIO[R, E, A])(p: A => Boolean): ZIO[R, E, A] =
+    f.repeatUntil(p)
+
   @inline override final def leftMap2[R, E, A, E2, E3](firstOp: ZIO[R, E, A], secondOp: => ZIO[R, E2, A])(f: (E, E2) => E3): ZIO[R, E3, A] = {
     firstOp.catchAll(e => secondOp.mapError(f(e, _)))
   }
@@ -58,6 +64,24 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def guarantee[R, E, A](f: ZIO[R, E, A], cleanup: ZIO[R, Nothing, Unit]): ZIO[R, E, A] = f.ensuring(cleanup)
   @inline override final def attempt[R, E, A](r: ZIO[R, E, A]): ZIO[R, Nothing, Either[E, A]] = r.either
   @inline override final def redeemPure[R, E, A, B](r: ZIO[R, E, A])(err: E => B, succ: A => B): ZIO[R, Nothing, B] = r.fold(err, succ)
+
+  @inline override final def retryUntil[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] =
+    r.retryUntil(f)
+
+  @inline override final def retryUntilF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
+    r.retryUntilM(f)
+
+  @inline override final def retryWhile[R, E, A](r: ZIO[R, E, A])(f: E => Boolean): ZIO[R, E, A] =
+    r.retryWhile(f)
+
+  @inline override final def retryWhileF[R, E, A](r: ZIO[R, E, A])(f: E => ZIO[R, Nothing, Boolean]): ZIO[R, E, A] =
+    r.retryWhileM(f)
+
+  @inline override final def fromOptionOr[R, E, A](r: ZIO[R, E, Option[A]])(default: => A): ZIO[R, E, A] =
+    r.someOrElse(default)
+
+  @inline override final def fromOptionF[R, E, A](r: ZIO[R, E, Option[A]])(default: ZIO[R, E, A]): ZIO[R, E, A] =
+    r.someOrElseM(default)
 
   @inline override final def bracket[R, E, A, B](acquire: ZIO[R, E, A])(release: A => ZIO[R, Nothing, Unit])(use: A => ZIO[R, E, B]): ZIO[R, E, B] = {
     ZIO.bracket(acquire)(release)(use)
