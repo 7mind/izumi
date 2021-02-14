@@ -90,16 +90,30 @@ final case class Functoid[+A](get: Provider) {
     zip(that).map[C](f.tupled)
   }
 
-  /** Applicative's `ap` method - can be used to chain transformations like `flatMap`.
-    * Apply a function produced by `that` Provider to the value produced by `this` Provider
+  /**
+    * Applicative's `ap` method - can be used to chain transformations like `flatMap`.
+    *
+    * Apply a function produced by `that` Provider to the value produced by `this` Provider.
+    *
+    * Same as
+    * {{{
+    *   this.map2(that)((a, f) => f(a))
+    * }}}
     */
   def flatAp[B: Tag](that: Functoid[A => B]): Functoid[B] = {
-    map2(that) { case (a, f) => f(a) }
+    map2(that)((a, f) => f(a))
   }
 
-  /** Apply a function produced by `this` Provider to the argument produced by `that` Provider */
+  /**
+    * Apply a function produced by `this` Provider to the argument produced by `that` Provider.
+    *
+    * Same as
+    * {{{
+    *   this.map2(that)((f, a) => f(a))
+    * }}}
+    */
   def ap[B, C](that: Functoid[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): Functoid[C] = {
-    that.flatAp[C](this.asInstanceOf[Functoid[B => C]])
+    map2(that)((f, a) => f(a))
   }
 
   /** Add `B` as an unused dependency of this Provider */
