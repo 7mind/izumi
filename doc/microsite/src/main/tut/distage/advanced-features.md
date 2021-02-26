@@ -301,8 +301,7 @@ Calling `.foreach` on an auto-set is safe; the actions will be executed in order
 
 e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.  When using an auto-set for finalization, you must `.reverse` the autoset.
 
-Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
-as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
+Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), as such they cannot contain garbage by construction. Because of this they effectively cannot be used as GC Roots.
 
 Further reading:
 
