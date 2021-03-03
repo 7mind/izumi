@@ -136,9 +136,12 @@ class SyntaxTest extends AnyWordSpec {
         })(_ => F.pure(1))
     }
     def y[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
-      F.pure(None).bracketCase[Throwable, Int] {
-          case (_, Exit.Success(x)) => F.pure(x).as(())
-          case (_, _) => F.unit
+      F.pure(None).bracketCase {
+          (_, exit: Exit[Throwable, Int]) =>
+            exit match {
+              case Exit.Success(x) => F.pure(x).as(())
+              case _ => F.unit
+            }
         }(_ => F.pure(1))
     }
     def z[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
@@ -163,6 +166,99 @@ class SyntaxTest extends AnyWordSpec {
     y[bio.IO]
     z[bio.IO]
     zz[bio.IO]
+  }
+
+  "Bracket3.bracketCase & guaranteeCase are callable" in {
+    import izumi.functional.bio.{Bracket3, Exit, F}
+
+    def x[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketCase(release = {
+          (_, _: Exit[Throwable, Int]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketCase {
+          (_, exit: Exit[Throwable, Int]) =>
+            exit match {
+              case Exit.Success(x) => F.pure(x).as(())
+              case _ => F.unit
+            }
+        }(_ => F.pure(1))
+    }
+    def z[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(1).guaranteeCase {
+        case Exit.Success(x) => F.pure(x).as(())
+        case _ => F.unit
+      }
+    }
+    def zz[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeCase {
+          case Exit.Success(x) => F.pure(x).as(())
+          case _ => F.unit
+        }.widenError[Throwable]
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+    z[zio.ZIO]
+    zz[zio.ZIO]
+  }
+
+  "Bracket2.bracketOnFailure & guaranteeOnFailure are callable" in {
+    import izumi.functional.bio.{Bracket2, Exit, F}
+
+    def x[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(None).bracketOnFailure(cleanupOnFailure = {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(None).bracketOnFailure {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        }(_ => F.pure(1))
+    }
+    def z[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(1).guaranteeOnFailure(_ => F.unit)
+    }
+    def zz[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeOnFailure(_ => F.unit).widenError[Throwable]
+    }
+
+    x[zio.IO]
+    y[zio.IO]
+    z[zio.IO]
+    zz[zio.IO]
+
+    x[bio.IO]
+    y[bio.IO]
+    z[bio.IO]
+    zz[bio.IO]
+  }
+
+  "Bracket3.bracketOnFailure & guaranteeOnFailure are callable" in {
+    import izumi.functional.bio.{Bracket3, Exit, F}
+
+    def x[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketOnFailure(cleanupOnFailure = {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketOnFailure {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        }(_ => F.pure(1))
+    }
+    def z[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(1).guaranteeOnFailure(_ => F.unit)
+    }
+    def zz[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeOnFailure(_ => F.unit).widenError[Throwable]
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+    z[zio.ZIO]
+    zz[zio.ZIO]
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {

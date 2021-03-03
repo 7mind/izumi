@@ -135,15 +135,18 @@ object Syntax2 {
 
   class BracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Bracket2[F]) extends ErrorOps(r) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
+
     @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
     @inline final def guaranteeCase(cleanup: Exit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
+
+    @inline final def bracketOnFailure[E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
+      F.bracketOnFailure(r: F[E1, A])(cleanupOnFailure)(use)
+    @inline final def guaranteeOnFailure(cleanupOnFailure: Exit.Failure[E] => F[Nothing, Unit]): F[E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
   }
 
   class PanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BracketOps(r) {
     @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "1.0")
-    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable
@@ -161,6 +164,9 @@ object Syntax2 {
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+
+    @deprecated("renamed to sandboxExit", "1.0")
+    @inline final def sandboxBIOExit: F[Nothing, Exit[E, A]] = sandboxExit
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {
