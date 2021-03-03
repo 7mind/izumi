@@ -59,8 +59,8 @@ class FunctoidMacro(val c: blackbox.Context) {
     case _ if tree.tpe ne null =>
       if (tree.tpe.typeSymbol.isModuleClass) {
         val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
-        val overridenFunctionNApply = tree
-          .tpe.typeSymbol.info.decl(TermName("apply")).alternatives
+        val overridenFunctionNApply = tree.tpe.typeSymbol.info
+          .decl(TermName("apply")).alternatives
           .find(_.overrides.exists(functionNClasses contains _.owner))
 
         overridenFunctionNApply.fold(analyzeValRef(tree.tpe)) {
@@ -85,7 +85,9 @@ class FunctoidMacro(val c: blackbox.Context) {
     val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftTypeToSafeType, liftableParameter}
 
-    val casts = parameters.indices.map(i => q"seqAny($i)")
+    val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
+
+    val casts = parameters.indices.map(i => q"$seqName($i)")
     val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)
 
     c.Expr[Functoid[R]] {
@@ -97,7 +99,7 @@ class FunctoidMacro(val c: blackbox.Context) {
             $parametersNoByName,
             ${liftTypeToSafeType(weakTypeOf[R])},
             fun,
-            { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
+            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
             ${symbolOf[ProviderType.Function.type].asClass.module},
           )
         )
