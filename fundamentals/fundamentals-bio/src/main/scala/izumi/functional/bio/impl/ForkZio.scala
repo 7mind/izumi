@@ -11,8 +11,7 @@ class ForkZio extends Fork3[ZIO] {
       // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/Lifecycle
       //  unless wrapped in `interruptible`
       //  see: https://github.com/zio/zio/issues/945
-      .interruptible
-      .forkDaemon
+      .interruptible.forkDaemon
       .map(Fiber3.fromZIO)
   }
 }

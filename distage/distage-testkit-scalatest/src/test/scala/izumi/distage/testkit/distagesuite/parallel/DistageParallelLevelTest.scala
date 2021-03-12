@@ -29,15 +29,14 @@ abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](suitesCounter
   private[this] val testsCounter = new AtomicInteger(0)
 
   override protected def config: TestConfig = {
-    super
-      .config.copy(
-        memoizationRoots = Set(DIKey.get[MemoizedInstance]),
-        pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite"),
-        parallelTests = ParallelLevel.Fixed(maxTests),
-        parallelSuites = ParallelLevel.Fixed(maxSuites),
-        parallelEnvs = ParallelLevel.Sequential,
-        logLevel = Log.Level.Error,
-      )
+    super.config.copy(
+      memoizationRoots = Set(DIKey.get[MemoizedInstance]),
+      pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite"),
+      parallelTests = ParallelLevel.Fixed(maxTests),
+      parallelSuites = ParallelLevel.Fixed(maxSuites),
+      parallelEnvs = ParallelLevel.Sequential,
+      logLevel = Log.Level.Error,
+    )
   }
 
   private[this] def checkCounters: F[Assertion] = F.maybeSuspend {

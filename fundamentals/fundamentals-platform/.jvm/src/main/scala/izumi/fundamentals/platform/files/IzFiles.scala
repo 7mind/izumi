@@ -118,8 +118,7 @@ object IzFiles {
   }
 
   def find(candidates: Seq[String], paths: Seq[String]): Option[Path] = {
-    paths
-      .view
+    paths.view
       .flatMap {
         p =>
           candidates.map(ext => Paths.get(p).resolve(ext))
@@ -131,8 +130,7 @@ object IzFiles {
   }
 
   def findAll(candidates: Seq[String], paths: Seq[String]): Iterable[Path] = {
-    paths
-      .view
+    paths.view
       .flatMap {
         p =>
           candidates.map(ext => Paths.get(p).resolve(ext))

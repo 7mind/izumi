@@ -21,8 +21,8 @@ class TemporalMonix(timer: Timer[UIO]) extends AsyncMonix with Temporal2[IO] {
         res => IO.pure(res),
       )
     }
-    timer
-      .clock.monotonic(TimeUnit.NANOSECONDS).map(_ + duration.toNanos)
+    timer.clock
+      .monotonic(TimeUnit.NANOSECONDS).map(_ + duration.toNanos)
       .flatMap(loop)
   }
 

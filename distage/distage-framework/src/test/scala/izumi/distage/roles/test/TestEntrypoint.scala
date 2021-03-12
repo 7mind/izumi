@@ -35,5 +35,3 @@ class TestEntrypointBase extends RoleAppMain.LauncherCats[IO] {
     AppFailureHandler.NullHandler
   }
 }
-
-

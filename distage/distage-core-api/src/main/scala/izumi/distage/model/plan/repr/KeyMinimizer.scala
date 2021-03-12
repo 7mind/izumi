@@ -22,8 +22,7 @@ class KeyMinimizer(
   @nowarn("msg=Unused import")
   private[this] val index: Map[String, Int] = {
     import scala.collection.compat._
-    allKeys
-      .iterator
+    allKeys.iterator
       .flatMap(extract)
       .map(name => name.split('.').last -> name)
       .toMultimapView

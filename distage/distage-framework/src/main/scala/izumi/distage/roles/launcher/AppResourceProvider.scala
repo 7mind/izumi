@@ -22,25 +22,24 @@ object AppResourceProvider {
   }
 
   final case class FinalizerFilters[F[_]](
-                                           filterF: FinalizerFilter[F],
-                                           filterId: FinalizerFilter[Identity],
-                                         )
+    filterF: FinalizerFilter[F],
+    filterId: FinalizerFilter[Identity],
+  )
 
   object FinalizerFilters {
     def all[F[_]]: FinalizerFilters[F] = FinalizerFilters[F](FinalizerFilter.all, FinalizerFilter.all)
   }
 
-  class Impl[F[_] : TagK](
-                           integrationChecker: IntegrationChecker[F],
-                           entrypoint: RoleAppEntrypoint[F],
-                           filters: FinalizerFilters[F],
-                           appPlan: AppStartupPlans,
-                           injectorFactory: InjectorFactory,
-                           hook: AppShutdownStrategy[F],
-                         ) extends AppResourceProvider[F] {
+  class Impl[F[_]: TagK](
+    integrationChecker: IntegrationChecker[F],
+    entrypoint: RoleAppEntrypoint[F],
+    filters: FinalizerFilters[F],
+    appPlan: AppStartupPlans,
+    injectorFactory: InjectorFactory,
+    hook: AppShutdownStrategy[F],
+  ) extends AppResourceProvider[F] {
     def makeAppResource: AppResource[F] = AppResource {
-      appPlan
-        .injector
+      appPlan.injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
@@ -57,7 +56,7 @@ object AppResourceProvider {
         .produceFX[F](appPlan.app.shared, filters.filterF)
         .flatMap {
           sharedLocator =>
-            (Injector
+            Injector
               .inherit(sharedLocator)
               .produceFX[F](appPlan.app.side, filters.filterF)
               .evalTap {
@@ -70,7 +69,7 @@ object AppResourceProvider {
                     .inherit(sharedLocator)
                     .produceFX[F](appPlan.app.primary, filters.filterF)
                     .evalTap(entrypoint.runTasksAndRoles(_, F))
-              }).beforeRelease(_ => F.maybeSuspend(hook.finishShutdown()))
+              }.beforeRelease(_ => F.maybeSuspend(hook.finishShutdown()))
         }
     }
   }

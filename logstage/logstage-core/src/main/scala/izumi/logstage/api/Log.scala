@@ -143,8 +143,7 @@ object Log {
     }
 
     def throwables: Seq[LogArgTyped[Throwable]] = {
-      message
-        .args
+      message.args
         .map {
           a => (a.value, a)
         }

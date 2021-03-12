@@ -59,8 +59,8 @@ class FunctoidMacro(val c: blackbox.Context) {
     case _ if tree.tpe ne null =>
       if (tree.tpe.typeSymbol.isModuleClass) {
         val functionNClasses = definitions.FunctionClass.seq.toSet[Symbol]
-        val overridenFunctionNApply = tree
-          .tpe.typeSymbol.info.decl(TermName("apply")).alternatives
+        val overridenFunctionNApply = tree.tpe.typeSymbol.info
+          .decl(TermName("apply")).alternatives
           .find(_.overrides.exists(functionNClasses contains _.owner))
 
         overridenFunctionNApply.fold(analyzeValRef(tree.tpe)) {

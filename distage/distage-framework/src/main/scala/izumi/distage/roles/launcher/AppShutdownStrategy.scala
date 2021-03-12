@@ -77,7 +77,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class ImmediateExitShutdownStrategy[F[_] : QuasiIO] extends AppShutdownStrategy[F] {
+  class ImmediateExitShutdownStrategy[F[_]: QuasiIO] extends AppShutdownStrategy[F] {
     def awaitShutdown(logger: IzLogger): F[Unit] = {
       QuasiIO[F].maybeSuspend {
         logger.info("Exiting immediately...")
@@ -93,7 +93,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class CatsEffectIOShutdownStrategy[F[_] : LiftIO](executionContext: ExecutionContext) extends AppShutdownStrategy[F] {
+  class CatsEffectIOShutdownStrategy[F[_]: LiftIO](executionContext: ExecutionContext) extends AppShutdownStrategy[F] {
     private val shutdownPromise: Promise[Unit] = Promise[Unit]()
     private val mainLatch: CountDownLatch = new CountDownLatch(1)
 
@@ -132,7 +132,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class BIOShutdownStrategy[F[+_, +_] : Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
+  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
     private val shutdownPromise: Promise[Unit] = Promise[Unit]()
     private val mainLatch: CountDownLatch = new CountDownLatch(1)
 

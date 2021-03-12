@@ -28,8 +28,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
             f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a)).toArray
           case _ =>
             // otherwise fill everything with nulls
-            runtimeClass
-              .getConstructors.head.getParameterTypes
+            runtimeClass.getConstructors.head.getParameterTypes
               .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
         }
       }
