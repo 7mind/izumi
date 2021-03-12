@@ -154,7 +154,7 @@ object Izumi {
         // disable scoverage on 2.12 for now due to incompatibility with 2.12.13
         "coverageEnabled" := Seq(
           SettingKey(Some(scala212), None) := false,
-          SettingKey.Default := true,
+          SettingKey.Default := "coverageEnabled.value".raw,
         )
       ),
     )
