@@ -54,10 +54,11 @@ object RoleAppEntrypoint {
             task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
-        val finalizer = (_: Unit) => {
-          hook.await(lateLogger)
+        val shutdownLatch: Unit => F[Unit] = (_: Unit) => {
+          hook.awaitShutdown(lateLogger)
         }
-        val f = roleServices.foldRight(finalizer) {
+
+        val appF: Unit => F[Unit] = roleServices.foldRight(shutdownLatch) {
           case ((role, res), acc) =>
             _ =>
               val loggedTask = for {
@@ -75,7 +76,8 @@ object RoleAppEntrypoint {
                     .flatMap(_ => F.fail[Unit](t))
               }
         }
-        f(())
+
+        appF(())
       } else {
         F.maybeSuspend(lateLogger.info("No services to run, exiting..."))
       }

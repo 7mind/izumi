@@ -8,20 +8,20 @@ import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.{BundledRolesModule, ConfigWriter, Help}
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.Fixture._
-import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
+import izumi.distage.roles.test.fixtures.TestPluginCatsIO.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
+class TestPluginBase[F[_] : TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Mode.Prod)
 
   include(BundledRolesModule[F] overriddenBy new ModuleDef {
     make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   })
 
-  private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
+  private def version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
       value
     case None =>
@@ -35,10 +35,13 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   makeRole[TestTask00[F]]
   makeRole[TestRole00[F]]
+  makeRole[ExitAfterSleepRole[F]]
+
   make[TestRole01[F]]
-  make[TestRole02[F]]
-  make[TestRole03[F]]
-  make[TestRole04[F]]
+  makeRole[TestRole02[F]]
+  makeRole[TestRole03[F]]
+  makeRole[TestRole04[F]]
+
   makeRole[FailingRole01[F]]
   makeRole[FailingRole02[F]]
 
@@ -70,13 +73,17 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[ListConf]("listconf")
 }
 
-class TestPlugin extends TestPluginBase[IO]
+class TestPluginCatsIO extends TestPluginBase[IO]
 
-object TestPlugin {
+object TestPluginCatsIO {
   trait NotCloseable
+
   final val versionProperty = "launcher-version-test"
 
   class InheritedCloseable extends NotCloseable with AutoCloseable {
     override def close(): Unit = {}
   }
 }
+
+
+
