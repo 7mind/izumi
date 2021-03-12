@@ -12,8 +12,12 @@ import izumi.logstage.sink.FallbackConsoleSink
 import java.util.concurrent.CountDownLatch
 import scala.concurrent.{ExecutionContext, Promise}
 
-trait AppShutdownInitiator[F[_]] {
+trait AppShutdownInitiator {
   def releaseAwaitLatch(): Unit
+}
+
+object AppShutdownInitiator {
+  def empty: AppShutdownInitiator = () => ()
 }
 
 /**
@@ -33,7 +37,7 @@ trait AppShutdownInitiator[F[_]] {
   *    1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
   *    2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
   */
-trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator[F] {
+trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
   def awaitShutdown(logger: IzLogger): F[Unit]
   def releaseAwaitLatch(): Unit
 

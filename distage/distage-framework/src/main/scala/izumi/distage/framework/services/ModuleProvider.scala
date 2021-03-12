@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Id, 
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import izumi.distage.roles.launcher.{AppShutdownInitiator, AppShutdownStrategy}
+import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
@@ -59,7 +59,7 @@ object ModuleProvider {
     roles: RolesInfo,
     args: RawAppArgs,
     activationInfo: ActivationInfo,
-    shutdownStrategy: AppShutdownStrategy[F],
+    shutdownInitiator: AppShutdownInitiator,
     roleAppLocator: Option[LocatorRef] @Id("roleapp"),
   ) extends ModuleProvider {
 
@@ -68,7 +68,7 @@ object ModuleProvider {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
-        make[AppShutdownInitiator[F]].fromValue(shutdownStrategy)
+        make[AppShutdownInitiator].fromValue(shutdownInitiator)
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
