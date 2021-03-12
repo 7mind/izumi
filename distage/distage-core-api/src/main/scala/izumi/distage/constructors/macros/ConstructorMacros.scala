@@ -313,7 +313,7 @@ abstract class ConstructorMacrosBase {
     val tools = DIUniverseLiftables(u)
     import tools.{liftTypeToSafeType, liftableParameter}
 
-    val seqName = TermName(c.freshName("seqAny"))
+    val seqName = if (parameters.exists(_.nonEmpty)) TermName(c.freshName("seqAny")) else TermName("_")
 
     val casts = {
       var i = 0

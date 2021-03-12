@@ -6,8 +6,8 @@ import org.scalatest.wordspec.AnyWordSpec
 class OptionalDependencyTest213 extends AnyWordSpec {
 
   "Perform exhaustive search for BIO and not find instances for ZIO / monix-bio when they're not on classpath" in {
-    final class optSearch2[C[_[_, _]]] { def find[F[_, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
-    final class optSearch3[C[_[_, _, _]]] { def find[F[_, _, _]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+    final class optSearch2[C[_[+_, +_]]] { def find[F[+_, +_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
+    final class optSearch3[C[_[-_, +_, +_]]] { def find[F[-_, +_, +_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
 
     assert(new optSearch2[IO2].find == null)
     assert(new optSearch3[IO3].find == null)

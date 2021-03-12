@@ -133,7 +133,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.13")
-  final val scala213 = ScalaVersion("2.13.4")
+  final val scala213 = ScalaVersion("2.13.5")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -154,7 +154,7 @@ object Izumi {
         // disable scoverage on 2.12 for now due to incompatibility with 2.12.13
         "coverageEnabled" := Seq(
           SettingKey(Some(scala212), None) := false,
-          SettingKey.Default := true,
+          SettingKey.Default := "coverageEnabled.value".raw,
         )
       ),
     )
@@ -238,12 +238,12 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Defaults.Scala213Options,
+          SettingKey(Some(scala213), None) := (Defaults.Scala213Options ++ Seq[Const](
+            "-Wunused:-synthetics"
+          )),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        // disable fatal-warnings to make sure publish goes through
-        "scalacOptions" -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
@@ -680,9 +680,9 @@ object Izumi {
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
     enableProjectSharedAggSettings = false,
-    dontIncludeInSuperAgg = false,
     settings = Seq(
-      "crossScalaVersions" := "Nil".raw
+      "crossScalaVersions" := "Nil".raw,
+      "scalaVersion" := scala212.value,
     ),
   )
 
