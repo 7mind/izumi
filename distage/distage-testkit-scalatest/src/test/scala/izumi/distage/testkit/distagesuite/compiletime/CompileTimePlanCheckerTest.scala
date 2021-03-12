@@ -279,13 +279,13 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "report error on invalid effect type" in {
+    val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false))
+    assert(result.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[PlanIssue.IncompatibleEffectType]))
+
     val err = intercept[TestFailedException](assertCompiles("""
       PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
       """))
     assert(err.getMessage.contains("IncompatibleEffectType"))
-
-    val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false))
-    assert(result.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[PlanIssue.IncompatibleEffectType]))
   }
 
   "StaticTestMainLogIO2 check passes with a LogIO2 dependency" in {

@@ -19,7 +19,7 @@ object StaticTestMain extends RoleAppMain.LauncherCats[cats.effect.IO] {
       ClassConstructor[StaticTestRole[F]]
         .flatAp((F: QuasiApplicative[F]) => F.pure(_: StaticTestRole[F]))
     }
-    makeRole[DependingRole]
+    makeRole[DependingRole[F]]
   }
 }
 

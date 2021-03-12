@@ -90,7 +90,7 @@ object RoleProvider {
 
     protected def checkRoleType(implType: SafeType, roleType: SafeType, log: Boolean): Boolean = {
       val res = implType <:< roleType
-      if (!res) logger.warn(s"Found role binding with incompatible effect type $implType (expected to be a subtype of $roleType)")
+      if (!res && log) logger.warn(s"Found role binding with incompatible effect type $implType (expected to be a subtype of $roleType)")
       res
     }
 
