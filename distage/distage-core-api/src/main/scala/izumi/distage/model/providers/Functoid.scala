@@ -113,7 +113,7 @@ final case class Functoid[+A](get: Provider) {
     * }}}
     */
   def ap[B, C](that: Functoid[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): Functoid[C] = {
-    map2(that)((f, a) => f(a))
+    map2(that)((f, a) => f.asInstanceOf[B => C](a))
   }
 
   /** Add `B` as an unused dependency of this Provider */
