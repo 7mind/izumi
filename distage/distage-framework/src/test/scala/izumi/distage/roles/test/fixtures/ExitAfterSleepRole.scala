@@ -11,7 +11,7 @@ class ExitAfterSleepRole[F[_] : QuasiIO](logger: IzLogger, shutdown: AppShutdown
   def runBadSleepingThread(id: String, cont: () => Unit): Unit = {
      def msg(s: String) = {
        println(s"$id: $s (direct message, will repeat in the logger)")
-       logger.info(s"$id: $s (logged message, will repeat in the logger)")
+       logger.info(s"$id: $s (logged message)")
     }
     new Thread(new Runnable {
       override def run(): Unit = {
