@@ -27,7 +27,7 @@ class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(
     F.maybeSuspend {
       logger.info(s"[ExitInTwoSecondsRole] started: $roleParameters, $freeArgs")
-      runBadSleepingThread("init", shutdown.releaseAwaitLatch)
+      runBadSleepingThread("init", () => shutdown.releaseAwaitLatch())
     }
   ) {
     _ =>
