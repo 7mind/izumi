@@ -18,27 +18,32 @@ trait AppShutdownInitiator[F[_]] {
 
 /**
   * There are two possible graceful termination paths for an application:
-  * 1) User explicilty calls [[AppShutdownStrategy#releaseAwaitLatch]]
-  * 2) The application received SIGINT and shutdown hook triggers.
-  *    It's important to remember that all other threads will continue to run until shutdown hook finishes,
-  *    after that they'll stop abruptly without any exceptions.
-  *    Izumi runtime must call [[AppShutdownStrategy#finishShutdown]] when all the cleanups are done
+  *
+  *   1) User explicitly calls [[AppShutdownStrategy#releaseAwaitLatch]]
+  *
+  *   2) The application received SIGINT and the shutdown hook triggers.
+  *
+  *      It's important to remember that all other threads will continue to run until the shutdown hook finishes,
+  *      after that they'll stop abruptly without even receiving any exceptions.
+  *
+  *      Izumi runtime will call [[AppShutdownStrategy#finishShutdown]] when all the cleanups are done.
   *
   *  Possible code paths:
-  *  1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
-  *  2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
+  *
+  *    1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
+  *    2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
   */
 trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator[F] {
   def awaitShutdown(logger: IzLogger): F[Unit]
-
   def releaseAwaitLatch(): Unit
 
   protected[izumi] def finishShutdown(): Unit
 }
 
 object AppShutdownStrategy {
-  private val logger = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.debug.distage.shutdown`.name)
-  private def makeHook(logger: IzLogger, cont: () => Unit) = {
+  private[this] val logger = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.debug.distage.shutdown`.name)
+
+  private[this] def makeShutdownHook(logger: IzLogger, cont: () => Unit): Thread = {
     new Thread(
       () => {
         logger.warn("Termination signal received")
@@ -53,7 +58,7 @@ object AppShutdownStrategy {
     private val postShutdownLatch = new CountDownLatch(1)
 
     def awaitShutdown(logger: IzLogger): Unit = {
-      val shutdownHook = makeHook(logger, releaseAwaitLatch)
+      val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
       primaryLatch.await()
@@ -78,10 +83,8 @@ object AppShutdownStrategy {
   }
 
   class ImmediateExitShutdownStrategy[F[_]: QuasiIO] extends AppShutdownStrategy[F] {
-    def awaitShutdown(logger: IzLogger): F[Unit] = {
-      QuasiIO[F].maybeSuspend {
-        logger.info("Exiting immediately...")
-      }
+    def awaitShutdown(logger: IzLogger): F[Unit] = QuasiIO[F].maybeSuspend {
+      logger.info("Exiting immediately...")
     }
 
     override def releaseAwaitLatch(): Unit = {
@@ -94,15 +97,15 @@ object AppShutdownStrategy {
   }
 
   class CatsEffectIOShutdownStrategy[F[_]: LiftIO](executionContext: ExecutionContext) extends AppShutdownStrategy[F] {
-    private val shutdownPromise: Promise[Unit] = Promise[Unit]()
-    private val mainLatch: CountDownLatch = new CountDownLatch(1)
+    private val primaryLatch: Promise[Unit] = Promise[Unit]()
+    private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 
     def awaitShutdown(logger: IzLogger): F[Unit] = {
-      val shutdownHook = makeHook(logger, releaseAwaitLatch)
+      val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
 
-      val f = shutdownPromise.future
+      val f = primaryLatch.future
 
       implicit val ec: ExecutionContext = executionContext
       f.onComplete {
@@ -122,30 +125,28 @@ object AppShutdownStrategy {
 
     def releaseAwaitLatch(): Unit = {
       logger.log("Application shutdown requested")
-      shutdownPromise.success(())
-      mainLatch.await() // we need to let main thread to finish everything
+      primaryLatch.success(())
+      postShutdownLatch.await() // we need to let main thread to finish everything
     }
 
     protected[izumi] override def finishShutdown(): Unit = {
       logger.log("Application will exit now")
-      mainLatch.countDown()
+      postShutdownLatch.countDown()
     }
   }
 
   class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
-    private val shutdownPromise: Promise[Unit] = Promise[Unit]()
-    private val mainLatch: CountDownLatch = new CountDownLatch(1)
+    private val primaryLatch: Promise[Unit] = Promise[Unit]()
+    private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 
     def awaitShutdown(logger: IzLogger): F[Throwable, Unit] = {
-      val shutdownHook = makeHook(logger, releaseAwaitLatch)
+      val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
 
-      val f = shutdownPromise.future
-
       F.fromFuture {
         implicit ec =>
-          f.map[Unit] {
+          primaryLatch.future.map[Unit] {
             _ =>
               try {
                 Runtime.getRuntime.removeShutdownHook(shutdownHook)
@@ -159,13 +160,13 @@ object AppShutdownStrategy {
 
     def releaseAwaitLatch(): Unit = {
       logger.log("Application shutdown requested")
-      shutdownPromise.success(())
-      mainLatch.await() // we need to let main thread to finish everything
+      primaryLatch.success(())
+      postShutdownLatch.await() // we need to let main thread to finish everything
     }
 
     protected[izumi] override def finishShutdown(): Unit = {
       logger.log("Application will exit now")
-      mainLatch.countDown()
+      postShutdownLatch.countDown()
     }
   }
 

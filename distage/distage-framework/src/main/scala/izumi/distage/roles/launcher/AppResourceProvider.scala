@@ -6,6 +6,7 @@ import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
@@ -69,8 +70,9 @@ object AppResourceProvider {
                     .inherit(sharedLocator)
                     .produceFX[F](appPlan.app.primary, filters.filterF)
                     .evalTap(entrypoint.runTasksAndRoles(_, F))
-              }.beforeRelease(_ => F.maybeSuspend(hook.finishShutdown()))
+              }
         }
+        .wrapRelease((r, a) => r(a).guarantee(F.maybeSuspend(hook.finishShutdown())))
     }
   }
 

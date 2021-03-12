@@ -28,22 +28,24 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     result
   }
 
-  val shutdownHook = new Thread(
-    () => {
-      stopPolling()
-      while (!queue.isEmpty) {
-        doFlush(NullStep)
-      }
-      target.sync()
-    },
-    "logstage-shutdown-hook",
-  )
+  locally {
+    val shutdownHook = new Thread(
+      () => {
+        stopPolling()
+        while (!queue.isEmpty) {
+          doFlush(NullStep)
+        }
+        target.sync()
+      },
+      "logstage-shutdown-hook",
+    )
+
+    Runtime.getRuntime.addShutdownHook(shutdownHook)
+  }
 
   def stopPolling(): Unit = {
     stop.set(true)
   }
-
-  Runtime.getRuntime.addShutdownHook(shutdownHook)
 
   private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
