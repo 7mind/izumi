@@ -9,11 +9,16 @@ import izumi.logstage.api.IzLogger
 
 class ExitAfterSleepRole[F[_] : QuasiIO](logger: IzLogger, shutdown: AppShutdownInitiator[F]) extends RoleService[F] {
   def runBadSleepingThread(id: String, cont: () => Unit): Unit = {
+     def msg(s: String) = {
+       println(s"$id: $s (direct message, will repeat in the logger)")
+       logger.info(s"$id: $s (logged message, will repeat in the logger)")
+    }
     new Thread(new Runnable {
       override def run(): Unit = {
-        logger.info(s"$id: sleeping...")
-        Thread.sleep(5000)
-        logger.info(s"$id: done sleeping!...")
+        val sleep = 5000
+        msg(s"sleeping ($sleep)...")
+        Thread.sleep(sleep)
+        msg(s"done sleeping ($sleep)")
         cont()
       }
     }).start()
