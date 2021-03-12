@@ -45,5 +45,5 @@ object DebugProperties extends properties.DebugProperties {
     *
     *  Default: `false`
     */
-  final val `izumi.distage.shutdown` = BoolProperty("izumi.distage.shutdown")
+  final val `izumi.debug.distage.shutdown` = BoolProperty("izumi.distage.shutdown")
 }
