@@ -58,11 +58,10 @@ class JsonFlattener {
         }
       },
       o => {
-        val out = o
-          .toIterable.flatMap {
-            case (name, value) =>
-              flatten(value, prefix :+ PathElement.ObjectName(name))
-          }.toSeq
+        val out = o.toIterable.flatMap {
+          case (name, value) =>
+            flatten(value, prefix :+ PathElement.ObjectName(name))
+        }.toSeq
         if (out.nonEmpty) {
           out
         } else {

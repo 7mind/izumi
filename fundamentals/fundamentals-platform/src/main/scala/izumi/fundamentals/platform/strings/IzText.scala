@@ -39,8 +39,8 @@ object IzText {
     (List(boundary) ++ List(Row(bheader, splitChar)) ++ List(splitter) ++ mainRows ++ List(boundary))
       .map {
         row =>
-          row
-            .parts.zipWithIndex.map {
+          row.parts.zipWithIndex
+            .map {
               case (v, cnum) =>
                 v.padTo(maxesM(cnum), ' ')
             }.mkString(row.splitter)

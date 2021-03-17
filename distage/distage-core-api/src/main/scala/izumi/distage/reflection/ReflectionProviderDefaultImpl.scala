@@ -147,9 +147,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def traitMethods(tpe: TypeNative): List[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
-    val declaredAbstractMethods = tpe
-      .members
-      .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
+    val declaredAbstractMethods = tpe.members.sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(isWireableMethod)
       .map(_.asMethod)
     declaredAbstractMethods.map(methodToAssociation(tpe, _))

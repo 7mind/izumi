@@ -28,13 +28,11 @@ object RolesInfo {
       val requestedNames = roles.requiredRoleBindings.map(_.descriptor.id)
       ArraySeq
         .unsafeWrapArray {
-          roles
-            .availableRoleBindings
-            .iterator.map {
-              r =>
-                val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
-                s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.descriptor.artifact.getOrElse("N/A")}"
-            }.toArray
+          roles.availableRoleBindings.iterator.map {
+            r =>
+              val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
+              s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.descriptor.artifact.getOrElse("N/A")}"
+          }.toArray
         }.sorted.niceList()
   }
 }

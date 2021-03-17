@@ -84,7 +84,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
             Seq(
               new ResourcesPluginBase {}.morph[PluginBase],
               new ConflictPlugin,
-              new TestPlugin,
+              new TestPluginCatsIO,
               new AdoptedAutocloseablesCasePlugin,
               probe,
               new PluginDef {
@@ -287,7 +287,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
-      withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
+      withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
         TestEntrypoint.main(Array("-ll", logLevel, ":configwriter", "-t", targetPath))
       }
 

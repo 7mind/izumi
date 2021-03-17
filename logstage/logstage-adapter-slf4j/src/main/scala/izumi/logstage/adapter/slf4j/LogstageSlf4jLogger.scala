@@ -28,8 +28,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val thread = Thread.currentThread()
     val threadData = ThreadData(thread.getName, thread.getId)
 
-    val caller = thread
-      .getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
+    val caller = thread.getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
 
     val ctx = caller match {
       case Some(frame) =>

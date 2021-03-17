@@ -12,7 +12,7 @@ import izumi.logstage.api.logger.LogSink
 
 import scala.concurrent.duration._
 
-class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink with AutoCloseable {
+class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink {
 
   import QueueingSink._
 
@@ -27,27 +27,50 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     result.setDaemon(true)
     result
   }
+  val shutdownHook = new Thread(
+    () => {
+      stopPolling()
+    },
+    "logstage-shutdown-hook",
+  )
+
+  locally {
+    Runtime.getRuntime.addShutdownHook(shutdownHook)
+  }
+
+
+  override def close(): Unit = {
+    stopPolling()
+  }
+
+  private def stopPolling(): Unit = {
+    stop.set(true)
+    Runtime.getRuntime.removeShutdownHook(shutdownHook)
+    while (!queue.isEmpty) {
+      doFlush(NullStep)
+    }
+    target.sync()
+  }
 
   private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
-      while (!stop.get()) {
+      while (!stop.get()) { //it's fine to spin forever, we are running in a daemon thread, it'll exit once the app finishes
         try {
-          // in case queue was empty we (probably) may sleep, otherwise it's better to continue working asap
-          if (doFlush(new CountingStep(maxBatchSize)) == null) {
+          val step = new CountingStep(maxBatchSize)
+          // in case queue was empty we sleep a bit (it's a sane heuristic), otherwise it's better to continue working asap
+          if (doFlush(step) == null) {
             Thread.sleep(sleepTime.toMillis)
           } else {
             Thread.`yield`()
           }
         } catch {
           case _: InterruptedException =>
-            stop.set(true)
+            stopPolling()
 
           case e: Throwable => // bad case!
             fallback.log("Logger polling failed", e)
         }
       }
-
-      finish()
     }
   }
 
@@ -56,21 +79,12 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
   }
 
   def flush(e: Log.Entry): Unit = {
-    queue.add(e).discard()
-    if (stop.get()) {
-      finish()
+    if (!stop.get()) { // Once shutdown is reqested the queue will stop receiving new messages, so it'll become finite
+      queue.add(e).discard()
+    } else {
+      target.flush(e)
+      target.sync()
     }
-  }
-
-  override def close(): Unit = {
-    if (stop.compareAndSet(false, true)) {
-      pollingThread.join()
-      finish()
-    }
-  }
-
-  private def finish(): Unit = {
-    doFlush(NullStep).discard()
   }
 
   private def doFlush(step: Step): Log.Entry = {

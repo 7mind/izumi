@@ -61,8 +61,7 @@ object LogFormat {
 
       val throwables = entry.throwables
       if (throwables.nonEmpty) {
-        throwables
-          .zipWithIndex
+        throwables.zipWithIndex
           .map {
             case (t, idx) =>
               val builder = new StringBuilder

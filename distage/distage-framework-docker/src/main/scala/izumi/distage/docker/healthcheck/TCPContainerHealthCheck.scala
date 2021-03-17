@@ -24,8 +24,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
     val dockerHostCandidates = findDockerHostCandidates(container, tcpPorts)
     val containerCandidates = findContainerInternalCandidates(container, tcpPorts)
 
-    val allCandidates = (dockerHostCandidates ++ containerCandidates)
-      .distinct
+    val allCandidates = (dockerHostCandidates ++ containerCandidates).distinct
       .filterNot(_.maybeAvailable.hostV4 == "0.0.0.0")
 
     logger.debug(s"going to check ports on $container: ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
@@ -43,8 +42,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
     val (bad, good) = checks.lrPartition
 
     val errored = UnavailablePorts(
-      bad
-        .iterator
+      bad.iterator
         .map { case FailedPort(a, b, c) => (a, (b.maybeAvailable, c)) }
         .toMultimapView.map {
           case (dp, ap) =>
@@ -52,8 +50,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
         }.toMap
     )
 
-    val succeded = good
-      .iterator
+    val succeded = good.iterator
       .map { case GoodPort(a, b) => (a, b) }
       .toMultimapView.map {
         case (dp, ap) =>

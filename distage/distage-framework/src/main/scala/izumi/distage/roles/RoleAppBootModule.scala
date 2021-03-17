@@ -59,7 +59,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ArgV].fromValue(args)
   make[RequiredRoles].fromValue(requiredRoles)
 
-  make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
+  make[AppShutdownStrategy[F]].aliased[AppShutdownInitiator].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
   make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
 

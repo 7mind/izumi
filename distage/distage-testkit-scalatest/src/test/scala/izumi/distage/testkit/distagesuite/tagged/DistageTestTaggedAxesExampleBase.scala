@@ -11,18 +11,17 @@ import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import zio.ZIO
 
 abstract class DistageTestTaggedAxesExampleBase extends Spec3[ZIO] with AssertZIO {
-  override protected def config: TestConfig = super
-    .config.copy(
-      forcedRoots = Map(
-        Set(Repo.Prod) -> Set(DIKey[PrdDep]),
-        Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
-      ),
-      pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
-        make[PrdDep]
-        make[DummyDep]
-        make[DepsCounters]
-      },
-    )
+  override protected def config: TestConfig = super.config.copy(
+    forcedRoots = Map(
+      Set(Repo.Prod) -> Set(DIKey[PrdDep]),
+      Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
+    ),
+    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
+      make[PrdDep]
+      make[DummyDep]
+      make[DepsCounters]
+    },
+  )
 }
 
 object DistageTestTaggedAxesExampleBase {
