@@ -14,6 +14,9 @@ object DebugProperties extends properties.DebugProperties {
     */
   final val `izumi.distage.roles.activation.warn-unset` = BoolProperty("izumi.distage.roles.activation.warn-unset")
 
+  /** Do not print warnings when roles with an incompatible effect type are discovered and discarded. Default: `false` */
+  final val `izumi.distage.roles.ignore-mismatched-effect` = BoolProperty("izumi.distage.roles.ignore-mismatched-effect")
+
   /**
     * Discover any component that inherits from [[izumi.distage.roles.model.AbstractRole]] and has a companion object that inherits [[izumi.distage.roles.model.RoleDescriptor]]
     * as a role, not only those additionally added using [[izumi.distage.roles.model.definition.RoleModuleDef#makeRole]],

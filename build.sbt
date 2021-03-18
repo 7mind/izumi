@@ -16,11 +16,11 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -153,11 +153,11 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -269,11 +269,11 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -407,11 +407,11 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -539,11 +539,11 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -666,11 +666,11 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -787,11 +787,11 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -906,11 +906,11 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1019,11 +1019,11 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1145,11 +1145,11 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1261,11 +1261,11 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1385,11 +1385,11 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1504,11 +1504,11 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1644,11 +1644,11 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1762,11 +1762,11 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -1878,11 +1878,11 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2007,11 +2007,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2152,11 +2152,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2267,11 +2267,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2393,11 +2393,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2514,11 +2514,11 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2630,11 +2630,11 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2746,11 +2746,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -2866,11 +2866,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -3013,11 +3013,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.13.5",
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.13") => false
       case (_, _) => coverageEnabled.value
@@ -3186,10 +3186,10 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.13"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     organization := "io.7mind.izumi",
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
