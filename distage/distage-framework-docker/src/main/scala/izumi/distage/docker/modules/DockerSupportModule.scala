@@ -2,11 +2,12 @@ package izumi.distage.docker.modules
 
 import distage.TagK
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.docker.{Docker, DockerClientWrapper}
+import izumi.distage.docker.{Docker, DockerClientFactory, DockerClientWrapper}
 import izumi.distage.model.definition.ModuleDef
 
 class DockerSupportModule[F[_]: TagK] extends ModuleDef {
   make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
+  make[DockerClientFactory].fromValue(DockerClientFactory.impl)
 
   include(DockerSupportModule.config)
 }

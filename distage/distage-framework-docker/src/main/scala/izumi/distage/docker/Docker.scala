@@ -1,7 +1,5 @@
 package izumi.distage.docker
 
-import java.util.concurrent.TimeUnit
-
 import izumi.distage.config.codec.{DIConfigReader, PureconfigAutoDerive}
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker.ClientConfig.parseReusePolicy
@@ -9,6 +7,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import pureconfig.ConfigReader
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 object Docker {
@@ -142,22 +141,25 @@ object Docker {
     * See `docker-reference.conf` for an example configuration.
     * You can `include` the reference configuration if you want to use defaults.
     *
-    * @param globalReuse   If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
+    * @param globalReuse  If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
     *
-    * @param daemon      Options to connect to a Docker Daemon
+    * @param remote       Options to connect to a Remote or Custom Docker Daemon (e.g. custom unix socket or pipe),
+    *                     will try to connect to using these options only if [[useRemote]] is `true`
     *
-    * @param useRegistry  Connect to speicifed Docker Registry
+    * @param useRemote    Connect to Remote Docker Daemon
+    *
+    * @param useRegistry  Connect to specified Docker Registry
     *
     * @param registry     Options to connect to custom Docker Registry host,
     *                     will try to connect to specified registry, instead of the default if [[useRegistry]] is `true`
-    *
     */
   final case class ClientConfig(
     globalReuse: DockerReusePolicy = ClientConfig.defaultReusePolicy,
-    daemon: Option[DaemonDockerConfig] = None,
+    useRemote: Boolean = false,
     useRegistry: Boolean = false,
-    registry: Option[DockerRegistryConfig] = None
+    remote: Option[RemoteDockerConfig] = None,
+    registry: Option[DockerRegistryConfig] = None,
   )
 
   object ClientConfig {
@@ -184,18 +186,35 @@ object Docker {
     }
   }
 
-  final case class DaemonDockerConfig(
+  /**
+    * @param host Valid options:
+    *             - "tcp://X.X.X.X:2375" for Remote Docker Daemon
+    *             - "unix:///var/run/docker.sock" for Unix sockets support
+    *             - "npipe:////./pipe/docker_engine" for Windows Npipe support
+    */
+  final case class RemoteDockerConfig(
     host: String,
     tlsVerify: Boolean = false,
     certPath: String,
-    config: String
+    config: String,
   )
 
-  final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
+  final case class DockerRegistryConfig(
+    url: String,
+    username: String,
+    password: String,
+    email: String,
+  )
 
-  final case class Mount(hostPath: String, containerPath: String, noCopy: Boolean = false)
+  final case class Mount(
+    hostPath: String,
+    containerPath: String,
+    noCopy: Boolean = false,
+  )
 
-  final case class UnmappedPorts(ports: Seq[DockerPort])
+  final case class UnmappedPorts(
+    ports: Seq[DockerPort]
+  )
 
   final case class ReportedContainerConnectivity(
     dockerHost: Option[String],

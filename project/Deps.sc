@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.68`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.69`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -125,6 +125,7 @@ object Izumi {
     )
 
     val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
+    val docker_java_transport_zerodep = Library("com.github.docker-java", "docker-java-transport-zerodep", V.docker_java, LibraryType.Invariant)
 
     val javaXInject = Library("javax.inject", "javax.inject", "1", LibraryType.Invariant)
   }
@@ -499,7 +500,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.docker,
-        libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
+        libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm, docker_java_transport_zerodep in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
         platforms = Targets.jvm,
