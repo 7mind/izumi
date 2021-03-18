@@ -7,7 +7,7 @@ import izumi.distage.model.definition.ModuleDef
 
 class DockerSupportModule[F[_]: TagK] extends ModuleDef {
   make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
-  make[DockerClientFactory].fromValue(DockerClientFactory.impl)
+  make[DockerClientFactory].from(DockerClientFactory.impl)
 
   include(DockerSupportModule.config)
 }
