@@ -251,6 +251,8 @@ trait Lifecycle[+F[_], +OuterResource] {
 
   final def beforeAcquire[G[x] >: F[x]: QuasiApplicative](f: => G[Unit]): Lifecycle[G, OuterResource] =
     wrapAcquire[G](acquire => QuasiApplicative[G].map2(f, acquire)((_, res) => res))
+
+  /** Prepend release action to existing */
   final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 

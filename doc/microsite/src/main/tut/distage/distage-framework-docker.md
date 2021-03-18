@@ -477,7 +477,6 @@ include "docker-reference.conf"
 
 # override docker object fields
 docker {
-  readTimeoutMs = 60000
   globalReuse = "always-kill"
 }
 ```
@@ -492,8 +491,6 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
   include(DockerSupportModule[F] overriddenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
-        readTimeoutMs    = 10000,
-        connectTimeoutMs = 10000,
         globalReuse      = DockerReusePolicy.ReuseEnabled,
         useRemote        = true,
         useRegistry      = true,
