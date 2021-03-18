@@ -123,7 +123,7 @@ object DockerClientWrapper {
     }
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
-      for {
+      (for {
         containers <- F.maybeSuspend {
           resource.rawClient
             .listContainersCmd()
@@ -145,8 +145,7 @@ object DockerClientWrapper {
                 F.maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
             }
         }
-        _ <- F.maybeSuspend(resource.rawClient.close())
-      } yield ()
+      } yield ()).guarantee(F.maybeSuspend(resource.rawClient.close()))
     }
   }
 
