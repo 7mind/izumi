@@ -66,11 +66,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "Check with invalid role produces error" in {
-    assert {
-      PlanCheck.runtime
-        .checkApp(StaticTestMain, PlanCheckConfig("unknownrole"))
-        .maybeErrorMessage.exists(_.contains("Unknown roles:"))
-    }
+    val result = PlanCheck.runtime.checkApp(StaticTestMain, PlanCheckConfig("unknownrole"))
+    assert(result.maybeErrorMessage.exists(_.contains("Unknown roles:")))
+    assert(result.issues.fromNonEmptySet.isEmpty)
 
     val err = intercept[TestFailedException](assertCompiles("""
       PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("unknownrole"))
