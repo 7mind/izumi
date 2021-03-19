@@ -82,12 +82,12 @@ object ResourceCases {
     def s3ComponentResource[F[_]: QuasiIO](ref: Ref[F, Queue[Ops]], s3Client: S3Client): Lifecycle[F, S3Component] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ComponentStart).map(_ => new S3Component(s3Client))
-      )(release = _ => ref.update(_ :+ ComponentStop).map(_ => ()))
+      )(release = _ => ref.update_(_ :+ ComponentStop))
 
     def s3clientResource[F[_]: QuasiIO](ref: Ref[F, Queue[Ops]], s3Component: S3Component): Lifecycle[F, S3ClientImpl] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ClientStart).map(_ => new S3ClientImpl(s3Component))
-      )(release = _ => ref.update(_ :+ ClientStop).map(_ => ()))
+      )(release = _ => ref.update_(_ :+ ClientStop))
 
   }
 
@@ -121,9 +121,10 @@ object ResourceCases {
     override def release: Unit = ()
   }
 
-  class Ref[F[_]: QuasiIO, A](r: AtomicReference[A]) {
-    def get: F[A] = QuasiIO[F].maybeSuspend(r.get())
-    def update(f: A => A): F[A] = QuasiIO[F].maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
+  class Ref[F[_], A](r: AtomicReference[A])(implicit F: QuasiIO[F]) {
+    def get: F[A] = F.maybeSuspend(r.get())
+    def update(f: A => A): F[A] = F.maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
+    def update_(f: A => A): F[Unit] = update(f).map(_ => ())
     def set(a: A): F[A] = update(_ => a)
   }
 
