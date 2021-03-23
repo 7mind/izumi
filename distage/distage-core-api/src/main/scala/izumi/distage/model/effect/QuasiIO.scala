@@ -190,19 +190,19 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
-      override def suspendF[A](effAction: => F[A]): F[A] = F.suspend(effAction)
+      override def suspendF[A](effAction: => F[A]): F[A] = F.defer(effAction)
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
-        F.handleErrorWith(F.suspend(action))(recover)
+        F.handleErrorWith(F.defer(action))(recover)
       }
       override def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
       }
-      override def fail[A](t: => Throwable): F[A] = F.suspend(F.raiseError(t))
+      override def fail[A](t: => Throwable): F[A] = F.defer(F.raiseError(t))
       override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {
-        F.bracket(acquire = F.suspend(acquire))(use = use)(release = release)
+        F.bracket(acquire = F.defer(acquire))(use = use)(release = release)
       }
       override def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B] = {
-        F.bracketCase(acquire = F.suspend(acquire))(use = use)(release = {
+        F.bracketCase(acquire = F.defer(acquire))(use = use)(release = {
           case (a, exitCase) =>
             exitCase match {
               case ExitCase.Completed => release(a, None)
@@ -212,7 +212,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
         })
       }
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
-        F.guarantee(F.suspend(fa))(F.suspend(`finally`))
+        F.guarantee(F.defer(fa))(F.defer(`finally`))
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
       override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
