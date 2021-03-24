@@ -258,6 +258,8 @@ trait Lifecycle[+F[_], +OuterResource] {
 
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
+  final def catchAll[G[x] >: F[x], E <: Throwable, B](f: E => Lifecycle[G, B]): Lifecycle[G, B] = ???
+
   @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
@@ -961,6 +963,9 @@ object Lifecycle extends LifecycleCatsInstances {
       override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
     }
   }
+
+  @inline
+  private final def foldMImpl[F[_], E, A, B](failure: E => Lifecycle[F, B], success: A => Lifecycle[F, B]): Lifecycle[F, B] = {}
 
   @deprecated("renamed to AdaptFunctoid", "1.0")
   type AdaptProvider[A] = AdaptFunctoidImpl[A]
