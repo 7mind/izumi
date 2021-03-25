@@ -968,7 +968,7 @@ object Lifecycle extends LifecycleCatsInstances {
   }
 
   @inline
-  private final def foldMImpl[F[_], A, B >: A](
+  private final def foldMImpl[F[_], A, B](
     self: Lifecycle[F, A]
   )(failure: Throwable => Lifecycle[F, B],
     success: A => Lifecycle[F, B],
