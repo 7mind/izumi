@@ -215,6 +215,20 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
       assert(ops2 == Seq(XStart, YStart, YStop, XStop))
     }
+
+    "handler errors with catchAll" in {
+      import ResourceCase1._
+
+      val ops1 = mutable.Queue.empty[Ops]
+
+      Try {
+        Lifecycle.makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
+          .catchAll { _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop) }.use(_ => ())
+      }
+
+      assert(ops1 == Seq(YStart, YStop))
+    }
+
   }
 
   "Resource bindings" should {
