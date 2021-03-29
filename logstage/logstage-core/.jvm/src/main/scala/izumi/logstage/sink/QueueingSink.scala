@@ -44,12 +44,19 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
   }
 
   private def stopPolling(): Unit = {
-    stop.set(true)
-    Runtime.getRuntime.removeShutdownHook(shutdownHook)
-    while (!queue.isEmpty) {
-      doFlush(NullStep)
+    if (stop.compareAndSet(false, true)) {
+      try {
+        // removeShutdownHook doesn't work if it gets invoked while hook is running which is exactly the case for termination by signal
+        Runtime.getRuntime.removeShutdownHook(shutdownHook)
+      } catch {
+        case _: IllegalStateException =>
+      }
+
+      while (!queue.isEmpty) {
+        doFlush(NullStep)
+      }
+      target.sync()
     }
-    target.sync()
   }
 
   private def poller(): Runnable = new Runnable {
