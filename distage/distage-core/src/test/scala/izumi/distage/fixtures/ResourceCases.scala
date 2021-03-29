@@ -19,6 +19,9 @@ object ResourceCases {
     case object XStop extends Ops
     case object YStart extends Ops
     case object YStop extends Ops
+    case object RStart extends Ops
+    case object RStop extends Ops
+    case object ZStart extends Ops
     case object ZStop extends Ops
 
     class X
