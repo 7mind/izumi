@@ -2,13 +2,14 @@ package izumi.distage.modules.typeclass
 
 import java.util.concurrent.ThreadPoolExecutor
 
-import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
+import cats.effect.ConcurrentEffect
 import cats.{Parallel, effect}
 import distage.{Id, ModuleDef}
 import zio.{IO, Runtime, Task}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
+import cats.effect.Temporal
 
 object ZIOCatsEffectInstancesModule extends ZIOCatsEffectInstancesModule
 
@@ -30,7 +31,7 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   make[Parallel[Task]].from {
     zio.interop.catz.parallelInstance[Any, Throwable]
   }
-  make[Timer[Task]].from[ZIOClockTimer[Throwable]]
+  make[Temporal[Task]].from[ZIOClockTimer[Throwable]]
 
   make[ContextShift[Task]].from {
     zio.interop.catz.zioContextShift[Any, Throwable]
@@ -41,7 +42,7 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   }
 }
 
-final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, ?]] {
+final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Temporal[IO[E, ?]] {
   override lazy val clock: effect.Clock[IO[E, ?]] = new effect.Clock[IO[E, ?]] {
     override def monotonic(unit: TimeUnit): IO[E, Long] =
       zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))

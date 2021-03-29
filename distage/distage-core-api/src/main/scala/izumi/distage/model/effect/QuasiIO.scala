@@ -212,7 +212,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
         })
       }
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
-        F.guarantee(F.defer(fa))(F.defer(`finally`))
+        F.guarantee(F.defer(fa), F.defer(`finally`))
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
       override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
