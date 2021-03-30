@@ -281,8 +281,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       assert(ops1 == Seq(YStart, YStop))
       assert(ops2 == Seq(XStart, YStart, YStop, XStop))
 
-      ops1.clearAndShrink(0)
-      ops2.clearAndShrink(0)
+      ops1.clear()
+      ops2.clear()
 
       redeemTest(false)
       assert(ops1 == Seq(RStart, ZStart, ZStop, XStop))
