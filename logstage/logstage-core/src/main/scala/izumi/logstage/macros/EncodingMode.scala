@@ -1,7 +1,7 @@
 package izumi.logstage.macros
 
 sealed trait EncodingMode {
-  final def fold[R](onRaw: => R)(onStrictness: Boolean => R): R = this match {
+  @inline final def fold[R](onRaw: => R)(onStrictness: Boolean => R): R = this match {
     case EncodingMode.NonStrict => onStrictness(false)
     case EncodingMode.Strict => onStrictness(true)
     case EncodingMode.Raw => onRaw

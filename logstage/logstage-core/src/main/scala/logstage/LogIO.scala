@@ -5,7 +5,7 @@ import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
 import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
@@ -13,7 +13,7 @@ import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
+trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLogIO[F] {
   override type Self[f[_]] = LogIO[f]
 
   final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
