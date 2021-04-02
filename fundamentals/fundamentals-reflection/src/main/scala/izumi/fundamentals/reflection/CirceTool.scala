@@ -9,7 +9,6 @@ object CirceTool {
 }
 
 class CirceToolMacro(val c: blackbox.Context) {
-
   import c.universe._
 
   @inline def make[T: c.WeakTypeTag](): c.Expr[Unit] = {
@@ -58,7 +57,7 @@ class CirceToolMacro(val c: blackbox.Context) {
     println(x.filter(_.nonEmpty).mkString("\n"))
     println(s"/* -- END: $base -- */")
 
-    reify(())
+    c.Expr[Unit](q"()")
   }
 
   private def complexPoly[T: c.WeakTypeTag](t: c.universe.Type) = {
