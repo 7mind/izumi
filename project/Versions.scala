@@ -3,20 +3,20 @@ object V {
   val izumi_reflect = "1.0.0-M16"
 
   // foundation
-  val collection_compat = "2.4.2"
+  val collection_compat = "2.4.3"
 
   val kind_projector = "0.11.3"
 
-  val scalatest = "3.2.6"
+  val scalatest = "3.2.7"
 
   val cats = "2.5.0"
-  val cats_effect = "2.4.0"
+  val cats_effect = "2.4.1"
 
   val discipline = "1.1.4"
   val discipline_scalatest = "2.0.0"
 
   val zio = "1.0.5"
-  val zio_interop_cats = "2.3.1.0"
+  val zio_interop_cats = "2.4.0.0"
 
   val monix = "3.3.0"
   val monix_bio = "1.1.0"
