@@ -1,6 +1,5 @@
 package izumi.logstage.macros
 
-import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.{getApplicationPointId, getEnclosingPosition}
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message}
