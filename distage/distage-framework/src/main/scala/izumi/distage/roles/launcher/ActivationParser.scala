@@ -42,7 +42,7 @@ object ActivationParser {
       val resultActivation = defaultActivations ++ requiredActivations ++ configActivations ++ cmdActivations // commandline choices override values in config
       val unsetActivations = activationInfo.availableChoices.keySet diff resultActivation.activeChoices.keySet
       if (unsetActivations.nonEmpty && warnUnsetActivations && syspropWarnUnsetActivations) {
-        val formattedMessage = {
+        logger.raw.warn {
           s"""Some activation choices were left unspecified both on the commandline and in default configuration:
              |
              |  - ${activationInfo.narrow(unsetActivations).formattedChoices}
@@ -64,7 +64,6 @@ object ActivationParser {
              |You may disable this warning by setting system property `-D${DebugProperties.`izumi.distage.roles.activation.warn-unset`.name}=false`
              |""".stripMargin
         }
-        logger.warn(formattedMessage)
       }
 
       resultActivation
