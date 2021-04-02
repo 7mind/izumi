@@ -245,7 +245,7 @@ object Izumi {
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter value x\\\\$4 in anonymous function is never used:silent",
+        "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
         "scalacOptions" in SettingScope.Raw("(Compile, sbt.Keys.doc)") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
