@@ -1,11 +1,11 @@
 package izumi.fundamentals.bio.test
 
-import cats.effect.concurrent.Ref
 import cats.effect.{Async, Concurrent, Sync}
 import izumi.functional.bio.{F, IO2}
 import izumi.functional.bio.catz._
 import org.scalatest.wordspec.AnyWordSpec
 import cats.Parallel
+import cats.effect.Ref
 
 class CatsConversionTest extends AnyWordSpec {
 
