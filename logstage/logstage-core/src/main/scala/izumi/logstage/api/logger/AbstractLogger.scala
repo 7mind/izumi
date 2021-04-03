@@ -37,6 +37,5 @@ trait AbstractLogger {
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
 
   def withCustomContext(context: CustomContext): Self
-
   final def apply(context: CustomContext): Self = withCustomContext(context)
 }

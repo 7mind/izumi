@@ -4,14 +4,14 @@ import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log._
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLoggerF, EncodingAwareAbstractLogIO, LogIORaw}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
 import logstage.Level
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroStrictLoggerF[F] {
+trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroStrictLogIO[F] {
   override type Self[f[_]] = LogIOStrict[f]
 
   final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
