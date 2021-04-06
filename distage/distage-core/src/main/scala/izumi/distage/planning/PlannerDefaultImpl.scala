@@ -12,14 +12,13 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.{DIKey, MirrorProvider}
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
-import izumi.distage.planning.sequential.LoopBreaker
 import izumi.distage.planning.solver.PlanSolver
 import izumi.functional.Value
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.Toposort
-import izumi.fundamentals.graphs.{DG, GraphMeta}
+import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
+import izumi.fundamentals.graphs.{DG, GraphMeta, ToposortError}
 import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
@@ -31,7 +30,6 @@ class PlannerDefaultImpl(
   hook: PlanningHook,
   resolver: PlanSolver,
   analyzer: PlanAnalyzer,
-  mirrorProvider: MirrorProvider,
 ) extends Planner {
 
   override def plan(input: PlannerInput): OrderedPlan = {
@@ -68,47 +66,42 @@ class PlannerDefaultImpl(
 
         Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
           .map(addImports(_, input.roots))
+          .map(plan => forwardingRefResolver.resolveMatrix(plan, input.roots))
           .map {
-            dg =>
-              val steps = dg.meta.nodes.values.toVector
-              SemiPlan(steps, input.roots)
+            plan =>
+              val ordered = Toposort.cycleBreaking(
+                predecessors = plan.predecessors,
+                break = new ToposortLoopBreaker[DIKey] {
+                  override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+                    throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
+                  }
+                },
+              )
+              val topology = analyzer.topology(plan.meta.nodes.values)
+
+              val sortedKeys = ordered match {
+                case Left(value) =>
+                  throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
+
+                case Right(value) =>
+                  value
+              }
+
+              val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
+
+              val roots = input.roots match {
+                case Roots.Of(roots) =>
+                  roots.toSet
+                case Roots.Everything =>
+                 topology.effectiveRoots
+              }
+              val finalPlan = OrderedPlan(sortedOps, roots, topology)
+              finalPlan
           }
-          .eff(planningObserver.onPhase10PostGC)
-          .map(makeOrdered)
-          .map(forwardingRefResolver.resolve)
           .eff(planningObserver.onPhase90AfterForwarding)
           .eff(sanityChecker.assertFinalPlanSane)
           .get
     }
-  }
-
-  protected[this] def makeOrdered(completedPlan: SemiPlan): OrderedPlan = {
-    val topology = analyzer.topology(completedPlan.steps)
-
-    val index = completedPlan.index
-
-    val maybeBrokenLoops = Toposort.cycleBreaking(
-      predecessors = IncidenceMatrix(topology.dependencies.graph),
-      break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
-    )
-
-    val sortedKeys = maybeBrokenLoops match {
-      case Left(value) =>
-        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
-
-      case Right(value) =>
-        value
-    }
-
-    val sortedOps = sortedKeys.flatMap(index.get).toVector
-
-    val roots = completedPlan.roots match {
-      case Roots.Of(roots) =>
-        roots.toSet
-      case Roots.Everything =>
-        topology.effectiveRoots
-    }
-    OrderedPlan(sortedOps, roots, topology)
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
@@ -143,7 +136,6 @@ class PlannerDefaultImpl(
 
   @nowarn("msg=Unused import")
   protected[this] def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
-    import scala.collection.compat._
 
     val imports = plan.successors.links.view
       .filterKeys(k => !plan.meta.nodes.contains(k))

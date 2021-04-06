@@ -95,9 +95,9 @@ object OpFormatter {
                  |${format(proxied).shift(2)}
                  |}""".stripMargin
 
-            case ProxyOp.InitProxy(target, dependencies, _, origin) =>
+            case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos -> init(${dependencies.map(formatKey).mkString(", ")})"
+              s"${formatKey(target)} $pos -> init[${proxy.target}](${dependencies.map(formatKey).mkString(", ")})"
 
           }
       }

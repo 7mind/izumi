@@ -45,8 +45,9 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(3)).children.size == 1)
-    assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(3)).children.size == 2)
+
+    assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(10)).children.size == 1)
+    assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(10)).children.size == 3)
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]

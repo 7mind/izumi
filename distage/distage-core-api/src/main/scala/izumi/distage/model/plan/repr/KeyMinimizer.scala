@@ -58,8 +58,11 @@ class KeyMinimizer(
 
         mutatorIndex(s"{id.${rendertype(tpe)}@$fullId}", idx)
 
-      case DIKey.ProxyElementKey(proxied, _) =>
-        s"{proxy.${renderKey(proxied)}}"
+      case DIKey.ProxyInitKey(proxied) =>
+        s"{proxyinit.${renderKey(proxied)}}"
+
+      case DIKey.ProxyControllerKey(proxied, _) =>
+        s"{proxyref.${renderKey(proxied)}}"
 
       case DIKey.EffectKey(key, _) =>
         s"{effect.${renderKey(key)}}"
@@ -84,7 +87,10 @@ class KeyMinimizer(
       case k: DIKey.IdKey[_] =>
         extract(k.tpe)
 
-      case p: DIKey.ProxyElementKey =>
+      case p: DIKey.ProxyControllerKey =>
+        extract(p.tpe) ++ extract(p.proxied)
+
+      case p: DIKey.ProxyInitKey =>
         extract(p.tpe) ++ extract(p.proxied)
 
       case s: DIKey.SetElementKey =>

@@ -52,7 +52,7 @@ class ProxyStrategyDefaultImpl(
     initProxy: ProxyOp.InitProxy,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
-    val target = initProxy.target
+    val target = initProxy.proxy.target
     val key = proxyKey(target)
 
     context.fetchUnsafe(key) match {
@@ -96,7 +96,7 @@ class ProxyStrategyDefaultImpl(
   }
 
   protected def proxyKey(m: DIKey): DIKey = {
-    DIKey.ProxyElementKey(m, SafeType.get[ProxyDispatcher])
+    DIKey.ProxyControllerKey(m, SafeType.get[ProxyDispatcher])
   }
 
 }

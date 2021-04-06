@@ -51,8 +51,16 @@ object DIKey {
     override def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
   }
 
-  final case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
-    override def toString: String = s"{proxy.${proxied.toString}}"
+  final case class ProxyInitKey(proxied: DIKey) extends DIKey {
+
+    override def tpe: SafeType = proxied.tpe
+
+    override def toString: String = s"{proxyinit.${proxied.toString}}"
+  }
+
+
+  final case class ProxyControllerKey(proxied: DIKey, tpe: SafeType) extends DIKey {
+    override def toString: String = s"{proxyref.${proxied.toString}}"
   }
 
   final case class ResourceKey(key: DIKey, tpe: SafeType) extends DIKey {
