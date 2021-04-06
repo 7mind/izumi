@@ -60,7 +60,6 @@ object BootstrapLocator {
 
   private[this] final val mirrorProvider = MirrorProvider.Impl
   private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
-  private[this] final val initProxiesAsap = izumi.distage.DebugProperties.`izumi.distage.init-proxies-asap`.boolValue(true)
 
   private final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
@@ -73,7 +72,7 @@ object BootstrapLocator {
     )
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true)
+    val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val mp = mirrorProvider
     val resolver = new PlanSolver.Impl(
@@ -87,7 +86,6 @@ object BootstrapLocator {
       planningObserver = bootstrapObserver,
       hook = hook,
       analyzer = analyzer,
-      mirrorProvider = mp,
       resolver = resolver,
     )
   }
@@ -108,7 +106,6 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[Boolean].named("distage.init-proxies-asap").fromValue(initProxiesAsap)
     make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]

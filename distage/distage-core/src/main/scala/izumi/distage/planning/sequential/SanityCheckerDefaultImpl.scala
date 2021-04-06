@@ -1,10 +1,12 @@
 package izumi.distage.planning.sequential
 
 import izumi.distage.model.exceptions._
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.InitProxy
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.reflection.DIKey.ProxyInitKey
 
 import scala.collection.mutable
 
@@ -17,7 +19,7 @@ class SanityCheckerDefaultImpl(
 
     val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
     if (reftable.dependees.graph.nonEmpty) {
-      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees}!", reftable)
+      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
     }
 
     val fullRefTable = planAnalyzer.topology(plan.steps)
@@ -50,11 +52,14 @@ class SanityCheckerDefaultImpl(
           (unique += s.target, nonunique)
       }
 
-    val proxyKeys = proxies.map(_.target)
+    val proxyKeys = proxies.map(op => op.asInstanceOf[InitProxy].target.proxied : DIKey)
 
     assertNoDuplicateKeys(uniqOps.toSeq ++ nonUniqueOps.toSeq) // 2.13 compat
     assertNoDuplicateKeys(proxyKeys)
 
+
+    // every init op has matching proxy op
+    // TODO: check reverse contract
     val missingProxies = proxyKeys.toSet -- uniqOps.toSet
     if (missingProxies.nonEmpty) {
       throw new MissingRefException(s"Cannot finish the plan, there are missing proxy refs: $missingProxies!", missingProxies, None)

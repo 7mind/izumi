@@ -32,25 +32,25 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     )
   }
 
-  def requirements(op: ExecutableOp): Set[DIKey] = {
+  private[this] def requirements(op: ExecutableOp): Seq[(DIKey, Set[DIKey])] = {
     op match {
       case w: WiringOp =>
-        w.wiring.requiredKeys
+        Seq((op.target, w.wiring.requiredKeys))
 
       case w: MonadicOp =>
-        Set(w.effectKey)
+        Seq((op.target, Set(w.effectKey)))
 
       case c: CreateSet =>
-        c.members
+        Seq((op.target, c.members))
 
       case _: MakeProxy =>
-        Set.empty
+        Seq((op.target, Set.empty))
 
       case _: ImportDependency =>
-        Set.empty
+        Seq((op.target, Set.empty))
 
       case i: InitProxy =>
-        Set(i.proxy.target) ++ requirements(i.proxy.op)
+        Seq((i.target, Set(i.proxy.target))) ++ requirements(i.proxy.op)
     }
   }
 
@@ -63,14 +63,22 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
     val dependencies = plan
       .foldLeft(new Accumulator) {
-        case (acc, op: InstantiationOp) =>
-          val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
-          acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
+        case (acc, op) =>
+          requirements(op)
+            .map {
+              case (k, r) =>
+                (k, r.filterNot(refFilter(acc)))
+            } // it's important NOT to update acc before we computed deps
+            .foreach {
+              case (k, r) =>
+                acc.getOrElseUpdate(k, mutable.Set.empty) ++= r
+            }
+
           acc
 
-        case (acc, op) =>
-          acc.getOrElseUpdate(op.target, mutable.Set.empty)
-          acc
+//        case (acc, op) =>
+//          acc.getOrElseUpdate(op.target, mutable.Set.empty)
+//          acc
       }
       .view
       .filter(postFilter)
