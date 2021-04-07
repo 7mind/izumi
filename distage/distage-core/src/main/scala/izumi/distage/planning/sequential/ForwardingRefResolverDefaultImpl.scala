@@ -2,12 +2,14 @@ package izumi.distage.planning.sequential
 
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError.BUG_UnableToFindLoop
+import izumi.distage.model.exceptions.SanityCheckFailedException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.planning.ForwardingRefResolver
 import izumi.distage.model.reflection._
 import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
 import scala.annotation.{nowarn, tailrec}
@@ -15,14 +17,13 @@ import scala.collection.mutable
 
 @nowarn("msg=Unused import")
 class ForwardingRefResolverDefaultImpl(
-  breaker: FwdrefLoopBreaker
-) extends ForwardingRefResolver {
-
-  import scala.collection.compat._
+                                        breaker: FwdrefLoopBreaker
+                                      ) extends ForwardingRefResolver {
 
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
+    val replacements = mutable.HashMap.empty[DIKey, mutable.HashSet[(DIKey, DIKey)]]
 
     def register(dependee: DIKey, deps: Set[DIKey]): Unit = {
       updatedPredcessors.getOrElseUpdate(dependee, mutable.HashSet.empty) ++= deps
@@ -46,10 +47,16 @@ class ForwardingRefResolverDefaultImpl(
         val loopMembers: Map[DIKey, Set[DIKey]] = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
 
         def processLoopResolution(resolution: BreakAt): Unit = {
+          /*
+          Our goal is to introduce two operations, MakeProxy and InitProxy.
+          All the usages outside of the referential loop will reference InitProxy by its synthetic key, thus we will maintain proper ordering
+          MakeProxy will use original key and only ops involved into the loop will dereference it
+           */
           val dependee = resolution.dependee
           val dependencies = resolution.dependencies
           val originalOp = plan.meta.nodes(dependee)
           assert(originalOp != null)
+
 
           val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
           val byNameAllowed = onlyByNameUsages
@@ -57,6 +64,16 @@ class ForwardingRefResolverDefaultImpl(
           val badDeps = dependencies.intersect(predcessors.keySet)
           val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
           val initOpKey = DIKey.ProxyInitKey(op.target)
+
+          val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
+
+          val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet - dependee
+          val allUsers = plan.successors.links(dependee)
+          (allUsers -- loopUsers).foreach {
+            k =>
+              replacements.getOrElseUpdate(k, mutable.HashSet.empty) += ((dependee, initOpKey: DIKey))
+          }
+
 
           val goodDeps = dependencies -- badDeps
 
@@ -86,8 +103,25 @@ class ForwardingRefResolverDefaultImpl(
 
     for {
       _ <- next(plan.predecessors.links)
-      p = IncidenceMatrix(updatedPredcessors.view.mapValues(_.toSet).toMap)
     } yield {
+      replacements.foreach {
+        case (in, repls) =>
+          val orig = updatedPlan(in)
+          assert(orig != null)
+
+          val idx = repls.toMap // TODO: check uniq
+          val upd = orig match {
+            case op: InstantiationOp =>
+              op.replaceKeys(identity, k => idx.getOrElse(k, k))
+            case o =>
+              throw new SanityCheckFailedException(s"BUG: $o is not an operation which expected to be a user of a cycle")
+          }
+          val preds = updatedPredcessors(in)
+          updatedPredcessors.put(in, preds.map(k => idx.getOrElse(k, k)))
+          updatedPlan.put(in, upd)
+      }
+
+      val p = IncidenceMatrix(updatedPredcessors.view.mapValues(_.toSet).toMap)
       DG.fromPred(p, GraphMeta(updatedPlan.toMap))
     }
   }
