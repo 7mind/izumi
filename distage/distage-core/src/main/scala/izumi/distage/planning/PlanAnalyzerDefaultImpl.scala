@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
@@ -14,7 +14,6 @@ import scala.collection.mutable
 
 @nowarn("msg=Unused import")
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
-  import scala.collection.compat._
 
   def topology(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
@@ -32,7 +31,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     )
   }
 
-  private[this] def requirements(op: ExecutableOp): Seq[(DIKey, Set[DIKey])] = {
+  def requirements(op: ExecutableOp): Seq[(DIKey, Set[DIKey])] = {
     op match {
       case w: WiringOp =>
         Seq((op.target, w.wiring.requiredKeys))

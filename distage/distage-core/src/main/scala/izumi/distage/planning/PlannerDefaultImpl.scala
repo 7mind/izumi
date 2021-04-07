@@ -66,7 +66,7 @@ class PlannerDefaultImpl(
 
         Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
           .map(addImports(_, input.roots))
-          .map(plan => forwardingRefResolver.resolveMatrix(plan, input.roots))
+          .map(plan => forwardingRefResolver.resolveMatrix(plan))
           .map {
             plan =>
               val ordered = Toposort.cycleBreaking(
