@@ -39,7 +39,7 @@ class SanityCheckerDefaultImpl(
     }
   }
 
-  override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
+  private[this] def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
     val (uniqOps, nonUniqueOps) = ops
       .foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
         case ((unique, nonunique), s: CreateSet) =>

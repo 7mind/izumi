@@ -2,7 +2,7 @@ package izumi.distage.gc
 
 import distage.DIKey
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.errors.LoopResolutionError
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.exceptions.InjectorFailed
 import izumi.distage.model.plan.Roots
