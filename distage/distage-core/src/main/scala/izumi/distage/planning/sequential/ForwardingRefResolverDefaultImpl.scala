@@ -18,6 +18,8 @@ class ForwardingRefResolverDefaultImpl(
   breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {
 
+  import scala.collection.compat._
+
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]

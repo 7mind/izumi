@@ -35,6 +35,9 @@ class PlannerDefaultImpl(
   analyzer: PlanAnalyzer,
 ) extends Planner {
 
+  import scala.collection.compat._
+
+
   override def plan(input: PlannerInput): OrderedPlan = {
     planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
   }
@@ -46,7 +49,7 @@ class PlannerDefaultImpl(
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
     } yield {
-      // TODO: this is legacy code which just make plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
+      // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
       Value(withoutLoops)
         .map {
           plan =>
