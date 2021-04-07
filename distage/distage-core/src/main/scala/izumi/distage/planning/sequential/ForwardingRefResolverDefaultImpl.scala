@@ -4,6 +4,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp,
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import izumi.distage.model.reflection._
+import izumi.distage.planning.sequential.LoopBreaker2.BreakAt
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
@@ -11,10 +12,10 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 class ForwardingRefResolverDefaultImpl(
-  protected val planAnalyzer: PlanAnalyzer
+  breaker: LoopBreaker2
 ) extends ForwardingRefResolver {
 
-  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp], roots: Roots): DG[DIKey, ExecutableOp] = {
+  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): DG[DIKey, ExecutableOp] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
 
@@ -36,18 +37,20 @@ class ForwardingRefResolverDefaultImpl(
         val reduced = predcessors -- resolved.keySet
         next(reduced)
       } else if (predcessors.nonEmpty) {
-        val loopMembers = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
+        val loopMembers: Map[DIKey, Set[DIKey]] = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
         if (loopMembers.isEmpty) {
           ???
         }
 
-        val (dependee, dependencies) = loopMembers.head
+        val resolution = breaker.breakLoop(loopMembers, plan).right.get
+        val dependee = resolution.dependee
+        val dependencies = resolution.dependencies
         val originalOp = plan.meta.nodes(dependee)
         assert(originalOp != null)
 
         val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
         val byNameAllowed = onlyByNameUsages
-        
+
         val badDeps = dependencies.intersect(predcessors.keySet)
         val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
         val initOpKey = DIKey.ProxyInitKey(op.target)
