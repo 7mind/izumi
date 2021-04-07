@@ -2,9 +2,10 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.errors.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
-import izumi.distage.model.definition.conflicts.MutSel
-import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError, LoopResolutionError}
+import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
+import izumi.distage.model.definition.errors.DIError
+import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
 import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, InjectorFailed, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
@@ -24,6 +25,7 @@ import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
 
+@nowarn("msg=Unused import")
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
@@ -39,7 +41,7 @@ class PlannerDefaultImpl(
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     val maybePlan = for {
-      resolved <- resolver.resolveConflicts(input)
+      resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan = preparePlan(resolved)
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
@@ -199,7 +201,7 @@ class PlannerDefaultImpl(
 
   // TODO: we need to completely get rid of exceptions, this is just some transitional stuff
   protected[this] def throwOnError(activation: Activation, issues: List[DIError]): Nothing = {
-    val conflicts = issues.collect { case c: ConflictResolutionError[DIKey, InstantiationOp] => c }
+    val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
     if (conflicts.nonEmpty) {
       throwOnConflict(activation, conflicts)
     }
@@ -216,15 +218,16 @@ class PlannerDefaultImpl(
 
     throw new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
   }
-  protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
-    val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")
+  protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionFailed]): Nothing = {
+    val rawIssues = issues.map(_.error)
+    val issueRepr = rawIssues.map(formatConflict(activation)).mkString("\n", "\n", "")
 
     throw new ConflictResolutionException(
       s"""Found multiple instances for a key. There must be exactly one binding for each DIKey. List of issues:$issueRepr
          |
          |You can use named instances: `make[X].named("id")` syntax and `distage.Id` annotation to disambiguate between multiple instances of the same type.
        """.stripMargin,
-      issues,
+      rawIssues,
     )
   }
 

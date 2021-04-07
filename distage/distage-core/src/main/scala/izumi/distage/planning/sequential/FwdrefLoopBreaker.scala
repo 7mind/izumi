@@ -1,7 +1,6 @@
 package izumi.distage.planning.sequential
 
-import izumi.distage.model.definition.errors.LoopResolutionError
-import izumi.distage.model.definition.errors.LoopResolutionError.{BUG_BestLoopResolutionIsNotSupported, BestLoopResolutionCannotBeProxied}
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}

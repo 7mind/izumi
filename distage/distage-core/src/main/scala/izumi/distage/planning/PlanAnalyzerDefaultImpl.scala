@@ -15,6 +15,9 @@ import scala.collection.mutable
 @nowarn("msg=Unused import")
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
+  import scala.collection.compat._
+
+
   def topology(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
       plan,

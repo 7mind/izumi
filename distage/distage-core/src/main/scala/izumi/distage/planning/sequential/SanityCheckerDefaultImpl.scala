@@ -1,7 +1,6 @@
 package izumi.distage.planning.sequential
 
 import izumi.distage.model.exceptions._
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.InitProxy
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}

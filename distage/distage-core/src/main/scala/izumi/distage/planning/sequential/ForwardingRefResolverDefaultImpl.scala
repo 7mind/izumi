@@ -1,7 +1,7 @@
 package izumi.distage.planning.sequential
 
-import izumi.distage.model.definition.errors.LoopResolutionError
-import izumi.distage.model.definition.errors.LoopResolutionError.BUG_UnableToFindLoop
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError.BUG_UnableToFindLoop
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.planning.ForwardingRefResolver
@@ -10,9 +10,10 @@ import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.collection.mutable
 
+@nowarn("msg=Unused import")
 class ForwardingRefResolverDefaultImpl(
   breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {
@@ -22,7 +23,7 @@ class ForwardingRefResolverDefaultImpl(
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
 
     def register(dependee: DIKey, deps: Set[DIKey]): Unit = {
-      updatedPredcessors.getOrElseUpdate(dependee, mutable.HashSet.empty).addAll(deps)
+      updatedPredcessors.getOrElseUpdate(dependee, mutable.HashSet.empty) ++= deps
       ()
     }
 
@@ -62,6 +63,7 @@ class ForwardingRefResolverDefaultImpl(
 
           updatedPlan.put(dependee, op)
           updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, op, op.origin))
+          ()
         }
 
         if (loopMembers.isEmpty) {

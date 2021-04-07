@@ -3,8 +3,7 @@ package izumi.distage.planning.solver
 import distage.Injector
 import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.conflicts.{Annotated, MutSel, Node}
-import izumi.distage.model.definition.errors.ConflictResolutionError
+import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
