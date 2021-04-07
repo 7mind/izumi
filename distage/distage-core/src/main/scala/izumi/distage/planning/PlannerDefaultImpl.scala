@@ -2,10 +2,11 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
-import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
+import izumi.distage.model.definition.errors.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.MutSel
+import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError, LoopResolutionError}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, InjectorFailed, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -14,7 +15,7 @@ import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
-import izumi.distage.planning.solver.PlanSolver
+import izumi.distage.planning.solver.{PlanSolver, SemigraphSolver}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
@@ -37,71 +38,83 @@ class PlannerDefaultImpl(
   }
 
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    resolver.resolveConflicts(input) match {
-      case Left(errors) =>
-        throwOnConflict(input.activation, errors)
-
-      case Right(resolved) =>
-        val mappedGraph = resolved.predecessors.links.toSeq.map {
-          case (target, deps) =>
-            val mappedTarget = updateKey(target)
-            val mappedDeps = deps.map(updateKey)
-
-            val op = resolved.meta.nodes.get(target).map {
-              op =>
-                val remaps = op.remapped.map {
-                  case (original, remapped) =>
-                    (original, updateKey(remapped))
+    val maybePlan = for {
+      resolved <- resolver.resolveConflicts(input)
+      plan = preparePlan(resolved)
+      withImports = addImports(plan, input.roots)
+      withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
+    } yield {
+      // TODO: this is legacy code which just make plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
+      Value(withoutLoops)
+        .map {
+          plan =>
+            val ordered = Toposort.cycleBreaking(
+              predecessors = plan.predecessors,
+              break = new ToposortLoopBreaker[DIKey] {
+                override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+                  throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
                 }
-                val mapper = (key: DIKey) => remaps.getOrElse(key, key)
-                op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper)
+              },
+            )
+            val topology = analyzer.topology(plan.meta.nodes.values)
+
+            val sortedKeys = ordered match {
+              case Left(value) =>
+                throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
+
+              case Right(value) =>
+                value
             }
 
-            ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
+            val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
+
+            val roots = input.roots match {
+              case Roots.Of(roots) =>
+                roots.toSet
+              case Roots.Everything =>
+                topology.effectiveRoots
+            }
+            val finalPlan = OrderedPlan(sortedOps, roots, topology)
+            finalPlan
+        }
+        .eff(planningObserver.onPhase90AfterForwarding)
+        .eff(sanityChecker.assertFinalPlanSane)
+        .get
+    }
+
+    maybePlan match {
+      case Left(errors) =>
+        throwOnError(input.activation, errors)
+
+      case Right(resolved) =>
+        resolved
+    }
+  }
+
+  private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]) = {
+    val mappedGraph = resolved.predecessors.links.toSeq.map {
+      case (target, deps) =>
+        val mappedTarget = updateKey(target)
+        val mappedDeps = deps.map(updateKey)
+
+        val op = resolved.meta.nodes.get(target).map {
+          op =>
+            val remaps = op.remapped.map {
+              case (original, remapped) =>
+                (original, updateKey(remapped))
+            }
+            val mapper = (key: DIKey) => remaps.getOrElse(key, key)
+            op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper)
         }
 
-        val mappedOps = mappedGraph.view.flatMap(_._2).toMap
-
-        val mappedMatrix = mappedGraph.view.map(_._1).filter({ case (k, _) => mappedOps.contains(k) }).toMap
-
-        Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
-          .map(addImports(_, input.roots))
-          .map(plan => forwardingRefResolver.resolveMatrix(plan))
-          .map {
-            plan =>
-              val ordered = Toposort.cycleBreaking(
-                predecessors = plan.predecessors,
-                break = new ToposortLoopBreaker[DIKey] {
-                  override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
-                    throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
-                  }
-                },
-              )
-              val topology = analyzer.topology(plan.meta.nodes.values)
-
-              val sortedKeys = ordered match {
-                case Left(value) =>
-                  throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
-
-                case Right(value) =>
-                  value
-              }
-
-              val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
-
-              val roots = input.roots match {
-                case Roots.Of(roots) =>
-                  roots.toSet
-                case Roots.Everything =>
-                 topology.effectiveRoots
-              }
-              val finalPlan = OrderedPlan(sortedOps, roots, topology)
-              finalPlan
-          }
-          .eff(planningObserver.onPhase90AfterForwarding)
-          .eff(sanityChecker.assertFinalPlanSane)
-          .get
+        ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
     }
+
+    val mappedOps = mappedGraph.view.flatMap(_._2).toMap
+
+    val mappedMatrix = mappedGraph.view.map(_._1).filter({ case (k, _) => mappedOps.contains(k) }).toMap
+    val plan = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
+    plan
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
@@ -173,6 +186,36 @@ class PlannerDefaultImpl(
     DG.fromPred(IncidenceMatrix(plan.predecessors.links ++ allImports), fullMeta)
   }
 
+  def formatError(e: LoopResolutionError): String = e match {
+    case LoopResolutionError.BUG_UnableToFindLoop(predcessors) =>
+      s"BUG: Failed to break circular dependencies, loop detector failed on matrix $predcessors which is expected to contain a loop"
+
+    case LoopResolutionError.BUG_BestLoopResolutionIsNotSupported(op) =>
+      s"BUG: Failed to break circular dependencies, best candidate ${op.target} is not a proxyable operation: $op"
+
+    case LoopResolutionError.BestLoopResolutionCannotBeProxied(op) =>
+      s"Failed to break circular dependencies, best candidate ${op.target} is not proxyable (final?): $op"
+  }
+
+  // TODO: we need to completely get rid of exceptions, this is just some transitional stuff
+  protected[this] def throwOnError(activation: Activation, issues: List[DIError]): Nothing = {
+    val conflicts = issues.collect { case c: ConflictResolutionError[DIKey, InstantiationOp] => c }
+    if (conflicts.nonEmpty) {
+      throwOnConflict(activation, conflicts)
+    }
+    import izumi.fundamentals.platform.strings.IzString._
+
+    val loops = issues.collect { case e: LoopResolutionError => formatError(e) }.niceList()
+    if (loops.nonEmpty) {
+      throw new InjectorFailed(
+        s"""Injector failed unexpectedly. List of issues: $loops
+       """.stripMargin,
+        issues,
+      )
+    }
+
+    throw new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
+  }
   protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {
     val issueRepr = issues.map(formatConflict(activation)).mkString("\n", "\n", "")
 

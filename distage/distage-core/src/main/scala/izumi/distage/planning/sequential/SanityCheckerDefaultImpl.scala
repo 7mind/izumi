@@ -6,7 +6,6 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.model.reflection.DIKey.ProxyInitKey
 
 import scala.collection.mutable
 
@@ -42,28 +41,29 @@ class SanityCheckerDefaultImpl(
   }
 
   override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
-    val (proxies, single) = ops.partition(_.isInstanceOf[ProxyOp.InitProxy])
-
-    val (uniqOps, nonUniqueOps) = single
+    val (uniqOps, nonUniqueOps) = ops
       .foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
         case ((unique, nonunique), s: CreateSet) =>
           (unique, nonunique += s.target)
         case ((unique, nonunique), s) =>
           (unique += s.target, nonunique)
       }
-
-    val proxyKeys = proxies.map(op => op.asInstanceOf[InitProxy].target.proxied : DIKey)
-
     assertNoDuplicateKeys(uniqOps.toSeq ++ nonUniqueOps.toSeq) // 2.13 compat
-    assertNoDuplicateKeys(proxyKeys)
 
+    val proxyInits = ops.collect { case op: ProxyOp.InitProxy => op}
+    val proxies = ops.collect { case op: ProxyOp.MakeProxy => op}
+    val proxyInitSources = proxyInits.map(_.target.proxied : DIKey)
+    val proxyKeys = proxies.map(_.target : DIKey)
 
-    // every init op has matching proxy op
-    // TODO: check reverse contract
-    val missingProxies = proxyKeys.toSet -- uniqOps.toSet
+    // every proxy op has matching init op
+    val missingProxies = proxyKeys.diff(proxyInitSources).toSet
     if (missingProxies.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing proxy refs: $missingProxies!", missingProxies, None)
-
+      throw new MissingRefException(s"BUG: Cannot finish the plan, there are missing MakeProxy operations: $missingProxies!", missingProxies, None)
+    }
+    // every init op has matching proxy op
+    val missingInits = proxyInitSources.diff(proxyKeys).toSet
+    if (missingInits.nonEmpty) {
+      throw new MissingRefException(s"BUG: Cannot finish the plan, there are missing InitProxy operations: $missingInits!", missingInits, None)
     }
   }
 

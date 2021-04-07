@@ -13,7 +13,7 @@ import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning._
-import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, LoopBreaker2, SanityCheckerDefaultImpl}
+import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, FwdrefLoopBreaker, SanityCheckerDefaultImpl}
 import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
 import izumi.distage.provisioning._
@@ -73,7 +73,7 @@ object BootstrapLocator {
     val mp = mirrorProvider
     val hook = new PlanningHookAggregate(Set.empty)
     val analyzer = new PlanAnalyzerDefaultImpl
-    val loopBreaker = new LoopBreaker2.LoopBreakerDefaultImpl(mp, analyzer)
+    val loopBreaker = new FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl(mp, analyzer)
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(loopBreaker)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val resolver = new PlanSolver.Impl(
@@ -149,7 +149,7 @@ object BootstrapLocator {
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
 
-    make[LoopBreaker2].from[LoopBreaker2.LoopBreakerDefaultImpl]
+    make[FwdrefLoopBreaker].from[FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl]
   }
 
   final val defaultBootstrapActivation: Activation = Activation(

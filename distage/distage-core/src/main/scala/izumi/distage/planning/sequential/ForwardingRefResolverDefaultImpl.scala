@@ -1,10 +1,12 @@
 package izumi.distage.planning.sequential
 
+import izumi.distage.model.definition.errors.LoopResolutionError
+import izumi.distage.model.definition.errors.LoopResolutionError.BUG_UnableToFindLoop
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import izumi.distage.model.plan.{ExecutableOp, Roots}
-import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
+import izumi.distage.model.planning.ForwardingRefResolver
 import izumi.distage.model.reflection._
-import izumi.distage.planning.sequential.LoopBreaker2.BreakAt
+import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
@@ -12,10 +14,10 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 class ForwardingRefResolverDefaultImpl(
-  breaker: LoopBreaker2
+  breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {
 
-  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): DG[DIKey, ExecutableOp] = {
+  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
 
@@ -25,53 +27,65 @@ class ForwardingRefResolverDefaultImpl(
     }
 
     @tailrec
-    def next(predcessors: Map[DIKey, Set[DIKey]]): Unit = {
+    def next(predcessors: Map[DIKey, Set[DIKey]]): Either[List[LoopResolutionError], Unit] = {
       val resolved = predcessors.filter(kv => kv._2.forall(updatedPredcessors.contains))
       if (resolved.nonEmpty) {
         resolved.foreach {
           case (r, d) =>
             register(r, d)
-            updatedPlan.put(r, plan.meta.nodes.getOrElse(r, ???))
+            assert(plan.meta.nodes.contains(r))
+            updatedPlan.put(r, plan.meta.nodes(r))
         }
 
         val reduced = predcessors -- resolved.keySet
         next(reduced)
       } else if (predcessors.nonEmpty) {
         val loopMembers: Map[DIKey, Set[DIKey]] = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
-        if (loopMembers.isEmpty) {
-          ???
+
+        def processLoopResolution(resolution: BreakAt): Unit = {
+          val dependee = resolution.dependee
+          val dependencies = resolution.dependencies
+          val originalOp = plan.meta.nodes(dependee)
+          assert(originalOp != null)
+
+          val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
+          val byNameAllowed = onlyByNameUsages
+
+          val badDeps = dependencies.intersect(predcessors.keySet)
+          val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
+          val initOpKey = DIKey.ProxyInitKey(op.target)
+
+          val goodDeps = dependencies -- badDeps
+
+          register(dependee, goodDeps)
+          register(initOpKey, badDeps ++ Set(dependee))
+
+          updatedPlan.put(dependee, op)
+          updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, op, op.origin))
         }
 
-        val resolution = breaker.breakLoop(loopMembers, plan).right.get
-        val dependee = resolution.dependee
-        val dependencies = resolution.dependencies
-        val originalOp = plan.meta.nodes(dependee)
-        assert(originalOp != null)
-
-        val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
-        val byNameAllowed = onlyByNameUsages
-
-        val badDeps = dependencies.intersect(predcessors.keySet)
-        val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
-        val initOpKey = DIKey.ProxyInitKey(op.target)
-
-        val goodDeps = dependencies -- badDeps
-
-        register(dependee, goodDeps)
-        register(initOpKey, badDeps ++ Set(dependee))
-
-        updatedPlan.put(dependee, op)
-        updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, op, op.origin))
-
-        next(predcessors -- Set(dependee))
+        if (loopMembers.isEmpty) {
+          Left(List(BUG_UnableToFindLoop(predcessors)))
+        } else {
+          breaker.breakLoop(loopMembers, plan) match {
+            case Left(value) =>
+              Left(value)
+            case Right(resolution) =>
+              processLoopResolution(resolution)
+              next(predcessors -- Set(resolution.dependee))
+          }
+        }
+      } else {
+        Right(())
       }
     }
 
-    next(plan.predecessors.links)
-
-    val p = IncidenceMatrix(updatedPredcessors.view.mapValues(_.toSet).toMap)
-    DG.fromPred(p, GraphMeta(updatedPlan.toMap))
-
+    for {
+      _ <- next(plan.predecessors.links)
+      p = IncidenceMatrix(updatedPredcessors.view.mapValues(_.toSet).toMap)
+    } yield {
+      DG.fromPred(p, GraphMeta(updatedPlan.toMap))
+    }
   }
 
   private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
