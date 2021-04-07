@@ -1,35 +1,28 @@
 package izumi.distage.planning.sequential
 
-import izumi.distage.model.exceptions.UnsupportedOpException
+import izumi.distage.model.definition.errors.LoopResolutionError
+import izumi.distage.model.definition.errors.LoopResolutionError.{BUG_BestLoopResolutionIsNotSupported, BestLoopResolutionCannotBeProxied}
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
-import izumi.distage.planning.sequential.LoopBreaker2.BreakAt
+import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.graphs.DG
 
-trait LoopBreaker2 {
-  def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[Nothing, BreakAt]
+trait FwdrefLoopBreaker {
+  def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], BreakAt]
 }
 
-object LoopBreaker2 {
+object FwdrefLoopBreaker {
   case class BreakAt(dependee: DIKey, dependencies: Set[DIKey])
 
-  class LoopBreakerDefaultImpl(
+  class FwdrefLoopBreakerDefaultImpl(
     mirrorProvider: MirrorProvider,
     analyzer: PlanAnalyzer,
-  ) extends LoopBreaker2 {
-    override def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[Nothing, BreakAt] = {
-      val out = break(withLoops.keySet, plan)
-      assert(withLoops.contains(out))
-      Right(BreakAt(out, withLoops(out)))
-    }
-
-    def break(keys: Set[DIKey], plan: DG[DIKey, ExecutableOp.SemiplanOp]): DIKey = {
-      val loop = keys.toList
-
-      val best = loop.sortWith {
+  ) extends FwdrefLoopBreaker {
+    override def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], BreakAt] = {
+      val best = withLoops.keys.toVector.sortWith {
         case (fst, snd) =>
           val fsto = plan.meta.nodes(fst)
           val sndo = plan.meta.nodes(snd)
@@ -68,16 +61,17 @@ object LoopBreaker2 {
 
       plan.meta.nodes(best) match {
         case op: ReferenceKey =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
+          Left(List(BUG_BestLoopResolutionIsNotSupported(op)))
         case op: ImportDependency =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
+          Left(List(BUG_BestLoopResolutionIsNotSupported(op)))
         case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) && hasNonByNameUses(plan, op.target) =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
-
+          Left(List(BestLoopResolutionCannotBeProxied(op)))
         case _: InstantiationOp =>
-          best
+          assert(withLoops.contains(best))
+          Right(BreakAt(best, withLoops(best)))
       }
     }
+
 
     private[this] def effectKey(key: DIKey): Boolean = key match {
       case _: DIKey.ResourceKey | _: DIKey.EffectKey => true

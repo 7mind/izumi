@@ -1,7 +1,8 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.errors.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts._
+import izumi.distage.model.definition.errors.ConflictResolutionError
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.planning.solver.SemigraphSolver._
 import izumi.functional.IzEither._
