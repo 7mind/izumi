@@ -53,6 +53,9 @@ class PlannerDefaultImpl(
       Value(withoutLoops)
         .map {
           plan =>
+          if (plan.toString.contains("Circular1")) {
+            println(plan.predecessors.links.niceList())
+          }
             val ordered = Toposort.cycleBreaking(
               predecessors = plan.predecessors,
               break = new ToposortLoopBreaker[DIKey] {
@@ -61,7 +64,6 @@ class PlannerDefaultImpl(
                 }
               },
             )
-            val topology = analyzer.topology(plan.meta.nodes.values)
 
             val sortedKeys = ordered match {
               case Left(value) =>
@@ -73,6 +75,7 @@ class PlannerDefaultImpl(
 
             val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
 
+            val topology = analyzer.topology(plan.meta.nodes.values)
             val roots = input.roots match {
               case Roots.Of(roots) =>
                 roots.toSet
