@@ -20,6 +20,9 @@ class ForwardingRefResolverDefaultImpl(
                                         breaker: FwdrefLoopBreaker
                                       ) extends ForwardingRefResolver {
 
+  import scala.collection.compat._
+
+
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
@@ -56,7 +59,7 @@ class ForwardingRefResolverDefaultImpl(
           val dependencies = resolution.dependencies
           val originalOp = plan.meta.nodes(dependee)
           assert(originalOp != null)
-
+          assert(originalOp.target == dependee)
 
           val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
           val byNameAllowed = onlyByNameUsages
@@ -67,9 +70,11 @@ class ForwardingRefResolverDefaultImpl(
 
           val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
 
-          val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet - dependee
+          val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
           val allUsers = plan.successors.links(dependee)
-          (allUsers -- loopUsers).foreach {
+          val toRewrite = allUsers -- loopUsers - dependee
+
+          toRewrite.foreach {
             k =>
               replacements.getOrElseUpdate(k, mutable.HashSet.empty) += ((dependee, initOpKey: DIKey))
           }
@@ -109,10 +114,15 @@ class ForwardingRefResolverDefaultImpl(
           val orig = updatedPlan(in)
           assert(orig != null)
 
-          val idx = repls.toMap // TODO: check uniq
+          val maybeIdx = repls.groupBy(_._1) // TODO: check uniq
+          assert(maybeIdx.forall(_._2.size == 1))
+          val idx = repls.toMap
+
           val upd = orig match {
             case op: InstantiationOp =>
               op.replaceKeys(identity, k => idx.getOrElse(k, k))
+            case mp: ProxyOp.MakeProxy =>
+              mp.copy(op = mp.op.replaceKeys(identity, k => idx.getOrElse(k, k)))
             case o =>
               throw new SanityCheckFailedException(s"BUG: $o is not an operation which expected to be a user of a cycle")
           }
