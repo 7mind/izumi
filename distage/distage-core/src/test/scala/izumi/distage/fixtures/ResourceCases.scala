@@ -178,7 +178,7 @@ object ResourceCases {
       override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, () => Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
       }
-      override def redeem[A, B](action: Suspend2[E, A])(failure: Throwable => Suspend2[E, B], success: A => Suspend2[E, B]): Suspend2[E, B] = {
+      override def redeem[A, B](action: => Suspend2[E, A])(failure: Throwable => Suspend2[E, B], success: A => Suspend2[E, B]): Suspend2[E, B] = {
         Suspend2(
           () =>
             Try(action.run()).toEither.flatMap(identity) match {

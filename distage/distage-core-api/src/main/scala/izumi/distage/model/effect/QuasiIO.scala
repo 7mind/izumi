@@ -51,7 +51,7 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
     */
   def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, (() => Throwable)) => F[A]): F[A]
 
-  def redeem[A, B](action: F[A])(failure: Throwable => F[B], success: A => F[B]): F[B]
+  def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B]
 
   def fail[A](t: => Throwable): F[A]
 
@@ -111,7 +111,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, (() => Throwable)) => Identity[A]): Identity[A] = {
       definitelyRecover(action)(e => recoverCause(e, () => e))
     }
-    override def redeem[A, B](action: Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
+    override def redeem[A, B](action: => Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
       Try(action) match {
         case Failure(exception) =>
           failure(exception)
@@ -160,7 +160,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: (Throwable, () => Throwable) => F[Throwable, A]): F[Throwable, A] = {
         F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, () => e.trace.unsafeAttachTrace(identity)))
       }
-      override def redeem[A, B](action: F[Throwable, A])(failure: Throwable => F[Throwable, B], success: A => F[Throwable, B]): F[Throwable, B] = {
+      override def redeem[A, B](action: => F[Throwable, A])(failure: Throwable => F[Throwable, B], success: A => F[Throwable, B]): F[Throwable, B] = {
         action.redeem(failure, success)
       }
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
@@ -209,7 +209,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       override def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
       }
-      override def redeem[A, B](action: F[A])(failure: Throwable => F[B], success: A => F[B]): F[B] = {
+      override def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B] = {
         F.redeemWith(action)(failure, success)
       }
       override def fail[A](t: => Throwable): F[A] = F.defer(F.raiseError(t))

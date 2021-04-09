@@ -999,12 +999,12 @@ object Lifecycle extends LifecycleCatsInstances {
       override def acquire: F[InnerResource] = F.maybeSuspend(new AtomicReference(Nil))
       override def release(finalizers: InnerResource): F[Unit] = F.suspendF(F.traverse_(finalizers.get())(_.apply()))
       override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
-        val action = bracketAppendFinalizer(finalizers)(self) {
+        def action = bracketAppendFinalizer(finalizers)(self) {
           inner: self.InnerResource =>
             self.extract(inner).fold(identity, F.pure)
         }
 
-        val onSuccess = (a: A) => {
+        def onSuccess = (a: A) => {
           val resource = success(a)
           bracketAppendFinalizer(finalizers)(resource) {
             inner: resource.InnerResource =>
@@ -1012,7 +1012,7 @@ object Lifecycle extends LifecycleCatsInstances {
           }
         }
 
-        val onError = (err: Throwable) => {
+        def onError = (err: Throwable) => {
           val resource = failure(err)
           bracketAppendFinalizer(finalizers)(resource) {
             inner: resource.InnerResource =>

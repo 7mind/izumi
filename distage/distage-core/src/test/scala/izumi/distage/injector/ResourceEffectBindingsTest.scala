@@ -219,37 +219,54 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
     "handler errors with catchAll" in {
       import ResourceCase1._
 
-      val ops = mutable.Queue.empty[Ops]
-
+      val ops1 = mutable.Queue.empty[Ops]
       Try {
         Lifecycle
-          .make(Suspend2(ops += XStart))(_ => Suspend2(ops += XStop).void)
+          .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
+          .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => ())
+      }
+      assert(ops1 == Seq(YStart, YStop))
+
+      val ops2 = mutable.Queue.empty[Ops]
+      Try {
+        Lifecycle
+          .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
               throw new RuntimeException()
           }
-          .catchAll(_ => Lifecycle.make(Suspend2[Unit](ops += YStart))(_ => Suspend2(ops += YStop).void))
+          .catchAll(_ => Lifecycle.make(Suspend2[Unit](ops2 += YStart))(_ => Suspend2(ops2 += YStop).void))
           .use((_: Unit) => Suspend2(()))
           .unsafeRun()
       }
-
-      assert(ops == Seq(XStart, YStart, YStop, XStop))
+      assert(ops2 == Seq(XStart, YStart, YStop, XStop))
     }
 
     "recover from failures with redeem" in {
       import ResourceCase1._
 
-      val ops = mutable.Queue.empty[Ops]
+      val ops1 = mutable.Queue.empty[Ops]
+      val ops2 = mutable.Queue.empty[Ops]
 
       def redeemTest(err: Boolean) = {
         def action(q: mutable.Queue[Ops]): Unit = if (err) throw new Throwable() else q += RStart
+
         Try {
           Lifecycle
-            .make(Suspend2(ops += XStart))(_ => Suspend2(ops += XStop).void)
-            .flatMap(_ => Lifecycle.make(Suspend2[Unit](action(ops)))(_ => Suspend2(ops += RStop).void))
+            .makeSimple[Unit](action(ops1))((_: Unit) => ops1 += XStop)
             .redeem(
-              onFailure = _ => Lifecycle.make(Suspend2[Unit](ops += YStart))(_ => Suspend2(ops += YStop).void),
-              onSuccess = _ => Lifecycle.make(Suspend2[Unit](ops += ZStart))(_ => Suspend2(ops += ZStop).void),
+              _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop),
+              _ => Lifecycle.makeSimple(ops1 += ZStart)(_ => ops1 += ZStop),
+            ).use(_ => ())
+        }
+
+        Try {
+          Lifecycle
+            .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
+            .flatMap(_ => Lifecycle.make(Suspend2[Unit](action(ops2)))(_ => Suspend2(ops2 += RStop).void))
+            .redeem(
+              onFailure = _ => Lifecycle.make(Suspend2[Unit](ops2 += YStart))(_ => Suspend2(ops2 += YStop).void),
+              onSuccess = _ => Lifecycle.make(Suspend2[Unit](ops2 += ZStart))(_ => Suspend2(ops2 += ZStop).void),
             )
             .use((_: Unit) => Suspend2(()))
             .unsafeRun()
@@ -257,12 +274,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       }
 
       redeemTest(true)
-      assert(ops == Seq(XStart, YStart, YStop, XStop))
+      assert(ops1 == Seq(YStart, YStop))
+      assert(ops2 == Seq(XStart, YStart, YStop, XStop))
 
-      ops.clear()
+      ops1.clear()
+      ops2.clear()
 
       redeemTest(false)
-      assert(ops == Seq(XStart, RStart, ZStart, ZStop, RStop, XStop))
+      assert(ops1 == Seq(RStart, ZStart, ZStop, XStop))
+      assert(ops2 == Seq(XStart, RStart, ZStart, ZStop, RStop, XStop))
     }
 
   }
