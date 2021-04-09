@@ -55,15 +55,15 @@ object DIKey {
     override def tpe: SafeType = reference.tpe
 
     override def toString: String = {
-      val drepr = disambiguator match {
+      val drepr = (disambiguator match {
         case SetKeyMeta.NoMeta =>
           None
         case SetKeyMeta.WithImpl(disambiguator) =>
           Some(s"impl:${disambiguator.hashCode}")
         case SetKeyMeta.WithAutoset(base) =>
           Some(s"autoset:${base.toString}")
-      }
-      s"{set.$set/${reference.toString}${drepr.map(v => "#" + v).getOrElse("")}"
+      }).map(v => "#" + v).getOrElse("")
+      s"{set.$set/${reference.toString}$drepr"
     }
   }
 
