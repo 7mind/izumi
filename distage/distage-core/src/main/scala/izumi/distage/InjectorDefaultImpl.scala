@@ -1,9 +1,10 @@
 package izumi.distage
 
 import izumi.distage.model._
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{DIPlan, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.{Bootloader, LocatorRef}
@@ -31,6 +32,14 @@ final class InjectorDefaultImpl[F[_]](
   private[this] val interpreter: PlanInterpreter = bootstrapLocator.get[PlanInterpreter]
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
+
+  override def makePlan(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    planner.makePlan(input)
+  }
+
+  override def makePlanNoRewrite(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    planner.makePlanNoRewrite(input)
+  }
 
   override def plan(input: PlannerInput): OrderedPlan = {
     planner.plan(addSelfInfo(input))
