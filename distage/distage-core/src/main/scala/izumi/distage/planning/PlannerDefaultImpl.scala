@@ -37,12 +37,12 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat._
 
-  override def plan(input: PlannerInput): OrderedPlan = {
-    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
+  override def makePlan(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    makePlanNoRewrite(input.copy(bindings = rewrite(input.bindings)))
   }
 
-  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    val maybePlan = for {
+  override def makePlanNoRewrite(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    for {
       resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan = preparePlan(resolved)
       withImports = addImports(plan, input.roots)
@@ -50,12 +50,24 @@ class PlannerDefaultImpl(
       _ <- sanityChecker.verifyPlan(withoutLoops, input.roots)
       _ <- Right(planningObserver.onPlanningFinished(input, withoutLoops))
     } yield {
-      // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
-      Value(withoutLoops)
+      DIPlan(withoutLoops, input)
+    }
+  }
+
+  override def plan(input: PlannerInput): OrderedPlan = {
+    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
+  }
+
+  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+    // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
+    val maybePlan = for {
+      plan <- makePlanNoRewrite(input)
+    } yield {
+      Value(plan)
         .map {
-          plan: DG[DIKey, ExecutableOp] =>
+          plan =>
             val ordered = Toposort.cycleBreaking(
-              predecessors = plan.predecessors,
+              predecessors = plan.plan.predecessors,
               break = new ToposortLoopBreaker[DIKey] {
                 override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
                   throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
@@ -71,8 +83,8 @@ class PlannerDefaultImpl(
                 value
             }
 
-            val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
-            val topology = analyzer.topology(plan.meta.nodes.values)
+            val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
+            val topology = analyzer.topology(plan.plan.meta.nodes.values)
             val roots = input.roots match {
               case Roots.Of(roots) =>
                 roots.toSet

@@ -1,11 +1,15 @@
 package izumi.distage.model
 
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning.PlanSplittingOps
 
 /** Transforms [[izumi.distage.model.definition.ModuleDef]] into [[izumi.distage.model.plan.OrderedPlan]] */
 trait Planner extends PlanSplittingOps {
+  def makePlan(input: PlannerInput): Either[List[DIError], DIPlan]
+  def makePlanNoRewrite(input: PlannerInput): Either[List[DIError], DIPlan]
+
   def plan(input: PlannerInput): OrderedPlan
   // plan lifecycle
   def planNoRewrite(input: PlannerInput): OrderedPlan
