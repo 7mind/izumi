@@ -43,7 +43,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     //    val missingKeys = originalKeys.toSet.diff(goodKeys)
     //    val missingKeysSeq = missingKeys.toSeq
 
-    val km = new KeyMinimizer(goodKeys /*++ originalKeys*/ )
+    val km = new KeyMinimizer(goodKeys /*++ originalKeys*/, colors = false)
     val roots = input.roots match {
       case Roots.Of(roots) =>
         roots.toSet

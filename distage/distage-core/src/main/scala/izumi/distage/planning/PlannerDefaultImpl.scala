@@ -319,7 +319,8 @@ class PlannerDefaultImpl(
   ): String = {
     val keyMinimizer = KeyMinimizer(
       ops.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
-      + key.key
+      + key.key,
+      colors = false,
     )
     val axisValuesInBindings = ops.iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }.flatten.collect { case AxisTag(t) => t }.toSet
     val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
