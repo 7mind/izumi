@@ -5,9 +5,9 @@ import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
+import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError, VerificationError}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, InjectorFailed, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, ForwardRefException, InjectorFailed, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -37,7 +37,6 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat._
 
-
   override def plan(input: PlannerInput): OrderedPlan = {
     planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
   }
@@ -48,14 +47,12 @@ class PlannerDefaultImpl(
       plan = preparePlan(resolved)
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
+      _ <- sanityChecker.verifyPlan(withoutLoops, input.roots)
     } yield {
       // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
       Value(withoutLoops)
         .map {
-          plan =>
-          if (plan.toString.contains("Circular1")) {
-            println(plan.predecessors.links.niceList())
-          }
+          plan: DG[DIKey, ExecutableOp] =>
             val ordered = Toposort.cycleBreaking(
               predecessors = plan.predecessors,
               break = new ToposortLoopBreaker[DIKey] {
@@ -67,14 +64,13 @@ class PlannerDefaultImpl(
 
             val sortedKeys = ordered match {
               case Left(value) =>
-                throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, $value")
+                throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
 
               case Right(value) =>
                 value
             }
 
             val sortedOps = sortedKeys.flatMap(plan.meta.nodes.get).toVector
-
             val topology = analyzer.topology(plan.meta.nodes.values)
             val roots = input.roots match {
               case Roots.Of(roots) =>
@@ -83,10 +79,13 @@ class PlannerDefaultImpl(
                 topology.effectiveRoots
             }
             val finalPlan = OrderedPlan(sortedOps, roots, topology)
+            val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
+            if (reftable.dependees.graph.nonEmpty) {
+              throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
+            }
             finalPlan
         }
         .eff(planningObserver.onPhase90AfterForwarding)
-        .eff(sanityChecker.assertFinalPlanSane)
         .get
     }
 
@@ -194,6 +193,24 @@ class PlannerDefaultImpl(
     DG.fromPred(IncidenceMatrix(plan.predecessors.links ++ allImports), fullMeta)
   }
 
+  def formatError(e: VerificationError): String = e match {
+    case VerificationError.BUG_PlanIndexIsBroken(badIndex) =>
+      s"BUG: plan index keys are inconsistent with operations: $badIndex"
+    case VerificationError.BUG_PlanIndexHasUnrequiredOps(unreferencedInGraph) =>
+      s"BUG: plan index has operations not referenced in dependency graph: $unreferencedInGraph"
+    case VerificationError.BUG_PlanMatricesInconsistent(plan) =>
+      s"BUG: predcessor matrix in the plan is not equal to transposed successor matrix: $plan"
+    case VerificationError.BUG_InitWithoutProxy(missingProxies) =>
+      s"BUG: Cannot finish the plan, there are missing MakeProxy operations: $missingProxies!"
+    case VerificationError.BUG_ProxyWithoutInit(missingInits) =>
+      s"BUG: Cannot finish the plan, there are missing InitProxy operations: $missingInits!"
+    case VerificationError.PlanReferencesMissingOperations(missingInOpsIndex) =>
+      s"Plan graph references missing operations: ${missingInOpsIndex.niceList()}"
+    case VerificationError.MissingRefException(missing, _) =>
+      s"Plan is broken, there the following keys are declared as dependencies but missing from the graph: ${missing.niceList()}"
+    case VerificationError.MissingRoots(roots) =>
+      s"There are no operations for the following plan roots: ${roots.niceList()}"
+  }
   def formatError(e: LoopResolutionError): String = e match {
     case LoopResolutionError.BUG_UnableToFindLoop(predcessors) =>
       s"BUG: Failed to break circular dependencies, loop detector failed on matrix $predcessors which is expected to contain a loop"
@@ -215,6 +232,15 @@ class PlannerDefaultImpl(
 
     val loops = issues.collect { case e: LoopResolutionError => formatError(e) }.niceList()
     if (loops.nonEmpty) {
+      throw new InjectorFailed(
+        s"""Injector failed unexpectedly. List of issues: $loops
+       """.stripMargin,
+        issues,
+      )
+    }
+
+    val inconsistencies = issues.collect { case e: DIError.VerificationError => formatError(e) }.niceList()
+    if (inconsistencies.nonEmpty) {
       throw new InjectorFailed(
         s"""Injector failed unexpectedly. List of issues: $loops
        """.stripMargin,
