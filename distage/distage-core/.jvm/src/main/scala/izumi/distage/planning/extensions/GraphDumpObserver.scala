@@ -15,20 +15,18 @@ import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
-final class GraphDumpObserver(
-  planAnalyzer: PlanAnalyzer
-) extends PlanningObserver {
-  private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
-
-  // TODO: elements removed by gc were lost, we need to address that as a part of #1220
-  override def onPhase10PostGC(plan: SemiPlan): Unit = synchronized {
-    beforeFinalization.set(plan)
-  }
+final class GraphDumpObserver() extends PlanningObserver {
+//  private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
+//
+//  // TODO: elements removed by gc were lost, we need to address that as a part of #1220
+//  override def onPhase10PostGC(plan: SemiPlan): Unit = synchronized {
+//    beforeFinalization.set(plan)
+//  }
 
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
-    val dotfileFull = render(finalPlan, withGc = true)
-    val dotfileMin = render(finalPlan, withGc = false)
-    save(dotfileFull, "full")
+    //val dotfileFull = render(finalPlan, withGc = true)
+    val dotfileMin = render(finalPlan)
+    //save(dotfileFull, "full")
     save(dotfileMin, "nogc")
   }
 
@@ -44,7 +42,7 @@ final class GraphDumpObserver(
     Files.createLink(last, path).discard()
   }
 
-  def render(finalPlan: OrderedPlan, withGc: Boolean): RenderedDot = {
+  def render(finalPlan: OrderedPlan): RenderedDot = {
     val g = new Digraph(graphAttr = mutable.Map("rankdir" -> "TB"))
 
     val legend = new Digraph("cluster_legend", graphAttr = mutable.Map("label" -> "Legend", "style" -> "dotted"))
@@ -61,16 +59,16 @@ final class GraphDumpObserver(
     val main = new Digraph("cluster_main", graphAttr = mutable.Map("label" -> "Context", "shape" -> "box"))
     val collected = new Digraph("cluster_collected", graphAttr = mutable.Map("label" -> "Collected", "style" -> "dotted"))
 
-    val preGcPlan = beforeFinalization.get()
-    val preTopology = planAnalyzer.topology(preGcPlan.steps)
+//    val preGcPlan = beforeFinalization.get()
+//    val preTopology = planAnalyzer.topology(preGcPlan.steps)
 
-    val originalKeys = preTopology.dependencies.graph.keys
+//    val originalKeys = preTopology.dependencies.graph.keys
     val goodKeys = finalPlan.keys
 
-    val missingKeys = originalKeys.toSet.diff(goodKeys)
-    val missingKeysSeq = missingKeys.toSeq
+//    val missingKeys = originalKeys.toSet.diff(goodKeys)
+//    val missingKeysSeq = missingKeys.toSeq
 
-    val km = new KeyMinimizer(goodKeys ++ originalKeys)
+    val km = new KeyMinimizer(goodKeys /*++ originalKeys*/ )
     val roots = finalPlan.declaredRoots
 
     goodKeys.foreach {
@@ -96,33 +94,33 @@ final class GraphDumpObserver(
         }
     }
 
-    if (withGc) {
-      missingKeysSeq.foreach {
-        k =>
-          val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
-          val op = preGcPlan.index(k)
-          val name = km.renderKey(k)
-          modify(name, attrs, op)
-          collected.node(name, attrs = attrs)
-      }
-
-      preTopology.dependencies.graph.foreach {
-        case (k, deps) =>
-          deps.foreach {
-            d =>
-              if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
-                collected.edge(km.renderKey(k), km.renderKey(d), attrs = mutable.Map("color" -> "coral1"))
-              } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
-                collected.edge(km.renderKey(k), km.renderKey(d))
-              }
-          }
-      }
-    }
+//    if (withGc) {
+//      missingKeysSeq.foreach {
+//        k =>
+//          val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
+//          val op = preGcPlan.index(k)
+//          val name = km.renderKey(k)
+//          modify(name, attrs, op)
+//          collected.node(name, attrs = attrs)
+//      }
+//
+//      preTopology.dependencies.graph.foreach {
+//        case (k, deps) =>
+//          deps.foreach {
+//            d =>
+//              if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
+//                collected.edge(km.renderKey(k), km.renderKey(d), attrs = mutable.Map("color" -> "coral1"))
+//              } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
+//                collected.edge(km.renderKey(k), km.renderKey(d))
+//              }
+//          }
+//      }
+//    }
 
     g.subGraph(main)
-    if (withGc) {
-      g.subGraph(collected)
-    }
+//    if (withGc) {
+//      g.subGraph(collected)
+//    }
     g.subGraph(legend)
     val res = g.source()
     new RenderedDot(res)
