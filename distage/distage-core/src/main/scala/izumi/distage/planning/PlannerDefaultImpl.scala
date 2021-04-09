@@ -48,6 +48,7 @@ class PlannerDefaultImpl(
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
       _ <- sanityChecker.verifyPlan(withoutLoops, input.roots)
+      _ <- Right(planningObserver.onPlanningFinished(input, withoutLoops))
     } yield {
       // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
       Value(withoutLoops)

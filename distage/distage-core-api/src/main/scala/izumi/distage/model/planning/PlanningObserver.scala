@@ -1,6 +1,9 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.graphs.DG
 import izumi.fundamentals.platform.language.unused
 
 /**
@@ -9,6 +12,7 @@ import izumi.fundamentals.platform.language.unused
   * @see GraphDumpObserver
   */
 trait PlanningObserver {
-  def onPhase10PostGC(@unused plan: SemiPlan): Unit = {}
+  def onPlanningFinished(@unused input: PlannerInput, @unused plan: DG[DIKey, ExecutableOp]): Unit = {}
+  @deprecated("This should be removed", "09/04/2021")
   def onPhase90AfterForwarding(@unused finalPlan: OrderedPlan): Unit = {}
 }
