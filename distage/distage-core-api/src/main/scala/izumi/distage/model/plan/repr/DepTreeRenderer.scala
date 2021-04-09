@@ -11,7 +11,7 @@ import izumi.distage.model.reflection._
 import scala.collection.mutable
 
 class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
-  val minimizer = new KeyMinimizer(collectKeys(node))
+  val minimizer = new KeyMinimizer(collectKeys(node), DIRendering.colorsEnabled)
 
   def render(): String = render(node)
 

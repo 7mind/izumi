@@ -2,7 +2,6 @@ package izumi.distage.testkit.services.dstest
 
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-
 import distage._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
@@ -13,7 +12,7 @@ import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.repr.KeyMinimizer
+import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
@@ -702,7 +701,7 @@ object DistageTestRunner {
         val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
 
         val memoizationRootsRendered = if (memoizationRoots.nonEmpty) {
-          val minimizer = KeyMinimizer(memoizationRoots)
+          val minimizer = KeyMinimizer(memoizationRoots, DIRendering.colorsEnabled)
           memoizationRoots.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
         } else {
           "ø"

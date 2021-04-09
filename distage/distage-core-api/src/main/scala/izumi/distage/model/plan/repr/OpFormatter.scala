@@ -28,58 +28,65 @@ object OpFormatter {
     }
   }
 
-  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter)
+  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
 
   class Impl(
     keyFormatter: KeyFormatter,
     typeFormatter: TypeFormatter,
+    colors: Boolean,
   ) extends OpFormatter {
+    import Console._
 
     import keyFormatter.formatKey
     import typeFormatter.formatType
 
     override def format(op: ExecutableOp): String = {
+      format(op, Set.empty)
+    }
+    def format(op: ExecutableOp, deferred: Set[DIKey]): String = {
       op match {
         case i: InstantiationOp =>
           i match {
             case CreateSet(target, members, origin) =>
               val repr = doFormat("set", members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := $repr"
+              formatDefn(target, pos, repr)
 
             case ExecuteEffect(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := effect[$effectHKTypeCtor]${formatKey(effectKey)}"
+              formatDefn(target, pos, s"${formatOpName("effect")}[$effectHKTypeCtor]${formatKey(effectKey)}")
 
             case AllocateResource(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := allocate[$effectHKTypeCtor]${formatKey(effectKey)}"
+              formatDefn(target, pos, s"${formatOpName("allocate")}[$effectHKTypeCtor]${formatKey(effectKey)}")
 
             case w: WiringOp =>
               w match {
                 case CallProvider(target, wiring, origin) =>
-                  formatProviderOp(target, wiring, origin)
+                  formatProviderOp(target, wiring, origin, deferred)
                 case UseInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
                   if (wiring.instance != null) {
-                    s"${formatKey(target)} $pos := value ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}"
+                    formatDefn(target, pos, s"${formatOpName("value")} ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}")
                   } else {
-                    s"${formatKey(target)} $pos := null"
+                    formatDefn(target, pos, formatOpName("null"))
                   }
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  s"${formatKey(target)} $pos := ref ${formatKey(wiring.key)}"
+                  formatDefn(target, pos, s"${formatOpName("ref")} ${formatKey(wiring.key)}")
               }
           }
 
         case ImportDependency(target, references, origin) =>
           val pos = formatBindingPosition(origin)
-          val hint = if (references.nonEmpty) {
+          val hintBase = if (references.nonEmpty) {
             s"// required for ${references.map(formatKey).mkString(" and ")}"
           } else {
             " // no dependees"
           }
-          s"${formatKey(target)} $pos := import $target $hint".trim
+
+          val hint = withColor(hintBase, CYAN)
+          formatDefn(target, pos, s"${formatOpName("import")} ${formatKey(target)} $hint")
 
         case p: ProxyOp =>
           p match {
@@ -91,35 +98,54 @@ object OpFormatter {
                 "proxy.cogen"
               }
 
-              s"""${formatKey(p.target)} $pos := $kind(${forwardRefs.map(s => s"${formatKey(s)}: deferred").mkString(", ")}) {
-                 |${format(proxied).shift(2)}
-                 |}""".stripMargin
+              val repr =
+                s"""${formatOpName(kind, RED)} {
+                   |${format(proxied, forwardRefs).shift(2)}
+                   |}""".stripMargin
+
+              formatDefn(p.target, pos, repr)
 
             case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos -> init[${proxy.target}](${dependencies.map(formatKey).mkString(", ")})"
+              //proxy.op.
+              formatDefn(target, pos, s"${formatOpName("init", RED)} ${formatKey(proxy.target)}")
 
           }
       }
     }
 
-    private def formatProviderOp(target: DIKey, deps: Wiring, origin: EqualizedOperationOrigin): String = {
-      val op = formatProviderWiring(deps)
+    private def formatProviderOp(target: DIKey, deps: Wiring, origin: EqualizedOperationOrigin, deferred: Set[DIKey]): String = {
+      val op = formatProviderWiring(deps, deferred)
       val pos = formatBindingPosition(origin)
-      s"${formatKey(target)} $pos := $op"
+      formatDefn(target, pos, op)
     }
 
-    private def formatProviderWiring(deps: Wiring): String = {
+    private def formatDefn(target: DIKey, pos: String, repr: String): String = {
+      val marker = if (colors) {
+        s"$BOLD$GREEN:=$RESET"
+      } else {
+        ":="
+      }
+      val shifted = if (repr.linesIterator.size > 1) {
+        s"$marker\n${repr.shift(4)}"
+      } else {
+        s"$marker $repr"
+      }
+      s"${formatKey(target)} $pos $shifted"
+    }
+
+    private def formatProviderWiring(deps: Wiring, deferred: Set[DIKey]): String = {
       deps match {
         case f: Function =>
-          doFormat(formatFunction(f.provider), f.associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
+          doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "call", ('(', ')'), ('{', '}'))
 
         case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"
       }
     }
 
-    private def formatDependency(association: LinkedParameter): String = {
+    private def formatDependency(deferred: Set[DIKey])(association: LinkedParameter): String = {
+      // ${RED}defer:($RESET${forwardRefs.map(s => s"${formatKey(s)}").mkString(", ")}$RED)$RESET
       association match {
         case p: LinkedParameter =>
           val fname = if (p.isByName) {
@@ -128,7 +154,12 @@ object OpFormatter {
             p.name
           }
 
-          s"""arg $fname: ${formatType(p.symbol.finalResultType)} = lookup(${formatKey(p.key)})"""
+          val op = if (deferred.contains(p.key)) {
+            withColor(s"defer:", RED)
+          } else {
+            ""
+          }
+          s"""${withColor("arg", BLUE)} $fname: ${formatType(p.symbol.finalResultType)} <- $op${formatKey(p.key)}"""
       }
     }
 
@@ -136,13 +167,29 @@ object OpFormatter {
       s"${provider.funString}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    //    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
-    //      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
-    //    }
+    private def withColor(name: String, color: String with Singleton = YELLOW) = {
+      if (colors) {
+        s"$color$name$RESET"
+      } else {
+        name
+      }
+    }
+
+    private def formatOpName(name: String, color: String with Singleton = YELLOW) = {
+      if (colors) {
+        s"$UNDERLINED${withColor(name, color)}"
+      } else {
+        name
+      }
+    }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
       val sb = new StringBuilder()
-      sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}")
+      if (colors) {
+        sb.append(s"${formatOpName(opName)}$GREEN${opFormat._1}$RESET$impl$GREEN${opFormat._2}$RESET ${delim._1}")
+      } else {
+        sb.append(s"${formatOpName(opName)}${opFormat._1}$impl${opFormat._2} ${delim._1}")
+      }
       if (depRepr.nonEmpty) {
         sb.append("\n")
         sb.append(depRepr.mkString("\n").shift(2))

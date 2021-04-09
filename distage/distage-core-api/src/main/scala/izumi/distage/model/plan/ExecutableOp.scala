@@ -4,7 +4,7 @@ import izumi.distage.model.exceptions.DIBugException
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
-import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
+import izumi.distage.model.plan.repr.{DIRendering, KeyFormatter, OpFormatter, TypeFormatter}
 import izumi.distage.model.reflection.DIKey.ProxyInitKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.reflect.TagK
@@ -14,7 +14,9 @@ import scala.annotation.tailrec
 sealed trait ExecutableOp {
   def target: DIKey
   def origin: EqualizedOperationOrigin
-  override final def toString: String = new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full).format(this)
+  override final def toString: String = {
+    new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
+  }
 }
 
 object ExecutableOp {
