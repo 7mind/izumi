@@ -107,8 +107,8 @@ object OpFormatter {
 
             case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
               val pos = formatBindingPosition(origin)
-              //proxy.op.
-              formatDefn(target, pos, s"${formatOpName("init", RED)} ${formatKey(proxy.target)}")
+              val resolved = proxy.forwardRefs.map(formatKey).map(_.shift(2)).mkString("{\n", "\n", "\n}")
+              formatDefn(target, pos, s"${formatOpName("init", RED)} ${formatKey(proxy.target)} ${withColor("with", GREEN)} $resolved")
 
           }
       }
