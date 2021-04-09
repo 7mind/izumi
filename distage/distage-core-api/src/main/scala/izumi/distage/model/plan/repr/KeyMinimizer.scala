@@ -100,7 +100,7 @@ class KeyMinimizer(
             Some(s"impl:${disambiguator.hashCode}")
           case SetKeyMeta.WithAutoset(base) =>
             Some(s"autoset:${renderKey(base)}")
-        }).getOrElse("")
+        }).map(v => "#" + v).getOrElse("")
         val fullDis = if (colors) {
           s"$BLUE$drepr$RESET"
         } else {
