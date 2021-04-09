@@ -7,7 +7,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -125,38 +125,39 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(counter == 0)
   }
 
-//  "Locator.instances returns instances in the order they were created in" in {
-//    import CircularCase2._
-//
-//    val definition = PlannerInput.everything(new ModuleDef {
-//      make[Circular3]
-//      make[Circular1]
-//      make[Circular2]
-//      make[Circular5]
-//      make[Circular4]
-//    })
-//
-//    val injector = mkInjector()
-//    val plan = injector.plan(definition)
-//    val context = injector.produce(plan).unsafeGet()
-//
-//    val planTypes: Seq[SafeType] = plan.steps
-//      .collect {
-//        case i: InstantiationOp => i
-//        case i: MakeProxy => i
-//      }
-//      .map(_.target.tpe)
-//    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-//    val instanceTypes = context.instances
-//      .map(_.key.tpe)
-//      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
-//
-//    assert(instanceTypes.size == planTypes.size)
-//    assert(instanceTypes == planTypes)
-//
-//    // whitebox test: ensure that plan ops are in a non-lazy collection
-//    assert(plan.steps.isInstanceOf[Vector[_]])
-//  }
+  "Locator.instances returns instances in the order they were created in" in {
+    import CircularCase2._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Circular3]
+      make[Circular1]
+      make[Circular2]
+      make[Circular5]
+      make[Circular4]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val planTypes: Seq[SafeType] = plan.steps
+      .collect {
+        case i: InstantiationOp => i
+        case i: MakeProxy => i
+        case i: InitProxy => i
+      }
+      .map(_.target.tpe)
+    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
+    val instanceTypes = context.instances
+      .map(_.key.tpe)
+      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
+
+    assert(instanceTypes.size == planTypes.size) // proxy creates TWO keys instead of one
+    assert(instanceTypes == planTypes)
+
+    // whitebox test: ensure that plan ops are in a non-lazy collection
+    assert(plan.steps.isInstanceOf[Vector[_]])
+  }
 
   "support by-name circular dependencies" in {
     import ByNameCycle._
