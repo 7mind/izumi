@@ -13,11 +13,9 @@ class PlanCircularDependencyCheck(
       val allProxies = plan.steps.collect {
         case s: ExecutableOp.ProxyOp.MakeProxy if !s.byNameAllowed => s
       }
-
       allProxies.foreach {
         s =>
-          val deptree = plan.topology.dependencies.tree(s.target)
-          val tree = s"\n${plan.renderDeps(deptree)}"
+          val tree = s"\n${plan.toDIPlan.renderDeps(s.target)}"
           logger.warn(s"Circular dependency has been resolved with proxy for ${s.target -> "key"}, $tree")
       }
     }
