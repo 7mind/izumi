@@ -1,14 +1,11 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.DIBugException
-import izumi.distage.model.plan.repr.{CompactOrderedPlanFormatter, DIPlanCompactFormatter, DIRendering, DepTreeRenderer, KeyFormatter, KeyMinimizer, OpFormatter, TypeFormatter}
-import izumi.distage.model.plan.topology.DepTreeNode.DepNode
+import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.Renderable
 import izumi.fundamentals.graphs.DG
-import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 
 case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput)
 
@@ -17,12 +14,14 @@ object DIPlan {
 
   implicit class DIPlanSyntax(plan: DIPlan) {
     def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
-    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan.plan.meta.nodes).render()
+    def renderDeps(key: DIKey): String = {
+      new DepTreeRenderer(dg.tree(key), plan.plan.meta.nodes).render()
+    }
     def renderAllDeps(): String = {
       val effectiveRoots = plan.plan.roots
-      val g = new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
-      effectiveRoots.map(root => g.tree(root)).map(renderDeps).mkString("\n")
+      effectiveRoots.map(renderDeps).mkString("\n")
     }
+    private lazy val dg =  new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
   }
 }
 
