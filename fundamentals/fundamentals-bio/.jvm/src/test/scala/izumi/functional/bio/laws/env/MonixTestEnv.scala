@@ -5,7 +5,7 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 import cats.Eq
 import cats.effect.laws.discipline.Parameters
 import cats.effect.laws.discipline.arbitrary.{catsEffectLawsArbitraryForIO, catsEffectLawsCogenForIO}
-import cats.effect.{ContextShift, IO => CIO}
+import cats.effect.{IO => CIO}
 import monix.bio.{Cause, IO, Task, UIO}
 import monix.execution.atomic.Atomic
 import monix.execution.exceptions.DummyException

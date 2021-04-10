@@ -1,6 +1,5 @@
 package izumi.distage.modules.platform
 
-import cats.effect.Blocker
 import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
 import monix.execution.Scheduler
 
