@@ -77,7 +77,12 @@ class KeyMinimizer(
           asString
         }
 
-        showKeyData("id", s"${rendertype(tpe)}@$fullId", idx)
+        val coloredId = if (colors) {
+          s"$BLUE$fullId$RESET"
+        } else {
+          fullId
+        }
+        showKeyData("id", s"${rendertype(tpe)}@$coloredId", idx)
 
       case DIKey.ProxyInitKey(proxied) =>
         showKeyData("proxyinit", renderKey(proxied))
