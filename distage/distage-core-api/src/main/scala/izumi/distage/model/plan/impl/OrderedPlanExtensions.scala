@@ -30,12 +30,12 @@ private[plan] object OrderedPlanExtensions {
       * @see [[OrderedPlanExtensions#defaultFormatter]]
       */
     def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
-    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan).render()
+//    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan.index).render()
 
-    def renderAllDeps(): String = {
-      val effectiveRoots = plan.keys.filter(k => plan.topology.dependees.direct(k).isEmpty)
-      effectiveRoots.map(root => plan.topology.dependencies.tree(root)).map(renderDeps).mkString("\n")
-    }
+//    def renderAllDeps(): String = {
+//      val effectiveRoots = plan.keys.filter(k => plan.topology.dependees.direct(k).isEmpty)
+//      effectiveRoots.map(root => plan.topology.dependencies.tree(root)).map(renderDeps).mkString("\n")
+//    }
   }
 
   final class OrderedPlanCatsOps(private val plan: OrderedPlan) extends AnyVal {

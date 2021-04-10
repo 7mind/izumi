@@ -63,6 +63,7 @@ class PlannerDefaultImpl(
     val maybePlan = for {
       plan <- makePlanNoRewrite(input)
     } yield {
+      //println(plan.render())
       Value(plan)
         .map {
           plan =>
