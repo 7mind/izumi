@@ -48,7 +48,7 @@ final class GraphDumpObserver() extends PlanningObserver {
       case Roots.Of(roots) =>
         roots.toSet
       case Roots.Everything =>
-        plan.roots
+        plan.noSuccessors
     }
 
     goodKeys.foreach {

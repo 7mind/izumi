@@ -38,22 +38,23 @@ object DIPlan {
     }
 
     final def replaceWithImports(keys: Set[DIKey]): DIPlan = {
-      val newSteps = steps.flatMap {
-        case s if keys.contains(s.target) =>
-          val dependees = plan.plan.successors.links(s.target)
+
+      val imports = keys.flatMap {
+        k =>
+          val dependees = plan.plan.successors.links(k)
           val dependeesWithoutKeys = dependees.diff(keys)
-          if (dependeesWithoutKeys.nonEmpty || plan.plan.roots.contains(s.target)) {
-            //     val dependees = topology.dependees.transitive(s.target).diff(keys)
-            Seq(ImportDependency(s.target, dependeesWithoutKeys, s.origin.value.toSynthetic))
+          if (dependeesWithoutKeys.nonEmpty || plan.plan.noSuccessors.contains(k)) {
+            Seq((k, ImportDependency(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
           } else {
             Seq.empty
           }
-        case s =>
-          Seq.empty
       }
 
-      val s = IncidenceMatrix(plan.plan.predecessors.links ++ keys.map(k => (k, Set.empty[DIKey])))
-      val m = GraphMeta(plan.plan.meta.without(keys).nodes ++ newSteps.map(i => (i.target, i)))
+      val replaced = imports.toMap
+      val removed = keys -- replaced.keySet
+
+      val s = IncidenceMatrix(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
+      val m = GraphMeta(plan.plan.meta.without(removed).nodes ++ replaced)
       DIPlan(DG(s.transposed, s, m), plan.input)
     }
 
@@ -148,7 +149,7 @@ object DIPlan {
       new DepTreeRenderer(dg.tree(key), plan.plan.meta.nodes).render()
     }
     def renderAllDeps(): String = {
-      val effectiveRoots = plan.plan.roots
+      val effectiveRoots = plan.plan.noSuccessors
       effectiveRoots.map(renderDeps).mkString("\n")
     }
     private lazy val dg = new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
