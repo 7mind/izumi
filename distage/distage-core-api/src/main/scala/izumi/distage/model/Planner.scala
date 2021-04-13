@@ -3,10 +3,9 @@ package izumi.distage.model
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan._
-import izumi.distage.model.planning.PlanSplittingOps
 
 /** Transforms [[izumi.distage.model.definition.ModuleDef]] into [[izumi.distage.model.plan.OrderedPlan]] */
-trait Planner extends PlanSplittingOps {
+trait Planner {
   def plan(input: PlannerInput): DIPlan
   def planNoRewrite(input: PlannerInput): DIPlan
 

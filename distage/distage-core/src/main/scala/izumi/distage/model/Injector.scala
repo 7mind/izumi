@@ -4,6 +4,7 @@ import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.{DIPlan, Roots}
+import izumi.distage.model.planning.PlanSplittingOps
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
@@ -20,7 +21,8 @@ import izumi.reflect.{Tag, TagK}
   * @see [[izumi.distage.model.Producer]]
   */
 trait Injector[F[_]] extends Planner with Producer {
-
+  @deprecated("should be removed with OrderedPlan", "13/04/2021")
+  def ops: PlanSplittingOps
   /**
     * Create an an object graph described by the `input` module,
     * designate all arguments of the provided function as roots of the graph,

@@ -2,13 +2,16 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.exceptions.{DIBugException, ForwardRefException, SanityCheckFailedException}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
+import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.functional.Renderable
+import izumi.functional.{Renderable, Value}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.{DG, GraphMeta}
+import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
+import izumi.fundamentals.graphs.{DG, GraphMeta, ToposortError}
 import izumi.reflect.Tag
 
 case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput)
@@ -23,6 +26,54 @@ object DIPlan {
   implicit class DIPlanSyntax(plan: DIPlan) {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
     def steps: List[ExecutableOp] = plan.plan.meta.nodes.values.toList
+
+    def toposort: Seq[DIKey] = {
+      Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
+        case Left(value) =>
+          throw DIBugException(s"BUG: toposort failed during plan rendering: $value")
+        case Right(value) =>
+          value
+      }
+    }
+
+    @deprecated("should be removed with OrderedPlan", "13/04/2021")
+    def toOrdered(analyzer: PlanAnalyzer): OrderedPlan = {
+      val sorted = Value(plan).map {
+        plan =>
+          val ordered = Toposort.cycleBreaking(
+            predecessors = plan.plan.predecessors,
+            break = new ToposortLoopBreaker[DIKey] {
+              override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+                throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
+              }
+            },
+          )
+
+          val sortedKeys = ordered match {
+            case Left(value) =>
+              throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
+
+            case Right(value) =>
+              value
+          }
+
+          val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
+          val topology = analyzer.topology(plan.plan.meta.nodes.values)
+          val roots = plan.input.roots match {
+            case Roots.Of(roots) =>
+              roots.toSet
+            case Roots.Everything =>
+              topology.effectiveRoots
+          }
+          val finalPlan = OrderedPlan(sortedOps, roots, topology)
+          val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
+          if (reftable.dependees.graph.nonEmpty) {
+            throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
+          }
+          finalPlan
+      }.get
+      sorted
+    }
 
     @deprecated("should be removed with OrderedPlan", "13/04/2021")
     def definition: ModuleBase = {

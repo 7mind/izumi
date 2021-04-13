@@ -119,7 +119,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ): TriSplittedPlan = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
     // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
-    injector.trisectByKeys(activation, appModule, sharedKeys) {
+    injector.ops.trisectByKeys(activation, appModule, sharedKeys) {
       _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
     }
   }
@@ -423,7 +423,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-    val newTestPlan = testInjector.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
+    val newTestPlan = testInjector.ops.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(

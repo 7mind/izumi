@@ -80,7 +80,6 @@ object BootstrapLocator {
       sanityChecker = sanityChecker,
       planningObserver = bootstrapObserver,
       hook = hook,
-      analyzer = analyzer,
       resolver = resolver,
     )
   }

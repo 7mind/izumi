@@ -57,7 +57,7 @@ object RoleAppPlanner {
       )
       val runtimeKeys = runtimeBsApp.plan.keys
 
-      val appPlan = runtimeBsApp.injector.trisectByKeys(activation, runtimeBsApp.module.drop(runtimeKeys), appMainRoots) {
+      val appPlan = runtimeBsApp.injector.ops.trisectByKeys(activation, runtimeBsApp.module.drop(runtimeKeys), appMainRoots) {
         _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
       }
 

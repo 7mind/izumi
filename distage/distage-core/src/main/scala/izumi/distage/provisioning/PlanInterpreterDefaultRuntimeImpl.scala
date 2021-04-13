@@ -7,9 +7,9 @@ import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.{ForwardRefException, IncompatibleEffectTypesException, ProvisionerIssue, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, ProvisionerIssue}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan, Roots}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
@@ -18,9 +18,6 @@ import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection._
 import izumi.functional.IzEither._
-import izumi.functional.Value
-import izumi.fundamentals.graphs.ToposortError
-import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.reflect.TagK
 
 import java.util.concurrent.atomic.AtomicReference
@@ -53,41 +50,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
-    val sorted = Value(plan).map {
-      plan =>
-        val ordered = Toposort.cycleBreaking(
-          predecessors = plan.plan.predecessors,
-          break = new ToposortLoopBreaker[DIKey] {
-            override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
-              throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
-            }
-          },
-        )
-
-        val sortedKeys = ordered match {
-          case Left(value) =>
-            throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
-
-          case Right(value) =>
-            value
-        }
-
-        val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
-        val topology = analyzer.topology(plan.plan.meta.nodes.values)
-        val roots = plan.input.roots match {
-          case Roots.Of(roots) =>
-            roots.toSet
-          case Roots.Everything =>
-            topology.effectiveRoots
-        }
-        val finalPlan = OrderedPlan(sortedOps, roots, topology)
-        val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
-        if (reftable.dependees.graph.nonEmpty) {
-          throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
-        }
-        finalPlan
-    }.get
-    instantiate[F](sorted, parentLocator, filterFinalizers)
+    instantiate[F](plan.toOrdered(analyzer), parentLocator, filterFinalizers)
   }
 
   override def instantiate[F[_]: TagK](

@@ -5,7 +5,10 @@ import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection._
 
-trait PlanSplittingOps { this: Planner =>
+class PlanSplittingOps(
+  planner: Planner,
+  analyzer: PlanAnalyzer,
+) {
 
   final def trisectByKeys(
     activation: Activation,
@@ -13,7 +16,7 @@ trait PlanSplittingOps { this: Planner =>
     primaryRoots: Set[DIKey],
   )(extractSubRoots: OrderedPlan => (Set[DIKey], Set[DIKey])
   ): TriSplittedPlan = {
-    val rewritten = rewrite(appModule)
+    val rewritten = planner.rewrite(appModule)
     val basePlan = toSubplanNoRewrite(activation, rewritten, primaryRoots)
 
     // here we extract integration checks out of our shared components plan and build it
@@ -77,13 +80,12 @@ trait PlanSplittingOps { this: Planner =>
   }
 
   private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
-    ???
-//    if (extractedRoots.nonEmpty) {
-//      // exclude runtime
-//      planNoRewrite(PlannerInput(appModule, activation, extractedRoots))
-//    } else {
-//      OrderedPlan.empty
-//    }
+    if (extractedRoots.nonEmpty) {
+      // exclude runtime
+      planner.planNoRewrite(PlannerInput(appModule, activation, extractedRoots)).toOrdered(analyzer)
+    } else {
+      OrderedPlan.empty
+    }
   }
 
 }
