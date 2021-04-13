@@ -2,19 +2,18 @@ package izumi.distage.model.planning
 
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.model.definition.{Activation, ModuleBase}
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.{DIPlan, OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection._
 
 class PlanSplittingOps(
-  planner: Planner,
-  analyzer: PlanAnalyzer,
+  planner: Planner
 ) {
 
   final def trisectByKeys(
     activation: Activation,
     appModule: ModuleBase,
     primaryRoots: Set[DIKey],
-  )(extractSubRoots: OrderedPlan => (Set[DIKey], Set[DIKey])
+  )(extractSubRoots: DIPlan => (Set[DIKey], Set[DIKey])
   ): TriSplittedPlan = {
     val rewritten = planner.rewrite(appModule)
     val basePlan = toSubplanNoRewrite(activation, rewritten, primaryRoots)
@@ -37,7 +36,7 @@ class PlanSplittingOps(
   private[this] final def trisect(
     activation: Activation,
     appModule: ModuleBase,
-    baseplan: OrderedPlan,
+    baseplan: DIPlan,
     primaryRoots: Set[DIKey],
     subplanRoots1: Set[DIKey],
     subplanRoots2: Set[DIKey],
@@ -46,15 +45,15 @@ class PlanSplittingOps(
     val subplanRoots = subplanRoots1 ++ subplanRoots2
     val extractedSubplan = truncateOrReplan(activation, appModule, baseplan, subplanRoots)
 
-    val sharedKeys = extractedSubplan.index.keySet.intersect(baseplan.index.keySet)
+    val sharedKeys = extractedSubplan.keys.intersect(baseplan.keys)
     val sharedPlan = truncateOrReplan(activation, appModule, extractedSubplan, sharedKeys)
 
     val primplan = baseplan.replaceWithImports(sharedKeys)
     val subplan = extractedSubplan.replaceWithImports(sharedKeys)
 
-    assert(subplan.declaredRoots == subplanRoots)
-    assert(primplan.declaredRoots == primaryRoots)
-    assert(sharedPlan.declaredRoots == sharedKeys)
+//    assert(subplan.declaredRoots == subplanRoots)
+//    assert(primplan.declaredRoots == primaryRoots)
+//    assert(sharedPlan.declaredRoots == sharedKeys)
 
     TriSplittedPlan(
       side = subplan,
@@ -65,8 +64,8 @@ class PlanSplittingOps(
     )
   }
 
-  private[this] final def truncateOrReplan(activation: Activation, appModule: ModuleBase, basePlan: OrderedPlan, subplanKeys: Set[DIKey]): OrderedPlan = {
-    val isSubset = subplanKeys.diff(basePlan.index.keySet).isEmpty
+  private[this] final def truncateOrReplan(activation: Activation, appModule: ModuleBase, basePlan: DIPlan, subplanKeys: Set[DIKey]): DIPlan = {
+    val isSubset = subplanKeys.diff(basePlan.keys).isEmpty
     if (isSubset) {
 //      //truncate(basePlan, subplanKeys)
 //      ???
@@ -79,12 +78,12 @@ class PlanSplittingOps(
 
   }
 
-  private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
+  private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): DIPlan = {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
-      planner.planNoRewrite(PlannerInput(appModule, activation, extractedRoots)).toOrdered(analyzer)
+      planner.planNoRewrite(PlannerInput(appModule, activation, extractedRoots))
     } else {
-      OrderedPlan.empty
+      DIPlan.empty
     }
   }
 

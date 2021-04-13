@@ -3,6 +3,7 @@ package izumi.distage.model.plan
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{DIBugException, ForwardRefException, SanityCheckFailedException}
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
@@ -36,6 +37,26 @@ object DIPlan {
       }
     }
 
+    final def replaceWithImports(keys: Set[DIKey]): DIPlan = {
+      val newSteps = steps.flatMap {
+        case s if keys.contains(s.target) =>
+          val dependees = plan.plan.successors.links(s.target)
+          val dependeesWithoutKeys = dependees.diff(keys)
+          if (dependeesWithoutKeys.nonEmpty || plan.plan.roots.contains(s.target)) {
+            //     val dependees = topology.dependees.transitive(s.target).diff(keys)
+            Seq(ImportDependency(s.target, dependeesWithoutKeys, s.origin.value.toSynthetic))
+          } else {
+            Seq.empty
+          }
+        case s =>
+          Seq.empty
+      }
+
+      val s = IncidenceMatrix(plan.plan.predecessors.links ++ keys.map(k => (k, Set.empty[DIKey])))
+      val m = GraphMeta(plan.plan.meta.without(keys).nodes ++ newSteps.map(i => (i.target, i)))
+      DIPlan(DG(s.transposed, s, m), plan.input)
+    }
+
     @deprecated("should be removed with OrderedPlan", "13/04/2021")
     def toOrdered(analyzer: PlanAnalyzer): OrderedPlan = {
       val sorted = Value(plan).map {
@@ -66,8 +87,11 @@ object DIPlan {
               topology.effectiveRoots
           }
           val finalPlan = OrderedPlan(sortedOps, roots, topology)
+
           val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
           if (reftable.dependees.graph.nonEmpty) {
+            println(finalPlan.render())
+            println(reftable.dependees.graph.filterNot(_._2.isEmpty).mkString("\n"))
             throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
           }
           finalPlan

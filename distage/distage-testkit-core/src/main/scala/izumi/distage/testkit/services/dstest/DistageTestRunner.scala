@@ -267,17 +267,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     F: QuasiIO[F]
   ): F[Unit] = {
     // shared plan
-    planCheck.verify(plan.shared.toDIPlan)
-    Injector.inherit(parentLocator).produceCustomF[F](plan.shared.toDIPlan).use {
+    planCheck.verify(plan.shared)
+    Injector.inherit(parentLocator).produceCustomF[F](plan.shared).use {
       sharedLocator =>
         // integration plan
-        planCheck.verify(plan.side.toDIPlan)
-        Injector.inherit(sharedLocator).produceCustomF[F](plan.side.toDIPlan).use {
+        planCheck.verify(plan.side)
+        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
           integrationSharedLocator =>
             withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
               // main plan
-              planCheck.verify(plan.primary.toDIPlan)
-              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary.toDIPlan).use {
+              planCheck.verify(plan.primary)
+              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
                 mainSharedLocator =>
                   use(mainSharedLocator)
               }
@@ -438,14 +438,14 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val testIntegrationChecker = new IntegrationChecker.Impl[F](testLogger)
 
-    planChecker.verify(newTestPlan.shared.toDIPlan)
-    planChecker.verify(newTestPlan.side.toDIPlan)
-    planChecker.verify(newTestPlan.primary.toDIPlan)
+    planChecker.verify(newTestPlan.shared)
+    planChecker.verify(newTestPlan.side)
+    planChecker.verify(newTestPlan.primary)
 
     // we are ready to run the test, finally
-    testInjector.produceCustomF[F](newTestPlan.shared.toDIPlan).use {
+    testInjector.produceCustomF[F](newTestPlan.shared).use {
       sharedLocator =>
-        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side.toDIPlan).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
           integrationLocator =>
             withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
               proceedIndividual(test, newTestPlan.primary, integrationLocator)
@@ -454,7 +454,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedIndividual(test: DistageTest[F], testPlan: OrderedPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
+  protected def proceedIndividual(test: DistageTest[F], testPlan: DIPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
     def testDuration(before: Option[Long]): FiniteDuration = {
       before.fold(Duration.Zero) {
         before =>
@@ -478,7 +478,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     doRecover(None) {
       if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
-      Injector.inherit(parent).produceCustomF[F](testPlan.toDIPlan).use {
+      Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
             val before = System.nanoTime()

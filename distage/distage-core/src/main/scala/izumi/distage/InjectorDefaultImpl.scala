@@ -5,7 +5,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.DIPlan
-import izumi.distage.model.planning.{PlanAnalyzer, PlanSplittingOps}
+import izumi.distage.model.planning.PlanSplittingOps
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.{Bootloader, LocatorRef}
@@ -33,7 +33,7 @@ final class InjectorDefaultImpl[F[_]](
   private[this] val interpreter: PlanInterpreter = bootstrapLocator.get[PlanInterpreter]
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
-  def ops: PlanSplittingOps = new PlanSplittingOps(this, bootstrapLocator.get[PlanAnalyzer])
+  def ops: PlanSplittingOps = new PlanSplittingOps(this)
 
   override def plan(input: PlannerInput): DIPlan = {
     planner.plan(addSelfInfo(input))

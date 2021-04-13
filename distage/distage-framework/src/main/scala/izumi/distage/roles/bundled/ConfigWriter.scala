@@ -2,14 +2,13 @@ package izumi.distage.roles.bundled
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -120,7 +119,7 @@ final class ConfigWriter[F[_]](
       .reboot(bootstrapOverride)
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: OrderedPlan): Iterator[ConfigPath] = {
+    def getConfig(plan: DIPlan): Iterator[ConfigPath] = {
       plan.steps.iterator.collect {
         case ExtractConfigPath(path) => path
       }
