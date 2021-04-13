@@ -42,6 +42,7 @@ class PlanInterpreterDefaultRuntimeImpl(
   analyzer: PlanAnalyzer,
 ) extends PlanInterpreter
   with OperationExecutor {
+  import scala.collection.compat._
 
   type OperationMetadata = Long
 

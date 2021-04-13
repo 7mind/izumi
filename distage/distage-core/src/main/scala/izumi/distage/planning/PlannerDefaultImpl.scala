@@ -32,6 +32,8 @@ class PlannerDefaultImpl(
   resolver: PlanSolver,
 ) extends Planner {
 
+  import scala.collection.compat._
+
   override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
     planNoRewriteSafe(input.copy(bindings = rewrite(input.bindings)))
 

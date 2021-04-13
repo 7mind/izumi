@@ -46,8 +46,11 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 1)
-    assert(plan.plan.predecessors.links(DIKey.get[Circular1]).size == 3)
+    assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 3)
+    assert(plan.plan.successors.links(DIKey.ProxyInitKey(DIKey.get[Circular1])).isEmpty)
+
+    assert(plan.plan.predecessors.links(DIKey.get[Circular1]).isEmpty)
+    assert(plan.plan.predecessors.links(DIKey.ProxyInitKey(DIKey.get[Circular1])).size == 2)
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]
@@ -125,39 +128,40 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(counter == 0)
   }
 
-  "Locator.instances returns instances in the order they were created in" in {
-    import CircularCase2._
-
-    val definition = PlannerInput.everything(new ModuleDef {
-      make[Circular3]
-      make[Circular1]
-      make[Circular2]
-      make[Circular5]
-      make[Circular4]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produce(plan).unsafeGet()
-
-    val planTypes: Seq[SafeType] = plan.steps
-      .collect {
-        case i: InstantiationOp => i
-        case i: MakeProxy => i
-        case i: InitProxy => i
-      }
-      .map(_.target.tpe)
-    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes = context.instances
-      .map(_.key.tpe)
-      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
-
-    assert(instanceTypes.size == planTypes.size) // proxy creates TWO keys instead of one
-    assert(instanceTypes == planTypes)
-
-    // whitebox test: ensure that plan ops are in a non-lazy collection
-    assert(plan.steps.isInstanceOf[Vector[_]])
-  }
+  // this test makes no sense because the order is not enforced anymore
+//  "Locator.instances returns instances in the order they were created in" in {
+//    import CircularCase2._
+//
+//    val definition = PlannerInput.everything(new ModuleDef {
+//      make[Circular3]
+//      make[Circular1]
+//      make[Circular2]
+//      make[Circular5]
+//      make[Circular4]
+//    })
+//
+//    val injector = mkInjector()
+//    val plan = injector.plan(definition)
+//    val context = injector.produce(plan).unsafeGet()
+//
+//    val planTypes: Seq[SafeType] = plan.steps
+//      .collect {
+//        case i: InstantiationOp => i
+//        case i: MakeProxy => i
+//        case i: InitProxy => i
+//      }
+//      .map(_.target.tpe)
+//    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
+//    val instanceTypes = context.instances
+//      .map(_.key.tpe)
+//      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
+//
+//    assert(instanceTypes.size == planTypes.size) // proxy creates TWO keys instead of one
+//    assert(instanceTypes == planTypes)
+//
+//    // whitebox test: ensure that plan ops are in a non-lazy collection
+//    assert(plan.steps.isInstanceOf[Vector[_]])
+//  }
 
   "support by-name circular dependencies" in {
     import ByNameCycle._

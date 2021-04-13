@@ -33,8 +33,8 @@ final case class OrderedPlan(
   @deprecated("should be removed with OrderedPlan", "13/04/2021")
   def toDIPlan: DIPlan = DIPlan(
     DG(
-      IncidenceMatrix(topology.dependencies.graph),
       IncidenceMatrix(topology.dependees.graph),
+      IncidenceMatrix(topology.dependencies.graph),
       GraphMeta(steps.map(e => (e.target, e)).toMap),
     ),
     PlannerInput(
