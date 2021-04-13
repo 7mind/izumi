@@ -37,11 +37,12 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat._
 
-  override def makePlan(input: PlannerInput): Either[List[DIError], DIPlan] = {
-    makePlanNoRewrite(input.copy(bindings = rewrite(input.bindings)))
+  override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    planNoRewriteSafe(input.copy(bindings = rewrite(input.bindings)))
+
   }
 
-  override def makePlanNoRewrite(input: PlannerInput): Either[List[DIError], DIPlan] = {
+  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
     for {
       resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan = preparePlan(resolved)
@@ -54,56 +55,8 @@ class PlannerDefaultImpl(
     }
   }
 
-  override def plan(input: PlannerInput): OrderedPlan = {
-    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
-  }
-
-  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-    // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
-    val maybePlan = for {
-      plan <- makePlanNoRewrite(input)
-    } yield {
-      //println(plan.render())
-      Value(plan)
-        .map {
-          plan =>
-            val ordered = Toposort.cycleBreaking(
-              predecessors = plan.plan.predecessors,
-              break = new ToposortLoopBreaker[DIKey] {
-                override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
-                  throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
-                }
-              },
-            )
-
-            val sortedKeys = ordered match {
-              case Left(value) =>
-                throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
-
-              case Right(value) =>
-                value
-            }
-
-            val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
-            val topology = analyzer.topology(plan.plan.meta.nodes.values)
-            val roots = input.roots match {
-              case Roots.Of(roots) =>
-                roots.toSet
-              case Roots.Everything =>
-                topology.effectiveRoots
-            }
-            val finalPlan = OrderedPlan(sortedOps, roots, topology)
-            val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
-            if (reftable.dependees.graph.nonEmpty) {
-              throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
-            }
-            finalPlan
-        }
-        .eff(planningObserver.onPhase90AfterForwarding)
-        .get
-    }
-
-    maybePlan match {
+  override def plan(input: PlannerInput): DIPlan = {
+    planSafe(input) match {
       case Left(errors) =>
         throwOnError(input.activation, errors)
 
@@ -111,6 +64,32 @@ class PlannerDefaultImpl(
         resolved
     }
   }
+
+  override def planNoRewrite(input: PlannerInput): DIPlan = {
+    planNoRewriteSafe(input) match {
+      case Left(errors) =>
+        throwOnError(input.activation, errors)
+
+      case Right(resolved) =>
+        resolved
+    }
+  }
+
+//  override def plan(input: PlannerInput): OrderedPlan = {
+//    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
+//  }
+//
+//  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+//    // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
+//    val maybePlan = for {
+//      plan <- makePlanNoRewrite(input)
+//    } yield {
+//      //println(plan.render())
+//
+//    }
+//
+
+//  }
 
   private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]) = {
     val mappedGraph = resolved.predecessors.links.toSeq.map {

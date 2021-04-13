@@ -13,7 +13,7 @@ import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
-import izumi.distage.model.plan.{ExecutableOp, TriSplittedPlan}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, TriSplittedPlan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
@@ -173,7 +173,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       distageTest =>
         val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else OrderedPlan.empty
+        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else DIPlan.empty
         PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
@@ -267,17 +267,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     F: QuasiIO[F]
   ): F[Unit] = {
     // shared plan
-    planCheck.verify(plan.shared)
-    Injector.inherit(parentLocator).produceCustomF[F](plan.shared).use {
+    planCheck.verify(plan.shared.toDIPlan)
+    Injector.inherit(parentLocator).produceCustomF[F](plan.shared.toDIPlan).use {
       sharedLocator =>
         // integration plan
-        planCheck.verify(plan.side)
-        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
+        planCheck.verify(plan.side.toDIPlan)
+        Injector.inherit(sharedLocator).produceCustomF[F](plan.side.toDIPlan).use {
           integrationSharedLocator =>
             withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
               // main plan
-              planCheck.verify(plan.primary)
-              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
+              planCheck.verify(plan.primary.toDIPlan)
+              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary.toDIPlan).use {
                 mainSharedLocator =>
                   use(mainSharedLocator)
               }
@@ -438,14 +438,14 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val testIntegrationChecker = new IntegrationChecker.Impl[F](testLogger)
 
-    planChecker.verify(newTestPlan.shared)
-    planChecker.verify(newTestPlan.side)
-    planChecker.verify(newTestPlan.primary)
+    planChecker.verify(newTestPlan.shared.toDIPlan)
+    planChecker.verify(newTestPlan.side.toDIPlan)
+    planChecker.verify(newTestPlan.primary.toDIPlan)
 
     // we are ready to run the test, finally
-    testInjector.produceCustomF[F](newTestPlan.shared).use {
+    testInjector.produceCustomF[F](newTestPlan.shared.toDIPlan).use {
       sharedLocator =>
-        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
+        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side.toDIPlan).use {
           integrationLocator =>
             withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
               proceedIndividual(test, newTestPlan.primary, integrationLocator)
@@ -478,7 +478,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     doRecover(None) {
       if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
-      Injector.inherit(parent).produceCustomF[F](testPlan).use {
+      Injector.inherit(parent).produceCustomF[F](testPlan.toDIPlan).use {
         testLocator =>
           F.suspendF {
             val before = System.nanoTime()
@@ -594,7 +594,7 @@ object DistageTestRunner {
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: OrderedPlan,
+    runtimePlan: DIPlan,
   )
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,

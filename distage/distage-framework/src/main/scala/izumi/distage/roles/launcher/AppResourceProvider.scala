@@ -54,12 +54,12 @@ object AppResourceProvider {
     private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
       injectorFactory
         .inherit(runtimeLocator)
-        .produceFX[F](appPlan.app.shared, filters.filterF)
+        .produceFX[F](appPlan.app.shared.toDIPlan, filters.filterF)
         .flatMap {
           sharedLocator =>
             Injector
               .inherit(sharedLocator)
-              .produceFX[F](appPlan.app.side, filters.filterF)
+              .produceFX[F](appPlan.app.side.toDIPlan, filters.filterF)
               .evalTap {
                 integrationLocator =>
                   integrationChecker.checkOrFail(appPlan.app.sideRoots1, appPlan.app.sideRoots2, integrationLocator)
@@ -68,7 +68,7 @@ object AppResourceProvider {
                 _ => // we don't need integration locator
                   Injector
                     .inherit(sharedLocator)
-                    .produceFX[F](appPlan.app.primary, filters.filterF)
+                    .produceFX[F](appPlan.app.primary.toDIPlan, filters.filterF)
                     .evalTap(entrypoint.runTasksAndRoles(_, F))
               }
         }

@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{OrderedPlan, Roots}
+import izumi.distage.model.plan.{DIPlan, OrderedPlan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
@@ -218,7 +218,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
-  final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
+  final def produce(plan: DIPlan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
 
@@ -263,7 +263,7 @@ trait Injector[F[_]] extends Planner with Producer {
     produce(bindings, roots, activation)
 
   @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(plan: OrderedPlan): Lifecycle[F, Locator] = {
+  final def produceF(plan: DIPlan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
 

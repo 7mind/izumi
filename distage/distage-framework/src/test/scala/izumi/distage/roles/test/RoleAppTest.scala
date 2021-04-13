@@ -180,8 +180,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
+        Injector.inherit(_).produce(plans.app.shared.toDIPlan).use {
+          Injector.inherit(_).produce(plans.app.side.toDIPlan).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
@@ -219,8 +219,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
+        Injector.inherit(_).produce(plans.app.shared.toDIPlan).use {
+          Injector.inherit(_).produce(plans.app.side.toDIPlan).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
@@ -263,8 +263,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val plans = roleAppPlanner.makePlan(roots)
 
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
+        Injector.inherit(_).produce(plans.app.shared.toDIPlan).use {
+          Injector.inherit(_).produce(plans.app.side.toDIPlan).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 

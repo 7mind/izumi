@@ -85,36 +85,36 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
     assert(primaryIndex.get(sc2).exists(_.isInstanceOf[ImportDependency]))
   }
 
-  "support plan separation" in {
-    val primary = Set(pcKey)
-    val sub = Set(icKey)
-
-    val definition = PlannerInput(
-      new ModuleDef {
-        make[PrimaryComponent]
-        make[IntegrationComponent]
-        make[SharedComponent0]
-        make[SharedComponent1]
-        make[SharedComponent2]
-      },
-      Activation.empty,
-      primary ++ sub,
-    )
-
-    val srcPlan = injector.plan(definition)
-
-    def verifySingleImport(key: DIKey): Unit = {
-      val plan = srcPlan.replaceWithImports(Set(key))
-      assert(plan.index.get(key).exists(_.isInstanceOf[ImportDependency]))
-      assert(plan.index.values.collect { case i: ImportDependency => i }.size == 1)
-      assert(!plan.definition.keys.contains(key))
-      ()
-    }
-
-    verifySingleImport(icKey)
-    verifySingleImport(sc0)
-    verifySingleImport(sc1)
-  }
+//  "support plan separation" in {
+//    val primary = Set(pcKey)
+//    val sub = Set(icKey)
+//
+//    val definition = PlannerInput(
+//      new ModuleDef {
+//        make[PrimaryComponent]
+//        make[IntegrationComponent]
+//        make[SharedComponent0]
+//        make[SharedComponent1]
+//        make[SharedComponent2]
+//      },
+//      Activation.empty,
+//      primary ++ sub,
+//    )
+//
+//    val srcPlan = injector.plan(definition)
+//
+//    def verifySingleImport(key: DIKey): Unit = {
+//      val plan = srcPlan.replaceWithImports(Set(key))
+//      assert(plan.index.get(key).exists(_.isInstanceOf[ImportDependency]))
+//      assert(plan.index.values.collect { case i: ImportDependency => i }.size == 1)
+//      assert(!plan.definition.keys.contains(key))
+//      ()
+//    }
+//
+//    verifySingleImport(icKey)
+//    verifySingleImport(sc0)
+//    verifySingleImport(sc1)
+//  }
 }
 
 object PlanOperationsTest {

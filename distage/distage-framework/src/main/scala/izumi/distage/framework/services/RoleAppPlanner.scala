@@ -6,7 +6,7 @@ import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.plan.{OrderedPlan, Roots, TriSplittedPlan}
+import izumi.distage.model.plan.{DIPlan, Roots, TriSplittedPlan}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -22,7 +22,7 @@ trait RoleAppPlanner {
 object RoleAppPlanner {
 
   final case class AppStartupPlans(
-    runtime: OrderedPlan,
+    runtime: DIPlan,
     app: TriSplittedPlan,
     injector: Injector[Identity],
   )
@@ -63,9 +63,9 @@ object RoleAppPlanner {
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimeBsApp.plan)
-      check.verify(appPlan.shared)
-      check.verify(appPlan.side)
-      check.verify(appPlan.primary)
+//      check.verify(appPlan.shared)
+//      check.verify(appPlan.side)
+//      check.verify(appPlan.primary)
 
       logger.info(
         s"Planning finished. ${appPlan.primary.keys.size -> "main ops"}, ${appPlan.side.keys.size -> "integration ops"}, ${appPlan.shared.keys.size -> "shared ops"}, ${runtimeBsApp.plan.keys.size -> "runtime ops"}"

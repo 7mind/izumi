@@ -47,32 +47,27 @@ object BootstrapLocator {
     // Please open an issue if you need the ability to override Activation using BootstrapModule
     val bindings = bindings0 ++ BootstrapLocator.selfReflectionModule(bindings0, bootstrapActivation)
 
-    val plan: OrderedPlan =
+    val plan =
       BootstrapLocator.bootstrapPlanner
         .plan(bindings, bootstrapActivation, Roots.Everything)
 
     val resource =
       BootstrapLocator.bootstrapProducer
-        .instantiate[Identity](plan, parent.getOrElse(Locator.empty), FinalizerFilter.all)
+        .run[Identity](plan, parent.getOrElse(Locator.empty), FinalizerFilter.all)
 
     resource.unsafeGet().throwOnFailure()
   }
 
   private[this] final val mirrorProvider = MirrorProvider.Impl
   private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
+  private[this] final val analyzer = new PlanAnalyzerDefaultImpl
 
   private final val bootstrapPlanner: Planner = {
 
-    val bootstrapObserver = new PlanningObserverAggregate(
-      Set(
-        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator.type](izumi.distage.DebugProperties.`izumi.distage.debug.bootstrap`.name))
-        //new GraphObserver(analyzer, Set.empty),
-      )
-    )
+    val bootstrapObserver = new PlanningObserverAggregate(Set.empty)
 
     val mp = mirrorProvider
     val hook = new PlanningHookAggregate(Set.empty)
-    val analyzer = new PlanAnalyzerDefaultImpl
     val loopBreaker = new FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl(mp, analyzer)
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(loopBreaker)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
@@ -103,6 +98,7 @@ object BootstrapLocator {
       failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
+      analyzer = analyzer,
     )
   }
 

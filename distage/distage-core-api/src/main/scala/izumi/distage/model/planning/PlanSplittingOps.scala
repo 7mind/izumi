@@ -77,12 +77,13 @@ trait PlanSplittingOps { this: Planner =>
   }
 
   private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
-    if (extractedRoots.nonEmpty) {
-      // exclude runtime
-      planNoRewrite(PlannerInput(appModule, activation, extractedRoots))
-    } else {
-      OrderedPlan.empty
-    }
+    ???
+//    if (extractedRoots.nonEmpty) {
+//      // exclude runtime
+//      planNoRewrite(PlannerInput(appModule, activation, extractedRoots))
+//    } else {
+//      OrderedPlan.empty
+//    }
   }
 
 }

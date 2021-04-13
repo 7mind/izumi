@@ -109,11 +109,6 @@ final class GraphDumpObserver() extends PlanningObserver {
     save(dotfileMin, "aftergc")
   }
 
-  override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
-    //val dotfileFull = render(finalPlan, withGc = true)
-
-  }
-
   private[this] def save(dotfile: RenderedDot, kind: String): Unit = {
     val name = s"plan-${System.currentTimeMillis()}-$kind.gv"
     val last = Paths.get(s"target", s"plan-last-$kind.gv")

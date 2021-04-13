@@ -13,6 +13,4 @@ import izumi.fundamentals.platform.language.unused
   */
 trait PlanningObserver {
   def onPlanningFinished(@unused input: PlannerInput, @unused plan: DG[DIKey, ExecutableOp]): Unit = {}
-  @deprecated("This should be removed", "09/04/2021")
-  def onPhase90AfterForwarding(@unused finalPlan: OrderedPlan): Unit = {}
 }

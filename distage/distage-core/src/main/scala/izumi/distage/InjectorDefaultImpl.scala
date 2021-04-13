@@ -33,20 +33,28 @@ final class InjectorDefaultImpl[F[_]](
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
-  override def makePlan(input: PlannerInput): Either[List[DIError], DIPlan] = {
-    planner.makePlan(input)
-  }
-
-  override def makePlanNoRewrite(input: PlannerInput): Either[List[DIError], DIPlan] = {
-    planner.makePlanNoRewrite(input)
-  }
-
-  override def plan(input: PlannerInput): OrderedPlan = {
+  override def plan(input: PlannerInput): DIPlan = {
     planner.plan(addSelfInfo(input))
   }
 
-  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+  override def planNoRewrite(input: PlannerInput): DIPlan = {
     planner.planNoRewrite(addSelfInfo(input))
+  }
+
+//  override def plan(input: PlannerInput): OrderedPlan = {
+//    planner.plan(addSelfInfo(input))
+//  }
+//
+//  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+//    planner.planNoRewrite(addSelfInfo(input))
+//  }
+
+  override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    planner.planSafe(addSelfInfo(input))
+  }
+
+  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+    planner.planNoRewriteSafe(addSelfInfo(input))
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
@@ -54,12 +62,13 @@ final class InjectorDefaultImpl[F[_]](
   }
 
   override private[distage] def produceDetailedFX[G[_]: TagK: QuasiIO](
-    plan: OrderedPlan,
+    plan: DIPlan,
     filter: FinalizerFilter[G],
   ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
-    interpreter.instantiate[G](plan, bootstrapLocator, filter)
+    interpreter.run[G](plan, bootstrapLocator, filter)
   }
 
+  // TODO: probably this should be a part of the Planner itself
   private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = InjectorDefaultImpl.selfReflectionModule(parentFactory, bsModule, defaultModule, input.activation, input)
 
