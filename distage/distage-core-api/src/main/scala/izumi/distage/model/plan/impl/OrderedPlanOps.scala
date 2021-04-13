@@ -1,7 +1,5 @@
 package izumi.distage.model.plan.impl
 
-import izumi.distage.model.Locator
-import izumi.distage.model.definition.Identifier
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
@@ -9,7 +7,7 @@ import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, _}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
-import izumi.reflect.{Tag, TagK}
+import izumi.reflect.TagK
 
 private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
 
@@ -93,56 +91,6 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
       case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
     }.toList
     NonEmptyList.from(badSteps)
-  }
-
-  /**
-    * Be careful, don't use this method blindly, it can disrupt graph connectivity when used improperly.
-    *
-    * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
-    *
-    * @note this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
-    *       by deleting the `keys` from bindings: `module -- keys`
-    */
-  final def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
-    val newSteps = steps.flatMap {
-      case s if keys.contains(s.target) =>
-        val dependees = topology.dependees.direct(s.target)
-        if (dependees.diff(keys).nonEmpty || declaredRoots.contains(s.target)) {
-          val dependees = topology.dependees.transitive(s.target).diff(keys)
-          Seq(ImportDependency(s.target, dependees, s.origin.value.toSynthetic))
-        } else {
-          Seq.empty
-        }
-      case s =>
-        Seq(s)
-    }
-
-    OrderedPlan(
-      steps = newSteps,
-      declaredRoots = declaredRoots,
-      topology = topology.removeKeys(keys),
-    )
-  }
-
-  override final def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
-    copy(steps = AbstractPlanOps.resolveImports(AbstractPlanOps.importToInstances(f), steps))
-  }
-
-  override final def resolveImport[T: Tag](instance: T): OrderedPlan =
-    resolveImports {
-      case i if i.target == DIKey.get[T] =>
-        instance
-    }
-
-  override final def resolveImport[T: Tag](id: Identifier)(instance: T): OrderedPlan = {
-    resolveImports {
-      case i if i.target == DIKey.get[T].named(id) =>
-        instance
-    }
-  }
-
-  override final def locateImports(locator: Locator): OrderedPlan = {
-    resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
   }
 
   @deprecated("Renamed to `assertValidOrThrow` and somewhat obsoleted by `Injector().assert` & new compile-time checks in `izumi.distage.framework.PlanCheck`!", "1.0")

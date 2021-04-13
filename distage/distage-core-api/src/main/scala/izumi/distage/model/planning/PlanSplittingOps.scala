@@ -1,14 +1,15 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.model.definition.{Activation, ModuleBase}
-import izumi.distage.model.plan.{DIPlan, OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.{DIPlan, TriSplittedPlan}
 import izumi.distage.model.reflection._
+import izumi.distage.model.{Planner, PlannerInput}
 
+@deprecated("should be removed with OrderedPlan", "13/04/2021")
 class PlanSplittingOps(
   planner: Planner
 ) {
-
+  @deprecated("should be removed with OrderedPlan", "13/04/2021")
   final def trisectByKeys(
     activation: Activation,
     appModule: ModuleBase,
@@ -23,6 +24,7 @@ class PlanSplittingOps(
     trisect(activation, rewritten, basePlan, primaryRoots, subplanRoots1, subplanRoots2)
   }
 
+  @deprecated("should be removed with OrderedPlan", "13/04/2021")
   final def trisectByRoots(
     activation: Activation,
     appModule: ModuleBase,
@@ -67,15 +69,10 @@ class PlanSplittingOps(
   private[this] final def truncateOrReplan(activation: Activation, appModule: ModuleBase, basePlan: DIPlan, subplanKeys: Set[DIKey]): DIPlan = {
     val isSubset = subplanKeys.diff(basePlan.keys).isEmpty
     if (isSubset) {
-//      //truncate(basePlan, subplanKeys)
-//      ???
-      // TODO: this can be optimized by truncation instead of replanning
       toSubplanNoRewrite(activation, appModule, subplanKeys)
-
     } else {
       toSubplanNoRewrite(activation, appModule, subplanKeys)
     }
-
   }
 
   private[this] final def toSubplanNoRewrite(activation: Activation, appModule: ModuleBase, extractedRoots: Set[DIKey]): DIPlan = {

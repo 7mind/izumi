@@ -63,9 +63,9 @@ object RoleAppPlanner {
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimeBsApp.plan)
-//      check.verify(appPlan.shared)
-//      check.verify(appPlan.side)
-//      check.verify(appPlan.primary)
+      check.verify(appPlan.shared)
+      check.verify(appPlan.side)
+      check.verify(appPlan.primary)
 
       logger.info(
         s"Planning finished. ${appPlan.primary.keys.size -> "main ops"}, ${appPlan.side.keys.size -> "integration ops"}, ${appPlan.shared.keys.size -> "shared ops"}, ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
