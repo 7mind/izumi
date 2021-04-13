@@ -2,7 +2,7 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
 
@@ -14,7 +14,6 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
 
   /** Try to substitute unresolved dependencies in this plan by objects in `locator` */
   def locateImports(locator: Locator): AbstractPlan[OpType]
-  def toSemi: SemiPlan
 
   /**
     * Get all imports (unresolved dependencies).
@@ -35,27 +34,6 @@ private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any 
 
   final def filter[T: Tag]: Seq[ExecutableOp] = {
     steps.filter(_.target == DIKey.get[T])
-  }
-
-  final def map(f: SemiplanOp => SemiplanOp): SemiPlan = {
-    val SemiPlan(steps, gcMode) = toSemi
-    SemiPlan(steps.map(f), gcMode)
-  }
-
-  final def flatMap(f: SemiplanOp => Seq[SemiplanOp]): SemiPlan = {
-    val SemiPlan(steps, gcMode) = toSemi
-    SemiPlan(steps.flatMap(f), gcMode)
-  }
-
-  final def collect(f: PartialFunction[SemiplanOp, SemiplanOp]): SemiPlan = {
-    val SemiPlan(steps, gcMode) = toSemi
-    SemiPlan(steps.collect(f), gcMode)
-  }
-
-  final def ++(that: AbstractPlan[OpType]): SemiPlan = {
-    val SemiPlan(steps, gcMode) = toSemi
-    val that0 = that.toSemi
-    SemiPlan(steps ++ that0.steps, gcMode)
   }
 
   final def collectChildren[T: Tag]: Seq[ExecutableOp] = {

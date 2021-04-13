@@ -3,7 +3,7 @@ package izumi.distage.planning.extensions
 import distage._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
 import izumi.distage.model.plan.repr.KeyMinimizer
-import izumi.distage.model.plan.{Roots, OrderedPlan => _, SemiPlan => _, _}
+import izumi.distage.model.plan.{Roots, OrderedPlan => _, _}
 import izumi.distage.model.planning.PlanningObserver
 import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import izumi.fundamentals.graphs.DG

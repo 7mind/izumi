@@ -100,8 +100,6 @@ trait Distage {
 
   type OrderedPlan = model.plan.OrderedPlan
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
-  type SemiPlan = model.plan.SemiPlan
-  val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   type SafeType = model.reflection.SafeType

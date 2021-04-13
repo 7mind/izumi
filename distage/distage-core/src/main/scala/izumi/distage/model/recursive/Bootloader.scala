@@ -3,7 +3,7 @@ package izumi.distage.model.recursive
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id, Module, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{DIPlan, OrderedPlan, Roots}
+import izumi.distage.model.plan.{DIPlan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.platform.functional.Identity

@@ -1,11 +1,11 @@
 package izumi.distage.model.plan.repr
 
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.topology.DepTreeNode
 import izumi.distage.model.plan.topology.DepTreeNode._
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.reflection._
 
 import scala.collection.mutable

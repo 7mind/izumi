@@ -18,7 +18,6 @@ import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 
 object BootstrapLocator {

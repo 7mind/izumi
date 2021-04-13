@@ -1,6 +1,5 @@
 package izumi.distage.provisioning
 
-import java.util.concurrent.atomic.AtomicReference
 import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
@@ -18,13 +17,13 @@ import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection._
-import izumi.distage.planning.PlanAnalyzerDefaultImpl
 import izumi.functional.IzEither._
 import izumi.functional.Value
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.reflect.TagK
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -177,7 +176,6 @@ class PlanInterpreterDefaultRuntimeImpl(
 
     @nowarn("msg=Unused import")
     def makeMeta(): LocatorMeta = {
-      import scala.collection.compat._
       LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
     }
 

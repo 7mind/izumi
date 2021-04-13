@@ -1,4 +1,4 @@
 package izumi.distage.model.exceptions
 
-@deprecated("this should be removed", "09/04/2021")
+@deprecated("should be removed with OrderedPlan", "13/04/2021")
 class SanityCheckFailedException(message: String) extends DIException(message)

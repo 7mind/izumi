@@ -96,8 +96,6 @@ package object distage extends Distage {
 
   override type OrderedPlan = model.plan.OrderedPlan
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
-  override type SemiPlan = model.plan.SemiPlan
-  override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
   override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   override type SafeType = model.reflection.SafeType

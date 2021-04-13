@@ -1,14 +1,14 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.{Locator, PlannerInput}
-import izumi.distage.model.definition.{Identifier, ModuleBase}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.Renderable
-import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.reflect.Tag
 
 case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput)
@@ -23,6 +23,8 @@ object DIPlan {
   implicit class DIPlanSyntax(plan: DIPlan) {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
     def steps: List[ExecutableOp] = plan.plan.meta.nodes.values.toList
+
+    @deprecated("should be removed with OrderedPlan", "13/04/2021")
     def definition: ModuleBase = {
       val userBindings = steps.flatMap {
         op =>
@@ -36,12 +38,14 @@ object DIPlan {
       ModuleBase.make(userBindings)
     }
 
-    final def collectChildrenKeys[T: Tag]: Set[DIKey] = {
+    private final def collectChildrenKeys[T: Tag]: Set[DIKey] = {
       val tpe = SafeType.get[T]
       steps.iterator.collect {
         case op if op.instanceType <:< tpe => op.target
       }.toSet
     }
+
+    @deprecated("should be removed with OrderedPlan", "13/04/2021")
     final def collectChildrenKeysSplit[T1, T2](implicit t1: Tag[T1], t2: Tag[T2]): (Set[DIKey], Set[DIKey]) = {
       if (t1.tag == t2.tag) {
         (collectChildrenKeys[T1], Set.empty)

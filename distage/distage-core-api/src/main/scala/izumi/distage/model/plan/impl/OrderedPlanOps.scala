@@ -4,9 +4,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp, SemiplanOp}
-import izumi.distage.model.plan.{OrderedPlan, Roots, SemiPlan}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, _}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
@@ -144,21 +143,6 @@ private[plan] trait OrderedPlanOps extends Any { this: OrderedPlan =>
 
   override final def locateImports(locator: Locator): OrderedPlan = {
     resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
-  }
-
-  override final def toSemi: SemiPlan = {
-    val safeSteps: Seq[SemiplanOp] = steps.flatMap {
-      case s: SemiplanOp =>
-        Seq(s)
-      case s: ProxyOp =>
-        s match {
-          case m: MakeProxy =>
-            Seq(m.op)
-          case _: InitProxy =>
-            Seq.empty
-        }
-    }
-    SemiPlan(safeSteps.toVector, Roots(declaredRoots))
   }
 
   @deprecated("Renamed to `assertValidOrThrow` and somewhat obsoleted by `Injector().assert` & new compile-time checks in `izumi.distage.framework.PlanCheck`!", "1.0")

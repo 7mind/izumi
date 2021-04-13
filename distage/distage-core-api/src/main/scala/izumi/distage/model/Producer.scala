@@ -2,7 +2,7 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{DIPlan, OrderedPlan}
+import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK

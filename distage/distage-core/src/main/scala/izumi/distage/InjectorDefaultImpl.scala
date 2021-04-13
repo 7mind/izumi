@@ -4,7 +4,7 @@ import izumi.distage.model._
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{DIPlan, OrderedPlan}
+import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.{Bootloader, LocatorRef}

@@ -1,9 +1,9 @@
 package izumi.distage.model.planning
 
+import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection._
-import izumi.distage.model.{Planner, PlannerInput}
 
 trait PlanSplittingOps { this: Planner =>
 

@@ -7,7 +7,7 @@ import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError, VerificationError}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, ForwardRefException, InjectorFailed, SanityCheckFailedException}
+import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, InjectorFailed}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -17,10 +17,8 @@ import izumi.distage.model.planning._
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.{PlanSolver, SemigraphSolver}
-import izumi.functional.Value
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
-import izumi.fundamentals.graphs.{DG, GraphMeta, ToposortError}
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.strings.IzString._
 
 import scala.annotation.nowarn
@@ -32,10 +30,7 @@ class PlannerDefaultImpl(
   planningObserver: PlanningObserver,
   hook: PlanningHook,
   resolver: PlanSolver,
-  analyzer: PlanAnalyzer,
 ) extends Planner {
-
-  import scala.collection.compat._
 
   override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
     planNoRewriteSafe(input.copy(bindings = rewrite(input.bindings)))
@@ -74,22 +69,6 @@ class PlannerDefaultImpl(
         resolved
     }
   }
-
-//  override def plan(input: PlannerInput): OrderedPlan = {
-//    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
-//  }
-//
-//  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-//    // TODO: this is legacy code which just makes plan DAG sequential, this needs to be removed but we have to implement DAG traversing provisioner first
-//    val maybePlan = for {
-//      plan <- makePlanNoRewrite(input)
-//    } yield {
-//      //println(plan.render())
-//
-//    }
-//
-
-//  }
 
   private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]) = {
     val mappedGraph = resolved.predecessors.links.toSeq.map {

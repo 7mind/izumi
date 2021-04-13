@@ -4,19 +4,11 @@ import cats.Applicative
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
 
 private[plan] object PlanCatsSyntaxImpl {
-
-  final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
-    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
-      plan.resolveImportsF[F] {
-        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
-      }
-  }
-
   final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
     def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
       plan.resolveImportsF[F] {
