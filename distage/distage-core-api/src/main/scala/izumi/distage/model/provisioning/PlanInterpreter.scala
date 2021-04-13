@@ -4,7 +4,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{DIException, IncompatibleEffectTypesException, MissingImport, MissingInstanceException, ProvisioningException}
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{DIPlan, OrderedPlan}
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
@@ -16,6 +16,12 @@ import izumi.fundamentals.platform.strings.IzString._
 import scala.concurrent.duration.Duration
 
 trait PlanInterpreter {
+  def instantiate[F[_]: TagK: QuasiIO](
+    plan: DIPlan,
+    parentLocator: Locator,
+    filterFinalizers: FinalizerFilter[F],
+  ): Lifecycle[F, Either[FailedProvision[F], Locator]]
+
   def instantiate[F[_]: TagK: QuasiIO](
     plan: OrderedPlan,
     parentLocator: Locator,

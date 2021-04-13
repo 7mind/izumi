@@ -6,11 +6,8 @@ import izumi.functional.Renderable
 import izumi.fundamentals.platform.basics.IzBoolean.{all, any}
 import izumi.fundamentals.platform.jvm.IzJvm
 
-
-
 @deprecated("", "")
 object CompactOrderedPlanFormatter extends Renderable[OrderedPlan] {
-
   override def render(plan: OrderedPlan): String = {
     val minimizer = KeyMinimizer(plan.keys, DIRendering.colorsEnabled)
     val tf = TypeFormatter.minimized(minimizer)

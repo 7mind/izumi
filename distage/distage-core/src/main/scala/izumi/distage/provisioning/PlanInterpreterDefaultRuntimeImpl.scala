@@ -1,7 +1,6 @@
 package izumi.distage.provisioning
 
 import java.util.concurrent.atomic.AtomicReference
-
 import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
@@ -11,7 +10,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, ProvisionerIssue}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
@@ -43,6 +42,14 @@ class PlanInterpreterDefaultRuntimeImpl(
   with OperationExecutor {
 
   type OperationMetadata = Long
+
+  override def instantiate[F[_]: TagK: QuasiIO](
+    plan: DIPlan,
+    parentLocator: Locator,
+    filterFinalizers: FinalizerFilter[F],
+  ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
+    ???
+  }
 
   override def instantiate[F[_]: TagK](
     plan: OrderedPlan,

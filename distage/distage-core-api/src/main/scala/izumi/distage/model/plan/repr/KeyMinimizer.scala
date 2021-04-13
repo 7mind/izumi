@@ -8,24 +8,23 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.reflect.macrortti.LightTypeTagRef.SymName
 import izumi.reflect.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
+trait DIConsoleColors extends IzConsoleColors
+
 class KeyMinimizer(
   allKeys: Set[DIKey],
   colors: Boolean,
-) {
+) extends DIConsoleColors {
+
+  override protected def colorsEnabled(): Boolean = colors
 
   def renderKey(key: DIKey): String = {
     renderKey(key, renderType)
   }
 
   def renderType(tpe: SafeType): String = {
-    import Console._
     import minimizedLTTRenderables.RenderableSyntax
     val base = tpe.tag.ref.render()(minimizedLTTRenderables.r_LightTypeTag)
-    if (colors) {
-      s"$MAGENTA$base$RESET"
-    } else {
-      base
-    }
+    styled(base, c.MAGENTA)
   }
 
   @nowarn("msg=Unused import")
@@ -52,18 +51,14 @@ class KeyMinimizer(
   }
 
   private[this] def showKeyData(prefix: String, value: String, idx: Option[Int] = None) = {
-    import Console._
-    val base = if (colors) {
-      s"$GREEN{$prefix.$RESET$value$GREEN}$RESET"
-    } else {
-      s"{$prefix.$value}"
-    }
-    idx.fold(base)(i => s"$base$RED.$i$RESET")
+    val prefixRepr = styled(s"{$prefix.", c.GREEN)
+    val suffixRepr = styled(s"}", c.GREEN)
+    val idxrepr = idx.map(i => styled(i.toString, c.RED)).getOrElse("")
+
+    s"$prefixRepr$value$suffixRepr$idxrepr"
   }
 
   @inline private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
-    import Console._
-
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
       case DIKey.TypeKey(tpe, idx) =>
@@ -77,12 +72,7 @@ class KeyMinimizer(
           asString
         }
 
-        val coloredId = if (colors) {
-          s"$BLUE$fullId$RESET"
-        } else {
-          fullId
-        }
-        showKeyData("id", s"${rendertype(tpe)}@$coloredId", idx)
+        showKeyData("id", s"${rendertype(tpe)}${styled("@" + fullId, c.UNDERLINED, c.BLUE)}", idx)
 
       case DIKey.ProxyInitKey(proxied) =>
         showKeyData("proxyinit", renderKey(proxied))
@@ -106,11 +96,8 @@ class KeyMinimizer(
           case SetKeyMeta.WithAutoset(base) =>
             Some(s"autoset:${renderKey(base)}")
         }).map(v => "#" + v).getOrElse("")
-        val fullDis = if (colors) {
-          s"$BLUE$drepr$RESET"
-        } else {
-          drepr
-        }
+
+        val fullDis = styled(drepr, c.BLUE)
         showKeyData("set", s"$base$fullDis")
     }
   }

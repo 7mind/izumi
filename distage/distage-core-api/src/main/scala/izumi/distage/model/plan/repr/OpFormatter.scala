@@ -34,11 +34,12 @@ object OpFormatter {
     keyFormatter: KeyFormatter,
     typeFormatter: TypeFormatter,
     colors: Boolean,
-  ) extends OpFormatter {
-    import Console._
-
+  ) extends OpFormatter
+    with DIConsoleColors {
     import keyFormatter.formatKey
     import typeFormatter.formatType
+
+    override protected def colorsEnabled(): Boolean = colors
 
     override def format(op: ExecutableOp): String = {
       format(op, Set.empty)
@@ -85,7 +86,7 @@ object OpFormatter {
             " // no dependees"
           }
 
-          val hint = withColor(hintBase, CYAN)
+          val hint = styled(hintBase, c.CYAN)
           formatDefn(target, pos, s"${formatOpName("import")} ${formatKey(target)} $hint")
 
         case p: ProxyOp =>
@@ -99,16 +100,16 @@ object OpFormatter {
               }
 
               val repr =
-                s"""${formatOpName(kind, RED)} {
+                s"""${formatOpName(kind, c.RED)} {
                    |${format(proxied, forwardRefs).shift(2)}
                    |}""".stripMargin
 
               formatDefn(p.target, pos, repr)
 
-            case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
+            case ProxyOp.InitProxy(target, _, proxy, origin) =>
               val pos = formatBindingPosition(origin)
               val resolved = proxy.forwardRefs.map(formatKey).map(_.shift(2)).mkString("{\n", "\n", "\n}")
-              formatDefn(target, pos, s"${formatOpName("init", RED)} ${formatKey(proxy.target)} ${withColor("with", GREEN)} $resolved")
+              formatDefn(target, pos, s"${formatOpName("init", c.RED)} ${formatKey(proxy.target)} ${styled("with", c.GREEN)} $resolved")
 
           }
       }
@@ -121,11 +122,7 @@ object OpFormatter {
     }
 
     private def formatDefn(target: DIKey, pos: String, repr: String): String = {
-      val marker = if (colors) {
-        s"$BOLD$GREEN:=$RESET"
-      } else {
-        ":="
-      }
+      val marker = styled(":=", c.BOLD, c.GREEN)
       val shifted = if (repr.linesIterator.size > 1) {
         s"$marker\n${repr.shift(4)}"
       } else {
@@ -155,11 +152,11 @@ object OpFormatter {
           }
 
           val op = if (deferred.contains(p.key)) {
-            withColor(s"defer:", RED)
+            styled(s"defer:", c.RED)
           } else {
             ""
           }
-          s"""${withColor(fname, BLUE)}: ${formatType(p.symbol.finalResultType)} <- $op${formatKey(p.key)}"""
+          s"""${styled("arg", c.BLUE)} $fname: ${formatType(p.symbol.finalResultType)} <- $op${formatKey(p.key)}"""
       }
     }
 
@@ -167,29 +164,13 @@ object OpFormatter {
       s"${provider.funString}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def withColor(name: String, color: String with Singleton = YELLOW) = {
-      if (colors) {
-        s"$color$name$RESET"
-      } else {
-        name
-      }
-    }
-
-    private def formatOpName(name: String, color: String with Singleton = YELLOW) = {
-      if (colors) {
-        s"$UNDERLINED${withColor(name, color)}"
-      } else {
-        name
-      }
+    private def formatOpName(name: String, color: String with Singleton = c.YELLOW) = {
+      styled(name, c.UNDERLINED, color)
     }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
       val sb = new StringBuilder()
-      if (colors) {
-        sb.append(s"${formatOpName(opName)}$GREEN${opFormat._1}$RESET$impl$GREEN${opFormat._2}$RESET ${delim._1}")
-      } else {
-        sb.append(s"${formatOpName(opName)}${opFormat._1}$impl${opFormat._2} ${delim._1}")
-      }
+      sb.append(s"${formatOpName(opName)}${styled(opFormat._1.toString, c.GREEN)}$impl${c.GREEN}${styled(opFormat._2.toString, c.GREEN)} ${delim._1}")
       if (depRepr.nonEmpty) {
         sb.append("\n")
         sb.append(depRepr.mkString("\n").shift(2))
