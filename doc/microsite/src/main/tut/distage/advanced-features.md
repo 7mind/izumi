@@ -346,6 +346,8 @@ assert(thisC == thatC)
 
 Locator contains metadata about the plan and the bindings from which it was ultimately created:
 
+TODO: not applicable for DIPlan
+
 ```scala mdoc:to-string
 import distage.{OrderedPlan, ModuleBase}
 

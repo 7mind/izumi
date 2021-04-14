@@ -21,12 +21,6 @@ trait PlanInterpreter {
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   ): Lifecycle[F, Either[FailedProvision[F], Locator]]
-
-  def instantiate[F[_]: TagK: QuasiIO](
-    plan: OrderedPlan,
-    parentLocator: Locator,
-    filterFinalizers: FinalizerFilter[F],
-  ): Lifecycle[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {
@@ -48,7 +42,7 @@ object PlanInterpreter {
 
   final case class FailedProvision[F[_]](
     failed: ProvisionImmutable[F],
-    plan: OrderedPlan,
+    plan: DIPlan,
     parentContext: Locator,
     failures: Seq[ProvisioningFailure],
     meta: FailedProvisionMeta,

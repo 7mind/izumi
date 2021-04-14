@@ -208,7 +208,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule) :: Nil
     }
 
-    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
+    val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys.toVector, bsModuleMinusVariableKeys, runtimePlan)
 
     val memoEnvHashCode = envMergeCriteria.hashCode()
     val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)

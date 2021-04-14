@@ -4,6 +4,8 @@
 
 ### Testing Plans
 
+TODO: not applicable to DIPlan
+
 Use `OrderedPlan#assertValid` method to test whether the plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string

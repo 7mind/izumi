@@ -7,9 +7,9 @@ import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, ProvisionerIssue}
+import izumi.distage.model.exceptions.{ForwardRefException, IncompatibleEffectTypesException, ProvisionerIssue, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan, Roots}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
@@ -18,6 +18,9 @@ import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection._
 import izumi.functional.IzEither._
+import izumi.functional.Value
+import izumi.fundamentals.graphs.ToposortError
+import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.reflect.TagK
 
 import java.util.concurrent.atomic.AtomicReference
@@ -51,17 +54,53 @@ class PlanInterpreterDefaultRuntimeImpl(
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
-    instantiate[F](plan.toOrdered(analyzer), parentLocator, filterFinalizers)
+    val sorted = Value(plan).map {
+      plan =>
+        val ordered = Toposort.cycleBreaking(
+          predecessors = plan.plan.predecessors,
+          break = new ToposortLoopBreaker[DIKey] {
+            override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
+              throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
+            }
+          },
+        )
+
+        val sortedKeys = ordered match {
+          case Left(value) =>
+            throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
+
+          case Right(value) =>
+            value
+        }
+
+        val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
+        val topology = analyzer.topology(plan.plan.meta.nodes.values)
+        val roots = plan.input.roots match {
+          case Roots.Of(roots) =>
+            roots.toSet
+          case Roots.Everything =>
+            topology.effectiveRoots
+        }
+        val finalPlan = OrderedPlan(sortedOps, roots, topology)
+
+        val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
+        if (reftable.dependees.graph.nonEmpty) {
+          throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
+        }
+        finalPlan
+    }.get
+    instantiate[F](sorted, plan, parentLocator, filterFinalizers)
   }
 
-  override def instantiate[F[_]: TagK](
+  private[this] def instantiate[F[_]: TagK](
     plan: OrderedPlan,
+    diplan: DIPlan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   )(implicit F: QuasiIO[F]
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
     Lifecycle.make(
-      acquire = instantiateImpl(plan, parentLocator)
+      acquire = instantiateImpl(plan, diplan, parentLocator)
     )(release = {
       resource =>
         val finalizers = resource match {
@@ -76,11 +115,12 @@ class PlanInterpreterDefaultRuntimeImpl(
 
   private[this] def instantiateImpl[F[_]: TagK](
     plan: OrderedPlan,
+    diplan: DIPlan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
-    val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, mutProvisioningContext)
+    val temporaryLocator = new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta.empty, mutProvisioningContext)
     val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
     mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
 
@@ -144,7 +184,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     def doFail(immutable: Provision.ProvisionImmutable[F]): Either[FailedProvision[F], LocatorDefaultImpl[F]] = {
-      Left(FailedProvision[F](immutable, plan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
+      Left(FailedProvision[F](immutable, diplan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
     }
 
     def runSteps(otherSteps: ArrayBuffer[ExecutableOp.NonImportOp]): F[Unit] = {
@@ -203,7 +243,7 @@ class PlanInterpreterDefaultRuntimeImpl(
             F.ifThenElse(mutFailures.nonEmpty)(
               F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
               F.maybeSuspend {
-                val finalLocator = new LocatorDefaultImpl(plan, Option(parentContext), makeMeta(), mutProvisioningContext.toImmutable)
+                val finalLocator = new LocatorDefaultImpl(diplan, Option(parentContext), makeMeta(), mutProvisioningContext.toImmutable)
                 locatorRef.ref.set(Right(finalLocator))
                 Right(finalLocator): Either[FailedProvision[F], LocatorDefaultImpl[F]]
               },

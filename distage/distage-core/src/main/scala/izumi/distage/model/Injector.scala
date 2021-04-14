@@ -15,7 +15,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
-  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.DIPlan]]
   *
   * @see [[izumi.distage.model.Planner]]
   * @see [[izumi.distage.model.Producer]]

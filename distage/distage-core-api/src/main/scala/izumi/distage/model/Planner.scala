@@ -4,7 +4,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan._
 
-/** Transforms [[izumi.distage.model.definition.ModuleDef]] into [[izumi.distage.model.plan.OrderedPlan]] */
+/** Transforms [[izumi.distage.model.definition.ModuleDef]] into [[izumi.distage.model.plan.DIPlan]] */
 trait Planner {
   def plan(input: PlannerInput): DIPlan
   def planNoRewrite(input: PlannerInput): DIPlan
@@ -12,9 +12,6 @@ trait Planner {
   def planSafe(input: PlannerInput): Either[List[DIError], DIPlan]
   def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], DIPlan]
 
-//  def plan(input: PlannerInput): OrderedPlan
-//  // plan lifecycle
-//  def planNoRewrite(input: PlannerInput): OrderedPlan
   def rewrite(bindings: ModuleBase): ModuleBase
 
   @inline final def planSafe(bindings: ModuleBase, activation: Activation, roots: Roots): Either[List[DIError], DIPlan] =

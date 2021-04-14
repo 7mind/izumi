@@ -1,10 +1,7 @@
 package distage
 
-import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.planning.extensions
+import izumi.distage.planning.{extensions, solver}
 import izumi.distage.{constructors, model, modules, planning}
-
-import izumi.distage.planning.solver
 
 trait Distage {
 
@@ -97,10 +94,6 @@ trait Distage {
 
   type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
-
-  type OrderedPlan = model.plan.OrderedPlan
-  val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
-  type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   type SafeType = model.reflection.SafeType
   val SafeType: model.reflection.SafeType.type = model.reflection.SafeType

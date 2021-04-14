@@ -2,17 +2,16 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.exceptions.{DIBugException, ForwardRefException, SanityCheckFailedException}
+import izumi.distage.model.exceptions.DIBugException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
-import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.functional.{Renderable, Value}
+import izumi.functional.Renderable
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
-import izumi.fundamentals.graphs.{DG, GraphMeta, ToposortError}
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.reflect.Tag
 
 case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput) {
@@ -67,48 +66,6 @@ object DIPlan {
       val s = IncidenceMatrix(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
       val m = GraphMeta(plan.plan.meta.without(removed).nodes ++ replaced)
       DIPlan(DG(s.transposed, s, m), plan.input)
-    }
-
-    @deprecated("should be removed with OrderedPlan", "13/04/2021")
-    def toOrdered(analyzer: PlanAnalyzer): OrderedPlan = {
-      val sorted = Value(plan).map {
-        plan =>
-          val ordered = Toposort.cycleBreaking(
-            predecessors = plan.plan.predecessors,
-            break = new ToposortLoopBreaker[DIKey] {
-              override def onLoop(done: Seq[DIKey], loopMembers: Map[DIKey, Set[DIKey]]): Either[ToposortError[DIKey], ToposortLoopBreaker.ResolvedLoop[DIKey]] = {
-                throw new SanityCheckFailedException(s"Integrity check failed: loops are not expected at this point, processed: $done, loops: $loopMembers")
-              }
-            },
-          )
-
-          val sortedKeys = ordered match {
-            case Left(value) =>
-              throw new SanityCheckFailedException(s"Toposort is not expected to fail here: $value")
-
-            case Right(value) =>
-              value
-          }
-
-          val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
-          val topology = analyzer.topology(plan.plan.meta.nodes.values)
-          val roots = plan.input.roots match {
-            case Roots.Of(roots) =>
-              roots.toSet
-            case Roots.Everything =>
-              topology.effectiveRoots
-          }
-          val finalPlan = OrderedPlan(sortedOps, roots, topology)
-
-          val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
-          if (reftable.dependees.graph.nonEmpty) {
-            println(finalPlan.render())
-            println(reftable.dependees.graph.filterNot(_._2.isEmpty).mkString("\n"))
-            throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
-          }
-          finalPlan
-      }.get
-      sorted
     }
 
     @deprecated("should be removed with OrderedPlan", "13/04/2021")
