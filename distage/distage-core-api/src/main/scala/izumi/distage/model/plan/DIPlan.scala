@@ -15,7 +15,18 @@ import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta, ToposortError}
 import izumi.reflect.Tag
 
-case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput)
+case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput) {
+  // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
+  override def hashCode(): Int = {
+    this.plan.meta.hashCode() ^ this.plan.predecessors.hashCode()
+  }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case p: DIPlan =>
+      this.plan.meta == p.plan.meta && this.plan.predecessors == p.plan.predecessors
+    case _ => false
+  }
+}
 
 object DIPlan {
   def empty: DIPlan = DIPlan(

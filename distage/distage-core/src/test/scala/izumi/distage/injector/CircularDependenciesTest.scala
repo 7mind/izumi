@@ -6,9 +6,6 @@ import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
-import izumi.distage.model.plan.ExecutableOp.InstantiationOp
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import org.scalatest.wordspec.AnyWordSpec
 
 class CircularDependenciesTest extends AnyWordSpec with MkInjector {
