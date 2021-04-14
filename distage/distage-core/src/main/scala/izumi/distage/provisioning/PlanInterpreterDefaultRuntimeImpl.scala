@@ -9,7 +9,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions.{ForwardRefException, IncompatibleEffectTypesException, ProvisionerIssue, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, OrderedPlan, Roots}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp, Roots}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable

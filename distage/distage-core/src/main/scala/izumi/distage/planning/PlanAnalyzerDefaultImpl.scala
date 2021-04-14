@@ -17,7 +17,6 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
   import scala.collection.compat._
 
-
   def topology(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
       plan,
@@ -77,10 +76,6 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
             }
 
           acc
-
-//        case (acc, op) =>
-//          acc.getOrElseUpdate(op.target, mutable.Set.empty)
-//          acc
       }
       .view
       .filter(postFilter)

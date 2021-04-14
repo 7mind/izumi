@@ -43,14 +43,6 @@ final class InjectorDefaultImpl[F[_]](
     planner.planNoRewrite(addSelfInfo(input))
   }
 
-//  override def plan(input: PlannerInput): OrderedPlan = {
-//    planner.plan(addSelfInfo(input))
-//  }
-//
-//  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
-//    planner.planNoRewrite(addSelfInfo(input))
-//  }
-
   override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
     planner.planSafe(addSelfInfo(input))
   }

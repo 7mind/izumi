@@ -32,7 +32,6 @@ class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
       make[W1.T2]
       make[W2.T2]
     }))
-    println(plan.render())
 
     val formatted = plan.render().replaceAll("\u001B\\[[;\\d]*m", "")
     assert(!formatted.contains(classOf[Impl1].getName))

@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.repr.OpFormatter
-import izumi.distage.model.plan.{DIPlan, OrderedPlan}
+import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection._
