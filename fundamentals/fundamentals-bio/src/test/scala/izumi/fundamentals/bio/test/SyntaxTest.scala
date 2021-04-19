@@ -352,7 +352,12 @@ class SyntaxTest extends AnyWordSpec {
       y[bio.IO],
       z[bio.IO],
     )
-    lazy val _ = (zioTest, monixTest)
+
+    lazy val eitherTest = (
+      x[Either],
+      z[Either]
+    )
+    lazy val _ = (zioTest, monixTest, eitherTest)
   }
 
   "Support BIO syntax for ZIO with wildcard import" in {
