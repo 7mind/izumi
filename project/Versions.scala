@@ -21,15 +21,15 @@ object V {
   val monix = "3.3.0"
   val monix_bio = "1.1.0"
 
-  val circe = "0.13.0"
-  val circe_generic_extras = "0.13.0"
+  val circe = "0.14.0-M5"
+  val circe_generic_extras = "0.13.1-M4"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.15.0"
   val magnolia = "0.17.0"
-  val jawn = "1.0.0"
+  val jawn = "1.1.1"
 
   // good to drop - scala
-  val scala_java_time = "2.0.0-RC5"
+  val scala_java_time = "2.0.0"
 
   // java-only dependencies below
   val classgraph = "4.8.104"
