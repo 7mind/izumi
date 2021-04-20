@@ -1,12 +1,13 @@
 package izumi.distage.modules.support
 
-import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, Sync, Timer}
+import cats.effect.{Concurrent, ConcurrentEffect, Effect, Sync}
 import cats.{Applicative, Parallel}
 import distage.{ModuleDef, TagK}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import izumi.fundamentals.platform.functional.Identity
+import cats.effect.Temporal
 
 /**
   * Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.
@@ -28,9 +29,9 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     implicit F: Sync[F] => QuasiIO.fromCats
   }
   make[QuasiAsync[F]].from {
-    (C0: Concurrent[F], T0: Timer[F], P0: Parallel[F]) =>
+    (C0: Concurrent[F], T0: Temporal[F], P0: Parallel[F]) =>
       implicit val C: Concurrent[F] = C0
-      implicit val T: Timer[F] = T0
+      implicit val T: Temporal[F] = T0
       implicit val P: Parallel[F] = P0
       QuasiAsync.fromCats
   }
@@ -56,10 +57,10 @@ object AnyCatsEffectSupportModule {
     *
     * `make[ContextShift[F]]` is not required by [[AnyCatsEffectSupportModule]] but is added for completeness
     */
-  def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Timer: ContextShift]: ModuleDef = new ModuleDef {
+  def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Temporal: ContextShift]: ModuleDef = new ModuleDef {
     addImplicit[ConcurrentEffect[F]]
     addImplicit[Parallel[F]]
-    addImplicit[Timer[F]]
+    addImplicit[Temporal[F]]
     addImplicit[ContextShift[F]]
 
     include(AnyCatsEffectSupportModule[F])
