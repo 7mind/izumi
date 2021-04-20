@@ -77,14 +77,9 @@ object Izumi {
     final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto) in Scope.Test.all
 
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
+    final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
+    final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
-    final val circe = Seq(
-      circe_core,
-      Library("io.circe", "circe-parser", V.circe, LibraryType.Auto),
-      Library("io.circe", "circe-literal", V.circe, LibraryType.Auto),
-      Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
-      circe_derivation,
-    ).map(_ in Scope.Compile.all)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scaltest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
@@ -406,9 +401,13 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
-        libs = circe ++ Seq(
-          jawn in Scope.Compile.js,
+        libs = Seq(
+          circe_core in Scope.Compile.all,
+          circe_derivation in Scope.Compile.all,
           scala_reflect in Scope.Provided.all,
+        ) ++ Seq(
+          jawn in Scope.Test.all,
+          circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
@@ -542,7 +541,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,
-        libs = Seq.empty,
+        libs = Seq(
+          jawn in Scope.Test.all,
+          circe_parser in Scope.Test.all,
+          circe_literal in Scope.Test.all,
+        ),
         depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(

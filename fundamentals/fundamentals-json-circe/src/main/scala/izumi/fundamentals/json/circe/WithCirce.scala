@@ -1,6 +1,7 @@
 package izumi.fundamentals.json.circe
 
-import io.circe.{Codec, Decoder, Encoder, derivation}
+import io.circe.derivation.DerivationMacros
+import io.circe.{Codec, Decoder, Encoder}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -43,7 +44,7 @@ abstract class WithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) 
 }
 
 // TODO: merge upstream, also with @JsonCodec
-final class MaterializeDerivationMacros(override val c: blackbox.Context) extends derivation.DerivationMacros(c) {
+final class MaterializeDerivationMacros(override val c: blackbox.Context) extends DerivationMacros(c) {
   import c.universe._
 
   def materializeEncoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedEncoder[A]] =
