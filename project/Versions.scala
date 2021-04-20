@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "1.0.0-M17"
+  val izumi_reflect = "1.1.0"
 
   // foundation
   val collection_compat = "2.4.3"
@@ -9,13 +9,13 @@ object V {
 
   val scalatest = "3.2.7"
 
-  val cats = "2.5.0"
-  val cats_effect = "3.0.2"
+  val cats = "2.6.0"
+  val cats_effect = "2.5.0"
 
   val discipline = "1.1.4"
   val discipline_scalatest = "2.0.0"
 
-  val zio = "1.0.5"
+  val zio = "1.0.6"
   val zio_interop_cats = "2.4.0.0"
 
   val monix = "3.3.0"
@@ -24,7 +24,7 @@ object V {
   val circe = "0.13.0"
   val circe_generic_extras = "0.13.0"
   val circe_derivation = "0.13.0-M5"
-  val pureconfig = "0.14.1"
+  val pureconfig = "0.15.0"
   val magnolia = "0.17.0"
   val jawn = "1.0.0"
 
@@ -38,7 +38,7 @@ object V {
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val docker_java = "3.2.7"
+  val docker_java = "3.2.8"
 
   // microsite-only
   val doobie = "0.9.4"
