@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.71`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.72`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -241,7 +241,7 @@ object Izumi {
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
-        "scalacOptions" in SettingScope.Raw("(Compile, sbt.Keys.doc)") -= "-Wconf:any:error",
+        "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
