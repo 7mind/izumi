@@ -9,8 +9,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
-  override final def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult = {
-
+  override final def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): HealthCheckResult = onRunningState(state) {
     val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
       container.connectivity.dockerPorts
         .collect {
@@ -26,7 +25,6 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
         }
 
     perform(logger, container, tcpPorts, udpPorts)
-
   }
 
   protected def perform(

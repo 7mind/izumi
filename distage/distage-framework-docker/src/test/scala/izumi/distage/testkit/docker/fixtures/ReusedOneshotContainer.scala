@@ -1,10 +1,10 @@
 package izumi.distage.testkit.docker.fixtures
 
 import java.util.UUID
-
 import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.Docker.{DockerReusePolicy, Mount}
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.Lifecycle
 
 object ReusedOneshotContainer extends ContainerDef {
@@ -13,9 +13,10 @@ object ReusedOneshotContainer extends ContainerDef {
       image = "alpine:3.12.0",
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
-      entrypoint = Seq("sh", "-c", s"echo `date` >> ${CmdContainerModule.stateFilePath}"),
+      entrypoint = Seq("sh", "-c", s"sleep 1; echo `date` >> ${CmdContainerModule.stateFilePath}"),
       reuse = DockerReusePolicy.ReuseEnabled,
       autoRemove = false, // we need this container to be preserved after exit as a marker
+      healthCheck = ContainerHealthCheck.exited(canBeDestroyed = true),
     )
   }
 }

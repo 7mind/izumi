@@ -1,8 +1,7 @@
 package izumi.distage.docker.healthcheck
 
 import java.net.{HttpURLConnection, URL}
-
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger
@@ -12,7 +11,7 @@ final class HttpGetCheck[Tag](
   port: DockerPort,
   useHttps: Boolean,
 ) extends ContainerHealthCheck[Tag] {
-  override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
+  override def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): ContainerHealthCheck.HealthCheckResult = onRunningState(state) {
     portStatus.availablePorts.firstOption(port) match {
       case Some(availablePort) if portStatus.allTCPPortsAccessible =>
         val protocol = if (useHttps) "https" else "http"

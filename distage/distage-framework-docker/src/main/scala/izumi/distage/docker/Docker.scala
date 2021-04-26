@@ -224,4 +224,11 @@ object Docker {
     override def toString: String = s"{host: $dockerHost; addresses=$containerAddressesV4; ports=$dockerPorts}"
   }
 
+  sealed trait ContainerState
+  object ContainerState {
+    case object Running extends ContainerState
+    case object SuccessfullyExited extends ContainerState
+    case object NotFound extends ContainerState
+    final case class Failed(status: Long) extends ContainerState
+  }
 }

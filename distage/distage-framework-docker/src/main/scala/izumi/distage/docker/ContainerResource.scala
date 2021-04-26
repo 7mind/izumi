@@ -1,8 +1,7 @@
 package izumi.distage.docker
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
-
 import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model._
 import izumi.distage.docker.ContainerResource.PortDecl
 import izumi.distage.docker.Docker._
@@ -21,6 +20,7 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
@@ -74,25 +74,30 @@ case class ContainerResource[F[_], T](
     }
   }
 
+  def inspectContainerAndGetStatus(containerId: String): Either[Throwable, ContainerState] = {
+    try {
+      val status = rawClient.inspectContainerCmd(containerId).exec()
+      status.getState match {
+        case s if s.getRunning => Right(ContainerState.Running)
+        case s if s.getExitCodeLong == 0L => Right(ContainerState.SuccessfullyExited)
+        case s => Right(ContainerState.Failed(s.getExitCodeLong))
+      }
+    } catch {
+      case _: NotFoundException => Right(ContainerState.NotFound)
+      case t: Throwable => Left(t)
+    }
+  }
+
   def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
     F.maybeSuspend {
       logger.debug(s"Awaiting until alive: $container...")
-      try {
-        val status = rawClient.inspectContainerCmd(container.id.name).exec()
-        if (status.getState.getExitCodeLong == 0L && config.ports.isEmpty) {
-          logger.debug(s"Container has exited but that was a singleshot container $container...")
-          Right(HealthCheckResult.Available)
-        } else if (status.getState.getRunning) {
-          logger.debug(s"Trying healthcheck on running $container...")
-          Right(config.healthCheck.check(logger, container))
-        } else {
-          Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
-        }
-      } catch {
-        case t: Throwable =>
-          Left(t)
+      inspectContainerAndGetStatus(container.id.name).map {
+        config.healthCheck.check(logger, container, _)
       }
     }.flatMap {
+        case Right(HealthCheckResult.Terminated(failure)) =>
+          F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+
         case Right(HealthCheckResult.Available) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
@@ -148,6 +153,9 @@ case class ContainerResource[F[_], T](
 
               case impossible: GoodHealthcheck =>
                 F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+
+              case HealthCheckResult.Terminated(failure) =>
+                F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
             }
           }
 

@@ -1,13 +1,13 @@
 package izumi.distage.docker.healthcheck
 
-import java.net.{InetSocketAddress, Socket}
-import java.nio.{Buffer, ByteBuffer}
-
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
+
+import java.net.{InetSocketAddress, Socket}
+import java.nio.{Buffer, ByteBuffer}
 
 final class PostgreSqlProtocolCheck[Tag](
   portStatus: HealthCheckResult.AvailableOnPorts,
@@ -15,7 +15,7 @@ final class PostgreSqlProtocolCheck[Tag](
   userName: String,
   databaseName: String,
 ) extends ContainerHealthCheck[Tag] {
-  override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
+  override def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): ContainerHealthCheck.HealthCheckResult = onRunningState(state) {
     portStatus.availablePorts.firstOption(port) match {
       case Some(availablePort) if portStatus.allTCPPortsAccessible =>
         val startupMessage = genStartupMessage()

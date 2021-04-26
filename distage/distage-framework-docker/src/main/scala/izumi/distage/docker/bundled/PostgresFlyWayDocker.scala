@@ -51,7 +51,7 @@ object PostgresFlyWayDocker extends ContainerDef {
       Config(
         image = "flyway/flyway:6.0-alpine",
         ports = Seq.empty,
-        healthCheck = ContainerHealthCheck.succeed,
+        healthCheck = ContainerHealthCheck.exited(canBeDestroyed = true),
         reuse = DockerReusePolicy.ReuseEnabled,
         autoRemove = false,
       )

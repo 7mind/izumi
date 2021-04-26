@@ -7,23 +7,36 @@ import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap}
 import izumi.logstage.api.IzLogger
 
 trait ContainerHealthCheck[Tag] {
-  def check(logger: IzLogger, container: DockerContainer[Tag]): HealthCheckResult
+  def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): HealthCheckResult
 
   final def ++(next: HealthCheckResult => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = this combine next
   final def combine(next: HealthCheckResult => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = {
-    (logger: IzLogger, container: DockerContainer[Tag]) =>
-      next(check(logger, container)).check(logger, container)
+    (logger: IzLogger, container: DockerContainer[Tag], state: ContainerState) =>
+      next(check(logger, container, state)).check(logger, container, state)
   }
   final def combineOnPorts(next: HealthCheckResult.AvailableOnPorts => ContainerHealthCheck[Tag]): ContainerHealthCheck[Tag] = {
-    (logger: IzLogger, container: DockerContainer[Tag]) =>
-      check(logger, container) match {
+    (logger: IzLogger, container: DockerContainer[Tag], state: ContainerState) =>
+      check(logger, container, state) match {
         case thisCheckResult: HealthCheckResult.AvailableOnPorts =>
-          next(thisCheckResult).check(logger, container) match {
+          next(thisCheckResult).check(logger, container, state) match {
             case HealthCheckResult.Available => thisCheckResult
             case other => other
           }
         case other => other
       }
+  }
+
+  protected def onRunningState(state: ContainerState)(performCheck: => HealthCheckResult): HealthCheckResult = {
+    state match {
+      case ContainerState.Running =>
+        performCheck
+      case ContainerState.SuccessfullyExited =>
+        HealthCheckResult.Terminated("Container unexpectedly exited with code 0.")
+      case ContainerState.NotFound =>
+        HealthCheckResult.Terminated("Container not found.")
+      case ContainerState.Failed(status) =>
+        HealthCheckResult.Terminated(s"Container terminated with non zero code. Code=$status")
+    }
   }
 }
 
@@ -43,12 +56,17 @@ object ContainerHealthCheck {
     portCheck.combineOnPorts(new PostgreSqlProtocolCheck(_, port, user, password))
   }
 
-  def succeed[T]: ContainerHealthCheck[T] = (_, _) => HealthCheckResult.Available
+  def succeed[T]: ContainerHealthCheck[T] = (_, _, _) => HealthCheckResult.Available
+
+  def exited[T](canBeDestroyed: Boolean): ContainerHealthCheck[T] = {
+    new ContainerExitedCheck[T](canBeDestroyed)
+  }
 
   sealed trait HealthCheckResult
   object HealthCheckResult {
     sealed trait BadHealthcheck extends HealthCheckResult
     case object Unavailable extends BadHealthcheck
+    final case class Terminated(failure: String) extends HealthCheckResult
 
     sealed trait GoodHealthcheck extends HealthCheckResult
     case object Available extends GoodHealthcheck

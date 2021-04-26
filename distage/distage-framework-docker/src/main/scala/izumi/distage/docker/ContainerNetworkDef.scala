@@ -55,7 +55,7 @@ object ContainerNetworkDef {
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 
-    private[this] val prefix: String = prefixName.camelToUnderscores.drop(1).replace("$", "")
+    private[this] val prefix: String = prefixName.camelToUnderscores.replace("$", "")
     private[this] val networkLabels: Map[String, String] = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
