@@ -24,6 +24,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 case class ContainerResource[F[_], T](
   config: Docker.ContainerConfig[T],
@@ -260,9 +261,40 @@ case class ContainerResource[F[_], T](
     val adjustedEnv = portsEnv ++ config.env
 
     for {
+      existedImages <- F.maybeSuspend {
+        rawClient
+          .listImagesCmd().exec()
+          .asScala
+          .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+          .toSet
+      }
+      _ <- F.fromEither {
+        // test if image exists
+        // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+        if (existedImages.contains(config.image) || existedImages.contains(config.image.replace("library/", ""))) {
+          logger.info(s"Skipping pull of `${config.image}`. Already exist.")
+          Right(())
+        } else {
+          logger.info(s"Going to pull `${config.image}`...")
+          // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+          Try {
+            rawClient
+              .pullImageCmd(config.image)
+              .start()
+              .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+          } match {
+            case Success(pulled) if pulled => // pulled successfully
+              Right(())
+            case Success(_) => // timed out
+              Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None))))
+            case Failure(t) => // failure occurred (e.g. rate limiter failure)
+              Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t)))))
+          }
+        }
+      }
       out <- F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
-        val cmd = Value(baseCmd)
+        val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
           .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
@@ -276,33 +308,8 @@ case class ContainerResource[F[_], T](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        val existedImages = rawClient
-          .listImagesCmd().exec()
-          .asScala
-          .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
-          .toSet
-
-        if (config.alwaysPull) {
-          try {
-            if (existedImages.contains(config.image)) {
-              logger.info(s"Skipping pull of `${config.image}`. Already exist.")
-            } else {
-              logger.info(s"Going to pull `${config.image}`...")
-              rawClient
-                .pullImageCmd(config.image)
-                .start()
-                .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
-            }
-          } catch {
-            case c: Throwable =>
-              throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
-          }
-        } else {
-          logger.info(s"Skipping explicit pull of `${config.image}`")
-        }
-
         logger.debug(s"Going to create container from image `${config.image}`...")
-        val res = cmd.exec()
+        val res = createContainerCmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
         rawClient.startContainerCmd(res.getId).exec()
