@@ -109,8 +109,8 @@ object Docker {
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
     *
-    * @param alwaysPull Pull the image before starting the container
-    *                   default: true
+    * @param autoPull Automatically pull the image if it does not exists before starting the container
+    *                 default: true
     */
   final case class ContainerConfig[T](
     image: String,
