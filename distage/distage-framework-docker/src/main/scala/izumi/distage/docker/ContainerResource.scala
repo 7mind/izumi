@@ -261,32 +261,34 @@ case class ContainerResource[F[_], T](
     val adjustedEnv = portsEnv ++ config.env
 
     for {
-      _ <- F.maybeSuspendEither {
-        val existedImages = rawClient
-          .listImagesCmd().exec()
-          .asScala
-          .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
-          .toSet
-        // test if image exists
-        // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
-        if (existedImages.contains(config.image) || existedImages.contains(config.image.replace("library/", ""))) {
-          logger.info(s"Skipping pull of `${config.image}`. Already exist.")
-          Right(())
-        } else {
-          logger.info(s"Going to pull `${config.image}`...")
-          // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
-          Try {
-            rawClient
-              .pullImageCmd(config.image)
-              .start()
-              .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
-          } match {
-            case Success(pulled) if pulled => // pulled successfully
-              Right(())
-            case Success(_) => // timed out
-              Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None))))
-            case Failure(t) => // failure occurred (e.g. rate limiter failure)
-              Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t)))))
+      _ <- F.when(config.autoPull) {
+        F.maybeSuspendEither {
+          val existedImages = rawClient
+            .listImagesCmd().exec()
+            .asScala
+            .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+            .toSet
+          // test if image exists
+          // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+          if (existedImages.contains(config.image) || existedImages.contains(config.image.replace("library/", ""))) {
+            logger.info(s"Skipping pull of `${config.image}`. Already exist.")
+            Right(())
+          } else {
+            logger.info(s"Going to pull `${config.image}`...")
+            // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+            Try {
+              rawClient
+                .pullImageCmd(config.image)
+                .start()
+                .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+            } match {
+              case Success(pulled) if pulled => // pulled successfully
+                Right(())
+              case Success(_) => // timed out
+                Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None))))
+              case Failure(t) => // failure occurred (e.g. rate limiter failure)
+                Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t)))))
+            }
           }
         }
       }
