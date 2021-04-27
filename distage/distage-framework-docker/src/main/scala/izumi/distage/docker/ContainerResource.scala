@@ -1,13 +1,12 @@
 package izumi.distage.docker
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
-
 import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model._
 import izumi.distage.docker.ContainerResource.PortDecl
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
-import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
+import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealth
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
@@ -21,9 +20,11 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 case class ContainerResource[F[_], T](
   config: Docker.ContainerConfig[T],
@@ -77,29 +78,20 @@ case class ContainerResource[F[_], T](
   def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
     F.maybeSuspend {
       logger.debug(s"Awaiting until alive: $container...")
-      try {
-        val status = rawClient.inspectContainerCmd(container.id.name).exec()
-        if (status.getState.getExitCodeLong == 0L && config.ports.isEmpty) {
-          logger.debug(s"Container has exited but that was a singleshot container $container...")
-          Right(HealthCheckResult.Available)
-        } else if (status.getState.getRunning) {
-          logger.debug(s"Trying healthcheck on running $container...")
-          Right(config.healthCheck.check(logger, container))
-        } else {
-          Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
-        }
-      } catch {
-        case t: Throwable =>
-          Left(t)
+      inspectContainerAndGetState(container.id.name).map {
+        config.healthCheck.check(logger, container, _)
       }
     }.flatMap {
-        case Right(HealthCheckResult.Available) =>
+        case Right(HealthCheckResult.Terminated(failure)) =>
+          F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+
+        case Right(HealthCheckResult.Good) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
             container
           }
 
-        case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
+        case Right(status: HealthCheckResult.GoodOnPorts) if status.allTCPPortsAccessible =>
           F.maybeSuspend {
             val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
             logger.info(s"Looks good: ${out -> "container"}")
@@ -114,10 +106,10 @@ case class ContainerResource[F[_], T](
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
             last match {
-              case HealthCheckResult.Unavailable =>
+              case HealthCheckResult.Bad =>
                 F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts, no diagnostics available: $container"))
 
-              case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
+              case HealthCheckResult.BadWithMeta(unavailablePorts, unverifiedPorts) =>
                 val sb = new StringBuilder()
                 sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
                 if (unverifiedPorts.nonEmpty) {
@@ -146,8 +138,11 @@ case class ContainerResource[F[_], T](
 
                 F.fail(new TimeoutException(sb.toString()))
 
-              case impossible: GoodHealthcheck =>
+              case impossible: GoodHealth =>
                 F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+
+              case HealthCheckResult.Terminated(failure) =>
+                F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
             }
           }
 
@@ -266,9 +261,40 @@ case class ContainerResource[F[_], T](
     val adjustedEnv = portsEnv ++ config.env
 
     for {
+      _ <- F.when(config.autoPull) {
+        F.maybeSuspendEither {
+          val existedImages = rawClient
+            .listImagesCmd().exec()
+            .asScala
+            .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+            .toSet
+          // test if image exists
+          // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+          if (existedImages.contains(config.image) || existedImages.contains(config.image.replace("library/", ""))) {
+            logger.info(s"Skipping pull of `${config.image}`. Already exist.")
+            Right(())
+          } else {
+            logger.info(s"Going to pull `${config.image}`...")
+            // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+            Try {
+              rawClient
+                .pullImageCmd(config.image)
+                .start()
+                .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+            } match {
+              case Success(pulled) if pulled => // pulled successfully
+                Right(())
+              case Success(_) => // timed out
+                Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None))))
+              case Failure(t) => // failure occurred (e.g. rate limiter failure)
+                Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t)))))
+            }
+          }
+        }
+      }
       out <- F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
-        val cmd = Value(baseCmd)
+        val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
           .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
@@ -282,18 +308,8 @@ case class ContainerResource[F[_], T](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        if (config.alwaysPull) {
-          logger.info(s"Going to pull `${config.image}`...")
-          rawClient
-            .pullImageCmd(config.image)
-            .start()
-            .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
-        } else {
-          logger.info(s"Skipping explicit pull of `${config.image}`")
-        }
-
         logger.debug(s"Going to create container from image `${config.image}`...")
-        val res = cmd.exec()
+        val res = createContainerCmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
         rawClient.startContainerCmd(res.getId).exec()
@@ -333,6 +349,20 @@ case class ContainerResource[F[_], T](
       }
       result <- await(out, 0)
     } yield result
+  }
+
+  private[this] def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
+    try {
+      val status = rawClient.inspectContainerCmd(containerId).exec()
+      status.getState match {
+        case s if s.getRunning => Right(ContainerState.Running)
+        case s if s.getExitCodeLong == 0L => Right(ContainerState.SuccessfullyExited)
+        case s => Right(ContainerState.Failed(s.getExitCodeLong))
+      }
+    } catch {
+      case _: NotFoundException => Right(ContainerState.NotFound)
+      case t: Throwable => Left(t)
+    }
   }
 
   private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {

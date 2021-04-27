@@ -19,6 +19,9 @@ object ResourceCases {
     case object XStop extends Ops
     case object YStart extends Ops
     case object YStop extends Ops
+    case object RStart extends Ops
+    case object RStop extends Ops
+    case object ZStart extends Ops
     case object ZStop extends Ops
 
     class X
@@ -163,6 +166,14 @@ object ResourceCases {
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Suspend2[E, A] = {
+        Suspend2(
+          eff match {
+            case Left(err) => throw err
+            case Right(v) => v
+          }
+        )
+      }
       override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         Suspend2(
           () =>
@@ -174,6 +185,15 @@ object ResourceCases {
       }
       override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, () => Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
+      }
+      override def redeem[A, B](action: => Suspend2[E, A])(failure: Throwable => Suspend2[E, B], success: A => Suspend2[E, B]): Suspend2[E, B] = {
+        Suspend2(
+          () =>
+            Try(action.run()).toEither.flatMap(identity) match {
+              case Left(value) => failure(value).run()
+              case Right(value) => success(value).run()
+            }
+        )
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =

@@ -5,7 +5,7 @@ import cats.effect.Resource.{Allocate, Bind, Suspend}
 import cats.effect.{ExitCase, Resource, concurrent}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
+import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, foldMImpl, fromCats, fromZIO, mapImpl, wrapAcquireImpl, wrapReleaseImpl}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.data.Morphism1
@@ -240,6 +240,8 @@ trait Lifecycle[+F[_], +OuterResource] {
   final def evalMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
   final def evalTap[G[x] >: F[x]: QuasiIO](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
     evalMap[G, OuterResource](a => QuasiIO[G].map(f(a))(_ => a))
+  final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
+    foldMImpl[G, OuterResource, B](this)(onFailure, onSuccess)
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
   final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, OuterResource] =
@@ -257,6 +259,9 @@ trait Lifecycle[+F[_], +OuterResource] {
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+
+  final def catchAll[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
+    foldMImpl[G, OuterResource, B](this)(recover, Lifecycle.pure(_))
 
   @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
@@ -959,6 +964,64 @@ object Lifecycle extends LifecycleCatsInstances {
       override def acquire: F[InnerResource] = self.acquire
       override def release(resource: InnerResource): F[Unit] = f(self.release, resource)
       override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
+    }
+  }
+
+  @inline
+  private final def foldMImpl[F[_], A, B](
+    self: Lifecycle[F, A]
+  )(failure: Throwable => Lifecycle[F, B],
+    success: A => Lifecycle[F, B],
+  )(implicit F: QuasiIO[F]
+  ): Lifecycle[F, B] = {
+    import QuasiIO.syntax._
+    new Lifecycle[F, B] {
+      override type InnerResource = AtomicReference[List[() => F[Unit]]]
+
+      private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+        F.bracket(
+          acquire = lifecycle.acquire.flatMap {
+            a =>
+              F.maybeSuspend {
+                // can't use `.updateAndGet` because of Scala.js
+                var oldValue = finalizers.get()
+                while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
+                  oldValue = finalizers.get()
+                }
+                a
+              }
+          }
+        )(release = _ => F.unit)(
+          use = use
+        )
+      }
+
+      override def acquire: F[InnerResource] = F.maybeSuspend(new AtomicReference(Nil))
+      override def release(finalizers: InnerResource): F[Unit] = F.suspendF(F.traverse_(finalizers.get())(_.apply()))
+      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
+        def action = bracketAppendFinalizer(finalizers)(self) {
+          inner: self.InnerResource =>
+            self.extract(inner).fold(identity, F.pure)
+        }
+
+        def onSuccess = (a: A) => {
+          val resource = success(a)
+          bracketAppendFinalizer(finalizers)(resource) {
+            inner: resource.InnerResource =>
+              resource.extract[C](inner).fold(identity, F.pure)
+          }
+        }
+
+        def onError = (err: Throwable) => {
+          val resource = failure(err)
+          bracketAppendFinalizer(finalizers)(resource) {
+            inner: resource.InnerResource =>
+              resource.extract[C](inner).fold(identity, F.pure)
+          }
+        }
+
+        F.redeem(action)(onError, onSuccess)
+      }
     }
   }
 

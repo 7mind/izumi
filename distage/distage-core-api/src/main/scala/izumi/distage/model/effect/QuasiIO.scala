@@ -38,6 +38,8 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
     */
   def maybeSuspend[A](eff: => A): F[A]
 
+  def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A]
+
   /** A stronger version of `handleErrorWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors
     */
@@ -50,6 +52,8 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
     * (e.g. in case of `ZIO`, the callback will mutate the throwable and attach a ZIO Trace to it.)
     */
   def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, (() => Throwable)) => F[A]): F[A]
+
+  def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B]
 
   def fail[A](t: => Throwable): F[A]
 
@@ -101,6 +105,10 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
+    override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Identity[A] = eff match {
+      case Left(err) => throw err
+      case Right(v) => v
+    }
     override def suspendF[A](effAction: => A): Identity[A] = effAction
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
       try { fa }
@@ -108,6 +116,14 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     }
     override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, (() => Throwable)) => Identity[A]): Identity[A] = {
       definitelyRecover(action)(e => recoverCause(e, () => e))
+    }
+    override def redeem[A, B](action: => Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
+      Try(action) match {
+        case Failure(exception) =>
+          failure(exception)
+        case Success(value) =>
+          success(value)
+      }
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -143,6 +159,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[Throwable, A] = F.syncThrowable(eff).flatMap(F.fromEither(_))
       override def suspendF[A](effAction: => F[Throwable, A]): F[Throwable, A] = F.suspend(effAction)
       override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
         F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
@@ -150,7 +167,9 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: (Throwable, () => Throwable) => F[Throwable, A]): F[Throwable, A] = {
         F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, () => e.trace.unsafeAttachTrace(identity)))
       }
-
+      override def redeem[A, B](action: => F[Throwable, A])(failure: Throwable => F[Throwable, B], success: A => F[Throwable, B]): F[Throwable, B] = {
+        action.redeem(failure, success)
+      }
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
       override def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
         F.bracket(acquire = F.suspend(acquire))(release = release(_).orTerminate)(use = use)
@@ -190,12 +209,16 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A] = F.defer(F.fromEither(eff))
       override def suspendF[A](effAction: => F[A]): F[A] = F.defer(effAction)
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.defer(action))(recover)
       }
       override def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
+      }
+      override def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B] = {
+        F.redeemWith(action)(failure, success)
       }
       override def fail[A](t: => Throwable): F[A] = F.defer(F.raiseError(t))
       override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {
