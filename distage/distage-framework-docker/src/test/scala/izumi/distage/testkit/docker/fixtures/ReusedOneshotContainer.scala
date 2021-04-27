@@ -16,7 +16,7 @@ object ReusedOneshotContainer extends ContainerDef {
       entrypoint = Seq("sh", "-c", s"sleep 1; echo `date` >> ${CmdContainerModule.stateFilePath}"),
       reuse = DockerReusePolicy.ReuseEnabled,
       autoRemove = false, // we need this container to be preserved after exit as a marker
-      healthCheck = ContainerHealthCheck.exited(canBeDestroyed = true),
+      healthCheck = ContainerHealthCheck.exited(canBeDestroyed = false),
     )
   }
 }
@@ -30,6 +30,7 @@ object ReuseCheckContainer extends ContainerDef {
       entrypoint = Seq("sh", "-c", s"if [[ $$(cat ${CmdContainerModule.stateFilePath} | wc -l | awk '{print $$1}') == 1 ]]; then exit 0; else exit 42; fi"),
       reuse = DockerReusePolicy.ReuseDisabled,
       autoRemove = false, // we need this container to be preserved after exit as a marker
+      healthCheck = ContainerHealthCheck.exited(canBeDestroyed = false),
     )
   }
 }

@@ -10,44 +10,46 @@ import java.net.{InetSocketAddress, Socket}
 import java.nio.{Buffer, ByteBuffer}
 
 final class PostgreSqlProtocolCheck[Tag](
-  portStatus: HealthCheckResult.AvailableOnPorts,
+  portStatus: HealthCheckResult.GoodOnPorts,
   port: DockerPort,
   userName: String,
   databaseName: String,
 ) extends ContainerHealthCheck[Tag] {
-  override def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): ContainerHealthCheck.HealthCheckResult = onRunningState(state) {
-    portStatus.availablePorts.firstOption(port) match {
-      case Some(availablePort) if portStatus.allTCPPortsAccessible =>
-        val startupMessage = genStartupMessage()
-        val socket = new Socket()
-        try {
-          socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
-          logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
-          val out = socket.getOutputStream
-          val in = socket.getInputStream
-          out.write(startupMessage)
-          val messageType = {
-            val outByte = Array[Byte](0)
-            in.read(outByte, 0, 1)
-            new String(outByte)
+  override def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): HealthCheckResult = {
+    ContainerHealthCheck.checkIfRunning(state) {
+      portStatus.availablePorts.firstOption(port) match {
+        case Some(availablePort) if portStatus.allTCPPortsAccessible =>
+          val startupMessage = genStartupMessage()
+          val socket = new Socket()
+          try {
+            socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
+            logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
+            val out = socket.getOutputStream
+            val in = socket.getInputStream
+            out.write(startupMessage)
+            val messageType = {
+              val outByte = Array[Byte](0)
+              in.read(outByte, 0, 1)
+              new String(outByte)
+            }
+            // first byte of response message should be `R` char
+            // every authentication message from PostgreSQL starts with `R`
+            if (messageType == "R") {
+              logger.info(s"PostgreSQL protocol on $port is available.")
+              HealthCheckResult.Good
+            } else {
+              logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
+              HealthCheckResult.Bad
+            }
+          } catch {
+            case failure: Throwable =>
+              logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. $failure")
+              HealthCheckResult.Bad
+          } finally {
+            socket.close()
           }
-          // first byte of response message should be `R` char
-          // every authentication message from PostgreSQL starts with `R`
-          if (messageType == "R") {
-            logger.info(s"PostgreSQL protocol on $port is available.")
-            ContainerHealthCheck.HealthCheckResult.Available
-          } else {
-            logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
-            ContainerHealthCheck.HealthCheckResult.Unavailable
-          }
-        } catch {
-          case failure: Throwable =>
-            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. $failure")
-            ContainerHealthCheck.HealthCheckResult.Unavailable
-        } finally {
-          socket.close()
-        }
-      case _ => ContainerHealthCheck.HealthCheckResult.Unavailable
+        case _ => HealthCheckResult.Bad
+      }
     }
   }
 

@@ -9,13 +9,13 @@ final class ContainerExitedCheck[Tag](canBeDestroyed: Boolean) extends Container
     state match {
       case ContainerState.Running =>
         logger.debug(s"$container still running, marked as unavailable.")
-        HealthCheckResult.Unavailable
+        HealthCheckResult.Bad
       case ContainerState.SuccessfullyExited =>
         logger.debug(s"$container successfully exited, marked available.")
-        HealthCheckResult.Available
+        HealthCheckResult.Good
       case ContainerState.NotFound if canBeDestroyed =>
         logger.debug(s"$container was destroyed, marked available.")
-        HealthCheckResult.Available
+        HealthCheckResult.Good
       case ContainerState.NotFound =>
         HealthCheckResult.Terminated("Container not found.")
       case ContainerState.Failed(status) =>
