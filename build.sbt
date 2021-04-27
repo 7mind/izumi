@@ -119,7 +119,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -129,7 +129,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
          case None         => Seq.empty
        })
     },
-    Test / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -378,7 +378,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -388,7 +388,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
          case None         => Seq.empty
        })
     },
-    Test / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -519,7 +519,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -529,7 +529,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
          case None         => Seq.empty
        })
     },
-    Test / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -1642,7 +1642,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -1652,7 +1652,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
          case None         => Seq.empty
        })
     },
-    Test / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -2157,7 +2157,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -2167,7 +2167,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
          case None         => Seq.empty
        })
     },
-    Test / unmanagedSourceDirectories ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
