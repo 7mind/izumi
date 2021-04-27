@@ -130,7 +130,7 @@ object Docker {
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.portCheck[T],
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
-    alwaysPull: Boolean = true,
+    autoPull: Boolean = true,
   ) {
     def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
     def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
@@ -224,4 +224,11 @@ object Docker {
     override def toString: String = s"{host: $dockerHost; addresses=$containerAddressesV4; ports=$dockerPorts}"
   }
 
+  sealed trait ContainerState
+  object ContainerState {
+    case object Running extends ContainerState
+    case object SuccessfullyExited extends ContainerState
+    case object NotFound extends ContainerState
+    final case class Failed(status: Long) extends ContainerState
+  }
 }

@@ -166,6 +166,14 @@ object ResourceCases {
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Suspend2[E, A] = {
+        Suspend2(
+          eff match {
+            case Left(err) => throw err
+            case Right(v) => v
+          }
+        )
+      }
       override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         Suspend2(
           () =>

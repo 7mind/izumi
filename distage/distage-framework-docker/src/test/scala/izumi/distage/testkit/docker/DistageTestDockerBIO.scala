@@ -19,7 +19,6 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
 
     "distage test runner should start only one container for reusable" should {
       "support docker resources" in {
-        // FIXME: verifier exit code is not checked, the test isn't reliable
         // TODO: additionally check flyway outcome with doobie
         (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
           for {

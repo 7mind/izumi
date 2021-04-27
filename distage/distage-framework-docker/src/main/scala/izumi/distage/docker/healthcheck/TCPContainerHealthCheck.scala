@@ -61,7 +61,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       case Some(value) =>
         val available = AvailablePorts(value)
         val allTCPPortsAvailable = tcpPortsGood(container, available)
-        HealthCheckResult.AvailableOnPorts(
+        HealthCheckResult.GoodOnPorts(
           available,
           errored,
           udpPorts.keySet.map(p => p: DockerPort),
@@ -70,9 +70,9 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
 
       case None =>
         if (container.containerConfig.tcpPorts.isEmpty) {
-          HealthCheckResult.Available
+          HealthCheckResult.Good
         } else {
-          HealthCheckResult.UnavailableWithMeta(
+          HealthCheckResult.BadWithMeta(
             errored,
             udpPorts.keySet.map(p => p: DockerPort),
           )
