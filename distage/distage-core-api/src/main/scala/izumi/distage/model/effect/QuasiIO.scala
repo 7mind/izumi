@@ -38,7 +38,7 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
     */
   def maybeSuspend[A](eff: => A): F[A]
 
-  def fromEither[A](eff: => Either[Throwable, A]): F[A]
+  def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A]
 
   /** A stronger version of `handleErrorWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors
@@ -103,7 +103,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
-    override def fromEither[A](eff: => Either[Throwable, A]): Identity[A] = eff match {
+    override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Identity[A] = eff match {
       case Left(err) => throw err
       case Right(v) => v
     }
@@ -149,7 +149,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
-      override def fromEither[A](eff: => Either[Throwable, A]): F[Throwable, A] = F.fromEither(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[Throwable, A] = F.syncThrowable(eff).flatMap(F.fromEither(_))
       override def suspendF[A](effAction: => F[Throwable, A]): F[Throwable, A] = F.suspend(effAction)
       override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
         F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
@@ -197,7 +197,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
-      override def fromEither[A](eff: => Either[Throwable, A]): F[A] = F.fromEither(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A] = F.defer(F.fromEither(eff))
       override def suspendF[A](effAction: => F[A]): F[A] = F.defer(effAction)
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.defer(action))(recover)

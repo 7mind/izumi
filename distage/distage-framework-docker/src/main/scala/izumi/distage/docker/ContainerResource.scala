@@ -261,14 +261,12 @@ case class ContainerResource[F[_], T](
     val adjustedEnv = portsEnv ++ config.env
 
     for {
-      existedImages <- F.maybeSuspend {
-        rawClient
+      _ <- F.maybeSuspendEither {
+        val existedImages = rawClient
           .listImagesCmd().exec()
           .asScala
           .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
           .toSet
-      }
-      _ <- F.fromEither {
         // test if image exists
         // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
         if (existedImages.contains(config.image) || existedImages.contains(config.image.replace("library/", ""))) {
