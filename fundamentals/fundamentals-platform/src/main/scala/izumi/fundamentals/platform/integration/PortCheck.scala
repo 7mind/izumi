@@ -57,7 +57,7 @@ class PortCheck(timeout: FiniteDuration) {
     checkAddress(new InetSocketAddress(address, port), clue)
   }
 
-  def checkAddress(address: => InetSocketAddress, clue: Option[String] = None): ResourceCheck = {
+  def checkAddress(address: InetSocketAddress, clue: Option[String] = None): ResourceCheck = {
     try {
       val socket = new Socket()
       try {
