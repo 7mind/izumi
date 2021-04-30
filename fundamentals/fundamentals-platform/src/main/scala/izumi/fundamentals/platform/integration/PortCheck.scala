@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.integration
 
-import java.net.{InetAddress, InetSocketAddress, Socket, URI, URL}
+import java.net._
 import scala.concurrent.duration._
 
 /**
@@ -13,18 +13,12 @@ import scala.concurrent.duration._
   */
 class PortCheck(timeout: FiniteDuration) {
 
-  @deprecated(
-    "PortCheck constructor now accepts FiniteDuration instead of Int of milliseconds. Rewrite from `new PortCheck(100)` to `new PortCheck(100.millis)`",
-    "Int constructor will be removed in 0.11.1",
-  )
-  def this(timeoutMillis: Int) = this(timeoutMillis.millis)
-
-  def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {
-    checkUrl(uri, Some(clue), Some(defaultPort))
+  def checkUrl(url: URL, clue: String, defaultPort: Int): ResourceCheck = {
+    checkUrl(url, Some(clue), Some(defaultPort))
   }
 
-  def checkUrl(uri: URL, clue: String): ResourceCheck = {
-    checkUrl(uri, Some(clue), None)
+  def checkUrl(url: URL, clue: String): ResourceCheck = {
+    checkUrl(url, Some(clue), None)
   }
 
   def checkUri(uri: URI, defaultPort: Int, clue: String): ResourceCheck = {
@@ -39,9 +33,9 @@ class PortCheck(timeout: FiniteDuration) {
     checkAddress(new InetSocketAddress(address, port), Some(clue))
   }
 
-  def checkUrl(uri: URL, clue: Option[String] = None, defaultPort: Option[Int] = None): ResourceCheck = {
-    val portOrDefault: Int = portFor(uri.getDefaultPort, defaultPort, uri.getPort)
-    checkPort(uri.getHost, portOrDefault, clue)
+  def checkUrl(url: URL, clue: Option[String] = None, defaultPort: Option[Int] = None): ResourceCheck = {
+    val portOrDefault: Int = portFor(url.getDefaultPort, defaultPort, url.getPort)
+    checkPort(url.getHost, portOrDefault, clue)
   }
 
   def checkUri(uri: URI, defaultPort: Int, clue: Option[String] = None): ResourceCheck = {
@@ -57,25 +51,35 @@ class PortCheck(timeout: FiniteDuration) {
     checkAddress(new InetSocketAddress(address, port), clue)
   }
 
-  def checkAddress(address: InetSocketAddress, clue: Option[String] = None): ResourceCheck = {
+  def checkAddress(address: => InetSocketAddress, clue: Option[String] = None): ResourceCheck = {
     try {
-      val socket = new Socket()
+      val evaluatedAddress = address
       try {
-        socket.connect(address, timeout.toMillis.toInt)
-        ResourceCheck.Success()
-      } finally {
-        socket.close()
+        val socket = new Socket()
+        try {
+          socket.connect(evaluatedAddress, timeout.toMillis.toInt)
+          ResourceCheck.Success()
+        } finally {
+          socket.close()
+        }
+      } catch {
+        case t: Throwable =>
+          val message = errorMessage(s"${evaluatedAddress.getHostName}:${evaluatedAddress.getPort}, timeout: $timeout", clue)
+          ResourceCheck.ResourceUnavailable(message, Some(t))
       }
     } catch {
       case t: Throwable =>
-        val message = clue match {
-          case Some(_) =>
-            s"$clue: port check failed on ${address.getHostName}:${address.getPort}, timeout: $timeout"
-          case None =>
-            s"Port check failed on ${address.getHostName}:${address.getPort}, timeout: $timeout"
-        }
-
+        val message = errorMessage(s"unknown address, timeout: $timeout", clue)
         ResourceCheck.ResourceUnavailable(message, Some(t))
+    }
+  }
+
+  private def errorMessage(ctx: String, mbClue: Option[String]): String = {
+    mbClue match {
+      case Some(clue) =>
+        s"Port check of $clue failed on $ctx"
+      case None =>
+        s"Port check failed on $ctx"
     }
   }
 

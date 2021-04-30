@@ -1,10 +1,11 @@
 package izumi.distage.docker.healthcheck
 
-import java.net.{HttpURLConnection, InetAddress, URL}
 import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger
+
+import java.net.{HttpURLConnection, URL}
 
 final class HttpGetCheck[Tag](
   portStatus: HealthCheckResult.GoodOnPorts,
