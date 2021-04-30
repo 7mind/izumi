@@ -1,7 +1,6 @@
 package izumi.fundamentals.platform.integration
 
-import java.net.{InetSocketAddress, Socket, URI, URL}
-
+import java.net.{InetAddress, InetSocketAddress, Socket, URI, URL}
 import scala.concurrent.duration._
 
 /**
@@ -36,6 +35,10 @@ class PortCheck(timeout: FiniteDuration) {
     checkPort(host, port, Some(clue))
   }
 
+  def checkAddressPort(address: InetAddress, port: Int, clue: String): ResourceCheck = {
+    checkAddress(new InetSocketAddress(address, port), Some(clue))
+  }
+
   def checkUrl(uri: URL, clue: Option[String] = None, defaultPort: Option[Int] = None): ResourceCheck = {
     val portOrDefault: Int = portFor(uri.getDefaultPort, defaultPort, uri.getPort)
     checkPort(uri.getHost, portOrDefault, clue)
@@ -47,10 +50,18 @@ class PortCheck(timeout: FiniteDuration) {
   }
 
   def checkPort(host: String, port: Int, clue: Option[String] = None): ResourceCheck = {
+    checkAddress(new InetSocketAddress(host, port), clue)
+  }
+
+  def checkAddressPort(address: InetAddress, port: Int, clue: Option[String] = None): ResourceCheck = {
+    checkAddress(new InetSocketAddress(address, port), clue)
+  }
+
+  def checkAddress(address: => InetSocketAddress, clue: Option[String] = None): ResourceCheck = {
     try {
       val socket = new Socket()
       try {
-        socket.connect(new InetSocketAddress(host, port), timeout.toMillis.toInt)
+        socket.connect(address, timeout.toMillis.toInt)
         ResourceCheck.Success()
       } finally {
         socket.close()
@@ -59,9 +70,9 @@ class PortCheck(timeout: FiniteDuration) {
       case t: Throwable =>
         val message = clue match {
           case Some(_) =>
-            s"$clue: port check failed on $host:$port, timeout: $timeout"
+            s"$clue: port check failed on ${address.getHostName}:${address.getPort}, timeout: $timeout"
           case None =>
-            s"Port check failed on $host:$port, timeout: $timeout"
+            s"Port check failed on ${address.getHostName}:${address.getPort}, timeout: $timeout"
         }
 
         ResourceCheck.ResourceUnavailable(message, Some(t))

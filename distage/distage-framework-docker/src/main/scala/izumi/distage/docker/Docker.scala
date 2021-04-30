@@ -7,17 +7,42 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import pureconfig.ConfigReader
 
+import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Success, Try}
 
 object Docker {
-  final case class AvailablePort(hostV4: String, port: Int)
+  final case class AvailablePort(host: ServiceHost, port: Int)
   object AvailablePort {
-    def local(port: Int): AvailablePort = hostPort("127.0.0.1", port)
-    def hostPort(host: String, port: Int): AvailablePort = AvailablePort(host, port)
+    def local(port: Int): AvailablePort = hostPort(ServiceHost.local, port)
+    def hostPort(host: ServiceHost, port: Int): AvailablePort = AvailablePort(host, port)
   }
 
-  final case class ServicePort(listenOnV4: String, port: Int)
+  final case class ServicePort(host: ServiceHost, port: Int)
+
+  sealed trait ServiceHost {
+    def address: InetAddress
+    def host: String
+    override def toString: String = address.getHostAddress
+  }
+  object ServiceHost {
+    def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
+      case address: Inet4Address => IPv4(address)
+      case address: Inet6Address => IPv6(address)
+    }
+    def apply(hostStr: String): Option[ServiceHost] = Try(InetAddress.getByName(hostStr)) match {
+      case Success(address: Inet4Address) => Some(IPv4(address))
+      case Success(address: Inet6Address) => Some(IPv6(address))
+      case _ => None
+    }
+    final case class IPv4(address: Inet4Address) extends ServiceHost {
+      override def host: String = address.getHostAddress
+    }
+    final case class IPv6(address: Inet6Address) extends ServiceHost {
+      override def host: String = s"[${address.getHostAddress}]"
+    }
+  }
 
   final case class ContainerId(name: String) extends AnyVal {
     override def toString: String = name
@@ -218,10 +243,10 @@ object Docker {
 
   final case class ReportedContainerConnectivity(
     dockerHost: Option[String],
-    containerAddressesV4: Seq[String],
+    containerAddresses: Seq[ServiceHost],
     dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
   ) {
-    override def toString: String = s"{host: $dockerHost; addresses=$containerAddressesV4; ports=$dockerPorts}"
+    override def toString: String = s"{host: $dockerHost; addresses=$containerAddresses; ports=$dockerPorts}"
   }
 
   sealed trait ContainerState
