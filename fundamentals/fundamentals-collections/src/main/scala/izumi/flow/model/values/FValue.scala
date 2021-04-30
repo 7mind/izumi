@@ -1,22 +1,7 @@
-package izumi.flow.schema
+package izumi.flow.model.values
 
-import izumi.flow.schema.FType.{FRecord, FTuple}
-
-sealed trait FType {}
-
-object FType {
-  sealed trait FBuiltin extends FType
-  case object FString extends FBuiltin
-  case object FInt extends FBuiltin
-  case object FBool extends FBuiltin
-  case object FLong extends FBuiltin
-  case object FDouble extends FBuiltin
-
-  case class FField(name: String, tpe: FBuiltin)
-  case class FRecord(name: String, fields: List[FField]) extends FType
-
-  case class FTuple(name: String, tuple: List[FType]) extends FType
-}
+import izumi.flow.model.schema.FType
+import izumi.flow.model.schema.FType.{FRecord, FTuple}
 
 sealed trait FValue {
   def tpe: FType
@@ -32,13 +17,13 @@ object FValue {
   case class FVLong(value: Long) extends FVBuiltin { val tpe: FType.FBuiltin = FType.FLong }
   case class FVDouble(value: Double) extends FVBuiltin { val tpe: FType.FBuiltin = FType.FDouble }
 
-  case class FVField(name: String, value: FVBuiltin) {
+  case class FVField(name: String, value: FValue) {
     def tpe: FType.FField = FType.FField(name, value.tpe)
   }
-  case class FVRecord(name: String, fields: List[FVField], tpe: FRecord) extends FValue {
+  case class FVRecord(fields: List[FVField], tpe: FRecord) extends FValue {
     override def value: Any = List(fields.map(_.value.value))
   }
-  case class FVTuple(name: String, tuple: List[FValue], tpe: FTuple) extends FValue {
+  case class FVTuple(tuple: List[FValue], tpe: FTuple) extends FValue {
     override def value: Any = tuple.map(_.value)
   }
 }

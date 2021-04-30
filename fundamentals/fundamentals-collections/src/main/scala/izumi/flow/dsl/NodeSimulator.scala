@@ -1,6 +1,10 @@
 package izumi.flow.dsl
 
-import izumi.flow.dsl.FlowOp.{PipeOp, SourceOp}
+import izumi.flow.dsl.simulator.components.{NsInterpreter, Registry, StreamBuffer}
+import izumi.flow.dsl.simulator.model.StreamState
+import izumi.flow.dsl.simulator.processing.{MultiProcessor, PipeProcessor, SourceProcessor}
+import izumi.flow.model.flow.FlowOp._
+import izumi.flow.model.flow.{FlowOp, ValueId}
 
 import scala.collection.mutable
 

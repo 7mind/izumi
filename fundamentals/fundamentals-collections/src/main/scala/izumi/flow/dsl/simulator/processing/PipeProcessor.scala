@@ -1,7 +1,10 @@
-package izumi.flow.dsl
+package izumi.flow.dsl.simulator.processing
 
-import izumi.flow.dsl.FlowOp.{FFilter, FMap, MultiOp, PipeOp}
-import izumi.flow.schema.{FType, FValue}
+import izumi.flow.dsl.simulator.components.{NsInterpreter, Registry, StreamBuffer}
+import izumi.flow.dsl.simulator.model.{PollingState, StreamState}
+import izumi.flow.model.flow.FlowOp.{FFilter, FMap, PipeOp}
+import izumi.flow.model.schema.FType
+import izumi.flow.model.values.FValue
 
 class PipeProcessor(op: PipeOp, registry: Registry, buffer: StreamBuffer, nsi: NsInterpreter) extends Processor {
   def process(): PollingState = {

@@ -1,7 +1,10 @@
 package izumi.flow.dsl
 
-import izumi.flow.dsl.FlowOp.{FConstMulti, FFilter, FMap, FZip}
-import izumi.flow.schema.{FType, FValue}
+import izumi.flow.model.expr._
+import izumi.flow.model.flow.FlowOp._
+import izumi.flow.model.flow._
+import izumi.flow.model.schema._
+import izumi.flow.model.values._
 
 object Test {
   val flow1 = Flow(
@@ -14,22 +17,28 @@ object Test {
       ValueId("ints_multiplied", FType.FInt)
     ),
   )
-//  val flow2 = Flow(
-//    List(
-//      FConstMulti(ValueId("ints_1", FType.FInt), List(FValue.FVInt(1), FValue.FVInt(2), FValue.FVInt(3))),
-//      FConstMulti(ValueId("ints_2", FType.FInt), List(FValue.FVInt(6), FValue.FVInt(5), FValue.FVInt(4))),
-//      FZip(List(ValueId("ints_1", FType.FInt), ValueId("ints_1", FType.FInt)), ValueId("ints_zipped", FType.FInt)),
-//      FMap(ValueId("ints_1", FType.FInt), ValueId("ints_multiplied", FType.FInt), FExpr.NashornOp("self * 2", FType.FInt)),
-//    ),
-//    List(
-//      ValueId("ints_multiplied", FType.FInt),
-//      ValueId("ints_zipped", FType.FInt),
-//    ),
-//  )
+  val flow2 = Flow(
+    List(
+      FConstMulti(ValueId("ints_1", FType.FInt), List(FValue.FVInt(1), FValue.FVInt(2), FValue.FVInt(3))),
+      FConstMulti(ValueId("ints_2", FType.FInt), List(FValue.FVInt(6), FValue.FVInt(5), FValue.FVInt(4))),
+      FZip(List(ValueId("ints_1", FType.FInt), ValueId("ints_2", FType.FInt)), ValueId("ints_zipped", FType.FTuple(List(FType.FInt, FType.FInt)))),
+      FMap(ValueId("ints_1", FType.FInt), ValueId("ints_multiplied", FType.FInt), FExpr.NashornOp("self * 2", FType.FInt, FType.FInt)),
+      FMap(
+        ValueId("ints_zipped", FType.FTuple(List(FType.FInt, FType.FInt))),
+        ValueId("ints_tuple_mapped", FType.FTuple(List(FType.FInt, FType.FInt))),
+        FExpr.NashornOp("[self[0] + 10, self[1] * 2]", FType.FTuple(List(FType.FInt, FType.FInt)), FType.FTuple(List(FType.FInt, FType.FInt))),
+      ),
+    ),
+    List(
+      ValueId("ints_multiplied", FType.FInt),
+      ValueId("ints_tuple_mapped", FType.FTuple(List(FType.FInt, FType.FInt))),
+    ),
+  )
 
   def main(args: Array[String]): Unit = {
-    val simulation = new Simulation(flow1)
-    simulation.run()
+//    new Simulation(flow1).run()
+
+    new Simulation(flow2).run()
   }
 
 }

@@ -1,5 +1,8 @@
 package izumi.flow.dsl
 
+import izumi.flow.dsl.simulator.components.Registry
+import izumi.flow.model.flow.{Flow, ValueId}
+
 class Simulation(flow: Flow) extends Registry {
   private val nodes = flow.ops.map(op => (op.output, new NodeSimulator(op, flow.dependees.links(op.output), this, flow.outputs.contains(op.output)))).toMap
 

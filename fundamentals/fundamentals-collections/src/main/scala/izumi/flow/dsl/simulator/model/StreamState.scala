@@ -1,6 +1,6 @@
-package izumi.flow.dsl
+package izumi.flow.dsl.simulator.model
 
-import izumi.flow.schema.FValue
+import izumi.flow.model.values.FValue
 
 sealed trait StreamState
 
