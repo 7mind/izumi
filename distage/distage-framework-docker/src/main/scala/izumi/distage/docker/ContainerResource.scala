@@ -377,9 +377,9 @@ case class ContainerResource[F[_], T](
           case static: DockerPort.Static =>
             Some(toExposedPort(static, static.number))
         }
-        val mappings = exposedPort.toSeq.flatMap(p => Option(network.getPorts.getBindings.get(p))).flatten.map {
+        val mappings = exposedPort.toSeq.flatMap(p => Option(network.getPorts.getBindings.get(p))).flatten.flatMap {
           port =>
-            ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+            ServiceHost(port.getHostIp).map(ServicePort(_, Integer.parseInt(port.getHostPortSpec)))
         }
         (containerPort, NonEmptyList.from(mappings))
     }
@@ -389,7 +389,7 @@ case class ContainerResource[F[_], T](
       Left(UnmappedPorts(unmapped))
     } else {
       val dockerHost = client.rawClientConfig.getDockerHost.getHost
-      val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
+      val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress).flatMap(ServiceHost(_))
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
       Right(

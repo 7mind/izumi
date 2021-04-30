@@ -22,7 +22,7 @@ final class PostgreSqlProtocolCheck[Tag](
           val startupMessage = genStartupMessage()
           val socket = new Socket()
           try {
-            socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
+            socket.connect(new InetSocketAddress(availablePort.host.address, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
             logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
             val out = socket.getOutputStream
             val in = socket.getInputStream

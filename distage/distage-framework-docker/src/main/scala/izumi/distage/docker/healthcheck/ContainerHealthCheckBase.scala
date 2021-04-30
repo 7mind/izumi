@@ -38,7 +38,7 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
 
   protected def findContainerInternalCandidates[T <: DockerPort](container: DockerContainer[Tag], ports: Map[T, NonEmptyList[ServicePort]]): Seq[PortCandidate[T]] = {
     val labels = container.labels
-    val addresses = container.connectivity.containerAddressesV4
+    val addresses = container.connectivity.containerAddresses
     ports.toSeq.flatMap {
       case (mappedPort, _) =>
         // if we have dynamic port then we will try find mapped port number in container labels
@@ -63,8 +63,8 @@ abstract class ContainerHealthCheckBase[Tag] extends ContainerHealthCheck[Tag] {
           .flatMap {
             ib =>
               List(
-                PortCandidate(mappedPort, AvailablePort(container.connectivity.dockerHost.getOrElse("127.0.0.1"), ib.port)),
-                PortCandidate(mappedPort, AvailablePort(ib.listenOnV4, ib.port)),
+                PortCandidate(mappedPort, AvailablePort(container.connectivity.dockerHost.flatMap(ServiceHost(_)).getOrElse(ServiceHost.local), ib.port)),
+                PortCandidate(mappedPort, AvailablePort(ib.host, ib.port)),
               )
           }
     }

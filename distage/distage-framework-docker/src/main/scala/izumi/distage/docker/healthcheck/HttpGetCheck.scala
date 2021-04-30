@@ -1,10 +1,11 @@
 package izumi.distage.docker.healthcheck
 
-import java.net.{HttpURLConnection, URL}
 import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger
+
+import java.net.{HttpURLConnection, URL}
 
 final class HttpGetCheck[Tag](
   portStatus: HealthCheckResult.GoodOnPorts,
@@ -16,7 +17,7 @@ final class HttpGetCheck[Tag](
       portStatus.availablePorts.firstOption(port) match {
         case Some(availablePort) if portStatus.allTCPPortsAccessible =>
           val protocol = if (useHttps) "https" else "http"
-          val url = new URL(s"$protocol://${availablePort.hostV4}:${availablePort.port}")
+          val url = new URL(s"$protocol://${availablePort.host.host}:${availablePort.port}")
           logger.info(s"Checking docker port $port via $url for $container. Will try to establish HTTP connection.")
           try {
             val connection = url.openConnection().asInstanceOf[HttpURLConnection]
