@@ -27,6 +27,9 @@ object Docker {
     override def toString: String = address.getHostAddress
   }
   object ServiceHost {
+    def zeroAddresses: Set[ServiceHost] = {
+      Set(ServiceHost("0.0.0.0"), ServiceHost("::")).flatten
+    }
     def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
       case address: Inet4Address => IPv4(address)
       case address: Inet6Address => IPv6(address)

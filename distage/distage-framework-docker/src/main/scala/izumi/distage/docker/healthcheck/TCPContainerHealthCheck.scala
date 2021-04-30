@@ -25,11 +25,7 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
     val containerCandidates = findContainerInternalCandidates(container, tcpPorts)
 
     val allCandidates = (dockerHostCandidates ++ containerCandidates).distinct
-      .filterNot {
-        c =>
-          val str = c.maybeAvailable.host.toString
-          str == "0.0.0.0" || str == "0:0:0:0:0:0:0:0"
-      }
+      .filterNot(c => ServiceHost.zeroAddresses.contains(c.maybeAvailable.host))
 
     logger.debug(s"going to check ports on $container: ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
 
