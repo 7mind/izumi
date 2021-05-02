@@ -24,26 +24,30 @@ object Docker {
   sealed trait ServiceHost {
     def address: InetAddress
     def host: String
-    override def toString: String = address.getHostAddress
+
+    override final def toString: String = address.getHostAddress
   }
   object ServiceHost {
-    def zeroAddresses: Set[ServiceHost] = {
-      Set(ServiceHost("0.0.0.0"), ServiceHost("::")).flatten
-    }
-    def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
-      case address: Inet4Address => IPv4(address)
-      case address: Inet6Address => IPv6(address)
-    }
-    def apply(hostStr: String): Option[ServiceHost] = Try(InetAddress.getByName(hostStr)) match {
-      case Success(address: Inet4Address) => Some(IPv4(address))
-      case Success(address: Inet6Address) => Some(IPv6(address))
-      case _ => None
-    }
     final case class IPv4(address: Inet4Address) extends ServiceHost {
       override def host: String = address.getHostAddress
     }
     final case class IPv6(address: Inet6Address) extends ServiceHost {
       override def host: String = s"[${address.getHostAddress}]"
+    }
+
+    def apply(hostStr: String): Option[ServiceHost] = Try(InetAddress.getByName(hostStr)) match {
+      case Success(address: Inet4Address) => Some(IPv4(address))
+      case Success(address: Inet6Address) => Some(IPv6(address))
+      case _ => None
+    }
+
+    def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
+      case address: Inet4Address => IPv4(address)
+      case address: Inet6Address => IPv6(address)
+    }
+
+    def zeroAddresses: Set[ServiceHost] = {
+      Set(ServiceHost("0.0.0.0"), ServiceHost("::")).flatten
     }
   }
 
@@ -84,7 +88,6 @@ object Docker {
   sealed abstract class DockerReusePolicy(val reuseEnabled: Boolean, val killEnforced: Boolean)
   object DockerReusePolicy {
     case object ReuseDisabled extends DockerReusePolicy(false, true)
-//    case object ReuseButAlwaysKill extends DockerReusePolicy(true, true)
     case object ReuseEnabled extends DockerReusePolicy(true, false)
 
     implicit val configReader: ConfigReader[DockerReusePolicy] =
@@ -204,8 +207,6 @@ object Docker {
       name match {
         case "ReuseDisabled" | "false" =>
           DockerReusePolicy.ReuseDisabled
-//        case "ReuseButAlwaysKill" =>
-//          DockerReusePolicy.ReuseButAlwaysKill
         case "ReuseEnabled" | "true" =>
           DockerReusePolicy.ReuseEnabled
         case other =>
@@ -223,8 +224,8 @@ object Docker {
   final case class RemoteDockerConfig(
     host: String,
     tlsVerify: Boolean = false,
-    certPath: String,
-    config: String,
+    certPath: String = "/home/user/.docker/certs",
+    config: String = "/home/user/.docker",
   )
 
   final case class DockerRegistryConfig(
