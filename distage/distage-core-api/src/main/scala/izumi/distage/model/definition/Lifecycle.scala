@@ -987,49 +987,43 @@ object Lifecycle extends LifecycleCatsInstances {
     new Lifecycle[F, B] {
       override type InnerResource = AtomicReference[List[() => F[Unit]]]
 
-      private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+      private[this] def extractAppendFinalizer[a](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, a]): F[a] = {
         F.bracket(
-          acquire = lifecycle.acquire.flatMap {
-            a =>
-              F.maybeSuspend {
-                // can't use `.updateAndGet` because of Scala.js
-                var oldValue = finalizers.get()
-                while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
-                  oldValue = finalizers.get()
+          acquire = {
+            val lifecycle = lifecycleCtor()
+            lifecycle.acquire.flatMap {
+              a =>
+                F.maybeSuspend {
+                  // can't use `.updateAndGet` because of Scala.js
+                  var oldValue = finalizers.get()
+                  while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
+                    oldValue = finalizers.get()
+                  }
+                  val doExtract: () => F[a] = {
+                    () => lifecycle.extract[a](a).fold(identity, F.pure)
+                  }
+                  doExtract
                 }
-                a
-              }
+            }
           }
         )(release = _ => F.unit)(
-          use = use
+          use = doExtract => doExtract()
         )
       }
 
-      override def acquire: F[InnerResource] = F.maybeSuspend(new AtomicReference(Nil))
-      override def release(finalizers: InnerResource): F[Unit] = F.suspendF(F.traverse_(finalizers.get())(_.apply()))
-      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
-        def action = bracketAppendFinalizer(finalizers)(self) {
-          inner: self.InnerResource =>
-            self.extract(inner).fold(identity, F.pure)
-        }
-
-        def onSuccess = (a: A) => {
-          val resource = success(a)
-          bracketAppendFinalizer(finalizers)(resource) {
-            inner: resource.InnerResource =>
-              resource.extract[C](inner).fold(identity, F.pure)
-          }
-        }
-
-        def onError = (err: Throwable) => {
-          val resource = failure(err)
-          bracketAppendFinalizer(finalizers)(resource) {
-            inner: resource.InnerResource =>
-              resource.extract[C](inner).fold(identity, F.pure)
-          }
-        }
-
-        F.redeem(action)(onError, onSuccess)
+      override def acquire: F[InnerResource] = {
+        F.maybeSuspend(new AtomicReference(Nil))
+      }
+      override def release(finalizers: InnerResource): F[Unit] = {
+        F.suspendF(F.traverse_(finalizers.get())(_.apply()))
+      }
+      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = {
+        Left(
+          F.redeem[A, C](extractAppendFinalizer(finalizers)(() => self))(
+            failure = e => extractAppendFinalizer(finalizers)(() => failure(e)),
+            success = a => extractAppendFinalizer(finalizers)(() => success(a)),
+          )
+        )
       }
     }
   }
