@@ -94,7 +94,7 @@ object ContainerNetworkDef {
     }
 
     override def release(resource: ContainerNetwork[T]): F[Unit] = {
-      if (Docker.shouldKill(config.reuse, client.clientConfig.globalReuse)) {
+      if (Docker.shouldKillPromptly(config.reuse, client.clientConfig.globalReuse)) {
         F.maybeSuspend {
           logger.info(s"Going to delete ${prefix -> "network"}->${resource.name}:${resource.id}")
           rawClient.removeNetworkCmd(resource.id).exec()

@@ -26,7 +26,7 @@ object PostgresFlyWayDocker extends ContainerDef {
     healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, cfg.user, cfg.password),
   )
 
-  override def config: Config = applyCfg(Cfg.default)(
+  override def config: Config = PostgresFlyWayDocker.applyCfg(Cfg.default)(
     Config(
       image = "library/postgres:12.3",
       ports = Seq(primaryPort),
@@ -47,13 +47,13 @@ object PostgresFlyWayDocker extends ContainerDef {
       mounts = Seq(Mount(cfg.flyWaySqlPath, "/flyway/sql")),
     )
 
-    override def config: Config = applyCfg("localhost", Cfg(""))(
+    override def config: Config = FlyWay.applyCfg("localhost", Cfg(""))(
       Config(
         image = "flyway/flyway:6.0-alpine",
         ports = Seq.empty,
-        healthCheck = ContainerHealthCheck.exited(canBeDestroyed = true),
         reuse = DockerReusePolicy.ReuseEnabled,
         autoRemove = false,
+        healthCheck = ContainerHealthCheck.exitCodeCheck(),
       )
     )
   }

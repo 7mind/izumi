@@ -5,12 +5,13 @@ import com.github.dockerjava.api.exception.NotModifiedException
 import com.github.dockerjava.api.model.Container
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig}
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
-import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
+import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.functional.Value
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString._
@@ -32,10 +33,10 @@ class DockerClientWrapper[F[_]](
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
-  def destroyContainer(containerId: ContainerId, context: ContainerDestroyMeta): F[Unit] = {
-    F.definitelyRecover {
-      F.maybeSuspend {
-        logger.info(s"Going to destroy $containerId ($context)...")
+  def removeContainer(containerId: ContainerId, context: ContainerDestroyMeta, removalReason: RemovalReason): F[Unit] = {
+    F.maybeSuspend {
+      try {
+        logger.info(s"Going to remove $containerId $removalReason ($context)...")
 
         try {
           rawClient
@@ -51,10 +52,11 @@ class DockerClientWrapper[F[_]](
             .discard()
         }
 
-        logger.info(s"Destroyed $containerId ($context)")
+        logger.info(s"Removed $containerId ($context)")
+      } catch {
+        case failure: Throwable =>
+          logger.warn(s"Got failure during container remove $containerId ${failure.stackTrace -> "failure"}")
       }
-    } {
-      failure => F.maybeSuspend(logger.warn(s"Got failure during container destroy $failure"))
     }
   }
 }
@@ -64,7 +66,7 @@ object DockerClientWrapper {
 
   sealed trait ContainerDestroyMeta
   object ContainerDestroyMeta {
-    final case class ParameterizedContainer[T](container: DockerContainer[T]) extends ContainerDestroyMeta {
+    final case class ParameterizedContainer[+Tag](container: DockerContainer[Tag]) extends ContainerDestroyMeta {
       override def toString: String = container.toString
     }
     final case class RawContainer(container: Container) extends ContainerDestroyMeta {
@@ -72,7 +74,14 @@ object DockerClientWrapper {
     }
   }
 
-  class Resource[F[_]](
+  sealed trait RemovalReason
+  object RemovalReason {
+    case object NotReused extends RemovalReason
+    case object NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer extends RemovalReason
+    case object AlreadyExited extends RemovalReason
+  }
+
+  final class Resource[F[_]](
     logger: IzLogger,
     clientConfig: ClientConfig,
     clientFactory: DockerClientFactory,
@@ -131,21 +140,23 @@ object DockerClientWrapper {
             .withLabelFilter(resource.labels.asJava)
             .exec()
         }
-        // destroy all containers that should not be reused or that exited (to not to accumulate containers that could be pruned)
-        containersToDestroy = containers.asScala.filter {
-          c =>
-            Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) ||
-            c.getState == DockerConst.State.exited
-        }
-        _ <- F.traverse_(containersToDestroy) {
+        _ <- F.traverse_(containers.asScala) {
           c: Container =>
-            val id = ContainerId(c.getId)
-            F.definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
-              error =>
-                F.maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+            // destroy all containers that should not be reused or that exited (to not accumulate containers that could be pruned)
+            val notReused = Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(_.asBoolean().contains(false))
+            val removalReason = if (notReused) {
+              Some(RemovalReason.NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer)
+            } else if (c.getState == DockerConst.State.exited) {
+              Some(RemovalReason.AlreadyExited)
+            } else {
+              None
+            }
+            F.traverse_(removalReason) {
+              resource.removeContainer(ContainerId(c.getId), ContainerDestroyMeta.RawContainer(c), _)
             }
         }
-      } yield ()).guarantee(F.maybeSuspend(resource.rawClient.close()))
+      } yield ())
+        .guarantee(F.maybeSuspend(resource.rawClient.close()))
     }
   }
 

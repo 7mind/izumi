@@ -8,7 +8,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
-final case class DockerContainer[Tag](
+final case class DockerContainer[+Tag](
   id: ContainerId,
   name: String,
   hostName: String,

@@ -8,35 +8,11 @@ import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.logstage.api.Log
+import logstage.LogIO2
 import zio.IO
 
-// this tests needed to check mutex for reusable containers during parallel test runs
+// these tests need to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends Spec2[IO] {
-
-  private val maybeBoolean: Option[Boolean] = MacroParameters.sbtIsInsideCI()
-
-  if (!maybeBoolean.getOrElse(false)) {
-
-    "distage test runner should start only one container for reusable" should {
-      "support docker resources" in {
-        // TODO: additionally check flyway outcome with doobie
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
-          for {
-            _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-            _ <- verifier.use(_ => IO.unit)
-          } yield ()
-      }
-
-      "support memoization" in {
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container]) =>
-          for {
-            _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}"))
-            _ <- verifier.use(_ => IO.unit)
-          } yield ()
-      }
-    }
-
-  }
 
   override protected def config: TestConfig = super.config.copy(
     memoizationRoots = Set(DIKey[PgSvcExample]),
@@ -44,6 +20,33 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     parallelEnvs = ParallelLevel.Unlimited,
     logLevel = Log.Level.Info,
   )
+
+  def insideCI: Boolean = MacroParameters.sbtIsInsideCI().getOrElse(false)
+
+  if (!insideCI) {
+
+    "distage test runner should start only one container for reusable" should {
+
+      "support docker resources" in {
+        // TODO: additionally check flyway outcome with doobie
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+          for {
+            _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
+            _ <- verifier.use(_ => IO.unit)
+          } yield ()
+      }
+
+      "support memoization" in {
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+          for {
+            _ <- log.info(s"ports/2: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
+            _ <- verifier.use(_ => IO.unit)
+          } yield ()
+      }
+
+    }
+
+  }
 
 }
 
