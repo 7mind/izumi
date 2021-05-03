@@ -98,8 +98,8 @@ object Docker {
     globalReuse.reuseEnabled && reusePolicy.reuseEnabled
   }
 
-  private[docker] def shouldKill(reusePolicy: DockerReusePolicy, globalReuse: DockerReusePolicy): Boolean = {
-    reusePolicy.killEnforced && globalReuse.killEnforced
+  private[docker] def shouldKillPromptly(reusePolicy: DockerReusePolicy, globalReuse: DockerReusePolicy): Boolean = {
+    reusePolicy.killEnforced || globalReuse.killEnforced
   }
 
   /**
@@ -115,6 +115,9 @@ object Docker {
     * @param reuse    If true and [[ClientConfig#globalReuse]] is also true, keeps container alive after tests.
     *                 If false, the container will be shut down.
     *                 default: true
+    *
+    * @param autoRemove Enable autoremove flag (`--rm`) for spawned docker image, ensures prompt pruning of containers running to completion.
+    *                   Note: must be disabled if you want to use [[ContainerHealthCheck.exitCodeCheck]]
     *
     * @param healthCheck The function to use to test if a container has started already,
     *                    by default probes to check if all [[ports]] are open and proceeds if so.
@@ -140,10 +143,10 @@ object Docker {
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
     *
-    * @param autoPull Automatically pull the image if it does not exists before starting the container
-    *                 default: true
+    * @param autoPull Pull the image if it does not exists before starting the container.
+    *                 default: true, should only be disabled if you absolutely must manage the image manually.
     */
-  final case class ContainerConfig[T](
+  final case class ContainerConfig[+Tag](
     image: String,
     ports: Seq[DockerPort],
     name: Option[String] = None,
@@ -159,7 +162,7 @@ object Docker {
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.portCheck[T],
+    healthCheck: ContainerHealthCheck = ContainerHealthCheck.portCheck,
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
     autoPull: Boolean = true,
   ) {
@@ -256,8 +259,7 @@ object Docker {
   sealed trait ContainerState
   object ContainerState {
     case object Running extends ContainerState
-    case object SuccessfullyExited extends ContainerState
     case object NotFound extends ContainerState
-    final case class Failed(status: Long) extends ContainerState
+    final case class Exited(status: Long) extends ContainerState
   }
 }
