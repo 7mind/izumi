@@ -370,7 +370,6 @@ import scala.util.{Failure, Success, Try}
             Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
         }
       }
-      Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
     }
   }
 
