@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.{Activation, DIKey, Injector, Roots}
+import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
 import izumi.distage.fixtures.PlanVerifierCases._
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ConflictResolutionException
@@ -14,6 +14,63 @@ import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
+  "Verifier handles resources (uniform case, Roots.Everything)" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
+      make[Int].tagged(Axis1.B).fromResource(Lifecycle.makeSimple(2)(_ => ()))
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.Everything, Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+  
+  "Verifier handles resources (non-uniform case, Roots.Everything)" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
+      make[Int].tagged(Axis1.B).fromResource(new Lifecycle.Basic[Identity, Int] {
+        override def acquire: Identity[Int] = 1
+
+        override def release(resource: Int): Identity[Unit] = ()
+
+      })
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.Everything, Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
+  "Verifier handles resources (uniform case)" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
+      make[Int].tagged(Axis1.B).fromResource(Lifecycle.makeSimple(2)(_ => ()))
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Int], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
+  "Verifier handles resources (non-uniform case)" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
+      make[Int].tagged(Axis1.B).fromResource(new Lifecycle.Basic[Identity, Int] {
+        override def acquire: Identity[Int] = 1
+
+        override def release(resource: Int): Identity[Unit] = ()
+
+      })
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Int], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
 
   "Verifier handles simple axis" in {
     import PlanVerifierCase1._
@@ -130,7 +187,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.head.asInstanceOf[UnsolvableConflict].key == DIKey[Fork1])
     assert(
       result.issues.get.head.asInstanceOf[UnsolvableConflict].ops.map(_._2) ==
-      NonEmptySet(Set(Axis1.A), Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint))
+        NonEmptySet(Set(Axis1.A), Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint))
     )
   }
 
@@ -157,10 +214,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.map(_.asInstanceOf[UnsolvableConflict].key) == NonEmptySet(DIKey[Fork2]))
     assert(
       result.issues.get.map(_.asInstanceOf[UnsolvableConflict].ops.map(_._2)) ==
-      NonEmptySet(
-        NonEmptySet(Set(Axis1.A), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
-        NonEmptySet(Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
-      )
+        NonEmptySet(
+          NonEmptySet(Set(Axis1.A), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
+          NonEmptySet(Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
+        )
     )
   }
 
@@ -188,7 +245,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.head.asInstanceOf[UnsolvableConflict].key == DIKey[Fork1])
     assert(
       result.issues.get.head.asInstanceOf[UnsolvableConflict].ops.map(_._2) ==
-      NonEmptySet(Set(Axis2.C), Set(Axis2.D), Set(Axis3.E), Set(Axis3.F)).map(_.map(_.toAxisPoint))
+        NonEmptySet(Set(Axis2.C), Set(Axis2.D), Set(Axis3.E), Set(Axis3.F)).map(_.map(_.toAxisPoint))
     )
   }
 
@@ -214,7 +271,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
-//    assert(result.issues.size == 99)
+    //    assert(result.issues.size == 99)
   }
 
   "Verifier flags shadowed defaults (overridden by all other activations)" in {
