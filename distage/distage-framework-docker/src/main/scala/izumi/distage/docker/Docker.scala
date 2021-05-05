@@ -41,9 +41,11 @@ object Docker {
       case _ => None
     }
 
-    def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
-      case address: Inet4Address => IPv4(address)
-      case address: Inet6Address => IPv6(address)
+    // we will try to find local host address or will return default 127.0.0.1
+    def local: ServiceHost = Try(InetAddress.getLocalHost) match {
+      case Success(address: Inet4Address) => IPv4(address)
+      case Success(address: Inet6Address) => IPv6(address)
+      case _ => IPv4(InetAddress.getByName("127.0.0.1").asInstanceOf[Inet4Address])
     }
 
     def zeroAddresses: Set[ServiceHost] = {

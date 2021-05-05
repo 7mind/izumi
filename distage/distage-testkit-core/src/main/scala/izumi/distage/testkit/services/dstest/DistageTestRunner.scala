@@ -470,6 +470,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
           }
+        // TODO: workaround to handle integration exceptions thrown by DockerWrapper and ContainerResorce
+        case (ProvisioningIntegrationException(failures), _) =>
+          F.maybeSuspend {
+            reporter.testStatus(test.meta, TestStatus.Ignored(failures))
+          }
         case (_, getTrace) =>
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
