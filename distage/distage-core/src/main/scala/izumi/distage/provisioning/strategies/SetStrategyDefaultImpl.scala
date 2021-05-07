@@ -13,7 +13,7 @@ import scala.collection.Iterable
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
     // target is guaranteed to be a Set
-    val scalaCollectionSetType = SafeType.get[collection.Set[_]]
+    val scalaCollectionSetType = SafeType.get[collection.Set[?]]
 
     val keyType = op.target.tpe.tag.typeArgs.headOption.getOrElse {
       throw new IncompatibleTypesException("Expected to be a set type but has no parameters", scalaCollectionSetType, op.target.tpe)

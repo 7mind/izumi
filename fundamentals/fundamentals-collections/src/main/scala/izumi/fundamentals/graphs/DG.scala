@@ -4,7 +4,7 @@ import GraphProperty._
 import GraphImpl._
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
-final case class DG[N, M] private (
+final case class DG[N, M] private[izumi] (
   successors: IncidenceMatrix[N],
   predecessors: IncidenceMatrix[N],
   meta: GraphMeta[N, M],

@@ -41,8 +41,8 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   }
 }
 
-final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, ?]] {
-  override lazy val clock: effect.Clock[IO[E, ?]] = new effect.Clock[IO[E, ?]] {
+final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, _]] {
+  override lazy val clock: effect.Clock[IO[E, _]] = new effect.Clock[IO[E, _]] {
     override def monotonic(unit: TimeUnit): IO[E, Long] =
       zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
 

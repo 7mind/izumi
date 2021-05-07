@@ -4,7 +4,7 @@ import java.lang.reflect.{Constructor, Field}
 
 object TypeUtil {
 
-  def isAssignableFrom(superClass: Class[_], obj: Any): Boolean = {
+  def isAssignableFrom(superClass: Class[?], obj: Any): Boolean = {
     def instanceClass = obj.getClass
 
     if (obj == null) {
@@ -30,7 +30,7 @@ object TypeUtil {
     }
   }
 
-  final def defaultValue(clazz: Class[_]): Any = {
+  final def defaultValue(clazz: Class[?]): Any = {
     if (clazz == classOf[java.lang.Integer] || clazz == classOf[Int]) {
       0: Int
     } else if (clazz == classOf[java.lang.Float] || clazz == classOf[Float]) {
@@ -52,7 +52,7 @@ object TypeUtil {
     }
   }
 
-  final def isObject(clazz: Class[_]): Option[Field] = {
+  final def isObject(clazz: Class[?]): Option[Field] = {
     val name = clazz.getName
     if ((name ne null) && name.endsWith("$")) {
       try {
@@ -66,11 +66,11 @@ object TypeUtil {
     }
   }
 
-  final def isZeroArgClass(clazz: Class[_]): Option[Constructor[_]] = {
+  final def isZeroArgClass(clazz: Class[?]): Option[Constructor[?]] = {
     clazz.getDeclaredConstructors.find(_.getParameterCount == 0)
   }
 
-  @inline final def instantiateObject[T](clazz: Class[_]): T = {
+  @inline final def instantiateObject[T](clazz: Class[?]): T = {
     clazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
@@ -78,15 +78,15 @@ object TypeUtil {
     field.get(null).asInstanceOf[T]
   }
 
-  @inline final def instantiateZeroArgClass[T](clazz: Class[_]): Option[T] = {
+  @inline final def instantiateZeroArgClass[T](clazz: Class[?]): Option[T] = {
     isZeroArgClass(clazz).map(instantiateZeroArgClass[T])
   }
 
-  @inline final def instantiateZeroArgClass[T](ctor: Constructor[_]): T = {
+  @inline final def instantiateZeroArgClass[T](ctor: Constructor[?]): T = {
     ctor.newInstance().asInstanceOf[T]
   }
 
-  final def isAnonymous(clazz: Class[_]): Boolean = {
+  final def isAnonymous(clazz: Class[?]): Boolean = {
     clazz.isAnonymousClass ||
     clazz.getName.contains("$anon$") // On Java 8 `.isAnonymousClass` returns false for Scala's anonymous classes, work around it with name matching
   }

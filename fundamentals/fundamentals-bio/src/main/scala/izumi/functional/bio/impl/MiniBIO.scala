@@ -80,7 +80,7 @@ sealed trait MiniBIO[+E, +A] {
             case t: Throwable =>
               Exit.Termination(t, Trace.empty)
           }
-        val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[_, _, _, _]])
+        val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[?, ?, ?, ?]])
         catcher match {
           case value :: stackRest =>
             runner(value.asInstanceOf[Catcher[Any, Any, Any, Any]].recover(err), stackRest)

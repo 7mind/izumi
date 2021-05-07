@@ -11,12 +11,12 @@ import izumi.logstage.api.IzLogger
 abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
   protected def perform(
     logger: IzLogger,
-    container: DockerContainer[_],
+    container: DockerContainer[?],
     tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
     udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
   ): HealthCheckResult
 
-  override final def check(logger: IzLogger, container: DockerContainer[_], state: ContainerState): HealthCheckResult = {
+  override final def check(logger: IzLogger, container: DockerContainer[?], state: ContainerState): HealthCheckResult = {
     HealthCheckResult.onRunning(state) {
       val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
         container.connectivity.dockerPorts.collect {
@@ -34,7 +34,7 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
     }
   }
 
-  protected def findContainerInternalCandidates[P <: DockerPort](container: DockerContainer[_], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
+  protected def findContainerInternalCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
     val labels = container.labels
     val addresses = container.connectivity.containerAddresses
     ports.toSeq.flatMap {
@@ -54,7 +54,7 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
     }
   }
 
-  protected def findDockerHostCandidates[P <: DockerPort](container: DockerContainer[_], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
+  protected def findDockerHostCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
     ports.toSeq.flatMap {
       case (mappedPort, internalBindings) =>
         internalBindings.toList.flatMap {
@@ -67,7 +67,7 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
     }
   }
 
-  protected def tcpPortsGood(container: DockerContainer[_], good: AvailablePorts): Boolean = {
+  protected def tcpPortsGood(container: DockerContainer[?], good: AvailablePorts): Boolean = {
     val tcpPorts = container.containerConfig.tcpPorts
     tcpPorts.diff(good.availablePorts.toMap.keySet).isEmpty
   }

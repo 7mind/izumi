@@ -97,7 +97,7 @@ object LocatorDef {
       addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_, key))
   }
 
-  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[_])
+  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[?])
     extends BindDSLBase[T, BindDSLNamedAfterFrom[T]]
     with BindDSLMutBase[T] {
     override protected def bind(impl: ImplDef): BindDSLNamedAfterFrom[T] =
@@ -109,7 +109,7 @@ object LocatorDef {
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
   }
 
-  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.IdKey[_]) extends BindDSLMutBase[T]
+  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.IdKey[?]) extends BindDSLMutBase[T]
   final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef, override protected val key: DIKey) extends BindDSLMutBase[T]
 
   sealed trait BindDSLMutBase[T] {

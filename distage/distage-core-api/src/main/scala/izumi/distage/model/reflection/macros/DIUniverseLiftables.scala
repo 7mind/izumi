@@ -21,8 +21,8 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       """
   }
 
-  protected[this] implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
-    case idKey: DIKey.IdKey[_] =>
+  protected[this] implicit val liftableIdKey: Liftable[DIKey.IdKey[?]] = {
+    case idKey: DIKey.IdKey[?] =>
       val lifted = idKey.idContract.liftable(idKey.id)
       q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
   }

@@ -15,7 +15,7 @@ final class PostgreSqlProtocolCheck(
   userName: String,
   databaseName: String,
 ) extends ContainerHealthCheck {
-  override def check(logger: IzLogger, container: DockerContainer[_], state: ContainerState): HealthCheckResult = {
+  override def check(logger: IzLogger, container: DockerContainer[?], state: ContainerState): HealthCheckResult = {
     HealthCheckResult.onRunning(state) {
       portStatus.availablePorts.firstOption(port) match {
         case Some(availablePort) if portStatus.allTCPPortsAccessible =>

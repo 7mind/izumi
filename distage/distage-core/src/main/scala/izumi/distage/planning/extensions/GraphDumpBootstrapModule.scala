@@ -9,7 +9,7 @@ import izumi.distage.model.planning.PlanningObserver
   * @see [[https://izumi.7mind.io/distage/debugging#graphviz-rendering GraphViz Rendering]]
   */
 class GraphDumpBootstrapModule extends BootstrapModuleDef {
-  // note: GraphDumpObserver doesn't work on Scala.js [due to file IO?]
+  // note: GraphDumpObserver doesn't work on Scala.js [due to file IO_]
   many[PlanningObserver]
     .add[GraphDumpObserver]
 }

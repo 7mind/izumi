@@ -163,7 +163,7 @@ object Docker {
     cwd: Option[String] = None,
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
-    networks: Set[ContainerNetwork[_]] = Set.empty,
+    networks: Set[ContainerNetwork[?]] = Set.empty,
     reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),

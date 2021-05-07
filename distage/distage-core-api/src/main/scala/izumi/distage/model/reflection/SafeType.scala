@@ -6,7 +6,7 @@ import izumi.reflect.{Tag, TagK, WeakTag}
 
 final case class SafeType private (
   tag: LightTypeTag,
-  /*private[distage] val */ cls: Class[_],
+  /*private[distage] val */ cls: Class[?],
 ) {
   override def toString: String = tag.repr
 

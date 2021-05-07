@@ -35,7 +35,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
   final class ResourceEmptyHasImpl[F[+_, +_]: Applicative2](
     d1: Dependency1
-  ) extends Lifecycle.LiftF[F[Throwable, ?], Trait1](
+  ) extends Lifecycle.LiftF[F[Throwable, _], Trait1](
       F.pure(trait1(d1))
     )
 
@@ -221,7 +221,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
         make[Dependency2]
         make[Dependency3]
         addImplicit[Local3[F]]
-        addImplicit[Applicative2[F[Any, +?, +?]]]
+        addImplicit[Applicative2[F[Any, +_, +_]]]
         make[Trait3 { def dep1: Dependency1 }].fromHas(
           (d3: Dependency3) =>
             (for {
@@ -234,10 +234,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
             }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3]
         )
         make[Trait2].fromHas[ResourceHasImpl[F]]
-        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
+        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
 
         many[Trait2].addHas[ResourceHasImpl[F]]
-        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
+        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
       })
 
       val injector = mkNoCyclesInjector()

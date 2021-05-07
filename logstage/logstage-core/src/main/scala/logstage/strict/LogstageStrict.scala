@@ -11,17 +11,17 @@ trait LogstageStrict {
   type LogBIOEnvStrictInstance[F[-_, +_, +_]] = LogIO3AskStrict.LogIO3AskStrictImpl[F]
 
   @deprecated("renamed to LogIO2Strict", "1.0")
-  type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, ?]]
+  type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, _]]
   @deprecated("renamed to LogIO2Strict", "1.0")
   lazy val LogBIOStrict: LogIO2Strict.type = LogIO2Strict
 
   @deprecated("renamed to LogIO3Strict", "1.0")
-  type LogBIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, ?]]
+  type LogBIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, _]]
   @deprecated("renamed to LogIO3Strict", "1.0")
   lazy val LogBIO3Strict: LogIO3Strict.type = LogIO3Strict
 
   @deprecated("renamed to LogIO3AskStrict", "1.0")
-  type LogBIOEnvStrict[F[_, _, _]] = LogIOStrict[F[Has[LogIO3Strict[F]], Nothing, ?]]
+  type LogBIOEnvStrict[F[_, _, _]] = LogIOStrict[F[Has[LogIO3Strict[F]], Nothing, _]]
   @deprecated("renamed to LogIO3AskStrict", "1.0")
   lazy val LogBIOEnvStrict: LogIO3AskStrict.type = LogIO3AskStrict
 }

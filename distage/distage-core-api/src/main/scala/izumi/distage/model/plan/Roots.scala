@@ -35,10 +35,10 @@ object Roots {
   def apply(root: DIKey, roots: DIKey*): Roots = {
     Roots.Of(NonEmptySet(root, roots: _*))
   }
-  def apply(roots: NonEmptySet[_ <: DIKey]): Roots = {
+  def apply(roots: NonEmptySet[? <: DIKey]): Roots = {
     Roots.Of(roots.widen)
   }
-  def apply(roots: Set[_ <: DIKey])(implicit d: DummyImplicit): Roots = {
+  def apply(roots: Set[? <: DIKey])(implicit d: DummyImplicit): Roots = {
     require(roots.nonEmpty, "GC roots set cannot be empty")
     Roots.Of(NonEmptySet.from(roots).get.widen)
   }

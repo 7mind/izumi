@@ -24,7 +24,7 @@ It shows how to write an idiomatic `distage` application from scratch and how to
 add to distage-example
 
 - how to setup graalvm native image with distage
-- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there???]
+- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there??_]
 */
 ```
 

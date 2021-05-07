@@ -81,7 +81,7 @@ class ProxyStrategyDefaultImpl(
     makeProxy.op match {
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-        SafeType.get[FakeSet[_]]
+        SafeType.get[FakeSet[?]]
       case op: WiringOp.CallProvider =>
         op.target.tpe
       case op: MonadicOp.AllocateResource =>

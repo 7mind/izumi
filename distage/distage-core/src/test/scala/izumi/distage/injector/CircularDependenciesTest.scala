@@ -153,7 +153,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(instanceTypes == planTypes)
 
     // whitebox test: ensure that plan ops are in a non-lazy collection
-    assert(plan.steps.isInstanceOf[Vector[_]])
+    assert(plan.steps.isInstanceOf[Vector[?]])
   }
 
   "support by-name circular dependencies" in {

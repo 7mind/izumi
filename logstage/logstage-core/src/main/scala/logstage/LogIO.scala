@@ -18,7 +18,7 @@ trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with 
 
   final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
 
-  override def widen[G[_]](implicit @unused ev: F[_] <:< G[_]): LogIO[G] = this.asInstanceOf[LogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
 object LogIO {
@@ -64,8 +64,8 @@ object LogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, ?]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, _]] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[?] <:< G[?]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
     def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {

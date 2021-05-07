@@ -5,7 +5,7 @@ import mdoc.{PostModifier, PostModifierContext}
 class FakePackageModifier extends PostModifier {
   override val name = "fakepackage"
   override def process(ctx: PostModifierContext): String = {
-    val regex = "\"fakepackage (.+?)\": Unit"
+    val regex = "\"fakepackage (.+_)\": Unit"
 
     val silent = ctx.info.contains("silent")
 

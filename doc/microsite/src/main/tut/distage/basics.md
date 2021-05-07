@@ -6,7 +6,7 @@
 
 ```scala mdoc:reset:invisible:to-string
 // ##### New overview
-// (sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
+// (sentence-two per concept + link to details [or inline expand? or these should just be chapters_])
 //
 // ###### Concepts
 // ####### ModuleDef
@@ -230,7 +230,7 @@ It shows how to write an idiomatic `distage`-style from scratch and how to:
 add to distage-example
 
 - how to setup graalvm native image with distage
-- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there???]
+- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there??_]
 */
 ```
 
@@ -612,9 +612,9 @@ val catsEffectHello = polymorphicHelloWorld[cats.effect.IO]
 
 val monixHello = polymorphicHelloWorld[monix.eval.Task]
 
-val zioHello = polymorphicHelloWorld[zio.IO[Throwable, ?]]
+val zioHello = polymorphicHelloWorld[zio.IO[Throwable, _]]
 
-val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, ?]]
+val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, _]]
 ```
 
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for implementation details. For details on
@@ -1421,24 +1421,24 @@ import zio.RIO
 import zio.console.{Console, getStrLn, putStrLn}
 import distage.Activation
 
-object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
+object RealInteractionZIO extends Interaction[RIO[Console, _]] {
   def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
   def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
 def RealInterpretersZIO = {
-  SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
-    make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
+  SyncInterpreters[RIO[Console, _]] overriddenBy new ModuleDef {
+    make[Interaction[RIO[Console, _]]].from(RealInteractionZIO)
   }
 }
 
 def chooseInterpreters(isDummy: Boolean) = {
-  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
+  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, _]]
                      else         RealInterpretersZIO
-  def module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  def module = ProgramModule[RIO[Console, _]] ++ interpreters
 
-  Injector[RIO[Console, ?]]()
-    .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
+  Injector[RIO[Console, _]]()
+    .produceGet[TaglessProgram[RIO[Console, _]]](module, Activation.empty)
 }
 
 // execute

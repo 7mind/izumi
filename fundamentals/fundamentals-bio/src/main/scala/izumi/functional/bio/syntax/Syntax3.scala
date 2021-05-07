@@ -292,7 +292,7 @@ object Syntax3 {
   }
 
   final class LocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: Local3[FR]) {
-    @inline final def toKleisli: Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
+    @inline final def toKleisli: Kleisli[FR[Any, E, _], R, A] = F.toKleisli(r)
   }
 
   trait ImplicitPuns extends ImplicitPuns1 {

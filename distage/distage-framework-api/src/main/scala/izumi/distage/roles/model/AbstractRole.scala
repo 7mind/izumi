@@ -27,7 +27,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * import logstage.LogIO2.log
     *
     * final class HelloService[F[+_, +_]: IO2: LogIO2] extends RoleService[F] {
-    *   def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F[Nothing, ?], Unit] = {
+    *   def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F[Nothing, _], Unit] = {
     *     Lifecycle.fork_(helloServer).void
     *   }
     *

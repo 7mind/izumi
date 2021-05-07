@@ -13,12 +13,12 @@ trait Provider {
   def fun: Seq[Any] => Any
   def providerType: ProviderType
 
-  def unsafeApply(refs: Seq[TypedRef[_]]): Any = {
+  def unsafeApply(refs: Seq[TypedRef[?]]): Any = {
     val args = verifyArgs(refs)
     fun(args)
   }
 
-  def unsafeMap(newRet: SafeType, f: Any => _): Provider
+  def unsafeMap(newRet: SafeType, f: Any => ?): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
   def addUnused(keys: Iterable[DIKey]): Provider
   def replaceKeys(f: DIKey => DIKey): Provider
@@ -40,7 +40,7 @@ trait Provider {
     "π:" + providerType.toString
   }
 
-  protected[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
+  protected[this] def verifyArgs(refs: Seq[TypedRef[?]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters
       .zip(refs).map {
         case (param, TypedRef(v, tpe, isByName)) =>
@@ -95,10 +95,10 @@ object Provider {
     def this(parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) =
       this(parameters, ret, fun, fun, providerType)
 
-    override def unsafeApply(refs: Seq[TypedRef[_]]): A =
+    override def unsafeApply(refs: Seq[TypedRef[?]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
 
-    override def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
+    override def unsafeMap(newRet: SafeType, f: Any => ?): ProviderImpl[?] =
       copy(
         ret = newRet,
         originalFun = f,
