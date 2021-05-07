@@ -6,15 +6,6 @@ import scala.reflect.macros.blackbox
 
 object ReflectionUtil {
 
-  def deannotate[U <: SingletonUniverse](typ: U#Type): U#Type = {
-    typ match {
-      case t: U#AnnotatedTypeApi =>
-        t.underlying
-      case _ =>
-        typ
-    }
-  }
-
   /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
     * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
     * So we just strip it when we get it.
@@ -119,10 +110,6 @@ object ReflectionUtil {
     go(targetType).distinct
   }
 
-  def kindOf(tpe: Universe#Type): Kind = {
-    Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
-  }
-
   def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
     findStringLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
   }
@@ -132,11 +119,6 @@ object ReflectionUtil {
       case l: Universe#LiteralApi if l.value.value.isInstanceOf[String] =>
         l.value.value.asInstanceOf[String]
     }.headOption
-  }
-
-  final case class Kind(args: List[Kind]) {
-    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
-    override def toString: String = format("_")
   }
 
 }
