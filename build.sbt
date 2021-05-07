@@ -17,7 +17,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -76,7 +76,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -93,12 +93,15 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -109,7 +112,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -153,7 +156,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -212,7 +215,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -229,12 +232,15 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -245,7 +251,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -268,7 +274,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -327,7 +333,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -344,12 +350,15 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -360,7 +369,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -405,7 +414,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -464,7 +473,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -481,12 +490,15 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -497,7 +509,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -536,7 +548,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -595,7 +607,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -612,12 +624,15 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -628,7 +643,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -662,7 +677,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -721,7 +736,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -738,12 +753,15 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -754,7 +772,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -781,7 +799,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -840,7 +858,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -857,12 +875,15 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -873,7 +894,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -899,7 +920,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -958,7 +979,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -975,12 +996,15 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -991,7 +1015,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1011,7 +1035,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1070,7 +1094,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1087,12 +1111,15 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1103,7 +1130,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1136,7 +1163,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1195,7 +1222,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1212,12 +1239,15 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1228,7 +1258,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1251,7 +1281,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1310,7 +1340,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1327,12 +1357,15 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1343,7 +1376,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1374,7 +1407,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1433,7 +1466,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1450,12 +1483,15 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1466,7 +1502,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1492,7 +1528,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1551,7 +1587,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1568,12 +1604,15 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1584,7 +1623,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1631,7 +1670,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1690,7 +1729,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1707,12 +1746,15 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1723,7 +1765,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1748,7 +1790,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1807,7 +1849,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1824,12 +1866,15 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1840,7 +1885,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1863,7 +1908,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1922,7 +1967,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1939,12 +1984,15 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1955,7 +2003,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1991,7 +2039,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2050,7 +2098,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2067,12 +2115,15 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2083,7 +2134,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2136,7 +2187,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2195,7 +2246,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2212,12 +2263,15 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2228,7 +2282,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2250,7 +2304,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2309,7 +2363,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2326,12 +2380,15 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2342,7 +2399,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2375,7 +2432,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2434,7 +2491,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2451,12 +2508,15 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2467,7 +2527,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2495,7 +2555,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2554,7 +2614,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2571,12 +2631,15 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2587,7 +2650,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2613,7 +2676,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2672,7 +2735,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2689,12 +2752,15 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2705,7 +2771,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2728,7 +2794,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2787,7 +2853,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2804,12 +2870,15 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2820,7 +2889,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2847,7 +2916,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2906,7 +2975,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2923,12 +2992,15 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2939,7 +3011,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2993,7 +3065,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3052,7 +3124,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3069,12 +3141,15 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3085,7 +3160,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3224,7 +3299,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3241,12 +3316,15 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
+        "-Wunused:-synthetics",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3257,7 +3335,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3272,7 +3350,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3294,7 +3372,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3316,7 +3394,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3340,7 +3418,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3364,7 +3442,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3381,7 +3459,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3398,7 +3476,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3412,7 +3490,7 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3448,7 +3526,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
+      "2.13.6-bin-SNAPSHOT",
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3495,7 +3573,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.13.6-bin-SNAPSHOT",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
