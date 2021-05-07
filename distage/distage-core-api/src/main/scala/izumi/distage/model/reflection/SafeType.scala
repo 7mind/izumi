@@ -4,7 +4,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.macrortti.LightTypeTag
 import izumi.reflect.{Tag, TagK, WeakTag}
 
-final case class SafeType private (
+final case class SafeType private[izumi] (
   tag: LightTypeTag,
   /*private[distage] val */ cls: Class[?],
 ) {
