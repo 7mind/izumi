@@ -231,6 +231,7 @@ object Izumi {
           SettingKey(Some(scala213), None) := (Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics",
             "-Xsource:3",
+            "-P:kind-projector:underscore-placeholders",
           )),
           SettingKey.Default := Const.EmptySeq,
         ),
