@@ -229,12 +229,14 @@ object Izumi {
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := (Defaults.Scala213Options ++ Seq[Const](
-            "-Wunused:-synthetics"
+            "-Wunused:-synthetics",
+            "-Xsource:3",
           )),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
