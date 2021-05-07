@@ -78,7 +78,7 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
 
   def traitConstructorAssertion(targetType: Type): Unit = {
     ReflectionUtil
-      .deepIntersectionTypeMembers[c.universe.type](targetType)
+      .deepIntersectionTypeMembers(c.universe: c.universe.type)(targetType)
       .find(tpe => tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal)
       .foreach {
         err =>
@@ -258,7 +258,7 @@ abstract class ConstructorMacrosBase {
     constructorParameters: List[List[Tree]],
     methodImpls: List[Tree],
   ): Tree = {
-    val parents = ReflectionUtil.deepIntersectionTypeMembers[u.u.type](targetType)
+    val parents = ReflectionUtil.deepIntersectionTypeMembers(u.u: u.u.type)(targetType)
     parents match {
       case parent :: Nil if parent.typeSymbol.isClass && !parent.typeSymbol.asClass.isTrait =>
         if (methodImpls.isEmpty) {

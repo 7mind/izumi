@@ -128,7 +128,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     if (tpe.typeSymbol.isStatic) {
       None
     } else {
-      val typeRef = ReflectionUtil.toTypeRef[u.u.type](tpe)
+      val typeRef = ReflectionUtil.toTypeRef(u.u: u.u.type)(tpe)
       typeRef
         .map(_.pre)
         .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
