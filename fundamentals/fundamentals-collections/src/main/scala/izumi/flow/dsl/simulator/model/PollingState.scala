@@ -1,3 +1,5 @@
 package izumi.flow.dsl.simulator.model
 
-case class PollingState(finished: Boolean)
+import izumi.flow.dsl.simulator.processing.NodeState
+
+case class PollingState(node: NodeState, finished: Boolean)

@@ -16,7 +16,7 @@ class MultiProcessor(op: MultiOp, registry: Registry, buffer: StreamBuffer) exte
     op.inputs.foreach(i => acc.getOrElseUpdate(i, mutable.ArrayBuffer.empty[FValue]))
   }
 
-  override def process(): PollingState = {
+  override def process(state: NodeState): PollingState = {
     //val it = op.input.tpe.asInstanceOf[FType.FStream].tpe
     val outt = op.output.tpe.asInstanceOf[FType.FStream].tpe
     op match {
@@ -42,7 +42,7 @@ class MultiProcessor(op: MultiOp, registry: Registry, buffer: StreamBuffer) exte
                   case StreamState.StreamFinished =>
                   // we need to process accumulated data and exit
                   case StreamState.StreamErrored() =>
-                    return PollingState(false)
+                    return PollingState(state, finished = false)
                 }
               case StreamState.ChunkNotReady =>
               // we need to wait until we accumulate enough inputs
@@ -63,15 +63,15 @@ class MultiProcessor(op: MultiOp, registry: Registry, buffer: StreamBuffer) exte
         }
 
         val (n, r) = if (inputsFinished && acc.exists(_._2.nonEmpty)) {
-          (List(StreamState.StreamErrored()), PollingState(true))
+          (List(StreamState.StreamErrored()), PollingState(state, finished = true))
         } else if (inputsFinished) {
-          (List(StreamState.StreamFinished), PollingState(true))
+          (List(StreamState.StreamFinished), PollingState(state, finished = true))
         } else {
 
           (
             if (ns.nonEmpty) { List.empty }
             else { List(StreamState.ChunkNotReady) },
-            PollingState(false),
+            PollingState(state, finished = false),
           )
         }
 

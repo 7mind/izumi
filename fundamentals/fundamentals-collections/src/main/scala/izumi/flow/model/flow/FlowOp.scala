@@ -24,6 +24,7 @@ object FlowOp {
 
   case class FMap(input: ValueId, output: ValueId, expr: FExpr) extends PipeOp
   case class FFilter(input: ValueId, output: ValueId, expr: FExpr) extends PipeOp
+  case class FFold(input: ValueId, output: ValueId, initial: FValue, expr: FExpr) extends PipeOp
 
   case class FZip(inputs: List[ValueId], output: ValueId) extends MultiOp
 }

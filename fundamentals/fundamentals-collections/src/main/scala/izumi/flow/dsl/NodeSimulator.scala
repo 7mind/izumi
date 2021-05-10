@@ -2,7 +2,7 @@ package izumi.flow.dsl
 
 import izumi.flow.dsl.simulator.components.{NsInterpreter, Registry, StreamBuffer}
 import izumi.flow.dsl.simulator.model.StreamState
-import izumi.flow.dsl.simulator.processing.{MultiProcessor, PipeProcessor, SourceProcessor}
+import izumi.flow.dsl.simulator.processing.{MultiProcessor, NodeState, PipeProcessor, SourceProcessor}
 import izumi.flow.model.flow.FlowOp._
 import izumi.flow.model.flow.{FlowOp, ValueId}
 
@@ -29,10 +29,13 @@ class NodeSimulator(op: FlowOp, clients: Set[ValueId], registry: Registry, isOut
     new Thread(
       new Runnable {
         override def run(): Unit = {
+          var state: NodeState = NodeState.Initial
           while (!done) {
-            done = processor.process().finished
+            val next = processor.process(state)
+            done = next.finished
+            state = next.node
           }
-          println(s"${op.output} finished! Client buffers=${buffers.view.mapValues(b => (b.size)).toMap}")
+          println(s"${op.output} finished! state = $state ; client buffers=${buffers.view.mapValues(b => (b.size)).toMap}")
         }
       },
       op.output.toString,

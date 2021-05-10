@@ -18,11 +18,13 @@ class NsInterpreter() {
   def interpretNs(iv: FValue, outType: FType, expr: FExpr): FValue = {
     expr match {
       case FExpr.NashornOp(expr, input, output) =>
-        assert(outType == output)
+        assert(outType == output, s"$outType != $output")
         assert(iv.tpe == input, s"${iv.tpe} != $input")
 
         val b = new util.HashMap[String, AnyRef]()
-        b.put("self", buildInput(iv))
+        val i = buildInput(iv)
+        //println(s"INTERPRET $expr on $i")
+        b.put("self", i)
         val bindings = new SimpleBindings(b)
         val out = engine.eval(expr, bindings)
         reconstructValue(outType, out)
@@ -40,7 +42,7 @@ class NsInterpreter() {
           case i: Int =>
             i
           case b =>
-            scala.sys.error(s"Not an integer: $b")
+            scala.sys.error(s"Not an integer: $b, ${b.getClass}")
         }
         FValue.FVInt(v)
       case t: FType.FRecord =>

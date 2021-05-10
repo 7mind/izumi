@@ -39,6 +39,12 @@ object Test {
         ValueId("ints_tuple_mapped", FType.FStream(FType.FTuple(List(FType.FInt, FType.FInt)))),
         FExpr.NashornOp("[self[0] + 10, self[1] * 2]", FType.FTuple(List(FType.FInt, FType.FInt)), FType.FTuple(List(FType.FInt, FType.FInt))),
       ),
+      FFold(
+        ValueId("ints_tuple_mapped", FType.FStream(FType.FTuple(List(FType.FInt, FType.FInt)))),
+        ValueId("ints_sum", FType.FInt),
+        FValue.FVInt(0),
+        FExpr.NashornOp("self[0] + self[1][0] + self[1][1]", FType.FTuple(List(FType.FInt, FType.FInt)), FType.FInt),
+      ),
     ),
     List(
       ValueId("ints_multiplied", FType.FStream(FType.FInt)),
