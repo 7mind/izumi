@@ -9,7 +9,7 @@ import izumi.flow.model.values.FValue
 class PipeProcessor(op: PipeOp, registry: Registry, buffer: StreamBuffer, nsi: NsInterpreter) extends Processor {
   def process(): PollingState = {
     registry.node(op.input).poll(op.output) match {
-      case value: StreamState.Final =>
+      case _: StreamState.Final =>
         PollingState(true)
       case StreamState.ChunkReady(chunk) =>
         buffer.nextStates(interpretPipe(op, chunk))
@@ -20,12 +20,29 @@ class PipeProcessor(op: PipeOp, registry: Registry, buffer: StreamBuffer, nsi: N
   }
 
   def interpretPipe(op: PipeOp, chunk: List[FValue]): List[StreamState] = {
+    val it = op.input.tpe.asInstanceOf[FType.FStream].tpe
+    val outt = op.output.tpe.asInstanceOf[FType.FStream].tpe
     op match {
-      case FMap(input, output, expr) =>
-        val mapped = chunk.map(i => nsi.interpretNs(i, output.tpe, expr))
+      case m: FMap =>
+        val mapped = chunk.map {
+          i =>
+            assert(i.tpe == i.tpe)
+            nsi.interpretNs(i, outt, m.expr)
+        }
         List(StreamState.ChunkReady(mapped))
-      case FFilter(input, output, expr) =>
-        val mapped = chunk.filter(i => nsi.interpretNs(i, FType.FBool, expr).value.asInstanceOf[Boolean])
+      case m: FFilter =>
+        assert(it == outt)
+
+        val mapped = chunk.filter {
+          i =>
+            assert(i.tpe == it)
+            nsi.interpretNs(i, FType.FBool, m.expr) match {
+              case FValue.FVBool(value) =>
+                value
+              case _ =>
+                ???
+            }
+        }
         if (mapped.nonEmpty) {
           List(StreamState.ChunkReady(mapped))
         } else {

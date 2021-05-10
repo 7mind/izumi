@@ -14,4 +14,6 @@ object FType {
   case class FRecord(fields: List[FField]) extends FType
 
   case class FTuple(tuple: List[FType]) extends FType
+
+  case class FStream(tpe: FType) extends FType
 }

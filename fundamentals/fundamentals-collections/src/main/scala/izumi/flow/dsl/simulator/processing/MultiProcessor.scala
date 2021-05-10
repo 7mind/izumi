@@ -17,10 +17,12 @@ class MultiProcessor(op: MultiOp, registry: Registry, buffer: StreamBuffer) exte
   }
 
   override def process(): PollingState = {
+    //val it = op.input.tpe.asInstanceOf[FType.FStream].tpe
+    val outt = op.output.tpe.asInstanceOf[FType.FStream].tpe
     op match {
       case FlowOp.FZip(inputs, output) =>
-        assert(output.tpe.isInstanceOf[FType.FTuple])
-        val outTuple = output.tpe match {
+        assert(outt.isInstanceOf[FType.FTuple])
+        val outTuple = outt match {
           case t: FType.FTuple =>
             t
           case _ =>

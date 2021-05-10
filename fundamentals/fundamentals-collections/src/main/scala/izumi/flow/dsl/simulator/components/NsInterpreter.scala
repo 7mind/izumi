@@ -57,6 +57,10 @@ class NsInterpreter() {
         assert(o.isArray)
         assert(o.size() == t.tuple.size)
         FValue.FVTuple(o.values().asScala.zip(t.tuple).map { case (v, t) => reconstructValue(t, v) }.toList, t)
+      case t: FType.FStream =>
+        val o = out.asInstanceOf[ScriptObjectMirror]
+        assert(o.isArray)
+        FValue.FVFiniteStream(o.values().asScala.map(reconstructValue(t, _)).toList, t)
       case u =>
         scala.sys.error(s"Can't process output of type $u, got $out")
     }
@@ -65,11 +69,24 @@ class NsInterpreter() {
   private def buildInput(iv: FValue): AnyRef = {
     iv match {
       case builtin: FValue.FVBuiltin =>
-        builtin.valueRef
-      case FValue.FVRecord(fields, tpe) =>
+        (builtin match {
+          case FValue.FVString(value) =>
+            value
+          case FValue.FVInt(value) =>
+            value
+          case FValue.FVBool(value) =>
+            value
+          case FValue.FVLong(value) =>
+            value
+          case FValue.FVDouble(value) =>
+            value
+        }).asInstanceOf[AnyRef]
+      case FValue.FVRecord(fields, _) =>
         fields.map(f => (f.name, buildInput(f.value))).toMap.asJava
-      case FValue.FVTuple(tuple, tpe) =>
+      case FValue.FVTuple(tuple, _) =>
         tuple.map(v => buildInput(v)).asJava
+      case FValue.FVFiniteStream(values, _) =>
+        values.map(buildInput).asJava
     }
   }
 }
