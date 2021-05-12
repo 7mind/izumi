@@ -33,7 +33,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. [distage](https://izumi.7mind.io/distage/) – Transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. [distage](https://izumi.7mind.io/distage/) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
 2. [distage-testkit](https://izumi.7mind.io/distage/distage-testkit) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. [distage-framework-docker](https://izumi.7mind.io/distage/distage-framework-docker) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. [LogStage](https://izumi.7mind.io/logstage/) – Automatic structural logs from Scala string interpolations,
