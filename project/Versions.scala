@@ -3,14 +3,14 @@ object V {
   val izumi_reflect = "1.1.1"
 
   // foundation
-  val collection_compat = "2.4.3"
+  val collection_compat = "2.4.4"
 
   val kind_projector = "0.11.3"
 
   val scalatest = "3.2.8"
 
-  val cats = "2.6.0"
-  val cats_effect = "2.5.1"
+  val cats = "2.6.1"
+  val cats_effect = "2.5.0"
 
   val discipline = "1.1.5"
   val discipline_scalatest = "2.0.0"
