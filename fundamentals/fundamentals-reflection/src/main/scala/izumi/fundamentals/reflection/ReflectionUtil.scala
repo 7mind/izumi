@@ -25,17 +25,17 @@ object ReflectionUtil {
     * So we just strip it when we get it.
     */
   @tailrec
-  final def norm0(u: Universe)(x: u.Type): u.Type = {
+  final def norm0[U <: SingletonUniverse](x: U#Type): U#Type = {
     x match {
-      case r: u.RefinedTypeApi if (r.parents.drop(1) eq Nil) && r.decls.isEmpty => norm0(u)(r.asInstanceOf[u.Type])
-      case a: u.AnnotatedTypeApi => norm0(u)(a.underlying)
+      case r: U#RefinedTypeApi if (r.parents.drop(1) eq Nil) && r.decls.isEmpty => norm0[U](r.asInstanceOf[U#Type])
+      case a: U#AnnotatedTypeApi => norm0[U](a.underlying)
       case _ => x
     }
   }
 
-  def toTypeRef(u: Universe)(tpe: u.TypeApi): Option[u.TypeRefApi] = {
+  def toTypeRef[U <: SingletonUniverse](tpe: U#TypeApi): Option[U#TypeRefApi] = {
     tpe match {
-      case typeRef: u.TypeRefApi =>
+      case typeRef: U#TypeRefApi =>
         Some(typeRef)
       case _ =>
         None
@@ -100,10 +100,10 @@ object ReflectionUtil {
     tpe1.dealias =:= tpe1
   }
 
-  def deepIntersectionTypeMembers(u: Universe)(targetType: u.Type): List[u.Type] = {
-    def go(tpe: u.Type): List[u.Type] = {
+  def deepIntersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
+    def go(tpe: U#Type): List[U#Type] = {
       tpe match {
-        case r: u.RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers(u)(norm0(u)(t.dealias)))
+        case r: U#RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers[U](norm0[U](t.dealias): U#Type))
         case _ => List(tpe)
       }
     }

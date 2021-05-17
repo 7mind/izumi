@@ -85,7 +85,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
         SymbolInfo.Static(
           name = transformName(tpe.typeSymbol.name.toString),
           finalResultType = tpe,
-          annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
+          annotations = AnnotationTools.getAllTypeAnnotations[u.type](tpe),
           isByName = tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == u.definitions.ByNameParamClass,
           wasGeneric = tpe.typeSymbol.isParameter,
         )
