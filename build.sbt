@@ -10,14 +10,14 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -82,7 +82,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -118,7 +118,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -154,7 +154,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -162,7 +162,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -227,7 +227,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -263,7 +263,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -278,7 +278,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -286,7 +286,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -351,7 +351,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -387,7 +387,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -423,7 +423,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
@@ -432,7 +432,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -497,7 +497,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -533,7 +533,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -565,14 +565,14 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-functional"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -637,7 +637,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -673,7 +673,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -689,7 +689,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -707,7 +707,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -772,7 +772,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -808,7 +808,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -823,7 +823,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
@@ -835,7 +835,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -900,7 +900,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -936,7 +936,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -948,7 +948,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orphans"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -962,7 +962,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1027,7 +1027,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1063,7 +1063,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1075,7 +1075,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
 lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-literals"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -1083,7 +1083,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1148,7 +1148,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1184,7 +1184,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1200,7 +1200,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1217,7 +1217,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1282,7 +1282,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1318,7 +1318,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1333,7 +1333,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "cglib" % "cglib-nodep" % V.cglib_nodep
@@ -1341,7 +1341,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1406,7 +1406,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1442,7 +1442,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1458,7 +1458,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1473,7 +1473,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1538,7 +1538,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1574,7 +1574,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1590,7 +1590,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
@@ -1600,7 +1600,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1665,7 +1665,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1701,7 +1701,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1739,7 +1739,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.github.classgraph" % "classgraph" % V.classgraph,
@@ -1748,7 +1748,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1813,7 +1813,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1849,7 +1849,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1867,14 +1867,14 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1939,7 +1939,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1975,7 +1975,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1990,7 +1990,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
@@ -1998,7 +1998,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2063,7 +2063,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2099,7 +2099,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2120,7 +2120,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -2135,7 +2135,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2200,7 +2200,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2236,7 +2236,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2275,7 +2275,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Test,
@@ -2289,7 +2289,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2354,7 +2354,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2390,7 +2390,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2405,14 +2405,14 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2477,7 +2477,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2513,7 +2513,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2531,7 +2531,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -2546,7 +2546,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2611,7 +2611,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2647,7 +2647,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2663,7 +2663,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
@@ -2675,7 +2675,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2740,7 +2740,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2776,7 +2776,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2792,7 +2792,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
@@ -2802,7 +2802,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2867,7 +2867,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2903,7 +2903,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2918,7 +2918,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j
@@ -2926,7 +2926,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2991,7 +2991,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3027,7 +3027,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3045,7 +3045,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j,
@@ -3054,7 +3054,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3119,7 +3119,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3155,7 +3155,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3193,7 +3193,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats,
@@ -3209,7 +3209,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3274,7 +3274,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3310,7 +3310,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3383,7 +3383,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -3451,7 +3451,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders"
       )
-      case (_, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3487,7 +3487,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.6-bin-SNAPSHOT") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3502,7 +3502,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3524,7 +3524,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3546,7 +3546,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3570,7 +3570,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3594,7 +3594,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3611,7 +3611,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3628,7 +3628,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3642,7 +3642,7 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3678,7 +3678,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6-bin-SNAPSHOT",
+      "2.13.6",
       "2.12.14-bin-SNAPSHOT"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3725,7 +3725,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.6-bin-SNAPSHOT",
+    scalaVersion := "2.13.6",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",

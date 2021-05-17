@@ -104,8 +104,7 @@ object Izumi {
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm()
 
-    final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
-      .more(LibSetting.Raw("cross CrossVersion.full"))
+    final val projector = Library("org.typelevel", "kind-projector_2.13.5", V.kind_projector, LibraryType.Invariant)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
@@ -129,7 +128,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.14-bin-SNAPSHOT")
-  final val scala213 = ScalaVersion("2.13.6-bin-SNAPSHOT")
+  final val scala213 = ScalaVersion("2.13.6")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
