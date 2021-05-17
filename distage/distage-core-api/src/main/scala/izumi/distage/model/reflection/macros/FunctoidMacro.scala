@@ -9,6 +9,7 @@ import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
+import scala.annotation.nowarn
 import scala.reflect.macros.blackbox
 
 /**
@@ -189,12 +190,12 @@ class FunctoidMacro(val c: blackbox.Context) {
   }
 
   protected[this] def widenFunctionObject(sig: Type): Type = {
-    sig match {
+    (sig match {
       case s: SingleTypeApi =>
         sig.baseType(s.sym.typeSignature.baseClasses.find(definitions.FunctionClass.seq.contains(_)).get)
       case _ =>
         sig
-    }
+    }): @nowarn("msg=outer reference")
   }
 
 }
