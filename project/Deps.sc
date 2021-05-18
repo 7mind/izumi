@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.73`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.76`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -146,13 +146,7 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
-      settings = Seq(
-        // disable scoverage on 2.12 for now due to incompatibility with 2.12.13
-        "coverageEnabled" := Seq(
-          SettingKey(Some(scala212), None) := false,
-          SettingKey.Default := "coverageEnabled.value".raw,
-        )
-      ),
+      settings = Seq.empty,
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,

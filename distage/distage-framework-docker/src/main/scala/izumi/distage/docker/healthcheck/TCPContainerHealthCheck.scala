@@ -11,11 +11,11 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
+class TCPContainerHealthCheck extends ContainerHealthCheckBase {
 
   override protected def perform(
     logger: IzLogger,
-    container: DockerContainer[Tag],
+    container: DockerContainer[_],
     tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
     udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
   ): HealthCheckResult = {
@@ -25,13 +25,13 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
     val containerCandidates = findContainerInternalCandidates(container, tcpPorts)
 
     val allCandidates = (dockerHostCandidates ++ containerCandidates).distinct
-      .filterNot(_.maybeAvailable.hostV4 == "0.0.0.0")
+      .filterNot(c => ServiceHost.zeroAddresses.contains(c.maybeAvailable.host))
 
     logger.debug(s"going to check ports on $container: ${allCandidates.map { case PortCandidate(k, v) => s"if $k is available at $v" }.niceList() -> "port mappings"}")
 
     val checks = allCandidates.map {
       case PortCandidate(dp, ap) =>
-        check.checkPort(ap.hostV4, ap.port, s"open port ${ap.hostV4}:${ap.port} for ${container.id}") match {
+        check.checkAddressPort(ap.host.address, ap.port, s"open port ${ap.host}:${ap.port} for ${container.id}") match {
           case ResourceCheck.Success() =>
             Right(GoodPort(dp, ap))
           case ResourceCheck.ResourceUnavailable(_, cause) =>
@@ -61,20 +61,20 @@ class TCPContainerHealthCheck[Tag] extends ContainerHealthCheckBase[Tag] {
       case Some(value) =>
         val available = AvailablePorts(value)
         val allTCPPortsAvailable = tcpPortsGood(container, available)
-        HealthCheckResult.GoodOnPorts(
-          available,
-          errored,
-          udpPorts.keySet.map(p => p: DockerPort),
-          allTCPPortsAvailable,
+        HealthCheckResult.AvailableOnPorts(
+          availablePorts = available,
+          unavailablePorts = errored,
+          unverifiedPorts = udpPorts.keySet.map(p => p: DockerPort),
+          allTCPPortsAccessible = allTCPPortsAvailable,
         )
 
       case None =>
         if (container.containerConfig.tcpPorts.isEmpty) {
-          HealthCheckResult.Good
+          HealthCheckResult.Passed
         } else {
-          HealthCheckResult.BadWithMeta(
-            errored,
-            udpPorts.keySet.map(p => p: DockerPort),
+          HealthCheckResult.UnavailableWithMeta(
+            unavailablePorts = errored,
+            unverifiedPorts = udpPorts.keySet.map(p => p: DockerPort),
           )
         }
     }

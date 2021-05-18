@@ -1,22 +1,23 @@
 package izumi.distage.docker.healthcheck
 
-import java.net.{HttpURLConnection, URL}
 import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger
 
-final class HttpGetCheck[Tag](
-  portStatus: HealthCheckResult.GoodOnPorts,
+import java.net.{HttpURLConnection, URL}
+
+final class HttpGetCheck(
+  portStatus: HealthCheckResult.AvailableOnPorts,
   port: DockerPort,
   useHttps: Boolean,
-) extends ContainerHealthCheck[Tag] {
-  override def check(logger: IzLogger, container: DockerContainer[Tag], state: ContainerState): HealthCheckResult = {
-    ContainerHealthCheck.checkIfRunning(state) {
+) extends ContainerHealthCheck {
+  override def check(logger: IzLogger, container: DockerContainer[_], state: ContainerState): HealthCheckResult = {
+    HealthCheckResult.onRunning(state) {
       portStatus.availablePorts.firstOption(port) match {
         case Some(availablePort) if portStatus.allTCPPortsAccessible =>
           val protocol = if (useHttps) "https" else "http"
-          val url = new URL(s"$protocol://${availablePort.hostV4}:${availablePort.port}")
+          val url = new URL(s"$protocol://${availablePort.host.host}:${availablePort.port}")
           logger.info(s"Checking docker port $port via $url for $container. Will try to establish HTTP connection.")
           try {
             val connection = url.openConnection().asInstanceOf[HttpURLConnection]
@@ -25,18 +26,18 @@ final class HttpGetCheck[Tag](
             val responseCode = connection.getResponseCode
             if (responseCode != -1) {
               logger.info(s"HTTP connection was successfully established with $port.")
-              HealthCheckResult.Good
+              HealthCheckResult.Passed
             } else {
               logger.info(s"Cannot establish HTTP connection with $port. Wrong protocol.")
-              HealthCheckResult.Bad
+              HealthCheckResult.Failed(s"Cannot establish HTTP connection with port=$port. Wrong protocol.")
             }
           } catch {
             case failure: Throwable =>
               logger.warn(s"Cannot establish HTTP connection with $port due to $failure")
-              HealthCheckResult.Bad
+              HealthCheckResult.Failed(s"Cannot establish HTTP connection with port=$port due to failure=$failure")
           }
         case _ =>
-          HealthCheckResult.Bad
+          HealthCheckResult.Failed()
       }
     }
   }

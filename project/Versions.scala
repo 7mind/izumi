@@ -1,22 +1,22 @@
 object V {
   // izumi
-  val izumi_reflect = "1.1.1"
+  val izumi_reflect = "1.1.3-RC1"
 
   // foundation
-  val collection_compat = "2.4.3"
+  val collection_compat = "2.4.4"
 
   val kind_projector = "0.11.3"
 
-  val scalatest = "3.2.8"
+  val scalatest = "3.2.9"
 
-  val cats = "2.6.0"
-  val cats_effect = "2.5.0"
+  val cats = "2.6.1"
+  val cats_effect = "2.5.1"
 
-  val discipline = "1.1.4"
+  val discipline = "1.1.5"
   val discipline_scalatest = "2.0.0"
 
-  val zio = "1.0.7"
-  val zio_interop_cats = "3.0.2.0"
+  val zio = "1.0.8"
+  val zio_interop_cats = "2.4.1.0"
 
   val monix = "3.3.0"
   val monix_bio = "1.1.0"
@@ -31,7 +31,7 @@ object V {
   val scala_java_time = "2.0.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.104"
+  val classgraph = "4.8.105"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 

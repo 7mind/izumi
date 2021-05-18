@@ -5,7 +5,10 @@ import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
 
   def catchAll[R, E, A, E2](r: F[R, E, A])(f: E => F[R, E2, A]): F[R, E2, A]
-  def catchSome[R, E, A, E1 >: E](r: F[R, E, A])(f: PartialFunction[E, F[R, E1, A]]): F[R, E1, A]
+
+  def catchSome[R, E, A, E1 >: E](r: F[R, E, A])(f: PartialFunction[E, F[R, E1, A]]): F[R, E1, A] = {
+    catchAll(r)(e => f.applyOrElse(e, (_: E) => fail(e)))
+  }
 
   def redeem[R, E, A, E2, B](r: F[R, E, A])(err: E => F[R, E2, B], succ: A => F[R, E2, B]): F[R, E2, B] = {
     flatMap(attempt(r))(_.fold(err, succ))

@@ -542,11 +542,12 @@ So to workaround this limitation you can convert an expression based resource-co
 ```scala mdoc:reset:to-string
 import distage.Lifecycle, cats.Monad
 
-class A
+class A(val n: Int)
+
 object A {
 
   def resource[F[_]: Monad]: Lifecycle[F, A] =
-    Lifecycle.pure[F, A](new A)
+    Lifecycle.pure[F](new A(1))
 
 }
 ```
@@ -556,12 +557,13 @@ Into a class-based form:
 ```scala mdoc:reset:to-string
 import distage.Lifecycle, cats.Monad
 
-class A
+class A(val n: Int)
+
 object A {
 
   final class Resource[F[_]: Monad]
-    extends Lifecycle.Of(
-      Lifecycle.pure[F, A](new A)
+    extends Lifecycle.Of[F, A](
+      Lifecycle.pure[F](new A(1))
     )
 
 }
