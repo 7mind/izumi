@@ -13,7 +13,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
 
 object Docker {
-  final case class AvailablePort(host: ServiceHost, port: Int)
+  final case class AvailablePort(host: ServiceHost, port: Int) {
+    def hostString: String = host.host
+
+    @deprecated("Use hostString", "1.0.6")
+    def hostV4: String = host.host
+  }
   object AvailablePort {
     def local(port: Int): AvailablePort = hostPort(ServiceHost.local, port)
     def hostPort(host: ServiceHost, port: Int): AvailablePort = AvailablePort(host, port)
@@ -25,7 +30,7 @@ object Docker {
     def address: InetAddress
     def host: String
 
-    override final def toString: String = address.getHostAddress
+    override final def toString: String = host
   }
   object ServiceHost {
     final case class IPv4(address: Inet4Address) extends ServiceHost {
