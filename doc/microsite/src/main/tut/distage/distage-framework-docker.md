@@ -300,7 +300,7 @@ object PostgresUsingDockerModule extends ModuleDef {
     container: PostgresDocker.Container => {
       val knownAddress = container.availablePorts.first(PostgresDocker.primaryPort)
       PostgresServerConfig(
-        host     = knownAddress.host.host,
+        host     = knownAddress.hostString,
         port     = knownAddress.port,
         database = "postgres",
         username = "postgres",
