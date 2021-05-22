@@ -21,10 +21,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -161,10 +157,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -280,10 +272,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -421,10 +409,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -556,10 +540,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -686,10 +666,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -809,10 +785,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -931,10 +903,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1047,10 +1015,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1176,10 +1140,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1295,10 +1255,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1422,10 +1378,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1544,10 +1496,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1687,10 +1635,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1808,10 +1752,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -1927,10 +1867,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2059,10 +1995,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2208,10 +2140,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2326,10 +2254,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2455,10 +2379,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2579,10 +2499,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2701,10 +2617,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2820,10 +2732,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -2943,10 +2851,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
@@ -3093,10 +2997,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "2.12.13"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => false
-      case (_, _) => coverageEnabled.value
-    } },
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
