@@ -126,6 +126,11 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 </a>
 <br/>
 
+<a href="https://glidewell.io/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
+</a>
+<br/>
+
 Projects powered by Izumi
 ==========================
 - [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely-functional way.
