@@ -159,8 +159,8 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
-  type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+e`, `+a`) => F[e, a]], E, A]
-  lazy val Fiber2: Fiber3.type = Fiber3
+  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +?, +?], E, A]
+  lazy val Fiber3: Fiber2.type = Fiber2
 
   type Ref2[+F[_, _], A] = Ref1[F[Nothing, ?], A]
   lazy val Ref2: Ref1.type = Ref1
@@ -297,11 +297,11 @@ package object bio extends Syntax3 with Syntax2 {
   type BIOFork3[F[-_, +_, +_]] = Fork3[F]
 
   @deprecated("renamed to Fiber2", "1.0")
-  type BIOFiber[F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+e`, `+a`) => F[e, a]], E, A]
+  type BIOFiber[F[+_, +_], +E, +A] = Fiber2[F, E, A]
   @deprecated("renamed to Fiber3", "1.0")
   type BIOFiber3[F[-_, +_, +_], +E, +A] = Fiber3[F, E, A]
   @deprecated("renamed to Fiber3", "1.0")
-  lazy val BIOFiber3: Fiber3.type = Fiber3
+  lazy val BIOFiber3: Fiber2.type = Fiber2
 
   @deprecated("renamed to BlockingIO2", "1.0")
   type BlockingIO[F[+_, +_]] = BlockingIO2[F]
