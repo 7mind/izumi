@@ -252,4 +252,50 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     )
   }
 
+  "type alias with" in {
+    import distage._
+    import cats.effect.IO
+
+    object x {
+      type SrcContextProcessor[F[_]] = SrcProcessor with ContextProcessor[F]
+    }
+    import x._
+    trait SrcProcessor
+    trait ContextProcessor[F[_]]
+
+    class FilesProcessor[F[_]] extends SrcProcessor with ContextProcessor[F]
+    class ConversionProcessor[F[_]] extends SrcProcessor with ContextProcessor[F]
+    class FilesResultProcessor[F[_]] extends SrcProcessor with ContextProcessor[F]
+
+    class ProcessorsModule[F[_]: TagK] extends ModuleDef {
+      make[FilesProcessor[F]]
+      make[ConversionProcessor[F]]
+      make[FilesResultProcessor[F]]
+
+      many[SrcContextProcessor[F]]
+        .ref[FilesProcessor[F]]
+        .ref[ConversionProcessor[F]]
+        .ref[FilesResultProcessor[F]]
+
+    }
+
+    class ServiceModule[F[_]: TagK] extends ModuleDef {
+      include(new ProcessorsModule[F])
+
+      make[SrcQueueConversionService[F]]
+    }
+
+    class SrcQueueConversionService[F[_]](
+      val processors: Set[SrcContextProcessor[F]]
+    )
+
+    def tag[F[_]: TagK] = Tag[SrcContextProcessor[F]]
+    def setTag[F[_]: TagK] = Tag[Set[SrcContextProcessor[F]]]
+
+    val tag1 = tag[IO].tag
+    val tag2 = Tag[SrcContextProcessor[IO]].tag
+    assert(tag1 == tag2)
+    assert(setTag[IO].tag == Tag[Set[SrcContextProcessor[IO]]].tag)
+  }
+
 }
