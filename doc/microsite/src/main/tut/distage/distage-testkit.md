@@ -425,7 +425,8 @@ However, this is not as declaring both implementations in our modules at the sam
 Our demonstration application will use the @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod` axis tags:
 
 ```scala mdoc:invisible
-implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.distage.plugins.ForcedRecompilationToken["abc"] = null
+// why does it not work under mdoc huh???
+import izumi.distage.plugins.ForcedRecompilationToken.disabled._
 ```
 
 ```scala mdoc:fakepackage:to-string
