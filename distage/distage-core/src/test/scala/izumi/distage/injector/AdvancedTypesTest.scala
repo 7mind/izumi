@@ -251,4 +251,23 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     )
   }
 
+  "regression test for https://github.com/7mind/izumi/issues/1523 Parameterization failure with Set of intersection type alias" in {
+    import cats.effect.IO
+
+    object x {
+      type SrcContextProcessor[F[_]] = SrcProcessor with ContextProcessor[F]
+    }
+    import x._
+    trait SrcProcessor
+    trait ContextProcessor[F[_]]
+
+    def tag[F[_]: TagK] = Tag[SrcContextProcessor[F]]
+    def setTag[F[_]: TagK] = Tag[Set[SrcContextProcessor[F]]]
+
+    val tag1 = tag[IO].tag
+    val tag2 = Tag[SrcContextProcessor[IO]].tag
+    assert(tag1 == tag2)
+    assert(setTag[IO].tag == Tag[Set[SrcContextProcessor[IO]]].tag)
+  }
+
 }
