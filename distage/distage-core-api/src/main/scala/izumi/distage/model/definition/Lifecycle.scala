@@ -328,9 +328,9 @@ object Lifecycle extends LifecycleCatsInstances {
 
   /**
     * Fork the specified action into a new fiber.
-    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber3#interrupt]]
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber2#interrupt]]
     *
-    * @return The [[izumi.functional.bio.Fiber3 fiber]] running `f` action
+    * @return The [[izumi.functional.bio.Fiber2 fiber]] running `f` action
     */
   def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Fiber2[F, E, A]] = {
     Lifecycle.make(f.fork)(_.interrupt)

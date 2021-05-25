@@ -355,7 +355,7 @@ class SyntaxTest extends AnyWordSpec {
 
     lazy val eitherTest = (
       x[Either],
-      z[Either]
+      z[Either],
     )
     lazy val _ = (zioTest, monixTest, eitherTest)
   }
@@ -597,5 +597,46 @@ class SyntaxTest extends AnyWordSpec {
     x[zio.ZIO](zio.UIO.succeed(Option(())))
     y[zio.ZIO](zio.UIO.succeed(Option(())))
     z[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
+
+  "Fiber#toCats syntax works" in {
+    import izumi.functional.bio.{Applicative2, Applicative3, F, Fork2, Fork3}
+
+    def x2[F[+_, +_]: Applicative2: Fork2] = {
+      F.unit.fork.map(_.toCats)
+    }
+    def x3[F[-_, +_, +_]: Applicative3: Fork3] = {
+      F.unit.fork.map(_.toCats)
+    }
+    x2[zio.IO]
+    x3[zio.ZIO]
+  }
+
+  "Fiber3 and Fiber2 types are wholly compatible" in {
+    import izumi.functional.bio.{Applicative2, Applicative3, F, Fiber2, Fiber3, Fork2, Fork3}
+
+    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, +?, +?]], fork: Fork2[FR[Any, +?, +?]]) = {
+      type F[+E, +A] = FR[Any, E, A]
+      for {
+        fiber <- F.unit.fork
+      } yield {
+        val fiber2: Fiber2[F, Nothing, Unit] = fiber
+        val fiber3: Fiber3[FR, Nothing, Unit] = fiber
+        (fiber2, fiber3)
+      }
+    }
+    def x3[FR[-_, +_, +_]: Applicative3: Fork3] = {
+      type F[+E, +A] = FR[Any, E, A]
+      for {
+        fiber <- F.unit.fork
+      } yield {
+        val fiber2: Fiber2[F, Nothing, Unit] = fiber
+        val fiber3: Fiber3[FR, Nothing, Unit] = fiber
+        (fiber2, fiber3)
+      }
+    }
+
+    x2[zio.ZIO]
+    x3[zio.ZIO]
   }
 }
