@@ -150,15 +150,9 @@ object Functoid {
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): Functoid[R] = macro FunctoidMacro.impl[R]
 
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] =
-    new Functoid[Nothing](
-      Provider.ProviderImpl(
-        parameters = Seq.empty,
-        ret = key.tpe,
-        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
-        providerType = ProviderType.Function,
-      )
-    )
+  implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
+    def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
+  }
 
   def identity[A: Tag]: Functoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Functoid[A]]
 
@@ -206,6 +200,17 @@ object Functoid {
     )
   }
 
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
+    new Functoid[Nothing](
+      Provider.ProviderImpl(
+        parameters = Seq.empty,
+        ret = key.tpe,
+        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
+        providerType = ProviderType.Function,
+      )
+    )
+  }
+
   def identityKey(key: DIKey): Functoid[_] = {
     val tpe = key.tpe
     val symbolInfo = firstParamSymbolInfo(tpe)
@@ -218,10 +223,6 @@ object Functoid {
         providerType = ProviderType.Function,
       )
     )
-  }
-
-  implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
-    def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
   }
 
   @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
