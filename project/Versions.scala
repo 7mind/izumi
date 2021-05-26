@@ -21,7 +21,7 @@ object V {
   val monix = "3.3.0"
   val monix_bio = "1.1.0"
 
-  val circe = "0.13.0"
+  val circe = "0.14.0"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.15.0"
   val magnolia = "0.17.0"
