@@ -10,15 +10,24 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -35,7 +44,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -76,7 +85,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -105,11 +114,11 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -145,16 +154,25 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -171,7 +189,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -212,7 +230,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -241,11 +259,11 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -260,16 +278,25 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -286,7 +313,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -327,7 +354,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -356,11 +383,11 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -396,17 +423,26 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -423,7 +459,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -464,7 +500,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -493,11 +529,11 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -529,15 +565,24 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-functional"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -554,7 +599,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -595,7 +640,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -624,11 +669,11 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -644,7 +689,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -658,12 +702,22 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "discipline-core" % V.discipline % Test,
       "org.typelevel" %% "discipline-scalatest" % V.discipline_scalatest % Test,
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -680,7 +734,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -721,7 +775,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -750,11 +804,11 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -769,7 +823,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
@@ -777,12 +830,22 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-literal" % V.circe % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -799,7 +862,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -840,7 +903,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -869,11 +932,11 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -885,7 +948,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orphans"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -895,12 +957,22 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       "io.monix" %% "monix" % V.monix % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -917,7 +989,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -958,7 +1030,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -987,11 +1059,11 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1003,16 +1075,25 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
 lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-literals"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1029,7 +1110,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1070,7 +1151,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1099,11 +1180,11 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1119,7 +1200,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1132,12 +1212,22 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1154,7 +1244,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1195,7 +1285,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1224,11 +1314,11 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1243,16 +1333,25 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "cglib" % "cglib-nodep" % V.cglib_nodep
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1269,7 +1368,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1310,7 +1409,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1339,11 +1438,11 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1359,7 +1458,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1370,12 +1468,22 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "javax.inject" % "javax.inject" % "1" % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1392,7 +1500,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1433,7 +1541,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1462,11 +1570,11 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1482,18 +1590,27 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
       "com.propensive" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1510,7 +1627,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1551,7 +1668,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1580,11 +1697,11 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1622,17 +1739,26 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.github.classgraph" % "classgraph" % V.classgraph,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1649,7 +1775,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1690,7 +1816,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1719,11 +1845,11 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1741,15 +1867,24 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1766,7 +1901,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1807,7 +1942,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1836,11 +1971,11 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1855,16 +1990,25 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1881,7 +2025,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1922,7 +2066,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1951,11 +2095,11 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1976,7 +2120,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1987,12 +2130,22 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2009,7 +2162,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2050,7 +2203,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2079,11 +2232,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2122,7 +2275,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Test,
@@ -2132,12 +2284,22 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
       "com.github.docker-java" % "docker-java-core" % V.docker_java,
       "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2154,7 +2316,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2195,7 +2357,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2224,11 +2386,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2243,15 +2405,24 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2268,7 +2439,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2309,7 +2480,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2338,11 +2509,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2360,7 +2531,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -2371,12 +2541,22 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
       "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2393,7 +2573,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2434,7 +2614,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2463,11 +2643,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2483,7 +2663,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
@@ -2491,12 +2670,22 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2513,7 +2702,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2554,7 +2743,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2583,11 +2772,11 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2603,18 +2792,27 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-parser" % V.circe % Test,
       "io.circe" %% "circe-literal" % V.circe % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2631,7 +2829,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2672,7 +2870,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2701,11 +2899,11 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2720,16 +2918,25 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2746,7 +2953,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2787,7 +2994,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2816,11 +3023,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2838,17 +3045,26 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j,
       "org.slf4j" % "slf4j-simple" % V.slf4j % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2865,7 +3081,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2906,7 +3122,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2935,11 +3151,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2977,7 +3193,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats,
@@ -2989,12 +3204,22 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "io.monix" %% "monix" % V.monix,
       "io.monix" %% "monix-bio" % V.monix_bio,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3011,7 +3236,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3052,7 +3277,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3081,11 +3306,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3158,14 +3383,23 @@ lazy val `microsite` = project.in(file("doc/microsite"))
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
+    ),
+    libraryDependencies ++= { if (Seq(
+      "2.12.14"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.12.13" % V.kind_projector)
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.6"
+    ) contains scalaVersion.value) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector_2.13.5" % V.kind_projector)
+    ) else Seq.empty }
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.12.13"
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3183,7 +3417,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     ),
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.13") => Seq(
+      case (_, "2.12.14") => Seq(
         "-Xsource:2.13",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3224,7 +3458,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.5") => Seq(
+      case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3253,11 +3487,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.13") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.5") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3272,8 +3506,8 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3294,8 +3528,8 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3316,8 +3550,8 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3340,8 +3574,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3364,8 +3598,8 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3381,8 +3615,8 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3398,8 +3632,8 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3412,8 +3646,8 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3426,7 +3660,7 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.13"
+    scalaVersion := "2.12.14"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -3437,7 +3671,7 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
   .settings(
     publish / skip := true,
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.13"
+    scalaVersion := "2.12.14"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -3448,8 +3682,8 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.5",
-      "2.12.13"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3495,7 +3729,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.13.6",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",

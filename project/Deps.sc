@@ -104,8 +104,8 @@ object Izumi {
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
 
-    final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
-      .more(LibSetting.Raw("cross CrossVersion.full"))
+    final val projector212 = Library("org.typelevel", "kind-projector_2.12.13", V.kind_projector, LibraryType.Invariant)
+    final val projector213 = Library("org.typelevel", "kind-projector_2.13.5", V.kind_projector, LibraryType.Invariant)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
@@ -128,8 +128,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.13")
-  final val scala213 = ScalaVersion("2.13.5")
+  final val scala212 = ScalaVersion("2.12.14")
+  final val scala213 = ScalaVersion("2.13.6")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -703,7 +703,8 @@ object Izumi {
       Import("com.typesafe.sbt.SbtGit.GitKeys._")
     ),
     globalLibs = Seq(
-      ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
+      ScopedLibrary(projector212, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.Versions(ScalaVersion("2.12.14"))), compilerPlugin = true),
+      ScopedLibrary(projector213, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.Versions(ScalaVersion("2.13.6"))), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,
     ),
