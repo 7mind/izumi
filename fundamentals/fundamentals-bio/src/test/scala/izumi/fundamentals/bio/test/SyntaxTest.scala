@@ -615,7 +615,7 @@ class SyntaxTest extends AnyWordSpec {
   "Fiber3 and Fiber2 types are wholly compatible" in {
     import izumi.functional.bio.{Applicative2, Applicative3, F, Fiber2, Fiber3, Fork2, Fork3}
 
-    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, +?, +?]], fork: Fork2[FR[Any, +?, +?]]) = {
+    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, +_, +_]], fork: Fork2[FR[Any, +_, +_]]) = {
       type F[+E, +A] = FR[Any, E, A]
       for {
         fiber <- F.unit.fork

@@ -159,7 +159,7 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
-  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +?, +?], E, A]
+  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +_, +_], E, A]
   lazy val Fiber3: Fiber2.type = Fiber2
 
   type Ref2[+F[_, _], A] = Ref1[F[Nothing, _], A]
