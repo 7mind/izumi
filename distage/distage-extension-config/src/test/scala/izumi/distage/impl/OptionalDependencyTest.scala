@@ -72,7 +72,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     type SomeBIO3[-R, +E, +A] = R => SomeBIO[E, A]
 
     def threeTo2[FR[-_, +_, +_]](implicit FR: IO3[FR]): FR[Any, Nothing, Unit] = {
-      val F: IO2[FR[Any, +?, +?]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
+      val F: IO2[FR[Any, +_, +_]] = implicitly // must use `BIOConvert3To2` instance to convert FR -> F
       F.unit
     }
 
@@ -138,7 +138,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[NoClassDefFoundError] {
-      QuasiIO.fromCats[Option, Lifecycle[?[_], Int]](null, null)
+      QuasiIO.fromCats[Option, Lifecycle[_[_], Int]](null, null)
     }
 
     And("Methods that mention cats types only in generics will error on call")

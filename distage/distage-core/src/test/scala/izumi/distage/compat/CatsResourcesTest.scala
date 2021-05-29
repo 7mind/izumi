@@ -114,8 +114,8 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
   "cats instances for Lifecycle" in {
     def failImplicit[A](implicit a: A = null): A = a
     def request[F[_]: cats.effect.Sync] = {
-      val F = cats.Functor[Lifecycle[F, ?]]
-      val M = cats.Monad[Lifecycle[F, ?]]
+      val F = cats.Functor[Lifecycle[F, _]]
+      val M = cats.Monad[Lifecycle[F, _]]
       val m = cats.Monoid[Lifecycle[F, Int]]
       val _ = (F, m, M)
       val fail = failImplicit[cats.kernel.Order[Lifecycle[F, Int]]]

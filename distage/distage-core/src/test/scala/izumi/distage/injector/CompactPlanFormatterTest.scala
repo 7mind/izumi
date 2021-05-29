@@ -27,7 +27,7 @@ class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput.everything(new ModuleDef {
       make[JustTrait].from[Impl1]
-      make[OptionT[scala.Either[Nothing, ?], Unit]].from(OptionT[Either[Nothing, ?], Unit](Right(None)))
+      make[OptionT[scala.Either[Nothing, _], Unit]].from(OptionT[Either[Nothing, _], Unit](Right(None)))
       make[K1[T1]].from(new K1[T1] {})
       make[W1.T2]
       make[W2.T2]

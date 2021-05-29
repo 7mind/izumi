@@ -144,7 +144,7 @@ package object bio extends Syntax3 with Syntax2 {
 
   type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
   }
@@ -159,15 +159,15 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
-  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +?, +?], E, A]
+  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +_, +_], E, A]
   lazy val Fiber3: Fiber2.type = Fiber2
 
-  type Ref2[+F[_, _], A] = Ref1[F[Nothing, ?], A]
+  type Ref2[+F[_, _], A] = Ref1[F[Nothing, _], A]
   lazy val Ref2: Ref1.type = Ref1
-  type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, ?], A]
+  type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, _], A]
   lazy val Ref3: Ref1.type = Ref1
 
-  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +?, +?], E, A]
+  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +_, +_], E, A]
   lazy val Promise3: Promise2.type = Promise2
 
   type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
@@ -175,39 +175,39 @@ package object bio extends Syntax3 with Syntax2 {
   type Latch3[+F[-_, +_, +_]] = Promise3[F, Nothing, Unit]
   lazy val Latch3: Promise2.type = Promise2
 
-  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, ?]]
+  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, _]]
   lazy val Semaphore2: Semaphore1.type = Semaphore1
-  type Semaphore3[+F[_, _, _]] = Semaphore1[F[Any, Nothing, ?]]
+  type Semaphore3[+F[_, _, _]] = Semaphore1[F[Any, Nothing, _]]
   lazy val Semaphore3: Semaphore1.type = Semaphore1
 
-  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, ?, ?]]
+  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, _, _]]
   object UnsafeRun3 {
     @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
-  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
+  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, _]]
   object SyncSafe2 {
     @inline def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
-  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, ?]]
+  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, _]]
   object SyncSafe3 {
     @inline def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
   }
 
-  type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
+  type Clock2[F[_, _]] = Clock[F[Nothing, _]]
   object Clock2 {
     @inline def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
   }
-  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, ?]]
+  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, _]]
   object Clock3 {
     @inline def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
-  type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
+  type Entropy2[F[_, _]] = Entropy[F[Nothing, _]]
   object Entropy2 {
     @inline def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
-  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
+  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, _]]
   object Entropy3 {
     @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }
@@ -339,7 +339,7 @@ package object bio extends Syntax3 with Syntax2 {
   @deprecated("renamed to Primitives2", "1.0")
   lazy val BIOPrimitives: Primitives2.type = Primitives2
   @deprecated("renamed to Primitives3", "1.0")
-  type BIOPrimitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
+  type BIOPrimitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
   @deprecated("renamed to Primitives3", "1.0")
   lazy val BIOPrimitives3: Primitives3.type = Primitives3
 

@@ -212,7 +212,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(
       exc.conflicts.exists(
         e =>
-          e.isInstanceOf[ConflictResolutionError.ConflictingDefs[_, _]] &&
+          e.isInstanceOf[ConflictResolutionError.ConflictingDefs[?, ?]] &&
           e.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
       )
     )

@@ -7,7 +7,7 @@ import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.{Provider, ReflectionProvider}
 import izumi.fundamentals.reflection.ReflectionUtil
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.reflect.macros.blackbox
 
 abstract class ClassConstructorMacros extends ConstructorMacrosBase {
@@ -115,6 +115,7 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
     val u.Wiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
 
     val (methodArgListDecls, methodArgList) = {
+      @nowarn("msg=outer reference")
       @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = {
         tpe match {
           case m: MethodTypeApi => m

@@ -50,8 +50,8 @@ final class ConfigTest extends AnyWordSpec {
       val context = injector.produce(plan).unsafeGet()
 
       // FIXME: pureconfig can't read specialized map types
-//      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[_, _]])
-      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[Map[_, _]])
+//      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[?, ?]])
+      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[Map[?, ?]])
       assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
       assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
     }
@@ -69,8 +69,8 @@ final class ConfigTest extends AnyWordSpec {
 
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
-      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[?]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[?]])
       assert(
         context.get[Service[ListCaseClass]].conf.mylist.head ==
         Set(

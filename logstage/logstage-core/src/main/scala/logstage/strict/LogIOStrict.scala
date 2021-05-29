@@ -16,7 +16,7 @@ trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] wit
 
   final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
 
-  override def widen[G[_]](implicit ev: F[_] <:< G[_]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
+  override def widen[G[_]](implicit ev: F[?] <:< G[?]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
 object LogIOStrict {
@@ -60,8 +60,8 @@ object LogIOStrict {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, ?]] = log.asInstanceOf[LogIOStrict[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[_] <:< G[_]): LogIOStrict[G] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
 }
 
 object LogIO2Strict {

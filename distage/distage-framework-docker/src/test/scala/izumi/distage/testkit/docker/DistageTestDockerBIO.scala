@@ -29,7 +29,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
 
       "support docker resources" in {
         // TODO: additionally check flyway outcome with doobie
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
           for {
             _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
             _ <- verifier.use(_ => IO.unit)
@@ -37,7 +37,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
       }
 
       "support memoization" in {
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, ?], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
           for {
             _ <- log.info(s"ports/2: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
             _ <- verifier.use(_ => IO.unit)

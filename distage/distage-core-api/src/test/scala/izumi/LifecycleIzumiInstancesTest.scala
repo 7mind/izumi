@@ -6,12 +6,12 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class LifecycleIzumiInstancesTest extends AnyWordSpec {
   "Summon Functor2/Functor3 instances for Lifecycle" in {
-    def t2[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +?, +?]] = {
-      Functor2[Lifecycle2[F, +?, +?]]
+    def t2[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +_, +_]] = {
+      Functor2[Lifecycle2[F, +_, +_]]
     }
 
-    def t3[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -?, +?, +?]] = {
-      Functor3[Lifecycle3[F, -?, +?, +?]]
+    def t3[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -_, +_, +_]] = {
+      Functor3[Lifecycle3[F, -_, +_, +_]]
     }
 
     t2[zio.IO]

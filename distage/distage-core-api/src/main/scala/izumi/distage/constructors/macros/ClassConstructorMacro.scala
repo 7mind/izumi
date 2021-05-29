@@ -6,6 +6,7 @@ import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
+import scala.annotation.nowarn
 import scala.reflect.macros.blackbox
 
 object ClassConstructorMacro {
@@ -16,7 +17,7 @@ object ClassConstructorMacro {
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("ClassConstructor", targetType)
 
-    targetType match {
+    (targetType match {
       case t: SingletonTypeApi =>
         val functoid = symbolOf[Functoid.type].asClass.module
         val term = t match {
@@ -49,7 +50,7 @@ object ClassConstructorMacro {
         val res = c.Expr[ClassConstructor[T]](q"{ new ${weakTypeOf[ClassConstructor[T]]}($provider) }")
         logger.log(s"Final syntax tree of class for $targetType:\n$res")
         res
-    }
+    }): @nowarn("msg=outer reference")
   }
 
 }

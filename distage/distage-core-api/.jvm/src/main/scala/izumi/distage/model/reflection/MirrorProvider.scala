@@ -5,14 +5,14 @@ import java.lang.reflect.Modifier
 import izumi.fundamentals.reflection.TypeUtil
 
 trait MirrorProvider {
-  def runtimeClass(tpe: SafeType): Option[Class[_]]
+  def runtimeClass(tpe: SafeType): Option[Class[?]]
   def runtimeClassCompatible(tpe: SafeType, value: Any): Boolean
   def canBeProxied(tpe: SafeType): Boolean
 }
 
 object MirrorProvider {
   object Impl extends MirrorProvider {
-    override def runtimeClass(tpe: SafeType): Option[Class[_]] = {
+    override def runtimeClass(tpe: SafeType): Option[Class[?]] = {
       if (tpe.hasPreciseClass) Some(tpe.cls) else None
     }
     override def canBeProxied(tpe: SafeType): Boolean = {

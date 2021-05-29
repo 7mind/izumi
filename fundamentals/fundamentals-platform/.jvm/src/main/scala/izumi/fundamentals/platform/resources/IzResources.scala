@@ -136,7 +136,7 @@ final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVa
 }
 
 object IzResourcesDirty {
-  @inline def apply(clazz: Class[_]): IzResourcesDirty = new IzResourcesDirty(clazz.getClassLoader)
+  @inline def apply(clazz: Class[?]): IzResourcesDirty = new IzResourcesDirty(clazz.getClassLoader)
   @inline def apply(classLoader: ClassLoader): IzResourcesDirty = new IzResourcesDirty(classLoader)
 
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
@@ -153,10 +153,10 @@ object IzResourcesDirty {
 }
 
 object IzResources {
-  @inline def apply(clazz: Class[_]): IzResources = new IzResources(clazz.getClassLoader)
+  @inline def apply(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline def apply(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
 
-  @inline implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz.getClassLoader)
+  @inline implicit def toResources(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline implicit def toResources(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
 
   private def classLocationUrl[C: ClassTag](): Option[URL] = {

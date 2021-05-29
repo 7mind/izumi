@@ -24,6 +24,6 @@ object Quirks {
   }
   @inline implicit final def LazyDiscarder[T](@unused t: => T): LazyDiscarder[Unit] = new LazyDiscarder[Unit]()
 
-  @inline final def forget(@unused trash: LazyDiscarder[_]*): Unit = ()
+  @inline final def forget(@unused trash: LazyDiscarder[?]*): Unit = ()
 
 }

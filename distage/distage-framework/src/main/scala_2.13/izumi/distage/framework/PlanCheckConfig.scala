@@ -66,7 +66,7 @@ object PlanCheckConfig {
 
   def empty: PlanCheckConfig["*", "", "*", Unset, Unset, Unset] = PlanCheckConfig()
 
-  type Any = PlanCheckConfig[_ <: String, _ <: String, _ <: String, _ <: Boolean, _ <: Boolean, _ <: Boolean]
+  type Any = PlanCheckConfig[? <: String, ? <: String, ? <: String, ? <: Boolean, ? <: Boolean, ? <: Boolean]
 
   type Unset <: Boolean with Singleton
 

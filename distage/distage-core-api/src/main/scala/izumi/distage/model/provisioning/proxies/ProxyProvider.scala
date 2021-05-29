@@ -16,12 +16,12 @@ object ProxyProvider {
     }
   }
 
-  final case class ProxyContext(runtimeClass: Class[_], op: ExecutableOp, params: ProxyParams)
+  final case class ProxyContext(runtimeClass: Class[?], op: ExecutableOp, params: ProxyParams)
 
   sealed trait ProxyParams
   object ProxyParams {
     final case object Empty extends ProxyParams
-    final case class Params(types: Array[Class[_]], values: Array[Any]) extends ProxyParams {
+    final case class Params(types: Array[Class[?]], values: Array[Any]) extends ProxyParams {
       override def toString: String = s"Params(${types.mkString("[", ",", "]")}, ${values.mkString("[", ",", "]")})"
     }
   }
