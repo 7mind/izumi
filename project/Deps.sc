@@ -582,6 +582,7 @@ object Izumi {
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "scalacOptions" -= "-Wconf:any:error",
+          "scalacOptions" -= "-Xsource:3",
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=

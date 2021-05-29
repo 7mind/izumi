@@ -3217,6 +3217,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:error",
+    scalacOptions -= "-Xsource:3",
     coverageEnabled := false,
     publish / skip := true,
     DocKeys.prefix := {if (isSnapshot.value) {
