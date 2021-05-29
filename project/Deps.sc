@@ -582,7 +582,24 @@ object Izumi {
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "scalacOptions" -= "-Wconf:any:error",
+          //  Disable `-Xsource:3` in docs due to mdoc failures:
+          //
+          //  ```
+          //  error: basics.md:97 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val injector: Injector[RIO[Console, _]] = Injector[RIO[Console, _]](); $doc.binder(injector, 2, 4, 2, 12)
+          //                                                                                    ^
+          //
+          //  error: basics.md:109 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val resource = injector.produce(plan); $doc.binder(resource, 4, 4, 4, 12)
+          //                                                    ^
+          //
+          //  error: basics.md:1359 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$9$]]
+          //  val res51 = chooseInterpreters(true); $doc.binder(res51, 26, 0, 26, 24)
+          //  ```
           "scalacOptions" -= "-Xsource:3",
+          // enable for unidoc
+          "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") += "-Xsource:3",
+          //
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
