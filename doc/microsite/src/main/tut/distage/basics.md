@@ -126,7 +126,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 ```scala mdoc:to-string
 import distage.{Activation, Injector, Roots}
 
-val injector = Injector[RIO[Console, *]]()
+val injector = Injector[RIO[Console, _]]()
 
 val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp])
 ```

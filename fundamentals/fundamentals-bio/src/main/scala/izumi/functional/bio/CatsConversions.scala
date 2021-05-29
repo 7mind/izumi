@@ -176,13 +176,13 @@ object CatsConversions {
   }
 
   class BIOCatsConcurrent[F[+_, +_]](override val F: Async2[F], val Fork: Fork2[F]) extends BIOCatsAsync[F](F) with cats.effect.Concurrent[F[Throwable, _]] {
-    @inline override final def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, *], A]] = {
+    @inline override final def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, _], A]] = {
       F.map(Fork.fork(fa))(_.toCats(F))
     }
     @inline override final def racePair[A, B](
       fa: F[Throwable, A],
       fb: F[Throwable, B],
-    ): F[Throwable, Either[(A, Fiber[F[Throwable, *], B]), (Fiber[F[Throwable, *], A], B)]] = {
+    ): F[Throwable, Either[(A, Fiber[F[Throwable, _], B]), (Fiber[F[Throwable, _], A], B)]] = {
       F.map(F.racePair(fa, fb)) {
         case Left((a, f)) => Left((a, f.toCats(F)))
         case Right((f, b)) => Right((f.toCats(F), b))
@@ -191,7 +191,7 @@ object CatsConversions {
     @inline override final def race[A, B](fa: F[Throwable, A], fb: F[Throwable, B]): F[Throwable, Either[A, B]] = {
       F.race(F.map(fa)(Left(_)), F.map(fb)(Right(_)))
     }
-    @inline override final def cancelable[A](k: (Either[Throwable, A] => Unit) => CancelToken[F[Throwable, *]]): F[Throwable, A] = {
+    @inline override final def cancelable[A](k: (Either[Throwable, A] => Unit) => CancelToken[F[Throwable, _]]): F[Throwable, A] = {
       F.asyncCancelable(F orTerminate k(_))
     }
     @inline override final def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] = Concurrent.liftIO(ioa)(this)
