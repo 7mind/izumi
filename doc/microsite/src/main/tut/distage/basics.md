@@ -6,7 +6,7 @@
 
 ```scala mdoc:reset:invisible:to-string
 // ##### New overview
-// (sentence-two per concept + link to details [or inline expand? or these should just be chapters_])
+// (sentence-two per concept + link to details [or inline expand? or these should just be chapters?])
 //
 // ###### Concepts
 // ####### ModuleDef
@@ -230,7 +230,7 @@ It shows how to write an idiomatic `distage`-style from scratch and how to:
 add to distage-example
 
 - how to setup graalvm native image with distage
-- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there??_]
+- how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there???]
 */
 ```
 
