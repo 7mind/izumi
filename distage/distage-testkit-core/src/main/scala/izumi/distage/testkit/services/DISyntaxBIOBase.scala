@@ -5,7 +5,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.{ApplicativeError2, TypedError}
 import izumi.fundamentals.platform.language.SourceFilePosition
 
-trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
+trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, `?`]] {
   implicit def tagBIO: TagKK[F]
 
   protected final def takeBIO(function: Functoid[F[_, _]], pos: SourceFilePosition): Unit = {

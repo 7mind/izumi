@@ -26,7 +26,7 @@ object LogZIO {
   object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get)
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
-    new WrappedLogIO[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
+    new WrappedLogIO[IO[Nothing, `?`]](logger)(SyncSafe2[IO]) {
       override def withCustomContext(context: CustomContext): LogIO2[IO] = {
         withFiberId(logger.withCustomContext(context))
       }
@@ -40,9 +40,9 @@ object LogZIO {
     }
   }
 
-  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO2[ZIO[R, ?, ?]] = {
-    new WrappedLogIO[ZIO[R, Nothing, ?]](logger)(SyncSafe[ZIO[R, Nothing, ?]]) {
-      override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, ?]] = {
+  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO2[ZIO[R, `?`, `?`]] = {
+    new WrappedLogIO[ZIO[R, Nothing, `?`]](logger)(SyncSafe[ZIO[R, Nothing, `?`]]) {
+      override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, `?`]] = {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }
 

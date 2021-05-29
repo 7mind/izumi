@@ -9,7 +9,7 @@ object QuasiIORunner {
 
   def fromCats[F[_]: Effect]: QuasiIORunner[F] = forAny[F]
 
-  class BIOImpl[F[_, _]] extends QuasiIORunner[F[Throwable, ?]]
+  class BIOImpl[F[_, _]] extends QuasiIORunner[F[Throwable, `?`]]
 
   implicit def forAny[F[_]]: QuasiIORunner[F] = new QuasiIORunner[F] {}
 }

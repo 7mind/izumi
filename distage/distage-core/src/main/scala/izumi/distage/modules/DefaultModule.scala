@@ -60,7 +60,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     implicit
     @unused ensureInteropCatsOnClasspath: `cats.effect.IO`[K],
     @unused l: `zio.ZIO`[ZIO],
-  ): DefaultModule2[ZIO[R, ?, ?]] = {
+  ): DefaultModule2[ZIO[R, `?`, `?`]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
   }
 }
@@ -74,7 +74,7 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     *
     * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
-  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
+  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, `?`, `?`]] = {
     DefaultModule(ZIOSupportModule)
   }
 

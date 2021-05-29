@@ -4,16 +4,16 @@ import zio.Has
 
 package object logstage extends LogStage {
 
-  type LogIO2[F[_, _]] = LogIO[F[Nothing, ?]]
-  type LogIO3[F[_, _, _]] = LogIO[F[Any, Nothing, ?]]
-  type LogIO3Ask[F[_, _, _]] = LogIO2[F[Has[LogIO3[F]], ?, ?]]
+  type LogIO2[F[_, _]] = LogIO[F[Nothing, `?`]]
+  type LogIO3[F[_, _, _]] = LogIO[F[Any, Nothing, `?`]]
+  type LogIO3Ask[F[_, _, _]] = LogIO2[F[Has[LogIO3[F]], `?`, `?`]]
   type LogZIO = Has[LogZIO.Service]
 
-  type LogCreateIO2[F[_, _]] = LogCreateIO[F[Nothing, ?]]
-  type LogCreateIO3[F[_, _, _]] = LogCreateIO[F[Any, Nothing, ?]]
+  type LogCreateIO2[F[_, _]] = LogCreateIO[F[Nothing, `?`]]
+  type LogCreateIO3[F[_, _, _]] = LogCreateIO[F[Any, Nothing, `?`]]
 
-  type UnsafeLogIO2[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
-  type UnsafeLogIO3[F[_, _, _]] = UnsafeLogIO[F[Any, Nothing, ?]]
+  type UnsafeLogIO2[F[_, _]] = UnsafeLogIO[F[Nothing, `?`]]
+  type UnsafeLogIO3[F[_, _, _]] = UnsafeLogIO[F[Any, Nothing, `?`]]
 
   override type IzLogger = api.IzLogger
   override final val IzLogger: api.IzLogger.type = api.IzLogger

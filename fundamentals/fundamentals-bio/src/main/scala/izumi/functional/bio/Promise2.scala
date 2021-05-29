@@ -25,7 +25,7 @@ object Promise2 {
     }
   }
 
-  def fromCats[F[+_, +_]: Panic2, E, A](deferred: TryableDeferred[F[Throwable, ?], F[E, A]]): Promise2[F, E, A] = {
+  def fromCats[F[+_, +_]: Panic2, E, A](deferred: TryableDeferred[F[Throwable, `?`], F[E, A]]): Promise2[F, E, A] = {
     new Promise2[F, E, A] {
       override def await: F[E, A] = deferred.get.orTerminate.flatten
       override def poll: F[Nothing, Option[F[E, A]]] = deferred.tryGet.orTerminate

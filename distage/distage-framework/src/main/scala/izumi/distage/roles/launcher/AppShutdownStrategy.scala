@@ -139,7 +139,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
+  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, `?`]] {
     private val primaryLatch: Promise[Unit] = Promise[Unit]()
     private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 

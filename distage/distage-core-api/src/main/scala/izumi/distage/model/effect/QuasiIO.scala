@@ -150,9 +150,9 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, `?`]] = {
     type E = Throwable
-    new QuasiIO[F[Throwable, ?]] {
+    new QuasiIO[F[Throwable, `?`]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
@@ -269,8 +269,8 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
 
   @inline implicit def quasiApplicativeIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
 
-  implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, ?]] = {
-    new QuasiApplicative[F[E, ?]] {
+  implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, `?`]] = {
+    new QuasiApplicative[F[E, `?`]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
@@ -315,8 +315,8 @@ object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
 
   @inline implicit def quasiFunctorIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
 
-  implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, ?]] = {
-    new QuasiFunctor[F[E, ?]] {
+  implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, `?`]] = {
+    new QuasiFunctor[F[E, `?`]] {
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
     }
   }

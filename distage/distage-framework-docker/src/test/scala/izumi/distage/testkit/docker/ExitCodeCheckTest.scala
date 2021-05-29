@@ -11,13 +11,13 @@ final class ExitCodeCheckTest extends Spec2[IO] with AssertZIO {
   "Exit code check" should {
 
     "Succeed on correct exit code" in {
-      (checkingContainer: ContainerResource[IO[Throwable, ?], ExitCodeCheckContainer.Tag]) =>
+      (checkingContainer: ContainerResource[IO[Throwable, `?`], ExitCodeCheckContainer.Tag]) =>
         checkingContainer
           .use(_ => IO.unit)
     }
 
     "Fail on incorrect exit code" in {
-      (checkingContainer: ContainerResource[IO[Throwable, ?], ExitCodeCheckContainer.Tag]) =>
+      (checkingContainer: ContainerResource[IO[Throwable, `?`], ExitCodeCheckContainer.Tag]) =>
         for {
           Left(error) <- checkingContainer
             .copy(config =

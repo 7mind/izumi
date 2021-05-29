@@ -443,10 +443,10 @@ object ModuleDefDSL {
   object MakeDSLBase {
     implicit final class MakeFromZIOHas[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal with MakeFromHasLowPriorityOverloads[T, AfterBind] {
       def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I]): AfterBind = {
-        dsl.fromEffect[IO[E, ?], I](HasConstructor[R].map(effect.provide))
+        dsl.fromEffect[IO[E, `?`], I](HasConstructor[R].map(effect.provide))
       }
       def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]]): AfterBind = {
-        dsl.fromEffect[IO[E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
+        dsl.fromEffect[IO[E, `?`], I](function.map2(HasConstructor[R])(_.provide(_)))
       }
 
       def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
@@ -471,7 +471,7 @@ object ModuleDefDSL {
         */
       def fromHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T]): AfterBind = {
         import tag._
-        val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
+        val provider: Functoid[Lifecycle[F[Any, E, `?`], A]] =
           AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
             case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
@@ -483,14 +483,14 @@ object ModuleDefDSL {
 
       /** Adds a dependency on `Local3[F]` */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+        dsl.fromEffect[F[Any, E, `?`], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
           (r, F: Local3[F]) => F.provide(effect)(r)
         })
       }
 
       /** Adds a dependency on `Local3[F]` */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+        dsl.fromEffect[F[Any, E, `?`], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
@@ -501,8 +501,8 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, ?], I]): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, `?`], I]): AfterBind = {
+        dsl.fromResource[Lifecycle[F[Any, E, `?`], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
           (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
         })
       }
@@ -514,10 +514,10 @@ object ModuleDefDSL {
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[Lifecycle[F[R, E, ?], I]]
+        function: Functoid[Lifecycle[F[R, E, `?`], I]]
       )(implicit d1: DummyImplicit
       ): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+        dsl.fromResource[Lifecycle[F[Any, E, `?`], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
@@ -527,10 +527,10 @@ object ModuleDefDSL {
   object SetDSLBase {
     implicit final class AddFromZIOHas[T, AfterAdd](protected val dsl: SetDSLBase[T, AfterAdd, _]) extends AnyVal with AddFromHasLowPriorityOverloads[T, AfterAdd] {
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[IO[E, ?], I](HasConstructor[R].map(effect.provide))
+        dsl.addEffect[IO[E, `?`], I](HasConstructor[R].map(effect.provide))
       }
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[IO[E, ?], I](function.map2(HasConstructor[R])(_.provide(_)))
+        dsl.addEffect[IO[E, `?`], I](function.map2(HasConstructor[R])(_.provide(_)))
       }
 
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
@@ -564,7 +564,7 @@ object ModuleDefDSL {
         */
       final def addHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
         import tag._
-        val provider: Functoid[Lifecycle[F[Any, E, ?], A]] =
+        val provider: Functoid[Lifecycle[F[Any, E, `?`], A]] =
           AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
             case ((resource, r), f) => provideLifecycle(f)(resource, r)
           }
@@ -576,7 +576,7 @@ object ModuleDefDSL {
 
       /** Adds a dependency on `Local3[F]` */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[F[Any, E, ?], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+        dsl.addEffect[F[Any, E, `?`], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
           (r, F: Local3[F]) => F.provide(effect)(r)
         })
       }
@@ -586,7 +586,7 @@ object ModuleDefDSL {
         function: Functoid[F[R, E, I]]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addEffect[F[Any, E, ?], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+        dsl.addEffect[F[Any, E, `?`], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((effect, r), f) => f.provide(effect)(r)
         })
       }
@@ -598,10 +598,10 @@ object ModuleDefDSL {
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        resource: Lifecycle[F[R, E, ?], I]
+        resource: Lifecycle[F[R, E, `?`], I]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, ?], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
+        dsl.addResource[Lifecycle[F[Any, E, `?`], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
           (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
         })
       }
@@ -613,11 +613,11 @@ object ModuleDefDSL {
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[Lifecycle[F[R, E, ?], I]]
+        function: Functoid[Lifecycle[F[R, E, `?`], I]]
       )(implicit pos: CodePositionMaterializer,
         d1: DummyImplicit,
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, ?], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+        dsl.addResource[Lifecycle[F[Any, E, `?`], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
           case ((resource, r), f) => provideLifecycle(f)(resource, r)
         })
       }
@@ -625,8 +625,8 @@ object ModuleDefDSL {
     }
   }
 
-  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, ?], A], r: R): Lifecycle[F[Any, E, ?], A] = {
-    resource.mapK(Morphism1[F[R, E, ?], F[Any, E, ?]](F.provide(_)(r)))
+  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, `?`], A], r: R): Lifecycle[F[Any, E, `?`], A] = {
+    resource.mapK(Morphism1[F[R, E, `?`], F[Any, E, `?`]](F.provide(_)(r)))
   }
 
   // DSL state machine

@@ -9,7 +9,7 @@ import cats.Parallel
 
 class CatsConversionTest extends AnyWordSpec {
 
-  class X[F[+_, +_]: IO2](val ref: Ref[F[Throwable, ?], Int])
+  class X[F[+_, +_]: IO2](val ref: Ref[F[Throwable, `?`], Int])
 
   "pickup conversion to Sync" in {
     def conv[F[+_, +_]: IO2]: F[Throwable, Int] = {

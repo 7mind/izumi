@@ -134,12 +134,12 @@ object DistageAbstractScalatestSpec {
     suiteName: String,
     suiteId: String,
     testname: String,
-    reg: TestRegistration[F[Throwable, ?]],
+    reg: TestRegistration[F[Throwable, `?`]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
-    implicit override val tagMonoIO: TagK[F[Throwable, ?]],
+    implicit override val tagMonoIO: TagK[F[Throwable, `?`]],
   ) extends DISyntaxBIOBase[F]
-    with LowPriorityIdentityOverloads[F[Throwable, ?]] {
+    with LowPriorityIdentityOverloads[F[Throwable, `?`]] {
 
     def in(function: Functoid[F[_, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
@@ -173,12 +173,12 @@ object DistageAbstractScalatestSpec {
     suiteName: String,
     suiteId: String,
     testname: String,
-    reg: TestRegistration[F[Any, Throwable, ?]],
+    reg: TestRegistration[F[Any, Throwable, `?`]],
     env: TestEnvironment,
-  )(implicit override val tagBIO: TagKK[F[Any, ?, ?]],
-    implicit override val tagMonoIO: TagK[F[Any, Throwable, ?]],
+  )(implicit override val tagBIO: TagKK[F[Any, `?`, `?`]],
+    implicit override val tagMonoIO: TagK[F[Any, Throwable, `?`]],
   ) extends DISyntaxBIOBase[F[Any, +?, +?]]
-    with LowPriorityIdentityOverloads[F[Any, Throwable, ?]] {
+    with LowPriorityIdentityOverloads[F[Any, Throwable, `?`]] {
 
     def in[R: HasConstructor](function: Functoid[F[R, _, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(

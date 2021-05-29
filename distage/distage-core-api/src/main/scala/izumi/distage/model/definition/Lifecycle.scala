@@ -332,12 +332,12 @@ object Lifecycle extends LifecycleCatsInstances {
     *
     * @return The [[izumi.functional.bio.Fiber2 fiber]] running `f` action
     */
-  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Fiber2[F, E, A]] = {
+  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, `?`], Fiber2[F, E, A]] = {
     Lifecycle.make(f.fork)(_.interrupt)
   }
 
   /** @see [[fork]] */
-  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F[Nothing, ?], Unit] = {
+  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F[Nothing, `?`], Unit] = {
     Lifecycle.fork(f).void
   }
 
@@ -440,8 +440,8 @@ object Lifecycle extends LifecycleCatsInstances {
     }
   }
 
-  implicit final class SyntaxWidenError[F[+_, +_], +E, +A](private val resource: Lifecycle[F[E, ?], A]) extends AnyVal {
-    def widenError[E1 >: E]: Lifecycle[F[E1, ?], A] = resource
+  implicit final class SyntaxWidenError[F[+_, +_], +E, +A](private val resource: Lifecycle[F[E, `?`], A]) extends AnyVal {
+    def widenError[E1 >: E]: Lifecycle[F[E1, `?`], A] = resource
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
@@ -539,7 +539,7 @@ object Lifecycle extends LifecycleCatsInstances {
     }
   }
 
-  implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, ?], A]) extends AnyVal {
+  implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, `?`], A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
       ZManaged.makeReserve(
@@ -559,11 +559,11 @@ object Lifecycle extends LifecycleCatsInstances {
   }
 
   implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +?, +?]] = new Functor2[Lifecycle2[F, +?, +?]] {
-    override def map[R, E, A, B](r: Lifecycle[F[E, ?], A])(f: A => B): Lifecycle[F[E, ?], B] = r.map(f)
+    override def map[R, E, A, B](r: Lifecycle[F[E, `?`], A])(f: A => B): Lifecycle[F[E, `?`], B] = r.map(f)
   }
 
   implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -?, +?, +?]] = new Functor3[Lifecycle3[F, -?, +?, +?]] {
-    override def map[R, E, A, B](r: Lifecycle[F[R, E, ?], A])(f: A => B): Lifecycle[F[R, E, ?], B] = r.map(f)
+    override def map[R, E, A, B](r: Lifecycle[F[R, E, `?`], A])(f: A => B): Lifecycle[F[R, E, `?`], B] = r.map(f)
   }
 
   /**
@@ -623,7 +623,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, ?], A](fromZIO(inner))
+  @open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, `?`], A](fromZIO(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -803,7 +803,7 @@ object Lifecycle extends LifecycleCatsInstances {
     override final type InnerResource = concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
   }
 
-  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, ?], A] {
+  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, `?`], A] {
     override final type InnerResource = ReleaseMap
     override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make
     override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
@@ -1062,11 +1062,11 @@ object Lifecycle extends LifecycleCatsInstances {
 private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
   implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
     implicit F: QuasiIO[F]
-  ): Monad[Lifecycle[F, ?]] = {
-    new cats.StackSafeMonad[Lifecycle[F, ?]] {
+  ): Monad[Lifecycle[F, `?`]] = {
+    new cats.StackSafeMonad[Lifecycle[F, `?`]] {
       override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F](x)
       override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
-    }.asInstanceOf[Monad[Lifecycle[F, ?]]]
+    }.asInstanceOf[Monad[Lifecycle[F, `?`]]]
   }
 
   implicit final def catsMonoidForLifecycle[Monoid[_]: `cats.kernel.Monoid`, F[_], A](
@@ -1090,10 +1090,10 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
 private[definition] sealed trait LifecycleCatsInstancesLowPriority {
   implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]: `cats.Functor`](
     implicit F: QuasiFunctor[F]
-  ): Functor[Lifecycle[F, ?]] = {
-    new cats.Functor[Lifecycle[F, ?]] {
+  ): Functor[Lifecycle[F, `?`]] = {
+    new cats.Functor[Lifecycle[F, `?`]] {
       override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
-    }.asInstanceOf[Functor[Lifecycle[F, ?]]]
+    }.asInstanceOf[Functor[Lifecycle[F, `?`]]]
   }
 }
 
@@ -1228,22 +1228,22 @@ private[definition] trait TrifunctorHasLifecycleTagImpl[R0, T] {
   type E
   type A <: T
   implicit def tagLocal3: Tag[Local3[F]]
-  implicit def tagFull: Tag[Lifecycle[F[Any, E, ?], A]]
+  implicit def tagFull: Tag[Lifecycle[F[Any, E, `?`], A]]
   implicit def ctorR: HasConstructor[R]
-  implicit def ev: R0 <:< Lifecycle[F[R, E, ?], A]
-  implicit def resourceTag: LifecycleTagImpl[Lifecycle[F[Any, E, ?], A]]
+  implicit def ev: R0 <:< Lifecycle[F[R, E, `?`], A]
+  implicit def resourceTag: LifecycleTagImpl[Lifecycle[F[Any, E, `?`], A]]
 }
 private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLifecycleTagLowPriority {
   import scala.annotation.unchecked.{uncheckedVariance => v}
 
   implicit def trifunctorResourceTag[
-    R1 <: Lifecycle[F0[R0, E0, ?], A0],
+    R1 <: Lifecycle[F0[R0, E0, `?`], A0],
     F0[_, _, _]: TagK3,
     R0: HasConstructor,
     E0: Tag,
     A0 <: A1: Tag,
     A1,
-  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, E0, ?], A0], A1] {
+  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, E0, `?`], A0], A1] {
     type R = R0
     type E = E0
     type A = A0
@@ -1255,13 +1255,13 @@ private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLi
     type A = A0
     val tagLocal3: Tag[Local3[F]] = implicitly
     val ctorR: HasConstructor[R0] = implicitly
-    val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = implicitly
-    val ev: R1 <:< Lifecycle[F0[R0, E0, ?], A0] = implicitly
-    val resourceTag: LifecycleTagImpl[Lifecycle[F0[Any, E0, ?], A0]] = new LifecycleTagImpl[Lifecycle[F0[Any, E0, ?], A0]] {
+    val tagFull: Tag[Lifecycle[F0[Any, E0, `?`], A0]] = implicitly
+    val ev: R1 <:< Lifecycle[F0[R0, E0, `?`], A0] = implicitly
+    val resourceTag: LifecycleTagImpl[Lifecycle[F0[Any, E0, `?`], A0]] = new LifecycleTagImpl[Lifecycle[F0[Any, E0, `?`], A0]] {
       type F[AA] = F0[Any, E0, AA]
       type A = A0
-      val tagFull: Tag[Lifecycle[F0[Any, E0, ?], A0]] = self.tagFull
-      val tagK: TagK[F0[Any, E0, ?]] = TagK[F0[Any, E0, ?]]
+      val tagFull: Tag[Lifecycle[F0[Any, E0, `?`], A0]] = self.tagFull
+      val tagK: TagK[F0[Any, E0, `?`]] = TagK[F0[Any, E0, `?`]]
       val tagA: Tag[A0] = implicitly
     }
   }
@@ -1270,12 +1270,12 @@ sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycle
   import scala.annotation.unchecked.{uncheckedVariance => v}
 
   implicit def trifunctorResourceTagNothing[
-    R1 <: Lifecycle[F0[R0, Nothing, ?], A0],
+    R1 <: Lifecycle[F0[R0, Nothing, `?`], A0],
     F0[_, _, _]: TagK3,
     R0: HasConstructor,
     A0 <: A1: Tag,
     A1,
-  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, Nothing, ?], A0], A1] {
+  ]: TrifunctorHasLifecycleTagImpl[R1 with Lifecycle[F0[R0, Nothing, `?`], A0], A1] {
     type R = R0
     type E = Nothing
     type A = A0

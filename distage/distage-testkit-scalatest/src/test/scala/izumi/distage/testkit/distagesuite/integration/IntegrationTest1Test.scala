@@ -65,7 +65,7 @@ final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, 
 final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO]
 final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task]
 
-class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +?], TestEnableDisable] with IntegrationCheck[F[Nothing, ?]] {
+class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +?], TestEnableDisable] with IntegrationCheck[F[Nothing, `?`]] {
   override def resourcesAvailable(): F[Nothing, ResourceCheck] =
     F.pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
   override def acquire: F[Nothing, TestEnableDisable] = F.pure(TestEnableDisable())

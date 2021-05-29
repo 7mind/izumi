@@ -9,7 +9,7 @@ package izumi.functional.bio
   *   import cats.effect.Sync
   *
   *   def divideByZero[F[+_, +_]: IO2]: F[Throwable, Int] = {
-  *     Sync[F[Throwable, ?]].delay(10 / 0)
+  *     Sync[F[Throwable, `?`]].delay(10 / 0)
   *   }
   * }}}
   */

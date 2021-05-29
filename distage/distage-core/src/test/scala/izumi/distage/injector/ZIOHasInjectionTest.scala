@@ -35,7 +35,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
   final class ResourceEmptyHasImpl[F[+_, +_]: Applicative2](
     d1: Dependency1
-  ) extends Lifecycle.LiftF[F[Throwable, ?], Trait1](
+  ) extends Lifecycle.LiftF[F[Throwable, `?`], Trait1](
       F.pure(trait1(d1))
     )
 

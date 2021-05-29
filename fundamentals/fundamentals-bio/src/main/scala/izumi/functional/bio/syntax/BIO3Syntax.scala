@@ -220,7 +220,7 @@ object BIO3Syntax {
   }
 
   final class BIOLocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: Local3[FR]) {
-    @inline final def toKleisli: Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
+    @inline final def toKleisli: Kleisli[FR[Any, E, `?`], R, A] = F.toKleisli(r)
   }
 
   trait BIO3ImplicitPuns extends BIO3ImplicitPuns1 {

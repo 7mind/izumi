@@ -25,9 +25,9 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     override def run[A](f: => A): A = f
   }
 
-  implicit def fromBIO[F[_, _]: UnsafeRun2]: QuasiIORunner[F[Throwable, ?]] = new BIOImpl[F]
+  implicit def fromBIO[F[_, _]: UnsafeRun2]: QuasiIORunner[F[Throwable, `?`]] = new BIOImpl[F]
 
-  final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, ?]] {
+  final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, `?`]] {
     override def run[A](f: => F[Throwable, A]): A = UnsafeRun2[F].unsafeRun(f)
   }
 

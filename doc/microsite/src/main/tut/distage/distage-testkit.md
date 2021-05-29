@@ -934,11 +934,11 @@ object leaderboard {
     import repo.Ladder
     type LadderEnv = Has[Ladder[IO]]
     type RndEnv = Has[Rnd[IO]]
-    object ladder extends Ladder[ZIO[LadderEnv, ?, ?]] {
+    object ladder extends Ladder[ZIO[LadderEnv, `?`, `?`]] {
       def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.get.submitScore(userId, score))
       def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.get.getScores)
     }
-    object rnd extends Rnd[ZIO[RndEnv, ?, ?]] {
+    object rnd extends Rnd[ZIO[RndEnv, `?`, `?`]] {
       override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.get.apply[A])
     }
   }

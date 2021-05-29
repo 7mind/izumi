@@ -64,7 +64,7 @@ object LogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, ?]] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, `?`]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {

@@ -40,8 +40,10 @@ object Morphism2 {
       Morphism2(functionKKInstance.apply)
   }
 
-  implicit def conversion3To2[F[_, _, _], G[_, _, _], R](f: Morphism3[F, G]): Morphism2[F[R, ?, ?], G[R, ?, ?]] = f.asInstanceOf[Morphism2[F[R, ?, ?], G[R, ?, ?]]]
-  implicit def Convert3To2[F[_, _, _], G[_, _, _], R](implicit f: Morphism3[F, G]): Morphism2[F[R, ?, ?], G[R, ?, ?]] = f.asInstanceOf[Morphism2[F[R, ?, ?], G[R, ?, ?]]]
+  implicit def conversion3To2[F[_, _, _], G[_, _, _], R](f: Morphism3[F, G]): Morphism2[F[R, `?`, `?`], G[R, `?`, `?`]] =
+    f.asInstanceOf[Morphism2[F[R, `?`, `?`], G[R, `?`, `?`]]]
+  implicit def Convert3To2[F[_, _, _], G[_, _, _], R](implicit f: Morphism3[F, G]): Morphism2[F[R, `?`, `?`], G[R, `?`, `?`]] =
+    f.asInstanceOf[Morphism2[F[R, `?`, `?`], G[R, `?`, `?`]]]
 
   private[Morphism2] type UnknownE
   private[Morphism2] type UnknownA

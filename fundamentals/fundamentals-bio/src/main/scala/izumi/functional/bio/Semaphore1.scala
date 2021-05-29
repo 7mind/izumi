@@ -14,7 +14,7 @@ trait Semaphore1[+F[_]] {
 }
 
 object Semaphore1 {
-  def fromCats[F[+_, +_]: Panic2](semaphore: Semaphore[F[Throwable, ?]]): Semaphore2[F] = new Semaphore2[F] {
+  def fromCats[F[+_, +_]: Panic2](semaphore: Semaphore[F[Throwable, `?`]]): Semaphore2[F] = new Semaphore2[F] {
     override def acquire: F[Nothing, Unit] = semaphore.acquire.orTerminate
     override def release: F[Nothing, Unit] = semaphore.release.orTerminate
 

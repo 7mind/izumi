@@ -60,7 +60,7 @@ object LogIOStrict {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, ?]] = log.asInstanceOf[LogIOStrict[F[E, ?]]]
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, `?`]] = log.asInstanceOf[LogIOStrict[F[E, `?`]]]
   implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[_] <:< G[_]): LogIOStrict[G] = log.widen
 }
 

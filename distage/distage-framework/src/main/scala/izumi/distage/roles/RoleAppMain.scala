@@ -141,19 +141,19 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO2[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, ?]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+  abstract class LauncherBIO2[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, `?`]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, `?`]] = new BIOShutdownStrategy[F]
 
-    // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, ?]]
+    // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, `?`]]
     override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
     }
   }
 
-  abstract class LauncherBIO3[F[-_, +_, +_]: TagK3: Async3: DefaultModule3](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Any, Throwable, ?]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, ?]] = new BIOShutdownStrategy[F[Any, +?, +?]]
+  abstract class LauncherBIO3[F[-_, +_, +_]: TagK3: Async3: DefaultModule3](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Any, Throwable, `?`]] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, `?`]] = new BIOShutdownStrategy[F[Any, +?, +?]]
 
-    // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, ?]]
+    // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, `?`]]
     override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO3Module[F]() +: _))
     }

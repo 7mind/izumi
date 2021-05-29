@@ -22,6 +22,6 @@ trait Local3[FR[-_, +_, +_]] extends MonadAsk3[FR] with ArrowChoice3[FR] with Lo
 private[bio] sealed trait LocalInstances
 object LocalInstances {
   implicit final class ToKleisliSyntaxLocal[FR[-_, +_, +_]](private val FR: Local3[FR]) extends AnyVal {
-    @inline final def toKleisli[R, E, A](fr: FR[R, E, A]): Kleisli[FR[Any, E, ?], R, A] = Kleisli(FR.provide(fr)(_))
+    @inline final def toKleisli[R, E, A](fr: FR[R, E, A]): Kleisli[FR[Any, E, `?`], R, A] = Kleisli(FR.provide(fr)(_))
   }
 }

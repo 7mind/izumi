@@ -91,7 +91,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, `?`]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -195,7 +195,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, `?`]](plan)
 
       val ctxResource = produceBIO[IO]
 

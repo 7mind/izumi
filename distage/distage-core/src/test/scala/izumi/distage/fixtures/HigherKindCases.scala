@@ -21,13 +21,13 @@ object HigherKindCases {
           override def point[A](a: A): List[A] = List(a)
         }
 
-      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, ?]] =
-        new Pointed[OptionT[F, ?]] {
+      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, `?`]] =
+        new Pointed[OptionT[F, `?`]] {
           override def point[A](a: A): OptionT[F, A] = OptionT(Pointed[F].point(Some(a)))
         }
 
-      implicit final def pointedEither[E]: Pointed[Either[E, ?]] =
-        new Pointed[Either[E, ?]] {
+      implicit final def pointedEither[E]: Pointed[Either[E, `?`]] =
+        new Pointed[Either[E, `?`]] {
           override def point[A](a: A): Either[E, A] = Right(a)
         }
 

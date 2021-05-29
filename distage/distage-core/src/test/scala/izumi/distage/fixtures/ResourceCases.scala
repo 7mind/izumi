@@ -30,7 +30,7 @@ object ResourceCases {
 
     val queueEffect = Suspend2(mutable.Queue.empty[Ops])
 
-    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], X] {
+    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, `?`], X] {
       override def acquire: Suspend2[Nothing, X] = Suspend2 {
         queue += XStart
         new X
@@ -43,7 +43,7 @@ object ResourceCases {
       }.void
     }
 
-    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], Y] {
+    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, `?`], Y] {
       x.discard()
 
       override def acquire: Suspend2[Nothing, Y] = Suspend2 {
@@ -58,7 +58,7 @@ object ResourceCases {
       }.void
     }
 
-    class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, ?], Z] {
+    class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, `?`], Z] {
       y.discard()
 
       override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
@@ -110,7 +110,7 @@ object ResourceCases {
       }
     }
 
-    class SuspendResource extends Lifecycle.Basic[Suspend2[Nothing, ?], Res] {
+    class SuspendResource extends Lifecycle.Basic[Suspend2[Nothing, `?`], Res] {
       override def acquire: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
 
       override def release(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
@@ -159,7 +159,7 @@ object ResourceCases {
   object Suspend2 {
     def apply[A](a: => A)(implicit dummy: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
-    implicit def QuasiIOSuspend2[E <: Throwable]: QuasiIO[Suspend2[E, ?]] = new QuasiIO[Suspend2[E, ?]] {
+    implicit def QuasiIOSuspend2[E <: Throwable]: QuasiIO[Suspend2[E, `?`]] = new QuasiIO[Suspend2[E, `?`]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def map2[A, B, C](fa: Suspend2[E, A], fb: => Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))

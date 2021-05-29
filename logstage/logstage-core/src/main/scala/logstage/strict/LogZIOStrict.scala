@@ -27,8 +27,8 @@ object LogZIOStrict {
   object log extends LogIO3AskStrictImpl[ZIO](_.get)
 
   def withFiberIdStrict(logger: AbstractLogger): LogIO2Strict[IO] = {
-    new WrappedLogIOStrict[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
-      override def withCustomContext(context: CustomContext): LogIOStrict[IO[Nothing, ?]] = {
+    new WrappedLogIOStrict[IO[Nothing, `?`]](logger)(SyncSafe2[IO]) {
+      override def withCustomContext(context: CustomContext): LogIOStrict[IO[Nothing, `?`]] = {
         withFiberIdStrict(logger.withCustomContext(context))
       }
 
@@ -41,9 +41,9 @@ object LogZIOStrict {
     }
   }
 
-  def withDynamicContextStrict[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIOStrict[ZIO[R, Nothing, ?]] = {
-    new WrappedLogIOStrict[ZIO[R, Nothing, ?]](logger)(SyncSafe[ZIO[R, Nothing, ?]]) {
-      override def withCustomContext(context: CustomContext): LogIOStrict[ZIO[R, Nothing, ?]] = {
+  def withDynamicContextStrict[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIOStrict[ZIO[R, Nothing, `?`]] = {
+    new WrappedLogIOStrict[ZIO[R, Nothing, `?`]](logger)(SyncSafe[ZIO[R, Nothing, `?`]]) {
+      override def withCustomContext(context: CustomContext): LogIOStrict[ZIO[R, Nothing, `?`]] = {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
 

@@ -49,7 +49,7 @@ object LogIO3Ask {
       F.access(get(_).createEntry(logLevel, message))
     override final def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Has[LogIO3[F]], Nothing, Log.Context] =
       F.access(get(_).createContext(logLevel, customContext))
-    override final def withCustomContext(context: CustomContext): LogIO2[F[Has[LogIO3[F]], ?, ?]] = {
+    override final def withCustomContext(context: CustomContext): LogIO2[F[Has[LogIO3[F]], `?`, `?`]] = {
       new LogIO3AskImpl[F](get(_).withCustomContext(context))
     }
   }

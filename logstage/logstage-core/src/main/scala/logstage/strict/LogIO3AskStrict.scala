@@ -71,7 +71,7 @@ object LogIO3AskStrict {
     )(implicit pos: CodePositionMaterializer
     ): F[Has[LogIO3Strict[F]], Nothing, Log.Context] =
       F.access(get(_).createContext(logLevel, customContext))
-    override final def withCustomContext(context: CustomContext): LogIO2Strict[F[Has[LogIO3Strict[F]], ?, ?]] = {
+    override final def withCustomContext(context: CustomContext): LogIO2Strict[F[Has[LogIO3Strict[F]], `?`, `?`]] = {
       new LogIO3AskStrictImpl[F](get(_).withCustomContext(context))
     }
   }

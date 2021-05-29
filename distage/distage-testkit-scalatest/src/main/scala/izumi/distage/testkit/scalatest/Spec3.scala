@@ -24,10 +24,10 @@ import scala.language.implicitConversions
   *   type PetStoreEnv = Has[PetStore[IO]]
   *   type PetsEnv = Has[Pets[IO]]
   *
-  *   val store = new PetStore[ZIO[PetStoreEnv, ?, ?]] {
+  *   val store = new PetStore[ZIO[PetStoreEnv, `?`, `?`]] {
   *     def purchasePet(name: String, cost: Int): RIO[PetStoreEnv, Boolean] = ZIO.accessM(_.get.purchasePet(name, cost))
   *   }
-  *   val pets = new Pets[ZIO[PetsEnv, ?, ?]] {
+  *   val pets = new Pets[ZIO[PetsEnv, `?`, `?`]] {
   *     def myPets: RIO[PetsEnv, List[String]] = ZIO.accessM(_.get.myPets)
   *   }
   *
@@ -55,15 +55,15 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, ?, ?]])
-  extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, ?]]
-  with DistageAbstractScalatestSpec[FR[Any, Throwable, ?]] {
+abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, `?`, `?`]])
+  extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, `?`]]
+  with DistageAbstractScalatestSpec[FR[Any, Throwable, `?`]] {
 
   protected implicit def convertToWordSpecStringWrapperDS3(s: String): DSWordSpecStringWrapper3[FR] = {
     new DSWordSpecStringWrapper3(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 
   override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = LogIO2Module[FR[Any, ?, ?]]()(tagBIO)
+    moduleOverrides = LogIO2Module[FR[Any, `?`, `?`]]()(tagBIO)
   )
 }

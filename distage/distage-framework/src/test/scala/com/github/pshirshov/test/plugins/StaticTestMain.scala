@@ -32,9 +32,9 @@ class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends Rol
   override protected def pluginConfig: PluginConfig =
     PluginConfig
       .cached("com.github.pshirshov.test.plugins")
-      .++(staticTestMainPlugin[F[Throwable, ?], F[Throwable, ?]])
+      .++(staticTestMainPlugin[F[Throwable, `?`], F[Throwable, `?`]])
       .++(new PluginDef {
-        modify[StaticTestRole[F[Throwable, ?]]]
+        modify[StaticTestRole[F[Throwable, `?`]]]
           .addDependency[LogIO2[F]]
       })
 }

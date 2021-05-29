@@ -8,9 +8,9 @@ import izumi.functional.bio.impl.MiniBIO
 import izumi.functional.bio.laws.env.MiniBIOEnv
 
 class MiniBIOLawsTest extends CatsLawsTestBase with MiniBIOEnv {
-  val syncTests: SyncTests[MiniBIO[Throwable, ?]] = new SyncTests[MiniBIO[Throwable, ?]] {
-    override val laws = new SyncLaws[MiniBIO[Throwable, ?]] {
-      override val F = Sync[MiniBIO[Throwable, ?]]
+  val syncTests: SyncTests[MiniBIO[Throwable, `?`]] = new SyncTests[MiniBIO[Throwable, `?`]] {
+    override val laws = new SyncLaws[MiniBIO[Throwable, `?`]] {
+      override val F = Sync[MiniBIO[Throwable, `?`]]
     }
   }
 

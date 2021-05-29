@@ -612,9 +612,9 @@ val catsEffectHello = polymorphicHelloWorld[cats.effect.IO]
 
 val monixHello = polymorphicHelloWorld[monix.eval.Task]
 
-val zioHello = polymorphicHelloWorld[zio.IO[Throwable, ?]]
+val zioHello = polymorphicHelloWorld[zio.IO[Throwable, `?`]]
 
-val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, ?]]
+val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, `?`]]
 ```
 
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for implementation details. For details on
@@ -1421,24 +1421,24 @@ import zio.RIO
 import zio.console.{Console, getStrLn, putStrLn}
 import distage.Activation
 
-object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
+object RealInteractionZIO extends Interaction[RIO[Console, `?`]] {
   def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
   def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
 def RealInterpretersZIO = {
-  SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
-    make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
+  SyncInterpreters[RIO[Console, `?`]] overriddenBy new ModuleDef {
+    make[Interaction[RIO[Console, `?`]]].from(RealInteractionZIO)
   }
 }
 
 def chooseInterpreters(isDummy: Boolean) = {
-  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
+  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, `?`]]
                      else         RealInterpretersZIO
-  def module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  def module = ProgramModule[RIO[Console, `?`]] ++ interpreters
 
-  Injector[RIO[Console, ?]]()
-    .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
+  Injector[RIO[Console, `?`]]()
+    .produceGet[TaglessProgram[RIO[Console, `?`]]](module, Activation.empty)
 }
 
 // execute
