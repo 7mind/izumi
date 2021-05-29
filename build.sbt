@@ -83,7 +83,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -102,6 +103,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -228,7 +230,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -247,6 +250,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -352,7 +356,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -371,6 +376,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -498,7 +504,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -517,6 +524,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -638,7 +646,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -657,6 +666,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -773,7 +783,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -792,6 +803,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -901,7 +913,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -920,6 +933,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1028,7 +1042,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1047,6 +1062,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1149,7 +1165,8 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1168,6 +1185,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1283,7 +1301,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1302,6 +1321,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1407,7 +1427,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1426,6 +1447,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1539,7 +1561,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1558,6 +1581,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1666,7 +1690,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1685,6 +1710,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1814,7 +1840,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1833,6 +1860,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -1940,7 +1968,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -1959,6 +1988,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2064,7 +2094,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2083,6 +2114,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2201,7 +2233,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2220,6 +2253,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2355,7 +2389,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2374,6 +2409,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2478,7 +2514,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2497,6 +2534,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2612,7 +2650,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2631,6 +2670,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2741,7 +2781,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2760,6 +2801,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2868,7 +2910,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -2887,6 +2930,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -2992,7 +3036,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -3011,6 +3056,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -3120,7 +3166,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -3139,6 +3186,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -3275,7 +3323,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -3294,6 +3343,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
@@ -3456,7 +3506,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3"
       )
       case (_, "2.13.6") => Seq(
         "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
@@ -3475,6 +3526,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
+        "-Xsource:3",
         "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
