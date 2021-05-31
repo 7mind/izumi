@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.76`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.77`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -227,15 +227,10 @@ object Izumi {
       final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) := Defaults.Scala212Options ++ Seq[Const](
-            "-Xsource:3",
-            "-P:kind-projector:underscore-placeholders",
+          SettingKey(Some(scala212), None) := Defaults.Scala212Options,
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
+            "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala213), None) := (Defaults.Scala213Options ++ Seq[Const](
-            "-Wunused:-synthetics",
-            "-Xsource:3",
-            "-P:kind-projector:underscore-placeholders",
-          )),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
