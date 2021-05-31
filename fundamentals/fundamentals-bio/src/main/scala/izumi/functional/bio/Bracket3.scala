@@ -12,10 +12,10 @@ trait Bracket3[F[-_, +_, +_]] extends Error3[F] {
   }
 
   final def bracketOnFailure[R, E, A, B](acquire: F[R, E, A])(cleanupOnFailure: (A, Exit.Failure[E]) => F[R, Nothing, Unit])(use: A => F[R, E, B]): F[R, E, B] = {
-    bracketCase[R, E, A, B](acquire)({
+    bracketCase[R, E, A, B](acquire) {
       case (a, e: Exit.Failure[E]) => cleanupOnFailure(a, e)
       case _ => unit
-    })(use)
+    }(use)
   }
 
   final def guaranteeOnFailure[R, E, A](f: F[R, E, A], cleanupOnFailure: Exit.Failure[E] => F[R, Nothing, Unit]): F[R, E, A] = {

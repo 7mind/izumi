@@ -38,7 +38,6 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     Runtime.getRuntime.addShutdownHook(shutdownHook)
   }
 
-
   override def close(): Unit = {
     stopPolling()
   }

@@ -64,7 +64,7 @@ class PlannerDefaultImpl(
 
         val mappedOps = mappedGraph.view.flatMap(_._2).toMap
 
-        val mappedMatrix = mappedGraph.view.map(_._1).filter({ case (k, _) => mappedOps.contains(k) }).toMap
+        val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
 
         Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
           .map(addImports(_, input.roots))
