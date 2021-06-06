@@ -19,7 +19,7 @@ object V {
   val zio_interop_cats = "2.5.1.0"
 
   val monix = "3.4.0"
-  val monix_bio = "1.1.0"
+  val monix_bio = "1.2.0"
 
   val circe = "0.14.1"
   val circe_derivation = "0.13.0-M5"
