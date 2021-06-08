@@ -252,7 +252,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     )
   }
 
-  "type alias with" in {
+  "parameterization of intersection type alias in Set (https://github.com/7mind/izumi/issues/1523)" in {
     import distage._
     import cats.effect.IO
 
