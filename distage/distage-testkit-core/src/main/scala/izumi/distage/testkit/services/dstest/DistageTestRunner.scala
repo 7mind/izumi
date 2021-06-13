@@ -99,7 +99,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
         // so this saves a lot of reallocation of memoized resources
         val mergedEnvs = memoizationEnvs.groupBy(_.envMergeCriteria)
-
         mergedEnvs.map {
           case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
             val integrationLogger = packedEnv.head.anyIntegrationLogger
@@ -702,18 +701,18 @@ object DistageTestRunner {
       }
     }
 
-    private def toString_(level: Int, memoizationRoots: Set[DIKey], suitePad: String, levelPad: String): String = {
+    private def toString_(level: Int, memoizedKeys: Set[DIKey], suitePad: String, levelPad: String): String = {
       val currentLevelPad = {
         val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
 
-        val memoizationRootsRendered = if (memoizationRoots.nonEmpty) {
-          val minimizer = KeyMinimizer(memoizationRoots)
-          memoizationRoots.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
+        val memoizedKeysRendered = if (memoizedKeys.nonEmpty) {
+          val minimizer = KeyMinimizer(memoizedKeys)
+          memoizedKeys.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
         } else {
           "ø"
         }
 
-        s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ MEMOIZATION ROOTS: $memoizationRootsRendered"
+        s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ MEMOIZED KEYS: $memoizedKeysRendered"
       }
 
       val str = {
@@ -724,8 +723,8 @@ object DistageTestRunner {
 
       val updatedLevelPad: String = levelPad.replaceAll("╠════$", "║    ").replaceAll("╚════$", "     ")
 
-      children.toList.zipWithIndex.foldLeft(str) {
-        case (acc, ((nextPlan, nextTree), i)) =>
+      val (res, _) = children.toList.zipWithIndex.foldLeft((str, memoizedKeys)) {
+        case ((acc, prevLevelKeys), ((nextPlan, nextTree), i)) =>
           val isLastChild = children.size == i + 1
           val nextSuitePad = suitePad + (if (isLastChild) "     " else "║    ")
           val nextLevelPad = level match {
@@ -733,9 +732,11 @@ object DistageTestRunner {
             case _ if isLastChild => s"$updatedLevelPad╚════"
             case _ => s"$updatedLevelPad╠════"
           }
-          val nextChildStr = nextTree.toString_(level + 1, nextPlan.keys, nextSuitePad, nextLevelPad)
-          s"$acc$nextChildStr"
+          val nextPlanKeys = nextPlan.keys
+          val nextChildStr = nextTree.toString_(level + 1, nextPlanKeys -- prevLevelKeys, nextSuitePad, nextLevelPad)
+          (s"$acc$nextChildStr", nextPlanKeys ++ prevLevelKeys)
       }
+      res
     }
   }
   object MemoizationTree {
