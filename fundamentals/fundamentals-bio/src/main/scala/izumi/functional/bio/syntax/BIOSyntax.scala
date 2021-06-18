@@ -118,7 +118,7 @@ object BIOSyntax {
   class BIOPanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BIOBracketOps(r) {
     @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "1.0")
+    @deprecated("renamed to sandboxExit", "will be removed in 1.1.0")
     @inline final def sandboxBIOExit = sandboxExit
 
     /**
@@ -263,10 +263,10 @@ object BIOSyntax {
     @inline final def BIOFunctor[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }
   trait BIOImplicitPuns14 {
-    @deprecated("Use Error2", "0.11")
+    @deprecated("Use Error2", "will be removed in 1.1.0")
     @inline implicit final def BIOMonadError[F[+_, +_]: Error2, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] =
       new BIOSyntax.BIOErrorOps[F, E, A](self)
-    @deprecated("Use Error2", "0.11")
+    @deprecated("Use Error2", "will be removed in 1.1.0")
     @inline final def BIOMonadError[F[+_, +_]: Error2]: Error2[F] = implicitly
   }
 
