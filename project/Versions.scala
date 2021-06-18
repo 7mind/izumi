@@ -32,7 +32,7 @@ object V {
 
   // java-only dependencies below
   val classgraph = "4.8.108"
-  val slf4j = "1.7.30"
+  val slf4j = "1.7.31"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
