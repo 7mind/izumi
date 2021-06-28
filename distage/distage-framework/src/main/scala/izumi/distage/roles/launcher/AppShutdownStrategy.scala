@@ -36,6 +36,8 @@ object AppShutdownInitiator {
   *
   *    1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
   *    2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
+  *
+  * @see also [[izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy]]
   */
 trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
   def awaitShutdown(logger: IzLogger): F[Unit]

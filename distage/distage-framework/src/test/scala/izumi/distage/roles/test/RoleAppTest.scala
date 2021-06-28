@@ -373,6 +373,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         )
     }
 
+    "Roles have access to AppShutdownInitiator" in {
+      ExitLatchTestEntrypoint
+        .main(
+          Array()
+        )
+    }
+
     "read config in bootstrap plugins" in {
       Fixture3.TestRoleAppMain.main(Array(":fixture3"))
     }
