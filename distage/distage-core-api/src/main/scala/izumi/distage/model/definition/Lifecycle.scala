@@ -12,11 +12,11 @@ import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.fundamentals.platform.language.{open, unused}
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
+import zio.*
 import zio.ZManaged.ReleaseMap
-import zio._
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ExecutorService, TimeUnit}
@@ -349,6 +349,18 @@ object Lifecycle extends LifecycleCatsInstances {
     */
   def forkCats[F[_], A](f: F[A])(implicit F: cats.effect.Concurrent[F]): Lifecycle[F, cats.effect.Fiber[F, A]] = {
     Lifecycle.make(F.start(f))(_.cancel)
+  }
+
+  def traverse[F[_]: QuasiIO, A, B](l: Iterable[A])(f: A => Lifecycle[F, B]): Lifecycle[F, List[B]] = {
+    l.foldLeft(pure[F](List.empty[B])) {
+      (acc, a) => acc.flatMap(list => f(a).map(r => list ++ List(r)))
+    }
+  }
+
+  def traverse_[F[_]: QuasiIO, A](l: Iterable[A])(f: A => Lifecycle[F, Unit]): Lifecycle[F, Unit] = {
+    l.foldLeft(unit) {
+      (acc, a) => acc.flatMap(_ => f(a))
+    }
   }
 
   def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = {
@@ -907,7 +919,7 @@ object Lifecycle extends LifecycleCatsInstances {
   }
 
   @inline private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiIO[F]): Lifecycle[F, B] = {
-    import QuasiIO.syntax._
+    import QuasiIO.syntax.*
     new Lifecycle[F, B] {
       override type InnerResource = AtomicReference[List[() => F[Unit]]]
 
@@ -983,7 +995,7 @@ object Lifecycle extends LifecycleCatsInstances {
     success: A => Lifecycle[F, B],
   )(implicit F: QuasiIO[F]
   ): Lifecycle[F, B] = {
-    import QuasiIO.syntax._
+    import QuasiIO.syntax.*
     new Lifecycle[F, B] {
       override type InnerResource = AtomicReference[List[() => F[Unit]]]
 
@@ -1234,7 +1246,7 @@ private[definition] trait TrifunctorHasLifecycleTagImpl[R0, T] {
   implicit def resourceTag: LifecycleTagImpl[Lifecycle[F[Any, E, _], A]]
 }
 private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLifecycleTagLowPriority {
-  import scala.annotation.unchecked.{uncheckedVariance => v}
+  import scala.annotation.unchecked.uncheckedVariance as v
 
   implicit def trifunctorResourceTag[
     R1 <: Lifecycle[F0[R0, E0, _], A0],
@@ -1267,7 +1279,7 @@ private[definition] object TrifunctorHasLifecycleTagImpl extends TrifunctorHasLi
   }
 }
 sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycleTagLowPriority1 {
-  import scala.annotation.unchecked.{uncheckedVariance => v}
+  import scala.annotation.unchecked.uncheckedVariance as v
 
   implicit def trifunctorResourceTagNothing[
     R1 <: Lifecycle[F0[R0, Nothing, _], A0],
