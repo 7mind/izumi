@@ -200,7 +200,7 @@ import scala.util.{Failure, Success, Try}
               .sortBy(_.getId)
           } catch {
             case c: Throwable =>
-              throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+              throw new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))
           }
         }
         val candidate = {
@@ -365,9 +365,9 @@ import scala.util.{Failure, Success, Try}
           case Success(pulled) if pulled => // pulled successfully
             Right(())
           case Success(_) => // timed out
-            Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None))))
+            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
           case Failure(t) => // failure occurred (e.g. rate limiter failure)
-            Left(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t)))))
+            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
         }
       }
     }

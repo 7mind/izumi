@@ -33,6 +33,7 @@ object AnyConstructorMacro {
     assert(enclosingClass.exists(_.pos == positionOfMakeCall), "enclosingClass must contain macro call position")
 
     def findExprContainingMake(tree: Tree): Option[Tree] = {
+      @nowarn("msg=outer reference")
       val afterLastBlock = Option {
         tree
           .filter(_.exists(_.pos == positionOfMakeCall))

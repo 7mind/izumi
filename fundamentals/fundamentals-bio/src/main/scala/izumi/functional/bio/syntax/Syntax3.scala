@@ -203,7 +203,7 @@ object Syntax3 {
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "1.0")
+    @deprecated("renamed to sandboxExit", "will be removed in 1.1.0")
     @inline final def sandboxBIOExit: FR[R, Nothing, Exit[E, A]] = sandboxExit
 
     /**
@@ -292,7 +292,7 @@ object Syntax3 {
   }
 
   final class LocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: Local3[FR]) {
-    @inline final def toKleisli: Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
+    @inline final def toKleisli: Kleisli[FR[Any, E, _], R, A] = F.toKleisli(r)
   }
 
   trait ImplicitPuns extends ImplicitPuns1 {

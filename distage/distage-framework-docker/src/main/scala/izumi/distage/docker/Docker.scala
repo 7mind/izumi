@@ -13,7 +13,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
 
 object Docker {
-  final case class AvailablePort(host: ServiceHost, port: Int)
+  final case class AvailablePort(host: ServiceHost, port: Int) {
+    def hostString: String = host.host
+
+    @deprecated("Use hostString", "1.0.6")
+    def hostV4: String = host.host
+  }
   object AvailablePort {
     def local(port: Int): AvailablePort = hostPort(ServiceHost.local, port)
     def hostPort(host: ServiceHost, port: Int): AvailablePort = AvailablePort(host, port)
@@ -25,7 +30,7 @@ object Docker {
     def address: InetAddress
     def host: String
 
-    override final def toString: String = address.getHostAddress
+    override final def toString: String = host
   }
   object ServiceHost {
     final case class IPv4(address: Inet4Address) extends ServiceHost {
@@ -41,9 +46,11 @@ object Docker {
       case _ => None
     }
 
-    def local: ServiceHost = (InetAddress.getLocalHost: @unchecked) match {
-      case address: Inet4Address => IPv4(address)
-      case address: Inet6Address => IPv6(address)
+    // we will try to find local host address or will return default 127.0.0.1
+    def local: ServiceHost = Try(InetAddress.getLocalHost) match {
+      case Success(address: Inet4Address) => IPv4(address)
+      case Success(address: Inet6Address) => IPv6(address)
+      case _ => IPv4(InetAddress.getByName("127.0.0.1").asInstanceOf[Inet4Address])
     }
 
     def zeroAddresses: Set[ServiceHost] = {
@@ -156,7 +163,7 @@ object Docker {
     cwd: Option[String] = None,
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
-    networks: Set[ContainerNetwork[_]] = Set.empty,
+    networks: Set[ContainerNetwork[?]] = Set.empty,
     reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),

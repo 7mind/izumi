@@ -6,6 +6,9 @@ import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}
 
+import scala.annotation.nowarn
+
+@nowarn("msg=outer reference")
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   import u.u.{Annotation, LiteralApi}

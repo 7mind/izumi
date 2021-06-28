@@ -6,9 +6,9 @@ import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.test.fixtures.{ExitAfterSleepRole, TestPluginBase}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 
-class TestPluginZIO extends TestPluginBase[zio.IO[Throwable, *]]
+class TestPluginZIO extends TestPluginBase[zio.IO[Throwable, _]]
 
-class ManualTestEntrypointBase extends RoleAppMain.LauncherBIO2[zio.IO] {
+class ExitLatchEntrypointBase extends RoleAppMain.LauncherBIO2[zio.IO] {
 
   /** Roles always enabled in this [[RoleAppMain]] */
   override protected def requiredRoles(argv: RoleAppMain.ArgV): Vector[RawRoleParams] = Vector(RawRoleParams(ExitAfterSleepRole.id))
@@ -22,4 +22,4 @@ class ManualTestEntrypointBase extends RoleAppMain.LauncherBIO2[zio.IO] {
   }
 }
 
-object ManualTestEntrypoint extends ManualTestEntrypointBase
+object ExitLatchTestEntrypoint extends ExitLatchEntrypointBase

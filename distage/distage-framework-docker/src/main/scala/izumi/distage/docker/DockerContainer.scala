@@ -61,9 +61,19 @@ object DockerContainer {
     )(implicit tag: distage.Tag[ContainerResource[F, T]]
     ): Functoid[ContainerResource[F, T]] = {
       self.zip(modify).map {
-        case (that, f) =>
-          import that._
-          that.copy(config = f(that.config))
+        case (self, f) =>
+          import self.{F, P}
+          self.copy(config = f(self.config))
+      }
+    }
+
+    def modifyConfig(
+      modify: Docker.ContainerConfig[T] => Docker.ContainerConfig[T]
+    ): Functoid[ContainerResource[F, T]] = {
+      self.mapSame {
+        self =>
+          import self.{F, P}
+          self.copy(config = modify(self.config))
       }
     }
 

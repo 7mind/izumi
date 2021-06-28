@@ -126,7 +126,7 @@ actionable series of steps - an @scaladoc[DIPlan](izumi.distage.model.plan.DIPla
 ```scala mdoc:to-string
 import distage.{Activation, Injector, Roots}
 
-val injector = Injector[RIO[Console, *]]()
+val injector = Injector[RIO[Console, _]]()
 
 val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp])
 ```
@@ -612,9 +612,9 @@ val catsEffectHello = polymorphicHelloWorld[cats.effect.IO]
 
 val monixHello = polymorphicHelloWorld[monix.eval.Task]
 
-val zioHello = polymorphicHelloWorld[zio.IO[Throwable, ?]]
+val zioHello = polymorphicHelloWorld[zio.IO[Throwable, _]]
 
-val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, ?]]
+val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, _]]
 ```
 
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for implementation details. For details on
@@ -913,16 +913,16 @@ class Dependency
 
 class X(dependency: Dependency)
 
-def makeX: URIO[Console with Has[Dependency], X] = {
+def makeX: RIO[Console with Has[Dependency], X] = {
   for {
     dep <- ZIO.service[Dependency]
     _   <- putStrLn(s"Obtained environment dependency = $dep")
   } yield new X(dep)
 }
 
-def makeXManaged: URManaged[Console with Has[Dependency], X] = makeX.toManaged_
+def makeXManaged: RManaged[Console with Has[Dependency], X] = makeX.toManaged_
 
-def makeXLayer: URLayer[Console with Has[Dependency], Has[X]] = makeX.toLayer
+def makeXLayer: RLayer[Console with Has[Dependency], Has[X]] = makeX.toLayer
 
 def module1 = new ModuleDef {
   make[Dependency]
@@ -940,7 +940,7 @@ You can also mix environment and parameter dependencies at the same time in one 
 ```scala mdoc:to-string
 def zioArgEnvCtor(
   dependency: Dependency
-): URLayer[Console, Has[X]] = {
+): RLayer[Console, Has[X]] = {
   ZLayer.succeed(dependency) ++
   ZLayer.identity[Console] >>>
   makeX.toLayer
@@ -960,7 +960,7 @@ Another example:
 ```scala mdoc:reset:to-string
 import distage.{Injector, ModuleDef}
 import zio.console.{putStrLn, Console}
-import zio.{UIO, URIO, Ref, Task, Has}
+import zio.{UIO, RIO, Ref, Task, Has}
 
 trait Hello {
   def hello: UIO[String]
@@ -972,9 +972,9 @@ trait World {
 // Environment forwarders that allow
 // using service functions from everywhere
 
-val hello: URIO[Has[Hello], String] = URIO.accessM(_.get.hello)
+val hello: RIO[Has[Hello], String] = RIO.accessM(_.get.hello)
 
-val world: URIO[Has[World], String] = URIO.accessM(_.get.world)
+val world: RIO[Has[World], String] = RIO.accessM(_.get.world)
 
 // service implementations
 
@@ -982,9 +982,9 @@ val makeHello = {
   (for {
     _     <- putStrLn("Creating Enterprise Hellower...")
     hello = new Hello { val hello = UIO("Hello") }
-  } yield hello).toManaged { _ =>
-    putStrLn("Shutting down Enterprise Hellower")
-  }
+  } yield hello).toManaged(release = _ =>
+    putStrLn("Shutting down Enterprise Hellower").orDie
+  )
 }
 
 val makeWorld = {
@@ -997,7 +997,7 @@ val makeWorld = {
 
 // the main function
 
-val turboFunctionalHelloWorld: URIO[Has[Hello] with Has[World] with Has[Console.Service], Unit] = {
+val turboFunctionalHelloWorld: RIO[Has[Hello] with Has[World] with Has[Console.Service], Unit] = {
   for {
     hello <- hello
     world <- world
@@ -1421,24 +1421,24 @@ import zio.RIO
 import zio.console.{Console, getStrLn, putStrLn}
 import distage.Activation
 
-object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
+object RealInteractionZIO extends Interaction[RIO[Console, _]] {
   def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
   def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
 def RealInterpretersZIO = {
-  SyncInterpreters[RIO[Console, ?]] overriddenBy new ModuleDef {
-    make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
+  SyncInterpreters[RIO[Console, _]] overriddenBy new ModuleDef {
+    make[Interaction[RIO[Console, _]]].from(RealInteractionZIO)
   }
 }
 
 def chooseInterpreters(isDummy: Boolean) = {
-  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
+  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, _]]
                      else         RealInterpretersZIO
-  def module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  def module = ProgramModule[RIO[Console, _]] ++ interpreters
 
-  Injector[RIO[Console, ?]]()
-    .produceGet[TaglessProgram[RIO[Console, ?]]](module, Activation.empty)
+  Injector[RIO[Console, _]]()
+    .produceGet[TaglessProgram[RIO[Console, _]]](module, Activation.empty)
 }
 
 // execute

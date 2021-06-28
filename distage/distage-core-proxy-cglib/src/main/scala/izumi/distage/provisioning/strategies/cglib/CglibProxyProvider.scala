@@ -27,7 +27,7 @@ class CglibProxyProvider extends ProxyProvider {
     val enhancer = new Enhancer()
 
     if (clazz.isInterface) {
-      enhancer.setInterfaces(Array[Class[_]](clazz, classOf[DistageProxy]))
+      enhancer.setInterfaces(Array[Class[?]](clazz, classOf[DistageProxy]))
     } else if (clazz == classOf[Any]) {
       enhancer.setInterfaces(Array(classOf[DistageProxy]))
     } else {

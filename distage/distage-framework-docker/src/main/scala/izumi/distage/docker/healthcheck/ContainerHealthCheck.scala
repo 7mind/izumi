@@ -7,17 +7,17 @@ import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap}
 import izumi.logstage.api.IzLogger
 
 trait ContainerHealthCheck {
-  def check(logger: IzLogger, container: DockerContainer[_], state: ContainerState): HealthCheckResult
+  def check(logger: IzLogger, container: DockerContainer[?], state: ContainerState): HealthCheckResult
 
   final def ++(next: HealthCheckResult => ContainerHealthCheck): ContainerHealthCheck = {
     this.combine(next)
   }
   final def combine(next: HealthCheckResult => ContainerHealthCheck): ContainerHealthCheck = {
-    (logger: IzLogger, container: DockerContainer[_], state: ContainerState) =>
+    (logger: IzLogger, container: DockerContainer[?], state: ContainerState) =>
       next(check(logger, container, state)).check(logger, container, state)
   }
   final def combineOnPorts(next: HealthCheckResult.AvailableOnPorts => ContainerHealthCheck): ContainerHealthCheck = {
-    (logger: IzLogger, container: DockerContainer[_], state: ContainerState) =>
+    (logger: IzLogger, container: DockerContainer[?], state: ContainerState) =>
       check(logger, container, state) match {
         case thisCheckResult: HealthCheckResult.AvailableOnPorts =>
           next(thisCheckResult).check(logger, container, state) match {

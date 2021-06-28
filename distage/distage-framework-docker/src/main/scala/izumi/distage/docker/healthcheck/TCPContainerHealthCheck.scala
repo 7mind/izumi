@@ -15,7 +15,7 @@ class TCPContainerHealthCheck extends ContainerHealthCheckBase {
 
   override protected def perform(
     logger: IzLogger,
-    container: DockerContainer[_],
+    container: DockerContainer[?],
     tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
     udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
   ): HealthCheckResult = {

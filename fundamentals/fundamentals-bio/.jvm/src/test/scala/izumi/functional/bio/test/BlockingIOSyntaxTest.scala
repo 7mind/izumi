@@ -18,7 +18,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
       implicit val blocking: Blocking = Has(Blocking.Service.live)
       `attach BlockingIO methods to a trifunctor BIO`[ZIO]
       `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
-      `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +?, +?]]
+      `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +_, +_]]
     }
   }
 
@@ -30,7 +30,7 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
       def hello = BlockingIO3[F].syncBlocking(println("hello world!"))
     }
 
-    assert(new X[zio.ZIO[Blocking, +?, +?]].hello != null)
+    assert(new X[zio.ZIO[Blocking, +_, +_]].hello != null)
     locally {
       implicit val blocking: Blocking = Has(Blocking.Service.live)
       assert(new X[zio.IO].hello != null)

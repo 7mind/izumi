@@ -36,6 +36,8 @@ object AppShutdownInitiator {
   *
   *    1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
   *    2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
+  *
+  * @see also [[izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy]]
   */
 trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
   def awaitShutdown(logger: IzLogger): F[Unit]
@@ -139,7 +141,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, ?]] {
+  class BIOShutdownStrategy[F[+_, +_]: Async2] extends AppShutdownStrategy[F[Throwable, _]] {
     private val primaryLatch: Promise[Unit] = Promise[Unit]()
     private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 

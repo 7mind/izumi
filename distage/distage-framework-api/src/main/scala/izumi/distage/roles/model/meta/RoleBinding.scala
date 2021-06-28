@@ -6,7 +6,7 @@ import izumi.distage.roles.model.RoleDescriptor
 
 final case class RoleBinding(
   binding: Binding,
-  runtimeClass: Class[_],
+  runtimeClass: Class[?],
   tpe: SafeType,
   descriptor: RoleDescriptor,
 )

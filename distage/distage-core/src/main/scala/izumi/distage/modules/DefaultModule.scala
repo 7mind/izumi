@@ -60,7 +60,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     implicit
     @unused ensureInteropCatsOnClasspath: `cats.effect.IO`[K],
     @unused l: `zio.ZIO`[ZIO],
-  ): DefaultModule2[ZIO[R, ?, ?]] = {
+  ): DefaultModule2[ZIO[R, _, _]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
   }
 }
@@ -74,7 +74,7 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     *
     * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
-  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, ?, ?]] = {
+  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, _, _]] = {
     DefaultModule(ZIOSupportModule)
   }
 
@@ -125,7 +125,7 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
 sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
   /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
   implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3](
-    implicit tagBIO: TagKK[F[Any, +?, +?]]
+    implicit tagBIO: TagKK[F[Any, +_, +_]]
   ): DefaultModule3[F] = {
     DefaultModule(AnyBIO3SupportModule.withImplicits[F])
   }

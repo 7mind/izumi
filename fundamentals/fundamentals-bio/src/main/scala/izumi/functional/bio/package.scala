@@ -144,7 +144,7 @@ package object bio extends Syntax3 with Syntax2 {
 
   type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
   }
@@ -159,15 +159,15 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
-  type Fiber2[+F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+e`, `+a`) => F[e, a]], E, A]
-  lazy val Fiber2: Fiber3.type = Fiber3
+  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +_, +_], E, A]
+  lazy val Fiber3: Fiber2.type = Fiber2
 
-  type Ref2[+F[_, _], A] = Ref1[F[Nothing, ?], A]
+  type Ref2[+F[_, _], A] = Ref1[F[Nothing, _], A]
   lazy val Ref2: Ref1.type = Ref1
-  type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, ?], A]
+  type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, _], A]
   lazy val Ref3: Ref1.type = Ref1
 
-  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +?, +?], E, A]
+  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +_, +_], E, A]
   lazy val Promise3: Promise2.type = Promise2
 
   type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
@@ -175,39 +175,39 @@ package object bio extends Syntax3 with Syntax2 {
   type Latch3[+F[-_, +_, +_]] = Promise3[F, Nothing, Unit]
   lazy val Latch3: Promise2.type = Promise2
 
-  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, ?]]
+  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, _]]
   lazy val Semaphore2: Semaphore1.type = Semaphore1
-  type Semaphore3[+F[_, _, _]] = Semaphore1[F[Any, Nothing, ?]]
+  type Semaphore3[+F[_, _, _]] = Semaphore1[F[Any, Nothing, _]]
   lazy val Semaphore3: Semaphore1.type = Semaphore1
 
-  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, ?, ?]]
+  type UnsafeRun3[F[_, _, _]] = UnsafeRun2[F[Any, _, _]]
   object UnsafeRun3 {
     @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
-  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
+  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, _]]
   object SyncSafe2 {
     @inline def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
-  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, ?]]
+  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, _]]
   object SyncSafe3 {
     @inline def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
   }
 
-  type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
+  type Clock2[F[_, _]] = Clock[F[Nothing, _]]
   object Clock2 {
     @inline def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
   }
-  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, ?]]
+  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, _]]
   object Clock3 {
     @inline def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
-  type Entropy2[F[_, _]] = Entropy[F[Nothing, ?]]
+  type Entropy2[F[_, _]] = Entropy[F[Nothing, _]]
   object Entropy2 {
     @inline def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
-  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, ?]]
+  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, _]]
   object Entropy3 {
     @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }
@@ -220,158 +220,158 @@ package object bio extends Syntax3 with Syntax2 {
 
   // Deprecated aliases
 
-  @deprecated("renamed to Functor2", "1.0")
+  @deprecated("renamed to Functor2", "will be removed in 1.1.0")
   type BIOFunctor[F[+_, +_]] = Functor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Bifunctor2", "1.0")
+  @deprecated("renamed to Bifunctor2", "will be removed in 1.1.0")
   type BIOBifunctor[F[+_, +_]] = Bifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Applicative2", "1.0")
+  @deprecated("renamed to Applicative2", "will be removed in 1.1.0")
   type BIOApplicative[F[+_, +_]] = Applicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Guarantee2", "1.0")
+  @deprecated("renamed to Guarantee2", "will be removed in 1.1.0")
   type BIOGuarantee[F[+_, +_]] = Guarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to ApplicativeError2", "1.0")
+  @deprecated("renamed to ApplicativeError2", "will be removed in 1.1.0")
   type BIOApplicativeError[F[+_, +_]] = ApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Monad2", "1.0")
+  @deprecated("renamed to Monad2", "will be removed in 1.1.0")
   type BIOMonad[F[+_, +_]] = Monad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Error2", "1.0")
+  @deprecated("renamed to Error2", "will be removed in 1.1.0")
   type BIOError[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Bracket2", "1.0")
+  @deprecated("renamed to Bracket2", "will be removed in 1.1.0")
   type BIOBracket[F[+_, +_]] = Bracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Panic2", "1.0")
+  @deprecated("renamed to Panic2", "will be removed in 1.1.0")
   type BIOPanic[F[+_, +_]] = Panic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to IO2", "1.0")
+  @deprecated("renamed to IO2", "will be removed in 1.1.0")
   type BIO[F[+_, +_]] = IO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Parallel2", "1.0")
+  @deprecated("renamed to Parallel2", "will be removed in 1.1.0")
   type BIOParallel[F[+_, +_]] = Parallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Concurrent2", "1.0")
+  @deprecated("renamed to Concurrent2", "will be removed in 1.1.0")
   type BIOConcurrent[F[+_, +_]] = Concurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Async2", "1.0")
+  @deprecated("renamed to Async2", "will be removed in 1.1.0")
   type BIOAsync[F[+_, +_]] = Async3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Temporal2", "1.0")
+  @deprecated("renamed to Temporal2", "will be removed in 1.1.0")
   type BIOTemporal[F[+_, +_]] = Temporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  @deprecated("renamed to Functor3", "1.0")
+  @deprecated("renamed to Functor3", "will be removed in 1.1.0")
   type BIOFunctor3[F[-_, +_, +_]] = Functor3[F]
-  @deprecated("renamed to Bifunctor3", "1.0")
+  @deprecated("renamed to Bifunctor3", "will be removed in 1.1.0")
   type BIOBifunctor3[F[-_, +_, +_]] = Bifunctor3[F]
-  @deprecated("renamed to Applicative3", "1.0")
+  @deprecated("renamed to Applicative3", "will be removed in 1.1.0")
   type BIOApplicative3[F[-_, +_, +_]] = Applicative3[F]
-  @deprecated("renamed to Guarantee3", "1.0")
+  @deprecated("renamed to Guarantee3", "will be removed in 1.1.0")
   type BIOGuarantee3[F[-_, +_, +_]] = Guarantee3[F]
-  @deprecated("renamed to ApplicativeError3", "1.0")
+  @deprecated("renamed to ApplicativeError3", "will be removed in 1.1.0")
   type BIOApplicativeError3[F[-_, +_, +_]] = ApplicativeError3[F]
-  @deprecated("renamed to Monad3", "1.0")
+  @deprecated("renamed to Monad3", "will be removed in 1.1.0")
   type BIOMonad3[F[-_, +_, +_]] = Monad3[F]
-  @deprecated("renamed to Error3", "1.0")
+  @deprecated("renamed to Error3", "will be removed in 1.1.0")
   type BIOError3[F[-_, +_, +_]] = Error3[F]
-  @deprecated("renamed to Bracket3", "1.0")
+  @deprecated("renamed to Bracket3", "will be removed in 1.1.0")
   type BIOBracket3[F[-_, +_, +_]] = Bracket3[F]
-  @deprecated("renamed to Panic3", "1.0")
+  @deprecated("renamed to Panic3", "will be removed in 1.1.0")
   type BIOPanic3[F[-_, +_, +_]] = Panic3[F]
-  @deprecated("renamed to IO3", "1.0")
+  @deprecated("renamed to IO3", "will be removed in 1.1.0")
   type BIO3[F[-_, +_, +_]] = IO3[F]
-  @deprecated("renamed to Parallel3", "1.0")
+  @deprecated("renamed to Parallel3", "will be removed in 1.1.0")
   type BIOParallel3[F[-_, +_, +_]] = Parallel3[F]
-  @deprecated("renamed to Concurrent3", "1.0")
+  @deprecated("renamed to Concurrent3", "will be removed in 1.1.0")
   type BIOConcurrent3[F[-_, +_, +_]] = Concurrent3[F]
-  @deprecated("renamed to Async3", "1.0")
+  @deprecated("renamed to Async3", "will be removed in 1.1.0")
   type BIOAsync3[F[-_, +_, +_]] = Async3[F]
-  @deprecated("renamed to Temporal3", "1.0")
+  @deprecated("renamed to Temporal3", "will be removed in 1.1.0")
   type BIOTemporal3[F[-_, +_, +_]] = Temporal3[F]
 
-  @deprecated("renamed to Ask3", "1.0")
+  @deprecated("renamed to Ask3", "will be removed in 1.1.0")
   type BIOAsk[F[-_, +_, +_]] = Ask3[F]
-  @deprecated("renamed to MonadAsk3", "1.0")
+  @deprecated("renamed to MonadAsk3", "will be removed in 1.1.0")
   type BIOMonadAsk[F[-_, +_, +_]] = MonadAsk3[F]
-  @deprecated("renamed to Profunctor3", "1.0")
+  @deprecated("renamed to Profunctor3", "will be removed in 1.1.0")
   type BIOProfunctor[F[-_, +_, +_]] = Profunctor3[F]
-  @deprecated("renamed to Arrow3", "1.0")
+  @deprecated("renamed to Arrow3", "will be removed in 1.1.0")
   type BIOArrow[F[-_, +_, +_]] = Arrow3[F]
-  @deprecated("renamed to ArrowChoice3", "1.0")
+  @deprecated("renamed to ArrowChoice3", "will be removed in 1.1.0")
   type BIOArrowChoice[F[-_, +_, +_]] = ArrowChoice3[F]
-  @deprecated("renamed to Local3", "1.0")
+  @deprecated("renamed to Local3", "will be removed in 1.1.0")
   type BIOLocal[F[-_, +_, +_]] = Local3[F]
 
-  @deprecated("renamed to Fork2", "1.0")
+  @deprecated("renamed to Fork2", "will be removed in 1.1.0")
   type BIOFork[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Fork3", "1.0")
+  @deprecated("renamed to Fork3", "will be removed in 1.1.0")
   type BIOFork3[F[-_, +_, +_]] = Fork3[F]
 
-  @deprecated("renamed to Fiber2", "1.0")
-  type BIOFiber[F[+_, +_], +E, +A] = Fiber3[Lambda[(`-R`, `+e`, `+a`) => F[e, a]], E, A]
-  @deprecated("renamed to Fiber3", "1.0")
+  @deprecated("renamed to Fiber2", "will be removed in 1.1.0")
+  type BIOFiber[F[+_, +_], +E, +A] = Fiber2[F, E, A]
+  @deprecated("renamed to Fiber3", "will be removed in 1.1.0")
   type BIOFiber3[F[-_, +_, +_], +E, +A] = Fiber3[F, E, A]
-  @deprecated("renamed to Fiber3", "1.0")
-  lazy val BIOFiber3: Fiber3.type = Fiber3
+  @deprecated("renamed to Fiber3", "will be removed in 1.1.0")
+  lazy val BIOFiber3: Fiber2.type = Fiber2
 
-  @deprecated("renamed to BlockingIO2", "1.0")
+  @deprecated("renamed to BlockingIO2", "will be removed in 1.1.0")
   type BlockingIO[F[+_, +_]] = BlockingIO2[F]
-  @deprecated("renamed to BlockingIO2", "1.0")
+  @deprecated("renamed to BlockingIO2", "will be removed in 1.1.0")
   lazy val BlockingIO: BlockingIO2.type = BlockingIO2
 
-  @deprecated("renamed to Ref2", "1.0")
+  @deprecated("renamed to Ref2", "will be removed in 1.1.0")
   type BIORef[F[+_, +_], A] = Ref2[F, A]
-  @deprecated("renamed to Ref2", "1.0")
+  @deprecated("renamed to Ref2", "will be removed in 1.1.0")
   lazy val BIORef: Ref2.type = Ref2
-  @deprecated("renamed to Ref3", "1.0")
+  @deprecated("renamed to Ref3", "will be removed in 1.1.0")
   type BIORef3[F[-_, +_, +_], A] = Ref3[F, A]
 
-  @deprecated("renamed to Promise2", "1.0")
+  @deprecated("renamed to Promise2", "will be removed in 1.1.0")
   type BIOPromise[F[+_, +_], E, A] = Promise2[F, E, A]
-  @deprecated("renamed to Promise2", "1.0")
+  @deprecated("renamed to Promise2", "will be removed in 1.1.0")
   lazy val BIOPromise: Promise2.type = Promise2
-  @deprecated("renamed to Promise3", "1.0")
+  @deprecated("renamed to Promise3", "will be removed in 1.1.0")
   type BIOPromise3[F[-_, +_, +_], E, A] = Promise3[F, E, A]
 
-  @deprecated("renamed to Latch2", "1.0")
+  @deprecated("renamed to Latch2", "will be removed in 1.1.0")
   type BIOLatch[F[+_, +_]] = Latch2[F]
-  @deprecated("renamed to Latch3", "1.0")
+  @deprecated("renamed to Latch3", "will be removed in 1.1.0")
   type BIOLatch3[F[-_, +_, +_]] = Latch3[F]
 
-  @deprecated("renamed to Semaphore2", "1.0")
+  @deprecated("renamed to Semaphore2", "will be removed in 1.1.0")
   type BIOSemaphore[F[+_, +_]] = Semaphore2[F]
-  @deprecated("renamed to Semaphore2", "1.0")
+  @deprecated("renamed to Semaphore2", "will be removed in 1.1.0")
   lazy val BIOSemaphore: Semaphore2.type = Semaphore2
-  @deprecated("renamed to Semaphore3", "1.0")
+  @deprecated("renamed to Semaphore3", "will be removed in 1.1.0")
   type BIOSemaphore3[F[-_, +_, +_]] = Semaphore3[F]
 
-  @deprecated("renamed to Primitives2", "1.0")
+  @deprecated("renamed to Primitives2", "will be removed in 1.1.0")
   type BIOPrimitives[F[+_, +_]] = Primitives2[F]
-  @deprecated("renamed to Primitives2", "1.0")
+  @deprecated("renamed to Primitives2", "will be removed in 1.1.0")
   lazy val BIOPrimitives: Primitives2.type = Primitives2
-  @deprecated("renamed to Primitives3", "1.0")
-  type BIOPrimitives3[F[-_, +_, +_]] = Primitives2[F[Any, +?, +?]]
-  @deprecated("renamed to Primitives3", "1.0")
+  @deprecated("renamed to Primitives3", "will be removed in 1.1.0")
+  type BIOPrimitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
+  @deprecated("renamed to Primitives3", "will be removed in 1.1.0")
   lazy val BIOPrimitives3: Primitives3.type = Primitives3
 
-  @deprecated("renamed to UnsafeRun2", "1.0")
+  @deprecated("renamed to UnsafeRun2", "will be removed in 1.1.0")
   type BIORunner[F[_, _]] = UnsafeRun2[F]
-  @deprecated("renamed to UnsafeRun2", "0.11")
+  @deprecated("renamed to UnsafeRun2", "will be removed in 1.1.0")
   lazy val BIORunner: UnsafeRun2.type = UnsafeRun2
 
-  @deprecated("renamed to UnsafeRun3", "0.11")
+  @deprecated("renamed to UnsafeRun3", "will be removed in 1.1.0")
   type BIORunner3[F[_, _, _]] = UnsafeRun3[F]
-  @deprecated("renamed to UnsafeRun3", "0.11")
+  @deprecated("renamed to UnsafeRun3", "will be removed in 1.1.0")
   lazy val BIORunner3: UnsafeRun3.type = UnsafeRun3
 
-  @deprecated("renamed to Error2", "0.11")
+  @deprecated("renamed to Error2", "will be removed in 1.1.0")
   type BIOMonadError[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  @deprecated("renamed to Error3", "0.11")
+  @deprecated("renamed to Error3", "will be removed in 1.1.0")
   type BIOMonadError3[FR[-_, +_, +_]] = Error3[FR]
 
-  @deprecated("renamed to Exit", "0.11")
+  @deprecated("renamed to Exit", "will be removed in 1.1.0")
   type BIOExit[+E, +A] = Exit[E, A]
-  @deprecated("renamed to Exit", "0.11")
+  @deprecated("renamed to Exit", "will be removed in 1.1.0")
   lazy val BIOExit: Exit.type = Exit
 
-  @deprecated("renamed to TransZio", "0.11")
+  @deprecated("renamed to TransZio", "will be removed in 1.1.0")
   type BIOTransZio[F[_, _]] = TransZio[F]
-  @deprecated("renamed to TransZio", "0.11")
+  @deprecated("renamed to TransZio", "will be removed in 1.1.0")
   lazy val BIOTransZio: TransZio.type = TransZio
 
-  @deprecated("renamed to Root", "0.11")
+  @deprecated("renamed to Root", "will be removed in 1.1.0")
   type BIORoot = Root
-  @deprecated("renamed to Root", "0.11")
+  @deprecated("renamed to Root", "will be removed in 1.1.0")
   lazy val BIORoot: Root.type = Root
 
 }

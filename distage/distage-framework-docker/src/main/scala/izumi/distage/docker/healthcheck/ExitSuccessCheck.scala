@@ -6,7 +6,7 @@ import izumi.distage.docker.{Docker, DockerContainer}
 import izumi.logstage.api.IzLogger
 
 final class ExitSuccessCheck(exitCode: Int) extends ContainerHealthCheck {
-  override def check(logger: IzLogger, container: DockerContainer[_], state: Docker.ContainerState): HealthCheckResult = {
+  override def check(logger: IzLogger, container: DockerContainer[?], state: Docker.ContainerState): HealthCheckResult = {
     state match {
       case ContainerState.Exited(code) if code == exitCode =>
         logger.info(s"$container successfully exited, health check passed.")

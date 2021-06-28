@@ -8,7 +8,6 @@ import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
-import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.strings.IzString._
@@ -123,7 +122,7 @@ object ContainerNetworkDef {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
       F.definitelyRecover(f) {
         c: Throwable =>
-          F.fail(new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))))
+          F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
       }
     }
 

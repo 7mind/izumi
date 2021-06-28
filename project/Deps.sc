@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.73`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.77`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -128,8 +128,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.13")
-  final val scala213 = ScalaVersion("2.13.5")
+  final val scala212 = ScalaVersion("2.12.14")
+  final val scala213 = ScalaVersion("2.13.6")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -146,13 +146,7 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
-      settings = Seq(
-        // disable scoverage on 2.12 for now due to incompatibility with 2.12.13
-        "coverageEnabled" := Seq(
-          SettingKey(Some(scala212), None) := false,
-          SettingKey.Default := "coverageEnabled.value".raw,
-        )
-      ),
+      settings = Seq.empty,
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
@@ -234,13 +228,14 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := (Defaults.Scala213Options ++ Seq[Const](
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
-          )),
+          ),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
@@ -582,6 +577,24 @@ object Izumi {
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "scalacOptions" -= "-Wconf:any:error",
+          //  Disable `-Xsource:3` in docs due to mdoc failures:
+          //
+          //  ```
+          //  error: basics.md:97 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val injector: Injector[RIO[Console, _]] = Injector[RIO[Console, _]](); $doc.binder(injector, 2, 4, 2, 12)
+          //                                                                                    ^
+          //
+          //  error: basics.md:109 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val resource = injector.produce(plan); $doc.binder(resource, 4, 4, 4, 12)
+          //                                                    ^
+          //
+          //  error: basics.md:1359 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$9$]]
+          //  val res51 = chooseInterpreters(true); $doc.binder(res51, 26, 0, 26, 24)
+          //  ```
+          "scalacOptions" -= "-Xsource:3",
+          // enable for unidoc
+          "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") += "-Xsource:3",
+          //
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=

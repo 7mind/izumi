@@ -44,6 +44,6 @@ object TemporalInstances extends TemporalInstancesLowPriority1 {
 sealed trait TemporalInstancesLowPriority1 {
   @inline implicit final def TemporalMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.Timer`](
     implicit
-    timer: Timer[MonixBIO[Nothing, ?]]
+    timer: Timer[MonixBIO[Nothing, _]]
   ): Predefined.Of[Temporal2[MonixBIO]] = new TemporalMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Temporal2[MonixBIO]]]
 }

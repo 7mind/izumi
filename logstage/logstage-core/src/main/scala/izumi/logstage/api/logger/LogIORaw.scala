@@ -21,5 +21,5 @@ final class LogIORaw[F[_], E <: AnyEncoded](
   override def createContext(logLevel: Level, customContext: Log.CustomContext)(implicit pos: CodePositionMaterializer): F[Log.Context] =
     delegate.createContext(logLevel, customContext)
 
-  override def widen[G[_]](implicit ev: F[_] <:< G[_]): LogIORaw[G, E] = this.asInstanceOf[LogIORaw[G, E]]
+  override def widen[G[_]](implicit ev: F[?] <:< G[?]): LogIORaw[G, E] = this.asInstanceOf[LogIORaw[G, E]]
 }

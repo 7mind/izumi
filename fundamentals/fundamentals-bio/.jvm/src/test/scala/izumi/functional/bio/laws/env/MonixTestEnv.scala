@@ -134,7 +134,7 @@ trait ArbitraryInstancesBase extends ArbitraryInstances0 {
       for (a <- getArbitrary[A]) yield IO.cancelable0[E, A] {
         (sc, cb) =>
           val isActive = Atomic(true)
-          sc.executeAsync {
+          sc.execute {
             () =>
               if (isActive.getAndSet(false))
                 cb.onSuccess(a)

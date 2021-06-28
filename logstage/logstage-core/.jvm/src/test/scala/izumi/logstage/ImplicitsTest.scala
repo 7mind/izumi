@@ -79,7 +79,7 @@ class ImplicitsTest extends AnyWordSpec {
 
   def logIO[F[_]: LogIO](): F[Unit] = LogIO[F].info("abc")
 
-  def logThrowable[F[+_, _]]()(implicit f: LogIO[F[Throwable, ?]]): F[Throwable, Unit] = f.info("cba")
+  def logThrowable[F[+_, _]]()(implicit f: LogIO[F[Throwable, _]]): F[Throwable, Unit] = f.info("cba")
 
   def expectThrowable[F[+_, _]](f: F[Throwable, Unit]): F[Throwable, Unit] = f
 

@@ -425,7 +425,8 @@ However, this is not as declaring both implementations in our modules at the sam
 Our demonstration application will use the @scaladoc[StandardAxis.Repo](izumi.distage.model.definition.StandardAxis$$Repo$) `Dummy` and `Prod` axis tags:
 
 ```scala mdoc:invisible
-implicit def _hack_whyDoesItNotWorkInMdocHuh_forcedRecompilationToken: izumi.distage.plugins.ForcedRecompilationToken["abc"] = null
+// why does it not work under mdoc huh???
+import izumi.distage.plugins.ForcedRecompilationToken.disabled._
 ```
 
 ```scala mdoc:fakepackage:to-string
@@ -933,11 +934,11 @@ object leaderboard {
     import repo.Ladder
     type LadderEnv = Has[Ladder[IO]]
     type RndEnv = Has[Rnd[IO]]
-    object ladder extends Ladder[ZIO[LadderEnv, ?, ?]] {
+    object ladder extends Ladder[ZIO[LadderEnv, _, _]] {
       def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.get.submitScore(userId, score))
       def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.get.getScores)
     }
-    object rnd extends Rnd[ZIO[RndEnv, ?, ?]] {
+    object rnd extends Rnd[ZIO[RndEnv, _, _]] {
       override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.get.apply[A])
     }
   }

@@ -21,13 +21,13 @@ object HigherKindCases {
           override def point[A](a: A): List[A] = List(a)
         }
 
-      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, ?]] =
-        new Pointed[OptionT[F, ?]] {
+      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, _]] =
+        new Pointed[OptionT[F, _]] {
           override def point[A](a: A): OptionT[F, A] = OptionT(Pointed[F].point(Some(a)))
         }
 
-      implicit final def pointedEither[E]: Pointed[Either[E, ?]] =
-        new Pointed[Either[E, ?]] {
+      implicit final def pointedEither[E]: Pointed[Either[E, _]] =
+        new Pointed[Either[E, _]] {
           override def point[A](a: A): Either[E, A] = Right(a)
         }
 
@@ -48,7 +48,7 @@ object HigherKindCases {
 
     // TODO: @Id(this)
     class TestServiceClass[F[_]: Pointed](@Id("TestService") getResult: Int) extends TestTrait {
-      override type R[_] = F[_]
+      override type R[_] = F[?]
 
       override def get: F[Int] = {
         Pointed[F].point(getResult)
@@ -56,13 +56,13 @@ object HigherKindCases {
     }
 
     trait TestServiceTrait[F[_]] extends TestTrait {
-      override type R[_] = F[_]
+      override type R[_] = F[?]
 
       implicit protected val pointed: Pointed[F]
 
       protected val getResult: Int @Id("TestService")
 
-      override def get: F[_] = Pointed[F].point(getResult * 2)
+      override def get: F[?] = Pointed[F].point(getResult * 2)
     }
 
     class TestProvider[A, F[_]: Pointed]

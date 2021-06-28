@@ -102,11 +102,9 @@ object LoggerMacroMethods {
     }
 
     c.universe.reify {
-      {
-        val self = c.prefix.splice
-        if (self.acceptable(Log.LoggerId(getApplicationPointId(c).splice), l.splice)) {
-          self.unsafeLog(Log.Entry.create(l.splice, m.splice)(getEnclosingPosition(c).splice))
-        }
+      val self = c.prefix.splice
+      if (self.acceptable(Log.LoggerId(getApplicationPointId(c).splice), l.splice)) {
+        self.unsafeLog(Log.Entry.create(l.splice, m.splice)(getEnclosingPosition(c).splice))
       }
     }
   }

@@ -97,7 +97,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -132,7 +132,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
+      assert(res.getMessage contains "implicit")
+      assert(res.getMessage contains "AdaptFunctoid.Aux")
     }
 
   }
@@ -205,7 +206,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -240,7 +241,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
+      assert(res.getMessage contains "implicit")
+      assert(res.getMessage contains "AdaptFunctoid.Aux")
     }
 
     "Lifecycle.fromZIO(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {

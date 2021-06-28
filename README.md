@@ -33,7 +33,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. [distage](https://izumi.7mind.io/distage/) – Transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. [distage](https://izumi.7mind.io/distage/) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
 2. [distage-testkit](https://izumi.7mind.io/distage/distage-testkit) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. [distage-framework-docker](https://izumi.7mind.io/distage/distage-framework-docker) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. [LogStage](https://izumi.7mind.io/logstage/) – Automatic structural logs from Scala string interpolations,
@@ -59,6 +59,7 @@ Support Chats:
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
 * [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+* [Discussions on Github](https://github.com/7mind/izumi/discussions)
 
 Videos:
 
@@ -122,6 +123,11 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 
 <a href="https://evo.company/">
   <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-evo-pay.svg?sanitize=true" alt="Evo.Pay"/>
+</a>
+<br/>
+
+<a href="https://glidewell.io/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
 </a>
 <br/>
 

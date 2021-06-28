@@ -49,9 +49,9 @@ trait Distage {
   type Lifecycle[+F[_], +A] = model.definition.Lifecycle[F, A]
   val Lifecycle: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, ?], A]
+  type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, _], A]
 
-  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, ?], A]
+  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, _], A]
 
   type Axis = model.definition.Axis
   val Axis: model.definition.Axis.type = model.definition.Axis

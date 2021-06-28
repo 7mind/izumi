@@ -345,7 +345,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceCustomF[Suspend2[Throwable, ?]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
       val instance = context.get[SelfReference]
 
@@ -373,7 +373,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
       val plan = injector.plan(definition)
 
       val context = injector
-        .produceCustomF[Suspend2[Nothing, ?]](plan).use {
+        .produceCustomF[Suspend2[Nothing, _]](plan).use {
           Suspend2(_)
         }.unsafeRun()
 
