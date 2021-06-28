@@ -2,8 +2,9 @@ package izumi.distage.roles.launcher
 
 import distage.TagK
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
@@ -54,30 +55,27 @@ object RoleAppEntrypoint {
             task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
-        val shutdownLatch: Unit => F[Unit] = (_: Unit) => {
-          hook.awaitShutdown(lateLogger)
-        }
-
-        val appF: Unit => F[Unit] = roleServices.foldRight(shutdownLatch) {
-          case ((role, res), acc) =>
-            _ =>
-              val loggedTask = for {
-                _ <- F.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
-                _ <- res.use {
-                  _ =>
-                    F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
-                      .flatMap(acc)
+        Lifecycle
+          .traverse(roleServices) {
+            case (role, resource) =>
+              resource
+                .wrapAcquire {
+                  acquire =>
+                    F.suspendF {
+                      lateLogger.info(s"Role is about to initialize: $role")
+                      acquire.flatMap(a => F.maybeSuspend { lateLogger.info(s"Role initialized: $role"); a })
+                    }
+                }.catchAll {
+                  t =>
+                    Lifecycle.liftF {
+                      F.suspendF {
+                        lateLogger.error(s"Role $role failed: $t")
+                        F.fail(t)
+                      }
+                    }
                 }
-              } yield ()
-
-              F.definitelyRecover(loggedTask) {
-                t =>
-                  F.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
-                    .flatMap(_ => F.fail[Unit](t))
-              }
-        }
-
-        appF(())
+          }
+          .use(_ => hook.awaitShutdown(lateLogger))
       } else {
         F.maybeSuspend(lateLogger.info("No services to run, exiting..."))
       }
