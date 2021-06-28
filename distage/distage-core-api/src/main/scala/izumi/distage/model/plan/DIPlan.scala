@@ -32,10 +32,12 @@ object DIPlan {
     DG(IncidenceMatrix.empty, IncidenceMatrix.empty, GraphMeta.empty),
     PlannerInput.everything(ModuleBase.empty),
   )
+
   @inline implicit final def defaultFormatter: Renderable[DIPlan] = DIPlanCompactFormatter
 
-  implicit class DIPlanSyntax(plan: DIPlan) {
+  implicit final class DIPlanSyntax(private val plan: DIPlan) extends AnyVal {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
+
     def steps: List[ExecutableOp] = plan.plan.meta.nodes.values.toList
 
     def toposort: Seq[DIKey] = {
@@ -47,8 +49,7 @@ object DIPlan {
       }
     }
 
-    final def replaceWithImports(keys: Set[DIKey]): DIPlan = {
-
+    def replaceWithImports(keys: Set[DIKey]): DIPlan = {
       val imports = keys.flatMap {
         k =>
           val dependees = plan.plan.successors.links(k)
@@ -82,7 +83,7 @@ object DIPlan {
       ModuleBase.make(userBindings)
     }
 
-    private final def collectChildrenKeys[T: Tag]: Set[DIKey] = {
+    private def collectChildrenKeys[T: Tag]: Set[DIKey] = {
       val tpe = SafeType.get[T]
       steps.iterator.collect {
         case op if op.instanceType <:< tpe => op.target
@@ -90,7 +91,7 @@ object DIPlan {
     }
 
     @deprecated("should be removed with OrderedPlan", "13/04/2021")
-    final def collectChildrenKeysSplit[T1, T2](implicit t1: Tag[T1], t2: Tag[T2]): (Set[DIKey], Set[DIKey]) = {
+    def collectChildrenKeysSplit[T1, T2](implicit t1: Tag[T1], t2: Tag[T2]): (Set[DIKey], Set[DIKey]) = {
       if (t1.tag == t2.tag) {
         (collectChildrenKeys[T1], Set.empty)
       } else {
@@ -113,13 +114,15 @@ object DIPlan {
     }
 
     def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
+
     def renderDeps(key: DIKey): String = {
+      val dg = new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
       new DepTreeRenderer(dg.tree(key), plan.plan.meta.nodes).render()
     }
+
     def renderAllDeps(): String = {
       val effectiveRoots = plan.plan.noSuccessors
       effectiveRoots.map(renderDeps).mkString("\n")
     }
-    private lazy val dg = new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
   }
 }

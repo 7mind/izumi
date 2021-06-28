@@ -10,7 +10,6 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.fundamentals.graphs.WeakEdge
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.annotation.nowarn
 

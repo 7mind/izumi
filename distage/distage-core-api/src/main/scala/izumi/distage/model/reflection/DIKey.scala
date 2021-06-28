@@ -44,8 +44,8 @@ object DIKey {
   sealed trait SetKeyMeta
   object SetKeyMeta {
     case object NoMeta extends SetKeyMeta
-    case class WithImpl(disambiguator: ImplDef) extends SetKeyMeta
-    case class WithAutoset(base: DIKey) extends SetKeyMeta
+    final case class WithImpl(disambiguator: ImplDef) extends SetKeyMeta
+    final case  class WithAutoset(base: DIKey) extends SetKeyMeta
   }
   /**
     * @param set       Key of the parent Set. `set.tpe` must be of type `Set[T]`

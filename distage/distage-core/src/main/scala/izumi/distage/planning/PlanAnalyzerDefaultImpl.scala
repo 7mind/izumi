@@ -20,16 +20,16 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def topology(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
       plan,
-      _ => _ => false,
-      _ => true,
+      refFilter = _ => _ => false,
+      postFilter = _ => true,
     )
   }
 
   def topologyFwdRefs(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
       plan,
-      acc => key => acc.contains(key),
-      _._2.nonEmpty,
+      refFilter = acc => key => acc.contains(key),
+      postFilter = _._2.nonEmpty,
     )
   }
 

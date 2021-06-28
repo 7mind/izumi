@@ -9,9 +9,7 @@ final case class Annotated[N](key: N, mut: Option[Int], axis: Set[AxisPoint]) {
   def isMutator: Boolean = mut.isDefined
 }
 
-
 final case class MutSel[N](key: N, mut: Option[Int]) {
   def isMutator: Boolean = mut.isDefined
-
   def asString: String = s"$key${mut.fold("")(i => s":$i")}"
 }
