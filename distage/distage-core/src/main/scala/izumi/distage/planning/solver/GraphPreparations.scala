@@ -10,21 +10,24 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.fundamentals.graphs.WeakEdge
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector
+import izumi.fundamentals.graphs.tools.gc.Tracer
 
 import scala.annotation.nowarn
 
 @nowarn("msg=Unused import")
 class GraphPreparations(
-                         bindingTranslator: BindingTranslator
-                       ) {
+  bindingTranslator: BindingTranslator
+) {
 
   import scala.collection.compat._
 
   def findWeakSetMembers(
-                          sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
-                          matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
-                          roots: Set[DIKey],
-                        ): Set[WeakEdge[DIKey]] = {
+    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    roots: Set[DIKey],
+  ): Set[WeakEdge[DIKey]] = {
     import izumi.fundamentals.collections.IzCollections._
 
     val indexed = matrix.links.map {
@@ -53,31 +56,35 @@ class GraphPreparations(
   }
 
   def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
-    input match {
+    val effective = input match {
       case Roots.Of(roots) =>
         // TODO: should we remove roots which are retained by effective roots? see #1476
         roots.toSet
       case Roots.Everything =>
         import izumi.fundamentals.collections.IzCollections._
         // this somehow duplicates plan.noSuccessors, though this happens BEFORE planning
-        val dependees = allOps
-          .flatMap {
-            case (k, op) =>
-              val reqs = op match {
-                case op: CreateSet =>
-                  op.members
-                case op: WiringOp =>
-                  op.wiring.requiredKeys
-                case op: MonadicOp =>
-                  Set(op.effectKey)
-              }
-              reqs.map(r => (r, Option(k.key))) ++ Set((k.key, None: Option[DIKey]))
-          }
-          .toMultimap
+        val dependees = allOps.flatMap {
+          case (k, op) =>
+            val reqs = op match {
+              case op: CreateSet =>
+                op.members
+              case op: WiringOp =>
+                op.wiring.requiredKeys
+              case op: MonadicOp =>
+                Set(op.effectKey)
+            }
+            reqs.map(r => (r, Option(k.key))) ++ Set((k.key, None: Option[DIKey]))
+        }.toMultimap
 
-        val effectiveRoots = dependees.filter(_._2.forall(_.isEmpty)).keySet
-        effectiveRoots
+        val noDependencies = dependees.filter(_._2.forall(_.isEmpty)).keySet
+
+        val depmatrix = IncidenceMatrix(dependees.map({ case (prev, succs) => (prev, succs.flatten) }))
+        val reachable = new Tracer[DIKey]().trace(depmatrix, Set.empty, noDependencies)
+
+        val allKeys = allOps.map(_._1.key).toSet
+        (allKeys -- reachable) ++ noDependencies
     }
+    effective
   }
 
   def toDeps(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = {
