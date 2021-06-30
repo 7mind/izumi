@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.data.~>>
+import izumi.functional.bio.data.{Morphism2, ~>>}
 import zio.{IO, RefM}
 
 trait RefM2[F[+_, +_], A] {
@@ -54,13 +54,13 @@ object RefM2 {
     }
   }
 
-  implicit final class RefF2Ops[F[+_, +_], A](private val self: RefM2[F, A]) extends AnyVal {
+  implicit final class RefM2Ops[F[+_, +_], A](private val self: RefM2[F, A]) extends AnyVal {
     def mapK[G[+_, +_]](fg: F ~>> G, gf: G ~>> F): RefM2[G, A] = new RefM2[G, A] {
       override def get: G[Nothing, A] = fg(self.get)
       override def set(a: A): G[Nothing, Unit] = fg(self.set(a))
-      override def modify[E, B](f: A => G[E, (B, A)]): G[E, B] = fg(self.modify(a => gf(f(a))))
-      override def update[E](f: A => G[E, A]): G[E, A] = fg(self.update(a => gf(f(a))))
-      override def update_[E](f: A => G[E, A]): G[E, Unit] = fg(self.update_(a => gf(f(a))))
+      override def modify[E, B](f: A => G[E, (B, A)]): G[E, B] = fg(self.modify(a => Morphism2.Ops[G, F](gf)(f(a))))
+      override def update[E](f: A => G[E, A]): G[E, A] = fg(self.update(a => Morphism2.Ops[G, F](gf)(f(a))))
+      override def update_[E](f: A => G[E, A]): G[E, Unit] = fg(self.update_(a => Morphism2.Ops[G, F](gf)(f(a))))
     }
   }
 }

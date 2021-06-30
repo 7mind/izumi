@@ -17,8 +17,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -158,8 +158,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -278,8 +278,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -420,8 +420,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -556,8 +556,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -687,8 +687,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -811,8 +811,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -934,8 +934,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1051,8 +1051,8 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1181,8 +1181,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1301,8 +1301,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1429,8 +1429,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1552,8 +1552,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1696,8 +1696,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1818,8 +1818,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1938,8 +1938,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2071,8 +2071,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2221,8 +2221,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2340,8 +2340,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2470,8 +2470,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2595,8 +2595,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2718,8 +2718,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2838,8 +2838,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2962,8 +2962,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3113,8 +3113,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3404,8 +3404,8 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3426,8 +3426,8 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3448,8 +3448,8 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3472,8 +3472,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3496,8 +3496,8 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3513,8 +3513,8 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3530,8 +3530,8 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3544,8 +3544,8 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3580,8 +3580,8 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.6",
-      "2.12.14"
+      "2.12.14",
+      "2.13.6"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3627,7 +3627,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.6",
+    scalaVersion := "2.12.14",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
