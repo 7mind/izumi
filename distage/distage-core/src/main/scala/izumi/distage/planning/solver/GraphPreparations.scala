@@ -11,7 +11,6 @@ import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 import izumi.fundamentals.graphs.tools.gc.Tracer
 
 import scala.annotation.nowarn
@@ -78,7 +77,7 @@ class GraphPreparations(
 
         val noDependencies = dependees.filter(_._2.forall(_.isEmpty)).keySet
 
-        val depmatrix = IncidenceMatrix(dependees.map({ case (prev, succs) => (prev, succs.flatten) }))
+        val depmatrix = IncidenceMatrix(dependees.map { case (prev, succs) => (prev, succs.flatten) })
         val reachable = new Tracer[DIKey]().trace(depmatrix, Set.empty, noDependencies)
 
         val allKeys = allOps.map(_._1.key).toSet
