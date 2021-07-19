@@ -3,7 +3,7 @@ object V {
   val izumi_reflect = "1.1.3-RC1"
 
   // foundation
-  val collection_compat = "2.4.4"
+  val collection_compat = "2.5.0"
 
   val kind_projector = "0.13.0"
 
@@ -31,13 +31,13 @@ object V {
   val scala_java_time = "2.0.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.108"
+  val classgraph = "4.8.110"
   val slf4j = "1.7.31"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-  val docker_java = "3.2.10"
+  val docker_java = "3.2.11"
 
   // microsite-only
   val doobie = "0.9.4"
