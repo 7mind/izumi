@@ -3,7 +3,7 @@ object V {
   val izumi_reflect = "1.1.3-RC1"
 
   // foundation
-  val collection_compat = "2.4.4"
+  val collection_compat = "2.5.0"
 
   val kind_projector = "0.13.0"
 
