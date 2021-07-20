@@ -47,7 +47,7 @@ object Roots {
 
   final case class Of(roots: NonEmptySet[DIKey]) extends Roots
 
-  /**  Disable garbage collection and try to instantiate every single binding.
+  /** Disable garbage collection and try to instantiate every single binding.
     *
     * There's almost always a better way to model things though.
     *
