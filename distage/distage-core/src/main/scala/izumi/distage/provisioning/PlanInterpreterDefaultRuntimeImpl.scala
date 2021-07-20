@@ -9,7 +9,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.exceptions.{ForwardRefException, IncompatibleEffectTypesException, ProvisionerIssue, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, Roots}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
@@ -43,10 +43,9 @@ object PlanInterpreterDefaultRuntimeImpl {
   @deprecated("should be removed once we finish transition to parallel interpreter", "13/04/2021")
   private final case class OrderedPlan(
     steps: Vector[ExecutableOp],
-    declaredRoots: Set[DIKey],
     topology: PlanTopology,
   ) {
-    def keys: Set[DIKey] = {
+    private def keys: Set[DIKey] = {
       steps.map(_.target).toSet
     }
 
@@ -107,17 +106,11 @@ class PlanInterpreterDefaultRuntimeImpl(
 
       val sortedOps = sortedKeys.flatMap(plan.plan.meta.nodes.get).toVector
       val topology = analyzer.topology(plan.plan.meta.nodes.values)
-      val roots = plan.input.roots match {
-        case Roots.Of(roots) =>
-          roots.toSet
-        case Roots.Everything =>
-          topology.effectiveRoots
-      }
-      val finalPlan = OrderedPlan(sortedOps, roots, topology)
+      val finalPlan = OrderedPlan(sortedOps, topology)
 
       val reftable = analyzer.topologyFwdRefs(finalPlan.steps)
-      if (reftable.dependees.graph.nonEmpty) {
-        throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.graph.mkString("\n")}!", reftable)
+      if (reftable.dependees.matrix.links.nonEmpty) {
+        throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees.matrix.links.mkString("\n")}!", reftable)
       }
       finalPlan
     }
