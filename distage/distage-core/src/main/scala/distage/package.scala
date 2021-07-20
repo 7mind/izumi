@@ -93,6 +93,9 @@ package object distage extends Distage {
   override type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   override val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
+  override type DIPlan = model.plan.DIPlan
+  override val DIPlan: model.plan.DIPlan.type = model.plan.DIPlan
+
   override type SafeType = model.reflection.SafeType
   override val SafeType: model.reflection.SafeType.type = model.reflection.SafeType
 
