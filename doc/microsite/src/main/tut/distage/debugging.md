@@ -58,10 +58,10 @@ You can also query a plan to see the dependencies and reverse dependencies of a 
 
 ```scala mdoc:to-string
 // Print dependencies
-println(plan.topology.dependencies.tree(DIKey[A]))
+println(plan.renderDeps(DIKey[A]))
 
 // Print reverse dependencies
-println(plan.topology.dependees.tree(DIKey[B]))
+println(plan.renderDependees(DIKey[B]))
 ```
 
 The printer highlights circular dependencies:

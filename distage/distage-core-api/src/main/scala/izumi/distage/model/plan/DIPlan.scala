@@ -2,19 +2,25 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.exceptions.DIBugException
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.exceptions.{DIBugException, IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
+import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.Renderable
+import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta}
-import izumi.reflect.Tag
+import izumi.reflect.{Tag, TagK}
 
-case class DIPlan(plan: DG[DIKey, ExecutableOp], input: PlannerInput) {
+final case class DIPlan(
+  plan: DG[DIKey, ExecutableOp],
+  input: PlannerInput,
+) {
   // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
   override def hashCode(): Int = {
     this.plan.meta.hashCode() ^ this.plan.predecessors.hashCode()
@@ -38,7 +44,8 @@ object DIPlan {
   implicit final class DIPlanSyntax(private val plan: DIPlan) extends AnyVal {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
 
-    def steps: List[ExecutableOp] = plan.plan.meta.nodes.values.toList
+    @deprecated("should be removed with OrderedPlan (returned steps are no longer ordered)", "13/04/2021")
+    def steps: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
 
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
@@ -116,7 +123,12 @@ object DIPlan {
     def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
 
     def renderDeps(key: DIKey): String = {
-      val dg = new DependencyGraph(plan.plan.predecessors.links, DependencyGraph.DependencyKind.Depends)
+      val dg = new DependencyGraph(plan.plan.predecessors, DependencyGraph.DependencyKind.Depends)
+      new DepTreeRenderer(dg.tree(key), plan.plan.meta.nodes).render()
+    }
+
+    def renderDependees(key: DIKey): String = {
+      val dg = new DependencyGraph(plan.plan.successors, DependencyGraph.DependencyKind.Required)
       new DepTreeRenderer(dg.tree(key), plan.plan.meta.nodes).render()
     }
 
@@ -124,5 +136,94 @@ object DIPlan {
       val effectiveRoots = plan.plan.noSuccessors
       effectiveRoots.map(renderDeps).mkString("\n")
     }
+  }
+
+  implicit final class DIPlanAssertions(private val plan: DIPlan) extends AnyVal {
+
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
+    /**
+      * Check for any unresolved dependencies,
+      * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
+      * or for any other issue that would cause [[izumi.distage.model.Injector#produce Injector.produce]] to fail
+      *
+      * If this returns `F.unit` then the wiring is generally correct,
+      * modulo runtime exceptions in user code,
+      * and `Injector.produce` should succeed.
+      *
+      * However, presence of imports does not *always* mean
+      * that a plan is invalid, imports may be fulfilled by a parent
+      * `Locator`, by BootstrapContext, or they may be materialized by
+      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+      *
+      * An effect is compatible if it's a subtype of `F` or is a type equivalent to [[izumi.fundamentals.platform.functional.Identity]] (e.g. `cats.Id`)
+      *
+      * Will `F.fail` the effect with [[izumi.distage.model.exceptions.InvalidPlanException]] if there are issues.
+      *
+      * @tparam F effect type to check against
+      */
+    final def assertValid[F[_]: QuasiIO: TagK](ignoredImports: DIKey => Boolean = Set.empty): F[Unit] = {
+      isValid(ignoredImports).fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
+    }
+
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
+    /**
+      * Same as [[assertValid]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
+      *
+      * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
+      */
+    final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
+      isValid(ignoredImports).fold(())(throw _)
+    }
+
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
+    /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+    final def isValid[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Option[InvalidPlanException] = {
+      import izumi.fundamentals.platform.strings.IzString._
+      val unresolved = unresolvedImports(ignoredImports).fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
+      val effects = incompatibleEffectType[F].fromNonEmptyList.map(op => IncompatibleEffectTypesException.format(op, SafeType.getK[F], op.effectHKTypeCtor))
+      for {
+        allErrors <- NonEmptyList.from(unresolved ++ effects)
+      } yield new InvalidPlanException(allErrors.toList.niceList(shift = ""))
+    }
+
+    /**
+      * Check for any unresolved dependencies.
+      *
+      * If this returns `None` then the wiring is generally correct,
+      * modulo runtime exceptions in user code,
+      * and `Injector.produce` should succeed.
+      *
+      * However, presence of imports does not *always* mean
+      * that a plan is invalid, imports may be fulfilled by a parent
+      * `Locator`, by BootstrapContext, or they may be materialized by
+      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+      *
+      * @return a non-empty list of unresolved imports if present
+      */
+    final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
+      val locatorRefKey = DIKey[LocatorRef]
+      val nonMagicImports = plan.steps.iterator.collect {
+        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
+      }.toList
+      NonEmptyList.from(nonMagicImports)
+    }
+    final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
+
+    /**
+      * Check for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`.
+      *
+      * An effect is compatible if it's a subtype of `F` or is a type equivalent to [[izumi.fundamentals.platform.functional.Identity]] (e.g. `cats.Id`)
+      *
+      * @tparam F effect type to check against
+      * @return a non-empty list of operations incompatible with `F` if present
+      */
+    final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
+      val effectType = SafeType.getK[F]
+      val badSteps = plan.steps.iterator.collect {
+        case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
+      }.toList
+      NonEmptyList.from(badSteps)
+    }
+
   }
 }

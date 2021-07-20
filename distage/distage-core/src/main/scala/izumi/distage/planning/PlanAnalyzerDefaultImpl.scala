@@ -8,6 +8,7 @@ import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.plan.topology.{DependencyGraph, PlanTopology}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection._
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -83,7 +84,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       .toMap
 
     val dependants = reverseReftable(dependencies)
-    PlanTopologyImmutable(DependencyGraph(dependants, DependencyKind.Required), DependencyGraph(dependencies, DependencyKind.Depends))
+    PlanTopologyImmutable(DependencyGraph(IncidenceMatrix(dependants), DependencyKind.Required), DependencyGraph(IncidenceMatrix(dependencies), DependencyKind.Depends))
   }
 
   @nowarn("msg=deprecated")
