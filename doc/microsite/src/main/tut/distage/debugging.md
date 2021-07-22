@@ -4,9 +4,7 @@
 
 ### Testing Plans
 
-TODO: not applicable to DIPlan
-
-Use `OrderedPlan#assertValid` method to test whether the plan will execute correctly when passed to `Injector#produce`.
+Use `Injector#assert` method to test whether the plan will execute correctly when passed to `Injector#produce`.
 
 ```scala mdoc:reset:to-string
 import distage.{DIKey, Roots, ModuleDef, Injector}
@@ -18,14 +16,12 @@ def badModule = new ModuleDef {
   make[A]
   make[B].fromEffect(zio.Task { ??? })
 }
-
-val badPlan = Injector[cats.effect.IO]().plan(badModule, Roots.target[A])
 ```
 
 ```scala mdoc:crash:to-string
 // the effect types are mismatched - `badModule` uses `zio.Task`, but we expect `cats.effect.IO`
 
-badPlan.assertValid[cats.effect.IO]().unsafeRunSync()
+Injector[cats.effect.IO]().assert(badModule, Roots.target[A]).unsafeRunSync()
 ```
 
 ```scala mdoc:to-string
@@ -33,14 +29,12 @@ def goodModule = new ModuleDef {
   make[A]
   make[B].fromEffect(cats.effect.IO(new B))
 }
-
-val plan = Injector[cats.effect.IO]().plan(goodModule, Roots.target[A])
 ```
 
 ```scala mdoc:to-string
 // the effect types in `goodModule` and here match now
 
-plan.assertValid[cats.effect.IO]().unsafeRunSync()
+Injector[cats.effect.IO]().assert(goodModule, Roots.target[A]).unsafeRunSync()
 ```
 
 ### Pretty-printing plans
