@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.PlannerInput
+import izumi.distage.model.{Locator, PlannerInput}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{DIBugException, IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
@@ -72,6 +72,14 @@ object DIPlan {
       }
     }
 
+    /**
+      * Be careful, don't use this method blindly, it can disrupt graph connectivity when used improperly.
+      *
+      * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
+      *
+      * @note this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
+      *       by deleting the `keys` from bindings: `module -- keys`
+      */
     def replaceWithImports(keys: Set[DIKey]): DIPlan = {
       val newImports = keys.flatMap {
         k =>
@@ -244,6 +252,10 @@ object DIPlan {
   }
 
   implicit final class DIPlanResolveImportsSyntax(private val plan: DIPlan) extends AnyVal {
+    def locateImports(locator: Locator): DIPlan = {
+      resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
+    }
+
     def resolveImports(f: PartialFunction[ImportDependency, Any]): DIPlan = {
       val dg = plan.plan
       plan.copy(plan = dg.copy(meta = GraphMeta(dg.meta.nodes.view.mapValues {
