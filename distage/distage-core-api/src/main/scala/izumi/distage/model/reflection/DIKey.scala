@@ -41,12 +41,6 @@ object DIKey {
     override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
   }
 
-  sealed trait SetKeyMeta
-  object SetKeyMeta {
-    case object NoMeta extends SetKeyMeta
-    final case class WithImpl(disambiguator: ImplDef) extends SetKeyMeta
-    final case  class WithAutoset(base: DIKey) extends SetKeyMeta
-  }
   /**
     * @param set       Key of the parent Set. `set.tpe` must be of type `Set[T]`
     * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
@@ -66,9 +60,14 @@ object DIKey {
       s"{set.$set/${reference.toString}$drepr"
     }
   }
+  sealed trait SetKeyMeta
+  object SetKeyMeta {
+    case object NoMeta extends SetKeyMeta
+    final case class WithImpl(disambiguator: ImplDef) extends SetKeyMeta
+    final case class WithAutoset(base: DIKey) extends SetKeyMeta
+  }
 
   final case class ProxyInitKey(proxied: DIKey) extends DIKey {
-
     override def tpe: SafeType = proxied.tpe
 
     override def toString: String = s"{proxyinit.${proxied.toString}}"

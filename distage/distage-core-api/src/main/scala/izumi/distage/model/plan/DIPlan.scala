@@ -4,7 +4,9 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{DIBugException, IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
+import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
@@ -44,8 +46,22 @@ object DIPlan {
   implicit final class DIPlanSyntax(private val plan: DIPlan) extends AnyVal {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
 
-    @deprecated("should be removed with OrderedPlan (returned steps are no longer ordered)", "13/04/2021")
+    @deprecated("could be removed with OrderedPlan (returned steps are no longer ordered)", "13/04/2021")
     def steps: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
+
+    /**
+      * Get all imports (unresolved dependencies).
+      *
+      * Note, presence of imports does not *always* mean
+      * that a plan is invalid, imports may be fulfilled by a parent
+      * `Locator`, by BootstrapContext, or they may be materialized by
+      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+      *
+      * @see [[distage.Injector#assert]] for a check you can use in tests
+      */
+    def getImports: Iterable[ImportDependency] = {
+      steps.collect { case i: ImportDependency => i }
+    }
 
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
@@ -57,7 +73,7 @@ object DIPlan {
     }
 
     def replaceWithImports(keys: Set[DIKey]): DIPlan = {
-      val imports = keys.flatMap {
+      val newImports = keys.flatMap {
         k =>
           val dependees = plan.plan.successors.links(k)
           val dependeesWithoutKeys = dependees.diff(keys)
@@ -68,7 +84,7 @@ object DIPlan {
           }
       }
 
-      val replaced = imports.toMap
+      val replaced = newImports.toMap
       val removed = keys -- replaced.keySet
 
       val s = IncidenceMatrix(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
@@ -138,9 +154,8 @@ object DIPlan {
     }
   }
 
-  implicit final class DIPlanAssertions(private val plan: DIPlan) extends AnyVal {
+  implicit final class DIPlanAssertionSyntax(private val plan: DIPlan) extends AnyVal {
 
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
     /**
       * Check for any unresolved dependencies,
       * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
@@ -161,22 +176,23 @@ object DIPlan {
       *
       * @tparam F effect type to check against
       */
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
     final def assertValid[F[_]: QuasiIO: TagK](ignoredImports: DIKey => Boolean = Set.empty): F[Unit] = {
       isValid(ignoredImports).fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
     }
 
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
     /**
       * Same as [[assertValid]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
       *
       * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
       */
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
     final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
       isValid(ignoredImports).fold(())(throw _)
     }
 
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
     /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+    @deprecated("Use distage.Injector#verify", "20.07.2021")
     final def isValid[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Option[InvalidPlanException] = {
       import izumi.fundamentals.platform.strings.IzString._
       val unresolved = unresolvedImports(ignoredImports).fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
@@ -226,4 +242,17 @@ object DIPlan {
     }
 
   }
+
+  implicit final class DIPlanResolveImportsSyntax(private val plan: DIPlan) extends AnyVal {
+    def resolveImports(f: PartialFunction[ImportDependency, Any]): DIPlan = {
+      val dg = plan.plan
+      plan.copy(plan = dg.copy(meta = GraphMeta(dg.meta.nodes.view.mapValues {
+        case i: ImportDependency =>
+          f.andThen(instance => UseInstance(i.target, Instance(i.target.tpe, instance), i.origin)).applyOrElse(i, (_: ImportDependency) => i)
+        case op =>
+          op
+      }.toMap)))
+    }
+  }
+
 }
