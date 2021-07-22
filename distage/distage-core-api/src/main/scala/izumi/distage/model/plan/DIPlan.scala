@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.{Locator, PlannerInput}
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Identifier, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.{DIBugException, IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
@@ -264,6 +264,20 @@ object DIPlan {
         case op =>
           op
       }.toMap)))
+    }
+
+    def resolveImport[T: Tag](instance: T): DIPlan = {
+      resolveImports {
+        case i if i.target == DIKey.get[T] =>
+          instance
+      }
+    }
+
+    def resolveImport[T: Tag](id: Identifier)(instance: T): DIPlan = {
+      resolveImports {
+        case i if i.target == DIKey.get[T].named(id) =>
+          instance
+      }
     }
   }
 
