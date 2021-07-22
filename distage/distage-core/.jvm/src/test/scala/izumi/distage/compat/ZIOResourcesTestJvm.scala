@@ -30,10 +30,12 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
   "ZManaged" should {
     "ZManaged works" in {
       val dbResource = ZManaged.make(UIO {
-        println("Connecting to DB!"); new DBConnection
+        println("Connecting to DB!")
+        new DBConnection
       })(_ => UIO(println("Disconnecting DB")))
       val mqResource = ZManaged.make(IO {
-        println("Connecting to Message Queue!"); new MessageQueueConnection
+        println("Connecting to Message Queue!");
+        new MessageQueueConnection
       })(_ => UIO(println("Disconnecting Message Queue")))
 
       val module = new ModuleDef {
@@ -135,10 +137,12 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
   "ZLayer" should {
     "ZLayer works" in {
       val dbResource = ZLayer.fromAcquireRelease(UIO {
-        println("Connecting to DB!"); new DBConnection
+        println("Connecting to DB!")
+        new DBConnection
       })(_ => UIO(println("Disconnecting DB")))
       val mqResource = ZLayer.fromAcquireRelease(IO {
-        println("Connecting to Message Queue!"); new MessageQueueConnection
+        println("Connecting to Message Queue!")
+        new MessageQueueConnection
       })(_ => UIO(println("Disconnecting Message Queue")))
 
       val module = new ModuleDef {

@@ -41,7 +41,7 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
         println()
         println(plan.render())
         println()
-        println(plan.renderDeps(plan.topology.dependencies.tree(DIKey.get[AccountsApiImpl])))
+        println(plan.renderDeps(DIKey.get[AccountsApiImpl]))
         println(plan.renderAllDeps())
         println()
       }
