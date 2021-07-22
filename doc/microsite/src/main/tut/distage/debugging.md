@@ -21,7 +21,7 @@ def badModule = new ModuleDef {
 ```scala mdoc:crash:to-string
 // the effect types are mismatched - `badModule` uses `zio.Task`, but we expect `cats.effect.IO`
 
-Injector[cats.effect.IO]().assert(badModule, Roots.target[A]).unsafeRunSync()
+Injector[cats.effect.IO]().assert(badModule, Roots.target[A])
 ```
 
 ```scala mdoc:to-string
@@ -34,7 +34,7 @@ def goodModule = new ModuleDef {
 ```scala mdoc:to-string
 // the effect types in `goodModule` and here match now
 
-Injector[cats.effect.IO]().assert(goodModule, Roots.target[A]).unsafeRunSync()
+Injector[cats.effect.IO]().assert(goodModule, Roots.target[A])
 ```
 
 ### Pretty-printing plans
