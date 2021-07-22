@@ -17,11 +17,10 @@ import scala.collection.mutable
 
 @nowarn("msg=Unused import")
 class ForwardingRefResolverDefaultImpl(
-                                        breaker: FwdrefLoopBreaker
-                                      ) extends ForwardingRefResolver {
+  breaker: FwdrefLoopBreaker
+) extends ForwardingRefResolver {
 
   import scala.collection.compat._
-
 
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
@@ -78,7 +77,6 @@ class ForwardingRefResolverDefaultImpl(
             k =>
               replacements.getOrElseUpdate(k, mutable.HashSet.empty) += ((dependee, initOpKey: DIKey))
           }
-
 
           val goodDeps = dependencies -- badDeps
 

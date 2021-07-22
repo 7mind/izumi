@@ -282,7 +282,6 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
       )
 
       val plan = injector.plan(definition)
-      println(plan.render())
       injector.produce(plan).unsafeGet()
     }
   }
