@@ -151,7 +151,7 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
     C0: ContextShift[F],
   ): DefaultModule[F] = {
     implicit val F: cats.effect.ConcurrentEffect[F] = F0.asInstanceOf[cats.effect.ConcurrentEffect[F]]
-    implicit val T: cats.effect.Timer[F] = T0.asInstanceOf[cats.effect.Timer[F]]
+    implicit val T: cats.effect.Temporal[F] = T0.asInstanceOf[cats.effect.Temporal[F]]
     implicit val P: cats.Parallel[F] = P0.asInstanceOf[cats.Parallel[F]]
     implicit val C: cats.effect.ContextShift[F] = C0.asInstanceOf[cats.effect.ContextShift[F]]
     DefaultModule(AnyCatsEffectSupportModule.withImplicits[F])

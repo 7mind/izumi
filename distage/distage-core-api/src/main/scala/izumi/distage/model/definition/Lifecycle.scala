@@ -24,6 +24,7 @@ import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
+import cats.effect
 
 /**
   * `Lifecycle` is a class that describes the effectful allocation of a resource and its finalizer.
@@ -459,20 +460,20 @@ object Lifecycle extends LifecycleCatsInstances {
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
   def fromCats[F[_], A](resource: Resource[F, A])(implicit F: cats.effect.Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
-      override def acquire: F[concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]] = {
-        concurrent.Ref.of[F, List[ExitCase[Throwable] => F[Unit]]](Nil)(F)
+      override def acquire: F[effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]]] = {
+        effect.Ref.of[F, List[ExitCase[Throwable] => F[Unit]]](Nil)(F)
       }
 
-      override def release(finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): F[Unit] = {
+      override def release(finalizersRef: effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): F[Unit] = {
         releaseExit(finalizersRef, ExitCase.Completed)
       }
 
-      override def extract[B >: A](finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): Left[F[B], Nothing] = {
+      override def extract[B >: A](finalizersRef: effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]]): Left[F[B], Nothing] = {
         Left(F.widen(allocatedTo(finalizersRef)))
       }
 
       // FIXME: `Lifecycle.release` should have an `exit` parameter
-      private[this] def releaseExit(finalizersRef: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]], exitCase: ExitCase[Throwable]): F[Unit] = {
+      private[this] def releaseExit(finalizersRef: effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]], exitCase: ExitCase[Throwable]): F[Unit] = {
         F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.traverse_(_)(_.apply(exitCase)))
       }
 
@@ -482,7 +483,7 @@ object Lifecycle extends LifecycleCatsInstances {
       // That is, because code like `resource.allocated.flatMap(_ => ...)` is unsafe because `.flatMap` may be interrupted,
       // dropping the finalizers on the floor and leaking all the resources.
       private[this] def allocatedTo(
-        finalizers: concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
+        finalizers: effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
       ): F[A] = {
 
         // Indirection for calling `loop` needed because `loop` must be @tailrec
@@ -812,7 +813,7 @@ object Lifecycle extends LifecycleCatsInstances {
   }
 
   trait FromCats[F[_], A] extends Lifecycle[F, A] {
-    override final type InnerResource = concurrent.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
+    override final type InnerResource = effect.Ref[F, List[ExitCase[Throwable] => F[Unit]]]
   }
 
   trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A] {
