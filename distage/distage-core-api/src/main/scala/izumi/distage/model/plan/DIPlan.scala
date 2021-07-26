@@ -19,6 +19,8 @@ import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.reflect.{Tag, TagK}
 
+import scala.annotation.nowarn
+
 final case class DIPlan(
   plan: DG[DIKey, ExecutableOp],
   input: PlannerInput,
@@ -256,7 +258,10 @@ object DIPlan {
       resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
     }
 
+    @nowarn("msg=Unused import")
     def resolveImports(f: PartialFunction[ImportDependency, Any]): DIPlan = {
+      import scala.collection.compat._
+
       val dg = plan.plan
       plan.copy(plan = dg.copy(meta = GraphMeta(dg.meta.nodes.view.mapValues {
         case i: ImportDependency =>
