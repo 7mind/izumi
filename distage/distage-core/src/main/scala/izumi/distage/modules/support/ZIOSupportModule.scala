@@ -39,6 +39,11 @@ trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule 
   addImplicit[Fork3[ZIO]]
   addImplicit[Primitives3[ZIO]]
 
+  make[Scheduler3[ZIO]].from {
+    implicit r: zio.clock.Clock =>
+      implicitly[Scheduler3[ZIO]]
+  }
+
   addImplicit[TransZio[IO]]
 
   make[zio.Runtime[ZEnv]].from((r: zio.Runtime[Any], zenv: ZEnv) => r.map(_ => zenv))

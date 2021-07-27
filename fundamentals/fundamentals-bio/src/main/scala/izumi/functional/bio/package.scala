@@ -1,6 +1,7 @@
 package izumi.functional
 
 import izumi.functional.bio.data.Isomorphism2
+import izumi.functional.bio.retry.Scheduler2
 import izumi.functional.bio.syntax.{Syntax2, Syntax3}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
@@ -147,6 +148,11 @@ package object bio extends Syntax3 with Syntax2 {
   type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
+  }
+
+  type Scheduler3[F[-_, +_, +_]] = Scheduler2[F[Any, +_, +_]]
+  object Scheduler3 {
+    @inline def apply[F[-_, +_, +_]: Scheduler3]: Scheduler3[F] = implicitly
   }
 
   type BlockingIO2[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
