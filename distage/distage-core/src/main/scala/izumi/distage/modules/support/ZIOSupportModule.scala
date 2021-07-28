@@ -1,9 +1,11 @@
 package izumi.distage.modules.support
 
+import distage.TagK3
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio._
-import zio.{Has, IO, ZEnv, ZIO}
+import izumi.reflect.{TagK, TagKK}
+import zio.{Has, IO, Task, ZEnv, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule
 
@@ -30,6 +32,9 @@ object ZIOSupportModule extends ZIOSupportModule
 trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule {
   include(AnyBIO3SupportModule[ZIO])
 
+  addImplicit[TagK[Task]]
+  addImplicit[TagKK[IO]]
+  addImplicit[TagK3[ZIO]]
   addImplicit[Async3[ZIO]]
   make[Temporal3[ZIO]].from {
     implicit r: zio.clock.Clock =>
