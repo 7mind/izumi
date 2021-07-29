@@ -3,11 +3,10 @@ package izumi.functional.bio.impl
 import cats.effect.Timer
 import izumi.functional.bio.Temporal2
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toZonedDateTime}
+import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toFiniteDuration, toZonedDateTime}
 import monix.bio.{IO, UIO}
 
 import java.util.concurrent.TimeUnit
-import scala.jdk.DurationConverters._
 
 class SchedulerMonix(timer: Timer[UIO]) extends Scheduler2[IO] {
   override def repeat[E, A, B](eff: IO[E, A])(policy: RetryPolicy[IO, A, B]): IO[E, A] = {
@@ -17,7 +16,8 @@ class SchedulerMonix(timer: Timer[UIO]) extends Scheduler2[IO] {
         dec <- makeDecision(now, in)
         res = dec match {
           case ControllerDecision.Repeat(_, interval, action) =>
-            IO.sleep(java.time.Duration.between(now, interval).toScala) *> eff.flatMap(loop(_, action))
+            val sleepTime = toFiniteDuration(java.time.Duration.between(now, interval))
+            IO.sleep(sleepTime) *> eff.flatMap(loop(_, action))
           case ControllerDecision.Stop(_) =>
             IO.pure(in)
         }
@@ -34,7 +34,8 @@ class SchedulerMonix(timer: Timer[UIO]) extends Scheduler2[IO] {
         dec <- makeDecision(now, in)
         res = dec match {
           case ControllerDecision.Repeat(_, interval, action) =>
-            IO.sleep(java.time.Duration.between(now, interval).toScala) *> eff.catchAll(loop(_, action))
+            val sleepTime = toFiniteDuration(java.time.Duration.between(now, interval))
+            IO.sleep(sleepTime) *> eff.catchAll(loop(_, action))
           case ControllerDecision.Stop(_) =>
             orElse(in)
         }

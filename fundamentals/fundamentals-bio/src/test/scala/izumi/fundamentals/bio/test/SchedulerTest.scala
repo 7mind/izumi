@@ -2,7 +2,7 @@ package izumi.fundamentals.bio.test
 
 import izumi.functional.bio.impl.SchedulerZio
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toZonedDateTime}
+import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toFiniteDuration, toZonedDateTime}
 import izumi.functional.bio.{F, Monad2, Primitives2, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.internal.Platform
@@ -130,7 +130,6 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     def zioTestTimedScheduler[E, B](eff: zio.IO[E, Any])(policy: RetryPolicy[zio.IO, Any, B], n: Int): zio.IO[E, Vector[FiniteDuration]] = {
-      import scala.jdk.DurationConverters._
       def loop(in: Any, makeDecision: RetryFunction[zio.IO, Any, B], acc: Vector[FiniteDuration], iter: Int): zio.IO[E, Vector[FiniteDuration]] = {
         if (iter <= 0) F.pure(acc)
         else {
@@ -141,7 +140,7 @@ class SchedulerTest extends AnyWordSpec {
               case ControllerDecision.Stop(_) => F.pure(acc)
               case ControllerDecision.Repeat(_, interval, next) =>
                 val sleep = java.time.Duration.between(now, interval)
-                zio.ZIO.sleep(sleep) *> eff *> loop((), next, acc.appended(sleep.toScala), iter - 1)
+                zio.ZIO.sleep(sleep) *> eff *> loop((), next, acc.appended(toFiniteDuration(sleep)), iter - 1)
             }
           } yield res).flatten
         }

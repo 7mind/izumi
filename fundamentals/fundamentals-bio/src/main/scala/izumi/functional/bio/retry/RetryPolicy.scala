@@ -6,14 +6,13 @@ import izumi.functional.bio.{Applicative2, F}
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.DurationConverters._
 
 abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFunction[F, A, B]) {
   def &&[A1 <: A, B1](policy: RetryPolicy[F, A1, B1]): RetryPolicy[F, A1, (B, B1)] = {
     def combined(left: RetryFunction[F, A, B], right: RetryFunction[F, A1, B1]): RetryFunction[F, A1, (B, B1)] =
       (now: ZonedDateTime, in: A1) =>
         F.map2(left(now, in), right(now, in)) {
-          case (ControllerDecision.Stop(l), ControllerDecision.Stop(r))         => ControllerDecision.Stop(l -> r)
+          case (ControllerDecision.Stop(l), ControllerDecision.Stop(r)) => ControllerDecision.Stop(l -> r)
           case (ControllerDecision.Repeat(l, _, _), ControllerDecision.Stop(r)) => ControllerDecision.Stop(l -> r)
           case (ControllerDecision.Stop(l), ControllerDecision.Repeat(r, _, _)) => ControllerDecision.Stop(l -> r)
           case (ControllerDecision.Repeat(l, linterval, lnext), ControllerDecision.Repeat(r, rinterval, rnext)) =>
@@ -74,7 +73,7 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
       (now, in) =>
         action(now, in).map {
           case ControllerDecision.Repeat(out, interval, next) => ControllerDecision.Repeat(f(out), interval, loop(next))
-          case ControllerDecision.Stop(out)                   => ControllerDecision.Stop(f(out))
+          case ControllerDecision.Stop(out) => ControllerDecision.Stop(f(out))
         }
     }
     RetryPolicy(loop(action))
@@ -123,18 +122,18 @@ object RetryPolicy {
         F.pure {
           state match {
             case Some(State(startMillis, lastRun)) =>
-              val nowMillis     = now.toInstant.toEpochMilli
+              val nowMillis = now.toInstant.toEpochMilli
               val runningBehind = nowMillis > (lastRun + intervalMillis)
               val boundary =
-                if (period.toJava.isZero) period
+                if (isZero(period)) period
                 else FiniteDuration(intervalMillis - ((nowMillis - startMillis) % intervalMillis), TimeUnit.MILLISECONDS)
 
-              val sleepTime = if (boundary.toJava.isZero) period else boundary
-              val nextRun   = if (runningBehind) now else now.plus(sleepTime.toJava)
+              val sleepTime = if (isZero(boundary)) period else boundary
+              val nextRun = if (runningBehind) now else now.plusNanos(sleepTime.toNanos)
               ControllerDecision.Repeat(n + 1L, nextRun, loop(Some(State(startMillis, nextRun.toInstant.toEpochMilli)), n + 1L))
             case None =>
               val nowMillis = now.toInstant.toEpochMilli
-              val nextRun   = now.plus(period.toJava)
+              val nextRun = now.plusNanos(period.toNanos)
               ControllerDecision.Repeat(n + 1L, nextRun, loop(Some(State(nowMillis, nextRun.toInstant.toEpochMilli)), n + 1L))
           }
         }
@@ -152,8 +151,8 @@ object RetryPolicy {
   }
 
   private[this] def multiply(delay: FiniteDuration, multiplier: Long): FiniteDuration = {
-    val base         = BigInt(delay.toNanos)
-    val result       = base * BigInt(multiplier)
+    val base = BigInt(delay.toNanos)
+    val result = base * BigInt(multiplier)
     val cappedResult = result min LongMax
     FiniteDuration(cappedResult.toLong, TimeUnit.NANOSECONDS)
   }
