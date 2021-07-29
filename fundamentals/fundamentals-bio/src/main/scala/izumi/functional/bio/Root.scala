@@ -5,6 +5,7 @@ import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
 import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither}
+import izumi.functional.bio.retry.Scheduler3
 import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
@@ -24,6 +25,7 @@ object Root extends RootInstancesLowPriority1 {
   @inline implicit final def AttachLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Local: Local3[FR]): Local.type = Local
   @inline implicit final def AttachPrimitives3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Primitives: Primitives3[FR]): Primitives.type =
     Primitives
+  @inline implicit final def AttachScheduler3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Scheduler: Scheduler3[FR]): Scheduler.type = Scheduler
   @inline implicit final def AttachFork3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Fork: Fork3[FR]): Fork.type = Fork
   @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 

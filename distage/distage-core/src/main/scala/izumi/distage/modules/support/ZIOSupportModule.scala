@@ -3,6 +3,7 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio._
+import izumi.functional.bio.retry.Scheduler3
 import zio.{Has, IO, ZEnv, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule

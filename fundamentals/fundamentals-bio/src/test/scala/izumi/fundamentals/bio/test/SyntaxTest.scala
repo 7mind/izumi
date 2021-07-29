@@ -1,5 +1,6 @@
 package izumi.fundamentals.bio.test
 
+import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, Scheduler3}
 import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -337,6 +338,12 @@ class SyntaxTest extends AnyWordSpec {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
+    def attachScheduler2[F[+_, +_]: Monad2: Scheduler2]: F[Nothing, Int] = {
+      F.repeat(F.pure(42))(RetryPolicy.recurs(2))
+    }
+    def attachScheduler3[FR[-_, +_, +_]: Monad3: Scheduler3]: FR[Nothing, Nothing, Int] = {
+      F.repeat(F.pure(42))(RetryPolicy.recurs(2))
+    }
     lazy val zioTest = {
       (
         x[zio.IO],
@@ -344,6 +351,8 @@ class SyntaxTest extends AnyWordSpec {
         z[zio.IO],
         `attach Primitives2 & Fork2 methods even when they aren't imported`[zio.IO],
         `attach Primitives2 & Fork23 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+        attachScheduler2[zio.IO],
+        attachScheduler3[zio.ZIO],
       )
     }
 
@@ -351,6 +360,7 @@ class SyntaxTest extends AnyWordSpec {
       x[bio.IO],
       y[bio.IO],
       z[bio.IO],
+      attachScheduler2[bio.IO],
     )
 
     lazy val eitherTest = (

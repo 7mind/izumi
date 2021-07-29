@@ -4,8 +4,8 @@ import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.modules.support._
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
-import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Scheduler3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
+import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
+import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.unused

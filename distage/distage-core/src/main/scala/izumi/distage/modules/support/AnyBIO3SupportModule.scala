@@ -3,8 +3,8 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
-import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3, Scheduler3}
+import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
+import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.reflect.{TagK3, TagKK}
 
 import scala.annotation.unchecked.{uncheckedVariance => v}
