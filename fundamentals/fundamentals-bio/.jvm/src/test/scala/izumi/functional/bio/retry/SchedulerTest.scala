@@ -1,8 +1,7 @@
-package izumi.fundamentals.bio.test
+package izumi.functional.bio.retry
 
 import izumi.functional.bio.impl.{SchedulerMonix, SchedulerZio}
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toFiniteDuration, toZonedDateTime}
 import izumi.functional.bio.{F, Monad2, Primitives2, UnsafeRun2}
 import monix.bio
 import monix.execution.Scheduler
