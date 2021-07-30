@@ -17,5 +17,5 @@ package object retry {
     Duration.fromNanos(javaDuration.toNanos)
   }
 
-  @inline def isZero(duration: FiniteDuration) = duration.toNanos == 0
+  @inline def isZero(duration: FiniteDuration): Boolean = duration.toNanos == 0
 }

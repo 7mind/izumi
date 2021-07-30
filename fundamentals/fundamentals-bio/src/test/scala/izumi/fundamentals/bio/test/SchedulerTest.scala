@@ -12,6 +12,7 @@ import zio.internal.Platform
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 class SchedulerTest extends AnyWordSpec {
@@ -25,6 +26,19 @@ class SchedulerTest extends AnyWordSpec {
   private val zioRunner = UnsafeRun2.createZIO(Platform.default)
 
   "Scheduler" should {
+
+    "recurs with zero or negative argument repeats effect 0 additional time" in {
+      val zio1 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](0)))
+      val zio2 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](-5)))
+
+      val m1 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](0)))
+      val m2 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](-283)))
+
+      assert(zio1 == 1)
+      assert(zio2 == 1)
+      assert(m1 == 1)
+      assert(m2 == 1)
+    }
 
     "recur N times" in {
       val res1 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](3)))
@@ -42,9 +56,9 @@ class SchedulerTest extends AnyWordSpec {
 
     "execute effect with a given period" in {
       val list1 = zioRunner.unsafeRun(zioTestTimedScheduler(zio.IO.unit)(RetryPolicy.spaced(200.millis), 3))
-      val list2 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](3)))
+      val list2 = monixRunner.unsafeRun(monixTestTimedRunner(bio.IO.unit)(RetryPolicy.spaced(200.millis), 3))
       assert(list1 == Vector.fill(3)(200.millis))
-
+      assert(list2 == Vector.fill(3)(200.millis))
     }
 
     // This one seems weird a bit, but it's the best simple test case I could come up with at the moment
@@ -57,26 +71,36 @@ class SchedulerTest extends AnyWordSpec {
         monixRunner.unsafeRun(monixTestTimedRunner(bio.IO.sleep(1.second))(RetryPolicy.fixed(2.seconds), 4))
 
       assert(sleeps1.head == 2.seconds)
-      assert(sleeps2.tail.forall(_ <= 1.second))
+      assert(sleeps1.tail.forall(_ <= 1.second))
 
-      assert(sleeps1.head == 2.seconds)
+      assert(sleeps2.head == 2.seconds)
       assert(sleeps2.tail.forall(_ <= 1.second))
     }
 
-    "have correct exponential backoff policy" in {
+    "execute spaced" in {
+      val sleeps1 =
+        zioRunner.unsafeRun(zioTestTimedScheduler(zio.ZIO.sleep(java.time.Duration.of(1, ChronoUnit.SECONDS)).provide(zioTestClock))(RetryPolicy.spaced(2.seconds), 4))
 
+      val sleeps2 =
+        monixRunner.unsafeRun(monixTestTimedRunner(bio.IO.sleep(1.second))(RetryPolicy.spaced(2.seconds), 4))
+
+      assert(sleeps1.forall(_ == 2.second))
+      assert(sleeps2.forall(_ == 2.second))
+    }
+
+    "compute exponential backoff intervals correctly" in {
       val baseDelay = 100
       val policy1 = RetryPolicy.exponential[zio.IO](baseDelay.millis)
       val policy2 = RetryPolicy.exponential[bio.IO](baseDelay.millis)
 
-      // NOTE: deep recursion here will blow up stack!!!
+      @tailrec
       def testZio(rf: RetryFunction[zio.IO, Any, FiniteDuration], now: ZonedDateTime, exp: Int): Unit = {
         val next = zioRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[zio.IO, Any, FiniteDuration]]))
         assert(next.out == (baseDelay * math.pow(2.0, exp.toDouble)).toLong.millis)
         if (exp < 4) testZio(next.action, next.interval, exp + 1) else ()
       }
 
-      // NOTE: deep recursion here will blow up stack!!!
+      @tailrec
       def testMonix(rf: RetryFunction[bio.IO, Any, FiniteDuration], now: ZonedDateTime, exp: Int): Unit = {
         val next = monixRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[bio.IO, Any, FiniteDuration]]))
         assert(next.out == (baseDelay * math.pow(2.0, exp.toDouble)).toLong.millis)
@@ -85,6 +109,20 @@ class SchedulerTest extends AnyWordSpec {
 
       testZio(policy1.action, ZonedDateTime.now(), 0)
       testMonix(policy2.action, ZonedDateTime.now(), 0)
+    }
+
+    "compute fixed intervals correctly" in {
+      val policy = RetryPolicy.fixed[bio.IO](100.millis)
+      val acc = scala.collection.mutable.ArrayBuffer.empty[Long]
+
+      def test(rf: RetryFunction[bio.IO, Any, Long], now: ZonedDateTime, exp: Int): Unit = {
+        val next = monixRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[bio.IO, Any, Long]]))
+        acc.append(next.interval.toInstant.toEpochMilli - now.toInstant.toEpochMilli)
+        if (exp < 4) test(next.action, next.interval, exp + 1) else ()
+      }
+
+      test(policy.action, ZonedDateTime.now(), 0)
+      assert(acc.forall(_ == 100))
     }
 
     "combine different policies properly" in {
@@ -142,7 +180,35 @@ class SchedulerTest extends AnyWordSpec {
       monixRunner.unsafeRun(monixTest)
     }
 
-    "retry effect after fail" in {
+    "fail if no more retries left" in {
+      def testZio() = {
+        var isSucceed = false
+        val test = zioScheduler.retry(zio.IO.fail(new RuntimeException("Crap!")))(RetryPolicy.recurs(2)).catchAll {
+          _ =>
+            zio.IO {
+              isSucceed = true
+            }
+        }
+        zioRunner.unsafeRun(test)
+        assert(isSucceed)
+      }
+      def testMonix() = {
+        var isSucceed = false
+        val test = monixScheduler.retry(bio.IO.raiseError(new RuntimeException("Crap!")))(RetryPolicy.recurs(2)).onErrorHandleWith {
+          _ =>
+            bio.IO {
+              isSucceed = true
+            }
+        }
+        monixRunner.unsafeRun(test)
+        assert(isSucceed)
+      }
+
+      testZio()
+      testMonix()
+    }
+
+    "retry effect after fail/get fallback value if no more retries left" in {
       def testZio(maxRetries: Int, expected: Int) = {
         val eff = (counter: zio.Ref[Int]) => counter.updateAndGet(_ + 1).flatMap(v => if (v < 3) zio.IO.fail(new RuntimeException("Crap!")) else zio.IO.unit)
         for {
@@ -179,7 +245,7 @@ class SchedulerTest extends AnyWordSpec {
       }
     }
 
-    "should fail immediately if fail occurs during repeat" in {
+    "fail immediately if fail occurs during repeat" in {
       def testZio() = {
         var isSucceed = false
         val eff = (counter: zio.Ref[Int]) => counter.updateAndGet(_ + 1).flatMap(v => if (v < 2) zio.IO.fail(new RuntimeException("Crap!")) else zio.IO.unit)
@@ -219,6 +285,17 @@ class SchedulerTest extends AnyWordSpec {
       testMonix()
     }
 
+    "run the specified finalizer as soon as the schedule is complete" in {
+      val testProgram = for {
+        p <- zio.Promise.make[Throwable, Unit]
+        _ <- zioScheduler.retryOrElse(zio.IO.fail(new RuntimeException("Crap!")))(RetryPolicy.recurs(2))(_ => zio.IO.unit).ensuring(p.succeed(()))
+        finalizerV <- p.poll
+        _ = assert(finalizerV.isDefined)
+      } yield ()
+
+      zioRunner.unsafeRun(testProgram)
+    }
+
     def simpleCounter[F[+_, +_]: Monad2: Primitives2, B](sc: Scheduler2[F])(policy: RetryPolicy[F, Int, B]) = {
       for {
         counter <- F.mkRef(0)
@@ -237,7 +314,7 @@ class SchedulerTest extends AnyWordSpec {
               case ControllerDecision.Stop(_) => zio.IO.succeed(acc)
               case ControllerDecision.Repeat(_, interval, next) =>
                 val sleep = java.time.Duration.between(now, interval)
-                zio.ZIO.sleep(sleep) *> eff *> loop((), next, acc.appended(toFiniteDuration(sleep)), iter - 1)
+                zio.ZIO.sleep(sleep) *> eff *> loop((), next, acc :+ toFiniteDuration(sleep), iter - 1)
             }
           } yield res).flatten
         }
@@ -262,7 +339,7 @@ class SchedulerTest extends AnyWordSpec {
               case ControllerDecision.Stop(_) => bio.IO.pure(acc)
               case ControllerDecision.Repeat(_, interval, next) =>
                 val sleep = toFiniteDuration(java.time.Duration.between(now, interval))
-                bio.IO.sleep(sleep) *> eff *> loop((), next, acc.appended(sleep), iter - 1)
+                bio.IO.sleep(sleep) *> eff *> loop((), next, acc :+ sleep, iter - 1)
             }
           } yield res).flatten
         }

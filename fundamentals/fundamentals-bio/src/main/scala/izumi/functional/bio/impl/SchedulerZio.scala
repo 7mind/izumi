@@ -25,6 +25,10 @@ class SchedulerZio(zioClock: Clock) extends Scheduler2[IO] {
     eff.flatMap(out => loop(out, policy.action))
   }
 
+  override def retry[E, E1 >: E, S, A](eff: IO[E, A])(policy: RetryPolicy[IO, E1, S]): IO[E, A] = {
+    retryOrElse(eff)(policy)(IO.fail(_))
+  }
+
   override def retryOrElse[E, E1 >: E, E2, A, A2 >: A, S](eff: IO[E, A])(policy: RetryPolicy[IO, E1, S])(orElse: E1 => IO[E2, A2]): IO[E2, A2] = {
     def loop(in: E1, makeDecision: RetryFunction[IO, E1, S]): IO[E2, A2] = {
       (for {
