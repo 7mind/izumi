@@ -43,6 +43,12 @@ You can print the output of `plan.render()` to get detailed info on what will ha
 and line numbers so your IDE can show you where the binding was defined!
 
 ```scala mdoc:to-string
+import distage.PlannerInput
+
+// `everything` method disable all dependency pruning (it was used for simplicity here)
+val pInput = PlannerInput.everything(goodModule)
+val plan = Injector.Standard().plan(pInput)
+
 println(plan.render())
 ```
 
