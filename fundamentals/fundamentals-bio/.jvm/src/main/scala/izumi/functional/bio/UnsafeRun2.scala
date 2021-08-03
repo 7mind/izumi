@@ -159,6 +159,7 @@ object UnsafeRun2 {
     override val executor: Executor = Executor.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
     override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
     override val supervisor: Supervisor[Any] = Supervisor.none
+    override val yieldOnStart: Boolean = true
 
     override def reportFailure(cause: Cause[Any]): Unit = {
       handler match {
@@ -179,6 +180,7 @@ object UnsafeRun2 {
       t.printStackTrace()
       sys.exit(-1)
     }
+
   }
 
   final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
