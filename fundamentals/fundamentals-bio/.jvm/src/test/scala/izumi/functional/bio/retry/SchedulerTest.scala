@@ -2,7 +2,7 @@ package izumi.functional.bio.retry
 
 import izumi.functional.bio.impl.{SchedulerMonix, SchedulerZio}
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{F, Monad2, Primitives2, UnsafeRun2}
+import izumi.functional.bio.{F, Functor2, IO2, Monad2, Primitives2, UnsafeRun2}
 import monix.bio
 import monix.execution.Scheduler
 import org.scalatest.wordspec.AnyWordSpec
@@ -76,6 +76,32 @@ class SchedulerTest extends AnyWordSpec {
       assert(sleeps2.tail.forall(_ <= 1.second))
     }
 
+    "fixed delay" in {
+      def policy[F[+_, +_]: Monad2] = RetryPolicy.fixed[F](100.millis) >>> RetryPolicy.elapsed
+
+      def test[F[+_, +_]: Functor2](runner: UnsafeRun2[F])(rf: RetryFunction[F, Any, FiniteDuration], now: ZonedDateTime, numOfRetries: Int) = {
+        val acc = scala.collection.mutable.ArrayBuffer.empty[FiniteDuration]
+        @tailrec
+        def loop(f: RetryFunction[F, Any, FiniteDuration], time: ZonedDateTime, curr: Int): Unit = {
+          if (curr < numOfRetries) {
+            val next = runner.unsafeRun(f(time, ()).map(_.asInstanceOf[ControllerDecision.Repeat[F, Any, FiniteDuration]]))
+            acc.append(next.out)
+            loop(next.action, next.interval, curr + 1)
+          } else ()
+        }
+
+        loop(rf, now, 0)
+        acc.toList
+      }
+
+      val expected = List(0, 1, 2, 3).map(i => (i * 100).millis)
+      val zioTest = test(zioRunner)(policy[zio.IO].action, ZonedDateTime.now(), 4)
+      assert(zioTest == expected)
+
+      val monixTest = test(monixRunner)(policy[bio.IO].action, ZonedDateTime.now(), 4)
+      assert(monixTest == expected)
+    }
+
     "execute spaced" in {
       val sleeps1 =
         zioRunner.unsafeRun(zioTestTimedScheduler(zio.ZIO.sleep(java.time.Duration.of(1, ChronoUnit.SECONDS)).provide(zioTestClock))(RetryPolicy.spaced(2.seconds), 4))
@@ -92,28 +118,28 @@ class SchedulerTest extends AnyWordSpec {
       val policy1 = RetryPolicy.exponential[zio.IO](baseDelay.millis)
       val policy2 = RetryPolicy.exponential[bio.IO](baseDelay.millis)
 
-      @tailrec
-      def testZio(rf: RetryFunction[zio.IO, Any, FiniteDuration], now: ZonedDateTime, exp: Int): Unit = {
-        val next = zioRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[zio.IO, Any, FiniteDuration]]))
-        assert(next.out == (baseDelay * math.pow(2.0, exp.toDouble)).toLong.millis)
-        if (exp < 4) testZio(next.action, next.interval, exp + 1) else ()
+      def test[F[+_, +_]: Functor2](runner: UnsafeRun2[F])(rf: RetryFunction[F, Any, FiniteDuration], now: ZonedDateTime, numOfRetries: Int): Unit = {
+        @tailrec
+        def loop(f: RetryFunction[F, Any, FiniteDuration], time: ZonedDateTime, curr: Int): Unit = {
+          if (curr < numOfRetries) {
+            val next = runner.unsafeRun(f(time, ()).map(_.asInstanceOf[ControllerDecision.Repeat[F, Any, FiniteDuration]]))
+            assert(next.out == (baseDelay * math.pow(2.0, curr.toDouble)).toLong.millis)
+            loop(next.action, next.interval, curr + 1)
+          } else ()
+        }
+
+        loop(rf, now, 0)
       }
 
-      @tailrec
-      def testMonix(rf: RetryFunction[bio.IO, Any, FiniteDuration], now: ZonedDateTime, exp: Int): Unit = {
-        val next = monixRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[bio.IO, Any, FiniteDuration]]))
-        assert(next.out == (baseDelay * math.pow(2.0, exp.toDouble)).toLong.millis)
-        if (exp < 4) testMonix(next.action, next.interval, exp + 1) else ()
-      }
-
-      testZio(policy1.action, ZonedDateTime.now(), 0)
-      testMonix(policy2.action, ZonedDateTime.now(), 0)
+      test(zioRunner)(policy1.action, ZonedDateTime.now(), 4)
+      test(monixRunner)(policy2.action, ZonedDateTime.now(), 4)
     }
 
     "compute fixed intervals correctly" in {
       val policy = RetryPolicy.fixed[bio.IO](100.millis)
       val acc = scala.collection.mutable.ArrayBuffer.empty[Long]
 
+      @tailrec
       def test(rf: RetryFunction[bio.IO, Any, Long], now: ZonedDateTime, exp: Int): Unit = {
         val next = monixRunner.unsafeRun(rf(now, ()).map(_.asInstanceOf[ControllerDecision.Repeat[bio.IO, Any, Long]]))
         acc.append(next.interval.toInstant.toEpochMilli - now.toInstant.toEpochMilli)
@@ -180,31 +206,21 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "fail if no more retries left" in {
-      def testZio() = {
+
+      def test[F[+_, +_]: IO2](runner: UnsafeRun2[F], scheduler: Scheduler2[F])(policy: RetryPolicy[F, Any, Any]) = {
         var isSucceed = false
-        val test = zioScheduler.retry(zio.IO.fail(new RuntimeException("Crap!")))(RetryPolicy.recurs(2)).catchAll {
+        val test = scheduler.retry(F.fail(new RuntimeException("Crap!")))(policy).catchAll {
           _ =>
-            zio.IO {
+            F.sync {
               isSucceed = true
             }
         }
-        zioRunner.unsafeRun(test)
-        assert(isSucceed)
-      }
-      def testMonix() = {
-        var isSucceed = false
-        val test = monixScheduler.retry(bio.IO.raiseError(new RuntimeException("Crap!")))(RetryPolicy.recurs(2)).onErrorHandleWith {
-          _ =>
-            bio.IO {
-              isSucceed = true
-            }
-        }
-        monixRunner.unsafeRun(test)
+        runner.unsafeRun(test)
         assert(isSucceed)
       }
 
-      testZio()
-      testMonix()
+      test(zioRunner, zioScheduler)(RetryPolicy.recurs(2))
+      test(monixRunner, monixScheduler)(RetryPolicy.recurs(2))
     }
 
     "retry effect after fail/get fallback value if no more retries left" in {
