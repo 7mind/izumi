@@ -316,7 +316,7 @@ class SyntaxTest extends AnyWordSpec {
   }
 
   "F summoner examples" in {
-    import izumi.functional.bio.{F, Fork2, Fork3, Functor2, Monad2, Monad3, Primitives2, Primitives3, Temporal2}
+    import izumi.functional.bio.{F, Fork2, Fork3, Functor2, Monad2, Monad3, Primitives2, Primitives3, Temporal2, PrimitivesM3}
 
     def x[F[+_, +_]: Monad2] = {
       F.when(false)(F.unit)
@@ -338,6 +338,10 @@ class SyntaxTest extends AnyWordSpec {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join) *>
       F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)).fork.flatMap(_.join)
     }
+    def `attach PrimitivesM2 methods to a trifunctor BIO even when not imported`[FR[-_, +_, +_]: Monad3: PrimitivesM3]: FR[Nothing, Nothing, Int] = {
+      F.mkRefM(4).flatMap(r => r.update(_ => F.pure(5)) *> r.get.map(_ - 1)) *>
+      F.mkMutex.flatMap(m => m.bracket(F.pure(10)))
+    }
     def attachScheduler2[F[+_, +_]: Monad2: Scheduler2]: F[Nothing, Int] = {
       F.repeat(F.pure(42))(RetryPolicy.recurs(2))
     }
@@ -351,6 +355,7 @@ class SyntaxTest extends AnyWordSpec {
         z[zio.IO],
         `attach Primitives2 & Fork2 methods even when they aren't imported`[zio.IO],
         `attach Primitives2 & Fork23 methods to a trifunctor BIO even when not imported`[zio.ZIO],
+        `attach PrimitivesM2 methods to a trifunctor BIO even when not imported`[zio.ZIO],
         attachScheduler2[zio.IO],
         attachScheduler3[zio.ZIO],
       )

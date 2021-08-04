@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
-import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
+import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, PrimitivesM2, PrimitivesM3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.reflect.{TagK3, TagKK}
 
 import scala.annotation.unchecked.{uncheckedVariance => v}
@@ -52,7 +52,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
     * `make[Fork3[F]]` and `make[Primitives3[F]]` are not required by [[AnyBIO3SupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3](implicit tagBIO: TagKK[F[Any, +_, +_]]): ModuleDef =
+  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3](implicit tagBIO: TagKK[F[Any, +_, +_]]): ModuleDef =
     new ModuleDef {
       include(AnyBIO3SupportModule[F])
 
@@ -61,6 +61,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
       addImplicit[Local3[F]]
       addImplicit[Fork3[F]]
       addImplicit[Primitives3[F]]
+      addImplicit[PrimitivesM3[F]]
       addImplicit[UnsafeRun3[F]]
       addImplicit[Scheduler3[F]]
 
@@ -70,6 +71,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[Scheduler3[F] =:= Scheduler2[F[Any, +_, +_]]]
         implicitly[UnsafeRun3[F] =:= UnsafeRun2[F[Any, +_, +_]]]
         implicitly[Primitives3[F] =:= Primitives2[F[Any, +_, +_]]]
+        implicitly[PrimitivesM3[F] =:= PrimitivesM2[F[Any, +_, +_]]]
         implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +_, +_]]]
         implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +_, +_]]]
         implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
