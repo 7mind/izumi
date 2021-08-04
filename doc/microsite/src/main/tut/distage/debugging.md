@@ -45,9 +45,7 @@ and line numbers so your IDE can show you where the binding was defined!
 ```scala mdoc:to-string
 import distage.PlannerInput
 
-// `everything` method disable all dependency pruning (it was used for simplicity here)
-val pInput = PlannerInput.everything(goodModule)
-val plan = Injector.Standard().plan(pInput)
+val plan = Injector().plan(goodModule, Roots.target[A])
 
 println(plan.render())
 ```

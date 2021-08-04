@@ -1,14 +1,14 @@
 package izumi.functional.bio.retry
 
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{Applicative2, F, Monad2}
+import izumi.functional.bio.{Applicative2, F, Functor2, Monad2}
 
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
-abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFunction[F, A, B]) {
-  def &&[A1 <: A, B1](policy: RetryPolicy[F, A1, B1]): RetryPolicy[F, A1, (B, B1)] = {
+class RetryPolicy[F[+_, +_], -A, +B](val action: RetryFunction[F, A, B]) {
+  def &&[A1 <: A, B1](policy: RetryPolicy[F, A1, B1])(implicit F: Applicative2[F]): RetryPolicy[F, A1, (B, B1)] = {
     def combined(left: RetryFunction[F, A, B], right: RetryFunction[F, A1, B1]): RetryFunction[F, A1, (B, B1)] =
       (now: ZonedDateTime, in: A1) =>
         F.map2(left(now, in), right(now, in)) {
@@ -22,7 +22,7 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
     RetryPolicy(combined(action, policy.action))
   }
 
-  def ||[A1 <: A, B1](policy: RetryPolicy[F, A1, B1]): RetryPolicy[F, A1, (B, B1)] = {
+  def ||[A1 <: A, B1](policy: RetryPolicy[F, A1, B1])(implicit F: Applicative2[F]): RetryPolicy[F, A1, (B, B1)] = {
     def combined(left: RetryFunction[F, A, B], right: RetryFunction[F, A1, B1]): RetryFunction[F, A1, (B, B1)] = {
       (now: ZonedDateTime, in: A1) =>
         F.map2(left(now, in), right(now, in)) {
@@ -39,7 +39,7 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
     RetryPolicy(combined(action, policy.action))
   }
 
-  def >>>[B1](that: RetryPolicy[F, B, B1])(implicit M: Monad2[F]): RetryPolicy[F, A, B1] = {
+  def >>>[B1](that: RetryPolicy[F, B, B1])(implicit F: Monad2[F]): RetryPolicy[F, A, B1] = {
     def loop(self: RetryFunction[F, A, B], that: RetryFunction[F, B, B1]): RetryFunction[F, A, B1] = {
       (now: ZonedDateTime, in: A) =>
         self(now, in).flatMap {
@@ -60,11 +60,15 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
     RetryPolicy(loop(action, that.action))
   }
 
-  def whileInput[A1 <: A](f: A1 => Boolean): RetryPolicy[F, A1, B] = check((in, _) => f(in))
+  def whileInput[A1 <: A](f: A1 => Boolean)(implicit F: Applicative2[F]): RetryPolicy[F, A1, B] = {
+    check((in, _) => f(in))
+  }
 
-  def whileOutput(f: B => Boolean): RetryPolicy[F, A, B] = check((_, out) => f(out))
+  def whileOutput(f: B => Boolean)(implicit F: Applicative2[F]): RetryPolicy[F, A, B] = {
+    check((_, out) => f(out))
+  }
 
-  def check[A1 <: A](pred: (A1, B) => Boolean): RetryPolicy[F, A1, B] = {
+  def check[A1 <: A](pred: (A1, B) => Boolean)(implicit F: Functor2[F]): RetryPolicy[F, A1, B] = {
     def loop(action: RetryFunction[F, A1, B]): RetryFunction[F, A1, B] = {
       (now: ZonedDateTime, in: A1) =>
         action(now, in).map {
@@ -76,7 +80,7 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
     RetryPolicy(loop(action))
   }
 
-  def modifyDelay(f: B => FiniteDuration): RetryPolicy[F, A, B] = {
+  def modifyDelay(f: B => FiniteDuration)(implicit F: Functor2[F]): RetryPolicy[F, A, B] = {
     def loop(action: RetryFunction[F, A, B]): RetryFunction[F, A, B] = {
       (now, in) =>
         action(now, in).map {
@@ -89,7 +93,7 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
     RetryPolicy(loop(action))
   }
 
-  def map[B1](f: B => B1): RetryPolicy[F, A, B1] = {
+  def map[B1](f: B => B1)(implicit F: Functor2[F]): RetryPolicy[F, A, B1] = {
     def loop(action: RetryFunction[F, A, B]): RetryFunction[F, A, B1] = {
       (now, in) =>
         action(now, in).map {
@@ -105,10 +109,13 @@ abstract class RetryPolicy[F[+_, +_]: Applicative2, -A, +B](val action: RetryFun
 object RetryPolicy {
   private val LongMax: BigInt = BigInt(Long.MaxValue)
 
-  def apply[F[+_, +_]: Applicative2, A, B](action: RetryFunction[F, A, B]): RetryPolicy[F, A, B] = new RetryPolicy[F, A, B](action) {}
+  def apply[F[+_, +_], A, B](action: RetryFunction[F, A, B]): RetryPolicy[F, A, B] = new RetryPolicy[F, A, B](action)
 
   def identity[F[+_, +_]: Applicative2, A]: RetryPolicy[F, A, A] = {
-    lazy val loop: RetryFunction[F, A, A] = (now: ZonedDateTime, in: A) => F.pure(ControllerDecision.Repeat(in, now, loop))
+    lazy val loop: RetryFunction[F, A, A] = {
+      (now: ZonedDateTime, in: A) =>
+        F.pure(ControllerDecision.Repeat(in, now, loop))
+    }
     RetryPolicy(loop)
   }
 
@@ -117,15 +124,14 @@ object RetryPolicy {
   }
 
   def elapsed[F[+_, +_]: Applicative2]: RetryPolicy[F, Any, FiniteDuration] = {
-    import scala.concurrent.duration.Duration
     def loop(start: Option[ZonedDateTime]): RetryFunction[F, Any, FiniteDuration] = {
       (now, _) =>
         F.pure {
           start match {
             case Some(start) =>
-              val duration = Duration(now.toInstant.toEpochMilli - start.toInstant.toEpochMilli, TimeUnit.MILLISECONDS)
+              val duration = FiniteDuration(now.toInstant.toEpochMilli - start.toInstant.toEpochMilli, TimeUnit.MILLISECONDS)
               ControllerDecision.Repeat(duration, now, loop(Some(start)))
-            case None => ControllerDecision.Repeat(Duration(0, TimeUnit.MILLISECONDS), now, loop(Some(now)))
+            case None => ControllerDecision.Repeat(FiniteDuration(0, TimeUnit.MILLISECONDS), now, loop(Some(now)))
           }
         }
     }
@@ -133,7 +139,9 @@ object RetryPolicy {
   }
 
   def forever[F[+_, +_]: Applicative2]: RetryPolicy[F, Any, Long] = {
-    def loop(n: Long): RetryFunction[F, Any, Long] = (now, _) => F.pure(ControllerDecision.Repeat(n, now, loop(n + 1L)))
+    def loop(n: Long): RetryFunction[F, Any, Long] = {
+      (now, _) => F.pure(ControllerDecision.Repeat(n, now, loop(n + 1L)))
+    }
     RetryPolicy(loop(0))
   }
 
@@ -162,10 +170,10 @@ object RetryPolicy {
               val nowMillis = now.toInstant.toEpochMilli
               val runningBehind = nowMillis > (lastRun + intervalMillis)
               val boundary =
-                if (isZero(period)) period
+                if (period.length == 0) period
                 else FiniteDuration(intervalMillis - ((nowMillis - startMillis) % intervalMillis), TimeUnit.MILLISECONDS)
 
-              val sleepTime = if (isZero(boundary)) period else boundary
+              val sleepTime = if (boundary.length == 0) period else boundary
               val nextRun = if (runningBehind) now else now.plusNanos(sleepTime.toNanos)
               ControllerDecision.Repeat(n + 1L, nextRun, loop(Some(State(startMillis, nextRun.toInstant.toEpochMilli)), n + 1L))
             case None =>
@@ -194,12 +202,14 @@ object RetryPolicy {
     FiniteDuration(cappedResult.toLong, TimeUnit.NANOSECONDS)
   }
 
-  type RetryFunction[F[+_, +_], -A, +B] = (ZonedDateTime, A) => F[Nothing, ControllerDecision[F, A, B]]
+  type RetryFunction[+F[+_, +_], -A, +B] = (ZonedDateTime, A) => F[Nothing, ControllerDecision[F, A, B]]
   object RetryFunction {
-    def done[F[+_, +_]: Applicative2, A](value: A): RetryFunction[F, Any, A] = (_, _) => F.pure(ControllerDecision.Stop(value))
+    def done[F[+_, +_]: Applicative2, A](value: A): RetryFunction[F, Any, A] = {
+      (_, _) => F.pure(ControllerDecision.Stop(value))
+    }
   }
 
-  sealed trait ControllerDecision[+F[+_, +_], -A, +B] extends Product with Serializable
+  sealed trait ControllerDecision[+F[+_, +_], -A, +B]
   object ControllerDecision {
     final case class Repeat[F[+_, +_], -A, +B](out: B, interval: ZonedDateTime, action: RetryFunction[F, A, B]) extends ControllerDecision[F, A, B]
     final case class Stop[+B](out: B) extends ControllerDecision[Nothing, Any, B]

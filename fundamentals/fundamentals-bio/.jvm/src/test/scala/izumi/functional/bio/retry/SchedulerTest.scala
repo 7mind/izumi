@@ -1,5 +1,6 @@
 package izumi.functional.bio.retry
 
+import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.impl.{SchedulerMonix, SchedulerZio}
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.{F, Functor2, IO2, Monad2, Primitives2, UnsafeRun2}

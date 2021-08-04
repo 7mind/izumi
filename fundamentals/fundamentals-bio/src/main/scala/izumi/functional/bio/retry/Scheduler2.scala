@@ -13,15 +13,6 @@ trait Scheduler2[F[+_, +_]] extends SchedulerInstances {
 
 object Scheduler2 {
   def apply[F[+_, +_]: Scheduler2]: Scheduler2[F] = implicitly
-
-  implicit final class Scheduler2Ops[F[+_, +_]](private val self: Scheduler2[F]) extends AnyVal {
-    @inline def repeat[E, A, B](eff: F[E, A])(policy: RetryPolicy[F, A, B]): F[E, A] = self.repeat(eff)(policy)
-
-    @inline def retry[E, E1 >: E, S, A](eff: F[E, A])(policy: RetryPolicy[F, E1, S]): F[E, A] = self.retry(eff)(policy)
-
-    @inline def retryOrElse[E, E1 >: E, E2, A, A2 >: A, S](eff: F[E, A])(policy: RetryPolicy[F, E1, S])(orElse: E1 => F[E2, A2]): F[E2, A2] =
-      self.retryOrElse[E, E1, E2, A, A2, S](eff)(policy)(orElse)
-  }
 }
 
 private[bio] sealed trait SchedulerInstances

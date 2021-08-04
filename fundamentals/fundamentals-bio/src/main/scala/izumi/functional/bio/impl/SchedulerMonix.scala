@@ -2,8 +2,9 @@ package izumi.functional.bio.impl
 
 import cats.effect.Timer
 import izumi.functional.bio.Temporal2
+import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toFiniteDuration, toZonedDateTime}
+import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toZonedDateTime}
 import monix.bio.{IO, UIO}
 
 import java.util.concurrent.TimeUnit
