@@ -2,6 +2,7 @@ package izumi.distage.modules.typeclass
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.bio._
+import izumi.functional.bio.retry.Scheduler3
 import izumi.reflect.TagK3
 
 /**
@@ -42,7 +43,7 @@ object BIO3InstancesModule {
     * `make[Temporal3[F]]`, `make[UnsafeRun3[F]]` `make[Fork3[F]]` and `make[Primitives3[F]]` are not required by [[BIO3InstancesModule]]
     * but are added for completeness
     */
-  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3]: ModuleDef = new ModuleDef {
+  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3]: ModuleDef = new ModuleDef {
     include(BIO3InstancesModule[F])
 
     addImplicit[Async3[F]]
@@ -52,5 +53,6 @@ object BIO3InstancesModule {
     addImplicit[Primitives3[F]]
     addImplicit[PrimitivesM3[F]]
     addImplicit[UnsafeRun3[F]]
+    addImplicit[Scheduler3[F]]
   }
 }

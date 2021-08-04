@@ -5,6 +5,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.MonixBIOPlatformDependentSupportModule
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
+import izumi.functional.bio.retry.Scheduler2
 import izumi.functional.bio.{Async2, Fork2, Primitives2, PrimitivesM2, Temporal2}
 import monix.bio.{IO, Task, UIO}
 import monix.execution.Scheduler
@@ -44,6 +45,10 @@ trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupp
   addImplicit[Fork2[IO]]
   addImplicit[Primitives2[IO]]
   addImplicit[PrimitivesM2[IO]]
+
+  make[Scheduler2[IO]].from {
+    implicit T: Timer[UIO] => implicitly[Scheduler2[IO]]
+  }
 
   make[ConcurrentEffect[Task]].from(IO.catsEffect(_: Scheduler, _: IO.Options))
   addImplicit[Parallel[Task]]

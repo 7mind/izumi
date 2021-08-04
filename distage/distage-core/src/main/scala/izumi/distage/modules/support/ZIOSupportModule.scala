@@ -3,6 +3,7 @@ package izumi.distage.modules.support
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio._
+import izumi.functional.bio.retry.Scheduler3
 import zio.{Has, IO, ZEnv, ZIO}
 
 object ZIOSupportModule extends ZIOSupportModule
@@ -38,6 +39,11 @@ trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule 
   addImplicit[Local3[ZIO]]
   addImplicit[Fork3[ZIO]]
   addImplicit[Primitives3[ZIO]]
+
+  make[Scheduler3[ZIO]].from {
+    implicit r: zio.clock.Clock =>
+      implicitly[Scheduler3[ZIO]]
+  }
 
   addImplicit[TransZio[IO]]
 
