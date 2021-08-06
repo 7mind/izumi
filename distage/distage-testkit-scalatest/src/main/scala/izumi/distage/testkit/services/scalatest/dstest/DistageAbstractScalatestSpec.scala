@@ -31,7 +31,7 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
 trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with CanVerb with DistageTestEnv with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
-  protected def config: TestConfig = TestConfig.forSuite(this.getClass)
+  override protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
   final protected[this] lazy val testEnv: TestEnvironment = makeTestEnv()
   protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
