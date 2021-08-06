@@ -7,8 +7,4 @@ object PV {
   val sbt_scoverage = "1.8.2"
   val sbt_pgp = "2.1.1"
   val sbt_assembly = "0.14.9"
-
-  val scala_js_version = "1.6.0"
-  val crossproject_version = "1.0.0"
-  val scalajs_bundler_version = "0.20.0"
 }
