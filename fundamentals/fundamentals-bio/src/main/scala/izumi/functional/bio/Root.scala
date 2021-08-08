@@ -4,13 +4,14 @@ import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
-import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither}
+import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither, BioIdentity3}
 import izumi.functional.bio.retry.Scheduler3
+import izumi.fundamentals.orphans.`monix.bio.IO`
+import izumi.fundamentals.platform.functional.{Identity2, Identity3}
 import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
 import scala.language.implicitConversions
-import izumi.fundamentals.orphans.`monix.bio.IO`
 
 trait Root extends DivergenceHelper with PredefinedHelper
 
@@ -110,7 +111,12 @@ sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
   @inline implicit final def BIOEither: Predefined.Of[Error2[Either]] = Predefined(BioEither)
 }
 
-sealed trait RootInstancesLowPriority10 {
+sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
+  @inline implicit final def BIOIdentity2: Predefined.Of[Monad2[Identity2]] = BioIdentity3.asInstanceOf[Predefined.Of[Monad2[Identity2]]]
+  @inline implicit final def BIOIdentity3: Predefined.Of[Monad3[Identity3]] = Predefined(BioIdentity3)
+}
+
+sealed trait RootInstancesLowPriority11 {
   @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
