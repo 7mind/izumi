@@ -658,6 +658,32 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(bindings.size == 3)
     }
 
+    "Progression test: set bindings with the same source position and implementation shouldn't conflict" in {
+      val definition: ModuleDef = new ModuleDef {
+        val fn = {
+          var i = 0
+          () => { i += 1; i }
+        }
+        def int() = {
+          many[Int].addEffect[Identity, Int](fn)
+        }
+
+        int()
+        int()
+        int()
+      }
+
+      intercept[TestFailedException] {
+        assert(definition.bindings.size == 4)
+      }
+      Injector().produceRun(definition) {
+        s: Set[Int] =>
+          intercept[TestFailedException] {
+            assert(s == Set(1, 2, 3))
+          }
+      }
+    }
+
   }
 
 }
