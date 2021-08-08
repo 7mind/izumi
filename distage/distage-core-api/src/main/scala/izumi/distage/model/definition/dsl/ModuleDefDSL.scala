@@ -354,6 +354,15 @@ object ModuleDefDSL {
     final def ref[I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
 
+    /**
+      * Add a Weak reference to `I` to the set
+      *
+      * This set will contain the same object that is bound to `make[I]`,
+      * but ONLY if some other - not garbage-collected - component in the object graph
+      * depends on `I` explicitly.
+      *
+      * @see Weak Sets https://izumi.7mind.io/distage/advanced-features#weak-sets
+      */
     final def weak[I <: T: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
 
@@ -430,6 +439,15 @@ object ModuleDefDSL {
     final def refSet[I <: Set[? <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false), pos)
 
+    /**
+      * Add a Weak reference to `Set[I]` to the set
+      *
+      * This set will contain all the elements of the Set bound at `make[Set[I]]`,
+      * but ONLY if some other, not garbage-collected, component in the object graph
+      * depends on `Set[I]` explicitly.
+      *
+      * @see Weak Sets https://izumi.7mind.io/distage/advanced-features#weak-sets
+      */
     final def weakSet[I <: Set[? <: T]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true), pos)
 

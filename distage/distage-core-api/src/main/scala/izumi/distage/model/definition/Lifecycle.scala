@@ -446,6 +446,8 @@ object Lifecycle extends LifecycleCatsInstances {
       *
       * This function only makes sense in code examples or at top-level,
       * please use [[SyntaxUse#use]] instead!
+      *
+      * @note will also acquire the resource without an uninterruptible section
       */
     def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
       F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
