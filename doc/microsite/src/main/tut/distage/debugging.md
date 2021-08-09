@@ -96,3 +96,46 @@ dot -Tpng target/plan-last-nogc.gv -o out.png
 ```
 
 ![plan-graph](media/plan-graph.png)
+
+#### Command-line activation
+
+You may activate GraphViz dump for a `distage-framework` @ref[Role-based application](distage-framework.md#roles) by passing a `--debug-dump-graph` option:
+
+```
+./launcher --debug-dump-graph :myrole
+```
+
+#### Testkit activation
+
+You may activate GraphViz dump in `distage-testkit` tests by setting `PlanningOptions(addGraphVizDump = true)` in `config`:
+
+```scala mdoc:reset
+import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.TestConfig
+import izumi.distage.framework.config.PlanningOptions
+
+final class MyTest extends Spec2[zio.IO] {
+  override def config: TestConfig = super.config.copy(
+    planningOptions = PlanningOptions(
+      addGraphVizDump = true,
+    )
+  )
+}
+```
+
+##### Launcher activation
+
+PlanningOptions are also modifiable in `distage-framework` applications:
+
+```scala mdoc:reset
+import distage.{Module, ModuleDef}
+import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.roles.RoleAppMain
+import zio.IO
+
+abstract class MyRoleLauncher extends RoleAppMain.LauncherBIO2[IO] {
+  override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): Module = new ModuleDef {
+    make[PlanningOptions].from(PlanningOptions(addGraphVizDump = true))
+  }
+}
+```
