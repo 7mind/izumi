@@ -25,7 +25,7 @@ object RefM2 {
   def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
     for {
       mutex <- Mutex2.createFromBIO[F]
-      ref   <- F.mkRef(a)
+      ref <- F.mkRef(a)
     } yield {
       new RefM2[F, A] {
         override def get: F[Nothing, A] = ref.get
@@ -34,18 +34,18 @@ object RefM2 {
 
         override def modify[E, B](f: A => F[E, (B, A)]): F[E, B] = mutex.bracket {
           for {
-            a0    <- ref.get
-            res   <- f(a0)
+            a0 <- ref.get
+            res <- f(a0)
             (b, a) = res
-            _     <- ref.set(a)
+            _ <- ref.set(a)
           } yield b
         }
 
         override def update[E](f: A => F[E, A]): F[E, A] = mutex.bracket {
           for {
             a0 <- ref.get
-            a  <- f(a0)
-            _  <- ref.set(a)
+            a <- f(a0)
+            _ <- ref.set(a)
           } yield a
         }
 

@@ -3,7 +3,6 @@ package izumi.functional.bio.impl
 import izumi.functional.bio.{Mutex2, PrimitivesM2, RefM2}
 import zio._
 
-
 object PrimitivesMZio extends PrimitivesMZio
 
 class PrimitivesMZio extends PrimitivesM2[IO] {

@@ -72,7 +72,6 @@ object FwdrefLoopBreaker {
       }
     }
 
-
     private[this] def effectKey(key: DIKey): Boolean = key match {
       case _: DIKey.ResourceKey | _: DIKey.EffectKey => true
       case _ => false

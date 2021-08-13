@@ -52,7 +52,9 @@ object AnyBIO3SupportModule extends App with ModuleDef {
     * `make[Fork3[F]]` and `make[Primitives3[F]]` are not required by [[AnyBIO3SupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3](implicit tagBIO: TagKK[F[Any, +_, +_]]): ModuleDef =
+  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3](
+    implicit tagBIO: TagKK[F[Any, +_, +_]]
+  ): ModuleDef =
     new ModuleDef {
       include(AnyBIO3SupportModule[F])
 
