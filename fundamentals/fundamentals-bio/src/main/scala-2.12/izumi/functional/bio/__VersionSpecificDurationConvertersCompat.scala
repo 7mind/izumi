@@ -6,13 +6,13 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 private[bio] object __VersionSpecificDurationConvertersCompat {
 
   /**
-   * Transform a Java duration into a Scala duration. If the nanosecond part of the Java duration is zero the returned
-   * duration will have a time unit of seconds and if there is a nanoseconds part the Scala duration will have a time
-   * unit of nanoseconds.
-   *
-   * @throws IllegalArgumentException If the given Java Duration is out of bounds of what can be expressed with the
-   *                                  Scala FiniteDuration.
-   */
+    * Transform a Java duration into a Scala duration. If the nanosecond part of the Java duration is zero the returned
+    * duration will have a time unit of seconds and if there is a nanoseconds part the Scala duration will have a time
+    * unit of nanoseconds.
+    *
+    * @throws IllegalArgumentException If the given Java Duration is out of bounds of what can be expressed with the
+    *                                  Scala FiniteDuration.
+    */
   private[bio] final def toFiniteDuration(duration: java.time.Duration): FiniteDuration = {
     val originalSeconds = duration.getSeconds
     val originalNanos = duration.getNano

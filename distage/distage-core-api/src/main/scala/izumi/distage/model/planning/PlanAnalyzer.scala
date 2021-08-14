@@ -13,4 +13,3 @@ trait PlanAnalyzer {
 
   def requirements(op: ExecutableOp): Seq[(DIKey, Set[DIKey])]
 }
-

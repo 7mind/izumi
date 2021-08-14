@@ -69,7 +69,6 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
         // substitute forward references by `null`
         TypeUtil.defaultValue(param.key.tpe.cls)
       case param =>
-
         context.fetchKey(declaredKey, param.isByName) match {
           case Some(v) =>
             v.asInstanceOf[Any]
