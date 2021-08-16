@@ -38,8 +38,24 @@ object LogZIO {
       * @param thunk the effect for which context will be passed
       * @return effect with the passed context
       */
-    def withContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
-      thunk.updateService((logZIO: Service) => logZIO(context: _*))
+    def withCustomContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
+      withCustomContext[R, E, A](CustomContext(context: _*))(thunk)
+    }
+
+    /**
+      * Allows to provide logging context
+      * which will be passed through the given effect
+      * via ZIO environment.
+      *
+      * @tparam R environment of the provided effect
+      * @tparam E effect error type
+      * @tparam A effect return type
+      * @param context context to be provided
+      * @param thunk the effect for which context will be passed
+      * @return effect with the passed context
+      */
+    def withCustomContext[R: Tag, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
+      thunk.updateService((logZIO: Service) => logZIO(context))
     }
   }
 
