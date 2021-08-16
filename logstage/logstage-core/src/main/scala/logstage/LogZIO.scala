@@ -4,6 +4,8 @@ import izumi.functional.bio.SyncSafe2
 import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.rendering.AnyEncoded
+import izumi.reflect.Tag
 import logstage.LogstageCats.WrappedLogIO
 import zio.{IO, ZIO}
 
@@ -23,7 +25,23 @@ object LogZIO {
     *   }
     * }}}
     */
-  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get)
+  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get) {
+    /**
+      * Allows to provide logging context
+      * which will be passed through the given effect
+      * via ZIO environment.
+      *
+      * @tparam R environment of the provided effect
+      * @tparam E effect error type
+      * @tparam A effect return type
+      * @param context context to be provided
+      * @param thunk the effect for which context will be passed
+      * @return effect with the passed context
+      */
+    def withContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
+      thunk.updateService((logZIO: Service) => logZIO(context: _*))
+    }
+  }
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
