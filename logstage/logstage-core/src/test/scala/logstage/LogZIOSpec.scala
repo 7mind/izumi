@@ -9,12 +9,12 @@ import logstage.LogZIO.log
 class LogZIOSpec extends AnyWordSpec {
   private val runtime = Runtime.default
 
-  "LogZIO.log.withCustomContext" should {
+  "LogZIO.withCustomContext" should {
     "provide context" in {
       val testSink = withTestSink {
         for {
           _ <- log.info("Hello")
-          _ <- log.withCustomContext("kek" -> "cheburek") {
+          _ <- LogZIO.withCustomContext("kek" -> "cheburek") {
             ZIO.effect(1 + 1) <* log.info("It's me")
           }
         } yield ()
@@ -38,7 +38,7 @@ class LogZIOSpec extends AnyWordSpec {
     "clean context on scope exit" in {
       val testSink = withTestSink {
         for {
-          _ <- log.withCustomContext("kek" -> "cheburek") {
+          _ <- LogZIO.withCustomContext("kek" -> "cheburek") {
             ZIO.effect(1 + 1) <* log.info("Hello")
           }
           _ <- log.info("Bye")
@@ -63,11 +63,11 @@ class LogZIOSpec extends AnyWordSpec {
 
     "nest context in multiple scopes" in {
       val testSink = withTestSink {
-        log.withCustomContext("correlation_id" -> "kek") {
+        LogZIO.withCustomContext("correlation_id" -> "kek") {
           log.info("service layer") *>
           ZIO.effect(1 + 2).flatMap {
             entityId =>
-              log
+              LogZIO
                 .withCustomContext("entity_id" -> entityId) {
                   log.info("DAO layer")
                 }.as(entityId) <* log.info("service layer 2")
@@ -122,7 +122,6 @@ class LogZIOSpec extends AnyWordSpec {
     val logger = LogIO.fromLogger[UIO](
       IzLogger(Log.Level.Info, List(sink))
     )
-    logger
     runtime.unsafeRun {
       thunk.provide(Has(logger))
     }
