@@ -1,11 +1,12 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import cats.effect.ConcurrentEffect
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.MonixPlatformDependentSupportModule
 import monix.eval.Task
 import monix.execution.Scheduler
+import cats.effect.Temporal
 
 object MonixSupportModule extends MonixSupportModule
 
@@ -36,5 +37,5 @@ trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportMod
   addImplicit[Parallel[Task]]
 
   addImplicit[ContextShift[Task]]
-  addImplicit[Timer[Task]]
+  addImplicit[Temporal[Task]]
 }
