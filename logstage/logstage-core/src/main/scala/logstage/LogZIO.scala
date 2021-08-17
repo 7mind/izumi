@@ -55,9 +55,24 @@ object LogZIO {
   }
 
   /**
-    * Allows to provide logging context
-    * which will be passed through the given effect
-    * via ZIO environment.
+    * Allows to provide logging context which will be passed through the given effect via ZIO environment.
+    *
+    * {{{
+    * import logstage.LogZIO
+    * import logstage.LogZIO.log
+    * import zio.ZIO
+    *
+    * def databaseCall(): ZIO[LogZIO, Throwable, String] = ZIO.succeed("stubbed")
+    *
+    * def dbLayerFunction(arg: Int): ZIO[LogZIO, Throwable, String] = {
+    *   LogZIO.withCustomContext("arg" -> arg) {
+    *     for {
+    *       result <- databaseCall
+    *       _ <- log.info(s"Database call $result") // … arg=1 Database call result=stubbed
+    *     } yield result
+    *   }
+    * }
+    * }}}
     *
     * @tparam R environment of the provided effect
     * @tparam E effect error type
@@ -71,9 +86,25 @@ object LogZIO {
   }
 
   /**
-    * Allows to provide logging context
-    * which will be passed through the given effect
-    * via ZIO environment.
+    * Allows to provide logging context which will be passed through the given effect via ZIO environment.
+    *
+    * {{{
+    * import izumi.logstage.api.Log.CustomContext
+    * import logstage.LogZIO
+    * import logstage.LogZIO.log
+    * import zio.ZIO
+    *
+    * def databaseCall(): ZIO[LogZIO, Throwable, String] = ZIO.succeed("stubbed")
+    *
+    * def dbLayerFunction(arg: Int): ZIO[LogZIO, Throwable, String] = {
+    *   LogZIO.withCustomContext(CustomContext("arg" -> arg)) {
+    *     for {
+    *       result <- databaseCall
+    *       _ <- log.info(s"Database call $result") // … arg=1 Database call result=stubbed
+    *     } yield result
+    *   }
+    * }
+    * }}}
     *
     * @tparam R environment of the provided effect
     * @tparam E effect error type

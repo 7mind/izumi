@@ -238,40 +238,43 @@ I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_lo
 
 ### Adding custom logging context to log messages
 
-`LogZIO.withCustomContext` allows to provide custom log context which will be by-passed to the underlying effect
-via ZIO environment:
+`LogZIO.withCustomContext` allows to append to the custom log context carried in ZIO environment when `LogZIO.log` is used for logging:
 
 ```scala mdoc:override:to-string
 import zio._
 
 def databaseCall(): ZIO[LogZIO, Throwable, String] = ZIO.succeed("stubbed")
 
-def daoLayerFunction(arg: Int): ZIO[LogZIO, Throwable, String] =
-    LogZIO.withCustomContext("arg" -> arg) {
-      for {
-        result <- databaseCall
-        _ <- log.info(s"Database call $result")
-      } yield result
-    }
+def dbLayerFunction(arg: Int): ZIO[LogZIO, Throwable, String] = {
+  LogZIO.withCustomContext("arg" -> arg) {
+    for {
+      result <- databaseCall
+      _      <- log.info(s"Database call $result")
+    } yield result
+ }
+}
 
-def serviceLayerFunction1(): ZIO[LogZIO, Throwable, String] =
-   for {
-     _ <- log.info("Going to call daoLayerFunction")
-     result <- daoLayerFunction(1)
-   } yield result
+def serviceLayerFunction1(): ZIO[LogZIO, Throwable, String] = {
+  for {
+    _      <- log.info("Going to call dbLayerFunction")
+    result <- dbLayerFunction(1)
+  } yield result
+}
 
-def serviceLayerFunction2(): ZIO[LogZIO, Throwable, String] =
-   log.info("Called serviceLayerFunction2").as("stubbed")
+def serviceLayerFunction2(): ZIO[LogZIO, Throwable, String] = {
+  log.info("Called serviceLayerFunction2").as("stubbed")
+}
 
-def controllerFunction(correlationId: String): ZIO[LogZIO, Throwable, String] =
-   LogZIO.withCustomContext("correlation_id" -> correlationId) {
-     for {
-       x <- serviceLayerFunction1()
-       y <- serviceLayerFunction2()
-       result = x + y
-       _ <- log.info(s"Controller produced $result")
-     } yield result
-   } <* log.info("Some log after controller function (without correlation_id)")
+def controllerFunction(correlationId: String): ZIO[LogZIO, Throwable, String] = {
+  LogZIO.withCustomContext("correlation_id" -> correlationId) {
+    for {
+      x     <- serviceLayerFunction1()
+      y     <- serviceLayerFunction2()
+      result = x + y
+      _     <- log.info(s"Controller produced $result")
+    } yield result
+  } <* log.info("Some log after controller function (without correlation_id)")
+}
 
 // at the end of the world
 zio.Runtime.default.unsafeRun {
@@ -280,8 +283,8 @@ zio.Runtime.default.unsafeRun {
 ```
 
 ```
-I 2021-08-17T15:07:54.244 (00_logstage.md:220)  …App12.serviceLayerFunction1 [2280:Thread-60           ] correlation_id=123 Going to call daoLayerFunction
-I 2021-08-17T15:07:54.342 (00_logstage.md:213)  ….App12.daoLayerFunction.212 [2280:Thread-60           ] correlation_id=123, arg=1 Database call result=stubbed
+I 2021-08-17T15:07:54.244 (00_logstage.md:220)  …App12.serviceLayerFunction1 [2280:Thread-60           ] correlation_id=123 Going to call dbLayerFunction
+I 2021-08-17T15:07:54.342 (00_logstage.md:213)  …n.App12.dbLayerFunction.212 [2280:Thread-60           ] correlation_id=123, arg=1 Database call result=stubbed
 I 2021-08-17T15:07:54.358 (00_logstage.md:226)  …App12.serviceLayerFunction2 [2280:Thread-60           ] correlation_id=123 Called serviceLayerFunction2
 I 2021-08-17T15:07:54.367 (00_logstage.md:235)  ….controllerFunction.232.233 [2280:Thread-60           ] correlation_id=123 Controller produced result=stubbedstubbed
 I 2021-08-17T15:07:54.371 (00_logstage.md:237)  …on.App12.controllerFunction [2280:Thread-60           ] Some log after controller function (without correlation_id)
