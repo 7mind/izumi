@@ -1955,6 +1955,7 @@ lazy val `distage-extension-logstage` = project
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "dev.zio" %% "zio" % V.zio % Test
     )
   )
   .settings(
@@ -2925,6 +2926,7 @@ lazy val `logstage-rendering-circe` = project
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-parser" % V.circe % Test,
       "io.circe" %% "circe-literal" % V.circe % Test,
+      "dev.zio" %% "zio" % V.zio % Test
     )
   )
   .settings(
