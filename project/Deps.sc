@@ -532,7 +532,7 @@ object Izumi {
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
-          zio_core in Scope.Test.all
+          zio_core in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
