@@ -4,9 +4,9 @@ import scala.language.implicitConversions
 
 /**
   * @note if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with Morphism1,
-  * you must enable `-Xsource:2.13` compiler option.
+  * you must enable `-Xsource:2.13` or `-Xsource:3` compiler option.
   *
-  * BIO does not work without `-Xsource:2.13` option on 2.12.
+  * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
   */
 object Morphism1 {
   private[data] type Morphism1[-F[_], +G[_]]
