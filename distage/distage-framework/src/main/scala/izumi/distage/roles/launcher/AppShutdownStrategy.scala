@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import cats.effect.{ContextShift, IO, LiftIO}
+import cats.effect.{IO, LiftIO}
 import izumi.distage.framework.DebugProperties
 import izumi.distage.model.effect.QuasiIO
 import izumi.functional.bio.{Async2, F}
