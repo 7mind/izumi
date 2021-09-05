@@ -27,7 +27,7 @@ class ImplicitsTest extends AnyWordSpec {
       assertCompiles("""
         def logIOC[F[+_]: Sync]: LogIO[F] = LogIO.fromLogger[F](IzLogger())
         logIOC[cats.effect.IO]
-      """)
+      """).discard()
     }
     IzScala.scalaRelease match {
       case _: ScalaRelease.`2_12` => intercept[TestFailedException](test())
