@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 
 addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.79")
@@ -18,4 +17,3 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
 
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % PV.sbt_mdoc)
-
