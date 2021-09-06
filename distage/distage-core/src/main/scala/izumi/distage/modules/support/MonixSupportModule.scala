@@ -7,6 +7,8 @@ import izumi.distage.modules.platform.MonixPlatformDependentSupportModule
 import monix.eval.Task
 import monix.execution.Scheduler
 
+import scala.concurrent.ExecutionContext
+
 object MonixSupportModule extends MonixSupportModule
 
 /**
@@ -30,6 +32,8 @@ trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportMod
   include(AnyCatsEffectSupportModule[Task])
 
   make[Scheduler].from(Scheduler.global)
+  make[ExecutionContext].named("cpu").using[Scheduler]
+
   make[Task.Options].from(Task.defaultOptions)
 
   make[ConcurrentEffect[Task]].from(Task.catsEffect(_: Scheduler, _: Task.Options))

@@ -60,4 +60,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
 
   make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
   make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
+
+  make[ExecutionContext].named("cpu").using[ExecutionContext]("zio.cpu")
+  make[ExecutionContext].named("io").using[ExecutionContext]("zio.io")
 }
