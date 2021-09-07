@@ -23,11 +23,11 @@ class ImplicitsTest extends AnyWordSpec {
   }
 
   "progression test: can't create LogIO from covariant F/Sync even when annotated (FIXED in 2.13, but not in 2.12 -Xsource:2.13)" in {
-    def test(): Unit = {
+    def test() = {
       assertCompiles("""
         def logIOC[F[+_]: Sync]: LogIO[F] = LogIO.fromLogger[F](IzLogger())
         logIOC[cats.effect.IO]
-      """).discard()
+      """)
     }
     IzScala.scalaRelease match {
       case _: ScalaRelease.`2_12` => intercept[TestFailedException](test())

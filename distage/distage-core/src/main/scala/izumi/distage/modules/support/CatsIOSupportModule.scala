@@ -5,6 +5,8 @@ import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 
+import scala.concurrent.ExecutionContext
+
 object CatsIOSupportModule extends CatsIOSupportModule
 
 /**
@@ -29,11 +31,13 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
 
   make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
   make[Timer[IO]].from((_: PublicIOApp).timer)
+  make[ExecutionContext].named("cpu").from((_: PublicIOApp).executionContext)
   make[PublicIOApp]
 }
 
 private[support] trait PublicIOApp extends IOApp {
   override def contextShift: ContextShift[IO] = super.contextShift
   override def timer: Timer[IO] = super.timer
+  override def executionContext: ExecutionContext = super.executionContext
   override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0))
 }

@@ -1,8 +1,16 @@
 package izumi.distage.modules.platform
 
-import cats.effect.{Blocker, IO, Sync}
-import izumi.distage.model.definition.ModuleDef
+import cats.effect.Blocker
+import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
+
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 
 private[modules] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
-  make[Blocker].fromResource(Blocker[IO](_: Sync[IO]))
+  make[ExecutionContext].named("io").fromResource {
+    Lifecycle
+      .fromExecutorService(Executors.newCachedThreadPool())
+      .map(ExecutionContext.fromExecutor)
+  }
+  make[Blocker].from(Blocker.liftExecutionContext(_: ExecutionContext @Id("io")))
 }

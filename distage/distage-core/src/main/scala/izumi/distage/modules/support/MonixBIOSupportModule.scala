@@ -10,6 +10,8 @@ import izumi.functional.bio.{Async2, Fork2, Primitives2, PrimitivesM2, Temporal2
 import monix.bio.{IO, Task, UIO}
 import monix.execution.Scheduler
 
+import scala.concurrent.ExecutionContext
+
 object MonixBIOSupportModule extends MonixBIOSupportModule
 
 /**
@@ -36,6 +38,8 @@ trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupp
   include(CatsEffectInstancesModule[Task])
 
   make[Scheduler].from(Scheduler.global)
+  make[ExecutionContext].named("cpu").using[Scheduler]
+
   make[IO.Options].from(IO.defaultOptions)
 
   addImplicit[Async2[IO]]
