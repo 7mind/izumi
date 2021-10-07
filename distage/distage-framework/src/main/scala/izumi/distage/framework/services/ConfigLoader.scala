@@ -10,7 +10,6 @@ import izumi.distage.model.exceptions.DIException
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString._
@@ -101,7 +100,7 @@ object ConfigLoader {
     def empty: ConfigLoader.Args = ConfigLoader.Args(None, Map.empty)
   }
 
-  @open class LocalFSImpl(
+  open class LocalFSImpl(
     logger: IzLogger @Id("early"),
     configLocation: ConfigLocation,
     configArgs: ConfigLoader.Args,

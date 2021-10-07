@@ -15,7 +15,7 @@ import izumi.functional.bio.{Async2, Async3}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.{open, unused}
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
 import izumi.reflect.{TagK, TagK3, TagKK}
@@ -101,7 +101,7 @@ abstract class RoleAppMain[F[_]](
     * object WiringTest extends PlanCheck.Main(MyApp, PlanCheckConfig(...))
     * }}}
     */
-  @open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[this.type, Cfg])
+  open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[this.type, Cfg])
     extends izumi.distage.framework.PlanCheck.Main[this.type, Cfg](this, cfg)
 
   /** @see [[izumi.distage.framework.PlanCheck.assertAppCompileTime]] */
