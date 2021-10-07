@@ -40,8 +40,14 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param other the <code>GenTraversableOnce</code> to append
     * @return a new <code>NonEmptyList</code> that contains all the elements of this <code>NonEmptyList</code> followed by all elements of <code>other</code>.
     */
-  def ++[U >: T](other: Iterable[U]): NonEmptyList[U] =
-    if (other.isEmpty) this else new NonEmptyList(toList ++ other.iterator)
+  def ++[U >: T](other: IterableOnce[U]): NonEmptyList[U] = {
+    val it = other.iterator
+    if (it.isEmpty) this else new NonEmptyList(toList ++ it)
+  }
+
+  @inline def ++:[U >: T](other: NonEmptyList[U]): NonEmptyList[U] = other ::: this
+  @inline def ++:[U >: T](other: Vector[U]): NonEmptyList[U] = other ::: this
+  @inline def ++:[U >: T](other: IterableOnce[U]): NonEmptyList[U] = other ::: this
 
   /**
     * Returns a new <code>NonEmptyList</code> with the given element prepended.
@@ -53,7 +59,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param element the element to prepend to this <code>NonEmptyList</code>
     * @return a new <code>NonEmptyList</code> consisting of <code>element</code> followed by all elements of this <code>NonEmptyList</code>.
     */
-  def +:[U >: T](element: U): NonEmptyList[U] = new NonEmptyList(element +: toList)
+  def +:[U >: T](element: U): NonEmptyList[U] = new NonEmptyList(element :: toList)
 
   /**
     * Adds an element to the beginning of this <code>NonEmptyList</code>.
@@ -65,7 +71,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param element the element to prepend to this <code>NonEmptyList</code>
     * @return a <code>NonEmptyList</code> that contains <code>element</code> as first element and that continues with this <code>NonEmptyList</code>.
     */
-  def ::[U >: T](element: U): NonEmptyList[U] = new NonEmptyList(element +: toList)
+  def ::[U >: T](element: U): NonEmptyList[U] = new NonEmptyList(element :: toList)
 
   /**
     * Returns a new <code>NonEmptyList</code> containing the elements of this <code>NonEmptyList</code> followed by the elements of the passed <code>NonEmptyList</code>.
@@ -96,8 +102,10 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param other the <code>GenTraversableOnce</code> to append
     * @return a new <code>NonEmptyList</code> that contains all the elements of this <code>NonEmptyList</code> followed by all elements of <code>other</code>.
     */
-  def :::[U >: T](other: IterableOnce[U]): NonEmptyList[U] =
-    if (other.iterator.isEmpty) this else new NonEmptyList(other.iterator.to(List) ::: toList)
+  def :::[U >: T](other: IterableOnce[U]): NonEmptyList[U] = {
+    val it = other.iterator
+    if (it.isEmpty) this else new NonEmptyList(it.toList ::: toList)
+  }
 
   /**
     * Returns a new <code>NonEmptyList</code> with the given element appended.
