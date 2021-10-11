@@ -11,7 +11,6 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.jvm.IzJvm
-import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
@@ -24,7 +23,7 @@ object RoleProvider {
   private[this] final val sysPropIgnoreMismatchedEffect = DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(false)
   private[this] final val syspropRolesReflection = DebugProperties.`izumi.distage.roles.reflection`.boolValue(true)
 
-  @open class Impl(
+  open class Impl(
     logger: IzLogger @Id("early"),
     ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
     reflectionEnabled: Boolean @Id("distage.roles.reflection"),

@@ -7,4 +7,5 @@ import scala.annotation.StaticAnnotation
   *
   * @see [[https://dotty.epfl.ch/docs/reference/other-new-features/open-classes.html Open Classes]]
   */
+@deprecated("Use `open` keyword directly with -Xsource:3", "Scala 2.13.6")
 final class open extends StaticAnnotation

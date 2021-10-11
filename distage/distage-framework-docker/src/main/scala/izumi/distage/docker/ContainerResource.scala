@@ -16,7 +16,6 @@ import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -27,7 +26,7 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-@open class ContainerResource[F[_], Tag](
+open class ContainerResource[F[_], Tag](
   val config: Docker.ContainerConfig[Tag],
   val client: DockerClientWrapper[F],
   val logger: IzLogger,

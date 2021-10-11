@@ -13,7 +13,7 @@ import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.{open, unused}
+import izumi.fundamentals.platform.language.unused
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio._
 import zio.ZManaged.ReleaseMap
@@ -599,7 +599,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *       it can hit a Scalac bug https://github.com/scala/bug/issues/11969
     *       and fail to compile, in that case you may switch to [[Lifecycle.OfInner]]
     */
-  @open class Of[+F[_], +A] private[this] (inner0: () => Lifecycle[F, A], @unused dummy: Boolean = false) extends Lifecycle.OfInner[F, A] {
+  open class Of[+F[_], +A] private[this] (inner0: () => Lifecycle[F, A], @unused dummy: Boolean = false) extends Lifecycle.OfInner[F, A] {
     def this(inner: => Lifecycle[F, A]) = this(() => inner)
 
     override val lifecycle: Lifecycle[F, A] = inner0()
@@ -620,7 +620,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class OfCats[F[_]: cats.effect.Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
+  open class OfCats[F[_]: cats.effect.Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
 
   /**
     * Class-based proxy over a [[zio.ZManaged]] value
@@ -637,7 +637,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO(inner))
+  open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -656,7 +656,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class Make[+F[_], A] private[this] (acquire0: () => F[A])(release0: A => F[Unit], @unused dummy: Boolean = false) extends Lifecycle.Basic[F, A] {
+  open class Make[+F[_], A] private[this] (acquire0: () => F[A])(release0: A => F[Unit], @unused dummy: Boolean = false) extends Lifecycle.Basic[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
@@ -678,7 +678,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
+  open class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
   /**
     * Class-based variant of [[makePair]]:
@@ -695,7 +695,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class MakePair[F[_], A] private[this] (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromPair[F, A] {
+  open class MakePair[F[_], A] private[this] (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromPair[F, A] {
     def this(acquire: => F[(A, F[Unit])]) = this(() => acquire)
 
     override final def acquire: F[(A, F[Unit])] = acquire0()
@@ -718,7 +718,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *
     * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
-  @open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
+  open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final type InnerResource = Unit
@@ -743,7 +743,7 @@ object Lifecycle extends LifecycleCatsInstances {
     *   }
     * }}}
     */
-  @open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
+  open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
 
   /**
     * Trait-based proxy over a [[Lifecycle]] value

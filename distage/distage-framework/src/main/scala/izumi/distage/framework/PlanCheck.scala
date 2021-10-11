@@ -14,7 +14,7 @@ import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.language.Quirks.discard
-import izumi.fundamentals.platform.language.{open, unused}
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import scala.annotation.tailrec
@@ -44,7 +44,7 @@ import scala.annotation.tailrec
   */
 object PlanCheck {
 
-  @open class Main[AppMain <: CheckableApp, Cfg <: PlanCheckConfig.Any](
+  open class Main[AppMain <: CheckableApp, Cfg <: PlanCheckConfig.Any](
     app: AppMain,
     cfg: Cfg = PlanCheckConfig.empty,
   )(implicit val planCheck: PlanCheckMaterializer[AppMain, Cfg]
