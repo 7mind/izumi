@@ -7,9 +7,10 @@ package izumi.logstage.api.rendering
 final case class RenderingOptions(
   withExceptions: Boolean,
   colored: Boolean,
+  hideKeys: Boolean,
 )
 object RenderingOptions {
-  def default: RenderingOptions = RenderingOptions(withExceptions = true, colored = true)
-  def colorless: RenderingOptions = RenderingOptions(withExceptions = true, colored = false)
-  def simple: RenderingOptions = RenderingOptions(withExceptions = false, colored = false)
+  def default: RenderingOptions = RenderingOptions(withExceptions = true, colored = true, hideKeys = false)
+  def colorless: RenderingOptions = RenderingOptions(withExceptions = true, colored = false, hideKeys = false)
+  def simple: RenderingOptions = RenderingOptions(withExceptions = false, colored = false, hideKeys = false)
 }
