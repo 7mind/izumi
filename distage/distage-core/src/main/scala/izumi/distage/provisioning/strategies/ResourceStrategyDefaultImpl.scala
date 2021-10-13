@@ -15,7 +15,6 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
 
   override def allocateResource[F[_]: TagK](
     context: ProvisioningKeyProvider,
-    @unused executor: OperationExecutor,
     op: MonadicOp.AllocateResource,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {

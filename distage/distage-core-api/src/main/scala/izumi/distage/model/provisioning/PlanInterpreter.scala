@@ -3,14 +3,15 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions._
+import izumi.distage.model.exceptions.*
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
-import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.exceptions.IzThrowable._
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.distage.model.reflection.*
+import izumi.fundamentals.platform.exceptions.IzThrowable
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
 
 import scala.concurrent.duration.Duration
@@ -54,13 +55,16 @@ object PlanInterpreter {
           case AggregateFailure(failures) =>
             val messages = failures
               .map {
+                case UnexpectedDIException(op, problem) =>
+                  import IzThrowable._
+                  s"DISTAGE BUG: while processing ${op.target}; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
                 case MissingImport(op) =>
                   MissingInstanceException.format(op.target, op.references)
                 case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
                   IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
               }
               .niceMultilineList("[!]")
-            s"Unsatisfied preconditions:\n$messages"
+            s"Plan interpreter failed:\n$messages"
           case StepProvisioningFailure(op, f) =>
             val pos = OpFormatter.formatBindingPosition(op.origin)
             val name = f match {
@@ -79,6 +83,8 @@ object PlanInterpreter {
                 f.op.references
               case f: IncompatibleEffectTypesException =>
                 Seq(f.op.target)
+              case f: UnexpectedDIException =>
+                Seq(f.op.target)
             }
           case op: StepProvisioningFailure =>
             Seq(op.op.target)
@@ -91,8 +97,13 @@ object PlanInterpreter {
       import izumi.fundamentals.platform.strings.IzString._
 
       val exceptions = failures.flatMap {
-        case _: AggregateFailure =>
-          Seq.empty
+        case f: AggregateFailure =>
+          f.failures.flatMap {
+            case e: UnexpectedDIException =>
+              Seq(e.problem)
+            case _ =>
+              Seq.empty
+          }
         case f: StepProvisioningFailure =>
           Seq(f.failure)
       }

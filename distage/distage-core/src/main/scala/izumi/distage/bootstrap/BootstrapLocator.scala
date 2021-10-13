@@ -10,7 +10,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.distage.model.provisioning.strategies.*
-import izumi.distage.model.provisioning.{OperationExecutor, PlanInterpreter, ProvisioningFailureInterceptor}
+import izumi.distage.model.provisioning.{OperationExecutor, PlanInterpreter}
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning.*
 import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, FwdrefLoopBreaker, SanityCheckerDefaultImpl}
@@ -97,7 +97,6 @@ object BootstrapLocator {
     new PlanInterpreterDefaultRuntimeImpl(
       importStrategy = new ImportStrategyDefaultImpl,
       executor = bootstrapExecutor,
-      failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
       analyzer = analyzer,
@@ -131,8 +130,6 @@ object BootstrapLocator {
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
-
-    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptor.DefaultImpl]
 
     many[PlanningObserver]
     many[PlanningHook]

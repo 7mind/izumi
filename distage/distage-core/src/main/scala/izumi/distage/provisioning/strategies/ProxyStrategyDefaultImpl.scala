@@ -51,7 +51,7 @@ class ProxyStrategyDefaultImpl(
     executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
   )(implicit F: QuasiIO[F]
-  ): F[Seq[NewObjectOp]] = {
+  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val target = initProxy.proxy.target
     val key = proxyControllerKey(target)
 
@@ -59,30 +59,40 @@ class ProxyStrategyDefaultImpl(
       case Some(dispatcher: ProxyDispatcher) =>
         executor
           .execute(context, initProxy.proxy.op)
-          .flatMap(_.toList match {
-            case NewObjectOp.NewInstance(_, instance) :: Nil =>
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(
-                  _ =>
-                    Seq(
-                      NewObjectOp.NewInstance(initProxy.target, instance)
+          .flatMap {
+            case Left(value) =>
+              F.pure(Left(value))
+            case Right(value) =>
+              value.toList match {
+                case NewObjectOp.NewInstance(_, instance) :: Nil =>
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.NewInstance(initProxy.target, instance)
+                          )
+                        )
                     )
-                )
 
-            case (r @ NewObjectOp.NewResource(_, instance, _)) :: Nil =>
-              val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(
-                  _ =>
-                    Seq(
-                      NewObjectOp.NewInstance(initProxy.target, instance),
-                      NewObjectOp.NewFinalizer(target, finalizer),
+                case (r @ NewObjectOp.NewResource(_, instance, _)) :: Nil =>
+                  val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.NewInstance(initProxy.target, instance),
+                            NewObjectOp.NewFinalizer(target, finalizer),
+                          )
+                        )
                     )
-                )
 
-            case r =>
-              throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
-          })
+                case r =>
+                  throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
+              }
+          }
+
       case _ =>
         throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
     }

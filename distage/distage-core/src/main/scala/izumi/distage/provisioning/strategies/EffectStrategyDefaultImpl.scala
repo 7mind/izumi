@@ -13,7 +13,6 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
 
   override def executeEffect[F[_]: TagK](
     context: ProvisioningKeyProvider,
-    @unused executor: OperationExecutor,
     op: MonadicOp.ExecuteEffect,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {

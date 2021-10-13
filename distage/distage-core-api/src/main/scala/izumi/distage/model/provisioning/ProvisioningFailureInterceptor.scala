@@ -20,13 +20,13 @@ final case class StepProvisioningFailure(
   failure: Throwable,
 ) extends ProvisioningFailure
 
-trait ProvisioningFailureInterceptor {
-  def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]
-  def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]]
-}
-object ProvisioningFailureInterceptor {
-  class DefaultImpl extends ProvisioningFailureInterceptor {
-    override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty
-    override def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]] = PartialFunction.empty
-  }
-}
+//trait ProvisioningFailureInterceptor {
+//  def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]
+//  def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]]
+//}
+//object ProvisioningFailureInterceptor {
+//  class DefaultImpl extends ProvisioningFailureInterceptor {
+//    override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty
+//    override def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]] = PartialFunction.empty
+//  }
+//}

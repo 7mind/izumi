@@ -6,5 +6,5 @@ import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, Provisi
 import izumi.reflect.TagK
 
 trait EffectStrategy {
-  def executeEffect[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, executor: OperationExecutor, op: MonadicOp.ExecuteEffect): F[Seq[NewObjectOp]]
+  def executeEffect[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, op: MonadicOp.ExecuteEffect): F[Seq[NewObjectOp]]
 }

@@ -63,7 +63,6 @@ object PlanInterpreterDefaultRuntimeImpl {
 class PlanInterpreterDefaultRuntimeImpl(
   executor: OperationExecutor,
   importStrategy: ImportStrategy,
-  failureHandler: ProvisioningFailureInterceptor,
   verifier: ProvisionOperationVerifier,
   fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
   analyzer: PlanAnalyzer,
@@ -145,26 +144,6 @@ class PlanInterpreterDefaultRuntimeImpl(
       LocatorContext(mutProvisioningContext.toImmutable, parentContext)
     }
 
-    def failureContext(step: NonImportOp): ProvisioningFailureContext = {
-      ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
-    }
-    def doStep(step: NonImportOp): F[Either[Throwable, Seq[NewObjectOp]]] = {
-      for {
-        maybeResult <- F.definitelyRecover[Try[Seq[NewObjectOp]]](
-          action = executor.execute(currentContext(), step).map(Success(_))
-        )(recover =
-          exception =>
-            F.maybeSuspend {
-              failureHandler
-                .onExecutionFailed(failureContext(step))
-                .applyOrElse(exception, Failure(_: Throwable))
-            }
-        )
-      } yield {
-        maybeResult.toEither
-      }
-    }
-
     def processStep[T <: ExecutableOp, E](h: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
       for {
         before <- F.maybeSuspend(System.nanoTime())
@@ -203,16 +182,12 @@ class PlanInterpreterDefaultRuntimeImpl(
     def runSteps(otherSteps: ArrayBuffer[NonImportOp]): F[Unit] = {
       F.traverse_(otherSteps) {
         step =>
-          processStep(doStep)(step).flatMap {
+          processStep(executor.execute(currentContext(), _: NonImportOp))(step).flatMap {
             case Right(newObjectOps) =>
               F.maybeSuspend {
                 newObjectOps.foreach {
                   newObject =>
-                    val maybeSuccess = Try {
-                      interpretResult(mutProvisioningContext, newObject)
-                    }.recoverWith(failureHandler.onBadResult(failureContext(step)))
-
-                    maybeSuccess match {
+                    Try(mutProvisioningContext.interpretResult(verifier, newObject)) match {
                       case Success(_) =>
                       case Failure(failure) =>
                         mutExcluded ++= plan.topology.transitiveDependees(step.target)
@@ -224,7 +199,7 @@ class PlanInterpreterDefaultRuntimeImpl(
             case Left(failure) =>
               F.maybeSuspend {
                 mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                mutFailures += StepProvisioningFailure(step, failure)
+                mutFailures += AggregateFailure(Seq(failure))
                 ()
               }
           }
@@ -247,7 +222,7 @@ class PlanInterpreterDefaultRuntimeImpl(
         },
       )
 
-      _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => interpretResult(mutProvisioningContext, r)))
+      _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => mutProvisioningContext.interpretResult(verifier, r)))
 
       out <- F.ifThenElse(mutFailures.nonEmpty)(
         F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
@@ -266,32 +241,6 @@ class PlanInterpreterDefaultRuntimeImpl(
 
     } yield {
       out
-    }
-  }
-
-  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    result match {
-      case NewObjectOp.NewImport(target, instance) =>
-        verifier.verify(target, active.imports.keySet, instance, s"import")
-        active.imports += (target -> instance)
-
-      case NewObjectOp.NewInstance(target, instance) =>
-        verifier.verify(target, active.instances.keySet, instance, "instance")
-        active.instances += (target -> instance)
-
-      case r @ NewObjectOp.NewResource(target, instance, _) =>
-        verifier.verify(target, active.instances.keySet, instance, "resource")
-        active.instances += (target -> instance)
-        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer[F](target, finalizer)
-
-      case r @ NewObjectOp.NewFinalizer(target, _) =>
-        val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer[F](target, finalizer)
-
-      case NewObjectOp.UpdatedSet(target, instance) =>
-        verifier.verify(target, active.instances.keySet, instance, "set")
-        active.instances += (target -> instance)
     }
   }
 
