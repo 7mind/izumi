@@ -8,7 +8,7 @@ import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
 import izumi.distage.model.provisioning.proxies.{ProxyDispatcher, ProxyProvider}
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.MirrorProvider
 import izumi.distage.model.reflection._
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
@@ -26,7 +26,7 @@ class ProxyStrategyDefaultImpl(
 ) extends ProxyStrategyDefaultImplPlatformSpecific(proxyProvider, mirrorProvider)
   with ProxyStrategy {
 
-  override def makeProxy(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
+  override def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {

@@ -6,23 +6,20 @@ import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.{ForwardRefException, IncompatibleEffectTypesException, ProvisionerIssue, SanityCheckFailedException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.planning.PlanAnalyzer
+import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
-import izumi.distage.model.provisioning.Provision.ProvisionMutable
-import izumi.distage.model.provisioning._
-import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.recursive.LocatorRef
-import izumi.distage.model.reflection._
-import izumi.functional.IzEither._
+import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.model.reflection.*
+import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.reflect.TagK
 
-import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -30,9 +27,9 @@ import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 object PlanInterpreterDefaultRuntimeImpl {
-  import izumi.distage.model.plan.repr._
+  import izumi.distage.model.plan.repr.*
   import izumi.distage.model.plan.topology.PlanTopology
-  import izumi.distage.model.reflection._
+  import izumi.distage.model.reflection.*
   import izumi.fundamentals.platform.strings.IzString.toRichString
 
   /**
@@ -64,20 +61,14 @@ object PlanInterpreterDefaultRuntimeImpl {
 
 // TODO: add introspection capabilities
 class PlanInterpreterDefaultRuntimeImpl(
-  setStrategy: SetStrategy,
-  proxyStrategy: ProxyStrategy,
-  providerStrategy: ProviderStrategy,
+  executor: OperationExecutor,
   importStrategy: ImportStrategy,
-  instanceStrategy: InstanceStrategy,
-  effectStrategy: EffectStrategy,
-  resourceStrategy: ResourceStrategy,
   failureHandler: ProvisioningFailureInterceptor,
   verifier: ProvisionOperationVerifier,
   fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
   analyzer: PlanAnalyzer,
-) extends PlanInterpreter
-  with OperationExecutor {
-  import PlanInterpreterDefaultRuntimeImpl._
+) extends PlanInterpreter {
+  import PlanInterpreterDefaultRuntimeImpl.*
 
   type OperationMetadata = Long
 
@@ -144,10 +135,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-    val mutProvisioningContext = ProvisionMutable[F]()
-    val temporaryLocator = new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta.empty, mutProvisioningContext)
-    val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
-    mutProvisioningContext.instances.put(DIKey.get[LocatorRef], locatorRef)
+    val mutProvisioningContext = ProvisionMutable[F](diplan, parentContext)
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
@@ -163,7 +151,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     def doStep(step: NonImportOp): F[Either[Throwable, Seq[NewObjectOp]]] = {
       for {
         maybeResult <- F.definitelyRecover[Try[Seq[NewObjectOp]]](
-          action = execute(currentContext(), step).map(Success(_))
+          action = executor.execute(currentContext(), step).map(Success(_))
         )(recover =
           exception =>
             F.maybeSuspend {
@@ -191,7 +179,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     def doImport(step: ImportDependency): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-      F.maybeSuspend(importStrategy.importDependency(currentContext(), this, step))
+      F.maybeSuspend(importStrategy.importDependency(currentContext(), step))
     }
 
     val imports = new ArrayBuffer[ImportDependency]()
@@ -205,7 +193,6 @@ class PlanInterpreterDefaultRuntimeImpl(
 
     @nowarn("msg=Unused import")
     def makeMeta(): LocatorMeta = {
-      import scala.collection.compat._
       LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
     }
 
@@ -213,7 +200,7 @@ class PlanInterpreterDefaultRuntimeImpl(
       Left(FailedProvision[F](immutable, diplan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
     }
 
-    def runSteps(otherSteps: ArrayBuffer[ExecutableOp.NonImportOp]): F[Unit] = {
+    def runSteps(otherSteps: ArrayBuffer[NonImportOp]): F[Unit] = {
       F.traverse_(otherSteps) {
         step =>
           processStep(doStep)(step).flatMap {
@@ -270,7 +257,7 @@ class PlanInterpreterDefaultRuntimeImpl(
               F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
               F.maybeSuspend {
                 val finalLocator = new LocatorDefaultImpl(diplan, Option(parentContext), makeMeta(), mutProvisioningContext.toImmutable)
-                locatorRef.ref.set(Right(finalLocator))
+                mutProvisioningContext.locatorRef.ref.set(Right(finalLocator))
                 Right(finalLocator): Either[FailedProvision[F], LocatorDefaultImpl[F]]
               },
             )
@@ -279,41 +266,6 @@ class PlanInterpreterDefaultRuntimeImpl(
 
     } yield {
       out
-    }
-  }
-
-  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: NonImportOp)(implicit F: QuasiIO[F]): F[Seq[NewObjectOp]] = {
-    step match {
-      case op: CreateSet =>
-        F pure setStrategy.makeSet(context, this, op)
-
-      case op: WiringOp =>
-        F pure execute(context, op)
-
-      case op: ProxyOp.MakeProxy =>
-        F pure proxyStrategy.makeProxy(context, this, op)
-
-      case op: ProxyOp.InitProxy =>
-        proxyStrategy.initProxy(context, this, op)
-
-      case op: MonadicOp.ExecuteEffect =>
-        F widen effectStrategy.executeEffect[F](context, this, op)
-
-      case op: MonadicOp.AllocateResource =>
-        F widen resourceStrategy.allocateResource[F](context, this, op)
-    }
-  }
-
-  override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
-    step match {
-      case op: WiringOp.UseInstance =>
-        instanceStrategy.getInstance(context, this, op)
-
-      case op: WiringOp.ReferenceKey =>
-        instanceStrategy.getInstance(context, this, op)
-
-      case op: WiringOp.CallProvider =>
-        providerStrategy.callProvider(context, this, op)
     }
   }
 

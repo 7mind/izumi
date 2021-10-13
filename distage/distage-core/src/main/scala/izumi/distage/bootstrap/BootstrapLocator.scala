@@ -1,23 +1,23 @@
 package izumi.distage.bootstrap
 
 import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
-import izumi.distage.model._
-import izumi.distage.model.definition._
+import izumi.distage.model.*
+import izumi.distage.model.definition.*
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
-import izumi.distage.model.plan._
-import izumi.distage.model.planning._
+import izumi.distage.model.plan.*
+import izumi.distage.model.planning.*
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
-import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
+import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.model.provisioning.{OperationExecutor, PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
-import izumi.distage.planning._
+import izumi.distage.planning.*
 import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, FwdrefLoopBreaker, SanityCheckerDefaultImpl}
 import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
-import izumi.distage.provisioning._
-import izumi.distage.provisioning.strategies._
+import izumi.distage.provisioning.*
+import izumi.distage.provisioning.strategies.*
 import izumi.fundamentals.platform.functional.Identity
 
 object BootstrapLocator {
@@ -84,15 +84,19 @@ object BootstrapLocator {
     )
   }
 
+  private val bootstrapExecutor = new OperationExecutorImpl(
+    setStrategy = new SetStrategyDefaultImpl,
+    proxyStrategy = new ProxyStrategyFailingImpl,
+    providerStrategy = new ProviderStrategyDefaultImpl,
+    instanceStrategy = new InstanceStrategyDefaultImpl,
+    effectStrategy = new EffectStrategyDefaultImpl,
+    resourceStrategy = new ResourceStrategyDefaultImpl,
+  )
+
   private final val bootstrapProducer: PlanInterpreter = {
     new PlanInterpreterDefaultRuntimeImpl(
-      setStrategy = new SetStrategyDefaultImpl,
-      proxyStrategy = new ProxyStrategyFailingImpl,
-      providerStrategy = new ProviderStrategyDefaultImpl,
       importStrategy = new ImportStrategyDefaultImpl,
-      instanceStrategy = new InstanceStrategyDefaultImpl,
-      effectStrategy = new EffectStrategyDefaultImpl,
-      resourceStrategy = new ResourceStrategyDefaultImpl,
+      executor = bootstrapExecutor,
       failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
@@ -118,6 +122,7 @@ object BootstrapLocator {
     make[SanityChecker].from[SanityCheckerDefaultImpl]
 
     make[Planner].from[PlannerDefaultImpl]
+    make[OperationExecutor].from[OperationExecutorImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
 
     make[SetStrategy].from[SetStrategyDefaultImpl]

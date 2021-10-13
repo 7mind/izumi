@@ -26,7 +26,6 @@ trait Provision[+F[_]] {
 
   @nowarn("msg=Unused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
-    import scala.collection.compat._
     instances.map(IdentifiedRef.tupled).to(scala.collection.immutable.Seq)
   }
   def index: immutable.Map[DIKey, Any] = {
@@ -35,21 +34,6 @@ trait Provision[+F[_]] {
 }
 
 object Provision {
-
-  final case class ProvisionMutable[F[_]]() extends Provision[F] {
-    override val instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    override val imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    override val finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]]()
-
-    def toImmutable: ProvisionImmutable[F] = {
-      ProvisionImmutable(instances, imports, finalizers)
-    }
-
-    override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
-      toImmutable.narrow(allRequiredKeys)
-    }
-  }
-
   final case class ProvisionImmutable[+F[_]](
     // LinkedHashMap for ordering
     instancesImpl: mutable.LinkedHashMap[DIKey, Any],
@@ -62,7 +46,6 @@ object Provision {
 
     @nowarn("msg=Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
-      import scala.collection.compat._
       ProvisionImmutable(
         instancesImpl.filter(kv => allRequiredKeys.contains(kv._1)), // 2.13 compat
         imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
@@ -70,5 +53,4 @@ object Provision {
       )
     }
   }
-
 }

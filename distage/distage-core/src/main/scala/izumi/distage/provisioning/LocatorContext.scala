@@ -5,6 +5,7 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 final case class LocatorContext(
   provision: ProvisionImmutable[Any],
