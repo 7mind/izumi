@@ -3,7 +3,6 @@ package izumi.distage.provisioning
 import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
@@ -12,18 +11,18 @@ import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.provisioning.*
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.*
 import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.ToposortError
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.reflect.TagK
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 object PlanInterpreterDefaultRuntimeImpl {
@@ -189,7 +188,7 @@ class PlanInterpreterDefaultRuntimeImpl(
             case Left(failure) =>
               F.maybeSuspend {
                 mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                mutFailures += ProvisioningFailure.AggregateFailure(Seq(failure))
+                mutFailures += ProvisioningFailure.AggregateFailure(IncidenceMatrix.empty, Seq(failure))
                 ()
               }
           }
@@ -207,7 +206,7 @@ class PlanInterpreterDefaultRuntimeImpl(
       _ <- F.ifThenElse(allIssues.isEmpty)(
         F.unit,
         F.maybeSuspend {
-          mutFailures += ProvisioningFailure.AggregateFailure(allIssues)
+          mutFailures += ProvisioningFailure.AggregateFailure(IncidenceMatrix.empty, allIssues)
           ()
         },
       )

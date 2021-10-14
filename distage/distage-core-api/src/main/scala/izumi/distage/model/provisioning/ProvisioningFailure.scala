@@ -8,9 +8,11 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 sealed trait ProvisioningFailure
 
 object ProvisioningFailure {
-  final case class AggregateFailure(failures: Seq[ProvisionerIssue]) extends ProvisioningFailure
+  final case class AggregateFailure(graph: IncidenceMatrix[DIKey], failures: Seq[ProvisionerIssue]) extends ProvisioningFailure
 
   final case class BrokenGraph(graph: IncidenceMatrix[DIKey]) extends ProvisioningFailure
+
+  //final case class BrokenGraph(graph: IncidenceMatrix[DIKey]) extends ProvisioningFailure
 
   final case class StepProvisioningFailure(
     op: ExecutableOp,

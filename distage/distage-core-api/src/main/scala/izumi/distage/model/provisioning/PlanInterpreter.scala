@@ -89,6 +89,8 @@ object PlanInterpreter {
               case f: UnexpectedDIException =>
                 Seq(f.key)
             }
+          case f: ProvisioningFailure.BrokenGraph =>
+            f.graph.links.keySet
           case op: ProvisioningFailure.StepProvisioningFailure =>
             Seq(op.op.target)
         }.toSet.size
@@ -109,6 +111,8 @@ object PlanInterpreter {
           }
         case f: ProvisioningFailure.StepProvisioningFailure =>
           Seq(f.failure)
+        case _: ProvisioningFailure.BrokenGraph =>
+          Seq.empty
       }
 
       F.fail {
