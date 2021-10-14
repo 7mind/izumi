@@ -30,6 +30,7 @@ object LogFormat {
 
     def formatMessage(entry: Log.Entry, options: RenderingOptions): RenderedMessage = {
       val withColors = options.colored
+      val hideKeys = options.hideKeys
       val templateBuilder = new StringBuilder()
       val messageBuilder = new StringBuilder()
 
@@ -43,11 +44,11 @@ object LogFormat {
       val occurences = mutable.HashMap[String, Int]()
 
       val parameters = mutable.ArrayBuffer[RenderedParameter]()
-      process(occurences, templateBuilder, messageBuilder, parameters, withColors)(balanced)
+      process(occurences, templateBuilder, messageBuilder, parameters, withColors, hideKeys)(balanced)
 
       val unbalancedArgs = mutable.ArrayBuffer[RenderedParameter]()
       val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
-      processUnbalanced(occurences, withColors, templateBuilder, messageBuilder, unbalancedArgs, unbalanced)
+      processUnbalanced(occurences, withColors, hideKeys, templateBuilder, messageBuilder, unbalancedArgs, unbalanced)
 
       if (options.withExceptions) {
         messageBuilder.append(traceThrowables(options, entry))
@@ -89,6 +90,7 @@ object LogFormat {
     @inline private[this] def processUnbalanced(
       occurences: mutable.HashMap[String, Int],
       withColors: Boolean,
+      hideKeys: Boolean,
       templateBuilder: StringBuilder,
       messageBuilder: StringBuilder,
       unbalancedArgs: ArrayBuffer[RenderedParameter],
@@ -101,7 +103,7 @@ object LogFormat {
         val parts = List.fill(unbalanced.size - 1)("; ") :+ ""
 
         val x = parts.zip(unbalanced)
-        process(occurences, templateBuilder, messageBuilder, unbalancedArgs, withColors)(x)
+        process(occurences, templateBuilder, messageBuilder, unbalancedArgs, withColors, hideKeys)(x)
 
         templateBuilder.append(" }}")
         messageBuilder.append(" }}")
@@ -114,6 +116,7 @@ object LogFormat {
       messageBuilder: mutable.StringBuilder,
       acc: mutable.ArrayBuffer[RenderedParameter],
       withColors: Boolean,
+      hideKeys: Boolean,
     )(balanced: collection.Seq[(String, LogArg)]
     ): Unit = {
       balanced.foreach {
@@ -151,7 +154,7 @@ object LogFormat {
             uncoloredRepr.repr
           }
 
-          if (!uncoloredRepr.arg.hiddenName) {
+          if (!hideKeys && !uncoloredRepr.arg.hiddenName) {
             messageBuilder.append(formatKvStrings(withColors, visibleName, maybeColoredRepr))
           } else {
             messageBuilder.append(maybeColoredRepr)

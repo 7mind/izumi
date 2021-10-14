@@ -11,7 +11,8 @@ import scala.collection.mutable
 import scala.runtime.RichInt
 
 class LogstageCirceRenderingPolicy(
-  prettyPrint: Boolean = false
+  prettyPrint: Boolean = false,
+  hideKeys: Boolean = false,
 ) extends RenderingPolicy {
 
   import LogstageCirceRenderingPolicy._
@@ -24,7 +25,7 @@ class LogstageCirceRenderingPolicy(
   override def render(entry: Log.Entry): String = {
     val result = mutable.ArrayBuffer[(String, Json)]()
 
-    val formatted = Format.formatMessage(entry, RenderingOptions(withExceptions = false, colored = false))
+    val formatted = Format.formatMessage(entry, RenderingOptions(withExceptions = false, colored = false, hideKeys = hideKeys))
     val params = parametersToJson[RenderedParameter](
       formatted.parameters ++ formatted.unbalanced,
       _.normalizedName,
@@ -161,7 +162,10 @@ class LogstageCirceRenderingPolicy(
 }
 
 object LogstageCirceRenderingPolicy {
-  @inline def apply(prettyPrint: Boolean = false): LogstageCirceRenderingPolicy = new LogstageCirceRenderingPolicy(prettyPrint)
+  @inline def apply(
+    prettyPrint: Boolean = false,
+    hideKeys: Boolean = false,
+  ): LogstageCirceRenderingPolicy = new LogstageCirceRenderingPolicy(prettyPrint, hideKeys)
 
   object Format extends LogFormat.LogFormatImpl {
     override protected def toString(argValue: Any): String = {
