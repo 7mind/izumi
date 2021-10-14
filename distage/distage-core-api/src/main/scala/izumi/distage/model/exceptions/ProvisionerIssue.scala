@@ -2,11 +2,11 @@ package izumi.distage.model.exceptions
 
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
-import izumi.distage.model.reflection.SafeType
+import izumi.distage.model.reflection.{DIKey, SafeType}
 
 sealed trait ProvisionerIssue
 
-case class UnexpectedDIException(op: ExecutableOp, problem: Throwable) extends ProvisionerIssue
+case class UnexpectedDIException(key: DIKey, problem: Throwable) extends ProvisionerIssue
 
 case class MissingImport(op: ImportDependency) extends ProvisionerIssue
 

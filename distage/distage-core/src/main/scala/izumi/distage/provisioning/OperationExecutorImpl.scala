@@ -25,7 +25,7 @@ class OperationExecutorImpl(
     for {
       maybeResult <- F.definitelyRecover[Either[ProvisionerIssue, Seq[NewObjectOp]]](
         action = executeUnsafe(context, step)
-      )(recover = exception => F.pure(Left(UnexpectedDIException(step, exception))))
+      )(recover = exception => F.pure(Left(UnexpectedDIException(step.target, exception))))
     } yield {
       maybeResult
     }

@@ -27,6 +27,10 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
     ProvisionImmutable(instances, imports, finalizers)
   }
 
+  def asContext(): LocatorContext = {
+    LocatorContext(toImmutable, parentContext)
+  }
+
   override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
     toImmutable.narrow(allRequiredKeys)
   }

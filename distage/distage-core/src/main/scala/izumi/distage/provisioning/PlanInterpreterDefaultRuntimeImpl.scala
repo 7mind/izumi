@@ -140,10 +140,6 @@ class PlanInterpreterDefaultRuntimeImpl(
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
     val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
-    def currentContext() = {
-      LocatorContext(mutProvisioningContext.toImmutable, parentContext)
-    }
-
     def processStep[T <: ExecutableOp, E](h: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
       for {
         before <- F.maybeSuspend(System.nanoTime())
@@ -158,7 +154,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     def doImport(step: ImportDependency): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-      F.maybeSuspend(importStrategy.importDependency(currentContext(), step))
+      F.maybeSuspend(importStrategy.importDependency(mutProvisioningContext.asContext(), step))
     }
 
     val imports = new ArrayBuffer[ImportDependency]()
@@ -182,7 +178,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     def runSteps(otherSteps: ArrayBuffer[NonImportOp]): F[Unit] = {
       F.traverse_(otherSteps) {
         step =>
-          processStep(executor.execute(currentContext(), _: NonImportOp))(step).flatMap {
+          processStep(executor.execute(mutProvisioningContext.asContext(), _: NonImportOp))(step).flatMap {
             case Right(newObjectOps) =>
               F.maybeSuspend {
                 newObjectOps.foreach {

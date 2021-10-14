@@ -1,22 +1,31 @@
 package izumi.distage.provisioning
 
+import distage.Id
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.IncompatibleEffectTypesException
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, MissingImport, ProvisionerIssue, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizerFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.reflect.TagK
+import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.distage.model.reflection.DIKey
+
+import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.util.Try
 
 class PlanInterpreterNonSequentialRuntimeImpl(
   importStrategy: ImportStrategy,
   operationExecutor: OperationExecutor,
   verifier: ProvisionOperationVerifier,
+  fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
 ) extends PlanInterpreter {
 
   type OperationMetadata = Long
@@ -41,60 +50,123 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     })
   }
 
-  private def process[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, op: ExecutableOp) = {
-    op match {
-      case op: ImportDependency =>
-        importStrategy.importDependency(context, op)
-      case op: NonImportOp =>
-        operationExecutor.execute(context, op)
-    }
-  }
-
   private[this] def instantiateImpl[F[_]: TagK](
     diplan: DIPlan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-    ???
-//    val mutProvisioningContext = Prov.make(diplan, parentContext)
-//
-//    def run(state: TraversalState) = {
-//      state.next() match {
-//        case TraversalState.Step(next, steps) =>
-//          val ops = steps.toSeq.map(k => diplan.plan.meta.nodes(k))
-//          ops.map {}
-//        case TraversalState.Done() =>
-//        case TraversalState.Problem(left) =>
-//      }
-//    }
-//    run(TraversalState(diplan.plan.predecessors.links))
+    val mutProvisioningContext = ProvisionMutable[F](diplan, parentContext)
+    val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
+    def run(state: TraversalState): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+      import izumi.functional.IzEither.*
+      state.next(Set.empty) match {
+        case TraversalState.Step(next, steps) =>
+          val ops = steps.toSeq.map(k => diplan.plan.meta.nodes(k))
+          val todo = ops.map {
+            op =>
+              process(mutProvisioningContext.asContext(), op)
+          }
+
+          for {
+            ctxops <- F.map(F.traverse(todo)(a => a))(_.biAggregateScalar.map(_.flatten))
+            result <- ctxops match {
+              case Right(ops) =>
+                F.map(F.traverse(ops)(op => interpretResult(mutProvisioningContext, op)))(_.biAggregateScalar)
+              case Left(issues) =>
+                F.pure(Left(issues))
+            }
+            out <- result match {
+              case Left(value) =>
+                F.pure(
+                  Left(
+                    FailedProvision(
+                      mutProvisioningContext.toImmutable,
+                      diplan,
+                      parentContext,
+                      List(AggregateFailure(value)),
+                      FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
+                      fullStackTraces,
+                    )
+                  )
+                )
+              case Right(value) =>
+                run(next)
+            }
+          } yield {
+            out
+          }
+        case TraversalState.Done() =>
+          F.maybeSuspend {
+            val finalLocator =
+              new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap), mutProvisioningContext.toImmutable)
+            mutProvisioningContext.locatorRef.ref.set(Right(finalLocator))
+            Right(finalLocator)
+          }
+        case TraversalState.Problem(left) =>
+          System.err.println(left)
+          F.pure(
+            Left(
+              FailedProvision(
+                mutProvisioningContext.toImmutable,
+                diplan,
+                parentContext,
+                List(AggregateFailure(List.empty)),
+                FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
+                fullStackTraces,
+              )
+            )
+          )
+      }
+    }
+    run(TraversalState(diplan.plan.predecessors))
   }
 
-  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    result match {
-      case NewObjectOp.NewImport(target, instance) =>
-        verifier.verify(target, active.imports.keySet, instance, s"import")
-        active.imports += (target -> instance)
-
-      case NewObjectOp.NewInstance(target, instance) =>
-        verifier.verify(target, active.instances.keySet, instance, "instance")
-        active.instances += (target -> instance)
-
-      case r @ NewObjectOp.NewResource(target, instance, _) =>
-        verifier.verify(target, active.instances.keySet, instance, "resource")
-        active.instances += (target -> instance)
-        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer[F](target, finalizer)
-
-      case r @ NewObjectOp.NewFinalizer(target, _) =>
-        val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer[F](target, finalizer)
-
-      case NewObjectOp.UpdatedSet(target, instance) =>
-        verifier.verify(target, active.instances.keySet, instance, "set")
-        active.instances += (target -> instance)
+  private def process[F[_]: TagK](context: ProvisioningKeyProvider, op: ExecutableOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    op match {
+      case op: ImportDependency =>
+        F.pure(importStrategy.importDependency(context, op))
+      case op: NonImportOp =>
+        operationExecutor.execute(context, op)
     }
+  }
+
+  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Unit]] = {
+    F.maybeSuspend {
+      val t = Try {
+        result match {
+          case NewObjectOp.NewImport(target, instance) =>
+            verifier.verify(target, active.imports.keySet, instance, s"import")
+            active.imports += (target -> instance)
+            ()
+
+          case NewObjectOp.NewInstance(target, instance) =>
+            verifier.verify(target, active.instances.keySet, instance, "instance")
+            active.instances += (target -> instance)
+            ()
+
+          case r @ NewObjectOp.NewResource(target, instance, _) =>
+            verifier.verify(target, active.instances.keySet, instance, "resource")
+            active.instances += (target -> instance)
+            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+            active.finalizers prepend Finalizer[F](target, finalizer)
+            ()
+
+          case r @ NewObjectOp.NewFinalizer(target, _) =>
+            val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
+            active.finalizers prepend Finalizer[F](target, finalizer)
+            ()
+
+          case NewObjectOp.UpdatedSet(target, instance) =>
+            verifier.verify(target, active.instances.keySet, instance, "set")
+            active.instances += (target -> instance)
+            ()
+        }
+      }.toEither
+
+      t.left.map(t => UnexpectedDIException(result.key, t))
+    }
+
   }
 
   private[this] def verifyEffectType[F[_]: TagK](

@@ -57,7 +57,7 @@ object PlanInterpreter {
               .map {
                 case UnexpectedDIException(op, problem) =>
                   import IzThrowable._
-                  s"DISTAGE BUG: while processing ${op.target}; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+                  s"DISTAGE BUG: while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
                 case MissingImport(op) =>
                   MissingInstanceException.format(op.target, op.references)
                 case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
@@ -84,7 +84,7 @@ object PlanInterpreter {
               case f: IncompatibleEffectTypesException =>
                 Seq(f.op.target)
               case f: UnexpectedDIException =>
-                Seq(f.op.target)
+                Seq(f.key)
             }
           case op: StepProvisioningFailure =>
             Seq(op.op.target)

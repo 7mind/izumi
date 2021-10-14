@@ -2,7 +2,9 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.reflection.DIKey
 
-sealed trait NewObjectOp
+sealed trait NewObjectOp {
+  def key: DIKey
+}
 object NewObjectOp {
   final case class NewInstance(key: DIKey, instance: Any) extends NewObjectOp
   final case class NewResource[F[_]](key: DIKey, instance: Any, finalizer: () => F[Unit]) extends NewObjectOp

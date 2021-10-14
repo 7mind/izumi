@@ -122,7 +122,8 @@ object BootstrapLocator {
 
     make[Planner].from[PlannerDefaultImpl]
     make[OperationExecutor].from[OperationExecutorImpl]
-    make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
+    //make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
+    make[PlanInterpreter].from[PlanInterpreterNonSequentialRuntimeImpl]
 
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
