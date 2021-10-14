@@ -52,12 +52,12 @@ object PlanInterpreter {
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
       val repr = failures
         .map {
-          case AggregateFailure(failures) =>
+          case ProvisioningFailure.AggregateFailure(failures) =>
             val messages = failures
               .map {
                 case UnexpectedDIException(op, problem) =>
                   import IzThrowable._
-                  s"DISTAGE BUG: while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+                  s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
                 case MissingImport(op) =>
                   MissingInstanceException.format(op.target, op.references)
                 case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
@@ -65,7 +65,10 @@ object PlanInterpreter {
               }
               .niceMultilineList("[!]")
             s"Plan interpreter failed:\n$messages"
-          case StepProvisioningFailure(op, f) =>
+          case ProvisioningFailure.BrokenGraph(matrix) =>
+            s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
+              .map { case (k, v) => s"$k: $v" }.niceList()}"
+          case ProvisioningFailure.StepProvisioningFailure(op, f) =>
             val pos = OpFormatter.formatBindingPosition(op.origin)
             val name = f match {
               case di: DIException => di.getClass.getSimpleName
@@ -77,7 +80,7 @@ object PlanInterpreter {
 
       val ccFailed = failures
         .flatMap {
-          case AggregateFailure(failures) =>
+          case ProvisioningFailure.AggregateFailure(failures) =>
             failures.flatMap {
               case f: MissingImport =>
                 f.op.references
@@ -86,7 +89,7 @@ object PlanInterpreter {
               case f: UnexpectedDIException =>
                 Seq(f.key)
             }
-          case op: StepProvisioningFailure =>
+          case op: ProvisioningFailure.StepProvisioningFailure =>
             Seq(op.op.target)
         }.toSet.size
 
@@ -97,14 +100,14 @@ object PlanInterpreter {
       import izumi.fundamentals.platform.strings.IzString._
 
       val exceptions = failures.flatMap {
-        case f: AggregateFailure =>
+        case f: ProvisioningFailure.AggregateFailure =>
           f.failures.flatMap {
             case e: UnexpectedDIException =>
               Seq(e.problem)
             case _ =>
               Seq.empty
           }
-        case f: StepProvisioningFailure =>
+        case f: ProvisioningFailure.StepProvisioningFailure =>
           Seq(f.failure)
       }
 

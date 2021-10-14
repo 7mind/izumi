@@ -5,7 +5,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
-import izumi.distage.model.provisioning.{AggregateFailure, NewObjectOp, Provision, ProvisioningFailure}
+import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
@@ -70,7 +70,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
     toImmutable.narrow(allRequiredKeys)
   }
 
-  def interpretResult(verifier: ProvisionOperationVerifier, result: NewObjectOp): Unit = {
+  def addResult(verifier: ProvisionOperationVerifier, result: NewObjectOp): Unit = {
     result match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, this.imports.keySet, instance, s"import")

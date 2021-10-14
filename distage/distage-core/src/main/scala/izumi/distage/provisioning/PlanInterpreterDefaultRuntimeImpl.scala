@@ -177,11 +177,11 @@ class PlanInterpreterDefaultRuntimeImpl(
               F.maybeSuspend {
                 newObjectOps.foreach {
                   newObject =>
-                    Try(mutProvisioningContext.interpretResult(verifier, newObject)) match {
+                    Try(mutProvisioningContext.addResult(verifier, newObject)) match {
                       case Success(_) =>
                       case Failure(failure) =>
                         mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                        mutFailures += StepProvisioningFailure(step, failure)
+                        mutFailures += ProvisioningFailure.StepProvisioningFailure(step, failure)
                     }
                 }
               }
@@ -189,7 +189,7 @@ class PlanInterpreterDefaultRuntimeImpl(
             case Left(failure) =>
               F.maybeSuspend {
                 mutExcluded ++= plan.topology.transitiveDependees(step.target)
-                mutFailures += AggregateFailure(Seq(failure))
+                mutFailures += ProvisioningFailure.AggregateFailure(Seq(failure))
                 ()
               }
           }
@@ -207,12 +207,12 @@ class PlanInterpreterDefaultRuntimeImpl(
       _ <- F.ifThenElse(allIssues.isEmpty)(
         F.unit,
         F.maybeSuspend {
-          mutFailures += AggregateFailure(allIssues)
+          mutFailures += ProvisioningFailure.AggregateFailure(allIssues)
           ()
         },
       )
 
-      _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => mutProvisioningContext.interpretResult(verifier, r)))
+      _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => mutProvisioningContext.addResult(verifier, r)))
 
       out <- F.ifThenElse(mutFailures.nonEmpty)(
         F.maybeSuspend(doFail(mutProvisioningContext)),

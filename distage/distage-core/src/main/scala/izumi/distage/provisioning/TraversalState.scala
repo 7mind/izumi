@@ -11,7 +11,7 @@ case class TraversalState(preds: IncidenceMatrix[DIKey]) {
       if (next.isEmpty) {
         TraversalState.Done()
       } else {
-        TraversalState.Problem(preds.links)
+        TraversalState.CannotProgress(preds)
       }
     } else {
       val allCurrentKeys = current.keySet
@@ -26,5 +26,5 @@ object TraversalState {
   sealed trait Next
   case class Step(next: TraversalState, steps: Set[DIKey]) extends Next
   case class Done() extends Next
-  case class Problem(left: Map[DIKey, Set[DIKey]]) extends Next
+  case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Next
 }

@@ -88,7 +88,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
             ctxops <- F.map(F.traverse(todo)(a => a))(_.biAggregateScalar.map(_.flatten))
             result <- ctxops match {
               case Right(ops) =>
-                F.map(F.traverse(ops)(op => interpretResult(ctx, op)))(_.biAggregateScalar)
+                F.map(F.traverse(ops)(op => addResult(ctx, op)))(_.biAggregateScalar)
               case Left(issues) =>
                 F.pure(Left(issues))
             }
@@ -96,10 +96,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
               case Left(value) =>
                 F.pure(
                   Left(
-                    ctx.makeFailure(List(AggregateFailure(value)), fullStackTraces)
+                    ctx.makeFailure(List(ProvisioningFailure.AggregateFailure(value)), fullStackTraces)
                   )
                 )
-              case Right(value) =>
+              case Right(_) =>
                 run(next)
             }
           } yield {
@@ -109,11 +109,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           F.maybeSuspend {
             Right(ctx.finish())
           }
-        case TraversalState.Problem(left) =>
-          System.err.println(left)
+        case TraversalState.CannotProgress(left) =>
           F.pure(
             Left(
-              ctx.makeFailure(List.empty, fullStackTraces)
+              ctx.makeFailure(List(ProvisioningFailure.BrokenGraph(left)), fullStackTraces)
             )
           )
       }
@@ -123,7 +122,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       result <- verifyEffectType(diplan.plan.meta.nodes.values)
       out <- result match {
         case Left(value) =>
-          F.pure(Left(ctx.makeFailure(List(AggregateFailure(value.toList)), fullStackTraces)))
+          F.pure(Left(ctx.makeFailure(List(ProvisioningFailure.AggregateFailure(value.toList)), fullStackTraces)))
         case Right(_) =>
           run(TraversalState(diplan.plan.predecessors))
       }
@@ -159,14 +158,13 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
   }
 
-  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Unit]] = {
+  private[this] def addResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Unit]] = {
     F.maybeSuspend {
       val t = Try {
-        active.interpretResult(verifier, result)
+        active.addResult(verifier, result)
       }.toEither
       t.left.map(t => UnexpectedDIException(result.key, t))
     }
-
   }
 
   private[this] def verifyEffectType[F[_]: TagK](
