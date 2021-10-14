@@ -119,7 +119,31 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           )
       }
     }
-    run(TraversalState(diplan.plan.predecessors))
+
+    for {
+      result <- verifyEffectType(diplan.plan.meta.nodes.values)
+      out <- result match {
+        case Left(value) =>
+          F.pure(
+            Left(
+              FailedProvision(
+                mutProvisioningContext.toImmutable,
+                diplan,
+                parentContext,
+                List(AggregateFailure(value.toList)),
+                FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
+                fullStackTraces,
+              )
+            )
+          )
+        case Right(_) =>
+          run(TraversalState(diplan.plan.predecessors))
+      }
+
+    } yield {
+      out
+    }
+
   }
 
   private def process[F[_]: TagK](context: ProvisioningKeyProvider, op: ExecutableOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
@@ -134,45 +158,17 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Unit]] = {
     F.maybeSuspend {
       val t = Try {
-        result match {
-          case NewObjectOp.NewImport(target, instance) =>
-            verifier.verify(target, active.imports.keySet, instance, s"import")
-            active.imports += (target -> instance)
-            ()
-
-          case NewObjectOp.NewInstance(target, instance) =>
-            verifier.verify(target, active.instances.keySet, instance, "instance")
-            active.instances += (target -> instance)
-            ()
-
-          case r @ NewObjectOp.NewResource(target, instance, _) =>
-            verifier.verify(target, active.instances.keySet, instance, "resource")
-            active.instances += (target -> instance)
-            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-            active.finalizers prepend Finalizer[F](target, finalizer)
-            ()
-
-          case r @ NewObjectOp.NewFinalizer(target, _) =>
-            val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-            active.finalizers prepend Finalizer[F](target, finalizer)
-            ()
-
-          case NewObjectOp.UpdatedSet(target, instance) =>
-            verifier.verify(target, active.instances.keySet, instance, "set")
-            active.instances += (target -> instance)
-            ()
-        }
+        active.interpretResult(verifier, result)
       }.toEither
-
       t.left.map(t => UnexpectedDIException(result.key, t))
     }
 
   }
 
   private[this] def verifyEffectType[F[_]: TagK](
-    ops: Seq[NonImportOp]
+    ops: Iterable[ExecutableOp]
   )(implicit F: QuasiIO[F]
-  ): F[Either[Seq[IncompatibleEffectTypesException], Unit]] = {
+  ): F[Either[Iterable[IncompatibleEffectTypesException], Unit]] = {
     val monadicOps = ops.collect { case m: MonadicOp => m }
     val badOps = monadicOps
       .filter(_.isIncompatibleEffectType[F])
