@@ -4,13 +4,11 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
-import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.platform.exceptions.IzThrowable
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
 
@@ -55,7 +53,7 @@ object PlanInterpreter {
           val messages = failures
             .map {
               case UnexpectedDIException(op, problem) =>
-                import IzThrowable._
+                import IzThrowable.*
                 s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
               case MissingImport(op) =>
                 MissingInstanceException.format(op.target, op.references)
@@ -86,28 +84,7 @@ object PlanInterpreter {
         }.toSet.size
       val ccTotal = failure.status.size
 
-//        failures
-//        .flatMap {
-//          case ProvisioningFailure.AggregateFailure(left, failures, _) =>
-//            failures.flatMap {
-//              case f: MissingImport =>
-//                f.op.references
-//              case f: IncompatibleEffectTypesException =>
-//                Seq(f.op.target)
-//              case f: UnexpectedDIException =>
-//                Seq(f.key)
-//            }
-//          case f: ProvisioningFailure.BrokenGraph =>
-//            f.graph.links.keySet
-////          case op: ProvisioningFailure.StepProvisioningFailure =>
-////            Seq(op.op.target)
-//        }.toSet.size
-
-//      val ccDone = failed.instances.size
-//      val ccTotal = plan.steps.size
-
-      import izumi.fundamentals.platform.exceptions.IzThrowable._
-      import izumi.fundamentals.platform.strings.IzString._
+      import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
       val exceptions = failure match {
         case f: ProvisioningFailure.AggregateFailure =>
@@ -117,8 +94,6 @@ object PlanInterpreter {
             case _ =>
               Seq.empty
           }
-//        case f: ProvisioningFailure.StepProvisioningFailure =>
-//          Seq(f.failure)
         case _: ProvisioningFailure.BrokenGraph =>
           Seq.empty
       }
