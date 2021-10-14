@@ -23,7 +23,7 @@ import izumi.reflect.TagK
 import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success, Try}
 
 object PlanInterpreterDefaultRuntimeImpl {
@@ -69,7 +69,7 @@ class PlanInterpreterDefaultRuntimeImpl(
 ) extends PlanInterpreter {
   import PlanInterpreterDefaultRuntimeImpl.*
 
-  type OperationMetadata = Long
+  //type OperationMetadata = Long
 
   override def run[F[_]: TagK: QuasiIO](
     plan: DIPlan,
@@ -138,7 +138,7 @@ class PlanInterpreterDefaultRuntimeImpl(
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
-    val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
+    //val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
     def processStep[T <: ExecutableOp, E](h: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
       for {
@@ -147,8 +147,7 @@ class PlanInterpreterDefaultRuntimeImpl(
         r <- F.ifThenElse(excludeOp)(F.pure(Right(Seq.empty[NewObjectOp]): Either[E, Seq[NewObjectOp]]), h(step))
         after <- F.maybeSuspend(System.nanoTime())
       } yield {
-        val time = after - before
-        meta.put(step.target, time)
+        mutProvisioningContext.setMetaTiming(step.target, Duration.fromNanos(after - before))
         r
       }
     }
@@ -166,13 +165,8 @@ class PlanInterpreterDefaultRuntimeImpl(
         otherSteps.append(o)
     }
 
-    @nowarn("msg=Unused import")
-    def makeMeta(): LocatorMeta = {
-      LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap)
-    }
-
-    def doFail(immutable: Provision.ProvisionImmutable[F]): Either[FailedProvision[F], LocatorDefaultImpl[F]] = {
-      Left(FailedProvision[F](immutable, diplan, parentContext, mutFailures.toVector, FailedProvisionMeta(makeMeta().timings), fullStackTraces))
+    def doFail(immutable: ProvisionMutable[F]): Either[FailedProvision[F], LocatorDefaultImpl[F]] = {
+      Left(immutable.makeFailure(mutFailures.toVector, fullStackTraces))
     }
 
     def runSteps(otherSteps: ArrayBuffer[NonImportOp]): F[Unit] = {
@@ -221,15 +215,13 @@ class PlanInterpreterDefaultRuntimeImpl(
       _ <- F.maybeSuspend(importResults.toSeq.flatten.flatten.foreach(r => mutProvisioningContext.interpretResult(verifier, r)))
 
       out <- F.ifThenElse(mutFailures.nonEmpty)(
-        F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
+        F.maybeSuspend(doFail(mutProvisioningContext)),
         runSteps(otherSteps).flatMap {
           _ =>
             F.ifThenElse(mutFailures.nonEmpty)(
-              F.maybeSuspend(doFail(mutProvisioningContext.toImmutable)),
+              F.maybeSuspend(doFail(mutProvisioningContext)),
               F.maybeSuspend {
-                val finalLocator = new LocatorDefaultImpl(diplan, Option(parentContext), makeMeta(), mutProvisioningContext.toImmutable)
-                mutProvisioningContext.locatorRef.ref.set(Right(finalLocator))
-                Right(finalLocator): Either[FailedProvision[F], LocatorDefaultImpl[F]]
+                Right(mutProvisioningContext.finish()): Either[FailedProvision[F], LocatorDefaultImpl[F]]
               },
             )
         },

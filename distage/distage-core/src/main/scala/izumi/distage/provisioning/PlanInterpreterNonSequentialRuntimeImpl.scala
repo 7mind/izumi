@@ -1,6 +1,6 @@
 package izumi.distage.provisioning
 
-import distage.Id
+import distage.{Id, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
@@ -16,9 +16,10 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.reflect.TagK
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import scala.collection.mutable
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 class PlanInterpreterNonSequentialRuntimeImpl(
@@ -27,8 +28,6 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   verifier: ProvisionOperationVerifier,
   fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
 ) extends PlanInterpreter {
-
-  type OperationMetadata = Long
 
   override def run[F[_]: TagK: QuasiIO](
     plan: DIPlan,
@@ -50,29 +49,46 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     })
   }
 
+  def prioritize(value: Seq[ExecutableOp]): Seq[ExecutableOp] = {
+    value.sortBy {
+      op =>
+        val repr = op.target.tpe.toString
+        op match {
+          case _: ImportDependency =>
+            (-10, repr)
+          case op: InstantiationOp if op.instanceType <:< SafeType.get[AbstractCheck] =>
+            (0, repr)
+          case _ =>
+            (1, repr)
+        }
+    }
+  }
+
   private[this] def instantiateImpl[F[_]: TagK](
     diplan: DIPlan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-    val mutProvisioningContext = ProvisionMutable[F](diplan, parentContext)
-    val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
+    val ctx = ProvisionMutable[F](diplan, parentContext)
 
     def run(state: TraversalState): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
       import izumi.functional.IzEither.*
+
+      // TODO: better metadata
+
       state.next(Set.empty) match {
         case TraversalState.Step(next, steps) =>
-          val ops = steps.toSeq.map(k => diplan.plan.meta.nodes(k))
+          val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)))
           val todo = ops.map {
             op =>
-              process(mutProvisioningContext.asContext(), op)
+              process(ctx, op)
           }
 
           for {
             ctxops <- F.map(F.traverse(todo)(a => a))(_.biAggregateScalar.map(_.flatten))
             result <- ctxops match {
               case Right(ops) =>
-                F.map(F.traverse(ops)(op => interpretResult(mutProvisioningContext, op)))(_.biAggregateScalar)
+                F.map(F.traverse(ops)(op => interpretResult(ctx, op)))(_.biAggregateScalar)
               case Left(issues) =>
                 F.pure(Left(issues))
             }
@@ -80,14 +96,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
               case Left(value) =>
                 F.pure(
                   Left(
-                    FailedProvision(
-                      mutProvisioningContext.toImmutable,
-                      diplan,
-                      parentContext,
-                      List(AggregateFailure(value)),
-                      FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
-                      fullStackTraces,
-                    )
+                    ctx.makeFailure(List(AggregateFailure(value)), fullStackTraces)
                   )
                 )
               case Right(value) =>
@@ -98,23 +107,13 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           }
         case TraversalState.Done() =>
           F.maybeSuspend {
-            val finalLocator =
-              new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap), mutProvisioningContext.toImmutable)
-            mutProvisioningContext.locatorRef.ref.set(Right(finalLocator))
-            Right(finalLocator)
+            Right(ctx.finish())
           }
         case TraversalState.Problem(left) =>
           System.err.println(left)
           F.pure(
             Left(
-              FailedProvision(
-                mutProvisioningContext.toImmutable,
-                diplan,
-                parentContext,
-                List(AggregateFailure(List.empty)),
-                FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
-                fullStackTraces,
-              )
+              ctx.makeFailure(List.empty, fullStackTraces)
             )
           )
       }
@@ -124,18 +123,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       result <- verifyEffectType(diplan.plan.meta.nodes.values)
       out <- result match {
         case Left(value) =>
-          F.pure(
-            Left(
-              FailedProvision(
-                mutProvisioningContext.toImmutable,
-                diplan,
-                parentContext,
-                List(AggregateFailure(value.toList)),
-                FailedProvisionMeta(LocatorMeta(meta.view.mapValues(Duration.fromNanos).toMap).timings),
-                fullStackTraces,
-              )
-            )
-          )
+          F.pure(Left(ctx.makeFailure(List(AggregateFailure(value.toList)), fullStackTraces)))
         case Right(_) =>
           run(TraversalState(diplan.plan.predecessors))
       }
@@ -146,13 +134,29 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
   }
 
-  private def process[F[_]: TagK](context: ProvisioningKeyProvider, op: ExecutableOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    op match {
-      case op: ImportDependency =>
-        F.pure(importStrategy.importDependency(context, op))
-      case op: NonImportOp =>
-        operationExecutor.execute(context, op)
+  private def timed[F[_]: TagK, T](op: => F[T])(implicit F: QuasiIO[F]): F[(T, FiniteDuration)] = {
+    for {
+      before <- F.maybeSuspend(System.nanoTime())
+      out <- op
+      after <- F.maybeSuspend(System.nanoTime())
+    } yield {
+      (out, Duration.fromNanos(after - before))
     }
+  }
+
+  private def process[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    for {
+      out <- timed(op match {
+        case op: ImportDependency =>
+          F.pure(importStrategy.importDependency(context.asContext(), op))
+        case op: NonImportOp =>
+          operationExecutor.execute(context.asContext(), op)
+      })
+    } yield {
+      context.setMetaTiming(op.target, out._2)
+      out._1
+    }
+
   }
 
   private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Unit]] = {
