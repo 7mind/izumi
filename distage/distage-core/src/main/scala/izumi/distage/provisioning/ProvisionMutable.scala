@@ -34,7 +34,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
     FailedProvisionMeta(makeMeta().timings)
   }
 
-  def makeFailure(failures: Seq[ProvisioningFailure], fullStackTraces: Boolean): FailedProvision[F] = {
+  def makeFailure(failures: ProvisioningFailure, fullStackTraces: Boolean): FailedProvision[F] = {
     FailedProvision(
       toImmutable,
       diplan,

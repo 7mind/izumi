@@ -45,63 +45,71 @@ object PlanInterpreter {
     failed: ProvisionImmutable[F],
     plan: DIPlan,
     parentContext: Locator,
-    failures: Seq[ProvisioningFailure],
+    failure: ProvisioningFailure,
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
-      val repr = failures
-        .map {
-          case ProvisioningFailure.AggregateFailure(failures) =>
-            val messages = failures
-              .map {
-                case UnexpectedDIException(op, problem) =>
-                  import IzThrowable._
-                  s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
-                case MissingImport(op) =>
-                  MissingInstanceException.format(op.target, op.references)
-                case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
-                  IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
-              }
-              .niceMultilineList("[!]")
-            s"Plan interpreter failed:\n$messages"
-          case ProvisioningFailure.BrokenGraph(matrix) =>
-            s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
-              .map { case (k, v) => s"$k: $v" }.niceList()}"
-          case ProvisioningFailure.StepProvisioningFailure(op, f) =>
-            val pos = OpFormatter.formatBindingPosition(op.origin)
-            val name = f match {
-              case di: DIException => di.getClass.getSimpleName
-              case o => o.getClass.getName
+      val repr = failure match {
+        case ProvisioningFailure.AggregateFailure(left, failures, _) =>
+          val messages = failures
+            .map {
+              case UnexpectedDIException(op, problem) =>
+                import IzThrowable._
+                s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+              case MissingImport(op) =>
+                MissingInstanceException.format(op.target, op.references)
+              case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
+                IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
             }
-            val trace = if (fullStackTraces) f.stackTrace else f.getMessage
-            s"${op.target} $pos, $name: $trace"
-        }
+            .niceMultilineList("[!]")
+          s"Plan interpreter failed:\n$messages"
+        case ProvisioningFailure.BrokenGraph(matrix, _) =>
+          s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
+            .map { case (k, v) => s"$k: $v" }.niceList()}"
+      }
 
-      val ccFailed = failures
-        .flatMap {
-          case ProvisioningFailure.AggregateFailure(failures) =>
-            failures.flatMap {
-              case f: MissingImport =>
-                f.op.references
-              case f: IncompatibleEffectTypesException =>
-                Seq(f.op.target)
-              case f: UnexpectedDIException =>
-                Seq(f.key)
-            }
-          case f: ProvisioningFailure.BrokenGraph =>
-            f.graph.links.keySet
-          case op: ProvisioningFailure.StepProvisioningFailure =>
-            Seq(op.op.target)
+      val ccFailed = failure.status
+        .collect {
+          case (key, _: OpStatus.Failure) =>
+            key
         }.toSet.size
+      val ccDone = failure.status
+        .collect {
+          case (key, _: OpStatus.Success) =>
+            key
+        }.toSet.size
+      val ccPending = failure.status
+        .collect {
+          case (key, _: OpStatus.Planned) =>
+            key
+        }.toSet.size
+      val ccTotal = failure.status.size
 
-      val ccDone = failed.instances.size
-      val ccTotal = plan.steps.size
+//        failures
+//        .flatMap {
+//          case ProvisioningFailure.AggregateFailure(left, failures, _) =>
+//            failures.flatMap {
+//              case f: MissingImport =>
+//                f.op.references
+//              case f: IncompatibleEffectTypesException =>
+//                Seq(f.op.target)
+//              case f: UnexpectedDIException =>
+//                Seq(f.key)
+//            }
+//          case f: ProvisioningFailure.BrokenGraph =>
+//            f.graph.links.keySet
+////          case op: ProvisioningFailure.StepProvisioningFailure =>
+////            Seq(op.op.target)
+//        }.toSet.size
+
+//      val ccDone = failed.instances.size
+//      val ccTotal = plan.steps.size
 
       import izumi.fundamentals.platform.exceptions.IzThrowable._
       import izumi.fundamentals.platform.strings.IzString._
 
-      val exceptions = failures.flatMap {
+      val exceptions = failure match {
         case f: ProvisioningFailure.AggregateFailure =>
           f.failures.flatMap {
             case e: UnexpectedDIException =>
@@ -109,16 +117,16 @@ object PlanInterpreter {
             case _ =>
               Seq.empty
           }
-        case f: ProvisioningFailure.StepProvisioningFailure =>
-          Seq(f.failure)
+//        case f: ProvisioningFailure.StepProvisioningFailure =>
+//          Seq(f.failure)
         case _: ProvisioningFailure.BrokenGraph =>
           Seq.empty
       }
 
       F.fail {
         new ProvisioningException(
-          s"""Provisioner failed on $ccFailed of $ccTotal required operations, just $ccDone succeeded:
-             |${repr.niceMultilineList()}
+          s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
+             |$repr
              |""".stripMargin,
           null,
         )

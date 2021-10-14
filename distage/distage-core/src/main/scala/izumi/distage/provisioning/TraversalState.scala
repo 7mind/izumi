@@ -1,20 +1,14 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions.ProvisionerIssue
+import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
-import izumi.fundamentals.collections.IzCollections._
-
-sealed trait OpStatus
-object OpStatus {
-  case class Planned() extends OpStatus
-  case class Success(time: FiniteDuration) extends OpStatus
-  case class Failure(issues: List[ProvisionerIssue], time: FiniteDuration) extends OpStatus
-}
+import izumi.fundamentals.collections.IzCollections.*
 
 case class TraversalState(
   preds: IncidenceMatrix[DIKey],

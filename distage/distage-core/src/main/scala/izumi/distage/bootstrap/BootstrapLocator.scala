@@ -94,12 +94,11 @@ object BootstrapLocator {
   )
 
   private final val bootstrapProducer: PlanInterpreter = {
-    new PlanInterpreterDefaultRuntimeImpl(
+    new PlanInterpreterNonSequentialRuntimeImpl(
       importStrategy = new ImportStrategyDefaultImpl,
-      executor = bootstrapExecutor,
+      operationExecutor = bootstrapExecutor,
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
-      analyzer = analyzer,
     )
   }
 
@@ -122,7 +121,6 @@ object BootstrapLocator {
 
     make[Planner].from[PlannerDefaultImpl]
     make[OperationExecutor].from[OperationExecutorImpl]
-    //make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
     make[PlanInterpreter].from[PlanInterpreterNonSequentialRuntimeImpl]
 
     make[SetStrategy].from[SetStrategyDefaultImpl]

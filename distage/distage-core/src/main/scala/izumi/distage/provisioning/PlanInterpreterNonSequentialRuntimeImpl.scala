@@ -58,7 +58,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       import izumi.functional.IzEither.*
 
       // TODO: better metadata
-      println(state.status.niceList())
+      //println(state.status.niceList())
 
       state.current() match {
         case TraversalState.Step(steps) =>
@@ -81,29 +81,28 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           if (state.failures.isEmpty) {
             F.maybeSuspend(Right(ctx.finish()))
           } else {
-            F.pure(Left(ctx.makeFailure(List(ProvisioningFailure.AggregateFailure(IncidenceMatrix.empty, state.failures.toVector)), fullStackTraces)))
+            F.pure(Left(ctx.makeFailure(ProvisioningFailure.AggregateFailure(IncidenceMatrix.empty, state.failures.toVector, state.status.toMap), fullStackTraces)))
           }
         case TraversalState.CannotProgress(left) =>
           val diag = if (state.failures.isEmpty) {
-            ProvisioningFailure.BrokenGraph(left)
+            ProvisioningFailure.BrokenGraph(left, state.status.toMap)
           } else {
-            ProvisioningFailure.AggregateFailure(left, state.failures.toVector)
+            ProvisioningFailure.AggregateFailure(left, state.failures.toVector, state.status.toMap)
           }
-          F.pure(Left(ctx.makeFailure(List(diag), fullStackTraces)))
+          F.pure(Left(ctx.makeFailure(diag, fullStackTraces)))
       }
     }
 
     for {
       result <- verifyEffectType(diplan.plan.meta.nodes.values)
+      initial = TraversalState(
+        diplan.plan.predecessors
+      )
       out <- result match {
         case Left(value) =>
-          F.pure(Left(ctx.makeFailure(List(ProvisioningFailure.AggregateFailure(diplan.plan.predecessors, value.toList)), fullStackTraces)))
+          F.pure(Left(ctx.makeFailure(ProvisioningFailure.AggregateFailure(diplan.plan.predecessors, value.toList, initial.status.toMap), fullStackTraces)))
         case Right(_) =>
-          run(
-            TraversalState(
-              diplan.plan.predecessors
-            )
-          )
+          run(initial)
       }
 
     } yield {
