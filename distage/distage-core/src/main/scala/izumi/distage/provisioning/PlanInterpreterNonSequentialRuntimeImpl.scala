@@ -90,19 +90,16 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       )
       out <- result match {
         case Left(value) =>
-          val next = initial.next(
-            List.empty,
-            value.map {
-              e =>
-                TimedFinalResult.Failure(
-                  e.key,
-                  List(e),
-                  FiniteDuration(0, TimeUnit.SECONDS),
-                )
-            }.toList,
-          )
-
-          F.pure(Left(ctx.makeFailure(next, fullStackTraces)))
+          val failures = value.map {
+            e =>
+              TimedFinalResult.Failure(
+                e.key,
+                List(e),
+                FiniteDuration(0, TimeUnit.SECONDS),
+              )
+          }.toList
+          val failed = initial.next(List.empty, failures)
+          F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
         case Right(_) =>
           run(initial)
       }
