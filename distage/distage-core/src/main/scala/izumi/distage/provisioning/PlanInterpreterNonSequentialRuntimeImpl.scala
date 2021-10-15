@@ -6,18 +6,17 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
-import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 class PlanInterpreterNonSequentialRuntimeImpl(
@@ -55,11 +54,6 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     val ctx = ProvisionMutable[F](diplan, parentContext)
 
     def run(state: TraversalState): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-      import izumi.functional.IzEither.*
-
-      // TODO: better metadata
-      //println(state.status.niceList())
-
       state.current() match {
         case TraversalState.Step(steps) =>
           val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)))
@@ -67,13 +61,13 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           for {
             results <- F.traverse(ops)(op => process(ctx, op))
             out <- F.traverse(results) {
-              case Left(value) =>
-                F.pure(List(Left(value): Either[ProvisionerIssue, DIKey]))
-              case Right(value) =>
-                F.traverse(value)(nop => addResult(ctx, nop))
+              case s: TimedResult.Success =>
+                addResult(ctx, s)
+              case f: TimedResult.Failure =>
+                F.pure(f.toFinal: TimedFinalResult)
             }
-            (bad, ok) = out.flatten.lrPartition
-            out <- run(state.next(ok.toSet, bad))
+            (ok, bad) = out.partition(_.isSuccess)
+            out <- run(state.next(ok.map(_.asInstanceOf[TimedFinalResult.Success]), bad.map(_.asInstanceOf[TimedFinalResult.Failure])))
           } yield {
             out
           }
@@ -126,42 +120,46 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-//  case class Timed[T](value: T, duration: FiniteDuration)
-
-  private def process[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  private def process[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[TimedResult] = {
     for {
-      out <- timed(op match {
+      before <- F.maybeSuspend(System.nanoTime())
+      out <- op match {
         case op: ImportDependency =>
           F.pure(importStrategy.importDependency(context.asContext(), op))
         case op: NonImportOp =>
           operationExecutor.execute(context.asContext(), op)
-      })
-    } yield {
-      val (result, duration) = out
-      context.setMetaTiming(op.target, duration)
-      result
-    }
-
-  }
-
-  private def timed[F[_]: TagK, T](op: => F[T])(implicit F: QuasiIO[F]): F[(T, FiniteDuration)] = {
-    for {
-      before <- F.maybeSuspend(System.nanoTime())
-      out <- op
+      }
       after <- F.maybeSuspend(System.nanoTime())
     } yield {
-      (out, Duration.fromNanos(after - before))
+      val duration = Duration.fromNanos(after - before)
+      out match {
+        case Left(value) =>
+          TimedResult.Failure(op.target, value, duration)
+        case Right(value) =>
+          TimedResult.Success(op.target, value, duration)
+      }
     }
   }
 
-  private[this] def addResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, DIKey]] = {
-    F.maybeSuspend {
-      val t = Try {
-        active.addResult(verifier, result)
-        result.key
-      }.toEither
-      t.left.map(t => UnexpectedDIException(result.key, t))
+  private[this] def addResult[F[_]: TagK](active: ProvisionMutable[F], result: TimedResult.Success)(implicit F: QuasiIO[F]): F[TimedFinalResult] = {
+    for {
+      out <- F.traverse(result.ops) {
+        op =>
+          F.maybeSuspend {
+            Try(active.addResult(verifier, op)).toEither.left.map(t => UnexpectedDIException(result.key, t))
+          }
+      }
+    } yield {
+      import izumi.functional.IzEither.*
+      val r = out.biAggregateScalar
+      r match {
+        case Left(value) =>
+          TimedFinalResult.Failure(result.key, value, result.time)
+        case Right(_) =>
+          TimedFinalResult.Success(result.key, result.time)
+      }
     }
+
   }
 
   private[this] def verifyEffectType[F[_]: TagK](

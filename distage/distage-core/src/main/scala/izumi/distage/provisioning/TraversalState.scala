@@ -1,14 +1,42 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions.ProvisionerIssue
-import izumi.distage.model.provisioning.OpStatus
+import izumi.distage.model.provisioning.{NewObjectOp, OpStatus}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
-import izumi.fundamentals.collections.IzCollections.*
+
+sealed trait TimedFinalResult {
+  def isSuccess: Boolean
+  def key: DIKey
+  def time: FiniteDuration
+}
+object TimedFinalResult {
+  case class Success(key: DIKey, time: FiniteDuration) extends TimedFinalResult {
+    override def isSuccess: Boolean = true
+  }
+
+  case class Failure(key: DIKey, issues: List[ProvisionerIssue], time: FiniteDuration) extends TimedFinalResult {
+    override def isSuccess: Boolean = false
+  }
+}
+sealed trait TimedResult {
+  def isSuccess: Boolean
+  def key: DIKey
+  def time: FiniteDuration
+}
+object TimedResult {
+  case class Success(key: DIKey, ops: Seq[NewObjectOp], time: FiniteDuration) extends TimedResult {
+    override def isSuccess: Boolean = true
+  }
+  case class Failure(key: DIKey, issues: ProvisionerIssue, time: FiniteDuration) extends TimedResult {
+    override def isSuccess: Boolean = false
+    def toFinal: TimedFinalResult.Failure = TimedFinalResult.Failure(key, List(issues), time)
+
+  }
+}
 
 case class TraversalState(
   preds: IncidenceMatrix[DIKey],
@@ -29,18 +57,19 @@ case class TraversalState(
     }
   }
 
-  def next(finished: Set[DIKey], issues: List[ProvisionerIssue]): TraversalState = {
+  def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
     val broken = issues.map(_.key).toSet
     val currentBroken = knownBroken ++ broken
     val withBrokenDeps = preds.links.filter(_._2.intersect(currentBroken).nonEmpty)
     val newBroken = currentBroken ++ withBrokenDeps.keySet
 
-    failures ++= issues
-    status ++= finished.map(k => (k, OpStatus.Success(FiniteDuration(0, TimeUnit.SECONDS))))
-    status ++= issues.map(i => (i.key, i)).toMultimapView.mapValues(issues => OpStatus.Failure(issues.toList, FiniteDuration(0, TimeUnit.SECONDS)))
+    failures ++= issues.flatMap(_.issues)
+    status ++= finished.map(k => (k.key, OpStatus.Success(k.time)))
+    status ++= issues.map(k => (k.key, OpStatus.Failure(k.issues, k.time)))
+    assert(issues.map(_.key).distinct.size == issues.size)
 
     TraversalState(
-      preds.without(finished ++ newBroken),
+      preds.without(finished.map(_.key).toSet ++ newBroken),
       newBroken,
       failures,
       status,
