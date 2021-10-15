@@ -12,8 +12,6 @@ import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
-import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
