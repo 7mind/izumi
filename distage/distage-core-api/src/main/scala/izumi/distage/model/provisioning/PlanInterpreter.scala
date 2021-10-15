@@ -37,7 +37,7 @@ object PlanInterpreter {
     }
   }
 
-  case class FailedProvisionMeta(timings: Map[DIKey, Duration])
+  case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
 
   final case class FailedProvision[F[_]](
     failed: ProvisionImmutable[F],

@@ -5,10 +5,11 @@ import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
-import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
+import izumi.distage.model.provisioning.{NewObjectOp, OpStatus, Provision, ProvisioningFailure}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.reflect.TagK
 
 import java.util.concurrent.atomic.AtomicReference
@@ -16,38 +17,34 @@ import scala.collection.mutable
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Locator) extends Provision[F] {
-  def setMetaTiming(target: DIKey, time: FiniteDuration): Unit = {
-    meta.put(target, time)
-  }
 
   private val temporaryLocator = new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta.empty, this)
 
   private val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
   type OperationMetadata = FiniteDuration
-  private val meta = mutable.HashMap.empty[DIKey, OperationMetadata]
 
-  private def makeMeta(): LocatorMeta = {
-    LocatorMeta(meta.toMap)
-  }
+  def makeFailure(state: TraversalState, fullStackTraces: Boolean): FailedProvision[F] = {
+    val diag = if (state.failures.isEmpty) {
+      ProvisioningFailure.BrokenGraph(state.preds, state.status.toMap)
+    } else {
+      ProvisioningFailure.AggregateFailure(state.preds, state.failures.toVector, state.status.toMap)
+    }
+    val meta = FailedProvisionMeta(state.status.toMap)
 
-  def makeFailedMeta(): FailedProvisionMeta = {
-    FailedProvisionMeta(makeMeta().timings)
-  }
-
-  def makeFailure(failures: ProvisioningFailure, fullStackTraces: Boolean): FailedProvision[F] = {
     FailedProvision(
       toImmutable,
       diplan,
       parentContext,
-      failures,
-      makeFailedMeta(),
+      diag,
+      meta,
       fullStackTraces,
     )
   }
 
-  def finish(): LocatorDefaultImpl[F] = {
+  def finish(state: TraversalState): LocatorDefaultImpl[F] = {
+    val meta = LocatorMeta(state.status.toMap)
     val finalLocator =
-      new LocatorDefaultImpl(diplan, Option(parentContext), makeMeta(), toImmutable)
+      new LocatorDefaultImpl(diplan, Option(parentContext), meta, toImmutable)
     locatorRef.ref.set(Right(finalLocator))
     finalLocator
   }

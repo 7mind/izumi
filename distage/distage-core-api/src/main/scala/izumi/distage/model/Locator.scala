@@ -5,6 +5,7 @@ import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, TypedRef}
@@ -120,7 +121,7 @@ object Locator {
 
   /** @param timings How long it took to instantiate each component */
   final case class LocatorMeta(
-    timings: Map[DIKey, FiniteDuration]
+    status: Map[DIKey, OpStatus]
   ) extends AnyVal
   object LocatorMeta {
     def empty: LocatorMeta = LocatorMeta(Map.empty)

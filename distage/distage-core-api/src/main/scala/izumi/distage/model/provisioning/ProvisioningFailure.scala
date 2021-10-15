@@ -8,9 +8,13 @@ import scala.concurrent.duration.FiniteDuration
 
 sealed trait OpStatus
 object OpStatus {
+  sealed trait Done extends OpStatus {
+    def time: FiniteDuration
+  }
+
   case class Planned() extends OpStatus
-  case class Success(time: FiniteDuration) extends OpStatus
-  case class Failure(issues: List[ProvisionerIssue], time: FiniteDuration) extends OpStatus
+  case class Success(time: FiniteDuration) extends Done
+  case class Failure(issues: List[ProvisionerIssue], time: FiniteDuration) extends Done
 }
 
 sealed trait ProvisioningFailure {

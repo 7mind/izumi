@@ -16,7 +16,8 @@ import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 class PlanInterpreterNonSequentialRuntimeImpl(
@@ -67,23 +68,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
                 F.pure(f.toFinal: TimedFinalResult)
             }
             (ok, bad) = out.partition(_.isSuccess)
-            out <- run(state.next(ok.map(_.asInstanceOf[TimedFinalResult.Success]), bad.map(_.asInstanceOf[TimedFinalResult.Failure])))
+            out <- run(state.next(ok.asInstanceOf[List[TimedFinalResult.Success]], bad.asInstanceOf[List[TimedFinalResult.Failure]]))
           } yield {
             out
           }
         case TraversalState.Done() =>
           if (state.failures.isEmpty) {
-            F.maybeSuspend(Right(ctx.finish()))
+            F.maybeSuspend(Right(ctx.finish(state)))
           } else {
-            F.pure(Left(ctx.makeFailure(ProvisioningFailure.AggregateFailure(IncidenceMatrix.empty, state.failures.toVector, state.status.toMap), fullStackTraces)))
+            F.pure(Left(ctx.makeFailure(state, fullStackTraces)))
           }
-        case TraversalState.CannotProgress(left) =>
-          val diag = if (state.failures.isEmpty) {
-            ProvisioningFailure.BrokenGraph(left, state.status.toMap)
-          } else {
-            ProvisioningFailure.AggregateFailure(left, state.failures.toVector, state.status.toMap)
-          }
-          F.pure(Left(ctx.makeFailure(diag, fullStackTraces)))
+        case TraversalState.CannotProgress(_) =>
+          F.pure(Left(ctx.makeFailure(state, fullStackTraces)))
       }
     }
 
@@ -94,7 +90,19 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       )
       out <- result match {
         case Left(value) =>
-          F.pure(Left(ctx.makeFailure(ProvisioningFailure.AggregateFailure(diplan.plan.predecessors, value.toList, initial.status.toMap), fullStackTraces)))
+          val next = initial.next(
+            List.empty,
+            value.map {
+              e =>
+                TimedFinalResult.Failure(
+                  e.key,
+                  List(e),
+                  FiniteDuration(0, TimeUnit.SECONDS),
+                )
+            }.toList,
+          )
+
+          F.pure(Left(ctx.makeFailure(next, fullStackTraces)))
         case Right(_) =>
           run(initial)
       }
