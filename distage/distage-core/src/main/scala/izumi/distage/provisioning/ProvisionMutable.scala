@@ -5,16 +5,15 @@ import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
-import izumi.distage.model.provisioning.{NewObjectOp, OpStatus, Provision, ProvisioningFailure}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.reflect.TagK
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Locator) extends Provision[F] {
 
