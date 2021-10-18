@@ -1,10 +1,5 @@
 package izumi.distage.roles.test
 
-import java.io.File
-import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.{Files, Paths}
-import java.util.UUID
-
 import cats.effect.IO
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
@@ -13,21 +8,25 @@ import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
+import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
-import izumi.distage.roles.test.fixtures.Fixture._
-import izumi.distage.roles.test.fixtures._
+import izumi.distage.roles.test.fixtures.*
+import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.jdk.CollectionConverters._
+import java.io.File
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Paths}
+import java.util.UUID
+import scala.jdk.CollectionConverters.*
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
@@ -176,21 +175,21 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
+//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
-            locator =>
-              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
+//        Injector.inherit(_).produce(plans.app.shared).use {
+//          Injector.inherit(_).produce(plans.app.side).use {
+        locator =>
+          //integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-              assert(probe.resources.getStartedCloseables().size == 3)
-              assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-          }
-        }
+          assert(probe.resources.getStartedCloseables().size == 3)
+          assert(probe.resources.getCheckedResources().size == 2)
+          assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
       }
+//        }
+//      }
     }
 
     "integration checks are discovered and ran from resource bindings" in {
@@ -215,21 +214,21 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
+//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
-            locator =>
-              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
+//        Injector.inherit(_).produce(plans.app.shared).use {
+//          Injector.inherit(_).produce(plans.app.side).use {
+        locator =>
+//              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-              assert(probe.resources.getStartedCloseables().size == 3)
-              assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-          }
-        }
+          assert(probe.resources.getStartedCloseables().size == 3)
+          assert(probe.resources.getCheckedResources().size == 2)
+          assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
       }
+//        }
+//      }
     }
 
     "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
@@ -258,30 +257,30 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
+//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
 
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared).use {
-          Injector.inherit(_).produce(plans.app.side).use {
-            locator =>
-              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
+//        Injector.inherit(_).produce(plans.app.shared).use {
+//          Injector.inherit(_).produce(plans.app.side).use {
+        locator =>
+//              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-              assert(initCounter.getStartedCloseables().size == 2)
-              assert(initCounter.getCheckedResources().size == 1)
-              assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
+          assert(initCounter.getStartedCloseables().size == 2)
+          assert(initCounter.getCheckedResources().size == 1)
+          assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
 
-              assert(initCounterIdentity.getStartedCloseables().size == 3)
-              assert(initCounterIdentity.getCheckedResources().size == 2)
-              assert(
-                initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
-                  locator.get[IntegrationResource0[Identity]],
-                  locator.get[IntegrationResource1[Identity]],
-                )
-              )
-          }
-        }
+          assert(initCounterIdentity.getStartedCloseables().size == 3)
+          assert(initCounterIdentity.getCheckedResources().size == 2)
+          assert(
+            initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
+              locator.get[IntegrationResource0[Identity]],
+              locator.get[IntegrationResource1[Identity]],
+            )
+          )
+//          }
+//        }
       }
     }
 

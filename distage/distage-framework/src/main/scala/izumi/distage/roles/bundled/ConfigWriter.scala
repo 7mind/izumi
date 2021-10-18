@@ -126,11 +126,9 @@ final class ConfigWriter[F[_]](
     }
 
     val resolvedConfig =
-      (getConfig(plans.app.primary) ++
-      getConfig(plans.app.side) ++
-      getConfig(plans.app.shared)).toSet + _HackyMandatorySection
+      getConfig(plans.app).toSet + _HackyMandatorySection
 
-    if (plans.app.primary.steps.exists(_.target == roleDIKey)) {
+    if (plans.app.steps.exists(_.target == roleDIKey)) {
       Some(ConfigWriter.minimized(resolvedConfig, config))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")

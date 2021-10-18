@@ -2,13 +2,13 @@ package izumi.distage.roles.launcher
 
 import distage.{Injector, TagK}
 import izumi.distage.InjectorFactory
-import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
+import izumi.distage.provisioning.IntegrationChecker
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.fundamentals.platform.functional.Identity
 
@@ -32,7 +32,6 @@ object AppResourceProvider {
   }
 
   class Impl[F[_]: TagK](
-    integrationChecker: IntegrationChecker[F],
     entrypoint: RoleAppEntrypoint[F],
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
@@ -54,24 +53,8 @@ object AppResourceProvider {
     private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
       injectorFactory
         .inherit(runtimeLocator)
-        .produceFX[F](appPlan.app.shared, filters.filterF)
-        .flatMap {
-          sharedLocator =>
-            Injector
-              .inherit(sharedLocator)
-              .produceFX[F](appPlan.app.side, filters.filterF)
-              .evalTap {
-                integrationLocator =>
-                  integrationChecker.checkOrFail(appPlan.app.sideRoots1, appPlan.app.sideRoots2, integrationLocator)
-              }
-              .flatMap {
-                _ => // we don't need integration locator
-                  Injector
-                    .inherit(sharedLocator)
-                    .produceFX[F](appPlan.app.primary, filters.filterF)
-                    .evalTap(entrypoint.runTasksAndRoles(_, F))
-              }
-        }
+        .produceFX[F](appPlan.app, filters.filterF)
+        .evalTap(entrypoint.runTasksAndRoles(_, F))
         .wrapRelease((r, a) => r(a).guarantee(F.maybeSuspend(hook.finishShutdown())))
     }
   }
