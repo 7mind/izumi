@@ -361,7 +361,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               ":" + FailingRole01.id,
             )
           )
-        fail("The app is expected to fail")
+        fail("The should fail but it didn't")
       } catch {
         case err: Throwable =>
           assert(err.getMessage.contains(FailingRole01.expectedError))

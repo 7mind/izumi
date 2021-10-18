@@ -1,19 +1,20 @@
 package izumi.distage.roles.test.fixtures
 
-import izumi.distage.model.provisioning.IntegrationCheck
-import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
+import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.QuasiIO
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.recursive.LocatorRef
+import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
-import izumi.distage.roles.test.fixtures.Fixture._
+import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.NotCloseable
 import izumi.distage.roles.test.fixtures.roles.TestRole00.TestRole00Resource
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
 import java.util.concurrent.ExecutorService
@@ -157,13 +158,14 @@ object TestRole04 extends RoleDescriptor {
 }
 
 class FailingRole01[F[_]: QuasiIO](
-  val integrationChecker: IntegrationChecker[F]
+  val bootComponentWhichMustNotBeResolved: FinalizerFilters[F]
 ) extends RoleService[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.unit
 }
 
 object FailingRole01 extends RoleDescriptor {
-  final val expectedError = "Instance is not available in the object graph: {type.izumi.distage.framework.services.IntegrationChecker[=λ %0 → IO[+0]]}"
+  final val expectedError =
+    "Instance is not available in the object graph: {type.izumi.distage.roles.launcher.AppResourceProvider::izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters[=λ %0 → IO[+0]]}"
   override final val id = "failingrole01"
 }
 

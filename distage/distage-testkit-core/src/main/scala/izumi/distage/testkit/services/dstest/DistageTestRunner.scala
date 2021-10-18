@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.dstest
 import distage.*
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
+import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.QuasiIO.syntax.*
@@ -35,6 +35,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
+// TODO: integration check sharing?..
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
   isTestSkipException: Throwable => Boolean,
@@ -228,7 +229,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         val allEnvTests = testsTree.allTests.map(_.test)
         integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
         withRecoverFromFailedExecution_(allEnvTests) {
-          val envIntegrationChecker = new IntegrationChecker.Impl[F](integrationLogger)
           val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
 
           // producing and verifying runtime plan
@@ -245,7 +245,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                   (locator, plan, allTests) => stateAction =>
                     lazy val nodeTests = allTests.map(_.test)
                     withTestsRecoverCase(nodeTests) {
-                      withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, nodeTests)(stateAction)
+                      withIntegrationSharedPlan(locator, planChecker, plan)(stateAction)
                     }
                 } {
                   (locator, levelGroups) => proceedMemoizationLevel(planChecker, locator, integrationLogger)(levelGroups)
@@ -259,9 +259,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   protected def withIntegrationSharedPlan(
     parentLocator: Locator,
     planCheck: PlanCircularDependencyCheck,
-    checker: IntegrationChecker[F],
     plan: DIPlan,
-    tests: => Iterable[DistageTest[F]],
   )(use: Locator => F[Unit]
   )(implicit
     F: QuasiIO[F]
@@ -279,9 +277,14 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     F.definitelyRecoverCause {
       testsAction
     } {
-      case (ProvisioningIntegrationException(integrations), _) =>
-        // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-        F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
+      case (ProvisioningIntegrationException(failures), _) =>
+        F.maybeSuspend {
+          // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+          tests.foreach {
+            test =>
+              reporter.testStatus(test.meta, TestStatus.Ignored(failures))
+          }
+        }
       case (_, getTrace) =>
         // fail all tests (if an exception reached here, it must have happened before the individual test runs)
         F.maybeSuspend(failAllTests(tests, getTrace()))
@@ -301,32 +304,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         failAllTests(allTests.toSeq, t)
         reporter.onFailure(t)
         onError
-    }
-  }
-
-  protected def withIntegrationCheck(
-    checker: IntegrationChecker[F],
-    integrationLocator: Locator,
-  )(tests: => Iterable[DistageTest[F]],
-    plans: DIPlan,
-  )(onSuccess: => F[Unit]
-  )(implicit
-    F: QuasiIO[F]
-  ): F[Unit] = {
-    checker.collectFailures(Set.empty, Set.empty, integrationLocator).flatMap {
-      case Some(failures) =>
-        F.maybeSuspend {
-          ignoreIntegrationCheckFailedTests(tests, failures)
-        }
-      case None =>
-        onSuccess
-    }
-  }
-
-  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
-    tests.foreach {
-      test =>
-        reporter.testStatus(test.meta, TestStatus.Ignored(failures))
     }
   }
 

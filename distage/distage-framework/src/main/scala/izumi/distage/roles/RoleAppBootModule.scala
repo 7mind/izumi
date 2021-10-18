@@ -218,7 +218,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       roleAppPlanner.makePlan(roots)
   }
 
-  make[IntegrationChecker[F]].from[IntegrationChecker.Impl[F]]
   make[RoleAppEntrypoint[F]].from[RoleAppEntrypoint.Impl[F]]
 
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
