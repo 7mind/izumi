@@ -117,12 +117,15 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     activation: Activation,
     injector: Injector[Identity],
     appModule: Module,
-  ): TriSplittedPlan = {
+  ) = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
     // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
-    injector.ops.trisectByKeys(activation, appModule, sharedKeys) {
-      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+    if (sharedKeys.nonEmpty) {
+      injector.plan(PlannerInput(appModule, activation, sharedKeys))
+    } else {
+      DIPlan.empty
     }
+    //injector.ops.trisectByKeys(activation, appModule, sharedKeys)
   }
 
   private def prepareGroupPlans(
@@ -194,7 +197,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // every duplicated key will be removed
       // every empty memoization level (after keys filtering) will be removed
       env.memoizationRoots.keys.toList
-        .sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
+        .sortBy(_._1).foldLeft((List.empty[DIPlan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
             val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
@@ -417,10 +420,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val (testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect) = {
-      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
-      (res1 -- allSharedKeys, res2 -- allSharedKeys)
-    }
+    val (testIntegrationCheckKeysIdentity: Set[DIKey], testIntegrationCheckKeysEffect: Set[DIKey]) = (Set.empty[DIKey], Set.empty[DIKey])
+
+//    {
+//      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+//      (res1 -- allSharedKeys, res2 -- allSharedKeys)
+//    }
 
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
@@ -444,6 +449,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker.verify(newTestPlan.primary)
 
     // we are ready to run the test, finally
+    println(newTestPlan.shared.render())
     testInjector.produceCustomF[F](newTestPlan.shared).use {
       sharedLocator =>
         Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
@@ -475,7 +481,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Ignored(failures))
           }
-        case (_, getTrace) =>
+        case (e: IntegrationCheckException, _) =>
+          F.maybeSuspend {
+            reporter.testStatus(test.meta, TestStatus.Ignored(e.failures))
+          }
+        case (e, getTrace) =>
+          e.printStackTrace()
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
           }
@@ -605,7 +616,7 @@ object DistageTestRunner {
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     preparedTests: Seq[PreparedTest[F]],
-    memoizationPlanTree: List[TriSplittedPlan],
+    memoizationPlanTree: List[DIPlan],
     anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
@@ -690,11 +701,11 @@ object DistageTestRunner {
       addEnv_(packedEnv.memoizationPlanTree, MemoizationLevelGroup(packedEnv.preparedTests, packedEnv.strengthenedKeys))
     }
 
-    @tailrec private def addEnv_(plans: List[TriSplittedPlan], levelTests: MemoizationLevelGroup[F]): Unit = {
+    @tailrec private def addEnv_(plans: List[DIPlan], levelTests: MemoizationLevelGroup[F]): Unit = {
       // here we are filtering all empty plans to merge levels together
-      plans.filter(_.nonEmpty) match {
+      plans match {
         case plan :: tail =>
-          val childTree = children.synchronized(children.getOrElseUpdate(plan, new MemoizationTree[F]))
+          val childTree = children.synchronized(children.getOrElseUpdate(TriSplittedPlan(DIPlan.empty, plan, DIPlan.empty, Set.empty, Set.empty), new MemoizationTree[F]))
           childTree.addEnv_(tail, levelTests)
         case Nil =>
           nodeTests.synchronized(nodeTests.append(levelTests))

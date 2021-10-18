@@ -154,11 +154,11 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           for {
             _ <- op match {
               case i: NewObjectOp.LocalInstance =>
-                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[Identity]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[Identity]]}")
-                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[F]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[F]]}")
+//                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[Identity]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[Identity]]}")
+//                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[F]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[F]]}")
 
                 if (i.implKey <:< SafeType.get[IntegrationCheck[Identity]]) {
-                  System.err.println(s"id: $i")
+//                  System.err.println(s"id: $i")
 
                   F.maybeSuspend {
                     Option(i.instance).map(i => checkOrThrow(i.asInstanceOf[IntegrationCheck[Identity]])) match {
@@ -169,7 +169,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
                     }
                   }
                 } else if (i.implKey <:< SafeType.get[IntegrationCheck[F]]) {
-                  System.err.println(s"F: $i")
+//                  System.err.println(s"F: $i")
                   Option(i.instance.asInstanceOf[IntegrationCheck[F]]) match {
                     case Some(value) =>
                       checkOrThrow(value)
@@ -204,7 +204,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private[this] def checkOrThrow[F[_]: TagK](check: IntegrationCheck[F])(implicit F: QuasiIO[F]): F[Unit] = {
-    System.err.println(s"cor on $check => ${check.resourcesAvailable()}")
+//    System.err.println(s"cor on $check => ${check.resourcesAvailable()}")
 
     F.map(check.resourcesAvailable()) {
       case ResourceCheck.Success() =>

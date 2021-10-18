@@ -60,7 +60,7 @@ object MockCache {
 }
 
 class ApplePaymentProvider[F[_]: QuasiIO] extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Test", None))
+  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])

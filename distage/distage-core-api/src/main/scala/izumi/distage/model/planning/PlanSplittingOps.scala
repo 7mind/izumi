@@ -9,20 +9,19 @@ import izumi.distage.model.{Planner, PlannerInput}
 class PlanSplittingOps(
   planner: Planner
 ) {
-  @deprecated("should be removed with OrderedPlan", "13/04/2021")
-  final def trisectByKeys(
-    activation: Activation,
-    appModule: ModuleBase,
-    primaryRoots: Set[DIKey],
-  )(extractSubRoots: DIPlan => (Set[DIKey], Set[DIKey])
-  ): TriSplittedPlan = {
-    val rewritten = planner.rewrite(appModule)
-    val basePlan = toSubplanNoRewrite(activation, rewritten, primaryRoots)
-
-    // here we extract integration checks out of our shared components plan and build it
-    val (subplanRoots1, subplanRoots2) = extractSubRoots(basePlan)
-    trisect(activation, rewritten, basePlan, primaryRoots, subplanRoots1, subplanRoots2)
-  }
+//  @deprecated("should be removed with OrderedPlan", "13/04/2021")
+//  final def trisectByKeys(
+//    activation: Activation,
+//    appModule: ModuleBase,
+//    primaryRoots: Set[DIKey],
+//  ): TriSplittedPlan = {
+//    val rewritten = planner.rewrite(appModule)
+//    val basePlan = toSubplanNoRewrite(activation, rewritten, primaryRoots)
+//
+//    // here we extract integration checks out of our shared components plan and build it
+//    //val (subplanRoots1, subplanRoots2) = extractSubRoots(basePlan)
+//    trisect(activation, rewritten, basePlan, primaryRoots, Set.empty, Set.empty)
+//  }
 
   @deprecated("should be removed with OrderedPlan", "13/04/2021")
   final def trisectByRoots(
@@ -32,7 +31,12 @@ class PlanSplittingOps(
     subplanRoots1: Set[DIKey],
     subplanRoots2: Set[DIKey],
   ): TriSplittedPlan = {
-    trisectByKeys(activation, appModule, primaryRoots)(_ => (subplanRoots1, subplanRoots2))
+    //trisectByKeys(activation, appModule, primaryRoots)(_ => (subplanRoots1, subplanRoots2))
+
+    val rewritten = planner.rewrite(appModule)
+    val basePlan = toSubplanNoRewrite(activation, rewritten, primaryRoots)
+
+    trisect(activation, rewritten, basePlan, primaryRoots, subplanRoots1, subplanRoots2)
   }
 
   private[this] final def trisect(
