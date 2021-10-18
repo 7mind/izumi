@@ -26,15 +26,15 @@ final case class TriSplittedPlan(
   def nonEmpty: Boolean = !isEmpty
 }
 
-object TriSplittedPlan {
-  implicit final class TriPlanEx(private val split: TriSplittedPlan) extends AnyVal {
-    def render(): String = {
-      Seq(
-        split.shared.render().listing("Shared Plan"),
-        split.side.render().listing("Side Plan"),
-        split.primary.render().listing("Primary Plan"),
-      ).mkString("\n")
-    }
-  }
-
-}
+//object TriSplittedPlan {
+//  implicit final class TriPlanEx(private val split: TriSplittedPlan) extends AnyVal {
+//    def render(): String = {
+//      Seq(
+//        split.shared.render().listing("Shared Plan"),
+//        split.side.render().listing("Side Plan"),
+//        split.primary.render().listing("Primary Plan"),
+//      ).mkString("\n")
+//    }
+//  }
+//
+//}
