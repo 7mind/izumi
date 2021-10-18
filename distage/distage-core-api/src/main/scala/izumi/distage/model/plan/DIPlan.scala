@@ -116,36 +116,6 @@ object DIPlan {
       ModuleBase.make(userBindings)
     }
 
-    private def collectChildrenKeys[T: Tag]: Set[DIKey] = {
-      val tpe = SafeType.get[T]
-      steps.iterator.collect {
-        case op if op.instanceType <:< tpe => op.target
-      }.toSet
-    }
-
-    @deprecated("should be removed with OrderedPlan", "13/04/2021")
-    def collectChildrenKeysSplit[T1, T2](implicit t1: Tag[T1], t2: Tag[T2]): (Set[DIKey], Set[DIKey]) = {
-      if (t1.tag == t2.tag) {
-        (collectChildrenKeys[T1], Set.empty)
-      } else {
-        val tpe1 = SafeType.get[T1]
-        val tpe2 = SafeType.get[T2]
-
-        val res1 = Set.newBuilder[DIKey]
-        val res2 = Set.newBuilder[DIKey]
-
-        steps.foreach {
-          op =>
-            if (op.instanceType <:< tpe1) {
-              res1 += op.target
-            } else if (op.instanceType <:< tpe2) {
-              res2 += op.target
-            }
-        }
-        (res1.result(), res2.result())
-      }
-    }
-
     def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
 
     def renderDeps(key: DIKey): String = {
