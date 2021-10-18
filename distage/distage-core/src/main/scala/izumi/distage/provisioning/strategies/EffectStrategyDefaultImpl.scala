@@ -1,12 +1,11 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.fundamentals.platform.language.unused
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.reflect.TagK
 
 class EffectStrategyDefaultImpl extends EffectStrategy {

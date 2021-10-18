@@ -206,7 +206,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private[this] def checkOrThrow[F[_]: TagK](check: IntegrationCheck[F])(implicit F: QuasiIO[F]): F[Unit] = {
 //    System.err.println(s"cor on $check => ${check.resourcesAvailable()}")
 
-    F.map(check.resourcesAvailable()) {
+    F.flatMap(check.resourcesAvailable()) {
       case ResourceCheck.Success() =>
         F.unit
       case failure: ResourceCheck.Failure =>

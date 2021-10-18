@@ -72,7 +72,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
         verifier.verify(target, this.imports.keySet, instance, s"import")
         this.imports += (target -> instance)
 
-      case NewObjectOp.NewInstance(target, instance) =>
+      case NewObjectOp.NewInstance(target, _, instance) =>
         verifier.verify(target, this.instances.keySet, instance, "instance")
         this.instances += (target -> instance)
 
@@ -80,7 +80,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
         verifier.verify(target, this.instances.keySet, instance, "reference")
         this.instances += (target -> instance)
 
-      case r @ NewObjectOp.NewResource(target, instance, _) =>
+      case r @ NewObjectOp.NewResource(target, _, instance, _) =>
         verifier.verify(target, this.instances.keySet, instance, "resource")
         this.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer

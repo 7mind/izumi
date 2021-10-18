@@ -2,13 +2,12 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
 class ResourceStrategyDefaultImpl extends ResourceStrategy {

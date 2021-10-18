@@ -4,9 +4,8 @@ import izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefExc
 import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.OrderedSetShim
-import izumi.fundamentals.platform.language.unused
 
 import scala.collection.Iterable
 

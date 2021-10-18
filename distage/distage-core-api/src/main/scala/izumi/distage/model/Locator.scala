@@ -13,7 +13,6 @@ import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
 import scala.collection.immutable.Queue
-import scala.concurrent.duration.FiniteDuration
 
 /**
   * The object graph created by executing a `plan`.

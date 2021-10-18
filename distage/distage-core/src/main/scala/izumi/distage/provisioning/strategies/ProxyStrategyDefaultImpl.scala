@@ -1,18 +1,16 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions._
+import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.distage.model.exceptions.*
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
 import izumi.distage.model.provisioning.proxies.{ProxyDispatcher, ProxyProvider}
-import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
-import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
 /**

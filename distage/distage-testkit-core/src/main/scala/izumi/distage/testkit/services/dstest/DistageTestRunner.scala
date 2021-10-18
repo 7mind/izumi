@@ -1,27 +1,23 @@
 package izumi.distage.testkit.services.dstest
 
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import distage.*
 import izumi.distage.config.model.AppConfig
-import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.exceptions.{IntegrationCheckException, ProvisioningException}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp, TriSplittedPlan}
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.services.dstest.DistageTestRunner.*
+import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -32,6 +28,8 @@ import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
@@ -420,45 +418,25 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val (testIntegrationCheckKeysIdentity: Set[DIKey], testIntegrationCheckKeysEffect: Set[DIKey]) = (Set.empty[DIKey], Set.empty[DIKey])
-
-//    {
-//      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
-//      (res1 -- allSharedKeys, res2 -- allSharedKeys)
-//    }
-
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-    val newTestPlan = testInjector.ops.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
+    val newTestPlan = if (newRoots.nonEmpty) {
+      testInjector.plan(PlannerInput(newAppModule, activation, newRoots))
+    } else {
+      DIPlan.empty
+    }
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
       s"""Running test...
          |
-         |Test pre-integration plan: ${newTestPlan.shared}
-         |
-         |Test integration plan: ${newTestPlan.side}
-         |
-         |Test primary plan: ${newTestPlan.primary}""".stripMargin
+         |Test plan: $newTestPlan""".stripMargin
     )
 
-    val testIntegrationChecker = new IntegrationChecker.Impl[F](testLogger)
+    planChecker.verify(newTestPlan)
 
-    planChecker.verify(newTestPlan.shared)
-    planChecker.verify(newTestPlan.side)
-    planChecker.verify(newTestPlan.primary)
+    proceedIndividual(test, newTestPlan, mainSharedLocator)
 
-    // we are ready to run the test, finally
-    println(newTestPlan.shared.render())
-    testInjector.produceCustomF[F](newTestPlan.shared).use {
-      sharedLocator =>
-        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
-          integrationLocator =>
-            withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
-              proceedIndividual(test, newTestPlan.primary, integrationLocator)
-            }
-        }
-    }
   }
 
   protected def proceedIndividual(test: DistageTest[F], testPlan: DIPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {

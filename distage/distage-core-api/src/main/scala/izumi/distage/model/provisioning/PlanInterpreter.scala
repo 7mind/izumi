@@ -12,8 +12,6 @@ import izumi.fundamentals.platform.exceptions.IzThrowable
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
 
-import scala.concurrent.duration.Duration
-
 trait PlanInterpreter {
   def run[F[_]: TagK: QuasiIO](
     plan: DIPlan,
