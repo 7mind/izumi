@@ -30,7 +30,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
             F.suspendF {
               resource.extract(innerResource).fold(identity, F.pure).map {
                 instance =>
-                  Seq(NewObjectOp.NewResource[F](op.target, instance, () => resource.release(innerResource)))
+                  Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => resource.release(innerResource)))
               }
             }
         }
@@ -40,7 +40,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
         F.maybeSuspend {
           val innerResource = resourceIdentity.acquire
           val instance: Any = resourceIdentity.extract(innerResource).merge
-          Seq(NewObjectOp.NewResource[F](op.target, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource))))
+          Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource))))
         }
       case None =>
         throw new MissingRefException(s"Failed to fetch Lifecycle instance element $resourceKey", Set(resourceKey), None)

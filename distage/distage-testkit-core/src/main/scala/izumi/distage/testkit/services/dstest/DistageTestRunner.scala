@@ -2,25 +2,26 @@ package izumi.distage.testkit.services.dstest
 
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-import distage._
+import distage.*
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
-import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
+import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp, TriSplittedPlan}
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
-import izumi.distage.testkit.services.dstest.DistageTestRunner._
+import izumi.distage.testkit.services.dstest.DistageTestRunner.*
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

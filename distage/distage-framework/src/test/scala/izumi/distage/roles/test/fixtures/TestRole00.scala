@@ -1,6 +1,6 @@
 package izumi.distage.roles.test.fixtures
 
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.effect.QuasiIO

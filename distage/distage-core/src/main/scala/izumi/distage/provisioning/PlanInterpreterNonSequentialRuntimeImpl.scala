@@ -6,12 +6,15 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, UnexpectedDIException}
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, IntegrationCheckException, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
+import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
@@ -148,9 +151,44 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     for {
       out <- F.traverse(result.ops) {
         op =>
-          F.maybeSuspend {
-            Try(active.addResult(verifier, op)).toEither.left.map(t => UnexpectedDIException(result.key, t))
+          for {
+            _ <- op match {
+              case i: NewObjectOp.LocalInstance =>
+                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[Identity]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[Identity]]}")
+                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[F]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[F]]}")
+
+                if (i.implKey <:< SafeType.get[IntegrationCheck[Identity]]) {
+                  System.err.println(s"id: $i")
+
+                  F.maybeSuspend {
+                    Option(i.instance).map(i => checkOrThrow(i.asInstanceOf[IntegrationCheck[Identity]])) match {
+                      case Some(_) =>
+                        ()
+                      case None =>
+                        ()
+                    }
+                  }
+                } else if (i.implKey <:< SafeType.get[IntegrationCheck[F]]) {
+                  System.err.println(s"F: $i")
+                  Option(i.instance.asInstanceOf[IntegrationCheck[F]]) match {
+                    case Some(value) =>
+                      checkOrThrow(value)
+                    case None =>
+                      F.unit
+                  }
+                } else {
+                  F.unit
+                }
+              case _ =>
+                F.unit
+            }
+            out <- F.maybeSuspend {
+              Try(active.addResult(verifier, op)).toEither.left.map(t => UnexpectedDIException(result.key, t))
+            }
+          } yield {
+            out
           }
+
       }
     } yield {
       import izumi.functional.IzEither.*
@@ -163,6 +201,17 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       }
     }
 
+  }
+
+  private[this] def checkOrThrow[F[_]: TagK](check: IntegrationCheck[F])(implicit F: QuasiIO[F]): F[Unit] = {
+    System.err.println(s"cor on $check => ${check.resourcesAvailable()}")
+
+    F.map(check.resourcesAvailable()) {
+      case ResourceCheck.Success() =>
+        F.unit
+      case failure: ResourceCheck.Failure =>
+        F.fail(new IntegrationCheckException(NonEmptyList(failure)))
+    }
   }
 
   private[this] def verifyEffectType[F[_]: TagK](

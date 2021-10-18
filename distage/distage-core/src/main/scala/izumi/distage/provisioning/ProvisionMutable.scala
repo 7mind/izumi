@@ -76,6 +76,10 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
         verifier.verify(target, this.instances.keySet, instance, "instance")
         this.instances += (target -> instance)
 
+      case NewObjectOp.UseInstance(target, instance) =>
+        verifier.verify(target, this.instances.keySet, instance, "reference")
+        this.instances += (target -> instance)
+
       case r @ NewObjectOp.NewResource(target, instance, _) =>
         verifier.verify(target, this.instances.keySet, instance, "resource")
         this.instances += (target -> instance)

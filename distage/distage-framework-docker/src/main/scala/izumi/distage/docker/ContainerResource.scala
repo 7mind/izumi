@@ -8,7 +8,7 @@ import izumi.distage.docker.Docker._
 import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}

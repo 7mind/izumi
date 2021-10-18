@@ -1,7 +1,7 @@
 package izumi.distage.roles.test.fixtures
 
 import distage.LocatorRef
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
@@ -56,6 +56,7 @@ object Fixture {
 
   abstract class ProbeCheck[F[_]: QuasiIO] extends ProbeResource[F] with IntegrationCheck[F] {
     override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
+      System.err.println(s"!!!: $this")
       counter.onCheck(this)
       ResourceCheck.Success()
     }

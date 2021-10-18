@@ -41,8 +41,8 @@ class ProxyStrategyDefaultImpl(
     }
 
     Seq(
-      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy),
-      NewObjectOp.NewInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
+      NewObjectOp.UseInstance(makeProxy.target, proxyInstance.proxy),
+      NewObjectOp.UseInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
     )
   }
 
@@ -64,25 +64,35 @@ class ProxyStrategyDefaultImpl(
               F.pure(Left(value))
             case Right(value) =>
               value.toList match {
-                case NewObjectOp.NewInstance(_, instance) :: Nil =>
+                case NewObjectOp.UseInstance(_, instance) :: Nil =>
                   F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
                     .map(
                       _ =>
                         Right(
                           Seq(
-                            NewObjectOp.NewInstance(initProxy.target, instance)
+                            NewObjectOp.UseInstance(initProxy.target, instance)
+                          )
+                        )
+                    )
+                case NewObjectOp.NewInstance(_, tpe, instance) :: Nil =>
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.NewInstance(initProxy.target, tpe, instance)
                           )
                         )
                     )
 
-                case (r @ NewObjectOp.NewResource(_, instance, _)) :: Nil =>
+                case (r @ NewObjectOp.NewResource(_, tpe, instance, _)) :: Nil =>
                   val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
                   F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
                     .map(
                       _ =>
                         Right(
                           Seq(
-                            NewObjectOp.NewInstance(initProxy.target, instance),
+                            NewObjectOp.NewInstance(initProxy.target, tpe, instance),
                             NewObjectOp.NewFinalizer(target, finalizer),
                           )
                         )

@@ -22,6 +22,6 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy {
     }.toVector
 
     val instance = op.wiring.provider.unsafeApply(args)
-    Seq(NewObjectOp.NewInstance(op.target, instance))
+    Seq(NewObjectOp.NewInstance(op.target, op.instanceType, instance))
   }
 }

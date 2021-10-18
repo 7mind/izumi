@@ -1,10 +1,10 @@
 package izumi.distage.framework.services
 
-import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.collections.nonempty.NonEmptyList
@@ -41,7 +41,6 @@ object IntegrationChecker {
       effectIntegrations: Set[DIKey],
       integrationLocator: Locator,
     ): F[Option[NonEmptyList[ResourceCheck.Failure]]] = {
-      import scala.collection.compat._
 
       if (identityIntegrations.nonEmpty || effectIntegrations.nonEmpty) {
         logger.info(

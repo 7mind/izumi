@@ -2,7 +2,7 @@ package izumi.distage.framework.services
 
 import distage.{Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}

@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
@@ -180,15 +180,17 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
 //        Injector.inherit(_).produce(plans.app.shared).use {
-//          Injector.inherit(_).produce(plans.app.side).use {
-        locator =>
-          //integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
+        Injector.inherit[IO](_).produce(plans.app).use {
+          locator =>
+            //integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-          assert(probe.resources.getStartedCloseables().size == 3)
-          assert(probe.resources.getCheckedResources().size == 2)
-          assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+            IO {
+              assert(probe.resources.getStartedCloseables().size == 3)
+              assert(probe.resources.getCheckedResources().size == 2)
+              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+            }
+        }
       }
-//        }
 //      }
     }
 
@@ -217,17 +219,20 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 //      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
+      System.err.println(plans.app.render())
       Injector().produce(plans.runtime).use {
 //        Injector.inherit(_).produce(plans.app.shared).use {
-//          Injector.inherit(_).produce(plans.app.side).use {
-        locator =>
+        Injector.inherit[IO](_).produce(plans.app).use {
+          locator =>
 //              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-          assert(probe.resources.getStartedCloseables().size == 3)
-          assert(probe.resources.getCheckedResources().size == 2)
-          assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+            IO {
+              assert(probe.resources.getStartedCloseables().size == 3)
+              assert(probe.resources.getCheckedResources().size == 2)
+              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+            }
+        }
       }
-//        }
 //      }
     }
 
@@ -263,23 +268,25 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       Injector().produce(plans.runtime).use {
 //        Injector.inherit(_).produce(plans.app.shared).use {
-//          Injector.inherit(_).produce(plans.app.side).use {
-        locator =>
+        Injector.inherit[IO](_).produce(plans.app).use {
+          locator =>
 //              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
 
-          assert(initCounter.getStartedCloseables().size == 2)
-          assert(initCounter.getCheckedResources().size == 1)
-          assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
+            IO {
+              assert(initCounter.getStartedCloseables().size == 2)
+              assert(initCounter.getCheckedResources().size == 1)
+              assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
 
-          assert(initCounterIdentity.getStartedCloseables().size == 3)
-          assert(initCounterIdentity.getCheckedResources().size == 2)
-          assert(
-            initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
-              locator.get[IntegrationResource0[Identity]],
-              locator.get[IntegrationResource1[Identity]],
-            )
-          )
-//          }
+              assert(initCounterIdentity.getStartedCloseables().size == 3)
+              assert(initCounterIdentity.getCheckedResources().size == 2)
+              assert(
+                initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
+                  locator.get[IntegrationResource0[Identity]],
+                  locator.get[IntegrationResource1[Identity]],
+                )
+              )
+            }
+        }
 //        }
       }
     }

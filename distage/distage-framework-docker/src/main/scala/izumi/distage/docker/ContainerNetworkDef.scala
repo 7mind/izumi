@@ -4,7 +4,7 @@ import java.util.UUID
 
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
 import izumi.distage.docker.Docker.DockerReusePolicy
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid

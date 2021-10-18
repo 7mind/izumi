@@ -1,4 +1,4 @@
-package izumi.distage.framework.model.exceptions
+package izumi.distage.model.exceptions
 
 import izumi.distage.model.exceptions.DIException
 import izumi.fundamentals.collections.nonempty.NonEmptyList

@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.TagK
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.model.effect.QuasiIO

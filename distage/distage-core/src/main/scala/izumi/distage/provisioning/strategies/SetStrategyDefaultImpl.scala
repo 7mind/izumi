@@ -47,6 +47,6 @@ class SetStrategyDefaultImpl extends SetStrategy {
     }
 
     val asSet = new OrderedSetShim[Any](newSet.distinct)
-    Seq(NewObjectOp.NewInstance(op.target, asSet))
+    Seq(NewObjectOp.NewInstance(op.target, op.instanceType, asSet))
   }
 }

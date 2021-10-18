@@ -873,7 +873,7 @@ Forced roots may be configured per-activation / combination of activations, e.g.
 
 #### Using `IntegrationCheck`
 
-Implementation classes that inherit from @scaladoc[`izumi.distage.framework.model.IntegrationCheck`](izumi.distage.framework.model.IntegrationCheck)
+Implementation classes that inherit from @scaladoc[`izumi.distage.model.provisioning.IntegrationCheck`](izumi.distage.model.provisioning.IntegrationCheck)
 will have their `resourceCheck()` method called before the test instantiation to check if external test dependencies —
 such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources) —
 are available for the test (or for the role when in main scope).
