@@ -10,7 +10,7 @@ import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.{IntegrationCheckException, ProvisioningException}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, TriSplittedPlan}
+import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
@@ -117,13 +117,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     appModule: Module,
   ) = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
-    // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
     if (sharedKeys.nonEmpty) {
       injector.plan(PlannerInput(appModule, activation, sharedKeys))
     } else {
       DIPlan.empty
     }
-    //injector.ops.trisectByKeys(activation, appModule, sharedKeys)
   }
 
   private def prepareGroupPlans(
@@ -262,29 +260,18 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     parentLocator: Locator,
     planCheck: PlanCircularDependencyCheck,
     checker: IntegrationChecker[F],
-    plan: TriSplittedPlan,
+    plan: DIPlan,
     tests: => Iterable[DistageTest[F]],
   )(use: Locator => F[Unit]
   )(implicit
     F: QuasiIO[F]
   ): F[Unit] = {
+
     // shared plan
-    planCheck.verify(plan.shared)
-    Injector.inherit(parentLocator).produceCustomF[F](plan.shared).use {
-      sharedLocator =>
-        // integration plan
-        planCheck.verify(plan.side)
-        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
-          integrationSharedLocator =>
-            withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
-              // main plan
-              planCheck.verify(plan.primary)
-              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
-                mainSharedLocator =>
-                  use(mainSharedLocator)
-              }
-            }
-        }
+    planCheck.verify(plan)
+    Injector.inherit(parentLocator).produceCustomF[F](plan).use {
+      mainSharedLocator =>
+        use(mainSharedLocator)
     }
   }
 
@@ -321,12 +308,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     checker: IntegrationChecker[F],
     integrationLocator: Locator,
   )(tests: => Iterable[DistageTest[F]],
-    plans: TriSplittedPlan,
+    plans: DIPlan,
   )(onSuccess: => F[Unit]
   )(implicit
     F: QuasiIO[F]
   ): F[Unit] = {
-    checker.collectFailures(plans.sideRoots1, plans.sideRoots2, integrationLocator).flatMap {
+    checker.collectFailures(Set.empty, Set.empty, integrationLocator).flatMap {
       case Some(failures) =>
         F.maybeSuspend {
           ignoreIntegrationCheckFailedTests(tests, failures)
@@ -643,7 +630,7 @@ object DistageTestRunner {
     * Every change in tree structure may lead to test failed across all childs of the corrupted node.
     */
   final class MemoizationTree[F[_]] {
-    private[this] val children = TrieMap.empty[TriSplittedPlan, MemoizationTree[F]]
+    private[this] val children = TrieMap.empty[DIPlan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
     @inline def allTests: Iterable[PreparedTest[F]] = {
@@ -655,7 +642,7 @@ object DistageTestRunner {
     /** Root node traverse. User should never call children node directly. */
     def stateTraverse[State](
       initialState: State
-    )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+    )(stateAcquire: (State, DIPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -667,8 +654,8 @@ object DistageTestRunner {
 
     @inline private def stateTraverse_[State](
       initialState: State,
-      thisPlan: TriSplittedPlan,
-    )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+      thisPlan: DIPlan,
+    )(stateAcquire: (State, DIPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -683,7 +670,7 @@ object DistageTestRunner {
       // here we are filtering all empty plans to merge levels together
       plans match {
         case plan :: tail =>
-          val childTree = children.synchronized(children.getOrElseUpdate(TriSplittedPlan(DIPlan.empty, plan, DIPlan.empty, Set.empty, Set.empty), new MemoizationTree[F]))
+          val childTree = children.synchronized(children.getOrElseUpdate(plan, new MemoizationTree[F]))
           childTree.addEnv_(tail, levelTests)
         case Nil =>
           nodeTests.synchronized(nodeTests.append(levelTests))
