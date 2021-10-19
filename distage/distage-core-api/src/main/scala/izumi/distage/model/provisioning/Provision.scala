@@ -26,6 +26,7 @@ trait Provision[+F[_]] {
 
   @nowarn("msg=Unused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
+    import scala.collection.compat.*
     instances.map(IdentifiedRef.tupled).to(scala.collection.immutable.Seq)
   }
   def index: immutable.Map[DIKey, Any] = {
@@ -46,6 +47,7 @@ object Provision {
 
     @nowarn("msg=Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
+      import scala.collection.compat.*
       ProvisionImmutable(
         instancesImpl.filter(kv => allRequiredKeys.contains(kv._1)), // 2.13 compat
         imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat

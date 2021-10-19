@@ -36,6 +36,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 // TODO: integration check sharing?..
+// TODO: fix compile-time tests
+// TODO: remove outdated code
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
   isTestSkipException: Throwable => Boolean,

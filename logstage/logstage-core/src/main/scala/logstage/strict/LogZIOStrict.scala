@@ -52,12 +52,4 @@ object LogZIOStrict {
       }
     }
   }
-
-  @deprecated("renamed to logstage.strict.LogZIOStrict", "1.0")
-  type LogZIOStrict = logstage.strict.LogZIOStrict
-  @deprecated("renamed to logstage.strict.LogZIOStrict", "1.0")
-  object LogZIOStrict {
-    @deprecated("renamed to logstage.strict.LogZIOStrict.Service", "1.0")
-    type Service = logstage.strict.LogZIOStrict.Service
-  }
 }

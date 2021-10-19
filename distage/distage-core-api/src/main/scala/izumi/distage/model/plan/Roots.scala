@@ -61,7 +61,4 @@ object Roots {
     * Also this mode is slower, because an additional tracing pass is required to determine actual root components.
     */
   case object Everything extends Roots
-
-  @deprecated("GCMode.NoGC has been renamed to `Roots.Everything`", "old name will be deleted in 1.1.1")
-  lazy val NoGC: Everything.type = Everything
 }

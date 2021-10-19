@@ -138,9 +138,6 @@ object ModuleBase {
     def untagged[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.map(_.withTags(Set.empty)))
     }
-
-    @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
-    def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = overriddenBy(that)
   }
 
   private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {

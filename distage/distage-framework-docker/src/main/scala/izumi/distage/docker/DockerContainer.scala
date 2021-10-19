@@ -150,13 +150,6 @@ object DockerContainer {
           old.copy(networks = old.networks + net)
       }
     }
-
-    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] =
-      dependOnContainer[containerDecl.Tag]
-
-    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = dependOnContainer[T2]
   }
 
 }

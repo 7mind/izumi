@@ -130,8 +130,6 @@ object BIO3Syntax {
     extends BIOBracket3Ops(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "will be removed in 1.1.0")
-    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable
@@ -352,19 +350,11 @@ object BIO3Syntax {
       new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOArrow[FR[-_, +_, +_]: Arrow3]: Arrow3[FR] = implicitly
   }
-  trait BIOImplicitPuns19 extends BIOImplicitPuns20 {
+  trait BIOImplicitPuns19 {
     @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: Profunctor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOProfunctorOps[FR, R, E, A] =
       new BIO3Syntax.BIOProfunctorOps[FR, R, E, A](self)
     @inline implicit final def BIOProfunctor[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOFunctor3Ops[FR, R, E, A] =
       new BIO3Syntax.BIOFunctor3Ops[FR, R, E, A](self)
     @inline final def BIOProfunctor[FR[-_, +_, +_]: Profunctor3]: Profunctor3[FR] = implicitly
   }
-  trait BIOImplicitPuns20 {
-    @deprecated("Use Error3", "will be removed in 1.1.0")
-    @inline implicit final def BIOMonadError3[FR[-_, +_, +_]: Error3, R, E, A](self: FR[R, E, A]): BIO3Syntax.BIOError3Ops[FR, R, E, A] =
-      new BIO3Syntax.BIOError3Ops[FR, R, E, A](self)
-    @deprecated("Use Error3", "will be removed in 1.1.0")
-    @inline final def BIOMonadError3[FR[-_, +_, +_]: Error3]: Error3[FR] = implicitly
-  }
-
 }

@@ -10,9 +10,6 @@ trait Axis { self =>
   abstract class AxisChoiceDef extends AxisChoice {
     override val axis: Axis = self
   }
-
-  @deprecated("Renamed to AxisChoiceDef", "1.0")
-  final type AxisValueDef = AxisChoiceDef
 }
 
 object Axis {
@@ -24,11 +21,5 @@ object Axis {
     final def toAxisPoint: AxisPoint = AxisPoint(axis.name, value)
 
     override final def toString: String = s"$axis:$value"
-
-    @deprecated("Renamed to `value`", "1.0")
-    final def id: String = value
   }
-
-  @deprecated("Renamed to AxisChoice", "1.0")
-  type AxisValue = AxisChoice
 }

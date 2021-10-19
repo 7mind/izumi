@@ -5,6 +5,7 @@ import izumi.distage.model.provisioning.{NewObjectOp, OpStatus}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
@@ -78,12 +79,16 @@ case class TraversalState(
 }
 
 object TraversalState {
-  def apply(preds: IncidenceMatrix[DIKey]): TraversalState = TraversalState(
-    preds,
-    Set.empty,
-    mutable.ArrayBuffer.empty,
-    preds.links.keySet.map(k => (k, OpStatus.Planned())).to(mutable.HashMap),
-  )
+  def apply(preds: IncidenceMatrix[DIKey]): TraversalState = {
+    val todo = mutable.HashMap[DIKey, OpStatus]()
+    todo ++= preds.links.keySet.map(k => (k, OpStatus.Planned()))
+    TraversalState(
+      preds,
+      Set.empty,
+      mutable.ArrayBuffer.empty,
+      todo,
+    )
+  }
 
   sealed trait Current
   case class Step(steps: Set[DIKey]) extends Current

@@ -28,11 +28,6 @@ final case class PluginConfig(
 
   def cachePackages(cachePackages: Boolean): PluginConfig = copy(cachePackages = cachePackages)
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)
-
-  @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
-  def overridenBy(plugins: Seq[PluginBase]): PluginConfig = overriddenBy(plugins)
-  @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
-  def overridenBy(plugin: PluginBase): PluginConfig = overriddenBy(plugin)
 }
 
 object PluginConfig {
@@ -76,9 +71,4 @@ object PluginConfig {
   lazy val empty: PluginConfig = const(Nil)
 
   private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)
-
-  @deprecated("Renamed to `compileTime`", "1.0")
-  def static(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
-  @deprecated("renamed to `.compileTime`", "1.0")
-  def staticallyAvailablePlugins(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
 }

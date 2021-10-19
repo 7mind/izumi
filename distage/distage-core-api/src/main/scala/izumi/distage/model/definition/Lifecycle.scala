@@ -1041,36 +1041,6 @@ object Lifecycle extends LifecycleCatsInstances {
       }
     }
   }
-
-  @deprecated("renamed to AdaptFunctoid", "1.0")
-  type AdaptProvider[A] = AdaptFunctoidImpl[A]
-  @deprecated("renamed to AdaptFunctoid", "1.0")
-  lazy val AdaptProvider: AdaptFunctoidImpl.type = AdaptFunctoidImpl
-
-  @deprecated("renamed to LifecycleTag", "1.0")
-  type ResourceTag[R] = LifecycleTagImpl[R]
-  @deprecated("renamed to LifecycleTag", "1.0")
-  lazy val ResourceTag: LifecycleTagImpl.type = LifecycleTagImpl
-
-  @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
-  type TrifunctorHasResourceTag[R0, T] = TrifunctorHasLifecycleTagImpl[R0, T]
-  @deprecated("renamed to TrifunctorHasLifecycleTag", "1.0")
-  lazy val TrifunctorHasResourceTag: TrifunctorHasLifecycleTagImpl.type = TrifunctorHasLifecycleTagImpl
-
-  @deprecated("Use distage.Lifecycle", "1.0")
-  type DIResourceBase[+F[_], +A] = Lifecycle[F, A]
-  object DIResourceBase {
-    @deprecated("Use distage.Lifecycle.NoCloseBase", "1.0")
-    type NoClose[+F[_], +A] = NoCloseBase[F, A]
-  }
-
-  @deprecated("renamed to fromAutoCloseable", "1.0")
-  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: QuasiIO[F]): Lifecycle[F, A] = fromAutoCloseable(acquire)
-
-  @deprecated("bincompat, will be removed in 1.1.0", "1.0.6")
-  private[distage] def pure[F[_], A](a: A)(implicit F: QuasiApplicative[F]): Lifecycle[F, A] = {
-    Lifecycle.liftF(F.pure(a))
-  }
 }
 
 private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {

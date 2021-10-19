@@ -237,35 +237,6 @@ trait Injector[F[_]] extends Planner with Producer {
     produceDetailedCustomF[Identity](plan(plannerInput))
   }
 
-  @deprecated("Use .produceRun. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceRunF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] =
-    produceRun[A](bindings, activation)(function)
-  @deprecated("Use .produceEval. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceEvalF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): Lifecycle[F, A] =
-    produceEval[A](bindings, activation)(function)
-
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] =
-    produceGet[A](bindings, activation)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase): Lifecycle[F, A] =
-    produceGet[A](bindings)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] =
-    produceGet[A](name)(bindings, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(input: PlannerInput): Lifecycle[F, Locator] =
-    produce(input)
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] =
-    produce(bindings, roots, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(plan: DIPlan): Lifecycle[F, Locator] = {
-    produceCustomF[F](plan)
-  }
-
   /**
     * Efficiently check all possible paths for the given module to the given `roots`,
     *

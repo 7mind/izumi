@@ -164,9 +164,6 @@ object Syntax2 {
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
-
-    @deprecated("renamed to sandboxExit", "will be removed in 1.1.0")
-    @inline final def sandboxBIOExit: F[Nothing, Exit[E, A]] = sandboxExit
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {
