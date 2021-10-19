@@ -24,11 +24,11 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
 
   def makeFailure(state: TraversalState, fullStackTraces: Boolean): FailedProvision[F] = {
     val diag = if (state.failures.isEmpty) {
-      ProvisioningFailure.BrokenGraph(state.preds, state.status.toMap)
+      ProvisioningFailure.BrokenGraph(state.preds, state.status())
     } else {
-      ProvisioningFailure.AggregateFailure(state.preds, state.failures.toVector, state.status.toMap)
+      ProvisioningFailure.AggregateFailure(state.preds, state.failures, state.status())
     }
-    val meta = FailedProvisionMeta(state.status.toMap)
+    val meta = FailedProvisionMeta(state.status())
 
     FailedProvision(
       toImmutable,
@@ -41,7 +41,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
   }
 
   def finish(state: TraversalState): LocatorDefaultImpl[F] = {
-    val meta = LocatorMeta(state.status.toMap)
+    val meta = LocatorMeta(state.status())
     val finalLocator =
       new LocatorDefaultImpl(diplan, Option(parentContext), meta, toImmutable)
     locatorRef.ref.set(Right(finalLocator))

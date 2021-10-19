@@ -56,7 +56,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     val ctx = ProvisionMutable[F](diplan, parentContext)
 
     def run(state: TraversalState): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-      state.current() match {
+      state.current match {
         case TraversalState.Step(steps) =>
           val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)))
 

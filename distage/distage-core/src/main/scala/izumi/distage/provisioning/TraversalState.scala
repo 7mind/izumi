@@ -39,41 +39,51 @@ object TimedResult {
   }
 }
 
-case class TraversalState(
-  preds: IncidenceMatrix[DIKey],
-  knownBroken: Set[DIKey],
-  failures: mutable.ArrayBuffer[ProvisionerIssue],
-  status: mutable.HashMap[DIKey, OpStatus],
+final class TraversalState(
+  val current: TraversalState.Current,
+  val preds: IncidenceMatrix[DIKey],
+  val knownBroken: Set[DIKey],
+  val failures: Vector[ProvisionerIssue],
+  _status: mutable.HashMap[DIKey, OpStatus],
 ) {
-  def current(): TraversalState.Current = {
-    val (current, next) = preds.links.partition(_._2.isEmpty)
-    if (current.isEmpty) {
+  def status(): Map[DIKey, OpStatus] = _status.toMap
+
+  @nowarn("msg=Unused import")
+  def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
+    import scala.collection.compat.*
+
+    val nextPreds = preds.without(finished.map(_.key).toSet)
+
+    val broken = issues.map(_.key).toSet
+    val currentBroken = knownBroken ++ broken
+    val withBrokenDeps = nextPreds.links.filter(_._2.intersect(currentBroken).nonEmpty)
+    val newBroken = currentBroken ++ withBrokenDeps.keySet
+
+    val newFailures = failures ++ issues.flatMap(_.issues)
+    _status ++= finished.map(k => (k.key, OpStatus.Success(k.time)))
+    _status ++= issues.map(k => (k.key, OpStatus.Failure(k.issues, k.time)))
+    assert(issues.map(_.key).distinct.size == issues.size)
+
+    val (current, next) = nextPreds.links.view
+      .filterKeys(k => !newBroken.contains(k))
+      .partition(_._2.isEmpty)
+
+    val step = if (current.isEmpty) {
       if (next.isEmpty) {
         TraversalState.Done()
       } else {
-        TraversalState.CannotProgress(preds)
+        TraversalState.CannotProgress(nextPreds)
       }
     } else {
-      TraversalState.Step(current.keySet)
+      TraversalState.Step(current.map(_._1).toSet)
     }
-  }
 
-  def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
-    val broken = issues.map(_.key).toSet
-    val currentBroken = knownBroken ++ broken
-    val withBrokenDeps = preds.links.filter(_._2.intersect(currentBroken).nonEmpty)
-    val newBroken = currentBroken ++ withBrokenDeps.keySet
-
-    failures ++= issues.flatMap(_.issues)
-    status ++= finished.map(k => (k.key, OpStatus.Success(k.time)))
-    status ++= issues.map(k => (k.key, OpStatus.Failure(k.issues, k.time)))
-    assert(issues.map(_.key).distinct.size == issues.size)
-
-    TraversalState(
-      preds.without(finished.map(_.key).toSet ++ newBroken),
+    new TraversalState(
+      step,
+      nextPreds,
       newBroken,
-      failures,
-      status,
+      newFailures,
+      _status,
     )
   }
 }
@@ -82,16 +92,17 @@ object TraversalState {
   def apply(preds: IncidenceMatrix[DIKey]): TraversalState = {
     val todo = mutable.HashMap[DIKey, OpStatus]()
     todo ++= preds.links.keySet.map(k => (k, OpStatus.Planned()))
-    TraversalState(
+    new TraversalState(
+      Step(Set.empty),
       preds,
       Set.empty,
-      mutable.ArrayBuffer.empty,
+      Vector.empty,
       todo,
     )
   }
 
   sealed trait Current
-  case class Step(steps: Set[DIKey]) extends Current
+  case class Step(steps: collection.Set[DIKey]) extends Current
   case class Done() extends Current
   case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
 }

@@ -19,7 +19,12 @@ object NewObjectOp {
   /** Marks a reused instance from current locator context
     */
   final case class UseInstance(key: DIKey, instance: Any) extends NewObjectOp
-  final case class NewFinalizer[F[_]](key: DIKey, finalizer: () => F[Unit]) extends NewObjectOp
+
+  /** Marks a reused instance from parent locator context
+    */
   final case class NewImport(key: DIKey, instance: Any) extends NewObjectOp
+
+  final case class NewFinalizer[F[_]](key: DIKey, finalizer: () => F[Unit]) extends NewObjectOp
+
   final case class UpdatedSet(key: DIKey, set: Set[Any]) extends NewObjectOp
 }

@@ -25,9 +25,4 @@ object ProvisioningFailure {
   final case class AggregateFailure(graph: IncidenceMatrix[DIKey], failures: Seq[ProvisionerIssue], status: Map[DIKey, OpStatus]) extends ProvisioningFailure
 
   final case class BrokenGraph(graph: IncidenceMatrix[DIKey], status: Map[DIKey, OpStatus]) extends ProvisioningFailure
-
-//  final case class StepProvisioningFailure(
-//    op: ExecutableOp,
-//    failure: Throwable,
-//  ) extends ProvisioningFailure
 }
