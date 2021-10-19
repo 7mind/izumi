@@ -175,15 +175,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-//        Injector.inherit(_).produce(plans.app.shared).use {
         Injector.inherit[IO](_).produce(plans.app).use {
           locator =>
-            //integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
-
             IO {
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
@@ -191,7 +187,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
             }
         }
       }
-//      }
     }
 
     "integration checks are discovered and ran from resource bindings" in {
@@ -216,16 +211,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
-      System.err.println(plans.app.render())
       Injector().produce(plans.runtime).use {
-//        Injector.inherit(_).produce(plans.app.shared).use {
         Injector.inherit[IO](_).produce(plans.app).use {
           locator =>
-//              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
-
             IO {
               assert(probe.resources.getStartedCloseables().size == 3)
               assert(probe.resources.getCheckedResources().size == 2)
@@ -233,7 +223,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
             }
         }
       }
-//      }
     }
 
     "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
@@ -262,16 +251,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
       )
-//      val integrationChecker = new IntegrationChecker.Impl[IO](logger)
 
       val plans = roleAppPlanner.makePlan(roots)
 
       Injector().produce(plans.runtime).use {
-//        Injector.inherit(_).produce(plans.app.shared).use {
         Injector.inherit[IO](_).produce(plans.app).use {
           locator =>
-//              integrationChecker.checkOrFail(plans.app.sideRoots1, plans.app.sideRoots2, locator).unsafeRunSync()
-
             IO {
               assert(initCounter.getStartedCloseables().size == 2)
               assert(initCounter.getCheckedResources().size == 1)
@@ -287,7 +272,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               )
             }
         }
-//        }
       }
     }
 
