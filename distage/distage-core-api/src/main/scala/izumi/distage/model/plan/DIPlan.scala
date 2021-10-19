@@ -48,22 +48,7 @@ object DIPlan {
   implicit final class DIPlanSyntax(private val plan: DIPlan) extends AnyVal {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
 
-    @deprecated("could be removed with OrderedPlan (returned steps are no longer ordered)", "13/04/2021")
-    def steps: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
-
-    /**
-      * Get all imports (unresolved dependencies).
-      *
-      * Note, presence of imports does not *always* mean
-      * that a plan is invalid, imports may be fulfilled by a parent
-      * `Locator`, by BootstrapContext, or they may be materialized by
-      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
-      *
-      * @see [[distage.Injector#assert]] for a check you can use in tests
-      */
-    def getImports: Iterable[ImportDependency] = {
-      steps.collect { case i: ImportDependency => i }
-    }
+    def stepsUnordered: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
 
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
@@ -102,20 +87,6 @@ object DIPlan {
       DIPlan(DG(s.transposed, s, m), plan.input)
     }
 
-    @deprecated("should be removed with OrderedPlan", "13/04/2021")
-    def definition: ModuleBase = {
-      val userBindings = steps.flatMap {
-        op =>
-          op.origin.value match {
-            case OperationOrigin.UserBinding(binding) =>
-              Seq(binding)
-            case _ =>
-              Seq.empty
-          }
-      }.toSet
-      ModuleBase.make(userBindings)
-    }
-
     def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
 
     def renderDeps(key: DIKey): String = {
@@ -135,53 +106,6 @@ object DIPlan {
   }
 
   implicit final class DIPlanAssertionSyntax(private val plan: DIPlan) extends AnyVal {
-
-    /**
-      * Check for any unresolved dependencies,
-      * or for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`,
-      * or for any other issue that would cause [[izumi.distage.model.Injector#produce Injector.produce]] to fail
-      *
-      * If this returns `F.unit` then the wiring is generally correct,
-      * modulo runtime exceptions in user code,
-      * and `Injector.produce` should succeed.
-      *
-      * However, presence of imports does not *always* mean
-      * that a plan is invalid, imports may be fulfilled by a parent
-      * `Locator`, by BootstrapContext, or they may be materialized by
-      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
-      *
-      * An effect is compatible if it's a subtype of `F` or is a type equivalent to [[izumi.fundamentals.platform.functional.Identity]] (e.g. `cats.Id`)
-      *
-      * Will `F.fail` the effect with [[izumi.distage.model.exceptions.InvalidPlanException]] if there are issues.
-      *
-      * @tparam F effect type to check against
-      */
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
-    final def assertValid[F[_]: QuasiIO: TagK](ignoredImports: DIKey => Boolean = Set.empty): F[Unit] = {
-      isValid(ignoredImports).fold(QuasiIO[F].unit)(QuasiIO[F].fail(_))
-    }
-
-    /**
-      * Same as [[assertValid]], but throws an [[izumi.distage.model.exceptions.InvalidPlanException]] if there are unresolved imports
-      *
-      * @throws izumi.distage.model.exceptions.InvalidPlanException if there are issues
-      */
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
-    final def assertValidOrThrow[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Unit = {
-      isValid(ignoredImports).fold(())(throw _)
-    }
-
-    /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-    @deprecated("Use distage.Injector#verify", "20.07.2021")
-    final def isValid[F[_]: TagK](ignoredImports: DIKey => Boolean = Set.empty): Option[InvalidPlanException] = {
-      import izumi.fundamentals.platform.strings.IzString._
-      val unresolved = unresolvedImports(ignoredImports).fromNonEmptyList.map(op => MissingInstanceException.format(op.target, op.references))
-      val effects = incompatibleEffectType[F].fromNonEmptyList.map(op => IncompatibleEffectTypesException.format(op, SafeType.getK[F], op.effectHKTypeCtor))
-      for {
-        allErrors <- NonEmptyList.from(unresolved ++ effects)
-      } yield new InvalidPlanException(allErrors.toList.niceList(shift = ""))
-    }
-
     /**
       * Check for any unresolved dependencies.
       *
@@ -198,7 +122,7 @@ object DIPlan {
       */
     final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
       val locatorRefKey = DIKey[LocatorRef]
-      val nonMagicImports = plan.steps.iterator.collect {
+      val nonMagicImports = plan.stepsUnordered.iterator.collect {
         case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
       }.toList
       NonEmptyList.from(nonMagicImports)
@@ -215,7 +139,7 @@ object DIPlan {
       */
     final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
       val effectType = SafeType.getK[F]
-      val badSteps = plan.steps.iterator.collect {
+      val badSteps = plan.stepsUnordered.iterator.collect {
         case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
       }.toList
       NonEmptyList.from(badSteps)

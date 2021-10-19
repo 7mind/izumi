@@ -2,11 +2,10 @@ package izumi.distage.planning.sequential
 
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError.BUG_UnableToFindLoop
-import izumi.distage.model.exceptions.SanityCheckFailedException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.planning.ForwardingRefResolver
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector
@@ -20,7 +19,7 @@ class ForwardingRefResolverDefaultImpl(
   breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {
 
-  import scala.collection.compat._
+  import scala.collection.compat.*
 
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
@@ -104,10 +103,10 @@ class ForwardingRefResolverDefaultImpl(
       }
     }
 
+    import izumi.functional.IzEither.*
     for {
       _ <- next(plan.predecessors.links)
-    } yield {
-      replacements.foreach {
+      _ <- replacements.map {
         case (in, repls) =>
           val orig = updatedPlan(in)
           assert(orig != null)
@@ -116,19 +115,23 @@ class ForwardingRefResolverDefaultImpl(
           assert(maybeIdx.forall(_._2.size == 1))
           val idx = repls.toMap
 
-          val upd = orig match {
-            case op: InstantiationOp =>
-              op.replaceKeys(identity, k => idx.getOrElse(k, k))
-            case mp: ProxyOp.MakeProxy =>
-              mp.copy(op = mp.op.replaceKeys(identity, k => idx.getOrElse(k, k)))
-            case o =>
-              throw new SanityCheckFailedException(s"BUG: $o is not an operation which expected to be a user of a cycle")
+          for {
+            upd <- orig match {
+              case op: InstantiationOp =>
+                Right(op.replaceKeys(identity, k => idx.getOrElse(k, k)))
+              case mp: ProxyOp.MakeProxy =>
+                Right(mp.copy(op = mp.op.replaceKeys(identity, k => idx.getOrElse(k, k))))
+              case o =>
+                Left(List(LoopResolutionError.BUG_NotALoopMember(o)))
+            }
+          } yield {
+            val preds = updatedPredcessors(in)
+            updatedPredcessors.put(in, preds.map(k => idx.getOrElse(k, k)))
+            updatedPlan.put(in, upd)
+            ()
           }
-          val preds = updatedPredcessors(in)
-          updatedPredcessors.put(in, preds.map(k => idx.getOrElse(k, k)))
-          updatedPlan.put(in, upd)
-      }
-
+      }.biAggregate
+    } yield {
       val p = IncidenceMatrix(updatedPredcessors.view.mapValues(_.toSet).toMap)
       DG.fromPred(p, GraphMeta(updatedPlan.toMap))
     }

@@ -19,7 +19,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
 
     val context = injector.produce(plan).unsafeGet()
-    assert(context.parent.exists(_.plan.steps.nonEmpty))
+    assert(context.parent.exists(_.plan.stepsUnordered.nonEmpty))
     val instantiated = context.get[TestClass]
     assert(instantiated.b == null)
   }

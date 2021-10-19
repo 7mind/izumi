@@ -159,7 +159,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
       val injectorEnv = injector.providedEnvironment
 
-      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.steps.filterNot(variableBsKeys contains _.target)
+      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target)
       val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
       val planner = injectorEnv.planner
 

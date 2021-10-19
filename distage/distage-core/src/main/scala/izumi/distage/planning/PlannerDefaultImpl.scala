@@ -186,6 +186,9 @@ class PlannerDefaultImpl(
       s"There are no operations for the following plan roots: ${roots.niceList()}"
   }
   def formatError(e: LoopResolutionError): String = e match {
+    case LoopResolutionError.BUG_NotALoopMember(badOp) =>
+      s"BUG: ${badOp.target} is not an operation which expected to be a user of a cycle"
+
     case LoopResolutionError.BUG_UnableToFindLoop(predcessors) =>
       s"BUG: Failed to break circular dependencies, loop detector failed on matrix $predcessors which is expected to contain a loop"
 

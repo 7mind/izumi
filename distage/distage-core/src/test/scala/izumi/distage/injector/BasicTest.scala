@@ -35,7 +35,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
+    assert(plan.stepsUnordered.exists(_.isInstanceOf[ImportDependency]))
 
     val exc = intercept[ProvisioningException] {
       injector.produce(plan).unsafeGet()

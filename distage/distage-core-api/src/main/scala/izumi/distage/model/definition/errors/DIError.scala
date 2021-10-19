@@ -13,6 +13,7 @@ object DIError {
   sealed trait LoopResolutionError extends DIError
 
   object LoopResolutionError {
+    final case class BUG_NotALoopMember(op: ExecutableOp) extends LoopResolutionError
     final case class BUG_UnableToFindLoop(predcessors: Map[DIKey, Set[DIKey]]) extends LoopResolutionError
     final case class BUG_BestLoopResolutionIsNotSupported(op: ExecutableOp.SemiplanOp) extends LoopResolutionError
     final case class BestLoopResolutionCannotBeProxied(op: InstantiationOp) extends LoopResolutionError

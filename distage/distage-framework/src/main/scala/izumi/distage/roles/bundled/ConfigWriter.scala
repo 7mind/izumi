@@ -120,7 +120,7 @@ final class ConfigWriter[F[_]](
       .makePlan(Set(roleDIKey))
 
     def getConfig(plan: DIPlan): Iterator[ConfigPath] = {
-      plan.steps.iterator.collect {
+      plan.stepsUnordered.iterator.collect {
         case ExtractConfigPath(path) => path
       }
     }
@@ -128,7 +128,7 @@ final class ConfigWriter[F[_]](
     val resolvedConfig =
       getConfig(plans.app).toSet + _HackyMandatorySection
 
-    if (plans.app.steps.exists(_.target == roleDIKey)) {
+    if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
       Some(ConfigWriter.minimized(resolvedConfig, config))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
