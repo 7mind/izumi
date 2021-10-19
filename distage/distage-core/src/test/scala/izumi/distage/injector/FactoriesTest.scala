@@ -189,7 +189,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
         import FactoryCase1._
 
         // FIXME: `make` support? should be compile-time error
-        val definition = PlannerInput.noGc(new ModuleDef {
+        val definition = PlannerInput.everything(new ModuleDef {
           make[FactoryProducingFactory]
           make[Dependency]
         })

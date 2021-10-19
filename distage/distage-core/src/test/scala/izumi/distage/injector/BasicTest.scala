@@ -96,7 +96,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       assertCompiles("""
         import BadAnnotationsCase._
 
-        val definition = PlannerInput.noGc(new ModuleDef {
+        val definition = PlannerInput.everything(new ModuleDef {
           make[TestDependency0]
           make[TestClass]
         })

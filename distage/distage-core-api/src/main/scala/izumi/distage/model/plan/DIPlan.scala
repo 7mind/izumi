@@ -1,17 +1,15 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.{Locator, PlannerInput}
 import izumi.distage.model.definition.{Identifier, ModuleBase}
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.{DIBugException, IncompatibleEffectTypesException, InvalidPlanException, MissingInstanceException}
+import izumi.distage.model.exceptions.DIBugException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.{Locator, PlannerInput}
 import izumi.functional.Renderable
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -154,7 +152,7 @@ object DIPlan {
 
     @nowarn("msg=Unused import")
     def resolveImports(f: PartialFunction[ImportDependency, Any]): DIPlan = {
-      import scala.collection.compat._
+      import scala.collection.compat.*
 
       val dg = plan.plan
       plan.copy(plan = dg.copy(meta = GraphMeta(dg.meta.nodes.view.mapValues {
