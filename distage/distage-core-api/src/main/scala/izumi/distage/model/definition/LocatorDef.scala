@@ -7,15 +7,15 @@ import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AliasTo, SetId, SetImpl}
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
+import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.plan._
+import izumi.distage.model.plan.*
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.distage.model.{Locator, PlannerInput}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}

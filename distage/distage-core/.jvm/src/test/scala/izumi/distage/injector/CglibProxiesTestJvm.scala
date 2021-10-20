@@ -1,11 +1,11 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.CircularCases._
+import distage.*
+import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
 import izumi.distage.fixtures.ResourceCases.{CircularResourceCase, Ref, Suspend2}
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
-import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import izumi.fundamentals.platform.functional.Identity

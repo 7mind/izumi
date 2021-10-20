@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.InvalidPlanException
+import izumi.distage.model.exceptions.interpretation.InvalidPlanException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.ProviderStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}

@@ -1,14 +1,15 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.fixtures.SetCases._
+import distage.*
+import izumi.distage.fixtures.BasicCases.*
+import izumi.distage.fixtures.SetCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.conflicts.ConflictResolutionError
-import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException}
+import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException

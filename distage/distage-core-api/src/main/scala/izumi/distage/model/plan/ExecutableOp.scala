@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.exceptions.DIBugException
+import izumi.distage.model.exceptions.planning.DIBugException
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin

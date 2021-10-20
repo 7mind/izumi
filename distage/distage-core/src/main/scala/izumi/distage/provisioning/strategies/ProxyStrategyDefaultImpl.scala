@@ -2,7 +2,7 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.*
+import izumi.distage.model.exceptions.interpretation.{MissingProxyAdapterException, ProvisionerIssue, UnexpectedProvisionResultException, UnsupportedProxyOpException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
@@ -24,24 +24,36 @@ class ProxyStrategyDefaultImpl(
 ) extends ProxyStrategyDefaultImplPlatformSpecific(proxyProvider, mirrorProvider)
   with ProxyStrategy {
 
-  override def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
+  override def makeProxy[F[_]: TagK](
+    context: ProvisioningKeyProvider,
+    makeProxy: ProxyOp.MakeProxy,
+  )(implicit F: QuasiIO[F]
+  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
-    val proxyInstance = if (cogenNotRequired) {
-      val proxy = new ByNameDispatcher(makeProxy.target)
-      DeferredInit(proxy, proxy)
-    } else {
-      val tpe = proxyTargetType(makeProxy)
-      if (!mirrorProvider.canBeProxied(tpe)) {
-        failCogenProxy(tpe, makeProxy)
+    F.maybeSuspend {
+      for {
+        proxyInstance <-
+          if (cogenNotRequired) {
+            val proxy = new ByNameDispatcher(makeProxy.target)
+            Right(DeferredInit(proxy, proxy))
+          } else {
+            for {
+              tpe <- proxyTargetType(makeProxy)
+            } yield {
+              if (!mirrorProvider.canBeProxied(tpe)) {
+                failCogenProxy(tpe, makeProxy)
+              }
+              makeCogenProxy(context, tpe, makeProxy)
+            }
+          }
+      } yield {
+        Seq(
+          NewObjectOp.UseInstance(makeProxy.target, proxyInstance.proxy),
+          NewObjectOp.UseInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
+        )
       }
-      makeCogenProxy(context, tpe, makeProxy)
     }
-
-    Seq(
-      NewObjectOp.UseInstance(makeProxy.target, proxyInstance.proxy),
-      NewObjectOp.UseInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
-    )
   }
 
   override def initProxy[F[_]: TagK](
@@ -97,30 +109,30 @@ class ProxyStrategyDefaultImpl(
                     )
 
                 case r =>
-                  throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
+                  F.pure(Left(UnexpectedProvisionResultException(key, r)))
               }
           }
 
       case _ =>
-        throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
+        F.pure(Left(MissingProxyAdapterException(key, initProxy)))
     }
   }
 
-  protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
+  protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): Either[ProvisionerIssue, SafeType] = {
     makeProxy.op match {
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-        SafeType.get[FakeSet[?]]
+        Right(SafeType.get[FakeSet[?]])
       case op: WiringOp.CallProvider =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: MonadicOp.AllocateResource =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: MonadicOp.ExecuteEffect =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: WiringOp.UseInstance =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+        Left(UnsupportedProxyOpException(op))
       case op: WiringOp.ReferenceKey =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+        Left(UnsupportedProxyOpException(op))
     }
   }
 

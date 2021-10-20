@@ -1,14 +1,14 @@
 package izumi.distage.injector
 
 import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
-import izumi.distage.fixtures.PlanVerifierCases._
+import izumi.distage.fixtures.PlanVerifierCases.*
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.ConflictResolutionException
+import izumi.distage.model.exceptions.planning.ConflictResolutionException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
+import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException

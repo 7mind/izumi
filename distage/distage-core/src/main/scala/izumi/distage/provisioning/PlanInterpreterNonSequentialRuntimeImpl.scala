@@ -6,7 +6,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, IntegrationCheckException, UnexpectedDIException}
+import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*

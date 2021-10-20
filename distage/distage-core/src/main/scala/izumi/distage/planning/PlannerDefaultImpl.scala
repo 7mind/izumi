@@ -7,19 +7,20 @@ import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError, VerificationError}
 import izumi.distage.model.definition.{Activation, Binding, ModuleBase}
-import izumi.distage.model.exceptions.{ConflictResolutionException, DIBugException, InjectorFailed}
+import izumi.distage.model.exceptions.planning.{ConflictResolutionException, DIBugException}
+import izumi.distage.model.exceptions.InjectorFailed
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
-import izumi.distage.model.plan._
+import izumi.distage.model.plan.*
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.repr.KeyMinimizer
-import izumi.distage.model.planning._
+import izumi.distage.model.planning.*
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.{PlanSolver, SemigraphSolver}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.annotation.nowarn
 

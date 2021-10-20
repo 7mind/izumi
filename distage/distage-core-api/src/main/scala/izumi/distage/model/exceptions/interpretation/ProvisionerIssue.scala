@@ -1,6 +1,8 @@
-package izumi.distage.model.exceptions
+package izumi.distage.model.exceptions.interpretation
 
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp}
+import izumi.distage.model.provisioning.NewObjectOp
 import izumi.distage.model.reflection.{DIKey, SafeType}
 
 sealed trait ProvisionerIssue {
@@ -14,6 +16,14 @@ case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
 }
 
 case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
+  override def key: DIKey = op.target
+}
+
+case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
+
+case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
+
+case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
   override def key: DIKey = op.target
 }
 

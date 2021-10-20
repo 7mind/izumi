@@ -2,7 +2,6 @@ package logstage.circe
 
 import io.circe.Encoder
 import izumi.logstage.api.rendering.{LogstageCodec, json}
-import izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
 

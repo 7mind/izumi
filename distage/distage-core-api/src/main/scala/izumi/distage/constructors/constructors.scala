@@ -1,14 +1,14 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.macros._
+import izumi.distage.constructors.macros.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
-import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
+import izumi.distage.model.exceptions.macros.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.WeakTag
 
-import scala.language.experimental.{macros => enableMacros}
+import scala.language.experimental.macros as enableMacros
 
 /**
   * An implicitly summonable constructor for a type `T`, can generate constructors for:

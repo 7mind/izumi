@@ -1,12 +1,12 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.{ProvisionerIssue, UnexpectedDIException}
+import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.distage.model.exceptions.interpretation.{ProvisionerIssue, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.reflect.TagK
-import izumi.distage.model.effect.QuasiIO.syntax.*
 
 class OperationExecutorImpl(
   setStrategy: SetStrategy,
@@ -53,7 +53,7 @@ class OperationExecutorImpl(
         }
 
       case op: ProxyOp.MakeProxy =>
-        F.pure(Right(proxyStrategy.makeProxy(context, op)))
+        proxyStrategy.makeProxy(context, op)
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)

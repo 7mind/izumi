@@ -1,5 +1,6 @@
-package izumi.distage.model.exceptions
+package izumi.distage.model.exceptions.planning
 
+import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey

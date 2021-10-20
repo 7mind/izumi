@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.definition.{Identifier, ModuleBase}
-import izumi.distage.model.exceptions.DIBugException
+import izumi.distage.model.exceptions.planning.DIBugException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance

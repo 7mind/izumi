@@ -4,6 +4,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
+import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisioningException, UnexpectedDIException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
 import izumi.distage.model.plan.DIPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
@@ -47,7 +48,7 @@ object PlanInterpreter {
   ) {
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
       val repr = failure match {
-        case ProvisioningFailure.AggregateFailure(left, failures, _) =>
+        case ProvisioningFailure.AggregateFailure(_, failures, _) =>
           val messages = failures
             .map {
               case UnexpectedDIException(op, problem) =>
@@ -57,6 +58,13 @@ object PlanInterpreter {
                 MissingInstanceException.format(op.target, op.references)
               case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
                 IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
+              case UnexpectedProvisionResultException(key, results) =>
+                s"Unexpected operation result for $key: $results, expected a single NewInstance!"
+              case MissingProxyAdapterException(key, op) =>
+                s"Cannot get dispatcher $key for $op"
+              case UnsupportedProxyOpException(op) =>
+                s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op"
+
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

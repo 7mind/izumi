@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
+import izumi.distage.model.exceptions.interpretation.{IncompatibleTypesException, MissingRefException}
 import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}

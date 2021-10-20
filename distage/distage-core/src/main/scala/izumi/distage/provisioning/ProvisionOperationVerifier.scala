@@ -1,10 +1,9 @@
 package izumi.distage.provisioning
 
-import izumi.distage.model.exceptions._
+import izumi.distage.model.exceptions.interpretation.{DuplicateInstancesException, IncompatibleRuntimeClassException, IncompatibleTypesException}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.fundamentals.platform.language.Quirks
 
 trait ProvisionOperationVerifier {

@@ -3,7 +3,7 @@ package izumi.distage.provisioning.strategies
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.MissingRefException
+import izumi.distage.model.exceptions.interpretation.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}

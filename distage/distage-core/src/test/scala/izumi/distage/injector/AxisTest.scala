@@ -1,12 +1,12 @@
 package izumi.distage.injector
 
 import distage.{DIKey, Id, Injector, Module}
-import izumi.distage.fixtures.BasicCases._
+import izumi.distage.fixtures.BasicCases.*
 import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.{BadSetAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.planning.{BadSetAxis, ConflictResolutionException}
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
