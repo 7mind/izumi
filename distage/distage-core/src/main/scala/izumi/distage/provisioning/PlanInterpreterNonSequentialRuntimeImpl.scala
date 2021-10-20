@@ -1,19 +1,19 @@
 package izumi.distage.provisioning
 
-import distage.{Id, SafeType}
+import distage.{DIKey, Id, Injector, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.IntegrationCheckException
-import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, UnexpectedDIException}
+import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.reflect.TagK
@@ -54,12 +54,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-    val ctx = ProvisionMutable[F](diplan, parentContext)
+    val ctx: ProvisionMutable[F] = ProvisionMutable[F](diplan, parentContext)
 
-    def run(state: TraversalState): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
       state.current match {
         case TraversalState.Step(steps) =>
-          val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)))
+          val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)), integrationPaths)
 
           for {
             results <- F.traverse(ops)(op => process(ctx, op))
@@ -70,7 +70,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
                 F.pure(f.toFinal: TimedFinalResult)
             }
             (ok, bad) = out.partition(_.isSuccess)
-            out <- run(state.next(ok.asInstanceOf[List[TimedFinalResult.Success]], bad.asInstanceOf[List[TimedFinalResult.Failure]]))
+            out <- run(
+              state.next(ok.asInstanceOf[List[TimedFinalResult.Success]], bad.asInstanceOf[List[TimedFinalResult.Failure]]),
+              integrationPaths,
+            )
           } yield {
             out
           }
@@ -90,20 +93,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       initial = TraversalState(
         diplan.plan.predecessors
       )
+      icPlan <- integrationPlan(initial, ctx)
+
       out <- result match {
         case Left(value) =>
-          val failures = value.map {
-            e =>
-              TimedFinalResult.Failure(
-                e.key,
-                List(e),
-                FiniteDuration(0, TimeUnit.SECONDS),
-              )
-          }.toList
-          val failed = initial.next(List.empty, failures)
-          F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
+          failEarly(ctx, initial, value)
         case Right(_) =>
-          run(initial)
+          icPlan match {
+            case Left(value) =>
+              F.pure(Left(value))
+            case Right(value) =>
+              run(initial, value.plan.meta.nodes.keySet)
+          }
       }
 
     } yield {
@@ -112,14 +113,60 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
   }
 
-  private[this] def prioritize(value: Seq[ExecutableOp]): Seq[ExecutableOp] = {
+  private def failEarly[F[_]: TagK](
+    ctx: ProvisionMutable[F],
+    initial: TraversalState,
+    value: Iterable[ProvisionerIssue],
+  )(implicit F: QuasiIO[F]
+  ): F[Left[FailedProvision[F], Nothing]] = {
+    val failures = value.map {
+      e =>
+        TimedFinalResult.Failure(
+          e.key,
+          List(e),
+          FiniteDuration(0, TimeUnit.SECONDS),
+        )
+    }.toList
+    val failed = initial.next(List.empty, failures)
+    F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
+  }
+
+  private[this] def integrationPlan[F[_]: TagK](
+    state: TraversalState,
+    ctx: ProvisionMutable[F],
+  )(implicit F: QuasiIO[F]
+  ): F[Either[FailedProvision[F], DIPlan]] = {
+    val allChecks = ctx.diplan.stepsUnordered.collect {
+      case op: InstantiationOp if op.instanceType <:< SafeType.get[AbstractCheck] =>
+        op
+    }.toSet
+    if (allChecks.nonEmpty) {
+      val icPlanner = Injector()
+      NonEmptySet.from(allChecks.map(_.target)) match {
+        case Some(value) =>
+          F.maybeSuspend {
+            icPlanner.planSafe(ctx.diplan.input.copy(roots = Roots.Of(value))).left.map {
+              errs =>
+                ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status()))
+            }
+          }
+        case None =>
+          F.pure(Right(DIPlan.empty))
+      }
+    } else {
+      F.pure(Right(DIPlan.empty))
+    }
+
+  }
+
+  private[this] def prioritize(value: Seq[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = {
     value.sortBy {
       op =>
         val repr = op.target.tpe.toString
         op match {
           case _: ImportDependency =>
             (-10, repr)
-          case op: InstantiationOp if op.instanceType <:< SafeType.get[AbstractCheck] =>
+          case op: InstantiationOp if integrationPaths.contains(op.target) =>
             (0, repr)
           case _ =>
             (1, repr)
@@ -155,12 +202,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           for {
             _ <- op match {
               case i: NewObjectOp.LocalInstance =>
-//                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[Identity]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[Identity]]}")
-//                System.err.println(s"check: ${i.implKey} <:< ${SafeType.get[IntegrationCheck[F]]} == ${i.implKey <:< SafeType.get[IntegrationCheck[F]]}")
-
                 if (i.implKey <:< SafeType.get[IntegrationCheck[Identity]]) {
-//                  System.err.println(s"id: $i")
-
                   F.maybeSuspend {
                     Option(i.instance).map(i => checkOrThrow(i.asInstanceOf[IntegrationCheck[Identity]])) match {
                       case Some(_) =>
@@ -205,8 +247,6 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private[this] def checkOrThrow[F[_]: TagK](check: IntegrationCheck[F])(implicit F: QuasiIO[F]): F[Unit] = {
-//    System.err.println(s"cor on $check => ${check.resourcesAvailable()}")
-
     F.flatMap(check.resourcesAvailable()) {
       case ResourceCheck.Success() =>
         F.unit

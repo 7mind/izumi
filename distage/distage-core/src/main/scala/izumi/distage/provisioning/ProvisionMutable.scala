@@ -28,6 +28,10 @@ final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Loc
     } else {
       ProvisioningFailure.AggregateFailure(state.preds, state.failures, state.status())
     }
+    makeFailure(state, fullStackTraces, diag)
+  }
+
+  def makeFailure(state: TraversalState, fullStackTraces: Boolean, diag: ProvisioningFailure): FailedProvision[F] = {
     val meta = FailedProvisionMeta(state.status())
 
     FailedProvision(

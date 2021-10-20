@@ -178,14 +178,15 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit[IO](_).produce(plans.app).use {
-          locator =>
-            IO {
-              assert(probe.resources.getStartedCloseables().size == 3)
-              assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-            }
-        }
+        Injector
+          .inherit[IO](_).produce(plans.app).use {
+            locator =>
+              IO {
+                assert(probe.resources.getStartedCloseables().size == 3)
+                assert(probe.resources.getCheckedResources().size == 2)
+                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+              }
+          }.unsafeRunSync()
       }
     }
 
@@ -214,14 +215,15 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
-        Injector.inherit[IO](_).produce(plans.app).use {
-          locator =>
-            IO {
-              assert(probe.resources.getStartedCloseables().size == 3)
-              assert(probe.resources.getCheckedResources().size == 2)
-              assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-            }
-        }
+        Injector
+          .inherit[IO](_).produce(plans.app).use {
+            locator =>
+              IO {
+                assert(probe.resources.getStartedCloseables().size == 3)
+                assert(probe.resources.getCheckedResources().size == 2)
+                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+              }
+          }.unsafeRunSync()
       }
     }
 
@@ -255,23 +257,24 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val plans = roleAppPlanner.makePlan(roots)
 
       Injector().produce(plans.runtime).use {
-        Injector.inherit[IO](_).produce(plans.app).use {
-          locator =>
-            IO {
-              assert(initCounter.getStartedCloseables().size == 2)
-              assert(initCounter.getCheckedResources().size == 1)
-              assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
+        Injector
+          .inherit[IO](_).produce(plans.app).use {
+            locator =>
+              IO {
+                assert(initCounter.getStartedCloseables().size == 2)
+                assert(initCounter.getCheckedResources().size == 1)
+                assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
 
-              assert(initCounterIdentity.getStartedCloseables().size == 3)
-              assert(initCounterIdentity.getCheckedResources().size == 2)
-              assert(
-                initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
-                  locator.get[IntegrationResource0[Identity]],
-                  locator.get[IntegrationResource1[Identity]],
+                assert(initCounterIdentity.getStartedCloseables().size == 3)
+                assert(initCounterIdentity.getCheckedResources().size == 2)
+                assert(
+                  initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
+                    locator.get[IntegrationResource0[Identity]],
+                    locator.get[IntegrationResource1[Identity]],
+                  )
                 )
-              )
-            }
-        }
+              }
+          }.unsafeRunSync()
       }
     }
 

@@ -15,7 +15,7 @@ import izumi.reflect.TagK
 
 trait RoleAppPlanner {
   def reboot(bsModule: BootstrapModule): RoleAppPlanner
-  def makePlan(appMainRoots: Set[DIKey] /*, appModule: ModuleBase*/ ): AppStartupPlans
+  def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans
 }
 
 object RoleAppPlanner {
@@ -57,16 +57,9 @@ object RoleAppPlanner {
       val runtimeKeys = runtimeBsApp.plan.keys
       val appPlan = runtimeBsApp.injector.plan(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
 
-//      val appPlan = runtimeBsApp.injector.ops.trisectByKeys(activation, runtimeBsApp.module.drop(runtimeKeys), appMainRoots) {
-//        _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
-//      }
-
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimeBsApp.plan)
       check.verify(appPlan)
-//      check.verify(appPlan.shared)
-//      check.verify(appPlan.side)
-//      check.verify(appPlan.primary)
 
       logger.info(
         s"Planning finished. ${appPlan.keys.size -> "main ops"} ${runtimeBsApp.plan.keys.size -> "runtime ops"}"

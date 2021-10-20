@@ -1,5 +1,6 @@
 package izumi.distage.model.provisioning
 
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -25,4 +26,6 @@ object ProvisioningFailure {
   final case class AggregateFailure(graph: IncidenceMatrix[DIKey], failures: Seq[ProvisionerIssue], status: Map[DIKey, OpStatus]) extends ProvisioningFailure
 
   final case class BrokenGraph(graph: IncidenceMatrix[DIKey], status: Map[DIKey, OpStatus]) extends ProvisioningFailure
+
+  final case class CantBuildIntegrationSubplan(errors: List[DIError], status: Map[DIKey, OpStatus]) extends ProvisioningFailure
 }

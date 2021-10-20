@@ -2,10 +2,12 @@ package izumi.distage.model.provisioning
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisioningException, UnexpectedDIException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
 import izumi.distage.model.plan.DIPlan
+import izumi.distage.model.provisioning.OpStatus.Planned
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.*
@@ -64,13 +66,14 @@ object PlanInterpreter {
                 s"Cannot get dispatcher $key for $op"
               case UnsupportedProxyOpException(op) =>
                 s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op"
-
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"
         case ProvisioningFailure.BrokenGraph(matrix, _) =>
           s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
             .map { case (k, v) => s"$k: $v" }.niceList()}"
+        case ProvisioningFailure.CantBuildIntegrationSubplan(errors, _) =>
+          s"Unable to build integration checks subplan:\n${errors.map(DIError.format(plan.input.activation))}"
       }
 
       val ccFailed = failure.status
@@ -101,6 +104,8 @@ object PlanInterpreter {
               Seq.empty
           }
         case _: ProvisioningFailure.BrokenGraph =>
+          Seq.empty
+        case _: ProvisioningFailure.CantBuildIntegrationSubplan =>
           Seq.empty
       }
 
