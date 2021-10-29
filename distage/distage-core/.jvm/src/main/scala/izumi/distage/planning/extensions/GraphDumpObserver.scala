@@ -32,7 +32,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     }
 
     val main = new Digraph("cluster_main", graphAttr = mutable.Map("label" -> "Context", "shape" -> "box"))
-    //val collected = new Digraph("cluster_collected", graphAttr = mutable.Map("label" -> "Collected", "style" -> "dotted"))
+    // val collected = new Digraph("cluster_collected", graphAttr = mutable.Map("label" -> "Collected", "style" -> "dotted"))
 
     //    val preGcPlan = beforeFinalization.get()
     //    val preTopology = planAnalyzer.topology(preGcPlan.steps)
@@ -105,7 +105,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     val res = g.source()
     val dotfileMin = new RenderedDot(res)
 
-    //save(dotfileFull, "full")
+    // save(dotfileFull, "full")
     save(dotfileMin, "aftergc")
   }
 

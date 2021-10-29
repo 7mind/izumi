@@ -124,7 +124,7 @@ class AsyncMonix extends Async2[IO] {
   override final def fromFuture[A](mkFuture: ExecutionContext => Future[A]): IO[Throwable, A] = {
     IO.deferFutureAction(mkFuture)
   }
-  //this approach I shamelessly ported from javaz
+  // this approach I shamelessly ported from javaz
   override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): IO[Throwable, A] = {
     lazy val cs: CompletionStage[A] = javaFuture
     IO.deferTotal {

@@ -103,7 +103,7 @@ class GraphPreparations(
   def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
     bindings.iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
-      //.filter(b => activationChoices.allValid(toAxis(b)))
+      // .filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
         b =>
           val next = bindingTranslator.computeProvisioning(b)

@@ -244,7 +244,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def copyToBuffer[U >: T](buf: Buffer[U]): Unit = {
     buf ++= toList
-    //toList.copyToBuffer(buf)
+    // toList.copyToBuffer(buf)
   }
 
   /**
@@ -1227,7 +1227,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     */
   def sum[U >: T](implicit num: Numeric[U]): U = toList.sum(num)
 
-  //import scala.collection.compat._
+  // import scala.collection.compat._
 
   /**
     * Converts this <code>NonEmptyList</code> into a collection of type <code>Col</code> by copying all elements.
