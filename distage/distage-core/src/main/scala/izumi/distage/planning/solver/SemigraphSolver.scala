@@ -43,7 +43,7 @@ object SemigraphSolver {
 
   final case class Selected[N](key: N, axis: Set[AxisPoint])
 
-  final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]]) //, unresolved: Map[Annotated[N], Seq[Node[N, V]]])
+  final case class Resolution[N, V](graph: DG[MutSel[N], RemappedValue[V, N]]) // , unresolved: Map[Annotated[N], Seq[Node[N, V]]])
   private final case class ResolvedMutations[N](
     lastOp: MutSel[N],
     operationReplacements: Seq[(MutSel[N], Set[MutSel[N]])],
@@ -85,7 +85,7 @@ object SemigraphSolver {
             (targetKey, RemappedValue(v.meta, replMap))
         }
 
-        Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta))) //, resolved.unresolved)
+        Resolution(DG.fromPred(mutationsResolved.finalMatrix, GraphMeta(meta))) // , resolved.unresolved)
       }
     }
 
@@ -275,7 +275,7 @@ object SemigraphSolver {
       }.toMap
 
       val allOuterReplacements = resolved.map(_._2.outerKeyReplacements).toSeq.flatten
-      //assert(allOuterReplacements.groupBy(_._1).forall(_._2.size == 1))
+      // assert(allOuterReplacements.groupBy(_._1).forall(_._2.size == 1))
       val outerReplMap = allOuterReplacements.toMap
         .map {
           case (k, (v, r)) =>

@@ -38,7 +38,7 @@ trait IzJvm {
 
     all(
       !isHeadless
-      //hasColorfulTerminal, // idea doesn't set TERM :(
+      // hasColorfulTerminal, // idea doesn't set TERM :(
     )
 
   }

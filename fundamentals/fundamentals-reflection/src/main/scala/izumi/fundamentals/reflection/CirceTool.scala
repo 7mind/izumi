@@ -72,7 +72,7 @@ class CirceToolMacro(val c: blackbox.Context) {
       t.typeArgs.foreach(a => processType(a, all))
     }
 
-    //m.map(_.asMethod).foreach(m => println((m.name, )))
+    // m.map(_.asMethod).foreach(m => println((m.name, )))
 
   }
 

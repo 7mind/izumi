@@ -814,7 +814,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @return a new <code>NonEmptyString</code> resulting from applying the given function <code>f</code> to each character of this <code>NonEmptyString</code> and collecting the results.
     */
   def map[U](f: Char => U): NonEmptyString = {
-    //NonEmptyString("test")
+    // NonEmptyString("test")
     new NonEmptyString(
       theString.map {
         c =>

@@ -36,7 +36,7 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
         IzFiles.getFs(u.toURI) match {
           case Failure(_) =>
             Some(UnloadablePathReference(u.toURI))
-          //throw exception
+          // throw exception
           case Success(fs) =>
             fs.synchronized {
               Some(LoadablePathReference(fs.provider().getPath(u.toURI), fs))

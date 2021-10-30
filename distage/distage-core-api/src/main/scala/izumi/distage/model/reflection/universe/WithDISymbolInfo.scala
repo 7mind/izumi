@@ -18,7 +18,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
     def withTpe(tpe: TypeNative): SymbolInfo
     def withIsByName(boolean: Boolean): SymbolInfo
     def withAnnotations(annotations: List[u.Annotation]): SymbolInfo
-    //def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
+    // def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
   }
 
   protected def typeOfDistageAnnotation: TypeNative

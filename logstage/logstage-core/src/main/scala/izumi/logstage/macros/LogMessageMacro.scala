@@ -150,7 +150,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
             args: List[Tree],
           ) =>
         // qq causes a weird warning here
-        //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
+        // case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         reifyContext(stringContext, namedArgs)
 
