@@ -15,6 +15,7 @@ final case class PlanCheckInput[F[_]](
   effectType: TagK[F],
   module: ModuleBase,
   roots: Roots,
+  roleNames: Set[String],
   providedKeys: Set[DIKey],
   configLoader: ConfigLoader,
   appPlugins: LoadedPlugins,
@@ -24,6 +25,7 @@ object PlanCheckInput {
   def apply[F[_]](
     module: ModuleBase,
     roots: Roots,
+    roleNames: Set[String] = Set.empty,
     configLoader: ConfigLoader = new ConfigLoader.LocalFSImpl(IzLogger(), ConfigLocation.Default, ConfigLoader.Args.empty),
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
@@ -33,6 +35,7 @@ object PlanCheckInput {
     effectType = effectType,
     module = module,
     roots = roots,
+    roleNames = roleNames,
     providedKeys = Injector.providedKeys[F]()(defaultModule),
     configLoader = configLoader,
     appPlugins = appPlugins,
@@ -48,6 +51,7 @@ object PlanCheckInput {
   def noConfig[F[_]](
     module: ModuleBase,
     roots: Roots,
+    roleNames: Set[String] = Set.empty,
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
   )(implicit effectType: TagK[F],
@@ -55,6 +59,7 @@ object PlanCheckInput {
   ): PlanCheckInput[F] = PlanCheckInput(
     module = module,
     roots = roots,
+    roleNames = roleNames,
     configLoader = ConfigLoader.empty,
     appPlugins = appPlugins,
     bsPlugins = bsPlugins,
