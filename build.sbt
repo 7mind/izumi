@@ -38,7 +38,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -80,7 +79,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -180,7 +178,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -222,7 +219,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -301,7 +297,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -343,7 +338,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -444,7 +438,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -486,7 +479,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -581,7 +573,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -623,7 +614,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -713,7 +703,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -755,7 +744,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -795,7 +783,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } }
+    } },
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent"
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -838,7 +827,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -880,7 +868,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -962,7 +949,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1004,7 +990,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1080,7 +1065,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1122,7 +1106,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1211,7 +1194,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1253,7 +1235,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1332,7 +1313,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1374,7 +1354,6 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1461,7 +1440,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1503,7 +1481,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1585,7 +1562,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1627,7 +1603,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1730,7 +1705,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1772,7 +1746,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1854,7 +1827,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1896,7 +1868,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -1975,7 +1946,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2017,7 +1987,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2109,7 +2078,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2151,7 +2119,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2260,7 +2227,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2302,7 +2268,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2380,7 +2345,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2422,7 +2386,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2511,7 +2474,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2553,7 +2515,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2637,7 +2598,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2679,7 +2639,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2762,7 +2721,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2804,7 +2762,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -2883,7 +2840,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2925,7 +2881,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -3008,7 +2963,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3050,7 +3004,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -3160,7 +3113,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3202,7 +3154,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -3340,7 +3291,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, "2.12.15") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3382,7 +3332,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, "2.13.6") => Seq(
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
-        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
         "-Wconf:cat=other-match-analysis:error",
@@ -3673,7 +3622,7 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % V.sbtgen % Provided
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.83" % Provided
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
