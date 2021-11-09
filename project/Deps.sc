@@ -6,6 +6,7 @@ object Izumi {
 
   object V {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
+    val sbtgen = Version.VExpr("V.sbtgen")
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
@@ -213,6 +214,11 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
+
+        // scala-steward workaround
+        // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
+        // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
+        "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % ${V.sbtgen.value} % Provided""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
