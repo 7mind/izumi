@@ -120,6 +120,7 @@ object PlanCheck {
       logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
 
+      var effectiveRoleNames = "unknown, failed too early"
       var effectiveRoots = "unknown, failed too early"
       var effectiveConfig = "unknown, failed too early"
       var effectiveBsPlugins = LoadedPlugins.empty
@@ -180,7 +181,7 @@ object PlanCheck {
 
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
-             |  roles               = $chosenRoles (effective: $effectiveRoots)
+             |  roles               = $chosenRoles (effective roles: $effectiveRoleNames) (all effective roots: $effectiveRoots)
              |  excludedActivations = ${NonEmptySet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
              |  bootstrapPlugins    = $bsPluginsStr
              |  plugins             = $appPluginsStr
@@ -201,6 +202,7 @@ object PlanCheck {
       try {
         val input = app.preparePlanCheckInput(chosenRoles, chosenConfig)
 
+        effectiveRoleNames = input.roleNames.mkString(", ")
         effectiveRoots = input.roots match {
           case Roots.Of(roots) => roots.mkString(", ")
           case Roots.Everything => "<Roots.Everything>"
@@ -228,7 +230,7 @@ object PlanCheck {
       reportEffectiveConfig: String => Unit,
     )(planCheckInput: PlanCheckInput[F]
     ): PlanVerifierResult = {
-      val PlanCheckInput(effectType, module, roots, providedKeys, configLoader, _, _) = planCheckInput
+      val PlanCheckInput(effectType, module, roots, _, providedKeys, configLoader, _, _) = planCheckInput
 
       val planVerifierResult = planVerifier.verify[F](
         bindings = module,
@@ -304,7 +306,7 @@ object PlanCheck {
       throw new IllegalArgumentException(
         s"""Invalid role selection syntax in `$s`.
            |
-           |Valid syntaxes:
+           |Valid syntax:
            |
            |  - "*" to check all roles,
            |  - "role1 role2" to check specific roles,

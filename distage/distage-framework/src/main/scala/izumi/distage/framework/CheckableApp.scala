@@ -106,6 +106,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
             bsModule.keys ++
             rolesInfo.requiredComponents
           ),
+          roleNames = rolesInfo.requiredRoleNames,
           providedKeys = injectorFactory.providedKeys[F](bsModule)(DefaultModule[F](Module.make(defaultModuleBindings))),
           configLoader = configLoader,
           appPlugins = appPlugins,
