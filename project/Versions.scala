@@ -4,7 +4,7 @@ object V {
   val sbtgen = "0.0.79"
 
   // foundation
-  val collection_compat = "2.5.0"
+  val collection_compat = "2.6.0"
 
   val kind_projector = "0.13.2"
 
