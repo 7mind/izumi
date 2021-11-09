@@ -53,7 +53,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
             err(_).foldMap(transform),
             suc(_).foldMap(transform),
           )
-      case s: FreePanic.Sandbox[S, E, A] =>
+      case s: FreePanic.Sandbox[S, E, A] @unchecked =>
         @inline def foldMapSandbox[e, a](s: FreePanic[S, e, a] with FreePanic.Sandbox[S, e, a]): G[e, a] = {
           s match {
             case FreePanic.Sandbox(sub) => sub.foldMap(transform).sandbox
