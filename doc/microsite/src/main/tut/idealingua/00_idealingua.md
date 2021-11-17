@@ -77,12 +77,12 @@ export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
 export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 
 # create sample project in `testproject` directory
-coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject
+cs launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject
 
 cd testproject
 
 # compile Scala and Typescript projects using all the defaults
-coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :scala :typescript
+cs launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :scala :typescript
 
 # Run SBT on generated Scala project
 pushd .
@@ -156,7 +156,7 @@ To install current release version:
 
 ```bash
 # install release executable
-coursier bootstrap izumi.r2:idealingua-compiler_2.12:$izumi.version$ -o idlc
+cs bootstrap izumi.r2:idealingua-compiler_2.12:$izumi.version$ -o idlc
 
 ./idlc --help
 ```
@@ -167,7 +167,7 @@ To install development snapshot:
 
 ```bash
 # install snapshot
-coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ izumi.r2:idealingua-compiler_2.12:0.7.0-SNAPSHOT -o idlc
+cs bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ izumi.r2:idealingua-compiler_2.12:0.7.0-SNAPSHOT -o idlc
 
 ./idlc --help
 ```
