@@ -2,16 +2,16 @@ package izumi.distage.model.effect
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
-
 import cats.Parallel
 import cats.effect.{Concurrent, Timer}
 import izumi.functional.bio.{Async2, F, Temporal2}
 import izumi.fundamentals.orphans.{`cats.Parallel`, `cats.effect.Concurrent`, `cats.effect.Timer`}
 import izumi.fundamentals.platform.functional.Identity
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.collection.compat._
+import scala.collection.compat.*
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -105,6 +105,8 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   }
 
   private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+
+    @nowarn("msg=getSecurityManager")
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
 

@@ -2,7 +2,6 @@ package izumi.functional.bio
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
-
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
 import monix.bio
@@ -11,6 +10,7 @@ import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, IO, Runtime, Supervisor, ZIO}
 
+import scala.annotation.nowarn
 import scala.concurrent.Future
 
 trait UnsafeRun2[F[_, _]] {
@@ -185,6 +185,7 @@ object UnsafeRun2 {
 
   final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
 
+    @nowarn("msg=getSecurityManager")
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
 

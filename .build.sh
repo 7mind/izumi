@@ -6,6 +6,11 @@
 # and https://github.com/sbt/sbt/pull/3995/files
 # TL;DR strict aggregation in sbt is broken; this is a workaround
 
+function scala310 {
+  echo "Using Scala 3.1..."
+  VERSION_COMMAND="++ $SCALA310"
+}
+
 function scala213 {
   echo "Using Scala 2.13..."
   VERSION_COMMAND="++ $SCALA213 "
@@ -110,9 +115,9 @@ function init {
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
     export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
-    export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA310=$(cat project/Deps.sc | grep 'val scala310 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
 
@@ -153,16 +158,16 @@ case $i in
         echo "Doing nothing..."
     ;;
 
+    3.1)
+        scala310
+    ;;
+
     2.13)
         scala213
     ;;
 
     2.12)
         scala212
-    ;;
-
-    2.11)
-        scala211
     ;;
 
     scala-all)
