@@ -7,29 +7,24 @@ import scala.language.implicitConversions
 
 trait IzEither {
   @inline implicit final def EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](
-    result: Col[Either[Src[L], R]]
-  ): EitherBiAggregate[L, R, Src, Col] =
-    new EitherBiAggregate(
-      result
-    )
+    col: Col[Either[Src[L], R]]
+  ): EitherBiAggregate[L, R, Src, Col] = new EitherBiAggregate(col)
   @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](
-    result: Col[Either[List[L], Col2[R]]]
-  ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(result)
-  @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](e: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(e)
-  @inline implicit final def EitherBiFind[Col[x] <: IterableOnce[x], T](s: Col[T]): EitherBiFind[Col, T] = new EitherBiFind(s)
-  @inline implicit final def EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](s: Col[T]): EitherBiFoldLeft[Col, T] = new EitherBiFoldLeft(s)
-  @inline implicit final def EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](s: Col[T]): EitherBiMapAggregate[Col, T] = new EitherBiMapAggregate(s)
-  @inline implicit final def EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](result: Col[T]): EitherBiFlatMapAggregate[Col, T] = new EitherBiFlatMapAggregate(
-    result
-  )
+    col: Col[Either[List[L], Col2[R]]]
+  ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(col)
+  @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(col)
+  @inline implicit final def EitherBiFind[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFind[Col, T] = new EitherBiFind(col)
+  @inline implicit final def EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFoldLeft[Col, T] = new EitherBiFoldLeft(col)
+  @inline implicit final def EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiMapAggregate[Col, T] = new EitherBiMapAggregate(col)
+  @inline implicit final def EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFlatMapAggregate[Col, T] = new EitherBiFlatMapAggregate(col)
 }
 
 object IzEither extends IzEither {
 
-  final class EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](private val result: Col[T]) extends AnyVal {
+  final class EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** monadic `foldLeft` with error accumulation */
     def biFoldLeft[L, A](z: A)(op: (A, T) => Either[List[L], A]): Either[List[L], A] = {
-      val i = result.iterator
+      val i = col.iterator
       var acc: Either[List[L], A] = Right(z)
 
       while (i.hasNext && acc.isRight) {
@@ -37,8 +32,7 @@ object IzEither extends IzEither {
         (acc, nxt) match {
           case (Right(a), n) =>
             acc = op(a, n)
-          case (o, _) =>
-            o
+          case _ =>
         }
       }
 
@@ -46,7 +40,7 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](private val result: Col[T]) extends AnyVal {
+  final class EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** `traverse` with error accumulation */
     @inline def biMapAggregate[L, A](f: T => Either[List[L], A])(implicit b: Factory[A, Col[A]]): Either[List[L], Col[A]] = {
       biMapAggregateTo(f)(b)
@@ -57,7 +51,7 @@ object IzEither extends IzEither {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      val iterator = result.iterator
+      val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
           case Left(e) => bad ++= e
@@ -74,10 +68,10 @@ object IzEither extends IzEither {
     }
 
     /** `traverse_` with error accumulation */
-    def biMapAggregateVoid[L, A](f: T => Either[List[L], A]): Either[List[L], Unit] = {
+    def biMapAggregateVoid[L](f: T => Either[List[L], Unit]): Either[List[L], Unit] = {
       val bad = List.newBuilder[L]
 
-      val iterator = result.iterator
+      val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
           case Left(e) => bad ++= e
@@ -94,7 +88,7 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](private val result: Col[T]) extends AnyVal {
+  final class EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** `flatTraverse` with error accumulation */
     def biFlatMapAggregate[L, A](f: T => Either[List[L], IterableOnce[A]])(implicit b: Factory[A, Col[A]]): Either[List[L], Col[A]] = {
       biFlatMapAggregateTo(f)(b)
@@ -105,7 +99,7 @@ object IzEither extends IzEither {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      val iterator = result.iterator
+      val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
           case Left(e) => bad ++= e
@@ -122,13 +116,13 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](private val result: Col[Either[Src[L], R]]) extends AnyVal {
+  final class EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](private val col: Col[Either[Src[L], R]]) extends AnyVal {
     /** `sequence` with error accumulation */
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
-      val iterator = result.iterator
+      val iterator = col.iterator
       while (iterator.hasNext) {
         iterator.next() match {
           case Left(e) => bad ++= e
@@ -148,7 +142,7 @@ object IzEither extends IzEither {
     def biAggregateVoid: Either[List[L], Unit] = {
       val bad = List.newBuilder[L]
 
-      val iterator = result.iterator
+      val iterator = col.iterator
       while (iterator.hasNext) {
         iterator.next() match {
           case Left(e) => bad ++= e
