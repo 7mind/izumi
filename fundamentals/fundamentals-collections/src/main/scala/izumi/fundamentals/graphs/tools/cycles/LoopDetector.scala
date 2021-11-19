@@ -76,10 +76,7 @@ object LoopDetector {
           Some(value)
         case None =>
           seen ++= start
-          val toTest = start.flatMap {
-            a: T =>
-              untested.getOrElse(a, Seq.empty)
-          }
+          val toTest = start.flatMap(untested.getOrElse(_, Seq.empty))
           if (toTest.isEmpty) {
             None
           } else {

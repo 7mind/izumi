@@ -144,12 +144,12 @@ package object bio extends Syntax3 with Syntax2 {
 
   type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
+  type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, + _, + _]]
   object Primitives3 {
     @inline def apply[F[-_, +_, +_]: Primitives3]: Primitives3[F] = implicitly
   }
 
-  type PrimitivesM3[F[-_, +_, +_]] = PrimitivesM2[F[Any, +_, +_]]
+  type PrimitivesM3[F[-_, +_, +_]] = PrimitivesM2[F[Any, + _, + _]]
   object PrimitivesM3 {
     @inline def apply[F[-_, +_, +_]: PrimitivesM3]: PrimitivesM3[F] = implicitly
   }
@@ -164,13 +164,13 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _]: TransZio]: TransZio[F] = implicitly
   }
 
-  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, +_, +_], E, A]
+  type Fiber3[+F[-_, +_, +_], +E, +A] = Fiber2[F[Any, + _, + _], E, A]
   lazy val Fiber3: Fiber2.type = Fiber2
 
-  type RefM3[F[_, +_, +_], A] = RefM2[F[Any, +_, +_], A]
+  type RefM3[F[_, +_, +_], A] = RefM2[F[Any, + _, + _], A]
   lazy val RefM3: RefM2.type = RefM2
 
-  type Mutex3[F[_, +_, +_], A] = Mutex2[F[Any, +_, +_]]
+  type Mutex3[F[_, +_, +_], A] = Mutex2[F[Any, + _, + _]]
   lazy val Mutex3: Mutex2.type = Mutex2
 
   type Ref2[+F[_, _], A] = Ref1[F[Nothing, _], A]
@@ -178,7 +178,7 @@ package object bio extends Syntax3 with Syntax2 {
   type Ref3[+F[_, _, _], A] = Ref1[F[Any, Nothing, _], A]
   lazy val Ref3: Ref1.type = Ref1
 
-  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, +_, +_], E, A]
+  type Promise3[+F[-_, +_, +_], E, A] = Promise2[F[Any, + _, + _], E, A]
   lazy val Promise3: Promise2.type = Promise2
 
   type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
@@ -229,160 +229,142 @@ package object bio extends Syntax3 with Syntax2 {
     instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
 
-  // Deprecated aliases
+}
 
-  @deprecated("renamed to Functor2", "will be removed in 1.1.0")
-  type BIOFunctor[F[+_, +_]] = Functor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Bifunctor2", "will be removed in 1.1.0")
-  type BIOBifunctor[F[+_, +_]] = Bifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Applicative2", "will be removed in 1.1.0")
-  type BIOApplicative[F[+_, +_]] = Applicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Guarantee2", "will be removed in 1.1.0")
-  type BIOGuarantee[F[+_, +_]] = Guarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to ApplicativeError2", "will be removed in 1.1.0")
-  type BIOApplicativeError[F[+_, +_]] = ApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Monad2", "will be removed in 1.1.0")
-  type BIOMonad[F[+_, +_]] = Monad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Error2", "will be removed in 1.1.0")
-  type BIOError[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Bracket2", "will be removed in 1.1.0")
-  type BIOBracket[F[+_, +_]] = Bracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Panic2", "will be removed in 1.1.0")
-  type BIOPanic[F[+_, +_]] = Panic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to IO2", "will be removed in 1.1.0")
-  type BIO[F[+_, +_]] = IO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Parallel2", "will be removed in 1.1.0")
-  type BIOParallel[F[+_, +_]] = Parallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Concurrent2", "will be removed in 1.1.0")
-  type BIOConcurrent[F[+_, +_]] = Concurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Async2", "will be removed in 1.1.0")
-  type BIOAsync[F[+_, +_]] = Async3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Temporal2", "will be removed in 1.1.0")
-  type BIOTemporal[F[+_, +_]] = Temporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+package bio {
+  import izumi.fundamentals.platform.language.unused
 
-  @deprecated("renamed to Functor3", "will be removed in 1.1.0")
-  type BIOFunctor3[F[-_, +_, +_]] = Functor3[F]
-  @deprecated("renamed to Bifunctor3", "will be removed in 1.1.0")
-  type BIOBifunctor3[F[-_, +_, +_]] = Bifunctor3[F]
-  @deprecated("renamed to Applicative3", "will be removed in 1.1.0")
-  type BIOApplicative3[F[-_, +_, +_]] = Applicative3[F]
-  @deprecated("renamed to Guarantee3", "will be removed in 1.1.0")
-  type BIOGuarantee3[F[-_, +_, +_]] = Guarantee3[F]
-  @deprecated("renamed to ApplicativeError3", "will be removed in 1.1.0")
-  type BIOApplicativeError3[F[-_, +_, +_]] = ApplicativeError3[F]
-  @deprecated("renamed to Monad3", "will be removed in 1.1.0")
-  type BIOMonad3[F[-_, +_, +_]] = Monad3[F]
-  @deprecated("renamed to Error3", "will be removed in 1.1.0")
-  type BIOError3[F[-_, +_, +_]] = Error3[F]
-  @deprecated("renamed to Bracket3", "will be removed in 1.1.0")
-  type BIOBracket3[F[-_, +_, +_]] = Bracket3[F]
-  @deprecated("renamed to Panic3", "will be removed in 1.1.0")
-  type BIOPanic3[F[-_, +_, +_]] = Panic3[F]
-  @deprecated("renamed to IO3", "will be removed in 1.1.0")
-  type BIO3[F[-_, +_, +_]] = IO3[F]
-  @deprecated("renamed to Parallel3", "will be removed in 1.1.0")
-  type BIOParallel3[F[-_, +_, +_]] = Parallel3[F]
-  @deprecated("renamed to Concurrent3", "will be removed in 1.1.0")
-  type BIOConcurrent3[F[-_, +_, +_]] = Concurrent3[F]
-  @deprecated("renamed to Async3", "will be removed in 1.1.0")
-  type BIOAsync3[F[-_, +_, +_]] = Async3[F]
-  @deprecated("renamed to Temporal3", "will be removed in 1.1.0")
-  type BIOTemporal3[F[-_, +_, +_]] = Temporal3[F]
+  trait Functor3[F[-_, +_, +_]] extends RootBifunctor[F] {
+    def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B]
 
-  @deprecated("renamed to Ask3", "will be removed in 1.1.0")
-  type BIOAsk[F[-_, +_, +_]] = Ask3[F]
-  @deprecated("renamed to MonadAsk3", "will be removed in 1.1.0")
-  type BIOMonadAsk[F[-_, +_, +_]] = MonadAsk3[F]
-  @deprecated("renamed to Profunctor3", "will be removed in 1.1.0")
-  type BIOProfunctor[F[-_, +_, +_]] = Profunctor3[F]
-  @deprecated("renamed to Arrow3", "will be removed in 1.1.0")
-  type BIOArrow[F[-_, +_, +_]] = Arrow3[F]
-  @deprecated("renamed to ArrowChoice3", "will be removed in 1.1.0")
-  type BIOArrowChoice[F[-_, +_, +_]] = ArrowChoice3[F]
-  @deprecated("renamed to Local3", "will be removed in 1.1.0")
-  type BIOLocal[F[-_, +_, +_]] = Local3[F]
+    def as[R, E, A, B](r: F[R, E, A])(v: => B): F[R, E, B] = map(r)(_ => v)
+    def void[R, E, A](r: F[R, E, A]): F[R, E, Unit] = map(r)(_ => ())
 
-  @deprecated("renamed to Fork2", "will be removed in 1.1.0")
-  type BIOFork[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  @deprecated("renamed to Fork3", "will be removed in 1.1.0")
-  type BIOFork3[F[-_, +_, +_]] = Fork3[F]
+    /** Extracts the optional value, or returns the given `valueOnNone` value */
+    def fromOptionOr[R, E, A](valueOnNone: => A, r: F[R, E, Option[A]]): F[R, E, A] = map(r)(_.getOrElse(valueOnNone))
 
-  @deprecated("renamed to Fiber2", "will be removed in 1.1.0")
-  type BIOFiber[F[+_, +_], +E, +A] = Fiber2[F, E, A]
-  @deprecated("renamed to Fiber3", "will be removed in 1.1.0")
-  type BIOFiber3[F[-_, +_, +_], +E, +A] = Fiber3[F, E, A]
-  @deprecated("renamed to Fiber3", "will be removed in 1.1.0")
-  lazy val BIOFiber3: Fiber2.type = Fiber2
+    @inline final def widen[R, E, A, A1](r: F[R, E, A])(implicit @unused ev: A <:< A1): F[R, E, A1] = r.asInstanceOf[F[R, E, A1]]
+  }
 
-  @deprecated("renamed to BlockingIO2", "will be removed in 1.1.0")
-  type BlockingIO[F[+_, +_]] = BlockingIO2[F]
-  @deprecated("renamed to BlockingIO2", "will be removed in 1.1.0")
-  lazy val BlockingIO: BlockingIO2.type = BlockingIO2
+  import cats.data.Kleisli
+  import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
+  import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
+  import izumi.functional.bio.SpecificityHelper._
+  import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither, BioIdentity3}
+  import izumi.functional.bio.retry.Scheduler3
+  import izumi.fundamentals.orphans.`monix.bio.IO`
+  import izumi.fundamentals.platform.functional.{Identity2, Identity3}
+  import zio.ZIO
 
-  @deprecated("renamed to Ref2", "will be removed in 1.1.0")
-  type BIORef[F[+_, +_], A] = Ref2[F, A]
-  @deprecated("renamed to Ref2", "will be removed in 1.1.0")
-  lazy val BIORef: Ref2.type = Ref2
-  @deprecated("renamed to Ref3", "will be removed in 1.1.0")
-  type BIORef3[F[-_, +_, +_], A] = Ref3[F, A]
+  import scala.language.implicitConversions
 
-  @deprecated("renamed to Promise2", "will be removed in 1.1.0")
-  type BIOPromise[F[+_, +_], E, A] = Promise2[F, E, A]
-  @deprecated("renamed to Promise2", "will be removed in 1.1.0")
-  lazy val BIOPromise: Promise2.type = Promise2
-  @deprecated("renamed to Promise3", "will be removed in 1.1.0")
-  type BIOPromise3[F[-_, +_, +_], E, A] = Promise3[F, E, A]
+  trait Root extends DivergenceHelper with PredefinedHelper
 
-  @deprecated("renamed to Latch2", "will be removed in 1.1.0")
-  type BIOLatch[F[+_, +_]] = Latch2[F]
-  @deprecated("renamed to Latch3", "will be removed in 1.1.0")
-  type BIOLatch3[F[-_, +_, +_]] = Latch3[F]
+  trait RootBifunctor[F[-_, +_, +_]] extends Root
 
-  @deprecated("renamed to Semaphore2", "will be removed in 1.1.0")
-  type BIOSemaphore[F[+_, +_]] = Semaphore2[F]
-  @deprecated("renamed to Semaphore2", "will be removed in 1.1.0")
-  lazy val BIOSemaphore: Semaphore2.type = Semaphore2
-  @deprecated("renamed to Semaphore3", "will be removed in 1.1.0")
-  type BIOSemaphore3[F[-_, +_, +_]] = Semaphore3[F]
+  trait RootTrifunctor[F[-_, +_, +_]] extends Root
 
-  @deprecated("renamed to Primitives2", "will be removed in 1.1.0")
-  type BIOPrimitives[F[+_, +_]] = Primitives2[F]
-  @deprecated("renamed to Primitives2", "will be removed in 1.1.0")
-  lazy val BIOPrimitives: Primitives2.type = Primitives2
-  @deprecated("renamed to Primitives3", "will be removed in 1.1.0")
-  type BIOPrimitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
-  @deprecated("renamed to Primitives3", "will be removed in 1.1.0")
-  lazy val BIOPrimitives3: Primitives3.type = Primitives3
+  object Root extends RootInstancesLowPriority1 {
+    @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] with S1 =
+      S1(Concurrent.InnerF)
 
-  @deprecated("renamed to UnsafeRun2", "will be removed in 1.1.0")
-  type BIORunner[F[_, _]] = UnsafeRun2[F]
-  @deprecated("renamed to UnsafeRun2", "will be removed in 1.1.0")
-  lazy val BIORunner: UnsafeRun2.type = UnsafeRun2
+    @inline implicit final def AttachLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Local: Local3[FR]): Local.type = Local
+    @inline implicit final def AttachPrimitives3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Primitives: Primitives3[FR]): Primitives.type =
+      Primitives
+    @inline implicit final def AttachScheduler3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Scheduler: Scheduler3[FR]): Scheduler.type = Scheduler
+    @inline implicit final def AttachPrimitivesM3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit PrimitivesM: PrimitivesM3[FR]): PrimitivesM.type =
+      PrimitivesM
+    @inline implicit final def AttachFork3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Fork: Fork3[FR]): Fork.type = Fork
+    @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 
-  @deprecated("renamed to UnsafeRun3", "will be removed in 1.1.0")
-  type BIORunner3[F[_, _, _]] = UnsafeRun3[F]
-  @deprecated("renamed to UnsafeRun3", "will be removed in 1.1.0")
-  lazy val BIORunner3: UnsafeRun3.type = UnsafeRun3
+    implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](private val FR0: Functor3[FR]) extends AnyVal {
+      @inline def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, _], R, A])(implicit FR: MonadAsk3[FR]): FR[R, E, A] = FR.fromKleisli(k)
+      @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: Local3[FR]): Kleisli[FR[Any, E, _], R, A] = {
+        val _ = FR0
+        FR.toKleisli(fr)
+      }
+    }
+  }
 
-  @deprecated("renamed to Error2", "will be removed in 1.1.0")
-  type BIOMonadError[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
+    @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] with S2 =
+      S2(Temporal.InnerF)
 
-  @deprecated("renamed to Error3", "will be removed in 1.1.0")
-  type BIOMonadError3[FR[-_, +_, +_]] = Error3[FR]
+    @inline implicit final def AttachArrowChoice[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit ArrowChoice: ArrowChoice3[FR]): ArrowChoice.type =
+      ArrowChoice
+    @inline implicit final def AttachMonadAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit MonadAsk: MonadAsk3[FR]): MonadAsk.type = MonadAsk
+    @inline implicit final def AttachConcurrent[FR[-_, +_, +_], R](@unused self: Concurrent3[FR])(implicit Concurrent: Concurrent3[FR]): Concurrent.type =
+      Concurrent
+  }
 
-  @deprecated("renamed to Exit", "will be removed in 1.1.0")
-  type BIOExit[+E, +A] = Exit[E, A]
-  @deprecated("renamed to Exit", "will be removed in 1.1.0")
-  lazy val BIOExit: Exit.type = Exit
+  sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
+    @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] with S3 =
+      S3(Parallel.InnerF)
 
-  @deprecated("renamed to TransZio", "will be removed in 1.1.0")
-  type BIOTransZio[F[_, _]] = TransZio[F]
-  @deprecated("renamed to TransZio", "will be removed in 1.1.0")
-  lazy val BIOTransZio: TransZio.type = TransZio
+    @inline implicit final def AttachArrow[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Arrow: Arrow3[FR]): Arrow.type = Arrow
+    @inline implicit final def AttachBifunctor[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Bifunctor: Bifunctor3[FR]): Bifunctor.type =
+      Bifunctor
+    @inline implicit final def AttachConcurrent[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Concurrent: Concurrent3[FR]): Concurrent.type =
+      Concurrent
+  }
 
-  @deprecated("renamed to Root", "will be removed in 1.1.0")
-  type BIORoot = Root
-  @deprecated("renamed to Root", "will be removed in 1.1.0")
-  lazy val BIORoot: Root.type = Root
+  sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
+    @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] with S4 =
+      S4(MonadAsk.InnerF)
 
+    @inline implicit final def AttachAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Ask: Ask3[FR]): Ask.type = Ask
+    @inline implicit final def AttachProfunctor[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Profunctor: Profunctor3[FR]): Profunctor.type =
+      Profunctor
+    @inline implicit final def AttachParallel[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Parallel: Parallel3[FR]): Parallel.type = Parallel
+  }
+
+  sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
+    @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] with S5 = S5(Ask.InnerF)
+
+    @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal.type = Temporal
+  }
+
+  sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
+    @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] with S6 =
+      S6(Profunctor.InnerF)
+  }
+
+  sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
+    @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] with S7 =
+      S7(Bifunctor.InnerF)
+  }
+
+  sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {
+    @inline implicit final def Local3ZIO: Predefined.Of[Local3[ZIO]] = Predefined(AsyncZio)
+    @inline implicit final def BIOZIO: Predefined.Of[Async3[ZIO]] = Predefined(AsyncZio)
+  }
+
+  sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
+    /**
+      * This instance uses 'no more orphans' trick to provide an Optional instance
+      * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
+      *
+      * Optional instance via https://blog.7mind.io/no-more-orphans.html
+      */
+    // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
+    // seems like it's because of the type lambda in `Async2` definition
+    @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[Async2[MonixBIO]] =
+      AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
+  }
+
+  sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
+    @inline implicit final def BIOEither: Predefined.Of[Error2[Either]] = Predefined(BioEither)
+  }
+
+  sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
+    @inline implicit final def BIOIdentity2: Predefined.Of[Monad2[Identity2]] = BioIdentity3.asInstanceOf[Predefined.Of[Monad2[Identity2]]]
+    @inline implicit final def BIOIdentity3: Predefined.Of[Monad3[Identity3]] = Predefined(BioIdentity3)
+  }
+
+  sealed trait RootInstancesLowPriority11 {
+    @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
+      implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
+    ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
+      Divergent(cast3To2[C, FR, R0](BifunctorPlus))
+  }
 }

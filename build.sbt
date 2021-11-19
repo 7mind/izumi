@@ -857,13 +857,13 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
-      "io.circe" %% "circe-literal" % V.circe % Test
+      "org.typelevel" %% "jawn-parser" % V.jawn % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "io.circe" %% "circe-derivation" % V.circe_derivation,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "io.circe" %% "circe-literal" % V.circe % Test
     ) else Seq.empty }
   )
   .settings(
@@ -1652,12 +1652,12 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
-      "com.propensive" %% "magnolia" % V.magnolia
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
+      "com.propensive" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
@@ -2636,11 +2636,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "io.monix" %% "monix" % V.monix % Optional,
       "io.monix" %% "monix-bio" % V.monix_bio % Optional,
-      "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scalamock" %% "scalamock" % V.scalamock % Test
     ) else Seq.empty }
   )
   .settings(
@@ -2903,11 +2903,11 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-parser" % V.circe % Test,
-      "io.circe" %% "circe-literal" % V.circe % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "io.circe" %% "circe-literal" % V.circe % Test
     ) else Seq.empty }
   )
   .settings(
@@ -3287,229 +3287,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `microsite` = project.in(file("doc/microsite"))
-  .dependsOn(
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-language` % "test->compile;compile->compile",
-    `fundamentals-reflection` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
-    `fundamentals-bio` % "test->compile;compile->compile",
-    `fundamentals-json-circe` % "test->compile;compile->compile",
-    `fundamentals-orphans` % "test->compile;compile->compile",
-    `fundamentals-literals` % "test->compile;compile->compile",
-    `distage-core-api` % "test->compile;compile->compile",
-    `distage-core-proxy-cglib` % "test->compile;compile->compile",
-    `distage-core` % "test->compile;compile->compile",
-    `distage-extension-config` % "test->compile;compile->compile",
-    `distage-extension-plugins` % "test->compile;compile->compile",
-    `distage-extension-logstage` % "test->compile;compile->compile",
-    `distage-framework-api` % "test->compile;compile->compile",
-    `distage-framework` % "test->compile;compile->compile",
-    `distage-framework-docker` % "test->compile;compile->compile",
-    `distage-testkit-core` % "test->compile;compile->compile",
-    `distage-testkit-scalatest` % "test->compile;compile->compile",
-    `logstage-core` % "test->compile;compile->compile",
-    `logstage-rendering-circe` % "test->compile;compile->compile",
-    `logstage-adapter-slf4j` % "test->compile;compile->compile",
-    `logstage-sink-slf4j` % "test->compile;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.typelevel" %% "cats-core" % V.cats,
-      "org.typelevel" %% "cats-effect" % V.cats_effect,
-      "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
-      "org.tpolecat" %% "doobie-core" % V.doobie,
-      "org.tpolecat" %% "doobie-postgres" % V.doobie,
-      "io.monix" %% "monix" % V.monix,
-      "io.monix" %% "monix-bio" % V.monix_bio,
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
-  )
-  .settings(
-    crossScalaVersions := Seq(
-      "3.1.0",
-      "2.13.7",
-      "2.12.15"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    organization := "io.7mind.izumi",
-    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
-    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
-    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Test / testOptions += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.15") => Seq(
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
-      )
-      case (_, "2.13.7") => Seq(
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:after",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.1.0") => Seq(
-        "-Ykind-projector:underscores",
-        "-no-indent",
-        "-explain",
-        "-deprecation",
-        "-feature"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions += "-Wconf:cat=deprecation:warning",
-    scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
-    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.15") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (false, "2.13.7") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:error",
-    scalacOptions -= "-Xsource:3",
-    Compile / sbt.Keys.doc / scalacOptions += "-Xsource:3",
-    coverageEnabled := false,
-    publish / skip := true,
-    DocKeys.prefix := {if (isSnapshot.value) {
-                (s => s"latest/snapshot/$s")
-              } else {
-                identity
-              }},
-    previewFixedPort := Some(9999),
-    git.remoteRepo := "git@github.com:7mind/izumi-microsite.git",
-    Compile / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
-    mdocIn := baseDirectory.value / "src/main/tut",
-    Paradox / sourceDirectory := mdocOut.value,
-    mdocExtraArguments ++= Seq(
-      " --no-link-hygiene"
-    ),
-    SitePlugin.autoImport.makeSite / mappings := {
-                (SitePlugin.autoImport.makeSite / mappings)
-                  .dependsOn(mdoc.toTask(" "))
-                  .value
-              },
-    Paradox / version := version.value,
-    ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox),
-    addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
-    Paradox / paradoxMaterialTheme ~= {
-                _.withCopyright("7mind.io")
-                  .withRepository(uri("https://github.com/7mind/izumi"))
-                //        .withColor("222", "434343")
-              },
-    ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api"),
-    Paradox / siteSubdirName := DocKeys.prefix.value(""),
-    paradoxProperties ++= Map(
-                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
-                "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
-                "izumi.version" -> version.value,
-              ),
-    ghpagesCleanSite / excludeFilter :=
-                new FileFilter {
-                  def accept(f: File): Boolean = {
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
-                      f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
-                      f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
-                      (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                      (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
-                  }
-                }
-  )
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
-  .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
-
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     libraryDependencies ++= Seq(
@@ -3766,36 +3543,6 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
     `logstage-rendering-circe`,
     `logstage-adapter-slf4j`,
     `logstage-sink-slf4j`
-  )
-
-lazy val `doc` = (project in file(".agg/doc-doc"))
-  .settings(
-    publish / skip := true,
-    crossScalaVersions := Seq(
-      "3.1.0",
-      "2.13.7",
-      "2.12.15"
-    ),
-    scalaVersion := crossScalaVersions.value.head
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `microsite`
-  )
-
-lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
-  .settings(
-    publish / skip := true,
-    crossScalaVersions := Seq(
-      "3.1.0",
-      "2.13.7",
-      "2.12.15"
-    ),
-    scalaVersion := crossScalaVersions.value.head
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `microsite`
   )
 
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))

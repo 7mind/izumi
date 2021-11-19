@@ -399,11 +399,11 @@ object Izumi {
         name = Projects.fundamentals.jsonCirce,
         libs = Seq(
           circe_core in Scope.Compile.all,
-          circe_derivation in Scope.Compile.all,
+          circe_derivation in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala2),
           scala_reflect in Scope.Provided.all.scalaVersion(ScalaVersionScope.AllScala2),
         ) ++ Seq(
           jawn in Scope.Test.all,
-          circe_literal in Scope.Test.all,
+          circe_literal in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
         ),
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
@@ -459,7 +459,9 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all.scalaVersion(ScalaVersionScope.AllScala2)),
+        libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala2)) ++ Seq(
+          scala_reflect in Scope.Provided.all.scalaVersion(ScalaVersionScope.AllScala2)
+        ),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
@@ -511,7 +513,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitScalatest,
         libs = allMonadsOptional ++ Seq(
-          scalamock in Scope.Test.all,
+          scalamock in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           scalatest.dependency in Scope.Compile.all,
         ),
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
@@ -540,7 +542,7 @@ object Izumi {
         libs = Seq(
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
-          circe_literal in Scope.Test.all,
+          circe_literal in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           zio_core in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
@@ -573,107 +575,109 @@ object Izumi {
   final lazy val docs = Aggregate(
     name = Projects.docs.id,
     artifacts = Seq(
-      Artifact(
-        name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ doobie ++ Seq(monix, monix_bio)).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
-        depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
-        settings = Seq(
-          "scalacOptions" -= "-Wconf:any:error",
-          //  Disable `-Xsource:3` in docs due to mdoc failures:
-          //
-          //  ```
-          //  error: basics.md:97 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
-          //  val injector: Injector[RIO[Console, _]] = Injector[RIO[Console, _]](); $doc.binder(injector, 2, 4, 2, 12)
-          //                                                                                    ^
-          //
-          //  error: basics.md:109 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
-          //  val resource = injector.produce(plan); $doc.binder(resource, 4, 4, 4, 12)
-          //                                                    ^
-          //
-          //  error: basics.md:1359 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$9$]]
-          //  val res51 = chooseInterpreters(true); $doc.binder(res51, 26, 0, 26, 24)
-          //  ```
-          "scalacOptions" -= "-Xsource:3",
-          // enable for unidoc
-          "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") += "-Xsource:3",
-          //
-          "coverageEnabled" := false,
-          "skip" in SettingScope.Raw("publish") := true,
-          "DocKeys.prefix" :=
-            """{if (isSnapshot.value) {
-            (s => s"latest/snapshot/$s")
-          } else {
-            identity
-          }}""".raw,
-          "previewFixedPort" := "Some(9999)".raw,
-          "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
-          "classLoaderLayeringStrategy" in SettingScope.Raw("Compile") := "ClassLoaderLayeringStrategy.Flat".raw,
-          "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
-          "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
-          "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
-          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
-            """{
-            (SitePlugin.autoImport.makeSite / mappings)
-              .dependsOn(mdoc.toTask(" "))
-              .value
-          }""".raw,
-          "version" in SettingScope.Raw("Paradox") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
-          SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
-          SettingDef.RawSettingDef(
-            "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
-          ),
-          SettingDef.RawSettingDef("""Paradox / paradoxMaterialTheme ~= {
-            _.withCopyright("7mind.io")
-              .withRepository(uri("https://github.com/7mind/izumi"))
-            //        .withColor("222", "434343")
-          }"""),
-          "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
-          "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
-          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
-            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
-            "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
-            "izumi.version" -> version.value,
-          )"""),
-          SettingDef.RawSettingDef(
-            """ghpagesCleanSite / excludeFilter :=
-            new FileFilter {
-              def accept(f: File): Boolean = {
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
-                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
-                  (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
-              }
-            }"""
-          ),
-        ),
-        plugins = Plugins(
-          enabled = Seq(
-            Plugin("ScalaUnidocPlugin"),
-            Plugin("ParadoxSitePlugin"),
-            Plugin("SitePlugin"),
-            Plugin("GhpagesPlugin"),
-            Plugin("ParadoxMaterialThemePlugin"),
-            Plugin("PreprocessPlugin"),
-            Plugin("MdocPlugin"),
-          ),
-          disabled = Seq(Plugin("ScoverageSbtPlugin")),
-        ),
-      )
+//      Artifact(
+//        name = Projects.docs.microsite,
+//        libs = (cats_all ++ zio_all ++ doobie ++ Seq(monix, monix_bio)).map(_ in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala2)) ++ Seq(
+//          izumi_reflect in Scope.Compile.all
+//        ),
+//        depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
+//        settings = Seq(
+//          "scalacOptions" -= "-Wconf:any:error",
+//          //  Disable `-Xsource:3` in docs due to mdoc failures:
+//          //
+//          //  ```
+//          //  error: basics.md:97 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+//          //  val injector: Injector[RIO[Console, _]] = Injector[RIO[Console, _]](); $doc.binder(injector, 2, 4, 2, 12)
+//          //                                                                                    ^
+//          //
+//          //  error: basics.md:109 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+//          //  val resource = injector.produce(plan); $doc.binder(resource, 4, 4, 4, 12)
+//          //                                                    ^
+//          //
+//          //  error: basics.md:1359 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$9$]]
+//          //  val res51 = chooseInterpreters(true); $doc.binder(res51, 26, 0, 26, 24)
+//          //  ```
+//          "scalacOptions" -= "-Xsource:3",
+//          // enable for unidoc
+//          "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") += "-Xsource:3",
+//          //
+//          "coverageEnabled" := false,
+//          "skip" in SettingScope.Raw("publish") := true,
+//          "DocKeys.prefix" :=
+//            """{if (isSnapshot.value) {
+//            (s => s"latest/snapshot/$s")
+//          } else {
+//            identity
+//          }}""".raw,
+//          "previewFixedPort" := "Some(9999)".raw,
+//          "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
+//          "classLoaderLayeringStrategy" in SettingScope.Raw("Compile") := "ClassLoaderLayeringStrategy.Flat".raw,
+//          "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
+//          "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
+//          "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
+//          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
+//            """{
+//            (SitePlugin.autoImport.makeSite / mappings)
+//              .dependsOn(mdoc.toTask(" "))
+//              .value
+//          }""".raw,
+//          "version" in SettingScope.Raw("Paradox") := "version.value".raw,
+//          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
+//          SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
+//          SettingDef.RawSettingDef(
+//            "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
+//          ),
+//          SettingDef.RawSettingDef("""Paradox / paradoxMaterialTheme ~= {
+//            _.withCopyright("7mind.io")
+//              .withRepository(uri("https://github.com/7mind/izumi"))
+//            //        .withColor("222", "434343")
+//          }"""),
+//          "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
+//          "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
+//          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
+//            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
+//            "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
+//            "izumi.version" -> version.value,
+//          )"""),
+//          SettingDef.RawSettingDef(
+//            """ghpagesCleanSite / excludeFilter :=
+//            new FileFilter {
+//              def accept(f: File): Boolean = {
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
+//                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
+//                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
+//                  (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
+//                  (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+//                  (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
+//                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+//                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
+//              }
+//            }"""
+//          ),
+//        ),
+//        plugins = Plugins(
+//          enabled = Seq(
+//            Plugin("ScalaUnidocPlugin"),
+//            Plugin("ParadoxSitePlugin"),
+//            Plugin("SitePlugin"),
+//            Plugin("GhpagesPlugin"),
+//            Plugin("ParadoxMaterialThemePlugin"),
+//            Plugin("PreprocessPlugin"),
+//            Plugin("MdocPlugin"),
+//          ),
+//          disabled = Seq(Plugin("ScoverageSbtPlugin")),
+//        ),
+//      )
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
