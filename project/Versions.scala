@@ -24,7 +24,7 @@ object V {
   val circe = "0.14.1"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.1"
-  val magnolia = "0.17.1"
+  val magnolia = "0.17.0"
   val jawn = "1.0.1"
 
   // good to drop - scala
