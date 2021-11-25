@@ -75,6 +75,8 @@ abstract class RoleAppMain[F[_]](
   /** Roles always enabled in this [[RoleAppMain]] */
   protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = Vector.empty
 
+  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = AppFailureHandler.TerminatingHandler
+
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
@@ -112,10 +114,6 @@ abstract class RoleAppMain[F[_]](
     izumi.distage.framework.PlanCheck.assertAppCompileTime[this.type, Cfg](this, cfg)
   }
 
-  override final def roleAppBootModule: Module = {
-    roleAppBootModule(ArgV.empty)
-  }
-
   def roleAppBootModule(argv: ArgV): Module = {
     val mainModule = roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
     val overrideModule = roleAppBootOverrides(argv)
@@ -134,9 +132,10 @@ abstract class RoleAppMain[F[_]](
     )
   }
 
-  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
-    AppFailureHandler.TerminatingHandler
+  override final def roleAppBootModule: Module = {
+    roleAppBootModule(ArgV.empty)
   }
+
 }
 
 object RoleAppMain {

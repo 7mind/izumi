@@ -31,11 +31,7 @@ object RoleAppActivationParser {
     }
 
     protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisChoice)] = {
-      def options: String = activationInfo.availableChoices
-        .map {
-          case (axis, members) =>
-            s"$axis:${members.niceList().shift(2)}"
-        }.niceList()
+      def options: String = activationInfo.formattedChoices
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {
         case Some((base, members)) =>
@@ -43,25 +39,29 @@ object RoleAppActivationParser {
             case Some(member) =>
               Some(base -> member)
             case None =>
-              logger.warn(s"Unknown choice: $choiceName")
-              logger.warn(s"Available $options")
               if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+                logger.warn(s"Unknown choice: $choiceName, available $options")
                 None
               } else {
                 throw new DIAppBootstrapException(
-                  s"Unknown choice: $choiceName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue"
+                  s"""Unknown choice: $choiceName, available $options
+                     |Set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true`
+                     |or set component `make[Boolean].named("distage.roles.activation.ignore-unknown").from(true)` in `RoleAppMain#roleAppBootOverrides`
+                     |to ignore this error and continue""".stripMargin
                 )
               }
           }
 
         case None =>
-          logger.warn(s"Unknown axis: $axisName")
-          logger.warn(s"Available $options")
           if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+            logger.warn(s"Unknown axis: $axisName, available $options")
             None
           } else {
             throw new DIAppBootstrapException(
-              s"Unknown axis: $axisName, set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true` to ignore this error and continue "
+              s"""Unknown axis: $axisName, available $options
+                 |Set system property `-D${DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name}=true`
+                 |or set component `make[Boolean].named("distage.roles.activation.ignore-unknown").from(true)` in `RoleAppMain#roleAppBootOverrides`
+                 |to ignore this error and continue""".stripMargin
             )
           }
       }

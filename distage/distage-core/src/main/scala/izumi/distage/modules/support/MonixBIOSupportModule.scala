@@ -12,8 +12,6 @@ import monix.execution.Scheduler
 
 import scala.concurrent.ExecutionContext
 
-object MonixBIOSupportModule extends MonixBIOSupportModule
-
 /**
   * `monix.bio.IO` effect type support for `distage` resources, effects, roles & tests
   *
@@ -33,7 +31,7 @@ object MonixBIOSupportModule extends MonixBIOSupportModule
   */
 trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupportModule {
   // QuasiIO & BIO instances
-  include(AnyBIO2SupportModule[IO])
+  include(AnyBIO2SupportModule.asIs[IO])
   // cats-effect instances
   include(CatsEffectInstancesModule[Task])
 
@@ -61,3 +59,5 @@ trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupp
   addImplicit[Timer[Task]]
   addImplicit[Timer[UIO]]
 }
+
+object MonixBIOSupportModule extends MonixBIOSupportModule

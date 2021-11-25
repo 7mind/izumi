@@ -19,9 +19,9 @@ import scala.annotation.unchecked.{uncheckedVariance => v}
   *
   * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
   */
-class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]) extends ModuleDef {
+abstract class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]) extends ModuleDef {
   // QuasiIO & bifunctor bio instances
-  include(AnyBIO2SupportModule[F[Any, +_, +_]])
+  include(AnyBIO2SupportModule.asIs[F[Any, +_, +_]])
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
   addConverted3To2[F[Any, +_, +_]]
@@ -43,8 +43,8 @@ class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +
   }
 }
 
-object AnyBIO3SupportModule extends App with ModuleDef {
-  @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]): AnyBIO3SupportModule[F] = new AnyBIO3SupportModule
+object AnyBIO3SupportModule {
+  @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]): AnyBIO3SupportModule[F] = new AnyBIO3SupportModule {}
 
   /**
     * Make [[AnyBIO3SupportModule]], binding the required dependencies in place to values from implicit scope
@@ -54,32 +54,29 @@ object AnyBIO3SupportModule extends App with ModuleDef {
     */
   def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3](
     implicit tagBIO: TagKK[F[Any, +_, +_]]
-  ): ModuleDef =
-    new ModuleDef {
-      include(AnyBIO3SupportModule[F])
+  ): ModuleDef = new AnyBIO3SupportModule[F] {
+    addImplicit[Async3[F]]
+    addImplicit[Temporal3[F]]
+    addImplicit[Local3[F]]
+    addImplicit[Fork3[F]]
+    addImplicit[Primitives3[F]]
+    addImplicit[PrimitivesM3[F]]
+    addImplicit[UnsafeRun3[F]]
+    addImplicit[Scheduler3[F]]
 
-      addImplicit[Async3[F]]
-      addImplicit[Temporal3[F]]
-      addImplicit[Local3[F]]
-      addImplicit[Fork3[F]]
-      addImplicit[Primitives3[F]]
-      addImplicit[PrimitivesM3[F]]
-      addImplicit[UnsafeRun3[F]]
-      addImplicit[Scheduler3[F]]
-
-      // no corresponding bifunctor (`F[Any, +_, +_]`) instances need to be added for these types because they already match
-      private[this] def aliasingCheck(): Unit = {
-        lazy val _ = aliasingCheck()
-        implicitly[Scheduler3[F] =:= Scheduler2[F[Any, +_, +_]]]
-        implicitly[UnsafeRun3[F] =:= UnsafeRun2[F[Any, +_, +_]]]
-        implicitly[Primitives3[F] =:= Primitives2[F[Any, +_, +_]]]
-        implicitly[PrimitivesM3[F] =:= PrimitivesM2[F[Any, +_, +_]]]
-        implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +_, +_]]]
-        implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +_, +_]]]
-        implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
-        implicitly[QuasiApplicative3[F] =:= QuasiApplicative2[F[Any, +_, +_]]]
-        implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +_, +_]]]
-        ()
-      }
+    // no corresponding bifunctor (`F[Any, +_, +_]`) instances need to be added for these types because they already match
+    private[this] def aliasingCheck(): Unit = {
+      lazy val _ = aliasingCheck()
+      implicitly[Scheduler3[F] =:= Scheduler2[F[Any, +_, +_]]]
+      implicitly[UnsafeRun3[F] =:= UnsafeRun2[F[Any, +_, +_]]]
+      implicitly[Primitives3[F] =:= Primitives2[F[Any, +_, +_]]]
+      implicitly[PrimitivesM3[F] =:= PrimitivesM2[F[Any, +_, +_]]]
+      implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +_, +_]]]
+      implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +_, +_]]]
+      implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
+      implicitly[QuasiApplicative3[F] =:= QuasiApplicative2[F[Any, +_, +_]]]
+      implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +_, +_]]]
+      ()
     }
+  }
 }

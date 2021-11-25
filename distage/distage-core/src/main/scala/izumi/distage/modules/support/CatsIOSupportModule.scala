@@ -7,8 +7,6 @@ import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 
 import scala.concurrent.ExecutionContext
 
-object CatsIOSupportModule extends CatsIOSupportModule
-
 /**
   * `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
@@ -34,6 +32,8 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
   make[ExecutionContext].named("cpu").from((_: PublicIOApp).executionContext)
   make[PublicIOApp]
 }
+
+object CatsIOSupportModule extends CatsIOSupportModule
 
 private[support] trait PublicIOApp extends IOApp {
   override def contextShift: ContextShift[IO] = super.contextShift

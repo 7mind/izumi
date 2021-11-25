@@ -5,17 +5,19 @@ import distage.{TagK, TagKK}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
+import izumi.distage.modules.support.AnyBIO2SupportModule
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}
-import izumi.functional.bio.catz._
-import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
+import izumi.functional.bio.UnsafeRun2.ZIORunner
+import izumi.functional.bio.catz.*
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Async3, F, Temporal2, Temporal3, UnsafeRun2}
 import izumi.fundamentals.platform.integration.ResourceCheck
-import zio.{Task, UIO}
+import zio.{Task, UIO, ZIO}
 
-case class TestEnableDisable()
+final case class TestEnableDisable()
 
-class DisabledTestZIO extends Lifecycle.Simple[TestEnableDisable] with IntegrationCheck[UIO] {
+class DisabledTestZIOResource extends Lifecycle.Simple[TestEnableDisable] with IntegrationCheck[UIO] {
   override def resourcesAvailable(): UIO[ResourceCheck] =
     UIO.succeed(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
 
@@ -26,7 +28,7 @@ class DisabledTestZIO extends Lifecycle.Simple[TestEnableDisable] with Integrati
 class MyDisabledTestZIO extends Spec1[Task] {
   override def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
-      make[TestEnableDisable].fromResource[DisabledTestZIO]
+      make[TestEnableDisable].fromResource[DisabledTestZIOResource]
     }
   )
 
@@ -35,7 +37,7 @@ class MyDisabledTestZIO extends Spec1[Task] {
   }
 }
 
-class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F, TestEnableDisable] with IntegrationCheck[F] {
+class DisabledTestFResource[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F, TestEnableDisable] with IntegrationCheck[F] {
   override def resourcesAvailable(): F[ResourceCheck] =
     F.pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
 
@@ -47,7 +49,7 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: TagK: DefaultModule, F[x] <: F0[x
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
-        make[TestEnableDisable].fromResource[DisabledTestF[F]]
+        make[TestEnableDisable].fromResource[DisabledTestFResource[F]]
         addImplicit[Applicative[F]]
       }
     )
@@ -65,7 +67,7 @@ final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, 
 final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO]
 final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task]
 
-class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +_], TestEnableDisable] with IntegrationCheck[F[Nothing, _]] {
+class DisabledTestF2Resource[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +_], TestEnableDisable] with IntegrationCheck[F[Nothing, _]] {
   override def resourcesAvailable(): F[Nothing, ResourceCheck] =
     F.pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
   override def acquire: F[Nothing, TestEnableDisable] = F.pure(TestEnableDisable())
@@ -76,7 +78,7 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: Ap
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
-        make[TestEnableDisable].fromResource[DisabledTestF2[F]]
+        make[TestEnableDisable].fromResource[DisabledTestF2Resource[F]]
       }
     )
   }
@@ -88,4 +90,14 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: Ap
 
 final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
 final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
-//final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]]
+final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]] {
+  final type myf[+E, +A] = zio.ZIO[zio.ZEnv, E, A]
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
+      include(AnyBIO2SupportModule.asIs[myf])
+      make[Async2[myf]].from { implicit a: Async3[ZIO] => Async2[myf] }
+      make[Temporal2[myf]].from { implicit a: Temporal3[ZIO] => Temporal2[myf] }
+      make[UnsafeRun2[myf]].from[ZIORunner[zio.ZEnv]]
+    }
+  )
+}

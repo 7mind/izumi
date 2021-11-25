@@ -19,7 +19,7 @@ import izumi.reflect.TagKK
   *
   * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`
   */
-class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
+abstract class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   include(BIO2InstancesModule[F])
 
   make[QuasiIORunner2[F]]
@@ -46,8 +46,9 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   }
 }
 
-object AnyBIO2SupportModule extends ModuleDef {
-  @inline def apply[F[+_, +_]: TagKK]: AnyBIO2SupportModule[F] = new AnyBIO2SupportModule
+object AnyBIO2SupportModule {
+  // FIXME remove apply()
+  @inline def asIs[F[+_, +_]: TagKK]: AnyBIO2SupportModule[F] = new AnyBIO2SupportModule {}
 
   /**
     * Make [[AnyBIO2SupportModule]], binding the required dependencies in place to values from implicit scope
@@ -55,9 +56,7 @@ object AnyBIO2SupportModule extends ModuleDef {
     * `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[AnyBIO2SupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2]: ModuleDef = new ModuleDef {
-    include(AnyBIO2SupportModule[F])
-
+  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2]: ModuleDef = new AnyBIO2SupportModule[F] {
     addImplicit[Async2[F]]
     addImplicit[Fork2[F]]
     addImplicit[Temporal2[F]]

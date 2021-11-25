@@ -760,7 +760,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @return an <code>Iterable</code> containing all entries of this <code>NonEmptyMap</code>.
     */
-  def toIterable: Iterable[(K, V)] = toMap.toIterable
+  def toIterable: Iterable[(K, V)] = toMap
 
   /**
     * Returns an <code>Iterator</code> over the entries in this <code>NonEmptyMap</code>.

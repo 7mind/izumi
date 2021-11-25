@@ -1,39 +1,37 @@
 package izumi.distage.modules.typeclass
 
-import java.util.concurrent.ThreadPoolExecutor
-
 import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
 import cats.{Parallel, effect}
 import distage.{Id, ModuleDef}
-import zio.{IO, Runtime, Task}
+import izumi.reflect.Tag
+import zio.{IO, Runtime, ZIO}
 
+import java.util.concurrent.ThreadPoolExecutor
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
-
-object ZIOCatsEffectInstancesModule extends ZIOCatsEffectInstancesModule
 
 /**
   * Adds `cats-effect` typeclass instances for ZIO
   *
-  * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
+  * Depends on `zio.Runtime[R]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
   *
   * Will also add the following components:
   *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("zio.io")`
   */
-trait ZIOCatsEffectInstancesModule extends ModuleDef {
-  include(CatsEffectInstancesModule[Task])
+class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
+  include(CatsEffectInstancesModule[ZIO[R, Throwable, +_]])
 
-  make[ConcurrentEffect[Task]].from {
-    r: Runtime[Any] =>
+  make[ConcurrentEffect[ZIO[R, Throwable, +_]]].from {
+    r: Runtime[R] =>
       zio.interop.catz.taskEffectInstance(r)
   }
-  make[Parallel[Task]].from {
-    zio.interop.catz.parallelInstance[Any, Throwable]
+  make[Parallel[ZIO[R, Throwable, +_]]].from {
+    zio.interop.catz.parallelInstance[R, Throwable]
   }
-  make[Timer[Task]].from[ZIOClockTimer[Throwable]]
+  make[Timer[ZIO[R, Throwable, +_]]].from[ZIOClockTimer[R, Throwable]]
 
-  make[ContextShift[Task]].from {
-    zio.interop.catz.zioContextShift[Any, Throwable]
+  make[ContextShift[ZIO[R, Throwable, +_]]].from {
+    zio.interop.catz.zioContextShift[R, Throwable]
   }
   make[Blocker].from {
     pool: ThreadPoolExecutor @Id("zio.io") =>
@@ -41,12 +39,18 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   }
 }
 
-final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, _]] {
-  override lazy val clock: effect.Clock[IO[E, _]] = new effect.Clock[IO[E, _]] {
-    override def monotonic(unit: TimeUnit): IO[E, Long] =
+object ZIOCatsEffectInstancesModule extends ModuleDef {
+  @inline final def apply[R: Tag](): ModuleDef = new ZIOCatsEffectInstancesModule[R]
+
+  include(new ZIOCatsEffectInstancesModule[Any])
+}
+
+final class ZIOClockTimer[R, E](zioClock: zio.clock.Clock.Service) extends effect.Timer[ZIO[R, E, _]] {
+  override lazy val clock: effect.Clock[ZIO[R, E, _]] = new effect.Clock[ZIO[R, E, _]] {
+    override def monotonic(unit: TimeUnit): ZIO[R, E, Long] =
       zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
 
-    override def realTime(unit: TimeUnit): IO[E, Long] =
+    override def realTime(unit: TimeUnit): ZIO[R, E, Long] =
       zioClock.currentTime(unit)
   }
 

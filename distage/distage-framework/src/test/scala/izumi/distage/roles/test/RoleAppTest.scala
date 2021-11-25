@@ -4,30 +4,37 @@ import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
-
 import cats.effect.IO
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
-import distage.{DIKey, Injector, Locator, LocatorRef}
+import distage.{DIKey, Injector, Locator, LocatorRef, ModuleDef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
-import izumi.distage.model.PlannerInput
+import izumi.distage.model.{PlannerInput, definition}
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
+import izumi.distage.modules.support.AnyCatsEffectSupportModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.DebugProperties
-import izumi.distage.roles.test.fixtures.Fixture._
-import izumi.distage.roles.test.fixtures._
+import izumi.distage.roles.{DebugProperties, RoleAppMain}
+import izumi.distage.roles.test.fixtures.Fixture.*
+import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
+import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.{Exit, TypedError, UnsafeRun2}
+import izumi.functional.bio.UnsafeRun2.InterruptAction
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
+import zio.{RIO, Runtime, ZEnv, ZIO}
+import zio.clock.Clock
+import zio.internal.Platform
 
-import scala.jdk.CollectionConverters._
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.*
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
   private final val targetPath = "target/configwriter"
@@ -392,6 +399,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
         new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
         new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        new StaticTestMainLogIO2[zio.ZIO[zio.ZEnv, +_, +_]].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
       }
     }
   }

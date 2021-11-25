@@ -1,24 +1,30 @@
 package izumi.distage.testkit.distagesuite
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-
-import cats.effect.{IO => CIO}
-import distage._
+import cats.effect.IO as CIO
+import distage.*
 import distage.plugins.PluginDef
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.modules.DefaultModule
+import izumi.distage.modules.support.AnyBIO2SupportModule
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
-import izumi.distage.testkit.distagesuite.fixtures._
+import izumi.distage.testkit.distagesuite.DistageTestExampleBase.*
+import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.functional.bio.ApplicativeError2
+import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.{ApplicativeError2, Async2, Async3, Exit, Temporal2, Temporal3, TypedError, UnsafeRun2}
+import izumi.functional.bio.UnsafeRun2.{InterruptAction, ZIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
-import zio.{Has, Task, ZIO}
+import zio.internal.Platform
+import zio.{Has, Runtime, Task, ZIO}
+
+import scala.concurrent.Future
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
@@ -225,6 +231,19 @@ final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
 final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]
+final class DistageTestExampleZIO3 extends DistageTestExampleBase[zio.ZIO[zio.ZEnv, Throwable, +_]] {
+  final type myf[+E, +A] = zio.ZIO[zio.ZEnv, E, A]
+  override def config: TestConfig = super.config.copy(
+    moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
+      include(AnyBIO2SupportModule.asIs[myf])
+      make[Async2[myf]].from { implicit a: Async3[ZIO] => Async2[myf] }
+      make[Temporal2[myf]].from { implicit a: Temporal3[ZIO] => Temporal2[myf] }
+      make[UnsafeRun2[myf]].from[ZIORunner[zio.ZEnv]]
+
+      val p = _root_.distage.DefaultModule3[Lambda[(`-R`, `+E`, `+A`) => zio.ZIO[R & zio.ZEnv, E, A]]]
+    }
+  )
+}
 
 abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
   "distage test" should {

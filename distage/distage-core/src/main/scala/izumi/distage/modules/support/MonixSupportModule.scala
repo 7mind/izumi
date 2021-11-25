@@ -9,8 +9,6 @@ import monix.execution.Scheduler
 
 import scala.concurrent.ExecutionContext
 
-object MonixSupportModule extends MonixSupportModule
-
 /**
   * `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
   *
@@ -42,3 +40,5 @@ trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportMod
   addImplicit[ContextShift[Task]]
   addImplicit[Timer[Task]]
 }
+
+object MonixSupportModule extends MonixSupportModule

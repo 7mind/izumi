@@ -18,6 +18,7 @@ import scala.collection.mutable
 object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]
 object MockAppIdPlugin extends MockAppPlugin[Identity]
+object MockAppZioRPlugin extends MockAppPlugin[zio.ZIO[zio.ZEnv, Throwable, +_]]
 
 abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockPostgresDriver[F]]

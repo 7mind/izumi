@@ -6,8 +6,6 @@ import izumi.functional.bio._
 import izumi.functional.bio.retry.Scheduler3
 import zio.{Has, IO, ZEnv, ZIO}
 
-object ZIOSupportModule extends ZIOSupportModule
-
 /**
   * `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
@@ -62,3 +60,5 @@ trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule 
   make[zio.random.Random].from(Has(_: zio.random.Random.Service))
   make[zio.random.Random.Service].from(zio.random.Random.Service.live)
 }
+
+object ZIOSupportModule extends ZIOSupportModule

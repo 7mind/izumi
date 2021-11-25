@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
   make[ZEnv].from(Has.allOf(_: Clock.Service, _: Console.Service, _: System.Service, _: Random.Service, _: Blocking.Service))
 
-  make[UnsafeRun3[ZIO]].using[ZIORunner]
+  make[UnsafeRun3[ZIO]].using[ZIORunner[Any]]
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
   make[BlockingIO2[IO]].from {
@@ -35,7 +35,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
       }
   }
 
-  make[ZIORunner].from {
+  make[ZIORunner[Any]].from {
     (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
       UnsafeRun2.createZIO(
         cpuPool = cpuPool,
@@ -45,7 +45,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
   }
   make[TracingConfig].fromValue(TracingConfig.enabled)
   make[FailureHandler].fromValue(FailureHandler.Default)
-  make[Runtime[Any]].from((_: ZIORunner).runtime)
+  make[Runtime[Any]].from((_: ZIORunner[Any]).runtime)
   make[Platform].from((_: Runtime[Any]).platform)
 
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
