@@ -57,9 +57,9 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * This adds cats typeclass instances to the default effect module if you have cats-effect on classpath,
     * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO, but not cats-effect instances.
     */
-  implicit def forZIOPlusCats[K[_], ZIO[_, _, _], R](
+  implicit def forZIOPlusCats[K[_, _, _], ZIO[_, _, _], R](
     implicit
-    @unused ensureInteropCatsOnClasspath: `cats.effect.IO`[K],
+    @unused ensureInteropCatsOnClasspath: `zio.interop.ZManagedSyntax`[K],
     @unused l: `zio.ZIO`[ZIO],
   ): DefaultModule2[ZIO[R, _, _]] = {
     DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)

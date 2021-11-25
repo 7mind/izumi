@@ -129,9 +129,9 @@ object `zio.ZIO` {
 
 // zio-interop-cats
 
-final abstract class `zio.interop.CatsEffectPlatform`[A]
-object `zio.interop.CatsEffectPlatform` {
-  @inline implicit final def get: `zio.interop.CatsEffectPlatform`[zio.interop.CatsEffectPlatform] = null
+final abstract class `zio.interop.ZManagedSyntax`[K[_, _, _]]
+object `zio.interop.ZManagedSyntax` {
+  @inline implicit final def get: `zio.interop.ZManagedSyntax`[zio.interop.ZManagedSyntax] = null
 }
 
 // monix-bio
@@ -139,11 +139,6 @@ object `zio.interop.CatsEffectPlatform` {
 final abstract class `monix.bio.IO`[K[_, _]]
 object `monix.bio.IO` {
   @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
-}
-
-final abstract class `monix.bio.IO.Options`[A]
-object `monix.bio.IO.Options` {
-  @inline implicit final def get: `monix.bio.IO.Options`[monix.bio.IO.Options] = null
 }
 
 // monix
