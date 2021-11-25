@@ -28,7 +28,7 @@ class SchedulerMonix(timer: Timer[UIO]) extends Scheduler2[IO] {
     eff.flatMap(out => loop(out, policy.action))
   }
 
-  override def retry[E, E1 >: E, S, A](eff: IO[E, A])(policy: RetryPolicy[IO, E1, S]): IO[E, A] = {
+  override def retry[E, E1 >: E, S, A](eff: IO[E, A])(policy: RetryPolicy[IO, E1, S]): IO[E1, A] = {
     retryOrElse(eff)(policy)(IO.raiseError)
   }
 

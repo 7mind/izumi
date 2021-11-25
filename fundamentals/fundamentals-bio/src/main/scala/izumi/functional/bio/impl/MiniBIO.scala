@@ -42,10 +42,10 @@ sealed trait MiniBIO[+E, +A] {
     @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): Exit[Any, Any] = op match {
 
       case MiniBIO.FlatMap(io, f) =>
-        runner(io, f :: stack)
+        runner(io, f.asInstanceOf[Any => MiniBIO[Any, Any]] :: stack)
 
       case MiniBIO.Redeem(io, err, succ) =>
-        runner(io, new Catcher(err, succ) :: stack)
+        runner(io, new Catcher(err, succ).asInstanceOf[Any => MiniBIO[Any, Any]] :: stack)
 
       case MiniBIO.Sync(a) =>
         val exit =
@@ -70,7 +70,7 @@ sealed trait MiniBIO[+E, +A] {
                 exit
             }
 
-          case failure: Exit.Failure[_] =>
+          case failure: Exit.Failure[?] =>
             runner(Fail.halt(failure), stack)
         }
       case MiniBIO.Fail(e) =>
@@ -112,7 +112,7 @@ object MiniBIO {
     def halt[E](e: => Exit.Failure[E]): Fail[E] = Fail(() => e)
   }
   final case class Sync[+E, +A](a: () => Exit[E, A]) extends MiniBIO[E, A]
-  final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
+  final case class FlatMap[+E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
   implicit val BIOMiniBIO: IO2[MiniBIO] with BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {

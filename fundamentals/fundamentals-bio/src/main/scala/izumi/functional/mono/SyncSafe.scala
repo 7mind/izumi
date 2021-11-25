@@ -55,5 +55,7 @@ trait LowPrioritySyncSafeInstances2 {
     * @see https://github.com/scala/bug/issues/11427
     */
   @inline implicit final def limitedCovariance[F[+_, _], E](implicit F: SyncSafe2[F]): SyncSafe[F[E, _]] = F.asInstanceOf[SyncSafe[F[E, _]]]
-  @inline implicit final def covarianceConversion[G[_], F[_]](log: SyncSafe[F])(implicit ev: F[?] <:< G[?]): SyncSafe[G] = { val _ = ev; log.asInstanceOf[SyncSafe[G]] }
+  @inline implicit final def covarianceConversion[G[_], F[_]](log: SyncSafe[F])(implicit ev: F[SyncSafe.type] <:< G[SyncSafe.type]): SyncSafe[G] = {
+    val _ = ev; log.asInstanceOf[SyncSafe[G]]
+  }
 }

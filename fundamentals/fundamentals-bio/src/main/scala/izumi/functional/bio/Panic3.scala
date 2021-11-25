@@ -13,7 +13,9 @@ private[bio] sealed trait PanicSyntax
 object PanicSyntax {
   implicit final class PanicOrTerminateK[F[-_, +_, +_]](private val F: Panic3[F]) extends AnyVal {
     def orTerminateK[R]: F[R, Throwable, _] ~> F[R, Nothing, _] = {
-      Lambda[F[R, Throwable, _] ~> F[R, Nothing, _]](f => F.orTerminate(f))
+      new (F[R, Throwable, _] ~> F[R, Nothing, _]) {
+        override def apply[A](fa: F[R, Throwable, A]): F[R, Nothing, A] = F.orTerminate(fa)
+      }
     }
   }
 }

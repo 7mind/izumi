@@ -87,7 +87,7 @@ object UnsafeRun2 {
 
   sealed trait FailureHandler
   object FailureHandler {
-    final case object Default extends FailureHandler
+    case object Default extends FailureHandler
     final case class Custom(handler: Exit.Failure[Any] => Unit) extends FailureHandler
   }
 
@@ -102,7 +102,7 @@ object UnsafeRun2 {
         case Exit.Success(value) =>
           value
 
-        case failure: Exit.Failure[_] =>
+        case failure: Exit.Failure[?] =>
           throw failure.trace.unsafeAttachTrace(TypedError(_))
       }
     }

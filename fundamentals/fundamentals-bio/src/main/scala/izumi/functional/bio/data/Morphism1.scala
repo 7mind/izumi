@@ -1,5 +1,7 @@
 package izumi.functional.bio.data
 
+import izumi.functional.bio.data.Morphism1.Morphism1
+
 import scala.language.implicitConversions
 
 /**
@@ -8,7 +10,7 @@ import scala.language.implicitConversions
   *
   * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
   */
-object Morphism1 {
+object Morphism1 extends Morphism1LowPriorityInstances {
   private[data] type Morphism1[-F[_], +G[_]]
   implicit final class Ops[-F[_], +G[_]](private val self: Morphism1[F, G]) extends AnyVal {
     @inline def apply[A](f: F[A]): G[A] = self.asInstanceOf[F[A] => G[A]](f)
@@ -25,7 +27,9 @@ object Morphism1 {
   @inline implicit def fromCats[F[_], G[_]](fn: cats.arrow.FunctionK[F, G]): Morphism1[F, G] = Morphism1(fn(_))
 
   implicit final class SyntaxToCats[F[_], G[_]](private val self: Morphism1[F, G]) extends AnyVal {
-    @inline def toCats: cats.arrow.FunctionK[F, G] = Lambda[cats.arrow.FunctionK[F, G]](self(_))
+    @inline def toCats: cats.arrow.FunctionK[F, G] = new cats.arrow.FunctionK[F, G] {
+      override def apply[A](fa: F[A]): G[A] = self(fa)
+    }
   }
 
   /**
@@ -49,12 +53,14 @@ object Morphism1 {
   implicit def conversion2To1[F[_, _], G[_, _], E](f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
   implicit def Convert2To1[F[_, _], G[_, _], E](implicit f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
 
-  // workaround for inference issues with `E=Nothing`
+  private[Morphism1] type UnknownA
+
+}
+
+private[data] sealed trait Morphism1LowPriorityInstances {
+  // workaround for inference issues with `E=Nothing` in Scala 2
   implicit def conversion2To1Nothing[F[_, _], G[_, _]](f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
     f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]]
   implicit def Convert2To1Nothing[F[_, _], G[_, _]](implicit f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
     f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]]
-
-  private[Morphism1] type UnknownA
-
 }

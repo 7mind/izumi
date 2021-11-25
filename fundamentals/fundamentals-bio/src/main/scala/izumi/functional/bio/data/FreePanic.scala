@@ -38,7 +38,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
-    foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic lift f(_)))
+    foldMap[S1, FreePanic[T, + _, + _]](Morphism2(FreePanic lift f(_)))
   }
 
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Panic2[G]): G[E, A] = {
@@ -53,15 +53,17 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
             err(_).foldMap(transform),
             suc(_).foldMap(transform),
           )
-      case s: FreePanic.Sandbox[S, E, A] @unchecked =>
-        @inline def foldMapSandbox[e, a](s: FreePanic[S, e, a] with FreePanic.Sandbox[S, e, a]): G[e, a] = {
-          s match {
-            case FreePanic.Sandbox(sub) => sub.foldMap(transform).sandbox
-          }
-        }
-        foldMapSandbox[E, A](s)
-      case FreePanic.BracketCase(acquire, release, use) =>
-        acquire.foldMap(transform).bracketCase((a, e: Exit[E, A]) => release(a, e).foldMap(transform))(a => use(a).foldMap(transform))
+//      case s: FreePanic.Sandbox[S, E, A] @unchecked =>
+//        @inline def foldMapSandbox[e, a](s: FreePanic[S, e, a] with FreePanic.Sandbox[S, e, a]): G[e, a] = {
+//          s match {
+//            case FreePanic.Sandbox(sub) => sub.foldMap(transform).sandbox
+//          }
+//        }
+//        foldMapSandbox[E, A](s)
+      case FreePanic.Sandbox(sub) =>
+        sub.foldMap(transform).sandbox
+      case FreePanic.BracketCase(acquire, release, use): FreePanic.BracketCase[S, E, ?, A] =>
+        acquire.foldMap[S1, G](transform).bracketCase[E, A]((a, e: Exit[E, A]) => release(a, e).foldMap[S1, G](transform))(a => use(a).foldMap[S1, G](transform))
       case FreePanic.FlatMapped(sub, cont) =>
         sub match {
           case FreePanic.FlatMapped(sub2, cont2) => sub2.flatMap(a => cont2(a).flatMap(cont)).foldMap(transform)
@@ -115,10 +117,10 @@ object FreePanic {
     override def toString: String = s"BracketCase:[acquire=$acquire;use=${use.getClass.getSimpleName}]"
   }
 
-  @inline implicit def FreePanicInstances[S[_, _]]: Panic2[FreePanic[S, +_, +_]] = Panic2Instance.asInstanceOf[Panic2Instance[S]]
+  @inline implicit def FreePanicInstances[S[_, _]]: Panic2[FreePanic[S, + _, + _]] = Panic2Instance.asInstanceOf[Panic2Instance[S]]
 
-  object Panic2Instance extends Panic2Instance[Any]
-  class Panic2Instance[S[_, _]] extends Panic2[FreePanic[S, +_, +_]] {
+  object Panic2Instance extends Panic2Instance[Nothing]
+  class Panic2Instance[S[_, _]] extends Panic2[FreePanic[S, + _, + _]] {
     @inline override def flatMap[R, E, A, B](r: FreePanic[S, E, A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, B] = r.flatMap(f)
     @inline override def *>[R, E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, B] = f *> next
     @inline override def <*[R, E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, A] = f <* next

@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.DivergenceHelper.Nondivergent
 import izumi.functional.bio.PredefinedHelper.NotPredefined
 
 trait PredefinedHelper {

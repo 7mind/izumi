@@ -29,7 +29,7 @@ sealed abstract class FreeError[+S[_, _], +E, +A] {
   @inline final def void: FreeError[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreeError[T, E, A] = {
-    foldMap[S1, FreeError[T, +_, +_]](Morphism2(FreeError lift f(_)))
+    foldMap[S1, FreeError[T, + _, + _]](Morphism2(FreeError lift f(_)))
   }
 
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Error2[G]): G[E, A] = {
@@ -74,10 +74,10 @@ object FreeError {
     override def toString: String = s"Redeem:[sub=$sub]"
   }
 
-  @inline implicit def FreeErrorInstances[S[_, _]]: Error2[FreeError[S, +_, +_]] = Error2Instance.asInstanceOf[Error2Instance[S]]
+  @inline implicit def FreeErrorInstances[S[_, _]]: Error2[FreeError[S, + _, + _]] = Error2Instance.asInstanceOf[Error2Instance[S]]
 
-  object Error2Instance extends Error2Instance[Any]
-  class Error2Instance[S[_, _]] extends Error2[FreeError[S, +_, +_]] {
+  object Error2Instance extends Error2Instance[Nothing]
+  class Error2Instance[S[_, _]] extends Error2[FreeError[S, + _, + _]] {
     @inline override def flatMap[R, E, A, B](r: FreeError[S, E, A])(f: A => FreeError[S, E, B]): FreeError[S, E, B] = r.flatMap(f)
     @inline override def *>[R, E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, B] = f *> next
     @inline override def <*[R, E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, A] = f <* next

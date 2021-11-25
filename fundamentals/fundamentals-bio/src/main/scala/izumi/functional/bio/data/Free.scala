@@ -12,7 +12,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): Free[T, E, A] = {
-    foldMap[S1, Free[T, +_, +_]](Morphism2(Free Suspend f(_)))
+    foldMap[S1, Free[T, + _, + _]](Morphism2(Free Suspend f(_)))
   }
 
   @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {
@@ -32,20 +32,20 @@ object Free {
   @inline def pure[S[_, _], A](a: A): Free[S, Nothing, A] = Pure(a)
   @inline def lift[S[_, _], E, A](s: S[E, A]): Free[S, E, A] = Suspend(s)
 
-  final case class Pure[S[_, _], A](a: A) extends Free[S, Nothing, A] {
+  final case class Pure[+S[_, _], +A](a: A) extends Free[S, Nothing, A] {
     override def toString: String = s"Pure:[$a]"
   }
-  final case class Suspend[S[_, _], E, A](a: S[E, A]) extends Free[S, E, A] {
+  final case class Suspend[+S[_, _], E, A](a: S[E, A]) extends Free[S, E, A] {
     override def toString: String = s"Suspend:[$a]"
   }
-  final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
+  final case class FlatMapped[+S[_, _], +E, +E1 >: E, A, +B](sub: Free[S, E, A], cont: A => Free[S, E1, B]) extends Free[S, E1, B] {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
 
-  @inline implicit def FreeMonadInstances[S[_, _]]: Monad2[Free[S, +_, +_]] = new Monad2Instance[S]
+  @inline implicit def FreeMonadInstances[S[_, _]]: Monad2[Free[S, + _, + _]] = new Monad2Instance[S]
 
-  object Monad2Instance extends Monad2Instance[Any]
-  class Monad2Instance[S[_, _]] extends Monad2[Free[S, +_, +_]] {
+  object Monad2Instance extends Monad2Instance[Nothing]
+  class Monad2Instance[S[_, _]] extends Monad2[Free[S, + _, + _]] {
     @inline override def flatMap[R, E, A, B](r: Free[S, E, A])(f: A => Free[S, E, B]): Free[S, E, B] = r.flatMap(f)
     @inline override def pure[A](a: A): Free[S, Nothing, A] = Free.pure(a)
     @inline override def *>[R, E, A, B](f: Free[S, E, A], next: => Free[S, E, B]): Free[S, E, B] = f *> next

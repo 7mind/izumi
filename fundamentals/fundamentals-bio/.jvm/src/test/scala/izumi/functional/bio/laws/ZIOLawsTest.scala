@@ -12,7 +12,10 @@ import zio.internal.{Executor, Platform, Tracing}
 class ZIOLawsTestTerminating extends CatsLawsTestBase with ZIOTestEnvTerminating {
   val cs: ContextShift[zio.Task] = zio.interop.catz.zioContextShift
   implicit val unsafeRun: UnsafeRun2[IO] = UnsafeRun2.createZIO(Platform.default.withTracing(Tracing.disabled).withReportFailure(_ => ()))
-  implicit val CE: ConcurrentEffect[zio.Task] = catz.BIOAsyncForkUnsafeRunToConcurrentEffect
+  implicit val CE: ConcurrentEffect[zio.Task] = {
+//    import izumi.functional.bio.ForkInstances.ForkZio
+    catz.BIOAsyncForkUnsafeRunToConcurrentEffect
+  }
 
   implicit val params: Parameters = Parameters.default.copy(
     allowNonTerminationLaws = false

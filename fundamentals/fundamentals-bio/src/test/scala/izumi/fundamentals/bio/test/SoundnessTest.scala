@@ -26,7 +26,7 @@ class SoundnessTest extends AnyWordSpec {
     than `Bifunctorial`: `(implicit guard: Lub[F#Functoriality, Trifunctorial, Bifunctorial])`
    */
 
-  type BIOArrow2[F[+_, +_]] = Arrow3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BIOArrow2[F[+_, +_]] = Arrow3[[R, E, A] =>> F[E, A]]
   type FR[F[-_, +_, +_], R] = { type l[+E, +A] = F[R, E, A] }
 
   "Cannot convert polymorphic BIOArrow into a bifunctor typeclass (normally)" in {

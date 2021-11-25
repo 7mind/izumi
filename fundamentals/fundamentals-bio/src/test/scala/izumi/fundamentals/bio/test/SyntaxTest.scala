@@ -390,68 +390,66 @@ class SyntaxTest extends AnyWordSpec {
 
     def x[FR[-_, +_, +_]: Monad3: Ask3] = {
       F.unit *> F.ask[Int].map {
-        _: Int =>
+        (_: Int) =>
           true
       } *>
       F.unit *> F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       }
     }
     def onlyMonadAsk[FR[-_, +_, +_]: MonadAsk3]: FR[Int, Nothing, Unit] = {
       F.unit <* F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       }
     }
     def onlyMonadAskAccess[FR[-_, +_, +_]: MonadAsk3]: FR[Int, Nothing, Unit] = {
       F.unit <* F.access {
-        _: Int =>
+        (_: Int) =>
           F.unit
       }
     }
     def onlyAsk[FR[-_, +_, +_]: Ask3]: FR[Int, Nothing, Unit] = {
       F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       } *> F.unit
     }
     def y[FR[-_, +_, +_]: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4)
     }
     def arrowAsk[FR[-_, +_, +_]: Arrow3: Ask3]: FR[String, Throwable, Int] = {
       F.askWith {
-        _: Int =>
+        (_: Int) =>
           ()
       }.dimap {
-          _: String =>
+          (_: String) =>
             4
         }(_ => 1)
     }
     def profunctorOnly[FR[-_, +_, +_]: Profunctor3]: FR[String, Throwable, Int] = {
       F.contramap(??? : FR[Unit, Throwable, Int]) {
-        _: Int =>
+        (_: Int) =>
           ()
       }.dimap {
-          _: String =>
+          (_: String) =>
             4
         }(_ => 1)
         .map(_ + 2)
     }
     def bifunctorOnly[FR[-_, +_, +_]: Bifunctor3]: FR[Unit, Int, Int] = {
       F.leftMap(??? : FR[Unit, Int, Int]) {
-        _: Int =>
+        (_: Int) =>
           ()
       }.bimap(
-          {
-            _: Unit =>
-              4
-          },
+          (_: Unit) =>
+            4,
           _ => 1,
         )
         .map(_ + 2)
@@ -459,7 +457,7 @@ class SyntaxTest extends AnyWordSpec {
     def Temporal2PlusLocal[FR[-_, +_, +_]: Temporal3: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
@@ -467,7 +465,7 @@ class SyntaxTest extends AnyWordSpec {
     def biomonadPlusLocal[FR[-_, +_, +_]: Monad3: Bifunctor3: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
@@ -630,7 +628,7 @@ class SyntaxTest extends AnyWordSpec {
   "Fiber3 and Fiber2 types are wholly compatible" in {
     import izumi.functional.bio.{Applicative2, Applicative3, F, Fiber2, Fiber3, Fork2, Fork3}
 
-    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, +_, +_]], fork: Fork2[FR[Any, +_, +_]]) = {
+    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, + _, + _]], fork: Fork2[FR[Any, + _, + _]]) = {
       type F[+E, +A] = FR[Any, E, A]
       for {
         fiber <- F.unit.fork
