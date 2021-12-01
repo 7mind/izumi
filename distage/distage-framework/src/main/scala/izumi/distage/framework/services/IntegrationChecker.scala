@@ -15,7 +15,6 @@ import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 import scala.annotation.nowarn
-import scala.util.control.NonFatal
 
 trait IntegrationChecker[F[_]] {
   def collectFailures(identityIntegrations: Set[DIKey], effectIntegrations: Set[DIKey], integrationLocator: Locator): F[Option[NonEmptyList[ResourceCheck.Failure]]]
