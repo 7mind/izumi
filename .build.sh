@@ -35,7 +35,7 @@ function csbt {
 # }
 
 function coverage {
-  csbt clean coverage "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
+  csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
   bash <(curl -s https://codecov.io/bash) || true # codecov.io may be offline for some reason
 }
 
@@ -51,10 +51,10 @@ function site {
     eval "$(ssh-agent -s)"
     ssh-add .secrets/travis-deploy-key
 
-    csbt +clean doc/ghpagesSynchLocal doc/ghpagesPushSite || exit 1
+    csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
   else
     echo "Not publishing site, because $CI_BRANCH is not 'develop'"
-    csbt doc/makeSite || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}doc/makeSite'" || exit 1
   fi
 }
 
@@ -77,12 +77,12 @@ function publishScala {
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  if [[ "$CI_BRANCH" == "develop" ]] ; then
+  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
+    echo "PUBLISH RELEASE"
+    csbt +clean "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
+  else
     echo "PUBLISH SNAPSHOT"
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
-  else
-    echo "PUBLISH RELEASE"
-    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   fi
 }
 

@@ -52,7 +52,7 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
-                bash sbtgen.sc --js && bash .build.sh secrets site
+                bash sbtgen.sc --js && bash .build.sh 2.13 secrets site
         - job: publish212
           displayName: 'Publish to Maven Central (2.12)'
           dependsOn:

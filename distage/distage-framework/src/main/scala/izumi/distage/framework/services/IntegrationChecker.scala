@@ -15,7 +15,6 @@ import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 import scala.annotation.nowarn
-import scala.util.control.NonFatal
 
 trait IntegrationChecker[F[_]] {
   def collectFailures(identityIntegrations: Set[DIKey], effectIntegrations: Set[DIKey], integrationLocator: Locator): F[Option[NonEmptyList[ResourceCheck.Failure]]]
@@ -92,16 +91,19 @@ object IntegrationChecker {
     )(wrap: => F[Either[ResourceCheck.Failure, Unit]]
     )(implicit F: QuasiIO[F]
     ): F[Either[ResourceCheck.Failure, Unit]] = {
-      logger.debug(s"Checking $resource")
-      F.definitelyRecover(wrap) {
-        case NonFatal(exception) =>
+      F.bracketCase(acquire = F.unit)(release = {
+        case (_, Some(exception)) =>
           F.maybeSuspend {
-            logger.error(s"Integration check for $resource threw $exception")
-            Left(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
+            logger.crit(s"""Integration check for $resource threw unexpected $exception.
+                           |Integration checks shouldn't throw, but should return `ResourceCheck.Failure`,
+                           |considering this exception a critical failure and Aborting!""".stripMargin)
           }
-        case other =>
-          F.fail(other)
-      }
+        case _ =>
+          F.unit
+      })(use = _ => {
+        logger.debug(s"Checking $resource")
+        wrap
+      })
     }
   }
 
