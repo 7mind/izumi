@@ -8,13 +8,13 @@ sealed trait NewObjectOp {
 object NewObjectOp {
   sealed trait LocalInstance {
     def instance: Any
-    def implKey: SafeType
+    def implType: SafeType
   }
 
   /** Marks a new instance introduced in current locator context
     */
-  final case class NewInstance(key: DIKey, implKey: SafeType, instance: Any) extends NewObjectOp with LocalInstance
-  final case class NewResource[F[_]](key: DIKey, implKey: SafeType, instance: Any, finalizer: () => F[Unit]) extends NewObjectOp with LocalInstance
+  final case class NewInstance(key: DIKey, implType: SafeType, instance: Any) extends NewObjectOp with LocalInstance
+  final case class NewResource[F[_]](key: DIKey, implType: SafeType, instance: Any, finalizer: () => F[Unit]) extends NewObjectOp with LocalInstance
 
   /** Marks a reused instance from current locator context
     */

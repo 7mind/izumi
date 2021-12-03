@@ -8,6 +8,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
+import izumi.distage.model.exceptions.planning.DIBugException
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
@@ -196,42 +197,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private[this] def addResult[F[_]: TagK](active: ProvisionMutable[F], result: TimedResult.Success)(implicit F: QuasiIO[F]): F[TimedFinalResult] = {
+    val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
     for {
       out <- F.traverse(result.ops) {
         op =>
           for {
-            _ <- op match {
-              case i: NewObjectOp.LocalInstance =>
-                if (i.implKey <:< SafeType.get[IntegrationCheck[Identity]]) {
-                  F.maybeSuspend {
-                    Option(i.instance).map(i => checkOrThrow(i.asInstanceOf[IntegrationCheck[Identity]])) match {
-                      case Some(_) =>
-                        ()
-                      case None =>
-                        ()
-                    }
-                  }
-                } else if (i.implKey <:< SafeType.get[IntegrationCheck[F]]) {
-//                  System.err.println(s"F: $i")
-                  Option(i.instance.asInstanceOf[IntegrationCheck[F]]) match {
-                    case Some(value) =>
-                      checkOrThrow(value)
-                    case None =>
-                      F.unit
-                  }
-                } else {
-                  F.unit
-                }
-              case _ =>
-                F.unit
-            }
+            _ <- runIntegrationCheck(op, integrationCheckFType)
             out <- F.maybeSuspend {
               Try(active.addResult(verifier, op)).toEither.left.map(t => UnexpectedDIException(result.key, t))
             }
           } yield {
             out
           }
-
       }
     } yield {
       import izumi.functional.IzEither.*
@@ -243,15 +220,31 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           TimedFinalResult.Success(result.key, result.time)
       }
     }
-
   }
 
-  private[this] def checkOrThrow[F[_]: TagK](check: IntegrationCheck[F])(implicit F: QuasiIO[F]): F[Unit] = {
-    F.flatMap(check.resourcesAvailable()) {
-      case ResourceCheck.Success() =>
+  private[this] def runIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
+    op match {
+      case i: NewObjectOp.LocalInstance if i.implType <:< SafeType.get[IntegrationCheck[Identity]] =>
+        F.maybeSuspend {
+          checkOrFail[Identity](i.instance)
+        }
+      case i: NewObjectOp.LocalInstance if i.implType <:< integrationCheckFType =>
+        checkOrFail[F](i.instance)
+      case _ =>
         F.unit
-      case failure: ResourceCheck.Failure =>
-        F.fail(new IntegrationCheckException(NonEmptyList(failure)))
+    }
+  }
+
+  private[this] def checkOrFail[F[_]: TagK](resource: Any)(implicit F: QuasiIO[F]): F[Unit] = {
+    F.suspendF {
+      resource
+        .asInstanceOf[IntegrationCheck[F]].resourcesAvailable()
+        .flatMap {
+          case ResourceCheck.Success() =>
+            F.unit
+          case failure: ResourceCheck.Failure =>
+            F.fail(new IntegrationCheckException(NonEmptyList(failure)))
+        }
     }
   }
 
@@ -262,10 +255,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     val monadicOps = ops.collect { case m: MonadicOp => m }
     val badOps = monadicOps
       .filter(_.isIncompatibleEffectType[F])
-      .map {
-        op =>
-          IncompatibleEffectTypesException(op, op.provisionerEffectType[F], op.actionEffectType)
-      }
+      .map(op => IncompatibleEffectTypesException(op, op.provisionerEffectType[F], op.actionEffectType))
 
     F.ifThenElse(badOps.isEmpty)(F.pure(Right(())), F.pure(Left(badOps)))
   }
