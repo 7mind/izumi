@@ -13,9 +13,9 @@ object OpStatus {
     def time: FiniteDuration
   }
 
-  case class Planned() extends OpStatus
-  case class Success(time: FiniteDuration) extends Done
-  case class Failure(issues: List[ProvisionerIssue], time: FiniteDuration) extends Done
+  final case class Planned() extends OpStatus
+  final case class Success(time: FiniteDuration) extends Done
+  final case class Failure(issues: List[ProvisionerIssue], time: FiniteDuration) extends Done
 }
 
 sealed trait ProvisioningFailure {
