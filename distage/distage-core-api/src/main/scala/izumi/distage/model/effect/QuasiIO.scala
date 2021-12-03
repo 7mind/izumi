@@ -29,6 +29,9 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
   def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
+  def guaranteeOnFailure[A](fa: => F[A])(cleanupOnFailure: Throwable => F[Unit]): F[A] = {
+    bracketCase(acquire = unit)(release = (_, maybeExit) => maybeExit.fold(unit)(cleanupOnFailure))(use = _ => fa)
+  }
   def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
   def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B]
   final def bracketAuto[A <: AutoCloseable, B](acquire: => F[A])(use: A => F[B]): F[B] = bracket(acquire)(a => maybeSuspend(a.close()))(use)
@@ -91,7 +94,10 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
 
     final class QuasiIOSuspendedSyntax[F[_], A](private val fa: () => F[A]) extends AnyVal {
       @inline def guarantee(`finally`: => F[Unit])(implicit F: QuasiIO[F]): F[A] = {
-        F.bracket(acquire = F.unit)(release = _ => `finally`)(use = _ => fa())
+        F.guarantee(fa())(`finally`)
+      }
+      @inline def guaranteeOnFailure(cleanupOnFailure: Throwable => F[Unit])(implicit F: QuasiIO[F]): F[A] = {
+        F.guaranteeOnFailure(fa())(cleanupOnFailure)
       }
     }
   }
@@ -118,7 +124,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       definitelyRecover(action)(e => recoverCause(e, () => e))
     }
     override def redeem[A, B](action: => Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
-      Try(action) match {
+      TryNonFatal(action) match {
         case Failure(exception) =>
           failure(exception)
         case Success(value) =>
@@ -132,7 +138,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     }
     override def bracketCase[A, B](acquire: => Identity[A])(release: (A, Option[Throwable]) => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
-      Try(use(a)) match {
+      TryWithFatal(use(a)) match {
         case Failure(exception) =>
           release(a, Some(exception))
           throw exception
@@ -142,12 +148,21 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       }
     }
     override def guarantee[A](fa: => Identity[A])(`finally`: => Identity[Unit]): Identity[A] = {
-      try fa
+      try { fa }
       finally `finally`
+    }
+    override def guaranteeOnFailure[A](fa: => Identity[A])(cleanupOnFailure: Throwable => Identity[Unit]): Identity[A] = {
+      try { fa }
+      catch { case t: Throwable => cleanupOnFailure(t); throw t }
     }
     override def fail[A](t: => Throwable): Identity[A] = throw t
     override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
+    @inline private[this] def TryWithFatal[A](r: => A): Try[A] = {
+      try Success(r)
+      catch { case t: Throwable => Failure(t) }
+    }
+    @inline private[this] def TryNonFatal[A](r: => A): Try[A] = Try(r)
   }
 
   implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, _]] = {
@@ -185,6 +200,9 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       }
       override def guarantee[A](fa: => F[Throwable, A])(`finally`: => F[Throwable, Unit]): F[Throwable, A] = {
         F.guarantee(F.suspend(fa), F.suspend(`finally`).orTerminate)
+      }
+      override def guaranteeOnFailure[A](fa: => F[Throwable, A])(cleanupOnFailure: Throwable => F[Throwable, Unit]): F[Throwable, A] = {
+        F.guaranteeOnFailure(F.suspend(fa), (e: Exit.Failure[E]) => cleanupOnFailure(e.toThrowable).orTerminate)
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
       override def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
@@ -236,6 +254,13 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       }
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
         F.guarantee(F.defer(fa))(F.defer(`finally`))
+      }
+      override def guaranteeOnFailure[A](fa: => F[A])(cleanupOnFailure: Throwable => F[Unit]): F[A] = {
+        F.guaranteeCase(F.defer(fa)) {
+          case ExitCase.Completed => F.unit
+          case ExitCase.Error(e) => cleanupOnFailure(e)
+          case ExitCase.Canceled => cleanupOnFailure(new InterruptedException)
+        }
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
       override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
