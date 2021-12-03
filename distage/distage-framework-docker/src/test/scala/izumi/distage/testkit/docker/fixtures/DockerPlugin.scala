@@ -24,8 +24,8 @@ class PgSvcExample(
 ) extends IntegrationCheck[Task] {
   override def resourcesAvailable(): Task[ResourceCheck] = Task.effect {
     val portCheck = new PortCheck(50.milliseconds)
-    portCheck.checkAddressPort(pg.host.address, pg.port)
-    portCheck.checkAddressPort(pg.host.address, pgfw.port)
+    portCheck.check(pg)
+    portCheck.check(pgfw)
   }
 }
 

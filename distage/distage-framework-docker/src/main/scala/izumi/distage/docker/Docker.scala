@@ -5,6 +5,7 @@ import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker.ClientConfig.parseReusePolicy
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
@@ -13,8 +14,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
 
 object Docker {
-  final case class AvailablePort(host: ServiceHost, port: Int) {
+  final case class AvailablePort(host: ServiceHost, port: Int) extends HostPortPair {
     def hostString: String = host.host
+
+    override def addr: InetAddress = host.address
   }
   object AvailablePort {
     def local(port: Int): AvailablePort = hostPort(ServiceHost.local, port)
