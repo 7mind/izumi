@@ -271,7 +271,8 @@ object AbstractBindingDefDSL {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               } else {
                 throw new InvalidFunctoidModifier(
-                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                  s"""Cannot apply invalid Functoid modifier $functoidModifier - new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`
+                     |Defined at ${initial.origin}""".stripMargin
                 )
               }
             case _ => ()
