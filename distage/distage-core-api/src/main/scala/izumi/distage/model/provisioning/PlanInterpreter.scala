@@ -52,17 +52,22 @@ object PlanInterpreter {
         case ProvisioningFailure.AggregateFailure(_, failures, _) =>
           val messages = failures
             .map {
-              case UnexpectedDIException(op, problem) =>
+              case UnexpectedDIException(op, problem, origin) =>
                 import IzThrowable.*
-                s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+                s"DISTAGE BUG: exception while processing $op ${origin.render()}; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+
               case MissingImport(op) =>
                 MissingInstanceException.format(op.target, op.references)
+
               case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
                 IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
-              case UnexpectedProvisionResultException(key, results) =>
-                s"Unexpected operation result for $key: $results, expected a single NewInstance!"
+
+              case UnexpectedProvisionResultException(key, results, origin) =>
+                s"Unexpected operation result for $key ${origin.render()}: $results, expected a single NewInstance!"
+
               case MissingProxyAdapterException(key, op) =>
                 s"Cannot get dispatcher $key for $op"
+
               case UnsupportedProxyOpException(op) =>
                 s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op"
             }

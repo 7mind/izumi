@@ -14,7 +14,7 @@ sealed abstract class PlanCheckResult {
   def maybeError: Option[Either[Throwable, PlanVerifierResult.Incorrect]]
   def maybeErrorMessage: Option[String]
 
-  final def issues: Option[NonEmptySet[PlanVerifier.PlanIssue]] = maybeError.flatMap(_.toOption.flatMap(_.issues))
+  final def issues: Option[NonEmptySet[PlanVerifier.PlanIssue]] = maybeError.flatMap(_.toOption.map(_.allIssues))
   final def verificationPassed: Boolean = maybeError.isEmpty
   final def verificationFailed: Boolean = maybeError.isDefined
 

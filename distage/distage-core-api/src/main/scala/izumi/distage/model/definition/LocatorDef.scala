@@ -75,7 +75,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
           s"""Binding $b is not an instance binding, only forms `make[X].fromValue(instance)` and `many[X].addValue(y).addValue(z)`
-             |are supported, binding was defined at ${b.origin}""".stripMargin,
+             |are supported, binding was defined at ${b.pos}""".stripMargin,
           b,
         )
     }

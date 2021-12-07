@@ -20,7 +20,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
         Seq((op.target, Set(w.effectKey)))
 
       case c: CreateSet =>
-        Seq((op.target, c.members))
+        Seq((op.target, c.members.keySet))
 
       case _: MakeProxy =>
         Seq((op.target, Set.empty))

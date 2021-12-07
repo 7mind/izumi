@@ -15,22 +15,23 @@ sealed trait ExecutableOp {
   def target: DIKey
   def origin: EqualizedOperationOrigin
   override final def toString: String = {
-    new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
+    OpFormatter(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled)
+      .format(this)
   }
 }
 
 object ExecutableOp {
 
   sealed trait SemiplanOp extends ExecutableOp
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: EqualizedOperationOrigin) extends SemiplanOp
+  final case class ImportDependency(target: DIKey, references: Map[DIKey, EqualizedOperationOrigin], origin: EqualizedOperationOrigin) extends SemiplanOp
 
   sealed trait NonImportOp extends ExecutableOp
   sealed trait InstantiationOp extends SemiplanOp with NonImportOp {
     def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp
   }
-  final case class CreateSet(target: DIKey, members: Set[DIKey], origin: EqualizedOperationOrigin) extends InstantiationOp {
+  final case class CreateSet(target: DIKey, members: Map[DIKey, EqualizedOperationOrigin], origin: EqualizedOperationOrigin) extends InstantiationOp {
     override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): CreateSet = {
-      this.copy(target = targets(this.target), members = this.members.map(parameters))
+      this.copy(target = targets(this.target), members = this.members.map { case (k, v) => parameters(k) -> v })
     }
   }
 

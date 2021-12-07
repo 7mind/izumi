@@ -10,7 +10,7 @@ import izumi.reflect.Tag
 
 sealed trait Binding {
   def key: DIKey
-  def origin: SourceFilePosition
+  def pos: SourceFilePosition
   def tags: Set[BindingTag]
 
   def group: GroupingKey
@@ -21,7 +21,9 @@ sealed trait Binding {
 
   def isMutator: Boolean
 
-  override final def toString: String = BindingFormatter(KeyFormatter.Full).formatBinding(this)
+  override final def toString: String = {
+    BindingFormatter(KeyFormatter.Full).formatBinding(this)
+  }
   override final def hashCode(): Int = group.hashCode
   override final def equals(obj: Any): Boolean = obj match {
     case b: Binding =>
@@ -29,6 +31,9 @@ sealed trait Binding {
     case _ =>
       false
   }
+
+  @deprecated("Renamed to `pos`", "1.1.0")
+  private[distage] def origin: SourceFilePosition = pos
 }
 
 object Binding {
@@ -52,7 +57,7 @@ object Binding {
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition, isMutator: Boolean = false)
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], pos: SourceFilePosition, isMutator: Boolean = false)
     extends ImplBinding
     with WithTarget {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
@@ -64,7 +69,7 @@ object Binding {
 
   sealed trait SetBinding extends Binding
 
-  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition)
+  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], pos: SourceFilePosition)
     extends ImplBinding
     with SetBinding {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
@@ -75,7 +80,7 @@ object Binding {
     override def isMutator: Boolean = false
   }
 
-  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding with WithTarget {
+  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], pos: SourceFilePosition) extends SetBinding with WithTarget {
     override lazy val group: GroupingKey = GroupingKey.Key(key)
     override def withTarget[T <: DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)

@@ -6,7 +6,6 @@ import izumi.distage.model.plan.ExecutableOp.WiringOp._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
 import izumi.distage.model.plan.Wiring.MonadicWiring._
 import izumi.distage.model.plan.Wiring.SingletonWiring._
-import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider}
@@ -17,18 +16,10 @@ trait OpFormatter {
 }
 
 object OpFormatter {
-  def formatBindingPosition(origin: EqualizedOperationOrigin): String = {
-    origin.value match {
-      case OperationOrigin.UserBinding(binding) =>
-        binding.origin.toString
-      case OperationOrigin.SyntheticBinding(binding) =>
-        binding.origin.toString
-      case OperationOrigin.Unknown =>
-        "(<unknown>)"
-    }
-  }
 
-  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = {
+    new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  }
 
   class Impl(
     keyFormatter: KeyFormatter,
@@ -50,15 +41,15 @@ object OpFormatter {
           i match {
             case CreateSet(target, members, origin) =>
               val repr = doFormat(formatType(target.tpe), members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
-              val pos = formatBindingPosition(origin)
+              val pos = formatOrigin(origin)
               formatDefn(target, pos, repr)
 
             case ExecuteEffect(target, effectKey, _, effectHKTypeCtor, origin) =>
-              val pos = formatBindingPosition(origin)
+              val pos = formatOrigin(origin)
               formatDefn(target, pos, s"${formatOpName("effect")}[$effectHKTypeCtor]${formatKey(effectKey)}")
 
             case AllocateResource(target, effectKey, _, effectHKTypeCtor, origin) =>
-              val pos = formatBindingPosition(origin)
+              val pos = formatOrigin(origin)
               formatDefn(target, pos, s"${formatOpName("allocate")}[$effectHKTypeCtor]${formatKey(effectKey)}")
 
             case w: WiringOp =>
@@ -66,22 +57,22 @@ object OpFormatter {
                 case CallProvider(target, wiring, origin) =>
                   formatProviderOp(target, wiring, origin, deferred)
                 case UseInstance(target, wiring, origin) =>
-                  val pos = formatBindingPosition(origin)
+                  val pos = formatOrigin(origin)
                   if (wiring.instance != null) {
                     formatDefn(target, pos, s"${formatOpName("value")} ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}")
                   } else {
                     formatDefn(target, pos, formatOpName("null"))
                   }
                 case ReferenceKey(target, wiring, origin) =>
-                  val pos = formatBindingPosition(origin)
+                  val pos = formatOrigin(origin)
                   formatDefn(target, pos, s"${formatOpName("ref")} ${formatKey(wiring.key)}")
               }
           }
 
         case ImportDependency(target, references, origin) =>
-          val pos = formatBindingPosition(origin)
+          val pos = formatOrigin(origin)
           val hintBase = if (references.nonEmpty) {
-            s"// required for ${references.map(formatKey).mkString(" and ")}"
+            s"// required for ${references.map { case (k, origin) => s"${formatKey(k)} ${formatOrigin(origin)}" }.mkString(" and ")}"
           } else {
             " // no dependees"
           }
@@ -92,7 +83,7 @@ object OpFormatter {
         case p: ProxyOp =>
           p match {
             case MakeProxy(proxied, forwardRefs, origin, byNameAllowed) =>
-              val pos = formatBindingPosition(origin)
+              val pos = formatOrigin(origin)
               val kind = if (byNameAllowed) {
                 "proxy.light"
               } else {
@@ -107,7 +98,7 @@ object OpFormatter {
               formatDefn(p.target, pos, repr)
 
             case ProxyOp.InitProxy(target, _, proxy, origin) =>
-              val pos = formatBindingPosition(origin)
+              val pos = formatOrigin(origin)
               val resolved = proxy.forwardRefs.map(formatKey).map(_.shift(2)).mkString("{\n", "\n", "\n}")
               formatDefn(target, pos, s"${formatOpName("init", c.RED)} ${formatKey(proxy.target)} ${styled("with", c.GREEN)} $resolved")
 
@@ -115,9 +106,12 @@ object OpFormatter {
       }
     }
 
+    private def formatOrigin(origin: EqualizedOperationOrigin): String = {
+      origin.value.render()
+    }
     private def formatProviderOp(target: DIKey, deps: Wiring, origin: EqualizedOperationOrigin, deferred: Set[DIKey]): String = {
       val op = formatProviderWiring(deps, deferred)
-      val pos = formatBindingPosition(origin)
+      val pos = formatOrigin(origin)
       formatDefn(target, pos, op)
     }
 

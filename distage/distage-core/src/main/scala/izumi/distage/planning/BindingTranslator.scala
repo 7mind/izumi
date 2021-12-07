@@ -35,7 +35,7 @@ object BindingTranslator {
           val elementKey = target
           val setKey = set.key.set
 
-          val next = computeProvisioning(SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
+          val next = computeProvisioning(SingletonBinding(elementKey, set.implementation, set.tags, set.pos))
           val oldSet = next.sets.getOrElse(target, CreateSet(setKey, Set.empty, OperationOrigin.UserBinding(binding)))
           val newSet = oldSet.copy(members = oldSet.members + elementKey)
 

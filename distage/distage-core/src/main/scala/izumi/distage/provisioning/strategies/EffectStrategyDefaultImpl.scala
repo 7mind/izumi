@@ -21,9 +21,9 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
     context.fetchKey(effectKey, makeByName = false) match {
       case Some(action0) if op.isEffect[F] =>
         val action = action0.asInstanceOf[F[Any]]
-        action.map(newInstance => Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance)))
+        action.map(newInstance => Seq(NewObjectOp.NewInstance(op.target, op.instanceType, newInstance)))
       case Some(newInstance) =>
-        F.pure(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance)))
+        F.pure(Seq(NewObjectOp.NewInstance(op.target, op.instanceType, newInstance)))
       case None =>
         throw new MissingRefException(s"Failed to fetch an effect to execute: $effectKey", Set(effectKey), None)
     }

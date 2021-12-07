@@ -131,9 +131,9 @@ class PlannerDefaultImpl(
       .filterKeys(k => !plan.meta.nodes.contains(k))
       .map {
         case (missing, refs) =>
-          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.meta.nodes.get(key)).map(_.origin.value.toSynthetic)
-          val origin = EqualizedOperationOrigin(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
-          (missing, ImportDependency(missing, refs, origin))
+          val originatedRefs = refs.map(key => key -> plan.meta.nodes.get(key).map(_.origin).getOrElse(EqualizedOperationOrigin(OperationOrigin.Unknown)))
+          val someOrigin = originatedRefs.headOption.fold(OperationOrigin.Unknown)(_._2)
+          (missing, ImportDependency(missing, originatedRefs, someOrigin.toSynthetic))
       }
       .toMap
 

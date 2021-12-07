@@ -68,7 +68,7 @@ object DIError {
               conflictingAxisTagsHint(
                 key = k,
                 activeChoices = activation.activeChoices.values.toSet,
-                ops = nodes.map(_._2.meta.origin.value),
+                origins = nodes.map(_._2.meta.origin.value),
               )
           }.niceList()
 
@@ -89,22 +89,22 @@ object DIError {
   protected[this] def conflictingAxisTagsHint(
     key: MutSel[DIKey],
     activeChoices: Set[AxisChoice],
-    ops: Set[OperationOrigin],
+    origins: Set[OperationOrigin],
   ): String = {
     val keyMinimizer = KeyMinimizer(
-      ops.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
+      origins.flatMap(_.foldPartial[Set[DIKey]](Set.empty, { case b: Binding.ImplBinding => Set(DIKey.TypeKey(b.implementation.implType)) }))
       + key.key,
       colors = false,
     )
-    val axisValuesInBindings = ops.iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }.flatten.collect { case AxisTag(t) => t }.toSet
+    val axisValuesInBindings = origins.iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }.flatten.collect { case AxisTag(t) => t }.toSet
     val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
-    val candidates = ops.iterator
+    val candidates = origins.iterator
       .map {
-        op =>
-          val bindingTags = op.fold(Set.empty[AxisChoice], _.tags.collect { case AxisTag(t) => t })
+        origin =>
+          val bindingTags = origin.fold(Set.empty[AxisChoice], _.tags.collect { case AxisTag(t) => t })
           val conflicting = axisValuesInBindings.diff(bindingTags)
-          val implTypeStr = op.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
-          s"$implTypeStr ${op.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags
+          val implTypeStr = origin.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
+          s"$implTypeStr ${origin.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags
             .mkString(", ")}}"
       }.niceList().shift(4)
 

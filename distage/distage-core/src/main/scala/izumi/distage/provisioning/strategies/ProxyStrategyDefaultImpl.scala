@@ -50,7 +50,7 @@ class ProxyStrategyDefaultImpl(
       } yield {
         Seq(
           NewObjectOp.UseInstance(makeProxy.target, proxyInstance.proxy),
-          NewObjectOp.UseInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
+          NewObjectOp.UseInstance(proxyDispatcherKey(makeProxy.target), proxyInstance.dispatcher),
         )
       }
     }
@@ -63,7 +63,7 @@ class ProxyStrategyDefaultImpl(
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val target = initProxy.proxy.target
-    val key = proxyControllerKey(target)
+    val key = proxyDispatcherKey(target)
 
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
@@ -109,7 +109,7 @@ class ProxyStrategyDefaultImpl(
                     )
 
                 case r =>
-                  F.pure(Left(UnexpectedProvisionResultException(key, r)))
+                  F.pure(Left(UnexpectedProvisionResultException(key, r, initProxy.proxy.origin)))
               }
           }
 
@@ -136,8 +136,8 @@ class ProxyStrategyDefaultImpl(
     }
   }
 
-  protected def proxyControllerKey(m: DIKey): DIKey = {
-    DIKey.ProxyControllerKey(m, SafeType.get[ProxyDispatcher])
+  protected def proxyDispatcherKey(m: DIKey): DIKey = {
+    DIKey.ProxyDispatcherKey(m, SafeType.get[ProxyDispatcher])
   }
 
 }

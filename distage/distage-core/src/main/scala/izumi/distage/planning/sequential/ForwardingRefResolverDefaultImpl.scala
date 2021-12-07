@@ -63,8 +63,8 @@ class ForwardingRefResolverDefaultImpl(
           val byNameAllowed = onlyByNameUsages
 
           val badDeps = dependencies.intersect(predcessors.keySet)
-          val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
-          val initOpKey = DIKey.ProxyInitKey(op.target)
+          val makeProxyOp = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed)
+          val initOpKey = DIKey.ProxyInitKey(makeProxyOp.target)
 
           val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
 
@@ -82,8 +82,8 @@ class ForwardingRefResolverDefaultImpl(
           register(dependee, goodDeps)
           register(initOpKey, badDeps ++ Set(dependee))
 
-          updatedPlan.put(dependee, op)
-          updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, op, op.origin))
+          updatedPlan.put(dependee, makeProxyOp)
+          updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, makeProxyOp, makeProxyOp.origin))
           ()
         }
 

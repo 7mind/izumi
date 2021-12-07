@@ -37,7 +37,7 @@ class GraphPreparations(
     val setDefs = sets
       .collect {
         case (target, Node(_, s: CreateSet)) =>
-          (target, s.members)
+          (target, s.members.keySet)
       }
 
     setDefs.flatMap {

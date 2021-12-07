@@ -98,7 +98,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
           if (!isAutosetElement) {
             val implType = b.implementation.implType
             val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = true)
-            Seq(SetElementBinding(SetElementKey(setKey, b.key, SetKeyMeta.WithAutoset(setKey)), impl, b.tags, b.origin))
+            Seq(SetElementBinding(SetElementKey(setKey, b.key, SetKeyMeta.WithAutoset(setKey)), impl, b.tags, b.pos))
           } else {
             Seq.empty
           }

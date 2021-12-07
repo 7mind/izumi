@@ -20,7 +20,7 @@ object ProvisionOperationVerifier {
       if (keys.contains(target)) throw DuplicateInstancesException(target)
 
       target match {
-        case _: DIKey.ProxyControllerKey => // each proxy operation returns two assignments
+        case _: DIKey.ProxyDispatcherKey => // each proxy operation returns two assignments
           throwIfIncompatible(DIKey.get[ProxyDispatcher], clue, value)
 
         case _ =>

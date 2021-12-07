@@ -73,7 +73,7 @@ object DIKey {
     override def toString: String = s"{proxyinit.${proxied.toString}}"
   }
 
-  final case class ProxyControllerKey(proxied: DIKey, tpe: SafeType) extends DIKey {
+  final case class ProxyDispatcherKey(proxied: DIKey, tpe: SafeType) extends DIKey {
     override def toString: String = s"{proxyref.${proxied.toString}}"
   }
 

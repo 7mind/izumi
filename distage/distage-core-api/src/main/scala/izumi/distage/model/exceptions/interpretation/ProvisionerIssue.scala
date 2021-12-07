@@ -2,29 +2,36 @@ package izumi.distage.model.exceptions.interpretation
 
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp}
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.NewObjectOp
 import izumi.distage.model.reflection.{DIKey, SafeType}
 
 sealed trait ProvisionerIssue {
   def key: DIKey
+  def origin: OperationOrigin
 }
 
-case class UnexpectedDIException(key: DIKey, problem: Throwable) extends ProvisionerIssue
+final case class UnexpectedDIException(key: DIKey, problem: Throwable, origin: OperationOrigin) extends ProvisionerIssue
 
-case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
+final case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
   override def key: DIKey = op.target
+  override def origin: OperationOrigin = op.origin.value
 }
 
-case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
+final case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
   override def key: DIKey = op.target
+  override def origin: OperationOrigin = op.origin.value
 }
 
-case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
+final case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp], origin: OperationOrigin) extends ProvisionerIssue
 
-case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
+final case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue {
+  override def origin: OperationOrigin = op.origin.value
+}
 
-case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
+final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
   override def key: DIKey = op.target
+  override def origin: OperationOrigin = op.origin.value
 }
 
 object IncompatibleEffectTypesException {

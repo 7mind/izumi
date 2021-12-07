@@ -63,7 +63,7 @@ object PlanSolver {
         keysToDrop = membersToDrop.map(_.key)
         filteredWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
           case (k, RemappedValue(set: CreateSet, remaps)) =>
-            val withoutUnreachableWeakMebers = set.members.diff(keysToDrop)
+            val withoutUnreachableWeakMebers = set.members -- keysToDrop
             (k, RemappedValue(set.copy(members = withoutUnreachableWeakMebers): InstantiationOp, remaps))
           case (k, o) =>
             (k, o)
@@ -109,7 +109,7 @@ object PlanSolver {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
               unconfigured =>
-                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+                Left(List(UnconfiguredMutatorAxis(key, b.pos, unconfigured)))
             }.map(out => (aob, out))
           case aob =>
             Right((aob, true))
@@ -166,17 +166,17 @@ object PlanSolver {
               }
 
             members.biAggregate match {
-              case Left(value) =>
-                val message = value
+              case Left(error) =>
+                val message = error
                   .map {
                     case u: UnconfiguredSetElementAxis =>
-                      s"Set ${u.set} defined at ${u.pos} has element ${u.element} with unconfigured axis: ${u.unconfigured.mkString(",")}"
+                      s"Set ${u.set} defined at ${u.origin} has element ${u.element} with unconfigured axis: ${u.unconfigured.mkString(",")}"
                     case i: InconsistentSetElementAxis =>
                       s"BUG, please report at https://github.com/7mind/izumi/issues: Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}"
 
                   }.niceList()
 
-                throw new BadSetAxis(message, value)
+                throw new BadSetAxis(message, error)
               case Right(value) =>
                 val goodMembers = value.filter(_._2).map(_._1)
                 val result = firstOp.copy(members = goodMembers)

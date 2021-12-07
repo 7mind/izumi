@@ -272,7 +272,7 @@ object AbstractBindingDefDSL {
               } else {
                 throw new InvalidFunctoidModifier(
                   s"""Cannot apply invalid Functoid modifier $functoidModifier - new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`
-                     |Defined at ${initial.origin}""".stripMargin
+                     |Defined at ${initial.pos}""".stripMargin
                 )
               }
             case _ => ()

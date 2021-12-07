@@ -71,7 +71,9 @@ object DIPlan {
           val dependees = plan.plan.successors.links(k)
           val dependeesWithoutKeys = dependees.diff(keys)
           if (dependeesWithoutKeys.nonEmpty || plan.plan.noSuccessors.contains(k)) {
-            Seq((k, ImportDependency(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
+            val originatedDependees = dependeesWithoutKeys.iterator.map(d => d -> plan.plan.meta.nodes(d).origin).toMap
+            val originalOpOrigin = plan.plan.meta.nodes(k).origin.value
+            Seq(k -> ImportDependency(k, originatedDependees, originalOpOrigin.toSynthetic))
           } else {
             Seq.empty
           }
@@ -118,14 +120,14 @@ object DIPlan {
       *
       * @return a non-empty list of unresolved imports if present
       */
-    final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
+    def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
       val locatorRefKey = DIKey[LocatorRef]
       val nonMagicImports = plan.stepsUnordered.iterator.collect {
         case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
       }.toList
       NonEmptyList.from(nonMagicImports)
     }
-    final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
+    def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
 
     /**
       * Check for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`.
@@ -135,7 +137,7 @@ object DIPlan {
       * @tparam F effect type to check against
       * @return a non-empty list of operations incompatible with `F` if present
       */
-    final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
+    def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
       val effectType = SafeType.getK[F]
       val badSteps = plan.stepsUnordered.iterator.collect {
         case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op

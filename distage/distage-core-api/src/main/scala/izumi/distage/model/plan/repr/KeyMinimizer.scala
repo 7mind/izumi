@@ -40,7 +40,7 @@ class KeyMinimizer(
 
   private[this] val minimizedLTTRenderables = new LTTRenderables {
     override def r_SymName(sym: SymName, hasPrefix: Boolean): String = {
-      val shortname = sym.name.split('.').last
+      lazy val shortname = sym.name.split('.').last
       if (hasPrefix) {
         shortname
       } else {
@@ -77,7 +77,7 @@ class KeyMinimizer(
       case DIKey.ProxyInitKey(proxied) =>
         showKeyData("proxyinit", renderKey(proxied))
 
-      case DIKey.ProxyControllerKey(proxied, _) =>
+      case DIKey.ProxyDispatcherKey(proxied, _) =>
         showKeyData("proxyref", renderKey(proxied))
 
       case DIKey.EffectKey(key, _) =>
@@ -110,7 +110,7 @@ class KeyMinimizer(
       case k: DIKey.IdKey[_] =>
         extract(k.tpe)
 
-      case p: DIKey.ProxyControllerKey =>
+      case p: DIKey.ProxyDispatcherKey =>
         extract(p.tpe) ++ extract(p.proxied)
 
       case p: DIKey.ProxyInitKey =>

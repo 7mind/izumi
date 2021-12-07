@@ -8,7 +8,18 @@ import scala.language.implicitConversions
 sealed trait OperationOrigin {
   def toSynthetic: OperationOrigin.Synthetic
 
-  @inline final def toSourceFilePosition: SourceFilePosition = fold(SourceFilePosition.unknown, _.origin)
+  @inline final def maybeBinding: Option[Binding] = fold(None, Some(_))
+
+  @inline final def toSourceFilePosition: SourceFilePosition = fold(SourceFilePosition.unknown, _.pos)
+
+  final def render(): String = this match {
+    case OperationOrigin.UserBinding(binding) =>
+      binding.pos.toString
+    case OperationOrigin.SyntheticBinding(binding) =>
+      binding.pos.toString
+    case OperationOrigin.Unknown =>
+      "(<unknown>)"
+  }
 
   @inline final def fold[A](onUnknown: => A, onDefined: Binding => A): A = this match {
     case defined: OperationOrigin.Defined => onDefined(defined.binding)

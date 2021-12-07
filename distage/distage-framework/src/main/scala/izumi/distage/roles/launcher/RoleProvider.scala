@@ -101,11 +101,13 @@ object RoleProvider {
     }
 
     protected def reflectCompanionBinding(roleBinding: ImplBinding): RoleBinding = {
+      val role = roleBinding.key
+      val at = roleBinding.pos
       if (isReflectionEnabled) {
         reflectCompanionDescriptor(roleBinding.key.tpe) match {
           case Some(descriptor) =>
             logger.warn(
-              s"""${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"}: using deprecated reflective look-up of `RoleDescriptor` companion object.
+              s"""$role defined $at: using deprecated reflective look-up of `RoleDescriptor` companion object.
                  |Please use `RoleModuleDef` & `makeRole` to create a role binding explicitly, instead.
                  |
                  |Reflective lookup of `RoleDescriptor` will be removed in a future version.""".stripMargin
@@ -113,12 +115,12 @@ object RoleProvider {
             mkRoleBinding(roleBinding, descriptor)
 
           case None =>
-            logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
-            throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
+            logger.crit(s"$role defined $at has no companion object inherited from RoleDescriptor")
+            throw new DIAppBootstrapException(s"role=$role defined at=$at has no companion object inherited from RoleDescriptor")
         }
       } else {
-        logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no RoleDescriptor, companion reflection is disabled")
-        throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no RoleDescriptor, companion reflection is disabled")
+        logger.crit(s"$role defined $at has no RoleDescriptor, companion reflection is disabled")
+        throw new DIAppBootstrapException(s"role=$role defined at=$at has no RoleDescriptor, companion reflection is disabled")
       }
     }
 

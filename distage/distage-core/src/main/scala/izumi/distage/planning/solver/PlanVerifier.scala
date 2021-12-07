@@ -47,13 +47,14 @@ class PlanVerifier(
     val (mutators, defns) = ops.partition(_._3.isMutator)
     val justOps = defns.map { case (k, op, _) => k -> op }
 
-    val setOps = preps
+    val setOps: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps
       .computeSetsUnsafe(justOps)
       .map {
         case (k, (s, _)) =>
-          (Annotated(k, None, Set.empty), Node(s.members, s))
+          (Annotated(k, None, Set.empty), Node(s.members.keySet, s))
 
-      }.toMultimapView
+      }
+      .toMultimapView
       .map {
         case (k, v) =>
           val members = v.flatMap(_.deps).toSet
@@ -76,7 +77,7 @@ class PlanVerifier(
 
     val before = System.currentTimeMillis()
     var after = before
-    val issues =
+    val maybeIssues =
       try {
         trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
       } finally {
@@ -86,7 +87,7 @@ class PlanVerifier(
     val visitedKeys = mutVisited.map(_._1).toSet
     val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
 
-    NonEmptySet.from(issues) match {
+    NonEmptySet.from(maybeIssues) match {
       case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, visitedKeys, time)
       case None => PlanVerifierResult.Correct(visitedKeys, time)
     }
@@ -427,7 +428,7 @@ object PlanVerifier {
         throw new PlanVerificationException(
           s"""Plan verification failed, issues were:
              |
-             |${incorrect.issues.fromNonEmptySet.niceList()}
+             |${incorrect.allIssues.toSet.niceList()}
              |
              |Visited keys:
              |
@@ -439,8 +440,12 @@ object PlanVerifier {
     }
   }
   object PlanVerifierResult {
-    final case class Incorrect(issues: Some[NonEmptySet[PlanIssue]], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult
-    final case class Correct(visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult { override def issues: None.type = None }
+    final case class Incorrect(allIssues: NonEmptySet[PlanIssue], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult {
+      override def issues: Some[NonEmptySet[PlanIssue]] = Some(allIssues)
+    }
+    final case class Correct(visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult {
+      override def issues: None.type = None
+    }
   }
 
   sealed abstract class PlanIssue {

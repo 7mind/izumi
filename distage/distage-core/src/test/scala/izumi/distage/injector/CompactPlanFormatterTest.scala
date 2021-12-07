@@ -5,7 +5,6 @@ import izumi.distage.fixtures.BasicCases.BasicCase1.{Impl1, JustTrait}
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import izumi.distage.injector.CompactPlanFormatterTest._
 import izumi.distage.model.PlannerInput
-import izumi.functional.Renderable._
 import org.scalatest.wordspec.AnyWordSpec
 
 object CompactPlanFormatterTest {
