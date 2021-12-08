@@ -10,11 +10,10 @@ import pureconfig.generic.{CoproductHint, ProductHint}
 import scala.reflect.classTag
 import scala.util.control.NonFatal
 
-object PureconfigInstances extends PureconfigInstances
-
 trait PureconfigInstances {
+
   /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
-  @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = camelCaseProductHint.asInstanceOf[ProductHint[T]]
+  @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = PureconfigInstances.camelCaseProductHint.asInstanceOf[ProductHint[T]]
 
   /** Override pureconfig's default `type` field type discriminator for sealed traits.
     * Instead, use `circe`-like format with a single-key object. Example:
@@ -35,10 +34,18 @@ trait PureconfigInstances {
     *   }
     * }}}
     */
-  @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
+  @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = PureconfigInstances.circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
 
-  private[codec] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
-  private[codec] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
+  // use `Exported` so that if user imports their own instances, user instances will have higher priority
+  @inline implicit final def memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = PureconfigInstances.configMemorySizeDecoder
+
+}
+
+object PureconfigInstances extends PureconfigInstances {
+
+  private[config] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
+
+  private[config] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
     override def from(cur: ConfigCursor, options: Seq[String]): Result[CoproductHint.Action] = {
       for {
         objCur <- cur.asObjectCursor
@@ -72,8 +79,7 @@ trait PureconfigInstances {
     }
   }
 
-  // use `Exported` so that if user imports their own instances, user instances will have higher priority
-  implicit final lazy val memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
+  private[config] final lazy val configMemorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
     cur: ConfigCursor =>
       cur.asConfigValue.flatMap {
         cv =>
@@ -84,4 +90,5 @@ trait PureconfigInstances {
           }
       }
   }
+
 }
