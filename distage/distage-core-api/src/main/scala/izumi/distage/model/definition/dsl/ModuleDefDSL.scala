@@ -320,6 +320,7 @@ object ModuleDefDSL {
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
+    /** Create a _new_ instance of `I` */
     final def add[I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](AnyConstructor[I])
 
