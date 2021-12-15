@@ -271,7 +271,7 @@ trait Lifecycle[+F[_], +OuterResource] {
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
 }
 
-object Lifecycle extends LifecycleCatsInstances {
+object Lifecycle extends LifecycleInstances {
 
   /**
     * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
@@ -570,14 +570,6 @@ object Lifecycle extends LifecycleCatsInstances {
         )
       )
     }
-  }
-
-  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +_, +_]] = new Functor2[Lifecycle2[F, +_, +_]] {
-    override def map[R, E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
-  }
-
-  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -_, +_, +_]] = new Functor3[Lifecycle3[F, -_, +_, +_]] {
-    override def map[R, E, A, B](r: Lifecycle[F[R, E, _], A])(f: A => B): Lifecycle[F[R, E, _], B] = r.map(f)
   }
 
   /**
@@ -1070,6 +1062,16 @@ object Lifecycle extends LifecycleCatsInstances {
   @deprecated("bincompat, will be removed in 1.1.0", "1.0.6")
   private[distage] def pure[F[_], A](a: A)(implicit F: QuasiApplicative[F]): Lifecycle[F, A] = {
     Lifecycle.liftF(F.pure(a))
+  }
+}
+
+private[definition] sealed trait LifecycleInstances extends LifecycleCatsInstances {
+  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +_, +_]] = new Functor2[Lifecycle2[F, +_, +_]] {
+    override def map[R, E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
+  }
+
+  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -_, +_, +_]] = new Functor3[Lifecycle3[F, -_, +_, +_]] {
+    override def map[R, E, A, B](r: Lifecycle[F[R, E, _], A])(f: A => B): Lifecycle[F[R, E, _], B] = r.map(f)
   }
 }
 
