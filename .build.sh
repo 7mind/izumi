@@ -1,4 +1,5 @@
-#!/bin/bash -xe
+#!/usr/bin/env bash
+set -xe
 
 # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
 # Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project

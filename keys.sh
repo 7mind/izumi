@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+
+set -e
 
 EMAIL=${EMAIL:-pshirshov@gmail.com}
 SSHKEYNAME=travis-deploy-key
