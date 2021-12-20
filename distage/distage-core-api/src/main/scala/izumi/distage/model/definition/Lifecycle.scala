@@ -9,13 +9,13 @@ import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromC
 import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.data.Morphism1
-import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
+import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, IO2, IO3, Local3, Monad3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.fundamentals.platform.language.unused
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
-import zio._
+import zio.*
 import zio.ZManaged.ReleaseMap
 
 import java.util.concurrent.atomic.AtomicReference
@@ -1301,4 +1301,129 @@ sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycle
 sealed trait TrifunctorHasLifecycleTagLowPriority1 {
   implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] =
     macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+}
+
+object altHierarchy extends scala.App {
+
+  trait QuasiApplicative[F[_]] extends QuasiFunctor[F] {
+    type FNoError[A] <: F[A]
+
+//    def pure[G[x] >: FNoError[x], A](a: A): G[A]
+    def pure[A](a: A): FNoError[A]
+    def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C]
+
+    def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
+    def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
+
+    final val unit: FNoError[Unit] = pure(())
+
+    final def when(cond: Boolean)(ifTrue: => F[Unit]): F[Unit] = if (cond) ifTrue else unit
+    final def unless(cond: Boolean)(ifFalse: => F[Unit]): F[Unit] = if (cond) unit else ifFalse
+    final def ifThenElse[A](cond: Boolean)(ifTrue: => F[A], ifFalse: => F[A]): F[A] = if (cond) ifTrue else ifFalse
+  }
+
+  trait QuasiMonad[F[_]] extends QuasiApplicative[F] {
+    def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+  }
+
+  trait QuasiBracket[F[_]] extends QuasiMonad[F] {
+    def bracket[A, B](acquire: => F[A])(release: A => FNoError[Unit])(use: A => F[B]): F[B]
+  }
+
+  trait QuasiMemoryIO[F[_]] extends QuasiBracket[F] {
+    def maybeSuspendNoError[A](eff: => A): FNoError[A]
+
+    def suspendFNoError[A](effAction: => F[A]): F[A] = {
+      flatMap(maybeSuspendNoError(effAction))(identity)
+    }
+  }
+
+  object QuasiMemoryIO {
+    type Aux[F[_], G[x] <: F[x]] = QuasiMemoryIO[F] { type FNoError[A] = G[A] }
+  }
+
+  implicit def quasiIOForBracket[F[+_, +_], E](implicit F: IO2[F]): QuasiMemoryIO.Aux[F[E, +_], F[Nothing, +_]] = new QuasiMemoryIO[F[E, +_]] {
+    override type FNoError[+A] = F[Nothing, A]
+
+    override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = fa.flatMap(f)
+
+    override def bracket[A, B](acquire: => F[E, A])(release: A => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = F.bracket(acquire) {
+      release
+    }(use)
+
+    override def maybeSuspendNoError[A](eff: => A): F[Nothing, A] = F.sync(eff)
+
+    override def suspendFNoError[A](effAction: => F[E, A]): F[E, A] = F.sync(effAction).flatten
+
+    override def pure[A](a: A): F[Nothing, A] = F.pure(a)
+//    override def pure[G[x] >: FNoError[x], A](a: A): G[A] = F.pure(a)
+
+    override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
+
+    override def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
+
+    override def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
+
+    override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
+  }
+
+  implicit def monad3[F[-_, +_, +_]: IO3]: Monad3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, +_], A]]] = {
+    new Monad3[Lambda[(`-R`, `+E`, `+A`) => Lifecycle[F[R, E, +_], A]]] {
+      override def flatMap[R, E, A, B](r: Lifecycle[F[R, E, +_], A])(f: A => Lifecycle[F[R, E, +_], B]): Lifecycle[F[R, E, +_], B] = {
+        flatMapImpl(r)(f) // (F)
+      }
+
+      override def pure[A](a: A): Lifecycle[F[Any, Nothing, +_], A] = Lifecycle.pure[F[Any, Nothing, +_]](a)
+    }
+  }
+
+  @inline private def flatMapImpl[F[_], G[x] <: F[x], A, B](
+    self: Lifecycle[F, A]
+  )(f: A => Lifecycle[F, B]
+  )(implicit F: QuasiMemoryIO[F]
+  ): Lifecycle[F, B] = {
+    new Lifecycle[F, B] {
+      override type InnerResource = AtomicReference[List[() => F[Unit]]]
+
+      private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+        F.bracket(
+          acquire = F.flatMap(lifecycle.acquire) {
+            a =>
+              F.maybeSuspendNoError {
+                // can't use `.updateAndGet` because of Scala.js
+                var oldValue = finalizers.get()
+                while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
+                  oldValue = finalizers.get()
+                }
+                a
+              }
+          }
+        )(release = _ => F.unit)(
+          use = use
+        )
+      }
+
+      override def acquire: F[InnerResource] = {
+        F.maybeSuspendNoError[InnerResource](new AtomicReference(Nil))
+      }
+      override def release(finalizers: InnerResource): F[Unit] = {
+        F.suspendFNoError(F.traverse_(finalizers.get())(_.apply()))
+      }
+      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
+        bracketAppendFinalizer(finalizers)(self) {
+          inner1: self.InnerResource =>
+            F.suspendFNoError {
+              F.flatMap(self.extract(inner1).fold(F.map(_)(f), F pure f(_))) {
+                that: Lifecycle[F, B] =>
+                  bracketAppendFinalizer(finalizers)(that) {
+                    inner2: that.InnerResource =>
+                      that.extract[C](inner2).fold(identity, F.pure(_))
+                  }
+              }
+            }
+        }
+      }
+    }
+  }
+
 }
