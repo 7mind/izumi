@@ -16,7 +16,7 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 class SchedulerTest extends AnyWordSpec {
-  private def monixSchedulerFromTimer(implicit timer: cats.effect.Timer[bio.UIO]) = new SchedulerMonix(timer)
+  private def monixSchedulerFromTimer(implicit timer: cats.effect.Temporal[bio.UIO]) = new SchedulerMonix(timer)
 
   private val monixRunner = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
   private val monixScheduler = monixSchedulerFromTimer
@@ -158,7 +158,7 @@ class SchedulerTest extends AnyWordSpec {
 
       val intersectPMonix = RetryPolicy.recursWhile[bio.IO, Boolean](identity) && RetryPolicy.recurs(4)
       val unionPMonix = RetryPolicy.recursWhile[bio.IO, Boolean](identity) || RetryPolicy.recurs(4)
-      val effMonix = (counter: cats.effect.concurrent.Ref[bio.Task, Int]) => counter.updateAndGet(_ + 1).map(_ < 3)
+      val effMonix = (counter: _root_.cats.effect.Ref[bio.Task, Int]) => counter.updateAndGet(_ + 1).map(_ < 3)
 
       val zioTest = for {
         counter1 <- zio.Ref.make(0)
@@ -182,8 +182,8 @@ class SchedulerTest extends AnyWordSpec {
       } yield ()
 
       val monixTest = for {
-        counter1 <- cats.effect.concurrent.Ref.of[bio.Task, Int](0)
-        counter2 <- cats.effect.concurrent.Ref.of[bio.Task, Int](0)
+        counter1 <- _root_.cats.effect.Ref.of[bio.Task, Int](0)
+        counter2 <- _root_.cats.effect.Ref.of[bio.Task, Int](0)
 
         _ <- monixScheduler.repeat(effMonix(counter1))(intersectPMonix)
         res1 <- counter1.get
@@ -236,10 +236,10 @@ class SchedulerTest extends AnyWordSpec {
       }
 
       def testMonix(maxRetries: Int, expected: Int) = {
-        val eff = (counter: cats.effect.concurrent.Ref[bio.Task, Int]) =>
+        val eff = (counter: _root_.cats.effect.Ref[bio.Task, Int]) =>
           counter.updateAndGet(_ + 1).flatMap(v => if (v < 3) bio.IO.raiseError(new RuntimeException("Crap!")) else bio.IO.unit)
         for {
-          counter <- cats.effect.concurrent.Ref.of[bio.Task, Int](0)
+          counter <- _root_.cats.effect.Ref.of[bio.Task, Int](0)
           _ <- monixScheduler.retryOrElse(eff(counter))(RetryPolicy.recurs(maxRetries))(_ => counter.set(-1))
           res <- counter.get
           _ = assert(res == expected)
@@ -281,10 +281,10 @@ class SchedulerTest extends AnyWordSpec {
 
       def testMonix() = {
         var isSucceed = false
-        val eff = (counter: cats.effect.concurrent.Ref[bio.Task, Int]) =>
+        val eff = (counter: _root_.cats.effect.Ref[bio.Task, Int]) =>
           counter.updateAndGet(_ + 1).flatMap(v => if (v < 2) bio.IO.raiseError(new RuntimeException("Crap!")) else bio.IO.unit)
         val testProgram = for {
-          counter <- cats.effect.concurrent.Ref.of[bio.Task, Int](0)
+          counter <- _root_.cats.effect.Ref.of[bio.Task, Int](0)
           _ <- monixScheduler
             .repeat(eff(counter))(RetryPolicy.recurs(10)).onErrorHandleWith(
               _ =>
@@ -343,7 +343,7 @@ class SchedulerTest extends AnyWordSpec {
       eff: bio.IO[E, Any]
     )(policy: RetryPolicy[bio.IO, Any, B],
       n: Int,
-    )(implicit timer: cats.effect.Timer[bio.UIO]
+    )(implicit timer: cats.effect.Temporal[bio.UIO]
     ): bio.IO[E, Vector[FiniteDuration]] = {
       def loop(in: Any, makeDecision: RetryFunction[bio.IO, Any, B], acc: Vector[FiniteDuration], iter: Int): bio.IO[E, Vector[FiniteDuration]] = {
         if (iter <= 0) bio.IO.pure(acc)

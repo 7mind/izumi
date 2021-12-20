@@ -1,9 +1,10 @@
 package izumi.distage.modules.typeclass
 
-import cats.effect.{Async, Bracket, Concurrent, ConcurrentEffect, ContextShift, Effect, LiftIO, Sync, Timer}
+import cats.effect.{Async, Concurrent, ConcurrentEffect, Effect, LiftIO, Sync}
 import cats.{Applicative, ApplicativeError, Apply, FlatMap, Functor, Invariant, InvariantSemigroupal, Monad, MonadError, Parallel, Semigroupal}
 import distage.TagK
 import izumi.distage.model.definition.ModuleDef
+import cats.effect.{ MonadCancel, Temporal }
 
 /**
   * Adds `cats-effect` typeclass instances for any effect type `F[_]` with an available `make[ConcurrentEffect[F]` binding
@@ -23,7 +24,7 @@ class CatsEffectInstancesModule[F[_]: TagK] extends ModuleDef {
   make[ApplicativeError[F, Throwable]].using[ConcurrentEffect[F]]
   make[MonadError[F, Throwable]].using[ConcurrentEffect[F]]
 
-  make[Bracket[F, Throwable]].using[ConcurrentEffect[F]]
+  make[MonadCancel[F, Throwable]].using[ConcurrentEffect[F]]
   make[Sync[F]].using[ConcurrentEffect[F]]
   make[Async[F]].using[ConcurrentEffect[F]]
   make[LiftIO[F]].using[ConcurrentEffect[F]]
@@ -40,10 +41,10 @@ object CatsEffectInstancesModule {
     * `make[Parallel[F]]`, `make[Timer[F]]` and `make[ContextShift[F]]` are not required by [[CatsEffectInstancesModule]]
     * but are added for completeness
     */
-  def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Timer: ContextShift]: ModuleDef = new ModuleDef {
+  def withImplicits[F[_]: TagK: ConcurrentEffect: Parallel: Temporal: ContextShift]: ModuleDef = new ModuleDef {
     addImplicit[ConcurrentEffect[F]]
     addImplicit[Parallel[F]]
-    addImplicit[Timer[F]]
+    addImplicit[Temporal[F]]
     addImplicit[ContextShift[F]]
 
     include(CatsEffectInstancesModule[F])

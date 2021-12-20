@@ -1,9 +1,9 @@
 package izumi.functional.bio
 
-import cats.effect.concurrent.Semaphore
 import izumi.functional.bio.data.~>
 import zio.ZIO
 import zio.stm.{USTM, ZSTM}
+import cats.effect.std.Semaphore
 
 trait Semaphore1[+F[_]] {
   def acquire: F[Unit]
