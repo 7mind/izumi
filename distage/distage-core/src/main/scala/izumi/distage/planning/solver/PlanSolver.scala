@@ -60,7 +60,7 @@ object PlanSolver {
               k
           }.toSet
         keysToDrop = membersToDrop.map(_.key)
-        filteredWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
+        withoutWeakMembers = resolution.graph.meta.nodes.filterNot(m => keysToDrop.contains(m._1.key)).map {
           case (k, RemappedValue(set: CreateSet, remaps)) =>
             val withoutUnreachableWeakMebers = set.members.diff(keysToDrop)
             (k, RemappedValue(set.copy(members = withoutUnreachableWeakMebers): InstantiationOp, remaps))
@@ -69,7 +69,7 @@ object PlanSolver {
         }
         resolved =
           resolution.graph.copy(
-            meta = GraphMeta(filteredWeakMembers),
+            meta = GraphMeta(withoutWeakMembers),
             successors = resolution.graph.successors.without(membersToDrop),
             predecessors = resolution.graph.predecessors.without(membersToDrop),
           )
@@ -133,7 +133,6 @@ object PlanSolver {
     }
 
     private def computeSets(ac: ActivationChoices, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
-      val setMembersUnsafe = preps.computeSetsUnsafe(allOps)
       val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps.view
         .filter(_._1.mut.isEmpty)
         .map {
@@ -145,7 +144,8 @@ object PlanSolver {
         .mapValues(_.map(_._2).toList)
         .toMap
 
-      val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] =
+      val sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]] = {
+        val setMembersUnsafe = preps.computeSetsUnsafe(allOps)
         setMembersUnsafe.map {
           case (setKey, (firstOp, membersUnsafe)) =>
             val members = membersUnsafe
@@ -183,6 +183,7 @@ object PlanSolver {
             }
 
         }.toMap
+      }
       sets
     }
 

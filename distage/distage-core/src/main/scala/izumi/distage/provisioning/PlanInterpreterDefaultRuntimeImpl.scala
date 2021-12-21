@@ -177,11 +177,11 @@ class PlanInterpreterDefaultRuntimeImpl(
       }
     }
 
-    def processStep[T <: ExecutableOp, E](h: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
+    def processStep[T <: ExecutableOp, E](process: T => F[Either[E, Seq[NewObjectOp]]])(step: T): F[Either[E, Seq[NewObjectOp]]] = {
       for {
         before <- F.maybeSuspend(System.nanoTime())
         excludeOp <- F.maybeSuspend(mutExcluded.contains(step.target))
-        r <- F.ifThenElse(excludeOp)(F.pure(Right(Seq.empty[NewObjectOp]): Either[E, Seq[NewObjectOp]]), h(step))
+        r <- F.ifThenElse(excludeOp)(F.pure(Right(Seq.empty[NewObjectOp]): Either[E, Seq[NewObjectOp]]), process(step))
         after <- F.maybeSuspend(System.nanoTime())
       } yield {
         val time = after - before
