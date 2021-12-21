@@ -24,31 +24,29 @@ object BindingTranslator {
   class Impl extends BindingTranslator {
     def computeProvisioning(binding: Binding): NextOps = {
       binding match {
-        case singleton: SingletonBinding[_] =>
+        case singleton: SingletonBinding[?] =>
           NextOps(
             sets = Map.empty,
             provisions = provisionSingleton(singleton),
           )
 
-        case set: SetElementBinding =>
-          val target = set.key
-          val elementKey = target
-          val setKey = set.key.set
+        case element: SetElementBinding =>
+          val elementKey = element.key
+          val setKey = element.key.set
 
-          val next = computeProvisioning(SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-          val oldSet = next.sets.getOrElse(target, CreateSet(setKey, Set.empty, OperationOrigin.UserBinding(binding)))
-          val newSet = oldSet.copy(members = oldSet.members + elementKey)
+          val elementProvisions = provisionSingleton(SingletonBinding(elementKey, element.implementation, element.tags, element.origin))
+          val newSet = CreateSet(setKey, Set(elementKey), OperationOrigin.UserBinding(binding))
 
           NextOps(
-            sets = next.sets.updated(target, newSet),
-            provisions = next.provisions,
+            sets = Map(setKey -> newSet),
+            provisions = elementProvisions,
           )
 
-        case set: EmptySetBinding[_] =>
-          val newSet = CreateSet(set.key, Set.empty, OperationOrigin.UserBinding(binding))
+        case emptySet: EmptySetBinding[?] =>
+          val newSet = CreateSet(emptySet.key, Set.empty, OperationOrigin.UserBinding(binding))
 
           NextOps(
-            sets = Map(set.key -> newSet),
+            sets = Map(emptySet.key -> newSet),
             provisions = Seq.empty,
           )
       }

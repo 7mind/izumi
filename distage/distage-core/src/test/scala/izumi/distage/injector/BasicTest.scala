@@ -337,6 +337,62 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
   }
 
+  "handle set inclusions with wildcard parameters" in {
+    class Rpx
+    class Rp[F[+_, +_], A]
+    class Rp1[F[+_, +_], A] extends Rp[F, A]
+    class Rp2[F[+_, +_], A <: Rpx, B] extends Rp[F, A]
+
+    def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
+      many[Rp1[F, ?]]
+        .add(new Rp1[F, Int])
+
+      many[Rp2[F, ?, ?]]
+        .add(new Rp2[F, Rpx, Unit])
+
+      many[Rp[F, ?]]
+        .refSet[Set[Rp1[F, ?]]]
+
+      many[Rp[F, ?]]
+        .refSet[Set[Rp2[F, ?, ?]]]
+    })
+
+    val context = mkInjector().produce(definition[Either]).unsafeGet()
+
+    val mergedSets = context.get[Set[Rp1[Either, ?]]] ++ context.get[Set[Rp2[Either, ?, ?]]]
+    val constructedSet = context.get[Set[Rp[Either, ?]]]
+
+    assert(constructedSet == mergedSets)
+  }
+
+  "handle set inclusions with bounded invariant wildcard parameters" in {
+    class Rpx
+    class Rp[F[+_, +_], A]
+    class Rp1[F[+_, +_], A] extends Rp[F, A]
+    class Rp2[F[+_, +_], A <: Rpx, B] extends Rp[F, A]
+
+    def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
+      many[Rp1[F, ?]]
+        .add(new Rp1[F, Int])
+
+      many[Rp2[F, ? <: Rpx, ?]]
+        .add(new Rp2[F, Rpx, Unit])
+
+      many[Rp[F, ?]]
+        .refSet[Set[Rp1[F, ?]]]
+
+      many[Rp[F, ?]]
+        .refSet[Set[Rp2[F, ? <: Rpx, ?]]]
+    })
+
+    val context = mkInjector().produce(definition[Either]).unsafeGet()
+
+    val mergedSets = context.get[Set[Rp1[Either, ?]]] ++ context.get[Set[Rp2[Either, ? <: Rpx, ?]]]
+    val constructedSet = context.get[Set[Rp[Either, ?]]]
+
+    assert(constructedSet == mergedSets)
+  }
+
   "handle multiple set element binds" in {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(7)
@@ -430,18 +486,20 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
         make[Mutable].named("x").fromValue(Mutable(1, None))
 
-        modify[Mutable].named("x").by {
-          _.flatAp {
-            (u: SomethingUseful) => (m: Mutable) =>
-              m.copy(b = Some(u))
-          }
+        modify[Mutable].named("x").withDependencies {
+          (u: SomethingUseful) => (m: Mutable) =>
+            m.copy(b = Some(u))
         }
 
         modify[Mutable]
           .named("x") {
             (m: Mutable) =>
-              m.copy(a = m.a + 10)
+              m.copy(a = m.a + 5)
           }.tagged(Repo.Prod)
+          .map(m => m.copy(a = m.a + 2))
+          .by(_.flatApSame(() => m => m.copy(a = m.a + 1)))
+          .by(_.flatAp(() => m => m.copy(a = m.a + 1)))
+          .withDependencies(() => m => m.copy(a = m.a + 2))
 
         modify[Mutable]
           .named("x") {
@@ -464,13 +522,14 @@ class BasicTest extends AnyWordSpec with MkInjector {
       new ModuleDef {
         make[SomethingUseful].fromValue(SomethingUseful("x"))
 
-        make[Mutable].fromValue(Mutable(1, None))
+        make[Mutable]
+          .fromValue(Mutable(-1, None))
+          .modify(_.increment(1))
+          .modifyBy(_.flatAp((_: SomethingUseful) => identity[Mutable]))
 
-        modify[Mutable].by {
-          _.flatAp {
-            (u: SomethingUseful) => (m: Mutable) =>
-              m.copy(b = Some(u))
-          }
+        modify[Mutable].withDependencies {
+          (u: SomethingUseful) => (m: Mutable) =>
+            m.copy(b = Some(u))
         }
 
         modify[Mutable]
@@ -481,13 +540,10 @@ class BasicTest extends AnyWordSpec with MkInjector {
             }
           }.tagged(Repo.Prod)
 
-        modify[Mutable]
-          .by {
-            _.map {
-              (m: Mutable) =>
-                m.copy(a = m.a + 20)
-            }
-          }.tagged(Repo.Dummy)
+        modify[Mutable] {
+          (m: Mutable) =>
+            m.copy(a = m.a + 20)
+        }.tagged(Repo.Dummy)
       },
       Activation.empty,
     )

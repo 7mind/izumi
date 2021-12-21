@@ -172,7 +172,9 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   object Mutations01 {
     final case class SomethingUseful(v: String)
-    final case class Mutable(a: Int, b: Option[SomethingUseful])
+    final case class Mutable(a: Int, b: Option[SomethingUseful]) {
+      def increment(i: Int): Mutable = copy(a = a + i)
+    }
   }
 
   object BasicCase7 {

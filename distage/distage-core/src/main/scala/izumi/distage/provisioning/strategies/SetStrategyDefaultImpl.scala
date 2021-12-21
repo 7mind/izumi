@@ -21,12 +21,6 @@ class SetStrategyDefaultImpl extends SetStrategy {
 
     val allOrderedInstances = context.instances.keySet
 
-    // this assertion is correct though disabled because it's weird and, probably, unnecessary slow
-    /*assert(
-      Set("scala.collection.mutable.LinkedHashMap$DefaultKeySet", "scala.collection.mutable.LinkedHashMap$LinkedKeySet").contains(allOrderedInstances.getClass.getName),
-      s"got: ${allOrderedInstances.getClass.getName}",
-    )*/
-
     val orderedMembersSeq: Seq[DIKey] = allOrderedInstances.intersect(op.members).toSeq
     val fetched = orderedMembersSeq.map(m => (m, context.fetchKey(m, makeByName = false)))
 
@@ -35,7 +29,12 @@ class SetStrategyDefaultImpl extends SetStrategy {
         // in case member type == set type we just merge them
         value.asInstanceOf[Iterable[Any]]
 
-      case (m, Some(value)) if m.tpe.tag.withoutArgs <:< scalaCollectionSetType.tag.withoutArgs && m.tpe.tag.typeArgs.headOption.exists(_ <:< keyType) =>
+      case (m, Some(value)) if m.tpe.tag.withoutArgs <:< scalaCollectionSetType.tag.withoutArgs =>
+        if (!m.tpe.tag.typeArgs.headOption.exists(_ <:< keyType)) {
+          val mArg = m.tpe.tag.typeArgs.head
+          println(mArg)
+          ???
+        }
         // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[Iterable[Any]]
 
