@@ -1,6 +1,6 @@
 package distage
 
-import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.definition
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.distage.model.effect.QuasiIO

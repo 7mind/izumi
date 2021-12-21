@@ -384,6 +384,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       Fixture3.TestRoleAppMain.main(Array(":fixture3"))
     }
 
+    "enable circular dependency support in app bindings by default" in {}
+
+    "disable circular dependency support in RoleAppBootModule bindings by default" in {}
+
     "LogIO2 binding is available in LauncherBIO for ZIO & MonixBIO" in {
       withProperties(
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",

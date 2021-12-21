@@ -1,6 +1,8 @@
 package com.github.pshirshov.test3.plugins
 
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.{BasicConfig, BootstrapComponent, UnsatisfiedDep}
+import izumi.distage.model.definition
+import izumi.distage.model.definition.{Activation, Id, ModuleDef}
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.definition.RoleModuleDef
@@ -19,6 +21,26 @@ object Fixture3 {
     override protected def pluginConfig: PluginConfig = PluginConfig.cachedThisPkg
     override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap") overriddenBy new PluginDef {
       modify[BootstrapComponent].addDependency[UnsatisfiedDep]
+    }
+  }
+
+  object TestRoleAppMainCircularAppModule extends RoleAppMain.LauncherIdentity {
+    override protected def pluginConfig: PluginConfig = PluginConfig.cachedThisPkg ++ new PluginDef {
+      modify[BasicConfig].withDependencies {
+        (_: Fixture3Role) => (BasicConfig: BasicConfig) => BasicConfig
+      }
+    }
+    override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap")
+  }
+
+  object TestRoleAppMainCircularRoleAppBootModule extends RoleAppMain.LauncherIdentity {
+    override protected def pluginConfig: PluginConfig = PluginConfig.cachedThisPkg
+    override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap")
+
+    override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): definition.Module = new ModuleDef {
+      modify[Activation].named("default").withDependencies {
+        (_: Activation @Id("default")) => self => self
+      }
     }
   }
 

@@ -55,10 +55,9 @@ abstract class RoleAppMain[F[_]](
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   /**
-    * Overrides applied to [[roleAppBootModule]]
+    * Overrides applied to [[initialRoleAppBootModule]]
     *
-    * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
-    *
+    * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[initialRoleAppBootModule]]
     * @note The components added here are visible during the creation of the app, but *not inside* the app,
     *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
     *
@@ -117,13 +116,13 @@ abstract class RoleAppMain[F[_]](
   }
 
   def roleAppBootModule(argv: ArgV): Module = {
-    val mainModule = roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
+    val mainModule = initialRoleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
     val overrideModule = roleAppBootOverrides(argv)
     mainModule overriddenBy overrideModule
   }
 
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
-  def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
+  def initialRoleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
     new RoleAppBootModule[F](
       args = argv,
       requiredRoles = additionalRoles,
@@ -145,7 +144,7 @@ object RoleAppMain {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, _]] = new BIOShutdownStrategy[F]
 
     // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, _]]
-    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
+    override def initialRoleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = super.initialRoleAppBootModule(argv, additionalRoles) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
     }
   }
@@ -154,7 +153,7 @@ object RoleAppMain {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, _]] = new BIOShutdownStrategy[F[Any, +_, +_]]
 
     // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, _]]
-    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
+    override def initialRoleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = super.initialRoleAppBootModule(argv, additionalRoles) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO3Module[F]() +: _))
     }
   }

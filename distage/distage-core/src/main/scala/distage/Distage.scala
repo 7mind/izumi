@@ -1,7 +1,7 @@
 package distage
 
 import izumi.distage.planning.{extensions, solver}
-import izumi.distage.{constructors, model, modules, planning}
+import izumi.distage.{bootstrap, constructors, model, modules, planning}
 
 trait Distage {
 
@@ -61,6 +61,7 @@ trait Distage {
   val Repo: model.definition.StandardAxis.Repo.type = model.definition.StandardAxis.Repo
   val World: model.definition.StandardAxis.World.type = model.definition.StandardAxis.World
   val Scene: model.definition.StandardAxis.Scene.type = model.definition.StandardAxis.Scene
+  val Cycles: bootstrap.Cycles.type = bootstrap.Cycles
 
   type DIKey = model.reflection.DIKey
   val DIKey: model.reflection.DIKey.type = model.reflection.DIKey
