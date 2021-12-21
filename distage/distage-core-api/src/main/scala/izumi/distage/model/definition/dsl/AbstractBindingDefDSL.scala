@@ -135,6 +135,12 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     * }}}
     */
   final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = new ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL](this)
+
+  final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
+    _bindDSL[T](ref)
+  }
+
   final private def _modify[T](key: DIKey.BasicKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): SingletonRef = {
     val (tpeKey: DIKey.TypeKey, maybeId) = key match {
       case tpeKey: DIKey.TypeKey => tpeKey -> None
@@ -146,11 +152,6 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     maybeId.foreach(ref append SetId(_))
     ref
   }
-
-  final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
-    _bindDSL[T](ref)
-  }
 }
 
 object AbstractBindingDefDSL {
@@ -161,11 +162,15 @@ object AbstractBindingDefDSL {
     }
 
     def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.map(f))
+      by(_.mapSame(f))
+    }
+
+    def withDependencies(f: Functoid[T => T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.flatApSame(f))
     }
 
     def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f)(pos))
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T](tag))(f)(pos))
     }
 
     def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
@@ -187,11 +192,15 @@ object AbstractBindingDefDSL {
 
   final class ModifyNamedDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL], name: Identifier) {
     def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.map(f))
+      by(_.mapSame(f))
+    }
+
+    def withDependencies(f: Functoid[T => T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.flatApSame(f))
     }
 
     def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f)(pos))
+      new ModifyTaggingDSL(dsl._modify(DIKey.get[T](tag).named(name))(f)(pos))
     }
 
     def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
@@ -216,12 +225,16 @@ object AbstractBindingDefDSL {
       new ModifyTaggingDSL(ref.append(AddTags(tags.toSet)))
     }
 
-    def by(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL[T](ref.append(Modify(f)))
-    }
-
     def map(f: T => T): ModifyTaggingDSL[T] = {
       by(_.mapSame(f))
+    }
+
+    def withDependencies(f: Functoid[T => T]): ModifyTaggingDSL[T] = {
+      by(_.flatApSame(f))
+    }
+
+    def by(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = {
+      new ModifyTaggingDSL[T](ref.append(Modify(f)))
     }
 
     def addDependency[B: Tag]: ModifyTaggingDSL[T] = {

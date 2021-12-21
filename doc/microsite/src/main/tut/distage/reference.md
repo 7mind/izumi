@@ -15,6 +15,7 @@ Singleton bindings:
   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
   - `make[X].fromResource(X.resource[F]: Lifecycle[F, X])` = create X using a `Lifecycle` value specifying its creation and destruction lifecycle
   - `make[X].from[XImpl].modify(fun(_))` = Create X using XImpl's constructor and apply `fun` to the result
+  - `make[X].from[XImpl].modifyWithDependencies { (c: C, d: D) => (x: X) => c.method(x, d) }` = Create X using XImpl's constructor and modify its `X` by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
   - `make[X].from[XImpl].modifyBy(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = Create X using XImpl's constructor and modify its `Functoid` using the provided lambda - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
 
 Set bindings:
@@ -28,6 +29,7 @@ Set bindings:
 
 Mutators:
   - `modify[X](fun(_))` = add a modifier applying `fun` to the value bound at `X` (mutator application order is unspecified)
+  - `modify[X].withDependencies { (c: C, d: D) => (x: X) => c.method(x, d) }` = add a modifier to the value bound at `X`, summoning additional `C` & `D` dependencies and applying `C.method` to `X` (mutator application order is unspecified)
   - `modify[X].by(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = add a modifier, applying the provided lambda to a `Functoid` retrieving `X` - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
 
 Tags:

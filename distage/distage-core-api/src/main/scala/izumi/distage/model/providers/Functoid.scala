@@ -152,6 +152,7 @@ object Functoid {
 
   implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
     def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
+    def flatApSame(f: Functoid[A => A]): Functoid[A] = functoid.flatAp(f)(functoid.getRetTag)
   }
 
   def identity[A: Tag]: Functoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Functoid[A]]
