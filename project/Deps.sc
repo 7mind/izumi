@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.83`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.89`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -190,7 +190,7 @@ object Izumi {
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
-      final val rootSettings = Defaults.SharedOptions ++ Seq(
+      final val rootSettings = Defaults.RootOptions ++ Seq(Defaults.SbtMetaRootOptions) ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
@@ -221,7 +221,7 @@ object Izumi {
         "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}" % Provided""".raw,
       )
 
-      final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
+      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" += "-Wconf:any:error",
         "scalacOptions" ++= Seq(
@@ -238,8 +238,7 @@ object Izumi {
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
-          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
+          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw
         ),
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), Some(true)) := Seq(
@@ -330,7 +329,7 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
-  final val crossScalaSources = Defaults.CrossScalaSources
+  final val crossScalaSources = Defaults.CrossScalaPlusSources ++ Defaults.CrossScalaRangeSources
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
@@ -341,7 +340,6 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.functional
         ),
-        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -365,7 +363,6 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.literals
         ),
-        settings = crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
@@ -375,7 +372,6 @@ object Izumi {
           Projects.fundamentals.platform,
           Projects.fundamentals.functional,
         ),
-        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.fundamentals.functional,
@@ -392,7 +388,6 @@ object Izumi {
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
         ),
-        platforms = Targets.cross,
         settings = Seq(
           "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent"
         ),
@@ -408,13 +403,11 @@ object Izumi {
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
-        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
-        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.literals,
@@ -422,7 +415,6 @@ object Izumi {
           scala_reflect in Scope.Provided.all
         ),
         depends = Seq.empty,
-        platforms = Targets.cross,
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,
@@ -461,11 +453,14 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(
+          pureconfig_magnolia,
+          magnolia,
+        ).map(_ in Scope.Compile.jvm) ++ Seq(
+          scala_reflect in Scope.Provided.all
+        ),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvm,
-        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -473,7 +468,6 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
@@ -486,7 +480,6 @@ object Izumi {
         name = Projects.distage.frameworkApi,
         libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.framework,
@@ -494,8 +487,6 @@ object Izumi {
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
-        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.distage.docker,
@@ -508,7 +499,6 @@ object Izumi {
         name = Projects.distage.testkitCore,
         libs = Nil,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
@@ -519,7 +509,6 @@ object Izumi {
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
     ),
     pathPrefix = Projects.distage.basePath,

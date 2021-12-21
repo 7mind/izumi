@@ -44,7 +44,7 @@ object PureconfigAutoDerive {
 
   object PureconfigAutoDeriveMacro {
     def materializeImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[PureconfigAutoDerive[A]] = {
-      import c.universe._
+      import c.universe.*
       c.Expr[PureconfigAutoDerive[A]] {
         // Yes, this is legal /_\ !! We add an import so that implicit scope is enhanced
         // by new config codecs that aren't in ConfigReader companion object
