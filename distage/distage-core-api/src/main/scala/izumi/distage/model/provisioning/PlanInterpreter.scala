@@ -7,7 +7,6 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisioningException, UnexpectedDIException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
 import izumi.distage.model.plan.DIPlan
-import izumi.distage.model.provisioning.OpStatus.Planned
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.*

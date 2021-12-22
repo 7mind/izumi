@@ -3,8 +3,6 @@ package logstage.circe
 import io.circe.Encoder
 import izumi.logstage.api.rendering.{LogstageCodec, json}
 
-import scala.language.implicitConversions
-
 trait LogstageCirce {
   type LogstageCirceRenderingPolicy = json.LogstageCirceRenderingPolicy
   val LogstageCirceRenderingPolicy: json.LogstageCirceRenderingPolicy.type = json.LogstageCirceRenderingPolicy
