@@ -1,6 +1,5 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.exceptions.DIException
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString._

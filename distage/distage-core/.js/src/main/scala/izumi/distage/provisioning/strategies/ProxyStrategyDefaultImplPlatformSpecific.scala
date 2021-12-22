@@ -1,5 +1,6 @@
 package izumi.distage.provisioning.strategies
 
+import izumi.distage.model.exceptions.interpretation.UnsupportedOpException
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
