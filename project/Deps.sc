@@ -223,6 +223,7 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+        "scalacOptions" += "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
