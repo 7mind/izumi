@@ -21,7 +21,6 @@ import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.Try
 
 class PlanInterpreterNonSequentialRuntimeImpl(
   importStrategy: ImportStrategy,
