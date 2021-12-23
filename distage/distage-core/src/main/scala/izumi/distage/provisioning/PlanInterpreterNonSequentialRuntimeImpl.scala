@@ -54,6 +54,8 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+    val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
+
     val ctx: ProvisionMutable[F] = ProvisionMutable[F](diplan, parentContext)
 
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
@@ -65,7 +67,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
             results <- F.traverse(ops)(op => process(ctx, op))
             out <- F.traverse(results) {
               case s: TimedResult.Success =>
-                addResult(ctx, s)
+                addResult(ctx, integrationCheckFType, s)
               case f: TimedResult.Failure =>
                 F.pure(f.toFinal: TimedFinalResult)
             }
@@ -137,7 +139,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], DIPlan]] = {
     val allChecks = ctx.diplan.stepsUnordered.collect {
-      case op: InstantiationOp if op.instanceType <:< SafeType.get[AbstractCheck] =>
+      case op: InstantiationOp if op.instanceType <:< abstractCheckType =>
         op
     }.toSet
     if (allChecks.nonEmpty) {
@@ -195,8 +197,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def addResult[F[_]: TagK](active: ProvisionMutable[F], result: TimedResult.Success)(implicit F: QuasiIO[F]): F[TimedFinalResult] = {
-    val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
+  private[this] def addResult[F[_]: TagK](
+    active: ProvisionMutable[F],
+    integrationCheckFType: SafeType,
+    result: TimedResult.Success,
+  )(implicit F: QuasiIO[F]
+  ): F[TimedFinalResult] = {
     for {
       out <- F.traverse(result.ops) {
         op =>
@@ -221,14 +227,21 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def runIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
+  private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
+
     op match {
-      case i: NewObjectOp.LocalInstance if i.implType <:< SafeType.get[IntegrationCheck[Identity]] =>
-        F.maybeSuspend {
-          checkOrFail[Identity](i.instance)
+      case i: NewObjectOp.LocalInstance =>
+        if (i.implType <:< nullType) {
+          F.unit
+        } else if (i.implType <:< integrationCheckIdentityType) {
+          F.maybeSuspend {
+            checkOrFail[Identity](i.instance)
+          }
+        } else if (i.implType <:< integrationCheckFType) {
+          checkOrFail[F](i.instance)
+        } else {
+          F.unit
         }
-      case i: NewObjectOp.LocalInstance if i.implType <:< integrationCheckFType =>
-        checkOrFail[F](i.instance)
       case _ =>
         F.unit
     }
@@ -259,4 +272,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     F.ifThenElse(badOps.isEmpty)(F.pure(Right(())), F.pure(Left(badOps)))
   }
 
+}
+
+private object PlanInterpreterNonSequentialRuntimeImpl {
+  private val abstractCheckType: SafeType = SafeType.get[AbstractCheck]
+  private val integrationCheckIdentityType: SafeType = SafeType.get[IntegrationCheck[Identity]]
+  private val nullType: SafeType = SafeType.get[Null]
 }
