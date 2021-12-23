@@ -243,8 +243,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               runner.run {
                 testsTree.stateTraverse(runtimeLocator) {
                   (locator, plan, allTests) => stateAction =>
-                    lazy val nodeTests = allTests.map(_.test)
-                    withTestsRecoverCase(nodeTests) {
+                    val nodeTests = allTests.map(_.test)
+                    withTestsRecoverCause(None, nodeTests*) {
                       withIntegrationSharedPlan(locator, planChecker, plan)(stateAction)
                     }
                 } {
@@ -272,41 +272,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def withTestsRecoverCase(tests: => Iterable[DistageTest[F]])(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
-    F.definitelyRecoverCause {
-      testsAction
-    } {
-      case (ProvisioningIntegrationException(failures), _) =>
-        F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, failures))
-      case (_, getTrace) =>
-        // fail all tests (if an exception reached here, it must have happened before the individual test runs)
-        F.maybeSuspend(failAllTests(tests, getTrace()))
-    }
-  }
-
-  protected def withRecoverFromFailedExecution[A](allTests: => Iterable[DistageTest[F]])(f: => A)(onError: => A): A = {
+  protected def withRecoverFromFailedExecution[A](allTests: Seq[DistageTest[F]])(f: => A)(onError: => A): A = {
     try {
       f
     } catch {
       case t: Throwable =>
         // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
-        failAllTests(allTests.toSeq, t)
+        allTests.foreach {
+          test => reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
+        }
         reporter.onFailure(t)
         onError
-    }
-  }
-
-  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
-    tests.foreach {
-      test =>
-        reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-    }
-  }
-
-  protected def failAllTests(tests: Iterable[DistageTest[F]], t: Throwable): Unit = {
-    tests.foreach {
-      test =>
-        reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
     }
   }
 
@@ -400,32 +376,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   protected def proceedIndividual(test: DistageTest[F], testPlan: DIPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
-    def testDuration(before: Option[Long]): FiniteDuration = {
-      before.fold(Duration.Zero) {
-        before =>
-          val after = System.nanoTime()
-          FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-      }
-    }
-
-    def doRecover(before: Option[Long])(action: => F[Unit]): F[Unit] = {
-      F.definitelyRecoverCause(action) {
-        case (s, _) if isTestSkipException(s) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
-          }
-        case (ProvisioningIntegrationException(failures), _) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-          }
-        case (_, getTrace) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
-          }
-      }
-    }
-
-    doRecover(None) {
+    withTestsRecoverCause(None, test) {
       if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
       Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
@@ -433,13 +384,44 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             val before = System.nanoTime()
             reporter.testStatus(test.meta, TestStatus.Running)
 
-            doRecover(Some(before)) {
+            withTestsRecoverCause(Some(before), test) {
               testLocator
                 .run(test.test)
                 .flatMap(_ => F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(testDuration(Some(before))))))
             }
           }
       }
+    }
+  }
+
+  protected def withTestsRecoverCause(before: Option[Long], tests: DistageTest[F]*)(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
+    F.definitelyRecoverCause(testsAction) {
+      case (s, _) if isTestSkipException(s) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
+          }
+        }
+      case (ProvisioningIntegrationException(failures), _) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Ignored(failures))
+          }
+        }
+      case (_, getTrace) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
+          }
+        }
+    }
+  }
+
+  private[this] def testDuration(before: Option[Long]): FiniteDuration = {
+    before.fold(Duration.Zero) {
+      before =>
+        val after = System.nanoTime()
+        FiniteDuration(after - before, TimeUnit.NANOSECONDS)
     }
   }
 
@@ -600,8 +582,8 @@ object DistageTestRunner {
     private[this] val children = TrieMap.empty[DIPlan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
-    @inline def allTests: Iterable[PreparedTest[F]] = {
-      nodeTests.toList.flatMap(_.preparedTests) ++ children.flatMap(_._2.allTests)
+    def allTests: Seq[PreparedTest[F]] = {
+      (nodeTests.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.allTests)).toSeq
     }
 
     @inline override def toString: String = toString_(0, Set.empty, "", "")
@@ -609,7 +591,7 @@ object DistageTestRunner {
     /** Root node traverse. User should never call children node directly. */
     def stateTraverse[State](
       initialState: State
-    )(stateAcquire: (State, DIPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+    )(stateAcquire: (State, DIPlan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -622,7 +604,7 @@ object DistageTestRunner {
     @inline private def stateTraverse_[State](
       initialState: State,
       thisPlan: DIPlan,
-    )(stateAcquire: (State, DIPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+    )(stateAcquire: (State, DIPlan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
