@@ -228,7 +228,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case (MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _), testsTree) =>
         val allEnvTests = testsTree.allTests.map(_.test)
         integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-        withRecoverFromFailedExecution_(allEnvTests) {
+        withRecoverFromFailedExecution(allEnvTests) {
           val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
 
           // producing and verifying runtime plan
@@ -252,7 +252,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 }
               }
           }
-        }
+        }(onError = ())
     }
   }
 
@@ -264,7 +264,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   )(implicit
     F: QuasiIO[F]
   ): F[Unit] = {
-
     // shared plan
     planCheck.verify(plan)
     Injector.inherit(parentLocator).produceCustomF[F](plan).use {
@@ -278,21 +277,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       testsAction
     } {
       case (ProvisioningIntegrationException(failures), _) =>
-        F.maybeSuspend {
-          // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-          tests.foreach {
-            test =>
-              reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-          }
-        }
+        F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, failures))
       case (_, getTrace) =>
         // fail all tests (if an exception reached here, it must have happened before the individual test runs)
         F.maybeSuspend(failAllTests(tests, getTrace()))
     }
-  }
-
-  protected def withRecoverFromFailedExecution_[A](allTests: => Iterable[DistageTest[F]])(f: => Unit): Unit = {
-    withRecoverFromFailedExecution(allTests)(f)(())
   }
 
   protected def withRecoverFromFailedExecution[A](allTests: => Iterable[DistageTest[F]])(f: => A)(onError: => A): A = {
@@ -304,6 +293,13 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         failAllTests(allTests.toSeq, t)
         reporter.onFailure(t)
         onError
+    }
+  }
+
+  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
+    tests.foreach {
+      test =>
+        reporter.testStatus(test.meta, TestStatus.Ignored(failures))
     }
   }
 
@@ -418,17 +414,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
           }
-        // TODO: workaround to handle integration exceptions thrown by DockerWrapper and ContainerResorce
         case (ProvisioningIntegrationException(failures), _) =>
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Ignored(failures))
           }
-        case (e: IntegrationCheckException, _) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Ignored(e.failures))
-          }
-        case (e, getTrace) =>
-          e.printStackTrace()
+        case (_, getTrace) =>
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
           }

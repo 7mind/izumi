@@ -8,11 +8,12 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
-import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
+import izumi.distage.model.plan.ExecutableOp.{MonadicOp, *}
 import izumi.distage.model.plan.{DIPlan, ExecutableOp}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -29,12 +30,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
 ) extends PlanInterpreter {
 
-  override def run[F[_]: TagK: QuasiIO](
+  override def run[F[_]: TagK](
     plan: DIPlan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
+  )(implicit F: QuasiIO[F]
   ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
-    val F: QuasiIO[F] = implicitly[QuasiIO[F]]
     Lifecycle.make(
       acquire = instantiateImpl(plan, parentLocator)
     )(release = {
@@ -61,24 +62,22 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
       state.current match {
         case TraversalState.Step(steps) =>
-          val ops = prioritize(steps.toSeq.map(k => diplan.plan.meta.nodes(k)), integrationPaths)
+          val ops = prioritize(steps.toSeq.map(diplan.plan.meta.nodes(_)), integrationPaths)
 
           for {
-            results <- F.traverse(ops)(op => process(ctx, op))
-            out <- F.traverse(results) {
+            results <- F.traverse(ops)(processOp(ctx, _))
+            timedResults <- F.traverse(results) {
               case s: TimedResult.Success =>
                 addResult(ctx, integrationCheckFType, s)
               case f: TimedResult.Failure =>
                 F.pure(f.toFinal: TimedFinalResult)
             }
-            (ok, bad) = out.partition(_.isSuccess)
-            out <- run(
+            (ok, bad) = timedResults.partition(_.isSuccess)
+            res <- run(
               state.next(ok.asInstanceOf[List[TimedFinalResult.Success]], bad.asInstanceOf[List[TimedFinalResult.Failure]]),
               integrationPaths,
             )
-          } yield {
-            out
-          }
+          } yield res
         case TraversalState.Done() =>
           if (state.failures.isEmpty) {
             F.maybeSuspend(Right(ctx.finish(state)))
@@ -92,40 +91,35 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
     for {
       result <- verifyEffectType(diplan.plan.meta.nodes.values)
-      initial = TraversalState(
-        diplan.plan.predecessors
-      )
+      initial = TraversalState(diplan.plan.predecessors)
       icPlan <- integrationPlan(initial, ctx)
 
-      out <- result match {
-        case Left(value) =>
-          failEarly(ctx, initial, value)
-        case Right(_) =>
+      res <- result match {
+        case Left(incompatibleEffectTypes) =>
+          failEarly(ctx, initial, incompatibleEffectTypes)
+
+        case Right(()) =>
           icPlan match {
-            case Left(value) =>
-              F.pure(Left(value))
-            case Right(value) =>
-              run(initial, value.plan.meta.nodes.keySet)
+            case Left(failedProvision) =>
+              F.pure(Left(failedProvision))
+            case Right(diPlan) =>
+              run(initial, diPlan.plan.meta.nodes.keySet)
           }
       }
-
-    } yield {
-      out
-    }
-
+    } yield res
   }
 
   private def failEarly[F[_]: TagK](
     ctx: ProvisionMutable[F],
     initial: TraversalState,
-    value: Iterable[ProvisionerIssue],
+    issues: Iterable[ProvisionerIssue],
   )(implicit F: QuasiIO[F]
   ): F[Left[FailedProvision[F], Nothing]] = {
-    val failures = value.map {
-      e =>
+    val failures = issues.map {
+      issue =>
         TimedFinalResult.Failure(
-          e.key,
-          List(e),
+          issue.key,
+          List(issue),
           FiniteDuration(0, TimeUnit.SECONDS),
         )
     }.toList
@@ -176,10 +170,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def process[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[TimedResult] = {
+  private def processOp[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[TimedResult] = {
     for {
       before <- F.maybeSuspend(System.nanoTime())
-      out <- op match {
+      res <- op match {
         case op: ImportDependency =>
           F.pure(importStrategy.importDependency(context.asContext(), op))
         case op: NonImportOp =>
@@ -188,7 +182,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       after <- F.maybeSuspend(System.nanoTime())
     } yield {
       val duration = Duration.fromNanos(after - before)
-      out match {
+      res match {
         case Left(value) =>
           TimedResult.Failure(op.target, value, duration)
         case Right(value) =>
@@ -204,25 +198,19 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   )(implicit F: QuasiIO[F]
   ): F[TimedFinalResult] = {
     for {
-      out <- F.traverse(result.ops) {
+      res <- F.traverse(result.ops) {
         op =>
-          for {
-            _ <- runIntegrationCheck(op, integrationCheckFType)
-            out <- F.maybeSuspend {
-              Try(active.addResult(verifier, op)).toEither.left.map(t => UnexpectedDIException(result.key, t))
-            }
-          } yield {
-            out
-          }
+          F.definitelyRecover[Option[UnexpectedDIException]](for {
+            _ <- runIfIntegrationCheck(op, integrationCheckFType)
+            _ <- F.maybeSuspend(active.addResult(verifier, op))
+          } yield None)(exception => F.pure(Some(UnexpectedDIException(result.key, exception))))
       }
     } yield {
-      import izumi.functional.IzEither.*
-      val r = out.biAggregateScalar
-      r match {
-        case Left(value) =>
-          TimedFinalResult.Failure(result.key, value, result.time)
-        case Right(_) =>
+      res.flatten match {
+        case Nil =>
           TimedFinalResult.Success(result.key, result.time)
+        case exceptions =>
+          TimedFinalResult.Failure(result.key, exceptions, result.time)
       }
     }
   }

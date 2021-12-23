@@ -94,18 +94,13 @@ object PlanInterpreter {
 
       import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
-      val exceptions = failure match {
+      val allExceptions = failure match {
         case f: ProvisioningFailure.AggregateFailure =>
-          f.failures.flatMap {
-            case e: UnexpectedDIException =>
-              Seq(e.problem)
-            case _ =>
-              Seq.empty
+          f.failures.collect {
+            case e: UnexpectedDIException => e.problem
           }
-        case _: ProvisioningFailure.BrokenGraph =>
-          Seq.empty
-        case _: ProvisioningFailure.CantBuildIntegrationSubplan =>
-          Seq.empty
+        case _: ProvisioningFailure.BrokenGraph => Seq.empty
+        case _: ProvisioningFailure.CantBuildIntegrationSubplan => Seq.empty
       }
 
       F.fail {
@@ -114,8 +109,7 @@ object PlanInterpreter {
              |$repr
              |""".stripMargin,
           null,
-        )
-          .addAllSuppressed(exceptions)
+        ).addAllSuppressed(allExceptions)
       }
     }
   }
