@@ -21,11 +21,13 @@ object SwingTheme {
     UIManager.put("nimbusSelectionBackground", new Color(104, 93, 156))
     UIManager.put("text", new Color(230, 230, 230))
 
-    try for (info <- javax.swing.UIManager.getInstalledLookAndFeels) {
-      if ("Nimbus" == info.getName) {
-        javax.swing.UIManager.setLookAndFeel(info.getClassName)
+    try
+      for (info <- javax.swing.UIManager.getInstalledLookAndFeels) {
+        if ("Nimbus" == info.getName) {
+          javax.swing.UIManager.setLookAndFeel(info.getClassName)
+        }
       }
-    } catch {
+    catch {
       case t: Throwable =>
         t.printStackTrace()
     }
