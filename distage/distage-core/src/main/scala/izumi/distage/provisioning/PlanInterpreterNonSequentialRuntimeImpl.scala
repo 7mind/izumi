@@ -216,7 +216,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
   private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
     op match {
-      case i: NewObjectOp.LocalInstance =>
+      case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
           F.unit
         } else if (i.implType <:< integrationCheckIdentityType) {

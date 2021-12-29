@@ -93,10 +93,6 @@ final case class ProvisionMutable[F[_]: TagK](diplan: Plan, parentContext: Locat
       case r @ NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
         this.finalizers prepend Finalizer[F](target, finalizer)
-
-      case NewObjectOp.UpdatedSet(target, instance) =>
-        verifier.verify(target, this.instances.keySet, instance, "set")
-        this.instances += (target -> instance)
     }
   }
 }
