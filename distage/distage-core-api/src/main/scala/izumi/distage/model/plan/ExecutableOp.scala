@@ -15,7 +15,7 @@ sealed trait ExecutableOp {
   def target: DIKey
   def origin: EqualizedOperationOrigin
   override final def toString: String = {
-    new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
+    OpFormatter(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
   }
 }
 
@@ -89,7 +89,7 @@ object ExecutableOp {
 
       @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Unit = {
         if (isIncompatibleEffectType[F]) {
-          throw DIBugException(
+          throw new DIBugException(
             s"Incompatible effect type in operation ${op.target}: $actionEffectType !<:< ${SafeType.identityEffectType}; this had to be handled before"
           )
         }

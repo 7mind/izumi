@@ -28,7 +28,9 @@ object OpFormatter {
     }
   }
 
-  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = {
+    new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  }
 
   class Impl(
     keyFormatter: KeyFormatter,
@@ -41,10 +43,9 @@ object OpFormatter {
 
     override protected def colorsEnabled(): Boolean = colors
 
-    override def format(op: ExecutableOp): String = {
-      format(op, Set.empty)
-    }
-    def format(op: ExecutableOp, deferred: Set[DIKey]): String = {
+    override def format(op: ExecutableOp): String = format(op, Set.empty)
+
+    protected def format(op: ExecutableOp, deferred: Set[DIKey]): String = {
       op match {
         case i: InstantiationOp =>
           i match {

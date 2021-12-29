@@ -12,7 +12,7 @@ trait ProvisionOperationVerifier {
 
 object ProvisionOperationVerifier {
 
-  class Default(
+  final class Default(
     mirror: MirrorProvider
   ) extends ProvisionOperationVerifier {
 
