@@ -15,9 +15,12 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
-final case class ProvisionMutable[F[_]: TagK](diplan: Plan, parentContext: Locator) extends Provision[F] {
+final class ProvisionMutable[F[_]: TagK](
+  val plan: Plan,
+  parentContext: Locator,
+) extends Provision[F] {
 
-  private val temporaryLocator = new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta.empty, this)
+  private val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, this)
 
   private val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
   type OperationMetadata = FiniteDuration
@@ -36,7 +39,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: Plan, parentContext: Locat
 
     FailedProvision(
       toImmutable,
-      diplan,
+      plan,
       parentContext,
       diag,
       meta,
@@ -47,7 +50,7 @@ final case class ProvisionMutable[F[_]: TagK](diplan: Plan, parentContext: Locat
   def finish(state: TraversalState): LocatorDefaultImpl[F] = {
     val meta = LocatorMeta(state.status())
     val finalLocator =
-      new LocatorDefaultImpl(diplan, Option(parentContext), meta, toImmutable)
+      new LocatorDefaultImpl(plan, Option(parentContext), meta, toImmutable)
     locatorRef.ref.set(Right(finalLocator))
     finalLocator
   }

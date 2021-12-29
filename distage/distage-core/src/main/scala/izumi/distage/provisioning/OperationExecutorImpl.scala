@@ -1,7 +1,6 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.interpretation.{ProvisionerIssue, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*
@@ -22,48 +21,39 @@ class OperationExecutorImpl(
     step: NonImportOp,
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    for {
-      maybeResult <- F.definitelyRecover[Either[ProvisionerIssue, Seq[NewObjectOp]]](
-        action = executeUnsafe(context, step)
-      )(recover = exception => F.pure(Left(UnexpectedDIException(step.target, exception))))
-    } yield {
-      maybeResult
-    }
+    F.definitelyRecover(
+      executeUnsafe(context, step)
+    )(err => F.pure(Left(UnexpectedDIException(step, err))))
   }
 
   private[this] def executeUnsafe[F[_]: TagK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
   )(implicit F: QuasiIO[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    step match {
-      case op: CreateSet =>
-        F.pure(Right(setStrategy.makeSet(context, op)))
+  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = step match {
+    case op: CreateSet =>
+      F.maybeSuspend(Right(setStrategy.makeSet(context, op)))
 
-      case op: WiringOp =>
-        op match {
-          case op: WiringOp.UseInstance =>
-            F.pure(Right(instanceStrategy.getInstance(context, op)))
+    case op: WiringOp.UseInstance =>
+      F.maybeSuspend(Right(instanceStrategy.getInstance(context, op)))
 
-          case op: WiringOp.ReferenceKey =>
-            F.pure(Right(instanceStrategy.getInstance(context, op)))
+    case op: WiringOp.ReferenceKey =>
+      F.maybeSuspend(Right(instanceStrategy.getInstance(context, op)))
 
-          case op: WiringOp.CallProvider =>
-            F.pure(Right(providerStrategy.callProvider(context, op)))
-        }
+    case op: WiringOp.CallProvider =>
+      F.maybeSuspend(Right(providerStrategy.callProvider(context, op)))
 
-      case op: ProxyOp.MakeProxy =>
-        proxyStrategy.makeProxy(context, op)
+    case op: ProxyOp.MakeProxy =>
+      proxyStrategy.makeProxy(context, op)
 
-      case op: ProxyOp.InitProxy =>
-        proxyStrategy.initProxy(context, this, op)
+    case op: ProxyOp.InitProxy =>
+      proxyStrategy.initProxy(context, this, op)
 
-      case op: MonadicOp.ExecuteEffect =>
-        F.map(effectStrategy.executeEffect[F](context, op))(Right.apply)
+    case op: MonadicOp.ExecuteEffect =>
+      F.map(effectStrategy.executeEffect[F](context, op))(Right(_))
 
-      case op: MonadicOp.AllocateResource =>
-        F.map(resourceStrategy.allocateResource[F](context, op))(Right.apply)
-    }
+    case op: MonadicOp.AllocateResource =>
+      F.map(resourceStrategy.allocateResource[F](context, op))(Right(_))
   }
 
 }

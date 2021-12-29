@@ -1,6 +1,6 @@
 package izumi.distage.provisioning
 
-import distage.{DIKey, Id, Injector, Roots, SafeType}
+import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
@@ -56,7 +56,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val ctx: ProvisionMutable[F] = ProvisionMutable[F](plan, parentContext)
+    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
 
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
       state.current match {
@@ -131,19 +131,17 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], Plan]] = {
-    val allChecks = ctx.diplan.stepsUnordered.collect {
-      case op: InstantiationOp if op.instanceType <:< abstractCheckType =>
-        op
+    val allChecks = ctx.plan.stepsUnordered.iterator.collect {
+      case op: InstantiationOp if op.instanceType <:< abstractCheckType => op
     }.toSet
     if (allChecks.nonEmpty) {
-      val icPlanner = Injector()
       NonEmptySet.from(allChecks.map(_.target)) match {
-        case Some(value) =>
+        case Some(integrationChecks) =>
           F.maybeSuspend {
-            icPlanner.planSafe(ctx.diplan.input.copy(roots = Roots.Of(value))).left.map {
-              errs =>
-                ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status()))
-            }
+            distage
+              .Injector()
+              .planSafe(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
+              .left.map(errs => ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status())))
           }
         case None =>
           F.pure(Right(Plan.empty))
@@ -199,10 +197,14 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     for {
       res <- F.traverse(result.ops) {
         op =>
-          F.definitelyRecover[Option[UnexpectedDIException]](for {
-            _ <- runIfIntegrationCheck(op, integrationCheckFType)
-            _ <- F.maybeSuspend(active.addResult(verifier, op))
-          } yield None)(exception => F.pure(Some(UnexpectedDIException(result.key, exception))))
+          F.definitelyRecover[Option[ProvisionerIssue]](
+            for {
+              res <- runIfIntegrationCheck(op, integrationCheckFType)
+              _ <- F.when(res.isDefined) {
+                F.maybeSuspend(active.addResult(verifier, op))
+              }
+            } yield res
+          )(err => F.pure(Some(UnexpectedIntegrationCheckException(result.key, err))))
       }
     } yield {
       res.flatten match {
@@ -214,34 +216,35 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
+  private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
-          F.unit
+          F.pure(None)
         } else if (i.implType <:< integrationCheckIdentityType) {
           F.maybeSuspend {
-            checkOrFail[Identity](i.instance)
+            checkOrFail[Identity](i.key, i.instance)
           }
         } else if (i.implType <:< integrationCheckFType) {
-          checkOrFail[F](i.instance)
+          checkOrFail[F](i.key, i.instance)
         } else {
-          F.unit
+          F.pure(None)
         }
       case _ =>
-        F.unit
+        F.pure(None)
     }
   }
 
-  private[this] def checkOrFail[F[_]: TagK](resource: Any)(implicit F: QuasiIO[F]): F[Unit] = {
+  private[this] def checkOrFail[F[_]: TagK](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     F.suspendF {
       resource
-        .asInstanceOf[IntegrationCheck[F]].resourcesAvailable()
+        .asInstanceOf[IntegrationCheck[F]]
+        .resourcesAvailable()
         .flatMap {
           case ResourceCheck.Success() =>
-            F.unit
+            F.pure(None)
           case failure: ResourceCheck.Failure =>
-            F.fail(new IntegrationCheckException(NonEmptyList(failure)))
+            F.pure(Some(IntegrationCheckFailure(key, new IntegrationCheckException(NonEmptyList(failure)))))
         }
     }
   }
@@ -255,7 +258,11 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       .filter(_.isIncompatibleEffectType[F])
       .map(op => IncompatibleEffectTypesException(op, op.provisionerEffectType[F], op.actionEffectType))
 
-    F.ifThenElse(badOps.isEmpty)(F.pure(Right(())), F.pure(Left(badOps)))
+    if (badOps.isEmpty) {
+      F.pure(Right(()))
+    } else {
+      F.pure(Left(badOps))
+    }
   }
 
 }

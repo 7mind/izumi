@@ -15,11 +15,11 @@ sealed trait TimedFinalResult {
   def time: FiniteDuration
 }
 object TimedFinalResult {
-  case class Success(key: DIKey, time: FiniteDuration) extends TimedFinalResult {
+  final case class Success(key: DIKey, time: FiniteDuration) extends TimedFinalResult {
     override def isSuccess: Boolean = true
   }
 
-  case class Failure(key: DIKey, issues: List[ProvisionerIssue], time: FiniteDuration) extends TimedFinalResult {
+  final case class Failure(key: DIKey, issues: List[ProvisionerIssue], time: FiniteDuration) extends TimedFinalResult {
     override def isSuccess: Boolean = false
   }
 }
@@ -91,7 +91,7 @@ final class TraversalState(
 object TraversalState {
   def apply(preds: IncidenceMatrix[DIKey]): TraversalState = {
     val todo = mutable.HashMap[DIKey, OpStatus]()
-    todo ++= preds.links.keySet.map(k => (k, OpStatus.Planned()))
+    todo ++= preds.links.keySet.map(_ -> OpStatus.Planned())
     new TraversalState(
       Step(Set.empty),
       preds,
@@ -102,7 +102,7 @@ object TraversalState {
   }
 
   sealed trait Current
-  case class Step(steps: collection.Set[DIKey]) extends Current
-  case class Done() extends Current
-  case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
+  final case class Step(steps: Set[DIKey]) extends Current
+  final case class Done() extends Current
+  final case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
 }
