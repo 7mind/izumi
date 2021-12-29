@@ -29,8 +29,9 @@ final case class DIPlan(
   }
 
   override def equals(obj: Any): Boolean = obj match {
-    case p: DIPlan =>
-      this.plan.meta == p.plan.meta && this.plan.predecessors == p.plan.predecessors
+    case that: DIPlan =>
+      this.plan.meta == that.plan.meta &&
+      this.plan.predecessors == that.plan.predecessors
     case _ => false
   }
 }
@@ -48,6 +49,8 @@ object DIPlan {
 
     def stepsUnordered: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
 
+    def definition: ModuleBase = plan.input.bindings
+
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
         case Left(value) =>
@@ -62,8 +65,9 @@ object DIPlan {
       *
       * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
       *
-      * @note this processes a complete plan, if you have bindings you can achieve a similar transformation before planning
-      *       by deleting the `keys` from bindings: `module -- keys`
+      * @note this processes a completed plan, you can achieve a similar transformation
+      *       before planning by removing the `keys` from [[ModuleBase]]:
+      *       `module -- keys`
       */
     def replaceWithImports(keys: Set[DIKey]): DIPlan = {
       val newImports = keys.flatMap {
@@ -104,6 +108,7 @@ object DIPlan {
   }
 
   implicit final class DIPlanAssertionSyntax(private val plan: DIPlan) extends AnyVal {
+
     /**
       * Check for any unresolved dependencies.
       *
@@ -117,15 +122,16 @@ object DIPlan {
       * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
       *
       * @return a non-empty list of unresolved imports if present
+      *
+      * @see [[distage.Injector#assert]] for a check you can use in tests
       */
-    final def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
+    def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
       val locatorRefKey = DIKey[LocatorRef]
       val nonMagicImports = plan.stepsUnordered.iterator.collect {
         case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
       }.toList
       NonEmptyList.from(nonMagicImports)
     }
-    final def unresolvedImports: Option[NonEmptyList[ImportDependency]] = unresolvedImports()
 
     /**
       * Check for any `make[_].fromEffect` or `make[_].fromResource` bindings that are incompatible with the passed `F`.
@@ -135,12 +141,26 @@ object DIPlan {
       * @tparam F effect type to check against
       * @return a non-empty list of operations incompatible with `F` if present
       */
-    final def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
+    def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
       val effectType = SafeType.getK[F]
       val badSteps = plan.stepsUnordered.iterator.collect {
         case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
       }.toList
       NonEmptyList.from(badSteps)
+    }
+
+    /**
+      * Get all imports (unresolved dependencies).
+      *
+      * Note, presence of imports does not *always* mean
+      * that a plan is invalid, imports may be fulfilled by a parent
+      * `Locator`, by BootstrapContext, or they may be materialized by
+      * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+      *
+      * @see [[distage.Injector#assert]] for a check you can use in tests
+      */
+    def allImports: Iterable[ImportDependency] = {
+      plan.stepsUnordered.collect { case i: ImportDependency => i }
     }
 
   }

@@ -355,7 +355,7 @@ val plan: DIPlan = objects.plan
 
 // Bindings from which the Plan was built (after GC)
 
-val bindings: ModuleBase = plan.input.bindings
+val bindings: ModuleBase = plan.definition
 ```
 
 #### Injector inheritance
