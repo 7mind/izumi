@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
-import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
@@ -278,7 +277,7 @@ object Syntax2 {
     @inline implicit final def Bifunctor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Bifunctor2[F[+_, +_]: Bifunctor2]: Bifunctor2[F] = implicitly
   }
-  trait ImplicitPuns13 extends BIOImplicitPuns {
+  trait ImplicitPuns13 {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }

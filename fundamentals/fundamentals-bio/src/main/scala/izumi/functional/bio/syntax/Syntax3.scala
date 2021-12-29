@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
 import cats.data.Kleisli
-import izumi.functional.bio.syntax.BIO3Syntax.BIO3ImplicitPuns
 import izumi.functional.bio.syntax.Syntax3.ImplicitPuns
 import izumi.functional.bio.{Applicative3, ApplicativeError3, Arrow3, ArrowChoice3, Ask3, Async3, Bifunctor3, Bracket3, Concurrent3, Error3, Exit, Fiber3, Fork3, Functor3, Guarantee3, IO3, Local3, Monad3, MonadAsk3, Panic3, Parallel3, Profunctor3, Temporal3, WithFilter}
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
@@ -395,7 +394,7 @@ object Syntax3 {
     @inline implicit final def Arrow3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Arrow3[FR[-_, +_, +_]: Arrow3]: Arrow3[FR] = implicitly
   }
-  trait ImplicitPuns19 extends BIO3ImplicitPuns {
+  trait ImplicitPuns19 {
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Profunctor3, R, E, A](self: FR[R, E, A]): ProfunctorOps[FR, R, E, A] = new ProfunctorOps[FR, R, E, A](self)
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Profunctor3[FR[-_, +_, +_]: Profunctor3]: Profunctor3[FR] = implicitly
