@@ -62,7 +62,6 @@ object BootstrapLocator {
   private[this] final val analyzer = new PlanAnalyzerDefaultImpl
 
   private final val bootstrapPlanner: Planner = {
-
     val bootstrapObserver = new PlanningObserverAggregate(Set.empty)
 
     val mp = mirrorProvider
@@ -95,6 +94,7 @@ object BootstrapLocator {
 
   private final val bootstrapProducer: PlanInterpreter = {
     new PlanInterpreterNonSequentialRuntimeImpl(
+      planner = bootstrapPlanner,
       importStrategy = new ImportStrategyDefaultImpl,
       operationExecutor = bootstrapExecutor,
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),

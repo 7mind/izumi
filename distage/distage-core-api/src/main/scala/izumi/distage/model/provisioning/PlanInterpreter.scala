@@ -5,7 +5,9 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
-import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisioningException, UnexpectedDIException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.*
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException, UnexpectedStepProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
@@ -50,10 +52,26 @@ object PlanInterpreter {
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
       val repr = failure match {
         case ProvisioningFailure.AggregateFailure(_, failures, _) =>
+          def stackTrace(exception: Throwable): String = {
+            if (fullStackTraces) exception.stackTrace else exception.getMessage
+          }
           val messages = failures
             .map {
-              case UnexpectedDIException(key, problem) =>
-                s"DISTAGE BUG: exception while processing $key; please report: https://github.com/7mind/izumi/issues\n${problem.stackTrace}"
+              case UnexpectedStepProvisioningException(op, problem) =>
+                val excName = problem match {
+                  case di: DIException => di.getClass.getSimpleName
+                  case o => o.getClass.getName
+                }
+                s"Got exception when trying to to execute $op, exception was:\n$excName:\n${stackTrace(problem)}"
+
+              case IntegrationCheckFailure(key, problem) =>
+                s"Integration check failed for $key, exception was:\n${stackTrace(problem)}"
+
+//              case UnexpectedDIException(op, problem) =>
+//                s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${stackTrace(problem)}"
+
+              case UnexpectedIntegrationCheckException(key, problem) =>
+                s"DISTAGE BUG: unexpected exception while processing integration check for $key; please report: https://github.com/7mind/izumi/issues\n${stackTrace(problem)}"
 
               case MissingImport(op) =>
                 MissingInstanceException.format(op.target, op.references)
@@ -89,7 +107,7 @@ object PlanInterpreter {
       val allExceptions = failure match {
         case f: ProvisioningFailure.AggregateFailure =>
           f.failures.collect {
-            case e: UnexpectedDIException => e.problem
+            case e: ProvisionerExceptionIssue => e.problem
           }
         case _: ProvisioningFailure.BrokenGraph => Seq.empty
         case _: ProvisioningFailure.CantBuildIntegrationSubplan => Seq.empty

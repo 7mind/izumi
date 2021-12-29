@@ -2,17 +2,19 @@ package izumi.distage.provisioning
 
 import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.IntegrationCheckException
-import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.IncompatibleEffectTypesException
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, *}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
 import izumi.fundamentals.platform.functional.Identity
@@ -20,9 +22,11 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class PlanInterpreterNonSequentialRuntimeImpl(
+  planner: Planner,
   importStrategy: ImportStrategy,
   operationExecutor: OperationExecutor,
   verifier: ProvisionOperationVerifier,
@@ -58,25 +62,31 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
 
+    @nowarn("msg=Unused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+      import scala.collection.compat.*
+
       state.current match {
         case TraversalState.Step(steps) =>
           val ops = prioritize(steps.toSeq.map(plan.plan.meta.nodes(_)), integrationPaths)
 
-          for {
+          val step = for {
             results <- F.traverse(ops)(processOp(ctx, _))
             timedResults <- F.traverse(results) {
               case s: TimedResult.Success =>
-                addResult(ctx, integrationCheckFType, s)
+                addIntegrationCheckResult(ctx, integrationCheckFType, s)
               case f: TimedResult.Failure =>
                 F.pure(f.toFinal: TimedFinalResult)
             }
-            (ok, bad) = timedResults.partition(_.isSuccess)
-            res <- run(
-              state.next(ok.asInstanceOf[List[TimedFinalResult.Success]], bad.asInstanceOf[List[TimedFinalResult.Failure]]),
-              integrationPaths,
-            )
-          } yield res
+            (ok, bad) = timedResults.partitionMap {
+              case ok: TimedFinalResult.Success => Left(ok)
+              case bad: TimedFinalResult.Failure => Right(bad)
+            }
+            recurs = () => run(state.next(ok, bad), integrationPaths) // prevent heap overflow due to final left-associative map in for-yield
+          } yield recurs
+
+          step.flatMap(recurs => recurs())
+
         case TraversalState.Done() =>
           if (state.failures.isEmpty) {
             F.maybeSuspend(Right(ctx.finish(state)))
@@ -101,8 +111,8 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           icPlan match {
             case Left(failedProvision) =>
               F.pure(Left(failedProvision))
-            case Right(diPlan) =>
-              run(initial, diPlan.plan.meta.nodes.keySet)
+            case Right(icPlan) =>
+              run(initial, icPlan.plan.meta.nodes.keySet)
           }
       }
     } yield res
@@ -138,8 +148,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       NonEmptySet.from(allChecks.map(_.target)) match {
         case Some(integrationChecks) =>
           F.maybeSuspend {
-            distage
-              .Injector()
+            planner
               .planSafe(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
               .left.map(errs => ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status())))
           }
@@ -149,11 +158,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     } else {
       F.pure(Right(Plan.empty))
     }
-
   }
 
-  private[this] def prioritize(value: Seq[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = {
-    value.sortBy {
+  private[this] def prioritize(ops: Seq[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = {
+    ops.sortBy {
       op =>
         val repr = op.target.tpe.toString
         op match {
@@ -188,7 +196,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def addResult[F[_]: TagK](
+  private[this] def addIntegrationCheckResult[F[_]: TagK](
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
@@ -198,12 +206,15 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       res <- F.traverse(result.ops) {
         op =>
           F.definitelyRecover[Option[ProvisionerIssue]](
-            for {
-              res <- runIfIntegrationCheck(op, integrationCheckFType)
-              _ <- F.when(res.isDefined) {
-                F.maybeSuspend(active.addResult(verifier, op))
-              }
-            } yield res
+            runIfIntegrationCheck(op, integrationCheckFType).flatMap {
+              case None =>
+                F.maybeSuspend {
+                  active.addResult(verifier, op)
+                  None
+                }
+              case failure @ Some(_) =>
+                F.pure(failure)
+            }
           )(err => F.pure(Some(UnexpectedIntegrationCheckException(result.key, err))))
       }
     } yield {

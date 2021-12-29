@@ -2,7 +2,8 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.interpretation.{MissingProxyAdapterException, ProvisionerIssue, UnexpectedProvisionResultException, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{MissingProxyAdapterException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
