@@ -38,12 +38,12 @@ final class ProvisionMutable[F[_]: TagK](
     val meta = FailedProvisionMeta(state.status())
 
     FailedProvision(
-      toImmutable,
-      plan,
-      parentContext,
-      diag,
-      meta,
-      fullStackTraces,
+      failed = toImmutable,
+      plan = plan,
+      parentContext = parentContext,
+      failure = diag,
+      meta = meta,
+      fullStackTraces = fullStackTraces,
     )
   }
 

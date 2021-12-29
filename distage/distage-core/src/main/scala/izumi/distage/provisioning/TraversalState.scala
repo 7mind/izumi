@@ -23,19 +23,19 @@ object TimedFinalResult {
     override def isSuccess: Boolean = false
   }
 }
+
 sealed trait TimedResult {
   def isSuccess: Boolean
   def key: DIKey
   def time: FiniteDuration
 }
 object TimedResult {
-  case class Success(key: DIKey, ops: Seq[NewObjectOp], time: FiniteDuration) extends TimedResult {
+  final case class Success(key: DIKey, ops: Seq[NewObjectOp], time: FiniteDuration) extends TimedResult {
     override def isSuccess: Boolean = true
   }
-  case class Failure(key: DIKey, issues: ProvisionerIssue, time: FiniteDuration) extends TimedResult {
+  final case class Failure(key: DIKey, issues: ProvisionerIssue, time: FiniteDuration) extends TimedResult {
     override def isSuccess: Boolean = false
     def toFinal: TimedFinalResult.Failure = TimedFinalResult.Failure(key, List(issues), time)
-
   }
 }
 
