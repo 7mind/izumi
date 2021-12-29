@@ -6,7 +6,7 @@ import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{DIPlan, ExecutableOp}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -119,7 +119,7 @@ final class ConfigWriter[F[_]](
       .reboot(bootstrapOverride)
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: DIPlan): Iterator[ConfigPath] = {
+    def getConfig(plan: Plan): Iterator[ConfigPath] = {
       plan.stepsUnordered.iterator.collect {
         case ExtractConfigPath(path) => path
       }

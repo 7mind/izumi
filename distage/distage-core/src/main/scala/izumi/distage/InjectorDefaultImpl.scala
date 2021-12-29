@@ -4,7 +4,7 @@ import izumi.distage.model._
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.DIPlan
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.{Bootloader, LocatorRef}
@@ -33,19 +33,19 @@ final class InjectorDefaultImpl[F[_]](
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
-  override def plan(input: PlannerInput): DIPlan = {
+  override def plan(input: PlannerInput): Plan = {
     planner.plan(addSelfInfo(input))
   }
 
-  override def planNoRewrite(input: PlannerInput): DIPlan = {
+  override def planNoRewrite(input: PlannerInput): Plan = {
     planner.planNoRewrite(addSelfInfo(input))
   }
 
-  override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+  override def planSafe(input: PlannerInput): Either[List[DIError], Plan] = {
     planner.planSafe(addSelfInfo(input))
   }
 
-  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], Plan] = {
     planner.planNoRewriteSafe(addSelfInfo(input))
   }
 
@@ -54,7 +54,7 @@ final class InjectorDefaultImpl[F[_]](
   }
 
   override private[distage] def produceDetailedFX[G[_]: TagK: QuasiIO](
-    plan: DIPlan,
+    plan: Plan,
     filter: FinalizerFilter[G],
   ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
     interpreter.run[G](plan, bootstrapLocator, filter)

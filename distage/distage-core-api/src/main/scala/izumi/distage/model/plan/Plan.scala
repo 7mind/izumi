@@ -5,6 +5,7 @@ import izumi.distage.model.exceptions.planning.DIBugException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
 import izumi.distage.model.recursive.LocatorRef
@@ -19,7 +20,7 @@ import izumi.reflect.{Tag, TagK}
 
 import scala.annotation.nowarn
 
-final case class DIPlan(
+final case class Plan(
   plan: DG[DIKey, ExecutableOp],
   input: PlannerInput,
 ) {
@@ -29,32 +30,46 @@ final case class DIPlan(
   }
 
   override def equals(obj: Any): Boolean = obj match {
-    case that: DIPlan =>
+    case that: Plan =>
       this.plan.meta == that.plan.meta &&
       this.plan.predecessors == that.plan.predecessors
     case _ => false
   }
 }
 
-object DIPlan {
-  def empty: DIPlan = DIPlan(
+object Plan {
+  def empty: Plan = Plan(
     DG(IncidenceMatrix.empty, IncidenceMatrix.empty, GraphMeta.empty),
     PlannerInput.everything(ModuleBase.empty),
   )
 
-  @inline implicit final def defaultFormatter: Renderable[DIPlan] = DIPlanCompactFormatter
+  @inline implicit final def defaultFormatter: Renderable[Plan] = DIPlanCompactFormatter
 
-  implicit final class DIPlanSyntax(private val plan: DIPlan) extends AnyVal {
+  implicit final class DIPlanSyntax(private val plan: Plan) extends AnyVal {
     def keys: Set[DIKey] = plan.plan.meta.nodes.keySet
 
     def stepsUnordered: Iterable[ExecutableOp] = plan.plan.meta.nodes.values
 
-    def definition: ModuleBase = plan.input.bindings
+    /** Effective [[ModuleBase bindings]] of this plan */
+    def definition: ModuleBase = {
+      val userBindings = plan.stepsUnordered.flatMap {
+        _.origin.value match {
+          case OperationOrigin.UserBinding(binding) =>
+            Seq(binding)
+          case _ =>
+            Seq.empty
+        }
+      }.toSet
+      ModuleBase.make(userBindings)
+    }
+
+    /** Original [[ModuleBase bindings]] of this plan */
+    def definitionOriginal: ModuleBase = plan.input.bindings
 
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
         case Left(value) =>
-          throw DIBugException(s"BUG: toposort failed during plan rendering: $value")
+          throw new DIBugException(s"BUG: toposort failed during plan rendering: $value")
         case Right(value) =>
           value
       }
@@ -69,7 +84,7 @@ object DIPlan {
       *       before planning by removing the `keys` from [[ModuleBase]]:
       *       `module -- keys`
       */
-    def replaceWithImports(keys: Set[DIKey]): DIPlan = {
+    def replaceWithImports(keys: Set[DIKey]): Plan = {
       val newImports = keys.flatMap {
         k =>
           val dependees = plan.plan.successors.links(k)
@@ -86,10 +101,10 @@ object DIPlan {
 
       val s = IncidenceMatrix(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
       val m = GraphMeta(plan.plan.meta.without(removed).nodes ++ replaced)
-      DIPlan(DG(s.transposed, s, m), plan.input)
+      Plan(DG(s.transposed, s, m), plan.input)
     }
 
-    def render()(implicit ev: Renderable[DIPlan]): String = ev.render(plan)
+    def render()(implicit ev: Renderable[Plan]): String = ev.render(plan)
 
     def renderDeps(key: DIKey): String = {
       val dg = new DependencyGraph(plan.plan.predecessors, DependencyGraph.DependencyKind.Depends)
@@ -107,7 +122,7 @@ object DIPlan {
     }
   }
 
-  implicit final class DIPlanAssertionSyntax(private val plan: DIPlan) extends AnyVal {
+  implicit final class DIPlanAssertionSyntax(private val plan: Plan) extends AnyVal {
 
     /**
       * Check for any unresolved dependencies.
@@ -165,13 +180,13 @@ object DIPlan {
 
   }
 
-  implicit final class DIPlanResolveImportsSyntax(private val plan: DIPlan) extends AnyVal {
-    def locateImports(locator: Locator): DIPlan = {
+  implicit final class DIPlanResolveImportsSyntax(private val plan: Plan) extends AnyVal {
+    def locateImports(locator: Locator): Plan = {
       resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
     }
 
     @nowarn("msg=Unused import")
-    def resolveImports(f: PartialFunction[ImportDependency, Any]): DIPlan = {
+    def resolveImports(f: PartialFunction[ImportDependency, Any]): Plan = {
       import scala.collection.compat.*
 
       val dg = plan.plan
@@ -183,14 +198,14 @@ object DIPlan {
       }.toMap)))
     }
 
-    def resolveImport[T: Tag](instance: T): DIPlan = {
+    def resolveImport[T: Tag](instance: T): Plan = {
       resolveImports {
         case i if i.target == DIKey.get[T] =>
           instance
       }
     }
 
-    def resolveImport[T: Tag](id: Identifier)(instance: T): DIPlan = {
+    def resolveImport[T: Tag](id: Identifier)(instance: T): Plan = {
       resolveImports {
         case i if i.target == DIKey.get[T].named(id) =>
           instance

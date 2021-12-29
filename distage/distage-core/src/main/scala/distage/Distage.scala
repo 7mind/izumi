@@ -95,8 +95,8 @@ trait Distage {
   type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
-  type DIPlan = model.plan.DIPlan
-  val DIPlan: model.plan.DIPlan.type = model.plan.DIPlan
+  type Plan = model.plan.Plan
+  val Plan: model.plan.Plan.type = model.plan.Plan
 
   type SafeType = model.reflection.SafeType
   val SafeType: model.reflection.SafeType.type = model.reflection.SafeType

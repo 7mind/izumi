@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
 import distage.*
-import izumi.distage.dsl.PlanTools
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.wordspec.AnyWordSpec
@@ -40,7 +39,6 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
       val plan = srcPlan.replaceWithImports(Set(key))
       assert(plan.plan.meta.nodes.get(key).exists(_.isInstanceOf[ImportDependency]))
       assert(plan.plan.meta.nodes.values.collect { case i: ImportDependency => i }.size == 1)
-      import PlanTools.*
       assert(!plan.definition.keys.contains(key))
       ()
     }

@@ -5,7 +5,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.plan.{DIPlan, Roots}
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -21,8 +21,8 @@ trait RoleAppPlanner {
 object RoleAppPlanner {
 
   final case class AppStartupPlans(
-    runtime: DIPlan,
-    app: DIPlan,
+    runtime: Plan,
+    app: Plan,
     injector: Injector[Identity],
   )
 

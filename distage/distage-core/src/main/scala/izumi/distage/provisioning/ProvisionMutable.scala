@@ -3,7 +3,7 @@ package izumi.distage.provisioning
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
-import izumi.distage.model.plan.DIPlan
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
-final case class ProvisionMutable[F[_]: TagK](diplan: DIPlan, parentContext: Locator) extends Provision[F] {
+final case class ProvisionMutable[F[_]: TagK](diplan: Plan, parentContext: Locator) extends Provision[F] {
 
   private val temporaryLocator = new LocatorDefaultImpl(diplan, Option(parentContext), LocatorMeta.empty, this)
 

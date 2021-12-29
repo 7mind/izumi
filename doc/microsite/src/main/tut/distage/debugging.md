@@ -81,7 +81,7 @@ To debug macros used by `distage` you may use the following Java Properties:
 
 ### Graphviz rendering
 
-Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writing GraphViz files with a graphical representation of the `OrderedPlan`. Data will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in the current working directory.
+Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writing GraphViz files with a graphical representation of `distage.Plan`. Data will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in the current working directory.
 
 ```scala mdoc:reset:to-string
 import distage.{GraphDumpBootstrapModule, Injector}

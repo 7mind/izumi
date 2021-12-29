@@ -8,28 +8,10 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
-import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
-
-object PlanTools {
-  implicit class PlanTestOps(plan: DIPlan) {
-    def definition: ModuleBase = {
-      val userBindings = plan.stepsUnordered.flatMap {
-        op =>
-          op.origin.value match {
-            case OperationOrigin.UserBinding(binding) =>
-              Seq(binding)
-            case _ =>
-              Seq.empty
-          }
-      }.toSet
-      ModuleBase.make(userBindings)
-    }
-  }
-}
 
 class DSLTest extends AnyWordSpec with MkInjector {
 
@@ -120,7 +102,6 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), Roots.Everything)
       val planAnnotated = injector.plan(definitionAnnotated)
 
-      import PlanTools.*
       assert(planAnnotated.definition.bindings.nonEmpty)
 
       injector.produce(planAnnotated).use {
@@ -531,7 +512,6 @@ class DSLTest extends AnyWordSpec with MkInjector {
         make[TraitY].tagged("tag1").using[ImplXYZ]("my-impl")
       })
 
-      import PlanTools.*
       val injector = mkInjector()
       val plan1 = injector.plan(definition)
       val plan2 = injector.plan(defWithoutSugar)

@@ -30,12 +30,12 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat.*
 
-  override def planSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+  override def planSafe(input: PlannerInput): Either[List[DIError], Plan] = {
     planNoRewriteSafe(input.copy(bindings = rewrite(input.bindings)))
 
   }
 
-  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], DIPlan] = {
+  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], Plan] = {
     for {
       resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan = preparePlan(resolved)
@@ -44,11 +44,11 @@ class PlannerDefaultImpl(
       _ <- sanityChecker.verifyPlan(withoutLoops, input.roots)
       _ <- Right(planningObserver.onPlanningFinished(input, withoutLoops))
     } yield {
-      DIPlan(withoutLoops, input)
+      Plan(withoutLoops, input)
     }
   }
 
-  override def plan(input: PlannerInput): DIPlan = {
+  override def plan(input: PlannerInput): Plan = {
     planSafe(input) match {
       case Left(errors) =>
         throwOnError(input.activation, errors)
@@ -58,7 +58,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  override def planNoRewrite(input: PlannerInput): DIPlan = {
+  override def planNoRewrite(input: PlannerInput): Plan = {
     planNoRewriteSafe(input) match {
       case Left(errors) =>
         throwOnError(input.activation, errors)

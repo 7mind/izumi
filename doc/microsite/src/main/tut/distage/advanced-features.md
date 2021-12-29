@@ -347,11 +347,11 @@ assert(thisC == thatC)
 Locator contains metadata about the plan, and the bindings from which it was ultimately created:
 
 ```scala mdoc:to-string
-import distage.{DIPlan, ModuleBase}
+import distage.{Plan, ModuleBase}
 
 // Plan that created this locator
 
-val plan: DIPlan = objects.plan
+val plan: Plan = objects.plan
 
 // Bindings from which the Plan was built (after GC)
 

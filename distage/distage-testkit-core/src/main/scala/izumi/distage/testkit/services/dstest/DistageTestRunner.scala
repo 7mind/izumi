@@ -11,7 +11,7 @@ import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
@@ -121,7 +121,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     if (sharedKeys.nonEmpty) {
       injector.plan(PlannerInput(appModule, activation, sharedKeys))
     } else {
-      DIPlan.empty
+      Plan.empty
     }
   }
 
@@ -174,7 +174,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       distageTest =>
         val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else DIPlan.empty
+        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else Plan.empty
         PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
@@ -194,7 +194,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // every duplicated key will be removed
       // every empty memoization level (after keys filtering) will be removed
       env.memoizationRoots.keys.toList
-        .sortBy(_._1).foldLeft((List.empty[DIPlan], Set.empty[DIKey])) {
+        .sortBy(_._1).foldLeft((List.empty[Plan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
             val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
@@ -259,7 +259,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   protected def withIntegrationSharedPlan(
     parentLocator: Locator,
     planCheck: PlanCircularDependencyCheck,
-    plan: DIPlan,
+    plan: Plan,
   )(use: Locator => F[Unit]
   )(implicit
     F: QuasiIO[F]
@@ -359,7 +359,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val newTestPlan = if (newRoots.nonEmpty) {
       testInjector.plan(PlannerInput(newAppModule, activation, newRoots))
     } else {
-      DIPlan.empty
+      Plan.empty
     }
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
@@ -375,7 +375,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   }
 
-  protected def proceedIndividual(test: DistageTest[F], testPlan: DIPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
+  protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
     withTestsRecoverCause(None, test) {
       if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
       Injector.inherit(parent).produceCustomF[F](testPlan).use {
@@ -525,12 +525,12 @@ object DistageTestRunner {
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: DIPlan,
+    runtimePlan: Plan,
   )
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     preparedTests: Seq[PreparedTest[F]],
-    memoizationPlanTree: List[DIPlan],
+    memoizationPlanTree: List[Plan],
     anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
@@ -579,7 +579,7 @@ object DistageTestRunner {
     * Every change in tree structure may lead to test failed across all childs of the corrupted node.
     */
   final class MemoizationTree[F[_]] {
-    private[this] val children = TrieMap.empty[DIPlan, MemoizationTree[F]]
+    private[this] val children = TrieMap.empty[Plan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
     def allTests: Seq[PreparedTest[F]] = {
@@ -591,7 +591,7 @@ object DistageTestRunner {
     /** Root node traverse. User should never call children node directly. */
     def stateTraverse[State](
       initialState: State
-    )(stateAcquire: (State, DIPlan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+    )(stateAcquire: (State, Plan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -603,8 +603,8 @@ object DistageTestRunner {
 
     @inline private def stateTraverse_[State](
       initialState: State,
-      thisPlan: DIPlan,
-    )(stateAcquire: (State, DIPlan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+      thisPlan: Plan,
+    )(stateAcquire: (State, Plan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -615,7 +615,7 @@ object DistageTestRunner {
       addEnv_(packedEnv.memoizationPlanTree, MemoizationLevelGroup(packedEnv.preparedTests, packedEnv.strengthenedKeys))
     }
 
-    @tailrec private def addEnv_(plans: List[DIPlan], levelTests: MemoizationLevelGroup[F]): Unit = {
+    @tailrec private def addEnv_(plans: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
       // here we are filtering all empty plans to merge levels together
       plans match {
         case plan :: tail =>

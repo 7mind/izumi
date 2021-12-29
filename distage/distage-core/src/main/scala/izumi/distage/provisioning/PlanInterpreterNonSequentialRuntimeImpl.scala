@@ -9,7 +9,7 @@ import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.exceptions.interpretation.{IncompatibleEffectTypesException, ProvisionerIssue, UnexpectedDIException}
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, *}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
@@ -30,7 +30,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 ) extends PlanInterpreter {
 
   override def run[F[_]: TagK](
-    plan: DIPlan,
+    plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   )(implicit F: QuasiIO[F]
@@ -50,18 +50,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private[this] def instantiateImpl[F[_]: TagK](
-    diplan: DIPlan,
+    plan: Plan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val ctx: ProvisionMutable[F] = ProvisionMutable[F](diplan, parentContext)
+    val ctx: ProvisionMutable[F] = ProvisionMutable[F](plan, parentContext)
 
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
       state.current match {
         case TraversalState.Step(steps) =>
-          val ops = prioritize(steps.toSeq.map(diplan.plan.meta.nodes(_)), integrationPaths)
+          val ops = prioritize(steps.toSeq.map(plan.plan.meta.nodes(_)), integrationPaths)
 
           for {
             results <- F.traverse(ops)(processOp(ctx, _))
@@ -89,8 +89,8 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
 
     for {
-      result <- verifyEffectType(diplan.plan.meta.nodes.values)
-      initial = TraversalState(diplan.plan.predecessors)
+      result <- verifyEffectType(plan.plan.meta.nodes.values)
+      initial = TraversalState(plan.plan.predecessors)
       icPlan <- integrationPlan(initial, ctx)
 
       res <- result match {
@@ -130,7 +130,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     state: TraversalState,
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
-  ): F[Either[FailedProvision[F], DIPlan]] = {
+  ): F[Either[FailedProvision[F], Plan]] = {
     val allChecks = ctx.diplan.stepsUnordered.collect {
       case op: InstantiationOp if op.instanceType <:< abstractCheckType =>
         op
@@ -146,10 +146,10 @@ class PlanInterpreterNonSequentialRuntimeImpl(
             }
           }
         case None =>
-          F.pure(Right(DIPlan.empty))
+          F.pure(Right(Plan.empty))
       }
     } else {
-      F.pure(Right(DIPlan.empty))
+      F.pure(Right(Plan.empty))
     }
 
   }
@@ -215,7 +215,6 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Unit] = {
-
     op match {
       case i: NewObjectOp.LocalInstance =>
         if (i.implType <:< nullType) {

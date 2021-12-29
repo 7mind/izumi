@@ -1,14 +1,14 @@
 package izumi.distage.framework.services
 
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.plan.{DIPlan, ExecutableOp}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.logstage.api.IzLogger
 
 class PlanCircularDependencyCheck(
   options: PlanningOptions,
   logger: IzLogger,
 ) {
-  def verify(plan: DIPlan): Unit = {
+  def verify(plan: Plan): Unit = {
     if (options.warnOnCircularDeps) {
       val allProxies = plan.stepsUnordered.collect {
         case s: ExecutableOp.ProxyOp.MakeProxy if !s.byNameAllowed => s

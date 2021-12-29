@@ -46,7 +46,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
   override def index: Map[DIKey, Any] = frozenMap
 
   /** The plan that produced this object graph */
-  override def plan: DIPlan = {
+  override def plan: Plan = {
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
         val binding = Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
@@ -56,7 +56,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
     val s = IncidenceMatrix(ops.map(op => (op._1.target, Set.empty[DIKey])).toMap)
     val nodes = ops.map(op => (op._1.target, op._1))
-    DIPlan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
+    Plan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
   }
 
   override def parent: Option[Locator] = None
