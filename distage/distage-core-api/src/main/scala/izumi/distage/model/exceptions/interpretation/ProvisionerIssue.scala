@@ -9,21 +9,21 @@ sealed trait ProvisionerIssue {
   def key: DIKey
 }
 
-case class UnexpectedDIException(key: DIKey, problem: Throwable) extends ProvisionerIssue
+final case class UnexpectedDIException(key: DIKey, problem: Throwable) extends ProvisionerIssue
 
-case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
+final case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
   override def key: DIKey = op.target
 }
 
-case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
+final case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
   override def key: DIKey = op.target
 }
 
-case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
+final case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
 
-case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
+final case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
 
-case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
+final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
   override def key: DIKey = op.target
 }
 

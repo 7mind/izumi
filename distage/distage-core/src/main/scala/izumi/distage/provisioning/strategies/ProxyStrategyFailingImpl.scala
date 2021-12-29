@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.interpretation.{NoopProvisionerImplCalled, ProvisionerIssue}
+import izumi.distage.model.exceptions.interpretation.{ProvisionerIssue, ProxyProviderFailingImplCalledException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -14,10 +14,10 @@ class ProxyStrategyFailingImpl extends ProxyStrategy {
     @unused executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    throw new NoopProvisionerImplCalled(s"ProxyStrategyFailingImpl does not support proxies, failed op: $initProxy", this)
+    throw new ProxyProviderFailingImplCalledException(s"ProxyStrategyFailingImpl does not support proxies, failed op: $initProxy", this)
   }
 
   override def makeProxy[F[_]: TagK: QuasiIO](@unused context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    throw new NoopProvisionerImplCalled(s"ProxyStrategyFailingImpl does not support proxies, failed op: $makeProxy", this)
+    throw new ProxyProviderFailingImplCalledException(s"ProxyStrategyFailingImpl does not support proxies, failed op: $makeProxy", this)
   }
 }

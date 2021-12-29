@@ -120,7 +120,7 @@ class PlannerDefaultImpl(
       case e: DIKey.EffectKey =>
         e.copy(key = updateKey(e.key, mindex))
       case k =>
-        throw DIBugException(s"Unexpected key mutator: $k, m=$mindex")
+        throw new DIBugException(s"Unexpected key mutator: $k, m=$mindex")
     }
   }
 

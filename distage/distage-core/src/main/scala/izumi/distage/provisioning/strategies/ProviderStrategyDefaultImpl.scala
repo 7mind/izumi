@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.interpretation.InvalidPlanException
+import izumi.distage.model.exceptions.planning.DIBugException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.ProviderStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
@@ -14,7 +14,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy {
           case Some(dep) =>
             TypedRef(dep, param.key.tpe, param.isByName)
           case _ =>
-            throw new InvalidPlanException(
+            throw new DIBugException(
               "The impossible happened! Tried to instantiate class," +
               s" but the dependency has not been initialized: Class: ${op.target}, dependency: $param"
             )
