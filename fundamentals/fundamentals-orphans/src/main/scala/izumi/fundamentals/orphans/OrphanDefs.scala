@@ -1,5 +1,7 @@
 package izumi.fundamentals.orphans
 
+import scala.annotation.unused
+
 /**
   * `No More Orphans` type providers. See detail https://blog.7mind.io/no-more-orphans.html
   *
@@ -64,6 +66,14 @@ object `cats.Semigroup` {
 final abstract class `cats.Parallel`[K[_[_]]]
 object `cats.Parallel` {
   @inline implicit final def get: `cats.Parallel`[cats.Parallel] = null
+}
+
+final abstract class `cats.kernel.PartialOrder with cats.kernel.Hash`[K[_]]
+object `cats.kernel.PartialOrder with cats.kernel.Hash` {
+  type PartialOrderHashType[T] = cats.kernel.PartialOrder[T] with cats.kernel.Hash[T]
+  @inline implicit final def get[K[_]](
+    implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]
+  ): `cats.kernel.PartialOrder with cats.kernel.Hash`[PartialOrderHashType] = null
 }
 
 // cats-effect
