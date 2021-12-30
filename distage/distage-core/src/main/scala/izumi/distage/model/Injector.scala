@@ -3,8 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{DIPlan, Roots}
-import izumi.distage.model.planning.PlanSplittingOps
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
@@ -15,14 +14,12 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
-  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.DIPlan]]
+  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.Plan]]
   *
   * @see [[izumi.distage.model.Planner]]
   * @see [[izumi.distage.model.Producer]]
   */
 trait Injector[F[_]] extends Planner with Producer {
-  @deprecated("should be removed with OrderedPlan", "13/04/2021")
-  def ops: PlanSplittingOps
   /**
     * Create an an object graph described by the `input` module,
     * designate all arguments of the provided function as roots of the graph,
@@ -220,7 +217,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
-  final def produce(plan: DIPlan): Lifecycle[F, Locator] = {
+  final def produce(plan: Plan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
 
@@ -238,35 +235,6 @@ trait Injector[F[_]] extends Planner with Producer {
   }
   final def produceDetailedIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] = {
     produceDetailedCustomF[Identity](plan(plannerInput))
-  }
-
-  @deprecated("Use .produceRun. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceRunF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] =
-    produceRun[A](bindings, activation)(function)
-  @deprecated("Use .produceEval. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceEvalF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): Lifecycle[F, A] =
-    produceEval[A](bindings, activation)(function)
-
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] =
-    produceGet[A](bindings, activation)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase): Lifecycle[F, A] =
-    produceGet[A](bindings)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] =
-    produceGet[A](name)(bindings, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(input: PlannerInput): Lifecycle[F, Locator] =
-    produce(input)
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] =
-    produce(bindings, roots, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(plan: DIPlan): Lifecycle[F, Locator] = {
-    produceCustomF[F](plan)
   }
 
   /**

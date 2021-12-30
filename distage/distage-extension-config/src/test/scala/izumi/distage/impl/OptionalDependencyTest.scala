@@ -5,7 +5,7 @@ import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.modules.DefaultModule
-import izumi.functional.bio.{Applicative2, ApplicativeError2, Arrow3, ArrowChoice3, Ask3, Async2, BIO, Bifunctor2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, IO3, Local3, Monad2, MonadAsk3, Panic2, Parallel2, Primitives2, PrimitivesM2, Profunctor3, Ref3, Temporal2}
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Arrow3, ArrowChoice3, Ask3, Async2, Bifunctor2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, IO3, Local3, Monad2, MonadAsk3, Panic2, Parallel2, Primitives2, PrimitivesM2, Profunctor3, Ref3, Temporal2}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -90,7 +90,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     try QuasiIO.fromBIO(null)
     catch { case _: NullPointerException => }
-    try BIO[SomeBIO, Unit](())(null)
+    try IO2[SomeBIO, Unit](())(null)
     catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")

@@ -116,12 +116,4 @@ object LogZIO {
   def withCustomContext[R: Tag, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
     thunk.updateService((logZIO: Service) => logZIO(context))
   }
-
-  @deprecated("renamed to logstage.LogZIO", "1.0")
-  type LogZIO = logstage.LogZIO
-  @deprecated("renamed to logstage.LogZIO", "1.0")
-  object LogZIO {
-    @deprecated("renamed to logstage.LogZIO.Service", "1.0")
-    type Service = logstage.LogZIO.Service
-  }
 }

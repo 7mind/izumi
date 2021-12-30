@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies.cglib
 
-import java.lang.reflect.Method
+import izumi.distage.model.exceptions.interpretation.MissingRefException
 
-import izumi.distage.model.exceptions.MissingRefException
+import java.lang.reflect.Method
 import izumi.distage.model.reflection.DIKey
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 

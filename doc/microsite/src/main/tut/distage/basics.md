@@ -120,7 +120,7 @@ def HelloByeModule = new ModuleDef {
 ```
 
 `ModuleDef` merely contains a description of the desired object graph, let's transform that high-level description into an
-actionable series of steps - an @scaladoc[DIPlan](izumi.distage.model.plan.DIPlan), a datatype we can
+actionable series of steps - a @scaladoc[Plan](izumi.distage.model.plan.Plan), a datatype we can
 @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without having to actually create objects or execute effects.
 
 ```scala mdoc:to-string

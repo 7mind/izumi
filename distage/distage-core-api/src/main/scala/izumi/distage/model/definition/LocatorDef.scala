@@ -7,15 +7,15 @@ import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AliasTo, SetId, SetImpl}
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
+import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.plan._
+import izumi.distage.model.plan.*
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.distage.model.{Locator, PlannerInput}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
@@ -46,7 +46,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
   override def index: Map[DIKey, Any] = frozenMap
 
   /** The plan that produced this object graph */
-  override def plan: DIPlan = {
+  override def plan: Plan = {
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
         val binding = Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
@@ -56,7 +56,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
     val s = IncidenceMatrix(ops.map(op => (op._1.target, Set.empty[DIKey])).toMap)
     val nodes = ops.map(op => (op._1.target, op._1))
-    DIPlan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
+    Plan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
   }
 
   override def parent: Option[Locator] = None

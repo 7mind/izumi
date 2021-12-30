@@ -6,7 +6,7 @@ import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{DIPlan, ExecutableOp}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -119,18 +119,16 @@ final class ConfigWriter[F[_]](
       .reboot(bootstrapOverride)
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: DIPlan): Iterator[ConfigPath] = {
-      plan.steps.iterator.collect {
+    def getConfig(plan: Plan): Iterator[ConfigPath] = {
+      plan.stepsUnordered.iterator.collect {
         case ExtractConfigPath(path) => path
       }
     }
 
     val resolvedConfig =
-      (getConfig(plans.app.primary) ++
-      getConfig(plans.app.side) ++
-      getConfig(plans.app.shared)).toSet + _HackyMandatorySection
+      getConfig(plans.app).toSet + _HackyMandatorySection
 
-    if (plans.app.primary.steps.exists(_.target == roleDIKey)) {
+    if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
       Some(ConfigWriter.minimized(resolvedConfig, config))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")

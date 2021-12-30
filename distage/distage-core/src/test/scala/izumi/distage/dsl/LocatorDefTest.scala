@@ -2,7 +2,7 @@ package izumi.distage.dsl
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.model.definition.{Id, LocatorDef}
-import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
 class LocatorDefTest extends AnyWordSpec {

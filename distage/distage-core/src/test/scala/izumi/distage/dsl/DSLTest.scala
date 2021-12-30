@@ -1,13 +1,13 @@
 package izumi.distage.dsl
 
-import distage._
+import distage.*
 import izumi.distage.constructors.ClassConstructor
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.fixtures.SetCases._
+import izumi.distage.fixtures.BasicCases.*
+import izumi.distage.fixtures.SetCases.*
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException

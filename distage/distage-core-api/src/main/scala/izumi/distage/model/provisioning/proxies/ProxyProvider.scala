@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning.proxies
 
-import izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import izumi.distage.model.exceptions.interpretation.ProxyProviderFailingImplCalledException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey
@@ -12,7 +12,7 @@ trait ProxyProvider {
 object ProxyProvider {
   class ProxyProviderFailingImpl extends ProxyProvider {
     override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
-      throw new NoopProvisionerImplCalled(s"ProxyProviderFailingImpl can't create cycle-breaking proxies, failed op: ${proxyContext.op}", this)
+      throw new ProxyProviderFailingImplCalledException(s"ProxyProviderFailingImpl can't create cycle-breaking proxies, failed op: ${proxyContext.op}", this)
     }
   }
 

@@ -1323,7 +1323,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     *
     * @return an <code>Iterable</code> containing all characters of this <code>NonEmptyString</code>.
     */
-  def toIterable: Iterable[Char] = theString.toIterable
+  def toIterable: Iterable[Char] = theString
 
   /**
     * Returns an <code>Iterator</code> over the elements in this <code>NonEmptyString</code>.

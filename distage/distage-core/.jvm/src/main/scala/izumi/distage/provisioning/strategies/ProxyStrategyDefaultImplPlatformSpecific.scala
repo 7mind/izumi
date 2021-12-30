@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.{MissingRefException, NoRuntimeClassException, UnsupportedOpException}
+import izumi.distage.model.exceptions.interpretation.{MissingRefException, NoRuntimeClassException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider

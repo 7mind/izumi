@@ -2,7 +2,7 @@ package izumi.distage.testkit.distagesuite.integration
 
 import cats.Applicative
 import distage.{TagK, TagKK}
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.modules.{DefaultModule, DefaultModule2}

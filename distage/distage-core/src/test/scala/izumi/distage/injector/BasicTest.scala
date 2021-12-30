@@ -1,14 +1,15 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.fixtures.SetCases._
+import distage.*
+import izumi.distage.fixtures.BasicCases.*
+import izumi.distage.fixtures.SetCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.conflicts.ConflictResolutionError
-import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException}
+import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
@@ -35,13 +36,13 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
+    assert(plan.stepsUnordered.exists(_.isInstanceOf[ImportDependency]))
 
     val exc = intercept[ProvisioningException] {
       injector.produce(plan).unsafeGet()
     }
 
-    assert(exc.getMessage.linesIterator.toList.head == "Provisioner failed on 1 of 4 required operations, just 1 succeeded:")
+    assert(exc.getMessage.linesIterator.toList.head == "Interpreter stopped; out of 4 operations: 1 failed, 2 succeeded, 1 ignored")
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
@@ -96,7 +97,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       assertCompiles("""
         import BadAnnotationsCase._
 
-        val definition = PlannerInput.noGc(new ModuleDef {
+        val definition = PlannerInput.everything(new ModuleDef {
           make[TestDependency0]
           make[TestClass]
         })

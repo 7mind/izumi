@@ -1,11 +1,12 @@
 package izumi.distage.injector
 
-import distage._
+import distage.*
 import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.fixtures.CircularCases._
+import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
+import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class CircularDependenciesTest extends AnyWordSpec with MkInjector {

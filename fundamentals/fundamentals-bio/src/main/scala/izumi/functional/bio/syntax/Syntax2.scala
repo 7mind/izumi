@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio._
-import izumi.functional.bio.syntax.BIOSyntax.BIOImplicitPuns
 import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
 import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
 
@@ -164,9 +163,6 @@ object Syntax2 {
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
-
-    @deprecated("renamed to sandboxExit", "will be removed in 1.1.0")
-    @inline final def sandboxBIOExit: F[Nothing, Exit[E, A]] = sandboxExit
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {
@@ -281,7 +277,7 @@ object Syntax2 {
     @inline implicit final def Bifunctor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Bifunctor2[F[+_, +_]: Bifunctor2]: Bifunctor2[F] = implicitly
   }
-  trait ImplicitPuns13 extends BIOImplicitPuns {
+  trait ImplicitPuns13 {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }

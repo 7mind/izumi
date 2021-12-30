@@ -4,7 +4,7 @@ import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
 import izumi.distage.docker.bundled._
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Mode
 import izumi.distage.plugins.PluginDef
@@ -23,9 +23,9 @@ class PgSvcExample(
   val cmd: ReusedOneshotContainer.Container,
 ) extends IntegrationCheck[Task] {
   override def resourcesAvailable(): Task[ResourceCheck] = Task.effect {
-    val portCheck = new PortCheck(10.milliseconds)
-    portCheck.checkAddressPort(pg.host.address, pg.port)
-    portCheck.checkAddressPort(pg.host.address, pgfw.port)
+    val portCheck = new PortCheck(50.milliseconds)
+    portCheck.check(pg)
+    portCheck.check(pgfw)
   }
 }
 

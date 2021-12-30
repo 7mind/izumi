@@ -1,12 +1,11 @@
 package izumi.distage.framework.services
 
-import distage.Injector
+import distage.{Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.plan.{DIPlan, Roots, TriSplittedPlan}
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
@@ -16,14 +15,14 @@ import izumi.reflect.TagK
 
 trait RoleAppPlanner {
   def reboot(bsModule: BootstrapModule): RoleAppPlanner
-  def makePlan(appMainRoots: Set[DIKey] /*, appModule: ModuleBase*/ ): AppStartupPlans
+  def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans
 }
 
 object RoleAppPlanner {
 
   final case class AppStartupPlans(
-    runtime: DIPlan,
-    app: TriSplittedPlan,
+    runtime: Plan,
+    app: Plan,
     injector: Injector[Identity],
   )
 
@@ -56,19 +55,14 @@ object RoleAppPlanner {
         )
       )
       val runtimeKeys = runtimeBsApp.plan.keys
-
-      val appPlan = runtimeBsApp.injector.ops.trisectByKeys(activation, runtimeBsApp.module.drop(runtimeKeys), appMainRoots) {
-        _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
-      }
+      val appPlan = runtimeBsApp.injector.plan(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimeBsApp.plan)
-      check.verify(appPlan.shared)
-      check.verify(appPlan.side)
-      check.verify(appPlan.primary)
+      check.verify(appPlan)
 
       logger.info(
-        s"Planning finished. ${appPlan.primary.keys.size -> "main ops"}, ${appPlan.side.keys.size -> "integration ops"}, ${appPlan.shared.keys.size -> "shared ops"}, ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
+        s"Planning finished. ${appPlan.keys.size -> "main ops"} ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
       )
       AppStartupPlans(runtimeBsApp.plan, appPlan, runtimeBsApp.injector)
     }

@@ -3,8 +3,9 @@ package izumi.distage.model
 import izumi.distage.AbstractLocator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.plan.DIPlan
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, TypedRef}
@@ -12,7 +13,6 @@ import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
 import scala.collection.immutable.Queue
-import scala.concurrent.duration.FiniteDuration
 
 /**
   * The object graph created by executing a `plan`.
@@ -40,7 +40,7 @@ trait Locator {
   def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]]
 
   /** The plan that produced this object graph */
-  def plan: DIPlan
+  def plan: Plan
   def parent: Option[Locator]
   def meta: LocatorMeta
 
@@ -110,7 +110,7 @@ object Locator {
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
     override def instances: immutable.Seq[IdentifiedRef] = Nil
-    override def plan: DIPlan = DIPlan.empty
+    override def plan: Plan = Plan.empty
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
     override def index: Map[DIKey, Any] = Map.empty
@@ -120,7 +120,7 @@ object Locator {
 
   /** @param timings How long it took to instantiate each component */
   final case class LocatorMeta(
-    timings: Map[DIKey, FiniteDuration]
+    status: Map[DIKey, OpStatus]
   ) extends AnyVal
   object LocatorMeta {
     def empty: LocatorMeta = LocatorMeta(Map.empty)

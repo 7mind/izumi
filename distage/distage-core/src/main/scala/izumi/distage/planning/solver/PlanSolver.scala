@@ -4,16 +4,16 @@ import distage.Injector
 import izumi.distage.DebugProperties
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.conflicts.{Annotated, ConflictResolutionError, MutSel, Node}
-import izumi.distage.model.exceptions._
+import izumi.distage.model.exceptions.planning.*
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.SemigraphSolver._
-import izumi.functional.IzEither._
+import izumi.distage.planning.solver.SemigraphSolver.*
+import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.annotation.nowarn
 
@@ -36,7 +36,8 @@ object PlanSolver {
     resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
     preps: GraphPreparations,
   ) extends PlanSolver {
-    import scala.collection.compat._
+
+    import scala.collection.compat.*
 
     def resolveConflicts(
       input: PlannerInput

@@ -65,12 +65,4 @@ object PlannerInput {
 
   /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
   def everything(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
-
-  /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
-  @deprecated("renamed to .everything", "old name will be removed in 0.11.1")
-  def noGC(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
-
-  /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
-  @deprecated("renamed to .everything", "old name  will be removed in 0.11.1")
-  def noGc(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
 }

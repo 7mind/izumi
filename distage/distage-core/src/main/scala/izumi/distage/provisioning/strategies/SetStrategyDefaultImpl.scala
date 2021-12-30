@@ -1,17 +1,16 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
+import izumi.distage.model.exceptions.interpretation.{IncompatibleTypesException, MissingRefException}
 import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
-import izumi.distage.model.reflection._
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.OrderedSetShim
-import izumi.fundamentals.platform.language.unused
 
 import scala.collection.Iterable
 
 class SetStrategyDefaultImpl extends SetStrategy {
-  def makeSet(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
+  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[?]]
 
@@ -47,6 +46,6 @@ class SetStrategyDefaultImpl extends SetStrategy {
     }
 
     val asSet = new OrderedSetShim[Any](newSet.distinct)
-    Seq(NewObjectOp.NewInstance(op.target, asSet))
+    Seq(NewObjectOp.NewInstance(op.target, op.instanceType, asSet))
   }
 }

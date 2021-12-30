@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.exceptions.UnsafeCallArgsMismatched
+import izumi.distage.model.exceptions.reflection.UnsafeCallArgsMismatched
 import izumi.distage.model.reflection.Provider.ProviderType
 
 trait Provider {

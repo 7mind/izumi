@@ -1,8 +1,8 @@
 package izumi.distage.model.provisioning.strategies
 
 import izumi.distage.model.plan.ExecutableOp.CreateSet
-import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 
 trait SetStrategy {
-  def makeSet(context: ProvisioningKeyProvider, executor: WiringExecutor, op: CreateSet): Seq[NewObjectOp]
+  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[NewObjectOp]
 }

@@ -2,13 +2,12 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
-import izumi.distage.model.definition.ModuleBaseInstances.{CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.orphans.`cats.kernel.BoundedSemilattice`
+import izumi.fundamentals.collections.IzCollections.*
+import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
 import izumi.fundamentals.platform.language.unused
 
-trait ModuleBase extends ModuleBaseInstances {
+trait ModuleBase {
   def bindings: Set[Binding]
   def iterator: Iterator[Binding] = bindings.iterator
 
@@ -25,7 +24,7 @@ trait ModuleBase extends ModuleBaseInstances {
   override final def toString: String = bindings.iterator.map(_.toString).mkString("\n", "\n", "")
 }
 
-object ModuleBase {
+object ModuleBase extends ModuleBaseLowPriorityInstances {
   def empty: ModuleBase = make(Set.empty)
 
   def make(bindings: Set[Binding]): ModuleBase = {
@@ -138,9 +137,6 @@ object ModuleBase {
     def untagged[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.map(_.withTags(Set.empty)))
     }
-
-    @deprecated("Bad grammar. Use `overriddenBy`", "1.0")
-    def overridenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = overriddenBy(that)
   }
 
   private[distage] def overrideImpl(existingIterator: Iterator[Binding], overridingIterator: Iterator[Binding]): Iterator[Binding] = {
@@ -163,8 +159,8 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
-    import cats.instances.set._
+  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: `cats.kernel.PartialOrder with cats.kernel.Hash`]: K[T] = {
+    import cats.instances.set.*
     new PartialOrder[T] with Hash[T] {
       override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
       override def hash(x: T): Int = x.hashCode()
@@ -178,30 +174,20 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase: ModuleMake, K[_]: `cats.kernel.BoundedSemilattice`]: K[T] =
-    new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
+  implicit def optionalCatsBoundedSemilatticeForModuleBase[T <: ModuleBase, K[_]](implicit T: ModuleMake[T], @unused K: `cats.kernel.BoundedSemilattice`[K]): K[T] =
+    new BoundedSemilattice[T] {
+      def empty: T = T.empty
+      def combine(x: T, y: T): T = (x ++ y)(T)
+    }.asInstanceOf[K[T]]
 
 }
 
-private[definition] sealed trait ModuleBaseInstances
-
-object ModuleBaseInstances {
+private[definition] sealed trait ModuleBaseLowPriorityInstances {
 
   // emulate bivariance for ModuleMake. The only purpose of the first parameter is to initiate
   // the search in its companion object, otherwise the parameter should be ignored when deciding
   // whether instances are subtypes of each other (aka bivariance)
   @inline implicit final def makeSelf[T <: ModuleBase](implicit T: ModuleMake.Aux[Nothing, T]): ModuleMake[T] =
     T.asInstanceOf[ModuleMake[T]]
-
-  final class ModuleBaseSemilattice[T <: ModuleBase: ModuleMake] extends BoundedSemilattice[T] {
-    def empty: T = ModuleMake[T].empty
-    def combine(x: T, y: T): T = x ++ y
-  }
-
-  type PartialOrderHash[T] = PartialOrder[T] with Hash[T]
-  final abstract class CatsPartialOrderHash[K[_]]
-  object CatsPartialOrderHash {
-    @inline implicit final def get[K[_]](implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]): CatsPartialOrderHash[PartialOrderHash] = null
-  }
 
 }

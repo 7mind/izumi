@@ -95,8 +95,8 @@ trait Distage {
   type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
-  type DIPlan = model.plan.DIPlan
-  val DIPlan: model.plan.DIPlan.type = model.plan.DIPlan
+  type Plan = model.plan.Plan
+  val Plan: model.plan.Plan.type = model.plan.Plan
 
   type SafeType = model.reflection.SafeType
   val SafeType: model.reflection.SafeType.type = model.reflection.SafeType
@@ -132,23 +132,4 @@ trait Distage {
 
   type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
-
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
-  type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
-  val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
-
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
-  type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
-  val GCMode: model.plan.Roots.type = model.plan.Roots
-
-  @deprecated("Use distage.Lifecycle.Basic", "1.0")
-  type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "1.0")
-  val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
-
-  @deprecated("Use distage.Lifecycle", "1.0")
-  type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
-
 }

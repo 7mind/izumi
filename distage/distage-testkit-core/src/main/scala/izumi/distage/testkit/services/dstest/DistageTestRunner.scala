@@ -1,26 +1,24 @@
 package izumi.distage.testkit.services.dstest
 
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-import distage._
+import distage.*
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
-import izumi.distage.framework.model.{ActivationInfo, IntegrationCheck}
-import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
+import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
-import izumi.distage.model.plan.{DIPlan, ExecutableOp, TriSplittedPlan}
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.services.dstest.DistageTestRunner.*
 import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
-import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -31,6 +29,8 @@ import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
@@ -116,11 +116,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     activation: Activation,
     injector: Injector[Identity],
     appModule: Module,
-  ): TriSplittedPlan = {
+  ) = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
-    // compute [[TriSplittedPlan]] of our test, to extract shared plan, and perform it only once
-    injector.ops.trisectByKeys(activation, appModule, sharedKeys) {
-      _.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
+    if (sharedKeys.nonEmpty) {
+      injector.plan(PlannerInput(appModule, activation, sharedKeys))
+    } else {
+      Plan.empty
     }
   }
 
@@ -156,7 +157,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
       val injectorEnv = injector.providedEnvironment
 
-      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.steps.filterNot(variableBsKeys contains _.target)
+      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target)
       val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
       val planner = injectorEnv.planner
 
@@ -173,7 +174,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       distageTest =>
         val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else DIPlan.empty
+        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else Plan.empty
         PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
@@ -193,7 +194,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // every duplicated key will be removed
       // every empty memoization level (after keys filtering) will be removed
       env.memoizationRoots.keys.toList
-        .sortBy(_._1).foldLeft((List.empty[TriSplittedPlan], Set.empty[DIKey])) {
+        .sortBy(_._1).foldLeft((List.empty[Plan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
             val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
@@ -227,8 +228,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case (MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _), testsTree) =>
         val allEnvTests = testsTree.allTests.map(_.test)
         integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-        withRecoverFromFailedExecution_(allEnvTests) {
-          val envIntegrationChecker = new IntegrationChecker.Impl[F](integrationLogger)
+        withRecoverFromFailedExecution(allEnvTests) {
           val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
 
           // producing and verifying runtime plan
@@ -243,108 +243,46 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               runner.run {
                 testsTree.stateTraverse(runtimeLocator) {
                   (locator, plan, allTests) => stateAction =>
-                    lazy val nodeTests = allTests.map(_.test)
-                    withTestsRecoverCase(nodeTests) {
-                      withIntegrationSharedPlan(locator, planChecker, envIntegrationChecker, plan, nodeTests)(stateAction)
+                    val nodeTests = allTests.map(_.test)
+                    withTestsRecoverCause(None, nodeTests*) {
+                      withIntegrationSharedPlan(locator, planChecker, plan)(stateAction)
                     }
                 } {
                   (locator, levelGroups) => proceedMemoizationLevel(planChecker, locator, integrationLogger)(levelGroups)
                 }
               }
           }
-        }
+        }(onError = ())
     }
   }
 
   protected def withIntegrationSharedPlan(
     parentLocator: Locator,
     planCheck: PlanCircularDependencyCheck,
-    checker: IntegrationChecker[F],
-    plan: TriSplittedPlan,
-    tests: => Iterable[DistageTest[F]],
+    plan: Plan,
   )(use: Locator => F[Unit]
   )(implicit
     F: QuasiIO[F]
   ): F[Unit] = {
     // shared plan
-    planCheck.verify(plan.shared)
-    Injector.inherit(parentLocator).produceCustomF[F](plan.shared).use {
-      sharedLocator =>
-        // integration plan
-        planCheck.verify(plan.side)
-        Injector.inherit(sharedLocator).produceCustomF[F](plan.side).use {
-          integrationSharedLocator =>
-            withIntegrationCheck(checker, integrationSharedLocator)(tests, plan) {
-              // main plan
-              planCheck.verify(plan.primary)
-              Injector.inherit(integrationSharedLocator).produceCustomF[F](plan.primary).use {
-                mainSharedLocator =>
-                  use(mainSharedLocator)
-              }
-            }
-        }
+    planCheck.verify(plan)
+    Injector.inherit(parentLocator).produceCustomF[F](plan).use {
+      mainSharedLocator =>
+        use(mainSharedLocator)
     }
   }
 
-  protected def withTestsRecoverCase(tests: => Iterable[DistageTest[F]])(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
-    F.definitelyRecoverCause {
-      testsAction
-    } {
-      case (ProvisioningIntegrationException(integrations), _) =>
-        // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-        F.maybeSuspend(ignoreIntegrationCheckFailedTests(tests, integrations))
-      case (_, getTrace) =>
-        // fail all tests (if an exception reached here, it must have happened before the individual test runs)
-        F.maybeSuspend(failAllTests(tests, getTrace()))
-    }
-  }
-
-  protected def withRecoverFromFailedExecution_[A](allTests: => Iterable[DistageTest[F]])(f: => Unit): Unit = {
-    withRecoverFromFailedExecution(allTests)(f)(())
-  }
-
-  protected def withRecoverFromFailedExecution[A](allTests: => Iterable[DistageTest[F]])(f: => A)(onError: => A): A = {
+  protected def withRecoverFromFailedExecution[A](allTests: Seq[DistageTest[F]])(f: => A)(onError: => A): A = {
     try {
       f
     } catch {
       case t: Throwable =>
         // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
-        failAllTests(allTests.toSeq, t)
+        allTests.foreach {
+          test => reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
+        }
         reporter.onFailure(t)
         onError
-    }
-  }
-
-  protected def withIntegrationCheck(
-    checker: IntegrationChecker[F],
-    integrationLocator: Locator,
-  )(tests: => Iterable[DistageTest[F]],
-    plans: TriSplittedPlan,
-  )(onSuccess: => F[Unit]
-  )(implicit
-    F: QuasiIO[F]
-  ): F[Unit] = {
-    checker.collectFailures(plans.sideRoots1, plans.sideRoots2, integrationLocator).flatMap {
-      case Some(failures) =>
-        F.maybeSuspend {
-          ignoreIntegrationCheckFailedTests(tests, failures)
-        }
-      case None =>
-        onSuccess
-    }
-  }
-
-  protected def ignoreIntegrationCheckFailedTests(tests: Iterable[DistageTest[F]], failures: NonEmptyList[ResourceCheck.Failure]): Unit = {
-    tests.foreach {
-      test =>
-        reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-    }
-  }
-
-  protected def failAllTests(tests: Iterable[DistageTest[F]], t: Throwable): Unit = {
-    tests.foreach {
-      test =>
-        reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
     }
   }
 
@@ -416,72 +354,29 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-    val (testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect) = {
-      val (res1, res2) = testPlan.collectChildrenKeysSplit[IntegrationCheck[Identity], IntegrationCheck[F]]
-      (res1 -- allSharedKeys, res2 -- allSharedKeys)
-    }
-
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-    val newTestPlan = testInjector.ops.trisectByRoots(activation, newAppModule, newRoots, testIntegrationCheckKeysIdentity, testIntegrationCheckKeysEffect)
+    val newTestPlan = if (newRoots.nonEmpty) {
+      testInjector.plan(PlannerInput(newAppModule, activation, newRoots))
+    } else {
+      Plan.empty
+    }
 
     val testLogger = testRunnerLogger("testId" -> test.meta.id)
     testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
       s"""Running test...
          |
-         |Test pre-integration plan: ${newTestPlan.shared}
-         |
-         |Test integration plan: ${newTestPlan.side}
-         |
-         |Test primary plan: ${newTestPlan.primary}""".stripMargin
+         |Test plan: $newTestPlan""".stripMargin
     )
 
-    val testIntegrationChecker = new IntegrationChecker.Impl[F](testLogger)
+    planChecker.verify(newTestPlan)
 
-    planChecker.verify(newTestPlan.shared)
-    planChecker.verify(newTestPlan.side)
-    planChecker.verify(newTestPlan.primary)
+    proceedIndividual(test, newTestPlan, mainSharedLocator)
 
-    // we are ready to run the test, finally
-    testInjector.produceCustomF[F](newTestPlan.shared).use {
-      sharedLocator =>
-        Injector.inherit(sharedLocator).produceCustomF[F](newTestPlan.side).use {
-          integrationLocator =>
-            withIntegrationCheck(testIntegrationChecker, integrationLocator)(Seq(test), newTestPlan) {
-              proceedIndividual(test, newTestPlan.primary, integrationLocator)
-            }
-        }
-    }
   }
 
-  protected def proceedIndividual(test: DistageTest[F], testPlan: DIPlan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
-    def testDuration(before: Option[Long]): FiniteDuration = {
-      before.fold(Duration.Zero) {
-        before =>
-          val after = System.nanoTime()
-          FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-      }
-    }
-
-    def doRecover(before: Option[Long])(action: => F[Unit]): F[Unit] = {
-      F.definitelyRecoverCause(action) {
-        case (s, _) if isTestSkipException(s) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
-          }
-        // TODO: workaround to handle integration exceptions thrown by DockerWrapper and ContainerResorce
-        case (ProvisioningIntegrationException(failures), _) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-          }
-        case (_, getTrace) =>
-          F.maybeSuspend {
-            reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
-          }
-      }
-    }
-
-    doRecover(None) {
+  protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
+    withTestsRecoverCause(None, test) {
       if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
       Injector.inherit(parent).produceCustomF[F](testPlan).use {
         testLocator =>
@@ -489,13 +384,44 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             val before = System.nanoTime()
             reporter.testStatus(test.meta, TestStatus.Running)
 
-            doRecover(Some(before)) {
+            withTestsRecoverCause(Some(before), test) {
               testLocator
                 .run(test.test)
                 .flatMap(_ => F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(testDuration(Some(before))))))
             }
           }
       }
+    }
+  }
+
+  protected def withTestsRecoverCause(before: Option[Long], tests: DistageTest[F]*)(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
+    F.definitelyRecoverCause(testsAction) {
+      case (s, _) if isTestSkipException(s) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
+          }
+        }
+      case (ProvisioningIntegrationException(failures), _) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Ignored(failures))
+          }
+        }
+      case (_, getTrace) =>
+        F.maybeSuspend {
+          tests.foreach {
+            test => reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
+          }
+        }
+    }
+  }
+
+  private[this] def testDuration(before: Option[Long]): FiniteDuration = {
+    before.fold(Duration.Zero) {
+      before =>
+        val after = System.nanoTime()
+        FiniteDuration(after - before, TimeUnit.NANOSECONDS)
     }
   }
 
@@ -599,12 +525,12 @@ object DistageTestRunner {
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: DIPlan,
+    runtimePlan: Plan,
   )
   final case class PackedEnv[F[_]](
     envMergeCriteria: EnvMergeCriteria,
     preparedTests: Seq[PreparedTest[F]],
-    memoizationPlanTree: List[TriSplittedPlan],
+    memoizationPlanTree: List[Plan],
     anyMemoizationInjector: Injector[Identity],
     anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
@@ -653,11 +579,11 @@ object DistageTestRunner {
     * Every change in tree structure may lead to test failed across all childs of the corrupted node.
     */
   final class MemoizationTree[F[_]] {
-    private[this] val children = TrieMap.empty[TriSplittedPlan, MemoizationTree[F]]
+    private[this] val children = TrieMap.empty[Plan, MemoizationTree[F]]
     private[this] val nodeTests = ArrayBuffer.empty[MemoizationLevelGroup[F]]
 
-    @inline def allTests: Iterable[PreparedTest[F]] = {
-      nodeTests.toList.flatMap(_.preparedTests) ++ children.flatMap(_._2.allTests)
+    def allTests: Seq[PreparedTest[F]] = {
+      (nodeTests.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.allTests)).toSeq
     }
 
     @inline override def toString: String = toString_(0, Set.empty, "", "")
@@ -665,7 +591,7 @@ object DistageTestRunner {
     /** Root node traverse. User should never call children node directly. */
     def stateTraverse[State](
       initialState: State
-    )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+    )(stateAcquire: (State, Plan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -677,8 +603,8 @@ object DistageTestRunner {
 
     @inline private def stateTraverse_[State](
       initialState: State,
-      thisPlan: TriSplittedPlan,
-    )(stateAcquire: (State, TriSplittedPlan, => Iterable[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
+      thisPlan: Plan,
+    )(stateAcquire: (State, Plan, Seq[PreparedTest[F]]) => (State => F[Unit]) => F[Unit]
     )(stateAction: (State, Iterable[MemoizationLevelGroup[F]]) => F[Unit]
     )(implicit F: QuasiIO[F]
     ): F[Unit] = {
@@ -689,9 +615,9 @@ object DistageTestRunner {
       addEnv_(packedEnv.memoizationPlanTree, MemoizationLevelGroup(packedEnv.preparedTests, packedEnv.strengthenedKeys))
     }
 
-    @tailrec private def addEnv_(plans: List[TriSplittedPlan], levelTests: MemoizationLevelGroup[F]): Unit = {
+    @tailrec private def addEnv_(plans: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
       // here we are filtering all empty plans to merge levels together
-      plans.filter(_.nonEmpty) match {
+      plans match {
         case plan :: tail =>
           val childTree = children.synchronized(children.getOrElseUpdate(plan, new MemoizationTree[F]))
           childTree.addEnv_(tail, levelTests)

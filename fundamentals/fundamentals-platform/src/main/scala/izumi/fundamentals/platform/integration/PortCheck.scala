@@ -1,7 +1,9 @@
 package izumi.fundamentals.platform.integration
 
-import java.net._
-import scala.concurrent.duration._
+import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
+
+import java.net.*
+import scala.concurrent.duration.*
 
 /**
   * This class is intended to be always present in the DI object graph and injected
@@ -47,6 +49,10 @@ class PortCheck(timeout: FiniteDuration) {
     checkAddress(new InetSocketAddress(host, port), clue)
   }
 
+  def check(port: HostPortPair, clue: Option[String] = None): ResourceCheck = {
+    checkAddressPort(port.addr, port.port, clue)
+  }
+
   def checkAddressPort(address: InetAddress, port: Int, clue: Option[String] = None): ResourceCheck = {
     checkAddress(new InetSocketAddress(address, port), clue)
   }
@@ -64,7 +70,8 @@ class PortCheck(timeout: FiniteDuration) {
         }
       } catch {
         case t: Throwable =>
-          val message = errorMessage(s"${evaluatedAddress.getHostName}:${evaluatedAddress.getPort}, timeout: $timeout", clue)
+          val message =
+            errorMessage(s"${evaluatedAddress.getAddress.getHostAddress}==${evaluatedAddress.getHostName}:${evaluatedAddress.getPort}, timeout: $timeout", clue)
           ResourceCheck.ResourceUnavailable(message, Some(t))
       }
     } catch {
@@ -93,4 +100,11 @@ class PortCheck(timeout: FiniteDuration) {
     portOrDefault
   }
 
+}
+
+object PortCheck {
+  trait HostPortPair {
+    def addr: InetAddress
+    def port: Int
+  }
 }

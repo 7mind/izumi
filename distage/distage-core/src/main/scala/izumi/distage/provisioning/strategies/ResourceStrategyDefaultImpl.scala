@@ -2,20 +2,18 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions.MissingRefException
+import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.distage.model.exceptions.interpretation.MissingRefException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
 class ResourceStrategyDefaultImpl extends ResourceStrategy {
 
   override def allocateResource[F[_]: TagK](
     context: ProvisioningKeyProvider,
-    @unused executor: OperationExecutor,
     op: MonadicOp.AllocateResource,
   )(implicit F: QuasiIO[F]
   ): F[Seq[NewObjectOp]] = {
@@ -31,7 +29,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
             F.suspendF {
               resource.extract(innerResource).fold(identity, F.pure).map {
                 instance =>
-                  Seq(NewObjectOp.NewResource[F](op.target, instance, () => resource.release(innerResource)))
+                  Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => resource.release(innerResource)))
               }
             }
         }
@@ -41,7 +39,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
         F.maybeSuspend {
           val innerResource = resourceIdentity.acquire
           val instance: Any = resourceIdentity.extract(innerResource).merge
-          Seq(NewObjectOp.NewResource[F](op.target, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource))))
+          Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource))))
         }
       case None =>
         throw new MissingRefException(s"Failed to fetch Lifecycle instance element $resourceKey", Set(resourceKey), None)

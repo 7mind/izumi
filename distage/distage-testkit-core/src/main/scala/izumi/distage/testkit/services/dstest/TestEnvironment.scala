@@ -5,7 +5,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.plan.DIPlan
+import izumi.distage.model.plan.Plan
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
@@ -52,7 +52,7 @@ object TestEnvironment {
   final case class MemoizationEnv(
     envExec: EnvExecutionParams,
     integrationLogger: IzLogger,
-    runtimePlan: DIPlan,
+    runtimePlan: Plan,
     memoizationInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
   )
@@ -60,7 +60,7 @@ object TestEnvironment {
   final case class PreparedTest[F[_]](
     test: DistageTest[F],
     appModule: Module,
-    testPlan: DIPlan,
+    testPlan: Plan,
     activationInfo: ActivationInfo,
     activation: Activation,
     planner: Planner, // 0.11.0: remove
