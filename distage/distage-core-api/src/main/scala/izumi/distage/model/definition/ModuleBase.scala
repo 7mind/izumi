@@ -5,6 +5,7 @@ import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
+import izumi.fundamentals.platform.language.unused
 
 trait ModuleBase {
   def bindings: Set[Binding]
@@ -173,10 +174,10 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsBoundedSemilatticeForModuleBase[T <: ModuleBase: ModuleMake, K[_]: `cats.kernel.BoundedSemilattice`]: K[T] =
+  implicit def optionalCatsBoundedSemilatticeForModuleBase[T <: ModuleBase, K[_]](implicit T: ModuleMake[T], @unused K: `cats.kernel.BoundedSemilattice`[K]): K[T] =
     new BoundedSemilattice[T] {
-      def empty: T = ModuleMake[T].empty
-      def combine(x: T, y: T): T = x ++ y
+      def empty: T = T.empty
+      def combine(x: T, y: T): T = (x ++ y)(T)
     }.asInstanceOf[K[T]]
 
 }
