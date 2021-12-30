@@ -6,12 +6,12 @@ import scala.collection.compat._
 import scala.language.implicitConversions
 
 trait IzEither {
-  @inline implicit final def EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](
+  @inline implicit final def EitherBiAggregate[L, R, Src[_], Col[x] <: IterableOnce[x]](
     col: Col[Either[Src[L], R]]
   ): EitherBiAggregate[L, R, Src, Col] = new EitherBiAggregate(col)
-  @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](
-    col: Col[Either[List[L], Col2[R]]]
-  ): EitherBiFlatAggregate[L, R, Col, Col2] = new EitherBiFlatAggregate(col)
+  @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x], Src[_]](
+    col: Col[Either[Src[L], Col2[R]]]
+  ): EitherBiFlatAggregate[L, R, Col, Col2, Src] = new EitherBiFlatAggregate(col)
   @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(col)
   @inline implicit final def EitherBiFind[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFind[Col, T] = new EitherBiFind(col)
   @inline implicit final def EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFoldLeft[Col, T] = new EitherBiFoldLeft(col)
@@ -116,9 +116,9 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiAggregate[L, R, Src[x] <: IterableOnce[x], Col[x] <: IterableOnce[x]](private val col: Col[Either[Src[L], R]]) extends AnyVal {
+  final class EitherBiAggregate[L, R, Src[_], Col[x] <: IterableOnce[x]](private val col: Col[Either[Src[L], R]]) extends AnyVal {
     /** `sequence` with error accumulation */
-    def biAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
+    def biAggregate(implicit b: Factory[R, Col[R]], ev: Src[L] => IterableOnce[L]): Either[List[L], Col[R]] = {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
@@ -139,7 +139,7 @@ object IzEither extends IzEither {
     }
 
     /** `sequence_` with error accumulation */
-    def biAggregateVoid: Either[List[L], Unit] = {
+    def biAggregateVoid(implicit ev: Src[L] => IterableOnce[L]): Either[List[L], Unit] = {
       val bad = List.newBuilder[L]
 
       val iterator = col.iterator
@@ -159,9 +159,9 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](private val result: Col[Either[List[L], Col2[R]]]) extends AnyVal {
+  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x], Src[_]](private val result: Col[Either[Src[L], Col2[R]]]) extends AnyVal {
     /** `flatSequence` with error accumulation */
-    def biFlatAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
+    def biFlatAggregate(implicit b: Factory[R, Col[R]], ev: Src[L] => IterableOnce[L]): Either[List[L], Col[R]] = {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
