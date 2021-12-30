@@ -24,99 +24,44 @@ object IzEitherAggregations extends IzEitherAggregations {
   final class EitherBiAggregate[L, R, Col[x] <: IterableOnce[x]](private val col: Col[Either[NonEmptyList[L], R]]) extends AnyVal {
     /** `sequence` with error accumulation */
     def biAggregate(implicit b: Factory[R, Col[R]]): Either[NonEmptyList[L], Col[R]] = {
-      val bad = List.newBuilder[L]
-      val good = b.newBuilder
-
-      val iterator = col.iterator
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) => bad ++= e.toList
-          case Right(v) => good += v
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(good.result())
-      }
+      IzEither.EitherBiAggregate(col.iterator.map(_.left.map(_.toList)).toList)
+        .biAggregate
+        .map(_.to(b))
+        .left.map(NonEmptyList.unsafeFrom)
     }
 
     /** `sequence_` with error accumulation */
     def biAggregateVoid: Either[NonEmptyList[L], Unit] = {
-      val bad = List.newBuilder[L]
-
-      val iterator = col.iterator
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) => bad ++= e.toList
-          case _ =>
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(())
-      }
+      IzEither.EitherBiAggregate(col.iterator.map(_.left.map(_.toList)).toList)
+        .biAggregateVoid
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
   final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](private val result: Col[Either[NonEmptyList[L], Col2[R]]]) extends AnyVal {
     /** `flatSequence` with error accumulation */
     def biFlatAggregate(implicit b: Factory[R, Col[R]]): Either[NonEmptyList[L], Col[R]] = {
-      val bad = List.newBuilder[L]
-      val good = b.newBuilder
-
-      val iterator = result.iterator
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) => bad ++= e.toList
-          case Right(v) => good ++= v
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(good.result())
-      }
+      IzEither.EitherBiFlatAggregate(result.iterator.map(_.left.map(_.toList)).toList)
+        .biFlatAggregate
+        .map(_.to(b))
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
   final class EitherBiFind[Col[x] <: IterableOnce[x], T](private val s: Col[T]) extends AnyVal {
     def biFind[E](predicate: T => Either[NonEmptyList[E], Boolean]): Either[NonEmptyList[E], Option[T]] = {
-      val i = s.iterator
-
-      while (i.hasNext) {
-        val a = i.next()
-        predicate(a) match {
-          case Left(value) =>
-            return Left(value)
-          case Right(true) =>
-            return Right(Some(a))
-          case Right(_) =>
-        }
-      }
-      Right(None)
+      IzEither.EitherBiFind(s)
+        .biFind(predicate(_).left.map(_.toList))
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
   final class EitherBiFoldLeft[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** monadic `foldLeft` with error accumulation */
     def biFoldLeft[L, A](z: A)(op: (A, T) => Either[NonEmptyList[L], A]): Either[NonEmptyList[L], A] = {
-      val i = col.iterator
-      var acc: Either[NonEmptyList[L], A] = Right(z)
-
-      while (i.hasNext && acc.isRight) {
-        val nxt = i.next()
-        (acc, nxt) match {
-          case (Right(a), n) =>
-            acc = op(a, n)
-          case _ =>
-        }
-      }
-      acc
+      IzEither.EitherBiFoldLeft(col)
+        .biFoldLeft(z)((a,t) => op(a,t).left.map(_.toList))
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
@@ -128,41 +73,16 @@ object IzEitherAggregations extends IzEitherAggregations {
 
     /** `traverse` with error accumulation */
     def biMapAggregateTo[L, A, CC](f: T => Either[NonEmptyList[L], A])(b: Factory[A, CC]): Either[NonEmptyList[L], CC] = {
-      val bad = List.newBuilder[L]
-      val good = b.newBuilder
-
-      val iterator = col.iterator
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) => bad ++= e.toList
-          case Right(v) => good += v
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(good.result())
-      }
+      IzEither.EitherBiMapAggregate(col)
+        .biMapAggregateTo(f(_).left.map(_.toList))(b)
+        .left.map(NonEmptyList.unsafeFrom)
     }
 
     /** `traverse_` with error accumulation */
     def biMapAggregateVoid[L](f: T => Either[NonEmptyList[L], Unit]): Either[NonEmptyList[L], Unit] = {
-      val bad = List.newBuilder[L]
-
-      val iterator = col.iterator
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) => bad ++= e.toList
-          case _ =>
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(())
-      }
+      IzEither.EitherBiMapAggregate(col)
+        .biMapAggregateVoid(f(_).left.map(_.toList))
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
@@ -174,22 +94,9 @@ object IzEitherAggregations extends IzEitherAggregations {
 
     /** `flatTraverse` with error accumulation */
     def biFlatMapAggregateTo[L, A, CC](f: T => Either[NonEmptyList[L], IterableOnce[A]])(b: Factory[A, CC]): Either[NonEmptyList[L], CC] = {
-      val bad = List.newBuilder[L]
-      val good = b.newBuilder
-
-      val iterator = col.iterator
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) => bad ++= e.toList
-          case Right(v) => good ++= v
-        }
-      }
-
-      val badList = NonEmptyList.from(bad.result())
-      badList match {
-        case Some(bad) => Left(bad)
-        case None => Right(good.result())
-      }
+      IzEither.EitherBiFlatMapAggregate(col)
+        .biFlatMapAggregateTo(f(_).left.map(_.toList))(b)
+        .left.map(NonEmptyList.unsafeFrom)
     }
   }
 
