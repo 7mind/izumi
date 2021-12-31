@@ -1,10 +1,12 @@
 package izumi.functional
 
 import izumi.functional.IzEitherTraversals.*
+import scala.collection.compat.*
 import scala.language.implicitConversions
 
 trait IzEitherTraversals {
   @inline implicit final def EitherBiTraversals[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiTraversals[Col, T] = new EitherBiTraversals(col)
+  @inline implicit final def EitherLrPartitions[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherLrPartitions[L, R, Col] = new EitherLrPartitions(col)
 }
 
 object IzEitherTraversals extends IzEitherTraversals {
@@ -41,5 +43,19 @@ object IzEitherTraversals extends IzEitherTraversals {
       acc
     }
 
+  }
+
+  final class EitherLrPartitions[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]) {
+    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
+      val bad = bl.newBuilder
+      val good = br.newBuilder
+
+      col.iterator.foreach {
+        case Left(e) => bad += e
+        case Right(v) => good += v
+      }
+
+      (bad.result(), good.result())
+    }
   }
 }

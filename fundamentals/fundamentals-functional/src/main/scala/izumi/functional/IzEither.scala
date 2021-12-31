@@ -161,17 +161,6 @@ object IzEither extends IzEither {
   }
 
   final class EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](private val e: Col[Either[L, R]]) extends AnyVal {
-    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
-      val bad = bl.newBuilder
-      val good = br.newBuilder
-
-      e.iterator.foreach {
-        case Left(e) => bad += e
-        case Right(v) => good += v
-      }
-
-      (bad.result(), good.result())
-    }
 
     /** `sequence` with error accumulation */
     def biAggregateScalar(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
