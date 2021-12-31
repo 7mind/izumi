@@ -1,8 +1,8 @@
 package izumi.functional
 
-import izumi.functional.IzEither._
+import izumi.functional.IzEither.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherScalarOps}
 
-import scala.collection.compat._
+import scala.collection.compat.*
 import scala.language.implicitConversions
 
 trait IzEither extends IzEitherTraversals {

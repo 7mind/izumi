@@ -1,6 +1,6 @@
 package izumi.functional
 
-import izumi.functional.IzEitherAggregations.*
+import izumi.functional.IzEitherAggregations.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 
 import scala.collection.compat.*

@@ -1,6 +1,7 @@
 package izumi.functional
 
 import izumi.functional.IzEitherTraversals.*
+import scala.language.implicitConversions
 
 trait IzEitherTraversals {
   @inline implicit final def EitherBiTraversals[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiTraversals[Col, T] = new EitherBiTraversals(col)
