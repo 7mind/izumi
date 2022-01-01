@@ -1,6 +1,5 @@
 package izumi.functional.bio.impl
 
-import cats.effect.Timer
 import izumi.functional.bio.Temporal2
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
@@ -8,8 +7,9 @@ import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, toZonedDateTime}
 import monix.bio.{IO, UIO}
 
 import java.util.concurrent.TimeUnit
+import cats.effect.Temporal
 
-class SchedulerMonix(timer: Timer[UIO]) extends Scheduler2[IO] {
+class SchedulerMonix(timer: Temporal[UIO]) extends Scheduler2[IO] {
   override def repeat[E, A, B](eff: IO[E, A])(policy: RetryPolicy[IO, A, B]): IO[E, A] = {
     def loop(in: A, makeDecision: RetryFunction[IO, A, B]): IO[E, A] = {
       (for {

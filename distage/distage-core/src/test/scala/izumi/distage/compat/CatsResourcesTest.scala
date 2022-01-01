@@ -1,7 +1,7 @@
 package izumi.distage.compat
 
 import cats.arrow.FunctionK
-import cats.effect.{Bracket, IO, Resource, Sync}
+import cats.effect.{IO, Resource, Sync}
 import distage._
 import izumi.distage.compat.CatsResourcesTest._
 import izumi.distage.model.definition.Binding.SingletonBinding
@@ -12,6 +12,7 @@ import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
+import cats.effect.MonadCancel
 
 object CatsResourcesTest {
   class Res { var initialized: Boolean = false }
@@ -39,7 +40,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      addImplicit[Bracket[IO, Throwable]]
+      addImplicit[MonadCancel[IO, Throwable]]
       make[MyApp]
     }
 

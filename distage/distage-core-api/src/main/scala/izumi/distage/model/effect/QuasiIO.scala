@@ -253,7 +253,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
         })
       }
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
-        F.guarantee(F.defer(fa))(F.defer(`finally`))
+        F.guarantee(F.defer(fa), F.defer(`finally`))
       }
       override def guaranteeOnFailure[A](fa: => F[A])(cleanupOnFailure: Throwable => F[Unit]): F[A] = {
         F.guaranteeCase(F.defer(fa)) {
