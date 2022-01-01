@@ -10,7 +10,7 @@ import zio.internal.Platform
 class FreeMonadTest extends AnyWordSpec {
   import FreeMonadTest._
   val syntax = new TestFreeSyntax[IO]
-  val simpleExecution: FreePanic[TestFreeChoice, Nothing, Unit] = {
+  val simpleExecution: FreePanic[TestFreeChoice, Nothing, Unit] =
     for {
       res <- syntax.pure(1)
       _ <- syntax.sync(assert(res == 1))
@@ -23,7 +23,6 @@ class FreeMonadTest extends AnyWordSpec {
         }.catchAll(_ => syntax.unit)
       _ <- syntax.scopeAccess(res => assert(res == 1000))
     } yield ()
-  }
   // tailrec test, just in case
   val nested: FreePanic[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
 

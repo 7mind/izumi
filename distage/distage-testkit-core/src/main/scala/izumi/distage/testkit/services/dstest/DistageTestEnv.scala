@@ -79,13 +79,12 @@ trait DistageTestEnv {
 }
 
 object DistageTestEnv {
-  private[distage] final val cache: SyncCache[EnvCacheKey, TestEnvironment] = {
+  private[distage] final val cache: SyncCache[EnvCacheKey, TestEnvironment] =
     if (DebugProperties.`izumi.distage.testkit.environment.cache`.boolValue(true)) {
       new SyncCache[EnvCacheKey, TestEnvironment]
     } else {
       null
     }
-  }
 
   private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
 }

@@ -32,7 +32,7 @@ trait QuasiAsync[F[_]] {
 object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
+  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] =
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
       final val QuasiAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
@@ -72,7 +72,6 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
         ()
       }
     }
-  }
 
   private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
     implicit val ec: ExecutionContext = ec0
