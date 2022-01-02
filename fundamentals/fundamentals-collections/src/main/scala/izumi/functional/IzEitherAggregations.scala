@@ -1,6 +1,6 @@
 package izumi.functional
 
-import izumi.functional.IzEitherAggregations.{EitherScalarOps, EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate}
+import izumi.functional.IzEitherAggregations.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherScalarOps}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 
 import scala.collection.compat.*
@@ -36,7 +36,8 @@ object IzEitherAggregations extends IzEitherAggregations {
     }
   }
 
-  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](private val result: Col[Either[NonEmptyList[L], Col2[R]]]) extends AnyVal {
+  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x]](private val result: Col[Either[NonEmptyList[L], Col2[R]]])
+    extends AnyVal {
     /** `flatSequence` with error accumulation */
     def biFlatAggregate(implicit b: Factory[R, Col[R]]): Either[NonEmptyList[L], Col[R]] = {
       new IzEither.EitherBiFlatAggregate(result)
@@ -53,14 +54,16 @@ object IzEitherAggregations extends IzEitherAggregations {
 
     /** `traverse` with error accumulation */
     def biMapAggregateTo[L, A, CC](f: T => Either[NonEmptyList[L], A])(b: Factory[A, CC]): Either[NonEmptyList[L], CC] = {
-      IzEither.EitherBiMapAggregate(col)
+      IzEither
+        .EitherBiMapAggregate(col)
         .biMapAggregateTo(f)(b)(_.toList)
         .left.map(NonEmptyList.unsafeFrom)
     }
 
     /** `traverse_` with error accumulation */
     def biMapAggregateVoid[L](f: T => Either[NonEmptyList[L], Unit]): Either[NonEmptyList[L], Unit] = {
-      IzEither.EitherBiMapAggregate(col)
+      IzEither
+        .EitherBiMapAggregate(col)
         .biMapAggregateVoid(f)(_.toList)
         .left.map(NonEmptyList.unsafeFrom)
     }
@@ -74,7 +77,8 @@ object IzEitherAggregations extends IzEitherAggregations {
 
     /** `flatTraverse` with error accumulation */
     def biFlatMapAggregateTo[L, A, CC](f: T => Either[NonEmptyList[L], IterableOnce[A]])(b: Factory[A, CC]): Either[NonEmptyList[L], CC] = {
-      IzEither.EitherBiFlatMapAggregate(col)
+      IzEither
+        .EitherBiFlatMapAggregate(col)
         .biFlatMapAggregateTo(f)(b)(_.toList)
         .left.map(NonEmptyList.unsafeFrom)
     }
@@ -83,9 +87,7 @@ object IzEitherAggregations extends IzEitherAggregations {
   final class EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](private val e: Col[Either[L, R]]) extends AnyVal {
     /** `sequence` with error accumulation */
     def biAggregateScalar(implicit b: Factory[R, Col[R]]): Either[NonEmptyList[L], Col[R]] = {
-      IzEither.EitherScalarOps(e)
-        .biAggregateScalar
-        .left.map(NonEmptyList.unsafeFrom)
+      IzEither.EitherScalarOps(e).biAggregateScalar.left.map(NonEmptyList.unsafeFrom)
     }
   }
 }

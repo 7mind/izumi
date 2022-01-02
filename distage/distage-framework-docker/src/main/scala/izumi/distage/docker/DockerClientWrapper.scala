@@ -90,7 +90,7 @@ object DockerClientWrapper {
   ) extends Lifecycle.Basic[F, DockerClientWrapper[F]]
     with IntegrationCheck[F] {
 
-    private[this] lazy val rawClientConfig: DefaultDockerClientConfig = {
+    private[this] lazy val rawClientConfig: DefaultDockerClientConfig =
       Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
         .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
           (b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
@@ -99,11 +99,9 @@ object DockerClientWrapper {
           (b, c) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
         )
         .get.build()
-    }
 
-    private[this] lazy val rawClient: DockerClient = {
+    private[this] lazy val rawClient: DockerClient =
       clientFactory.makeClient(clientConfig, rawClientConfig)
-    }
 
     override def resourcesAvailable(): F[ResourceCheck] = F.maybeSuspend {
       try {
