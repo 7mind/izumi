@@ -348,7 +348,7 @@ class SyntaxTest extends AnyWordSpec {
     def attachScheduler3[FR[-_, +_, +_]: Monad3: Scheduler3]: FR[Nothing, Nothing, Int] = {
       F.repeat(F.pure(42))(RetryPolicy.recurs(2))
     }
-    lazy val zioTest = {
+    lazy val zioTest =
       (
         x[zio.IO],
         y[zio.IO],
@@ -359,7 +359,6 @@ class SyntaxTest extends AnyWordSpec {
         attachScheduler2[zio.IO],
         attachScheduler3[zio.ZIO],
       )
-    }
 
     lazy val monixTest = (
       x[bio.IO],

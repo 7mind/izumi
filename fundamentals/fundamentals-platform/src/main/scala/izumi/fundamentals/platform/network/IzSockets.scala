@@ -18,7 +18,7 @@ object IzSockets {
 
   val RANDOM_LOOPBACK_ADDRESS = "RANDOM_LOOPBACK_ADDRESS"
 
-  private val canBindOnAlternativeLoopbackAddresses = {
+  private val canBindOnAlternativeLoopbackAddresses =
     try {
       IzSockets.temporaryServerAddress(address = "127.20.0.0")
       true
@@ -26,7 +26,6 @@ object IzSockets {
       case _: java.net.BindException =>
         false
     }
-  }
 
   /** @return A port on 'localhost' that is currently available */
   def temporaryLocalPort(udp: Boolean = false): Int = temporaryServerAddress("localhost", udp).getPort

@@ -25,13 +25,11 @@ object FileServiceImpl {
       Source.fromFile(this.name)
     }
 
-    private val outputSink = {
+    private val outputSink =
       for {
         _ <- createIfNotExists
         writer <- Try(Files.newOutputStream(filePath, StandardOpenOption.APPEND))
       } yield writer
-
-    }
 
     override def exists: Boolean = {
       new File(name).exists()
