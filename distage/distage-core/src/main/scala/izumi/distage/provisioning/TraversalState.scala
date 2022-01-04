@@ -77,7 +77,7 @@ final class TraversalState(
         CannotProgress(nextPreds)
       }
     } else {
-      Step(current.keys)
+      Step(current.map(_._1))
     }
 
     new TraversalState(
