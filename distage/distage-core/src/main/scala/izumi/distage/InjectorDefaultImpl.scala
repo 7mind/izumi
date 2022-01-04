@@ -121,11 +121,13 @@ object InjectorDefaultImpl {
     }
   }
 
-  private[this] lazy val selfReflectionKeys: Set[DIKey] =
+  private[this] lazy val selfReflectionKeys: Set[DIKey] = {
     // passing nulls to prevent key list getting out of sync
     selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null).keys
+  }
 
-  lazy val providedKeys: Set[DIKey] =
+  lazy val providedKeys: Set[DIKey] = {
     selfReflectionKeys +
-      DIKey[LocatorRef] // magic import, always available
+    DIKey[LocatorRef] // magic import, always available
+  }
 }

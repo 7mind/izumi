@@ -4,13 +4,14 @@ import LogPayloadSize._
 
 final case class FileSinkConfig private (fileSizeInBytes: Option[Int], fileSizeSoft: Option[Int]) {
 
-  val (maxAllowedSize, calculateMessageSize) =
+  val (maxAllowedSize, calculateMessageSize) = {
     (fileSizeSoft, fileSizeInBytes) match {
       case (Some(size), _) => (size, LogPayloadSizeSoft.size(_: String))
       case (_, Some(size)) => (size, LogPayloadSizeInBytes.size(_: String))
       case (None, None) =>
         throw new IllegalArgumentException("File limit parameter should be specified")
     }
+  }
 }
 
 object FileSinkConfig {

@@ -162,11 +162,12 @@ class FunctoidMacro(val c: blackbox.Context) {
   }
 
   protected[this] def extractMethodReferenceParams(symbol: Symbol): List[Symbol] = {
-    val isSyntheticCaseClassApply =
+    val isSyntheticCaseClassApply = {
       symbol.name.decodedName.toString == "apply" &&
-        symbol.isSynthetic &&
-        symbol.owner.companion.isClass &&
-        symbol.owner.companion.asClass.isCaseClass
+      symbol.isSynthetic &&
+      symbol.owner.companion.isClass &&
+      symbol.owner.companion.asClass.isCaseClass
+    }
 
     val method = if (isSyntheticCaseClassApply) {
       // since this is a _synthetic_ apply, its signature must match the case class constructor exactly, so we don't check it

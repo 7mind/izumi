@@ -129,9 +129,10 @@ abstract class GraphVizDotML(
     if (this.strict) result += s"${sj}strict ${head.format(na)}"
     else result += s"$sj${head.format(na)}"
 
-    val styled =
+    val styled = {
       if (this.graphAttr.nonEmpty || this.nodeAttr.nonEmpty || this.edgeAttr.nonEmpty) true
       else false
+    }
     if (this.graphAttr.nonEmpty) {
       result += s"$sj\t%s %s".format("graph", this.attribute(null, this.graphAttr))
     }

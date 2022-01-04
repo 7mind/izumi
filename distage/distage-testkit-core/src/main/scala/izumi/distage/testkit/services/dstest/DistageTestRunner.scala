@@ -140,10 +140,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
 
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
-    val appModule =
+    val appModule = {
       // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
       IdentitySupportModule ++ DefaultModule[F] overriddenBy
-        moduleProvider.appModules().merge overriddenBy env.appModule
+      moduleProvider.appModules().merge overriddenBy env.appModule
+    }
 
     val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`

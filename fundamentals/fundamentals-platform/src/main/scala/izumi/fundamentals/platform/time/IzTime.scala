@@ -16,17 +16,19 @@ trait IzTimeSafe {
   @inline implicit final def toRichDuration(duration: Duration): IzDuration = new IzDuration(duration)
 
   // formatters with 3 decimal positions for nanos
-  final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter =
+  final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
       .append(ISO_LOCAL_DATE)
       .appendLiteral('T')
       .append(ISO_LOCAL_TIME_3NANO)
       .toFormatter()
+  }
 
-  final lazy val ISO_LOCAL_DATE: DateTimeFormatter =
+  final lazy val ISO_LOCAL_DATE: DateTimeFormatter = {
     DateTimeFormatter.ISO_LOCAL_DATE
+  }
 
-  final lazy val ISO_LOCAL_TIME_3NANO: DateTimeFormatter =
+  final lazy val ISO_LOCAL_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder()
       .appendValue(HOUR_OF_DAY, 2)
       .appendLiteral(':')
@@ -37,14 +39,16 @@ trait IzTimeSafe {
       .optionalStart
       .appendFraction(NANO_OF_SECOND, 3, 3, true)
       .toFormatter()
+  }
 
-  final lazy val ISO_OFFSET_TIME_3NANO: DateTimeFormatter =
+  final lazy val ISO_OFFSET_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
       .append(ISO_LOCAL_TIME_3NANO)
       .appendOffsetId
       .toFormatter()
+  }
 
-  final val ISO_DATE_TIME_3NANO: DateTimeFormatter =
+  final val ISO_DATE_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
       .append(ISO_LOCAL_DATE_TIME_3NANO)
       .appendOffsetId
@@ -54,16 +58,19 @@ trait IzTimeSafe {
       .appendZoneRegionId()
       .appendLiteral(']')
       .toFormatter()
+  }
 
-  final val ISO_DATE =
+  final val ISO_DATE = {
     DateTimeFormatter.ISO_DATE
+  }
 
-  final val ISO_TIME_3NANO =
+  final val ISO_TIME_3NANO = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
       .append(ISO_LOCAL_TIME_3NANO)
       .optionalStart
       .appendOffsetId
       .toFormatter
+  }
 }
 
 object IzTimeSafe extends IzTimeSafe with IzTimeOrderingSafe
@@ -89,7 +96,7 @@ trait IzTime extends IzTimeSafe {
 
   def isoNow: String = utcNow.isoFormat
 
-  final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter =
+  final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder()
       .append(ISO_OFFSET_DATE_TIME_3NANO)
       .optionalStart
@@ -98,14 +105,16 @@ trait IzTime extends IzTimeSafe {
       .appendZoneRegionId
       .appendLiteral(']')
       .toFormatter
+  }
 
-  final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter =
+  final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
       .append(ISO_LOCAL_DATE_TIME_3NANO)
       .parseLenient
       .appendOffsetId
       .parseStrict
       .toFormatter
+  }
 }
 
 object IzTime extends IzTime with IzTimeOrdering

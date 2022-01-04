@@ -23,10 +23,11 @@ trait Provider {
   def addUnused(keys: Iterable[DIKey]): Provider
   def replaceKeys(f: DIKey => DIKey): Provider
 
-  private val eqField: AnyRef =
+  private val eqField: AnyRef = {
     if (providerType eq ProviderType.Function) originalFun
     else if (providerType eq ProviderType.FunctionWithUnusedKeys) (originalFun, diKeys)
     else ret
+  }
   override final def equals(obj: Any): Boolean = obj match {
     case that: Provider => eqField == that.eqField
     case _ => false
