@@ -92,7 +92,7 @@ object BootstrapLocator {
     resourceStrategy = new ResourceStrategyDefaultImpl,
   )
 
-  private final val bootstrapProducer: PlanInterpreter =
+  private final val bootstrapProducer: PlanInterpreter = {
     new PlanInterpreterNonSequentialRuntimeImpl(
       planner = bootstrapPlanner,
       importStrategy = new ImportStrategyDefaultImpl,
@@ -100,6 +100,7 @@ object BootstrapLocator {
       verifier = new ProvisionOperationVerifier.Default(mirrorProvider),
       fullStackTraces = fullStackTraces,
     )
+  }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
@@ -157,7 +158,8 @@ object BootstrapLocator {
     }
   }
 
-  lazy val selfReflectionKeys: Set[DIKey] =
+  lazy val selfReflectionKeys: Set[DIKey] = {
     // passing nulls to prevent key list getting out of sync
     selfReflectionModule(null, null.asInstanceOf[Activation]).keys
+  }
 }

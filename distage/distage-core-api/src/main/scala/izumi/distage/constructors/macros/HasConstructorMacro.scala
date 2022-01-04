@@ -34,7 +34,7 @@ object HasConstructorMacro {
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
         val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
-        val provider: c.Expr[Functoid[T]] =
+        val provider: c.Expr[Functoid[T]] = {
           generateProvider[T, ProviderType.ZIOHas.type](params :: Nil) {
             case (headParam :: params) :: Nil =>
               params.foldLeft(q"_root_.zio.Has.apply($headParam)") {
@@ -42,6 +42,7 @@ object HasConstructorMacro {
               }
             case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type $targetType in HasConstructorMacro")
           }
+        }
 
         val res = c.Expr[HasConstructor[T]](q"{ new ${weakTypeOf[HasConstructor[T]]}($provider) }")
         logger.log(s"Final syntax tree of HasConstructor for $targetType:\n$res")

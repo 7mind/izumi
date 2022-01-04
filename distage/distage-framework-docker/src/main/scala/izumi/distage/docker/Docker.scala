@@ -207,10 +207,11 @@ object Docker {
     implicit val configReader: ConfigReader[ClientConfig] = PureconfigAutoDerive.derived
     implicit val diConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.deriveFromPureconfigConfigReader
 
-    val defaultReusePolicy: DockerReusePolicy =
+    val defaultReusePolicy: DockerReusePolicy = {
       DebugProperties.`izumi.distage.docker.reuse`
         .strValue()
         .fold[DockerReusePolicy](DockerReusePolicy.ReuseEnabled)(parseReusePolicy)
+    }
 
     def parseReusePolicy(name: String): DockerReusePolicy = {
       name match {

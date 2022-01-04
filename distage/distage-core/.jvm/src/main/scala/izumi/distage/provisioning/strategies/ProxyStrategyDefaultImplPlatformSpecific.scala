@@ -21,7 +21,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     val classConstructorParams = if (noArgsConstructor(tpe)) {
       ProxyParams.Empty
     } else {
-      val allArgsAsNull: Array[(Class[?], Any)] =
+      val allArgsAsNull: Array[(Class[?], Any)] = {
         op.op match {
           case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
             // for class constructors, try to fetch known dependencies from the object graph
@@ -31,6 +31,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
             runtimeClass.getConstructors.head.getParameterTypes
               .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
         }
+      }
       val (argClasses, argValues) = allArgsAsNull.unzip
       ProxyParams.Params(argClasses, argValues)
     }

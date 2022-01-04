@@ -156,8 +156,9 @@ class LogstageCirceRenderingPolicy(
     case o => Json.fromString(o.toString)
   }
 
-  private val mapListElement: PartialFunction[Any, Json] =
+  private val mapListElement: PartialFunction[Any, Json] = {
     mapScalar orElse mapToString
+  }
 }
 
 object LogstageCirceRenderingPolicy {

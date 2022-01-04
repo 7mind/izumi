@@ -27,11 +27,12 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
   }
 
-  protected[this] implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] =
+  protected[this] implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
     Liftable[DIKey.BasicKey] {
       case t: DIKey.TypeKey => q"${liftableTypeKey(t)}"
       case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
     }
+  }
 
   // SymbolInfo
 
