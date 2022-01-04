@@ -22,18 +22,23 @@ object FileLockMutex {
     F: QuasiIO[F],
     P: QuasiAsync[F],
   ): F[E] = {
-    def retryOnFileLock(eff: F[FileLock], attempts: Int = 0): F[Option[FileLock]] = {
-      logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
-      F.definitelyRecover(eff.map(Option(_))) {
-        case _: OverlappingFileLockException =>
-          if (attempts < maxAttempts) {
-            P.sleep(waitFor).flatMap(_ => retryOnFileLock(eff, attempts + 1))
-          } else {
-            logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
-            F.pure(None)
-          }
-        case err =>
-          F.fail(err)
+    def retryOnFileLock(eff: F[FileLock]): F[Option[FileLock]] = {
+      F.tailRecM(0) {
+        attempts =>
+          logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
+          F.definitelyRecover[Either[Int, Option[FileLock]]](
+            eff.map(lock => Right(Option(lock)))
+          )(recover = {
+            case _: OverlappingFileLockException =>
+              if (attempts < maxAttempts) {
+                P.sleep(waitFor).map(_ => Left(attempts + 1))
+              } else {
+                logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
+                F.pure(Right(None))
+              }
+            case err =>
+              F.fail(err)
+          })
       }
     }
 

@@ -4,7 +4,7 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
 
@@ -33,8 +33,8 @@ sealed trait Binding {
 
 object Binding {
 
-  sealed trait GroupingKey {
-    override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  sealed abstract class GroupingKey extends Product {
+    override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
   }
   object GroupingKey {
     final case class KeyImpl(key: DIKey, impl: ImplDef) extends GroupingKey

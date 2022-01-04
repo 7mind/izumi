@@ -14,7 +14,7 @@ trait ModuleBase {
   final def keys: Set[DIKey] = keysIterator.toSet
   def keysIterator: Iterator[DIKey] = iterator.map(_.key)
 
-  override final def hashCode(): Int = bindings.hashCode()
+  override final lazy val hashCode: Int = bindings.hashCode()
   override final def equals(obj: Any): Boolean = obj match {
     case m: ModuleBase =>
       m.bindings == this.bindings
@@ -163,7 +163,7 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     import cats.instances.set.*
     new PartialOrder[T] with Hash[T] {
       override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
-      override def hash(x: T): Int = x.hashCode()
+      override def hash(x: T): Int = x.hashCode
       override def eqv(x: T, y: T): Boolean = x == y
     }.asInstanceOf[K[T]]
   }

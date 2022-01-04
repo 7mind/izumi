@@ -23,6 +23,7 @@ import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
+import scala.collection.compat.immutable.ArraySeq
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class PlanInterpreterNonSequentialRuntimeImpl(
@@ -63,14 +64,14 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
 
     @nowarn("msg=Unused import")
-    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvision[F], LocatorDefaultImpl[F]]]] = {
       import scala.collection.compat.*
 
       state.current match {
-        case TraversalState.Step(steps) =>
-          val ops = prioritize(steps.toSeq.map(plan.plan.meta.nodes(_)), integrationPaths)
+        case TraversalState.Current.Step(steps) =>
+          val ops = prioritize(steps.map(plan.plan.meta.nodes(_)), integrationPaths)
 
-          val step = for {
+          for {
             results <- F.traverse(ops)(processOp(ctx, _))
             timedResults <- F.traverse(results) {
               case s: TimedResult.Success =>
@@ -82,19 +83,17 @@ class PlanInterpreterNonSequentialRuntimeImpl(
               case ok: TimedFinalResult.Success => Left(ok)
               case bad: TimedFinalResult.Failure => Right(bad)
             }
-            recurs = () => run(state.next(ok, bad), integrationPaths) // prevent heap overflow due to final left-associative map in for-yield
-          } yield recurs
+            nextState = state.next(ok, bad)
+          } yield Left(nextState)
 
-          step.flatMap(recurs => recurs())
-
-        case TraversalState.Done() =>
+        case TraversalState.Current.Done() =>
           if (state.failures.isEmpty) {
-            F.maybeSuspend(Right(ctx.finish(state)))
+            F.maybeSuspend(Right(Right(ctx.finish(state))))
           } else {
-            F.pure(Left(ctx.makeFailure(state, fullStackTraces)))
+            F.pure(Right(Left(ctx.makeFailure(state, fullStackTraces))))
           }
-        case TraversalState.CannotProgress(_) =>
-          F.pure(Left(ctx.makeFailure(state, fullStackTraces)))
+        case TraversalState.Current.CannotProgress(_) =>
+          F.pure(Right(Left(ctx.makeFailure(state, fullStackTraces))))
       }
     }
 
@@ -112,7 +111,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
             case Left(failedProvision) =>
               F.pure(Left(failedProvision))
             case Right(icPlan) =>
-              run(initial, icPlan.plan.meta.nodes.keySet)
+              F.tailRecM(initial)(run(_, icPlan.plan.meta.nodes.keySet))
           }
       }
     } yield res
@@ -160,8 +159,8 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def prioritize(ops: Seq[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = {
-    ops.sortBy {
+  private[this] def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
+    ops.toArray.sortBy {
       op =>
         val repr = op.target.tpe.toString
         op match {

@@ -6,6 +6,7 @@ import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 
+import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
@@ -27,6 +28,13 @@ import scala.util.{Failure, Success, Try}
   */
 trait QuasiIO[F[_]] extends QuasiApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+
+  def tailRecM[A, B](a: A)(f: A => F[Either[A, B]]): F[B] = {
+    flatMap(f(a)) {
+      case Left(next) => tailRecM(next)(f)
+      case Right(res) => pure(res)
+    }
+  }
 
   def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
   def guaranteeOnFailure[A](fa: => F[A])(cleanupOnFailure: Throwable => F[Unit]): F[A] = {
@@ -109,6 +117,12 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
     override def flatMap[A, B](a: A)(f: A => Identity[B]): Identity[B] = f(a)
+    @tailrec override def tailRecM[A, B](a: A)(f: A => Identity[Either[A, B]]): Identity[B] = {
+      f(a) match {
+        case Left(next) => tailRecM(next)(f)
+        case Right(res) => res
+      }
+    }
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
     override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Identity[A] = eff match {
@@ -172,6 +186,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
+      override def tailRecM[A, B](a: A)(f: A => F[Throwable, Either[A, B]]): F[Throwable, B] = F.tailRecM(a)(f)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
       override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[Throwable, A] = F.syncThrowable(eff).flatMap(F.fromEither(_))
@@ -225,6 +240,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.flatMap(fa)(a => F.map(fb)(f(a, _)))
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
+      override def tailRecM[A, B](a: A)(f: A => F[Either[A, B]]): F[B] = F.tailRecM(a)(f)
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
       override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A] = F.defer(F.fromEither(eff))
