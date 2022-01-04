@@ -3,11 +3,11 @@ package izumi.distage.model.definition
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.reflection.{DIKey, Provider, SafeType}
 
-sealed trait ImplDef {
+sealed abstract class ImplDef extends Product {
   def implType: SafeType
 
   override final def toString: String = BindingFormatter(KeyFormatter.Full).formatImplDef(this)
-  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
+  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
 }
 
 object ImplDef {

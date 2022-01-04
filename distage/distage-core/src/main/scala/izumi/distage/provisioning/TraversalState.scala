@@ -3,6 +3,7 @@ package izumi.distage.provisioning
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.provisioning.{NewObjectOp, OpStatus}
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.provisioning.TraversalState.Current.{CannotProgress, Done, Step}
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
 import scala.annotation.nowarn
@@ -46,15 +47,17 @@ final class TraversalState(
   val failures: Vector[ProvisionerIssue],
   _status: mutable.HashMap[DIKey, OpStatus],
 ) {
+
   def status(): Map[DIKey, OpStatus] = _status.toMap
 
   @nowarn("msg=Unused import")
   def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
     import scala.collection.compat.*
 
-    val nextPreds = preds.without(finished.map(_.key).toSet)
+    val nextPreds = preds.without(finished.iterator.map(_.key).toSet)
 
     val broken = issues.map(_.key).toSet
+    assert(broken.size == issues.size)
     val currentBroken = knownBroken ++ broken
     val withBrokenDeps = nextPreds.links.filter(_._2.intersect(currentBroken).nonEmpty)
     val newBroken = currentBroken ++ withBrokenDeps.keySet
@@ -62,30 +65,30 @@ final class TraversalState(
     val newFailures = failures ++ issues.flatMap(_.issues)
     _status ++= finished.map(k => (k.key, OpStatus.Success(k.time)))
     _status ++= issues.map(k => (k.key, OpStatus.Failure(k.issues, k.time)))
-    assert(issues.map(_.key).distinct.size == issues.size)
 
     val (current, next) = nextPreds.links.view
-      .filterKeys(k => !newBroken.contains(k))
+      .filterKeys(!newBroken.contains(_))
       .partition(_._2.isEmpty)
 
     val step = if (current.isEmpty) {
       if (next.isEmpty) {
-        TraversalState.Done()
+        Done()
       } else {
-        TraversalState.CannotProgress(nextPreds)
+        CannotProgress(nextPreds)
       }
     } else {
-      TraversalState.Step(current.map(_._1).toSet)
+      Step(current.keys)
     }
 
     new TraversalState(
-      step,
-      nextPreds,
-      newBroken,
-      newFailures,
-      _status,
+      current = step,
+      preds = nextPreds,
+      knownBroken = newBroken,
+      failures = newFailures,
+      _status = _status,
     )
   }
+
 }
 
 object TraversalState {
@@ -93,16 +96,18 @@ object TraversalState {
     val todo = mutable.HashMap[DIKey, OpStatus]()
     todo ++= preds.links.keySet.map(_ -> OpStatus.Planned())
     new TraversalState(
-      Step(Set.empty),
-      preds,
-      Set.empty,
-      Vector.empty,
-      todo,
+      current = Step(Set.empty),
+      preds = preds,
+      knownBroken = Set.empty,
+      failures = Vector.empty,
+      _status = todo,
     )
   }
 
   sealed trait Current
-  final case class Step(steps: Set[DIKey]) extends Current
-  final case class Done() extends Current
-  final case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
+  object Current {
+    final case class Step(steps: Iterable[DIKey]) extends Current
+    final case class Done() extends Current
+    final case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
+  }
 }

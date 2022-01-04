@@ -10,13 +10,15 @@ import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.reflect.TagK
 
 import scala.annotation.tailrec
+import scala.util.hashing.MurmurHash3
 
-sealed trait ExecutableOp {
+sealed abstract class ExecutableOp extends Product {
   def target: DIKey
   def origin: EqualizedOperationOrigin
   override final def toString: String = {
     OpFormatter(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
   }
+  override final lazy val hashCode: Int = MurmurHash3.productHash(this)
 }
 
 object ExecutableOp {

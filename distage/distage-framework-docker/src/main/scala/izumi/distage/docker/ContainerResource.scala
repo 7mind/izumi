@@ -94,78 +94,79 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  def await(container: DockerContainer[Tag], attempt: Int): F[DockerContainer[Tag]] = {
-    F.maybeSuspend {
-      logger.debug(s"Awaiting until alive: $container...")
-      inspectContainerAndGetState(container.id.name).map {
-        config.healthCheck.check(logger, container, _)
-      }
-    }.flatMap {
-        case Right(HealthCheckResult.Passed) =>
-          F.maybeSuspend {
-            logger.info(s"Continuing without port checks: $container")
-            container
-          }
-
-        case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
-          F.maybeSuspend {
-            val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
-            logger.info(s"Looks good: ${out -> "container"}")
-            out
-          }
-
-        case Right(HealthCheckResult.Terminated(failure)) =>
-          F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
-
-        case Right(last) =>
-          val maxAttempts = config.healthCheckMaxAttempts
-          val next = attempt + 1
-          if (maxAttempts >= next) {
-            logger.debug(s"Health check uncertain, retrying $next/$maxAttempts on $container...")
-            P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
-          } else {
-            last match {
-              case HealthCheckResult.Failed(failure) =>
-                F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
-
-              case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
-                val sb = new StringBuilder()
-                sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
-                if (unverifiedPorts.nonEmpty) {
-                  sb.append(s"Unchecked ports:\n")
-                  sb.append(unverifiedPorts.niceList())
-                }
-                if (unavailablePorts.unavailablePorts.nonEmpty) {
-                  val portErrors = unavailablePorts.unavailablePorts
-                    .flatMap {
-                      case (port, attempts) =>
-                        attempts.map {
-                          case (tested, cause) =>
-                            (port, tested, cause)
-                        }
-                    }.map {
-                      case (port, tested, None) =>
-                        s"- $port with candidate $tested: no diagnostics"
-                      case (port, tested, Some(cause)) =>
-                        s"- $port with candidate $tested:\n${cause.stackTrace.shift(4)}"
-                    }
-
-                  sb.append(s"Unchecked ports:\n")
-                  sb.append(portErrors.niceList())
-                }
-                F.fail(new TimeoutException(sb.toString()))
-
-              case HealthCheckResult.Terminated(failure) =>
-                F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
-
-              case impossible: GoodHealthcheck =>
-                F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+  protected[this] def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
+    case (container, attempt) =>
+      F.maybeSuspend {
+        logger.debug(s"Awaiting until alive: $container...")
+        inspectContainerAndGetState(container.id.name).map {
+          config.healthCheck.check(logger, container, _)
+        }
+      }.flatMap {
+          case Right(HealthCheckResult.Passed) =>
+            F.maybeSuspend {
+              logger.info(s"Continuing without port checks: $container")
+              Right(container)
             }
-          }
 
-        case Left(t) =>
-          F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
-      }
+          case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
+            F.maybeSuspend {
+              val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
+              logger.info(s"Looks good: ${out -> "container"}")
+              Right(out)
+            }
+
+          case Right(HealthCheckResult.Terminated(failure)) =>
+            F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+
+          case Right(last) =>
+            val maxAttempts = config.healthCheckMaxAttempts
+            val next = attempt + 1
+            if (maxAttempts >= next) {
+              logger.debug(s"Health check uncertain, retrying $next/$maxAttempts on $container...")
+              P.sleep(config.healthCheckInterval).map(_ => Left((container, next)))
+            } else {
+              last match {
+                case HealthCheckResult.Failed(failure) =>
+                  F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
+
+                case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
+                  val sb = new StringBuilder()
+                  sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
+                  if (unverifiedPorts.nonEmpty) {
+                    sb.append(s"Unchecked ports:\n")
+                    sb.append(unverifiedPorts.niceList())
+                  }
+                  if (unavailablePorts.unavailablePorts.nonEmpty) {
+                    val portErrors = unavailablePorts.unavailablePorts
+                      .flatMap {
+                        case (port, attempts) =>
+                          attempts.map {
+                            case (tested, cause) =>
+                              (port, tested, cause)
+                          }
+                      }.map {
+                        case (port, tested, None) =>
+                          s"- $port with candidate $tested: no diagnostics"
+                        case (port, tested, Some(cause)) =>
+                          s"- $port with candidate $tested:\n${cause.stackTrace.shift(4)}"
+                      }
+
+                    sb.append(s"Unchecked ports:\n")
+                    sb.append(portErrors.niceList())
+                  }
+                  F.fail(new TimeoutException(sb.toString()))
+
+                case HealthCheckResult.Terminated(failure) =>
+                  F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
+
+                case impossible: GoodHealthcheck =>
+                  F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+              }
+            }
+
+          case Left(t) =>
+            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
+        }
   }
 
   protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
@@ -253,7 +254,7 @@ open class ContainerResource[F[_], Tag](
               labels = cInspection.getConfig.getLabels.asScala.toMap,
             )
             logger.info(s"Matching container found: ${config.image}->${unverified.name}:${unverified.id}, will try to reuse...")
-            await(unverified, 0)
+            await(unverified)
 
           case None =>
             logger.info(s"No existing container found for ${config.image}, will run new...")
@@ -336,7 +337,7 @@ open class ContainerResource[F[_], Tag](
             container
         }
       }
-      result <- await(out, 0)
+      result <- await(out)
     } yield result
   }
 
