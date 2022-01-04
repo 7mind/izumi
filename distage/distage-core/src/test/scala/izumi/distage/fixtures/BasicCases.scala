@@ -15,6 +15,7 @@ object BasicCases {
     }
 
     class TestImpl0 extends TestDependency0
+    class TestImpl00 extends TestDependency0
 
     trait NotInContext
 

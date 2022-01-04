@@ -507,4 +507,17 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(error.getMessage.contains("String"))
   }
 
+  "stack does not overflow when producing very large dependency chains" in {
+    val max = 4000
+    val definition = new ModuleDef {
+      make[Int].named("0").fromValue(0)
+      for (i <- 1 to max) {
+        make[Int].named(s"$i").from((_: Int) + 1).annotateParameter[Int](s"${i - 1}")
+      }
+    }
+
+    val instance = mkInjector().produceGet[Int](s"$max")(definition).unsafeGet()
+    assert(instance == max)
+  }
+
 }

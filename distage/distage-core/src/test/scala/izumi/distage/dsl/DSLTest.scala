@@ -95,7 +95,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
         make[TestDependency1].from[TestImpl1]
         make[TestDependency0].from[TestImpl0]
-        make[TestDependency0].named("test_param").from[TestImpl0]
+        make[TestDependency0].named("test_param").from[TestImpl00]
       }
 
       val injector = mkInjector()
@@ -107,10 +107,11 @@ class DSLTest extends AnyWordSpec with MkInjector {
       injector.produce(planAnnotated).use {
         locator =>
           val tc = locator.get[TestClass]
-          val ta0 = locator.get[TestDependency0]("test_param")
           val t0 = locator.get[TestDependency0]
-          assert(tc.fieldArgDependency == ta0)
+          val ta0 = locator.get[TestDependency0]("test_param")
           assert(tc.fieldArgDependency != t0)
+          assert(tc.fieldArgDependency == ta0)
+          assert(tc.fieldArgDependency.getClass == classOf[TestImpl00])
       }
     }
 
