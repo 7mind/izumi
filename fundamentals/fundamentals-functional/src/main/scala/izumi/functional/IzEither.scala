@@ -68,12 +68,20 @@ object IzEither extends IzEither {
 
   final class EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** `flatTraverse` with error accumulation */
-    def biFlatMapAggregate[Src[_], L, A](f: T => Either[Src[L], IterableOnce[A]])(implicit b: Factory[A, Col[A]], ev: Src[L] => IterableOnce[L]): Either[List[L], Col[A]] = {
+    def biFlatMapAggregate[Src[_], L, A](
+      f: T => Either[Src[L], IterableOnce[A]]
+    )(implicit b: Factory[A, Col[A]],
+      ev: Src[L] => IterableOnce[L],
+    ): Either[List[L], Col[A]] = {
       biFlatMapAggregateTo(f)(b)
     }
 
     /** `flatTraverse` with error accumulation */
-    def biFlatMapAggregateTo[Src[_], L, A, CC](f: T => Either[Src[L], IterableOnce[A]])(b: Factory[A, CC])(implicit ev: Src[L] => IterableOnce[L]): Either[List[L], CC] = {
+    def biFlatMapAggregateTo[Src[_], L, A, CC](
+      f: T => Either[Src[L], IterableOnce[A]]
+    )(b: Factory[A, CC]
+    )(implicit ev: Src[L] => IterableOnce[L]
+    ): Either[List[L], CC] = {
       val bad = List.newBuilder[L]
       val good = b.newBuilder
 
@@ -137,7 +145,8 @@ object IzEither extends IzEither {
     }
   }
 
-  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x], Src[_]](private val result: Col[Either[Src[L], Col2[R]]]) extends AnyVal {
+  final class EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x], Src[_]](private val result: Col[Either[Src[L], Col2[R]]])
+    extends AnyVal {
     /** `flatSequence` with error accumulation */
     def biFlatAggregate(implicit b: Factory[R, Col[R]], ev: Src[L] => IterableOnce[L]): Either[List[L], Col[R]] = {
       val bad = List.newBuilder[L]
