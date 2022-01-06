@@ -1,4 +1,4 @@
-package izumi.distage.testkit.docker
+   package izumi.distage.testkit.docker
 
 import distage.DIKey
 import izumi.distage.model.definition.Lifecycle

@@ -25,6 +25,7 @@ import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
+import scala.util.chaining._
 
 open class ContainerResource[F[_], Tag](
   val config: Docker.ContainerConfig[Tag],
@@ -41,7 +42,7 @@ open class ContainerResource[F[_], Tag](
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
     )
-    reuseLabel ++ client.labels
+    reuseLabel ++ client.labels ++ config.userTags
   }
 
   protected[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
@@ -78,7 +79,7 @@ open class ContainerResource[F[_], Tag](
     }
 
     if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-      runReused(ports)
+      runReused(ports, client.clientConfig.searchTag)
     } else {
       runNew(ports)
     }
@@ -169,8 +170,9 @@ open class ContainerResource[F[_], Tag](
         }
   }
 
-  protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected[this] def runReused(ports: Seq[PortDecl], searchTag: Option[String]): F[DockerContainer[Tag]] = {
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
+    val searchLabel = searchTag.getOrElse("")
     FileLockMutex.withLocalMutex(logger)(
       s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
       waitFor = 200.millis,
@@ -196,6 +198,7 @@ open class ContainerResource[F[_], Tag](
               .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(statusFilter.asJava)
+              .pipe(cmd => if (searchLabel.isEmpty) cmd else cmd.withLabelFilter(List(searchLabel).asJava))
               .exec().asScala.toList
               .sortBy(_.getId)
           } catch {
