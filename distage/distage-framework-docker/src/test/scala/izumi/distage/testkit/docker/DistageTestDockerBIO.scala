@@ -1,10 +1,10 @@
-   package izumi.distage.testkit.docker
+package izumi.distage.testkit.docker
 
 import distage.DIKey
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
+import izumi.distage.testkit.docker.fixtures.{PgSvcExample, PostgresModuleOverrides, ReuseCheckContainer}
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.logstage.api.Log
@@ -70,4 +70,16 @@ final class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
 }
 final class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Error)
+}
+
+// Labels tests
+final class DistageTestDockerTagsTest1 extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = super.config.moduleOverrides overriddenBy PostgresModuleOverrides.taggedDockerModule
+  )
+}
+final class DistageTestDockerTagsTest2 extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = super.config.moduleOverrides overriddenBy PostgresModuleOverrides.taggedDockerModule
+  )
 }

@@ -1,12 +1,15 @@
 package izumi.distage.testkit.docker.fixtures
 
+import distage.ModuleDef
 import distage.config.ConfigModuleDef
-import izumi.distage.docker.Docker.AvailablePort
+import izumi.distage.docker.ContainerDef
+import izumi.distage.docker.Docker.{AvailablePort, DockerPort}
 import izumi.distage.docker.bundled._
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Mode
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import zio.Task
@@ -26,6 +29,33 @@ class PgSvcExample(
     val portCheck = new PortCheck(50.milliseconds)
     portCheck.check(pg)
     portCheck.check(pgfw)
+  }
+}
+
+object PostgresTestDocker extends ContainerDef {
+  val primaryPort: DockerPort = DockerPort.TCP(5432)
+
+  override def config: Config = {
+    Config(
+      image = "library/postgres:12.3",
+      ports = Seq(primaryPort),
+      env = Map("POSTGRES_PASSWORD" -> "postgres"),
+      userTags = Map("user.specific.tag" -> "test.tag"),
+      healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),
+    )
+  }
+}
+
+object PostgresModuleOverrides {
+  val taggedDockerModule = new ModuleDef {
+    make[PostgresTestDocker.Container].fromResource {
+      PostgresTestDocker.make[Task]
+    }
+
+    make[AvailablePort].named("pg").tagged(Mode.Test).from {
+      pg: PostgresTestDocker.Container =>
+        pg.availablePorts.first(PostgresDocker.primaryPort)
+    }
   }
 }
 

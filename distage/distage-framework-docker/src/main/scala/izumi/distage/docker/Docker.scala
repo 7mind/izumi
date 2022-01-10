@@ -198,8 +198,6 @@ object Docker {
     *
     * @param registry     Options to connect to custom Docker Registry host,
     *                     will try to connect to specified registry, instead of the default if [[useRegistry]] is `true`
-    *
-    * @param searchTag    A tag that is used to search containter. Useful when several containers are available to reuse
     */
   final case class ClientConfig(
     globalReuse: DockerReusePolicy = ClientConfig.defaultReusePolicy,
@@ -207,7 +205,6 @@ object Docker {
     useRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
     registry: Option[DockerRegistryConfig] = None,
-    searchTag: Option[String] = None,
   )
 
   object ClientConfig {
