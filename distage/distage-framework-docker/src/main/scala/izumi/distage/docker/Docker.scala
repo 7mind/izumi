@@ -142,6 +142,9 @@ object Docker {
     *
     * @param env      Setup environment variables visible inside docker container
     *
+    * @param userTags User defined container labels that used to differentiate between containers with the same name
+    *                 but with different configs
+    *
     * @param cmd      Entrypoint command to use
     *
     * @param entrypoint Docker entrypoint to use
@@ -158,6 +161,7 @@ object Docker {
     ports: Seq[DockerPort],
     name: Option[String] = None,
     env: Map[String, String] = Map.empty,
+    userTags: Map[String, String] = Map.empty,
     cmd: Seq[String] = Seq.empty,
     entrypoint: Seq[String] = Seq.empty,
     cwd: Option[String] = None,

@@ -2,16 +2,16 @@ package izumi.distage.testkit.docker.fixtures
 
 import distage.config.ConfigModuleDef
 import izumi.distage.docker.Docker.AvailablePort
-import izumi.distage.docker.bundled._
+import izumi.distage.docker.bundled.*
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Mode
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import zio.Task
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class PgSvcExample(
   val pg: AvailablePort @Id("pg"),
