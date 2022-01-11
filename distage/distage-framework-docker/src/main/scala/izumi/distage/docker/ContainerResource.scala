@@ -41,7 +41,7 @@ open class ContainerResource[F[_], Tag](
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
     )
-    reuseLabel ++ client.labels
+    reuseLabel ++ client.labels ++ config.userTags
   }
 
   protected[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
@@ -196,6 +196,7 @@ open class ContainerResource[F[_], Tag](
               .listContainersCmd()
               .withAncestorFilter(List(config.image).asJava)
               .withStatusFilter(statusFilter.asJava)
+              .withLabelFilter(config.userTags.asJava)
               .exec().asScala.toList
               .sortBy(_.getId)
           } catch {
