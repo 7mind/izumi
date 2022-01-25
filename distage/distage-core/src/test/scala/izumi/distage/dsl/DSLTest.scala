@@ -685,6 +685,16 @@ class DSLTest extends AnyWordSpec with MkInjector {
       }
     }
 
+    "Progression test: modifier bindings shouldn't be always unequal without capturing outer variables, but they are" in {
+      def mkDefinition(): ModuleDef = new ModuleDef {
+        modify[Int](_ + 1)
+      }
+
+      intercept[TestFailedException] {
+        assert(mkDefinition() == mkDefinition())
+      }
+    }
+
   }
 
 }
