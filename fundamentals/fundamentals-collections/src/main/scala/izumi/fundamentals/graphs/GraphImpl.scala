@@ -11,7 +11,7 @@ object GraphImpl {
   }
 
   trait DirectedGraphPred[N, +M] extends GraphImpl[N, M] { this: AbstractGraph[N, M] =>
-    def predcessors: IncidenceMatrix[N]
+    def predecessors: IncidenceMatrix[N]
   }
 
 }

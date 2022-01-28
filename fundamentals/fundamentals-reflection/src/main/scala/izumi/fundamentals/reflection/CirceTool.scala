@@ -9,7 +9,6 @@ object CirceTool {
 }
 
 class CirceToolMacro(val c: blackbox.Context) {
-
   import c.universe._
 
   @inline def make[T: c.WeakTypeTag](): c.Expr[Unit] = {
@@ -20,8 +19,7 @@ class CirceToolMacro(val c: blackbox.Context) {
     val allSymbols = all.map(_.typeSymbol)
 
     println(s"/* -- BEGIN: $base -- */")
-    val x = all
-      .toSeq
+    val x = all.toSeq
       .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java") || !t.toString.contains("."))
       .filter(t => t.typeSymbol.isClass)
       .sortBy {
@@ -59,7 +57,7 @@ class CirceToolMacro(val c: blackbox.Context) {
     println(x.filter(_.nonEmpty).mkString("\n"))
     println(s"/* -- END: $base -- */")
 
-    reify(())
+    c.Expr[Unit](q"()")
   }
 
   private def complexPoly[T: c.WeakTypeTag](t: c.universe.Type) = {

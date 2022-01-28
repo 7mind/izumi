@@ -14,14 +14,20 @@ object IzScala {
     def parse(versionString: String): ScalaRelease = {
       val parts = versionString.split('.').toList
       parts match {
-        case "2" :: "12" :: bugfix :: Nil =>
-          ScalaRelease.`2_12`(Integer.parseInt(bugfix))
-        case "2" :: "13" :: bugfix :: Nil =>
-          ScalaRelease.`2_13`(Integer.parseInt(bugfix))
-        case major :: minor :: bugfix :: Nil =>
-          ScalaRelease.Unsupported(Seq(Integer.parseInt(major), Integer.parseInt(minor), Integer.parseInt(bugfix)))
+        case "2" :: "12" :: ParseInt(bugfix) :: Nil =>
+          ScalaRelease.`2_12`(bugfix)
+        case "2" :: "13" :: ParseInt(bugfix) :: Nil =>
+          ScalaRelease.`2_13`(bugfix)
+        case ParseInt(major) :: ParseInt(minor) :: ParseInt(bugfix) :: Nil =>
+          ScalaRelease.Unsupported(Seq(major, minor, bugfix))
         case _ =>
           ScalaRelease.Unknown(versionString)
+      }
+    }
+    private[this] object ParseInt {
+      def unapply(str: String): Option[Int] = {
+        try { Some(Integer.parseInt(str)) }
+        catch { case _: NumberFormatException => None }
       }
     }
 

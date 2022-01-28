@@ -8,11 +8,11 @@ import scala.collection.mutable
 
 // TODO: this class is not required for distage
 @nowarn("msg=Unused import")
-final class CycleEraser[N](predcessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
+final class CycleEraser[N](predecessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
   import scala.collection.compat._
 
   private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
-  private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predcessorsMatrix)
+  private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predecessorsMatrix)
 
   def run(): Either[DAGError[N], IncidenceMatrix[N]] = {
     val (noPreds, hasPreds) = current.partition(_._2.isEmpty)

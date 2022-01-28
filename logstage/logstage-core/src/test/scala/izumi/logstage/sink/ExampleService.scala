@@ -15,10 +15,10 @@ import scala.util.Random
 
 @ExposedTestScope
 @nowarn("msg=[Ee]xpression.*logger")
-@nowarn("msg=missing interpolator")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 
+  @nowarn("msg=missing interpolator")
   def start(): Unit = {
     val justAnArg = "this is an argument"
     val justAList = List[Any](10, "green", "bottles")
@@ -92,6 +92,7 @@ class ExampleService(logger: IzLogger) {
     suspended()
   }
 
+  @nowarn("msg=missing interpolator")
   private def runStrict(): Unit = {
     final case class NoInstance(x: Int)
     final case class YesInstance(x: Int)

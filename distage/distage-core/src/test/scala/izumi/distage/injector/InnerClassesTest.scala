@@ -10,7 +10,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
     import InnerClassStablePathsCase._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[StableObjectInheritingTrait.TestDependency]
       make[StableObjectInheritingTrait1.TestDependency]
     })
@@ -26,7 +26,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TestDependency]
       make[TestClass]
     })
@@ -41,7 +41,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val testProviderModule = new TestModule
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
@@ -60,7 +60,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
       val testProviderModule = new TestModule
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
 //        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.TestClass]
         make[testProviderModule.TestDependency]
@@ -101,7 +101,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val testProviderModule = new TestModule
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
 //      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
@@ -119,7 +119,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can handle class local path-dependent injections (macros can)" in {
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
       make[TopLevelPathDepTest.TestClass]
       make[TopLevelPathDepTest.TestDependency]
@@ -136,7 +136,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   "Can handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
     import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TestFactory]
     })
 
@@ -149,7 +149,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameCircular1]
       make[ByNameCircular2]
     })
@@ -181,7 +181,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
-    private val definition = PlannerInput.noGC(new ModuleDef {
+    private val definition = PlannerInput.everything(new ModuleDef {
       make[InnerPathDepTest.this.type].from[InnerPathDepTest.this.type](InnerPathDepTest.this: InnerPathDepTest.this.type)
       make[TestClass]
       make[TestDependency]

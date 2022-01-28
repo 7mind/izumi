@@ -74,7 +74,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -91,7 +91,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -103,8 +103,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
       unsafeRun {
         import izumi.functional.bio.catz.BIOToBracket
-        ctxResource
-          .toCats
+        ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
       }
@@ -127,7 +126,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
+      assert(res.getMessage contains "implicit")
+      assert(res.getMessage contains "AdaptFunctoid.Aux")
     }
 
   }
@@ -179,7 +179,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.noGC(definition, Activation.empty))
+      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -196,7 +196,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         IO(assert(!i1.initialized && !i2.initialized))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, ?]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
 
       val ctxResource = produceBIO[IO]
 
@@ -208,8 +208,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
       unsafeRun {
         import izumi.functional.bio.catz.BIOToBracket
-        ctxResource
-          .toCats
+        ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
       }
@@ -232,7 +231,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       """
         )
       )
-      assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
+      assert(res.getMessage contains "implicit")
+      assert(res.getMessage contains "AdaptFunctoid.Aux")
     }
 
     "Lifecycle.fromZIO(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {

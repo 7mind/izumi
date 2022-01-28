@@ -21,8 +21,7 @@ final class LocatorDefaultImpl[F[_]](
     dependencyMap.get(key)
 
   override def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
-    dependencyMap
-      .finalizers
+    dependencyMap.finalizers
       .filter(_.fType == SafeType.getK[F1])
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])
   }

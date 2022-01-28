@@ -27,7 +27,7 @@ class BootstrapTest extends AnyWordSpec {
         context.get[PlanAnalyzer]("another.one")
       }
 
-      intercept[AssertionError] {
+      intercept[IllegalArgumentException] {
         context.lookupLocal[Long](DIKey.get[PlanAnalyzer])
       }
 

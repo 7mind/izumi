@@ -1,7 +1,5 @@
 package izumi.distage.roles.test.fixtures
 
-import java.util.concurrent.ExecutorService
-
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.definition.{Id, Lifecycle}
@@ -10,13 +8,15 @@ import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
-import izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
+import izumi.distage.roles.test.fixtures.TestPluginCatsIO.NotCloseable
 import izumi.distage.roles.test.fixtures.roles.TestRole00.TestRole00Resource
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
+
+import java.util.concurrent.ExecutorService
 
 class TestTask00[F[_]: QuasiIO](logger: IzLogger) extends RoleTask[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
@@ -25,6 +25,7 @@ class TestTask00[F[_]: QuasiIO](logger: IzLogger) extends RoleTask[F] {
     }
   }
 }
+
 object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
@@ -57,17 +58,20 @@ object roles {
         }
     }
   }
+
   object TestRole00 extends RoleDescriptor {
     override final val id = "testrole00"
 
     override def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, Some("Example role"), None, freeArgsAllowed = true)
 
     final case class IntegrationOnlyCfg(flag: Boolean)
+
     final case class IntegrationOnlyCfg2(value: String)
 
     final case class SetElementOnlyCfg(abc: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck[F])
+
     final class TestRole00ResourceIntegrationCheck[F[_]: QuasiIO](
       private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
@@ -91,6 +95,7 @@ class TestRole01[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
       }
   }
 }
+
 object TestRole01 extends RoleDescriptor {
   override final val id = "testrole01"
 
@@ -107,6 +112,7 @@ class TestRole02[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
       }
   }
 }
+
 object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
 }
@@ -125,6 +131,7 @@ class TestRole03[F[_]: QuasiIO](
       }
   }
 }
+
 object TestRole03 extends RoleDescriptor {
   final val expectedError = "bad axisComponent"
   override final val id = "testrole03"
@@ -144,6 +151,7 @@ class TestRole04[F[_]: QuasiIO](
       }
   }
 }
+
 object TestRole04 extends RoleDescriptor {
   override final val id = "testrole04"
 }
@@ -153,6 +161,7 @@ class FailingRole01[F[_]: QuasiIO](
 ) extends RoleService[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.unit
 }
+
 object FailingRole01 extends RoleDescriptor {
   final val expectedError = "Instance is not available in the object graph: {type.izumi.distage.framework.services.IntegrationChecker[=λ %0 → IO[+0]]}"
   override final val id = "failingrole01"
@@ -164,6 +173,7 @@ class FailingRole02[F[_]: QuasiIO](
 ) extends RoleService[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.unit
 }
+
 object FailingRole02 extends RoleDescriptor {
   override final val id = "failingrole02"
 }

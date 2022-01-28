@@ -5,7 +5,7 @@
 ### Dependency Pruning
 
 `distage` performs pruning of all unused bindings by default.
-When you configure a set of "root" keys - 
+When you configure a set of "root" keys -
 either explicitly by passing @scaladoc[Roots](izumi.distage.model.plan.Roots)
 or implicitly by using @scaladoc[Injector#produceRun](izumi.distage.model.Injector#produceRun) or @scaladoc[Injector#produceGet](izumi.distage.model.Injector#produceGet) methods, `distage` will remove all bindings that aren't required to create the supplied roots – these bindings will be thrown out and not even considered, much less executed.
 
@@ -91,7 +91,7 @@ objects.find[C]
 import distage.{DIKey, Roots, ModuleDef, Injector}
 
 class A(val b: B)
-class B(val a: A) 
+class B(val a: A)
 class C(val c: C)
 
 def module = new ModuleDef {
@@ -188,7 +188,7 @@ final case class Weak() extends Elem {
 def module = new ModuleDef {
   make[Strong]
   make[Weak]
-  
+
   many[Elem]
     .ref[Strong]
     .weak[Weak]
@@ -196,7 +196,7 @@ def module = new ModuleDef {
 
 // Designate Set[Elem] as the garbage collection root,
 // everything that Set[Elem] does not strongly depend on will be garbage collected
-// and will not be constructed. 
+// and will not be constructed.
 
 val roots = Roots.target[Set[Elem]]
 
@@ -232,7 +232,7 @@ final class Weak extends Elem {
 def module = new ModuleDef {
   make[Strong]
   make[Weak]
-  
+
   many[Elem]
     .ref[Strong]
     .weak[Weak]
@@ -301,8 +301,7 @@ Calling `.foreach` on an auto-set is safe; the actions will be executed in order
 
 e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.  When using an auto-set for finalization, you must `.reverse` the autoset.
 
-Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), they are assembled *after* garbage collection is done,
-as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
+Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), as such they cannot contain garbage by construction. Because of this they effectively cannot be used as GC Roots.
 
 Further reading:
 
@@ -367,7 +366,7 @@ You may run a new planning cycle, inheriting the instances from an existing `Loc
 val childInjector = Injector.inherit(objects)
 
 class Printer(a: A, b: B, c: C) {
-  def printEm() = 
+  def printEm() =
     println(s"I've got A=$a, B=$b, C=$c, all here!")
 }
 

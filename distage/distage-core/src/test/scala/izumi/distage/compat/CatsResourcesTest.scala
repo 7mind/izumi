@@ -1,5 +1,6 @@
 package izumi.distage.compat
 
+import cats.arrow.FunctionK
 import cats.effect.{Bracket, IO, Resource, Sync}
 import distage._
 import izumi.distage.compat.CatsResourcesTest._
@@ -73,7 +74,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     }
 
     val injector = Injector[Identity]()
-    val plan = injector.plan(PlannerInput.noGC(definition ++ new ModuleDef {
+    val plan = injector.plan(PlannerInput.everything(definition ++ new ModuleDef {
       addImplicit[Sync[IO]]
     }))
 
@@ -102,7 +103,9 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .unsafeRunSync()
 
     ctxResource
+      .mapK(FunctionK.id[IO])
       .toCats
+      .mapK(FunctionK.id[IO])
       .use(assert1)
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()
@@ -111,8 +114,8 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
   "cats instances for Lifecycle" in {
     def failImplicit[A](implicit a: A = null): A = a
     def request[F[_]: cats.effect.Sync] = {
-      val F = cats.Functor[Lifecycle[F, ?]]
-      val M = cats.Monad[Lifecycle[F, ?]]
+      val F = cats.Functor[Lifecycle[F, _]]
+      val M = cats.Monad[Lifecycle[F, _]]
       val m = cats.Monoid[Lifecycle[F, Int]]
       val _ = (F, m, M)
       val fail = failImplicit[cats.kernel.Order[Lifecycle[F, Int]]]
@@ -138,7 +141,8 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       """
       )
     )
-    assert(res.getMessage contains "could not find implicit value for parameter adapt: izumi.distage.model.definition.Lifecycle.AdaptFunctoid.Aux")
+    assert(res.getMessage contains "implicit")
+    assert(res.getMessage contains "AdaptFunctoid.Aux")
   }
 
 }

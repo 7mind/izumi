@@ -10,7 +10,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. @ref[**distage**](distage/00_distage.md) – Transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. @ref[**distage**](distage/00_distage.md) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
 2. @ref[**distage-testkit**](distage/distage-testkit.md) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. @ref[**distage-framework-docker**](distage/distage-framework-docker.md) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. @ref[**LogStage**](logstage/00_logstage.md) – Automatic structural logs from Scala string interpolations,
@@ -24,7 +24,7 @@ including the following components:
 Dependencies
 ------------
 
-To use, add the following into `project/build.sbt`,
+To use, add the following into `build.sbt`,
 
 @@@vars
 
@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi.version$",
   // LogStage integration with DIStage
   "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
-  
+
   // LogStage core library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
   // Write logs as JSON
@@ -66,7 +66,7 @@ Documentation
 
 * @scaladoc[Scaladoc](izumi.index)
 * [Documentation](https://izumi.7mind.io/)
-* SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/)
+* SNAPSHOT [Documentation](https://izumi.7mind.io/latest/snapshot/)
 
 Further reading
 ---------------
@@ -82,27 +82,32 @@ Support Chats:
 * [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
 
+Videos:
+
+* [Izumi 1.0: Your Next Scala Stack](https://www.youtube.com/watch?v=o65sKWnFyk0)
+* [Scala, Functional Programming and Team Productivity (an overview of distage, distage-framework-docker & distage-testkit)](https://www.youtube.com/watch?v=QbdeVoL4hBk)
+* [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs)
+* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+* [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
+
 Slides:
 
+* [Izumi 1.0: Your Next Scala Stack](https://www.slideshare.net/7mind/izumi-10-your-next-scala-stack)
+* [Scala, Functional Programming and Team Productivity](https://www.slideshare.net/7mind/scala-functional-programming-and-team-productivity)
 * [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
 * [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 * [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [More slides](https://github.com/7mind/slides)
-
-Videos:
-
-* [Hyper-pragmatic Pure FP Testing with distage-testkit, Functional Scala, London](https://www.youtube.com/watch?v=CzpvjkUukAs)
-* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
 Credits
 =======
 
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
-YourKit supports open source projects with innovative and intelligent tools 
+YourKit supports open source projects with innovative and intelligent tools
 for monitoring and profiling Java and .NET applications.
-YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/) 
-[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
+YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/)
+[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
 @@toc { depth=2 }

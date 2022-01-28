@@ -43,7 +43,7 @@ object MacroParametersImpl {
     val prefix = s"$name="
     val value = c.settings.find(_.startsWith(prefix)).map(_.stripPrefix(prefix))
     if (value.isEmpty) {
-      c.warning(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options")
+      c.info(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options", force = true)
     }
 
     import c.universe._
@@ -56,7 +56,7 @@ object MacroParametersImpl {
     val prefix = s"$name="
     val value = c.settings.find(_.startsWith(prefix)).map(_.stripPrefix(prefix))
     if (value.isEmpty) {
-      c.warning(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options")
+      c.info(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options", force = true)
     }
 
     import c.universe._

@@ -13,6 +13,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     }
 
   def tap[R, E, A](r: F[R, E, A], f: A => F[R, E, Unit]): F[R, E, A] = flatMap(r)(a => as(f(a))(a))
+
   @inline final def when[R, E, E1](cond: F[R, E, Boolean])(ifTrue: F[R, E1, Unit])(implicit ev: E <:< E1): F[R, E1, Unit] = {
     ifThenElse(cond)(ifTrue, unit)
   }
@@ -26,6 +27,53 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
   )(implicit @unused ev: E <:< E1
   ): F[R, E1, A] = {
     flatMap(cond.asInstanceOf[F[R, E1, Boolean]])(if (_) ifTrue else ifFalse)
+  }
+
+  /** Extracts the optional value, or executes the `fallbackOnNone` effect */
+  def fromOptionF[R, E, A](fallbackOnNone: => F[R, E, A], r: F[R, E, Option[A]]): F[R, E, A] = {
+    flatMap(r) {
+      case Some(value) => pure(value)
+      case None => fallbackOnNone
+    }
+  }
+
+  /**
+    * Execute an action repeatedly until its result fails to satisfy the given predicate
+    * and return that result, discarding all others.
+    */
+  @inline def iterateWhile[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+    flatMap(r)(i => iterateWhileF(i)(_ => r)(p))
+  }
+
+  /**
+    * Execute an action repeatedly until its result satisfies the given predicate
+    * and return that result, discarding all others.
+    */
+  @inline def iterateUntil[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+    flatMap(r)(i => iterateUntilF(i)(_ => r)(p))
+  }
+
+  /**
+    * Apply an effectful function iteratively until its result fails
+    * to satisfy the given predicate and return that result.
+    */
+  @inline def iterateWhileF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+    tailRecM(init) {
+      a =>
+        if (p(a)) {
+          map(f(a))(Left(_))
+        } else {
+          pure(Right(a))
+        }
+    }
+  }
+
+  /**
+    * Apply an effectful function iteratively until its result satisfies
+    * the given predicate and return that result.
+    */
+  @inline def iterateUntilF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+    iterateWhileF(init)(f)(!p(_))
   }
 
   // defaults

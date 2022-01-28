@@ -3,6 +3,7 @@ package izumi.distage.modules.support
 import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
 import izumi.distage.model.definition.ModuleDef
+import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
@@ -11,8 +12,15 @@ object CatsIOSupportModule extends CatsIOSupportModule
   *
   *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
+  *
+  * Will also add the following components:
+  *   - [[cats.effect.Blocker]] by using [[cats.effect.Blocker.apply]]
+  *
+  * Added into scope by [[izumi.distage.modules.DefaultModule]].
+  *
+  * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait CatsIOSupportModule extends ModuleDef {
+trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportModule {
   // QuasiIO & cats-effect instances
   include(AnyCatsEffectSupportModule[IO])
 
@@ -24,7 +32,7 @@ trait CatsIOSupportModule extends ModuleDef {
   make[PublicIOApp]
 }
 
-private trait PublicIOApp extends IOApp {
+private[support] trait PublicIOApp extends IOApp {
   override def contextShift: ContextShift[IO] = super.contextShift
   override def timer: Timer[IO] = super.timer
   override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0))

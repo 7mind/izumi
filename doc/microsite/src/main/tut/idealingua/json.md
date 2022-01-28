@@ -49,7 +49,7 @@ data NamedIntPair {
 Should be rendered as:
 
 ```json
-{ 
+{
   "example.IntPair#Struct": {
     "x": 256,
     "y": 512
@@ -95,7 +95,7 @@ Should be rendered as:
 
 ```json
 {
-  "A": { 
+  "A": {
     "value": 1
   }
 }
@@ -168,7 +168,7 @@ package example
 service SayHello {
   def sayHello(): str
 }
-``` 
+```
 
 `sayHello` method will return a result rendered as:
 

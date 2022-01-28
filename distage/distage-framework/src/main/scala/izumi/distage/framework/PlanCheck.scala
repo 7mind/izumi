@@ -35,7 +35,7 @@ import scala.annotation.tailrec
   *   object WiringCheck extends PlanCheck.Main(MainLauncher)
   * }}}
   *
-  * The object will emit compile-time errors for any issues or omissions in your `ModuleDef`s
+  * This object will emit compile-time errors for any issues or omissions in your `ModuleDefs`
   *
   * @see [[izumi.distage.framework.PlanCheckConfig Configuration Options]]
   * @see [[izumi.distage.framework.CheckableApp Support for checking not role-based applications]]
@@ -77,22 +77,34 @@ object PlanCheck {
     def assertApp(
       app: CheckableApp,
       cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
+      planVerifier: PlanVerifier = PlanVerifier(),
       logger: TrivialLogger = defaultLogger(),
     ): Unit = {
-      checkApp(app, cfg, logger).throwOnError()
+      checkApp(app, cfg, planVerifier, logger).throwOnError()
     }
 
     /** @return a list of issues, if any. Does not throw. */
     def checkApp(
       app: CheckableApp,
       cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
+      planVerifier: PlanVerifier = PlanVerifier(),
       logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
       val chosenRoles = parseRoles(cfg.roles)
       val chosenActivations = parseActivations(cfg.excludeActivations)
       val chosenConfig = if (cfg.config == "*") None else Some(cfg.config)
 
-      checkAppParsed[app.AppEffectType](app, chosenRoles, chosenActivations, chosenConfig, cfg.checkConfig, cfg.printBindings, cfg.onlyWarn, logger)
+      checkAppParsed[app.AppEffectType](
+        app,
+        chosenRoles,
+        excludedActivations = chosenActivations,
+        chosenConfig = chosenConfig,
+        checkConfig = cfg.checkConfig,
+        printBindings = cfg.printBindings,
+        onlyWarn = cfg.onlyWarn,
+        planVerifier,
+        logger,
+      )
     }
 
     /** @return a list of issues, if any. Does not throw. */
@@ -104,6 +116,7 @@ object PlanCheck {
       checkConfig: Boolean,
       printBindings: Boolean,
       onlyWarn: Boolean = false,
+      planVerifier: PlanVerifier = PlanVerifier(),
       logger: TrivialLogger = defaultLogger(),
     ): PlanCheckResult = {
 
@@ -112,10 +125,6 @@ object PlanCheck {
       var effectiveBsPlugins = LoadedPlugins.empty
       var effectiveAppPlugins = LoadedPlugins.empty
       var effectivePlugins = LoadedPlugins.empty
-
-      def continue: PlanCheckInput[F] => PlanVerifierResult = {
-        checkAnyApp[F](excludedActivations, checkConfig, effectiveConfig = _)
-      }
 
       def renderPlugins(plugins: Seq[PluginBase]): String = {
         val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
@@ -190,20 +199,20 @@ object PlanCheck {
       logger.log(s"Checking with roles=`$chosenRoles` excludedActivations=`$excludedActivations` chosenConfig=`$chosenConfig`")
 
       try {
-        val data = app.preparePlanCheckInput(chosenRoles, chosenConfig)
+        val input = app.preparePlanCheckInput(chosenRoles, chosenConfig)
 
-        effectiveRoots = data.roots match {
+        effectiveRoots = input.roots match {
           case Roots.Of(roots) => roots.mkString(", ")
           case Roots.Everything => "<Roots.Everything>"
         }
-        effectiveAppPlugins = data.appPlugins
-        effectiveBsPlugins = data.bsPlugins
-        val loadedPlugins = data.appPlugins ++ data.bsPlugins
+        effectiveAppPlugins = input.appPlugins
+        effectiveBsPlugins = input.bsPlugins
+        val loadedPlugins = input.appPlugins ++ input.bsPlugins
         effectivePlugins = loadedPlugins
 
-        continue(data) match {
+        checkAnyApp[F](planVerifier, excludedActivations, checkConfig, effectiveConfig = _)(input) match {
           case incorrect: PlanVerifierResult.Incorrect => returnPlanCheckError(Right(incorrect))
-          case PlanVerifierResult.Correct(visitedKeys) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
+          case PlanVerifierResult.Correct(visitedKeys, _) => PlanCheckResult.Correct(loadedPlugins, visitedKeys)
         }
       } catch {
         case t: Throwable =>
@@ -213,14 +222,15 @@ object PlanCheck {
     }
 
     private[this] def checkAnyApp[F[_]](
+      planVerifier: PlanVerifier,
       excludedActivations: Set[NonEmptySet[AxisPoint]],
       checkConfig: Boolean,
       reportEffectiveConfig: String => Unit,
-    )(ph: PlanCheckInput[F]
+    )(planCheckInput: PlanCheckInput[F]
     ): PlanVerifierResult = {
-      val PlanCheckInput(effectType, module, roots, providedKeys, configLoader, _, _) = ph
+      val PlanCheckInput(effectType, module, roots, providedKeys, configLoader, _, _) = planCheckInput
 
-      val planVerifierResult = PlanVerifier().verify[F](
+      val planVerifierResult = planVerifier.verify[F](
         bindings = module,
         roots = roots,
         providedKeys = providedKeys,
@@ -257,7 +267,7 @@ object PlanCheck {
 
       NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
         case Some(allIssues) =>
-          PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys)
+          PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys, planVerifierResult.time)
         case None =>
           planVerifierResult
       }

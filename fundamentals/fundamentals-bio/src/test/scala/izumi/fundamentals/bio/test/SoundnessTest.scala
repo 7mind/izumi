@@ -37,7 +37,7 @@ class SoundnessTest extends AnyWordSpec {
       }
       zio.Runtime.default.unsafeRun(valueF[zio.ZIO].provide(1))
       """))
-    assert(res.getMessage contains "could not find implicit value for parameter")
+    assert(res.getMessage contains "implicit")
     assert(res.getMessage contains "BIOArrow2")
   }
 
@@ -49,7 +49,7 @@ class SoundnessTest extends AnyWordSpec {
     }
     zio.Runtime.default.unsafeRun(valueZIO.provide(1))
     """))
-    assert(res.getMessage contains "could not find implicit value for parameter")
+    assert(res.getMessage contains "implicit")
     assert(res.getMessage contains "BIOArrow2")
   }
 }

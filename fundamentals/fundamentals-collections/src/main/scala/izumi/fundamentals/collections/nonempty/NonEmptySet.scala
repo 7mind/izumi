@@ -976,6 +976,8 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
     * @return A new <code>NonEmptySet</code> containing pairs consisting of all elements of this <code>NonEmptySet</code> paired with their index. Indices start at 0.
     */
   def zipWithIndex: NonEmptySet[(T, Int)] = new NonEmptySet(toSet.zipWithIndex)
+
+  def widen[U >: T]: NonEmptySet[U] = new NonEmptySet(toSet.toSet[U])
 }
 
 /**

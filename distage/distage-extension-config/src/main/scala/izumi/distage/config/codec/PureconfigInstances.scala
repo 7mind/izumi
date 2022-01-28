@@ -37,8 +37,8 @@ trait PureconfigInstances {
     */
   @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
 
-  private[this] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
-  private[this] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
+  private[codec] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
+  private[codec] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {
     override def from(cur: ConfigCursor, options: Seq[String]): Result[CoproductHint.Action] = {
       for {
         objCur <- cur.asObjectCursor

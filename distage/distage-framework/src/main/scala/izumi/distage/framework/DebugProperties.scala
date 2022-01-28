@@ -32,11 +32,18 @@ object DebugProperties extends properties.DebugProperties {
   final val `izumi.distage.plancheck.only-warn` = BoolProperty("izumi.distage.plancheck.only-warn")
 
   /**
-    *  Print debug me∑ssages during plan checking.
+    *  Print debug messages during plan checking.
     *
     *  Default: `false`
     *
     *  @note To affect compile-time, the system property must be set in sbt, `sbt -Dprop=true`, or by adding the option to `.jvmopts` in project root.
     */
   final val `izumi.debug.macro.distage.plancheck` = BoolProperty("izumi.debug.macro.distage.plancheck")
+
+  /**
+    *  Print debug me∑ssages during application shutdown.
+    *
+    *  Default: `false`
+    */
+  final val `izumi.debug.distage.shutdown` = BoolProperty("izumi.debug.distage.shutdown")
 }

@@ -146,7 +146,7 @@ class PostgresRunAsAdminModule[F[_]: TagK] extends ModuleDef {
   make[PostgresDocker.Container].fromResource {
     PostgresDocker
       .make[F]
-      .modifyConfig { 
+      .modifyConfig {
         () => (old: PostgresDocker.Config) =>
           old.copy(user = Some("admin"))
       }
@@ -173,14 +173,14 @@ class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 }
 ```
 
-#### dependOnDocker
+#### dependOnContainer
 
-@scaladoc[`dependOnDocker`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnDocker)
-adds a dependency on a given Docker container. `distage` ensures the requested container is available
-before the dependent is provided.
+@scaladoc[`dependOnContainer`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnContainer)
+adds a dependency on a given Docker container.
+`distage` ensures the requested container is available before the dependent.
 
 For example, suppose a system under test requires both PostgreSQL and Elasticsearch. One option is to
-use `dependOnDocker` to declare the Elasticsearch container depends on the PostgreSQL container:
+use `dependOnContainer` to declare the Elasticsearch container depends on the PostgreSQL container:
 
 ```scala mdoc:to-string
 object ElasticSearchDocker extends ContainerDef {
@@ -201,7 +201,7 @@ class ElasticSearchPlusPostgresModule[F[_]: TagK] extends ModuleDef {
   }
 
   make[ElasticSearchDocker.Container].fromResource {
-    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker)
+    ElasticSearchDocker.make[F].dependOnContainer(PostgresDocker)
   }
 }
 ```
@@ -238,15 +238,15 @@ health check.
 
 ### Usage in Integration Tests
 
-A common use case is using Docker containers to provide service implementations for integration test, such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
-`distage` container resources are easy to integrate as providers.
+A common use case is using Docker containers to provide service implementations for integration test,
+such as using a PostgreSQL container for verifying an application that uses a PostgreSQL database.
 
 Consider the example application below. This application is written to depend on a
 [doobie](https://tpolecat.github.io/doobie/) `Transactor`, which is constructed from a
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
-import cats.effect.ContextShift
+import cats.effect.{Async, ContextShift}
 import doobie.Transactor
 import doobie.syntax.connectionio._
 import doobie.syntax.string._
@@ -277,24 +277,22 @@ final case class PostgresServerConfig(
 
 object TransactorFromConfigModule extends ModuleDef {
   make[Transactor[IO]].from {
-    (config: PostgresServerConfig, contextShift: ContextShift[IO]) =>
-      implicit val CS = contextShift
+    (config: PostgresServerConfig, async: Async[IO], contextShift: ContextShift[IO]) =>
 
       Transactor.fromDriverManager[IO](
         driver = "org.postgresql.Driver",
         url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
         user   = config.username,
         pass   = config.password,
-      )
+      )(async, contextShift)
   }
 }
 ```
 
-Note that the above code is agnostic of environment. Provided a `PostgresServerConfig`, the
-`Transactor` needed by `PostgresExampleApp` can be constructed.
+Note that the above code is agnostic of environment.
+Provided a `PostgresServerConfig`, the `Transactor` needed by `PostgresExampleApp` can be constructed.
 
-An integration test would use a module that provides the `PostgresServerConfig` from a
-`PostgresDocker.Container`:
+An integration test would use a module that provides the `PostgresServerConfig` from a `PostgresDocker.Container`:
 
 ```scala mdoc:to-string
 object PostgresUsingDockerModule extends ModuleDef {
@@ -302,7 +300,7 @@ object PostgresUsingDockerModule extends ModuleDef {
     container: PostgresDocker.Container => {
       val knownAddress = container.availablePorts.first(PostgresDocker.primaryPort)
       PostgresServerConfig(
-        host     = knownAddress.hostV4,
+        host     = knownAddress.hostString,
         port     = knownAddress.port,
         database = "postgres",
         username = "postgres",
@@ -337,7 +335,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
   )
 
   "distage docker" should {
-  
+
     "support integration tests using containers" in {
       app: PostgresExampleApp =>
         for {
@@ -345,7 +343,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
           _ <- assertIO(v == 2)
         } yield ()
     }
-    
+
   }
 }
 ```
@@ -359,7 +357,7 @@ def postgresDockerIntegrationExample = {
     include(TransactorFromConfigModule)
     include(PostgresUsingDockerModule)
     include(DistageFrameworkModules)
-   
+
     make[PostgresExampleApp]
   }
 
@@ -440,7 +438,7 @@ class TestClusterNetworkModule[F[_]: TagK] extends ModuleDef {
     PostgresDocker.make[F].connectToNetwork(TestClusterNetwork)
   }
   make[ElasticSearchDocker.Container].fromResource {
-    ElasticSearchDocker.make[F].dependOnDocker(PostgresDocker).connectToNetwork(TestClusterNetwork)
+    ElasticSearchDocker.make[F].dependOnContainer(PostgresDocker).connectToNetwork(TestClusterNetwork)
   }
 }
 ```
@@ -479,7 +477,6 @@ include "docker-reference.conf"
 
 # override docker object fields
 docker {
-  readTimeoutMs = 60000
   globalReuse = "always-kill"
 }
 ```
@@ -494,8 +491,6 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
   include(DockerSupportModule[F] overriddenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
-        readTimeoutMs    = 10000,
-        connectTimeoutMs = 10000,
         globalReuse      = DockerReusePolicy.ReuseEnabled,
         useRemote        = true,
         useRegistry      = true,

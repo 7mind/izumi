@@ -32,7 +32,7 @@ object LogIOModule {
 }
 
 /** [[LogIOModule]] for bifunctors */
-class LogIO2Module[F[_, _]: TagKK] extends LogIOModule[F[Nothing, ?]]
+class LogIO2Module[F[_, _]: TagKK] extends LogIOModule[F[Nothing, _]]
 
 object LogIO2Module {
   @inline def apply[F[_, _]: TagKK](): LogIO2Module[F] = new LogIO2Module
@@ -42,7 +42,7 @@ object LogIO2Module {
 }
 
 /** [[LogIOModule]] for trifunctors */
-class LogIO3Module[F[_, _, _]: TagK3] extends LogIOModule[F[Any, Nothing, ?]]
+class LogIO3Module[F[_, _, _]: TagK3] extends LogIOModule[F[Any, Nothing, _]]
 
 object LogIO3Module {
   @inline def apply[F[_, _, _]: TagK3](): LogIO3Module[F] = new LogIO3Module

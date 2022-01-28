@@ -5,11 +5,11 @@ import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.{ApplicativeError2, TypedError}
 import izumi.fundamentals.platform.language.SourceFilePosition
 
-trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
+trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, _]] {
   implicit def tagBIO: TagKK[F]
 
-  protected final def takeBIO(function: Functoid[F[_, _]], pos: SourceFilePosition): Unit = {
-    val fAsThrowable: Functoid[F[Throwable, _]] = function
+  protected final def takeBIO(function: Functoid[F[?, ?]], pos: SourceFilePosition): Unit = {
+    val fAsThrowable: Functoid[F[Throwable, ?]] = function
       .map2(Functoid.identity[ApplicativeError2[F]]) {
         (effect, F) =>
           F.leftMap(effect) {
@@ -21,7 +21,7 @@ trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, ?]] {
     takeIO(fAsThrowable, pos)
   }
 
-  protected final def takeFunBIO[T: Tag](function: T => F[_, _], pos: SourceFilePosition): Unit = {
+  protected final def takeFunBIO[T: Tag](function: T => F[?, ?], pos: SourceFilePosition): Unit = {
     takeBIO(function, pos)
   }
 

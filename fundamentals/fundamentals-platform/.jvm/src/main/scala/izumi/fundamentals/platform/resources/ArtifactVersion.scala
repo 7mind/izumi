@@ -71,14 +71,14 @@ object IzArtifactMaterializerMacro {
 
     c.Expr[IzArtifactMaterializer] {
       q"""{
-          import izumi.fundamentals.platform.build.BuildAttributes._
-          import izumi.fundamentals.platform.build.MacroParameters._
+          import _root_.izumi.fundamentals.platform.build.{BuildAttributes => BA}
+          import _root_.izumi.fundamentals.platform.build.{MacroParameters => MP}
 
-          ${symbolOf[IzArtifactMaterializer].asClass.companion}(${symbolOf[IzArtifact].asClass.companion}(
-            ${symbolOf[IzArtifactId].asClass.companion}(projectGroupId().getOrElse("???"), artifactName().getOrElse("???")),
-            ${symbolOf[ArtifactVersion].asClass.companion}(artifactVersion().getOrElse("???")),
-            ${symbolOf[BuildStatus].asClass.companion}(userName().getOrElse("???"), javaVersion().getOrElse("???"), sbtVersion().getOrElse("???"), buildTimestamp()),
-            ${symbolOf[GitStatus].asClass.companion}(gitBranch().getOrElse("???"), repoClean = gitRepoClean().getOrElse(false), gitHeadCommit().getOrElse("???")),
+          new ${typeOf[IzArtifactMaterializer]}(new ${typeOf[IzArtifact]}(
+            new ${typeOf[IzArtifactId]}(MP.projectGroupId().getOrElse("???"), MP.artifactName().getOrElse("???")),
+            new ${typeOf[ArtifactVersion]}(MP.artifactVersion().getOrElse("???")),
+            new ${typeOf[BuildStatus]}(BA.userName().getOrElse("???"), BA.javaVersion().getOrElse("???"), MP.sbtVersion().getOrElse("???"), BA.buildTimestamp()),
+            new ${typeOf[GitStatus]}(MP.gitBranch().getOrElse("???"), MP.gitRepoClean().getOrElse(false), MP.gitHeadCommit().getOrElse("???")),
           ))
           }
        """

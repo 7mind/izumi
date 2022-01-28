@@ -44,7 +44,7 @@ class PlannerDefaultImpl(
         throwOnConflict(input.activation, errors)
 
       case Right(resolved) =>
-        val mappedGraph = resolved.predcessors.links.toSeq.map {
+        val mappedGraph = resolved.predecessors.links.toSeq.map {
           case (target, deps) =>
             val mappedTarget = updateKey(target)
             val mappedDeps = deps.map(updateKey)
@@ -64,7 +64,7 @@ class PlannerDefaultImpl(
 
         val mappedOps = mappedGraph.view.flatMap(_._2).toMap
 
-        val mappedMatrix = mappedGraph.view.map(_._1).filter({ case (k, _) => mappedOps.contains(k) }).toMap
+        val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
 
         Value(DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps)))
           .map(addImports(_, input.roots))
@@ -88,7 +88,7 @@ class PlannerDefaultImpl(
     val index = completedPlan.index
 
     val maybeBrokenLoops = Toposort.cycleBreaking(
-      predcessors = IncidenceMatrix(topology.dependencies.graph),
+      predecessors = IncidenceMatrix(topology.dependencies.graph),
       break = new LoopBreaker(analyzer, mirrorProvider, index, topology, completedPlan),
     )
 
@@ -178,7 +178,7 @@ class PlannerDefaultImpl(
 
     val fullMeta = GraphMeta(plan.meta.nodes ++ imports ++ missingRootsImports)
 
-    DG.fromPred(IncidenceMatrix(plan.predcessors.links ++ allImports), fullMeta)
+    DG.fromPred(IncidenceMatrix(plan.predecessors.links ++ allImports), fullMeta)
   }
 
   protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionError[DIKey, InstantiationOp]]): Nothing = {

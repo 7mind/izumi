@@ -62,47 +62,47 @@ case class Wrapper[A](wrap: A)
 case class Service[A](conf: A)
 
 object TestConfigReaders {
-  final val mapDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val mapDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[MapCaseClass]]
     makeConfig[MapCaseClass]("MapCaseClass")
   })
 
-  final val listDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val listDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[ListCaseClass]]
     makeConfig[ListCaseClass]("ListCaseClass")
   })
 
-  final val optDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val optDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[OptionCaseClass]]
     makeConfig[OptionCaseClass]("OptionCaseClass")
   })
 
-  final val backticksDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val backticksDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[BackticksCaseClass]]
     makeConfig[BackticksCaseClass]("BackticksCaseClass")
   })
 
-  final val sealedDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val sealedDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[SealedCaseClass]]
     makeConfig[SealedCaseClass]("SealedCaseClass")
   })
 
-  final val tupleDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val tupleDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[TupleCaseClass]]
     makeConfig[TupleCaseClass]("TupleCaseClass")
   })
 
-  final val customCodecDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val customCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[CustomCaseClass]]
     makeConfig[CustomCaseClass]("CustomCaseClass")
   })
 
-  final val privateFieldsCodecDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val privateFieldsCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[PrivateCaseClass]]
     makeConfig[PrivateCaseClass]("PrivateCaseClass")
   })
 
-  final val partiallyPrivateFieldsCodecDefinition = PlannerInput.noGC(new ConfigModuleDef {
+  final val partiallyPrivateFieldsCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
     make[Service[PartiallyPrivateCaseClass]]
     makeConfig[PartiallyPrivateCaseClass]("PartiallyPrivateCaseClass")
   })

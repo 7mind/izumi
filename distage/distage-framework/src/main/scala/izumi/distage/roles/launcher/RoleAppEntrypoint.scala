@@ -54,10 +54,11 @@ object RoleAppEntrypoint {
             task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
-        val finalizer = (_: Unit) => {
-          hook.await(lateLogger)
+        val shutdownLatch: Unit => F[Unit] = (_: Unit) => {
+          hook.awaitShutdown(lateLogger)
         }
-        val f = roleServices.foldRight(finalizer) {
+
+        val appF: Unit => F[Unit] = roleServices.foldRight(shutdownLatch) {
           case ((role, res), acc) =>
             _ =>
               val loggedTask = for {
@@ -75,13 +76,14 @@ object RoleAppEntrypoint {
                     .flatMap(_ => F.fail[Unit](t))
               }
         }
-        f(())
+
+        appF(())
       } else {
         F.maybeSuspend(lateLogger.info("No services to run, exiting..."))
       }
     }
 
-    protected def runTasks(index: Map[String, Object])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F]): F[Unit] = {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -117,16 +119,15 @@ object RoleAppEntrypoint {
     }
 
     private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRole[F]] = {
-      roles
-        .availableRoleBindings.flatMap {
-          b =>
-            rolesLocator.index.get(b.binding.key) match {
-              case Some(value: AbstractRole[F]) =>
-                Seq(b.descriptor.id -> value)
-              case _ =>
-                Seq.empty
-            }
-        }.toMap
+      roles.availableRoleBindings.flatMap {
+        b =>
+          rolesLocator.lookupInstance[AbstractRole[F]](b.binding.key) match {
+            case Some(value) =>
+              Seq(b.descriptor.id -> value)
+            case _ =>
+              Seq.empty
+          }
+      }.toMap
     }
 
   }

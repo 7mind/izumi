@@ -13,11 +13,17 @@ object ZIOSupportModule extends ZIOSupportModule
   *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
-  * @note Will also add the following components:
+  * Will also add the following components:
   *   - `ThreadPoolExecutor @Id("zio.cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
   *   - `ThreadPoolExecutor @Id("zio.io")` and blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
   *   - `ExecutionContext @Id("zio.cpu")` & `ExecutionContext @Id("zio.io")` respectively
   *   - [[zio.internal.tracing.TracingConfig]] will be set to [[zio.internal.tracing.TracingConfig.enabled]] by default
+  *   - Standard ZIO services: [[zio.console.Console]], [[zio.clock.Clock]], [[zio.system.System]], [[zio.random.Random]] and corresponding `.Service` types
+  *
+  * Added into scope by [[izumi.distage.modules.DefaultModule]].
+  * If [[https://github.com/zio/interop-cats/ interop-cats]] library is on the classpath during compilation,
+  * implicit [[izumi.distage.modules.DefaultModule.forZIOPlusCats]] will be picked up instead of [[izumi.distage.modules.DefaultModule.forZIO]]
+  * and will add a module with `cats-effect` instances [[izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule]]
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */

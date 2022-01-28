@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.66`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.77`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -8,8 +8,6 @@ object Izumi {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
-    val silencer = Version.VExpr("V.silencer")
-    val neme_plugin = Version.VExpr("V.neme_plugin")
     val scalatest = Version.VExpr("V.scalatest")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
@@ -79,14 +77,9 @@ object Izumi {
     final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto) in Scope.Test.all
 
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
+    final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
+    final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
-    final val circe = Seq(
-      circe_core,
-      Library("io.circe", "circe-parser", V.circe, LibraryType.Auto),
-      Library("io.circe", "circe-literal", V.circe, LibraryType.Auto),
-      Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
-      circe_derivation,
-    ).map(_ in Scope.Compile.all)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scaltest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
@@ -113,9 +106,6 @@ object Izumi {
 
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
-    final val silencer_plugin = Library("com.github.ghik", "silencer-plugin", V.silencer, LibraryType.Invariant)
-      .more(LibSetting.Raw("cross CrossVersion.full"))
-    final val nemePlugin = Library("com.softwaremill.neme", "neme-plugin", V.neme_plugin, LibraryType.AutoJvm)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
@@ -129,7 +119,8 @@ object Izumi {
       Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto),
     )
 
-    val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
+    val docker_java_core = Library("com.github.docker-java", "docker-java-core", V.docker_java, LibraryType.Invariant)
+    val docker_java_transport_zerodep = Library("com.github.docker-java", "docker-java-transport-zerodep", V.docker_java, LibraryType.Invariant)
 
     val javaXInject = Library("javax.inject", "javax.inject", "1", LibraryType.Invariant)
   }
@@ -137,8 +128,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.12")
-  final val scala213 = ScalaVersion("2.13.4")
+  final val scala212 = ScalaVersion("2.12.14")
+  final val scala213 = ScalaVersion("2.13.6")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -155,6 +146,7 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
+      settings = Seq.empty,
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
@@ -236,11 +228,15 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Defaults.Scala213Options,
+          SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
+            "-Wunused:-synthetics"
+          ),
           SettingKey.Default := Const.EmptySeq,
         ),
-        // disable fatal-warnings to make sure publish goes through
-        "scalacOptions" -= "-Wconf:any:error",
+        "scalacOptions" += "-Wconf:msg=nowarn:silent",
+        "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
+        "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
           """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
@@ -400,16 +396,20 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
-        libs = circe ++ Seq(
-          jawn in Scope.Compile.js,
+        libs = Seq(
+          circe_core in Scope.Compile.all,
+          circe_derivation in Scope.Compile.all,
           scala_reflect in Scope.Provided.all,
+        ) ++ Seq(
+          jawn in Scope.Test.all,
+          circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
-        libs = allMonadsOptional,
+        libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
         platforms = Targets.cross,
       ),
@@ -496,7 +496,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.docker,
-        libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
+        libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep).map(_ in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
         platforms = Targets.jvm,
@@ -536,7 +536,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,
-        libs = Seq.empty,
+        libs = Seq(
+          jawn in Scope.Test.all,
+          circe_parser in Scope.Test.all,
+          circe_literal in Scope.Test.all,
+        ),
         depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
@@ -569,10 +573,28 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ doobie).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
+        libs = (cats_all ++ zio_all ++ doobie ++ Seq(monix, monix_bio)).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "scalacOptions" -= "-Wconf:any:error",
+          //  Disable `-Xsource:3` in docs due to mdoc failures:
+          //
+          //  ```
+          //  error: basics.md:97 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val injector: Injector[RIO[Console, _]] = Injector[RIO[Console, _]](); $doc.binder(injector, 2, 4, 2, 12)
+          //                                                                                    ^
+          //
+          //  error: basics.md:109 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$0$]]
+          //  val resource = injector.produce(plan); $doc.binder(resource, 4, 4, 4, 12)
+          //                                                    ^
+          //
+          //  error: basics.md:1359 (mdoc generated code) could not find implicit value for parameter t: pprint.TPrint[zio.ZIO[zio.Has[zio.console.Console.Service],Throwable,β$9$]]
+          //  val res51 = chooseInterpreters(true); $doc.binder(res51, 26, 0, 26, 24)
+          //  ```
+          "scalacOptions" -= "-Xsource:3",
+          // enable for unidoc
+          "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") += "-Xsource:3",
+          //
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
@@ -589,17 +611,17 @@ object Izumi {
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
           "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
             """{
-            (mappings in SitePlugin.autoImport.makeSite)
+            (SitePlugin.autoImport.makeSite / mappings)
               .dependsOn(mdoc.toTask(" "))
               .value
           }""".raw,
           "version" in SettingScope.Raw("Paradox") := "version.value".raw,
           SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
-          SettingDef.RawSettingDef("addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)"),
+          SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
-            "unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
+            "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),
-          SettingDef.RawSettingDef("""paradoxMaterialTheme in Paradox ~= {
+          SettingDef.RawSettingDef("""Paradox / paradoxMaterialTheme ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))
             //        .withColor("222", "434343")
@@ -612,7 +634,7 @@ object Izumi {
             "izumi.version" -> version.value,
           )"""),
           SettingDef.RawSettingDef(
-            """excludeFilter in ghpagesCleanSite :=
+            """ghpagesCleanSite / excludeFilter :=
             new FileFilter {
               def accept(f: File): Boolean = {
                   f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
@@ -677,9 +699,9 @@ object Izumi {
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
     enableProjectSharedAggSettings = false,
-    dontIncludeInSuperAgg = false,
     settings = Seq(
-      "crossScalaVersions" := "Nil".raw
+      "crossScalaVersions" := "Nil".raw,
+      "scalaVersion" := scala212.value,
     ),
   )
 
@@ -701,8 +723,6 @@ object Izumi {
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
-      ScopedLibrary(nemePlugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
-      ScopedLibrary(silencer_plugin, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,
     ),

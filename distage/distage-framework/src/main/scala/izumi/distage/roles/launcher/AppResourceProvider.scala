@@ -6,6 +6,7 @@ import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
@@ -25,6 +26,7 @@ object AppResourceProvider {
     filterF: FinalizerFilter[F],
     filterId: FinalizerFilter[Identity],
   )
+
   object FinalizerFilters {
     def all[F[_]]: FinalizerFilters[F] = FinalizerFilters[F](FinalizerFilter.all, FinalizerFilter.all)
   }
@@ -35,10 +37,10 @@ object AppResourceProvider {
     filters: FinalizerFilters[F],
     appPlan: AppStartupPlans,
     injectorFactory: InjectorFactory,
+    hook: AppShutdownStrategy[F],
   ) extends AppResourceProvider[F] {
     def makeAppResource: AppResource[F] = AppResource {
-      appPlan
-        .injector
+      appPlan.injector
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
@@ -70,6 +72,7 @@ object AppResourceProvider {
                     .evalTap(entrypoint.runTasksAndRoles(_, F))
               }
         }
+        .wrapRelease((r, a) => r(a).guarantee(F.maybeSuspend(hook.finishShutdown())))
     }
   }
 

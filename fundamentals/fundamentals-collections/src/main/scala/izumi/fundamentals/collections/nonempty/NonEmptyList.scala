@@ -174,7 +174,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>Seq</code> slice to look for
     * @return true if this <code>NonEmptyList</code> contains a slice with the same elements as <code>that</code>, otherwise <code>false</code>.
     */
-  def containsSlice[B](that: Seq[B]): Boolean = toList.containsSlice(that)
+  def containsSlice[U >: T](that: Seq[U]): Boolean = toList.containsSlice(that)
 
   /**
     * Indicates whether this <code>NonEmptyList</code> contains a given <code>Vector</code> as a slice.
@@ -182,7 +182,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>Vector</code> slice to look for
     * @return true if this <code>NonEmptyList</code> contains a slice with the same elements as <code>that</code>, otherwise <code>false</code>.
     */
-  def containsSlice[B](that: Vector[B]): Boolean = toList.containsSlice(that)
+  def containsSlice[U >: T](that: Vector[U]): Boolean = toList.containsSlice(that)
 
   /**
     * Indicates whether this <code>NonEmptyList</code> contains a given <code>NonEmptyList</code> as a slice.
@@ -190,7 +190,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
     * @param that the <code>NonEmptyList</code> slice to look for
     * @return true if this <code>NonEmptyList</code> contains a slice with the same elements as <code>that</code>, otherwise <code>false</code>.
     */
-  def containsSlice[B](that: NonEmptyList[B]): Boolean = toList.containsSlice(that.toList)
+  def containsSlice[U >: T](that: NonEmptyList[U]): Boolean = toList.containsSlice(that.toList)
 
   /**
     * Copies values of this <code>NonEmptyList</code> to an array. Fills the given array <code>arr</code> with values of this <code>NonEmptyList</code>. Copying

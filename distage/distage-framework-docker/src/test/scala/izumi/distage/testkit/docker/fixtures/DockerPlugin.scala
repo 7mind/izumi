@@ -24,8 +24,8 @@ class PgSvcExample(
 ) extends IntegrationCheck[Task] {
   override def resourcesAvailable(): Task[ResourceCheck] = Task.effect {
     val portCheck = new PortCheck(10.milliseconds)
-    portCheck.checkPort(pg.hostV4, pg.port)
-    portCheck.checkPort(pgfw.hostV4, pgfw.port)
+    portCheck.checkAddressPort(pg.host.address, pg.port)
+    portCheck.checkAddressPort(pg.host.address, pgfw.port)
   }
 }
 
@@ -64,7 +64,7 @@ object DockerPlugin extends PluginDef {
 
   // this container will start once `DynamoContainer` is up and running
   make[PostgresDocker.Container].fromResource {
-    PostgresDocker.make[Task].dependOnDocker(DynamoDocker)
+    PostgresDocker.make[Task].dependOnContainer(DynamoDocker)
   }
 
   // these lines are for test scope

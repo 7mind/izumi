@@ -18,6 +18,8 @@ object Syntax2 {
     @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
     @inline final def void: F[E, Unit] = F.void(r)
     @inline final def widen[A1](implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
+
+    @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): F[E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
   final class BifunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Bifunctor2[F]) {
@@ -66,13 +68,25 @@ object Syntax2 {
     @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
+
+    @inline final def iterateWhile(p: A => Boolean): F[E, A] = F.iterateWhile(r)(p)
+    @inline final def iterateUntil(p: A => Boolean): F[E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
   }
 
   class ErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Error2[F]) extends ApplicativeErrorOps(r) {
+    // duplicated from MonadOps
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
     @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
+
+    @inline final def iterateWhile(p: A => Boolean): F[E, A] = F.iterateWhile(r)(p)
+    @inline final def iterateUntil(p: A => Boolean): F[E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
+    // duplicated from MonadOps
 
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A2, E2](r)(h)
     @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[Any, E, A2, E1](r)(h)
@@ -90,7 +104,13 @@ object Syntax2 {
     @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[Any, E, A, E2](r)(err, succ)
 
     @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[Any, E1, A, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[Any, E1, A, A1](r)(F.fromOption(errorOnNone)(_))
+    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.fromOption(errorOnNone, r.widen)
+
+    @inline final def retryWhile(f: E => Boolean): F[E, A] = F.retryWhile(r)(f)
+    @inline final def retryWhileF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryWhileF(r)(f)
+
+    @inline final def retryUntil(f: E => Boolean): F[E, A] = F.retryUntil(r)(f)
+    @inline final def retryUntilF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryUntilF(r)(f)
 
     /** for-comprehensions sugar:
       *
@@ -115,15 +135,18 @@ object Syntax2 {
 
   class BracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Bracket2[F]) extends ErrorOps(r) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
+
     @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
     @inline final def guaranteeCase(cleanup: Exit[E, A] => F[Nothing, Unit]): F[E, A] = F.guaranteeCase(r, cleanup)
+
+    @inline final def bracketOnFailure[E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
+      F.bracketOnFailure(r: F[E1, A])(cleanupOnFailure)(use)
+    @inline final def guaranteeOnFailure(cleanupOnFailure: Exit.Failure[E] => F[Nothing, Unit]): F[E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
   }
 
   class PanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BracketOps(r) {
     @inline final def sandbox: F[Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
-    @deprecated("renamed to sandboxExit", "1.0")
-    @inline final def sandboxBIOExit = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable
@@ -141,6 +164,9 @@ object Syntax2 {
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+
+    @deprecated("renamed to sandboxExit", "1.0")
+    @inline final def sandboxBIOExit: F[Nothing, Exit[E, A]] = sandboxExit
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {

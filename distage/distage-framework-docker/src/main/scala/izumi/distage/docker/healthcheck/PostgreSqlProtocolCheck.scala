@@ -1,53 +1,56 @@
 package izumi.distage.docker.healthcheck
 
-import java.net.{InetSocketAddress, Socket}
-import java.nio.{Buffer, ByteBuffer}
-
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-final class PostgreSqlProtocolCheck[Tag](
+import java.net.{InetSocketAddress, Socket}
+import java.nio.{Buffer, ByteBuffer}
+
+final class PostgreSqlProtocolCheck(
   portStatus: HealthCheckResult.AvailableOnPorts,
   port: DockerPort,
   userName: String,
   databaseName: String,
-) extends ContainerHealthCheck[Tag] {
-  override def check(logger: IzLogger, container: DockerContainer[Tag]): ContainerHealthCheck.HealthCheckResult = {
-    portStatus.availablePorts.firstOption(port) match {
-      case Some(availablePort) if portStatus.allTCPPortsAccessible =>
-        val startupMessage = genStartupMessage()
-        val socket = new Socket()
-        try {
-          socket.connect(new InetSocketAddress(availablePort.hostV4, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
-          logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
-          val out = socket.getOutputStream
-          val in = socket.getInputStream
-          out.write(startupMessage)
-          val messageType = {
-            val outByte = Array[Byte](0)
-            in.read(outByte, 0, 1)
-            new String(outByte)
+) extends ContainerHealthCheck {
+  override def check(logger: IzLogger, container: DockerContainer[?], state: ContainerState): HealthCheckResult = {
+    HealthCheckResult.onRunning(state) {
+      portStatus.availablePorts.firstOption(port) match {
+        case Some(availablePort) if portStatus.allTCPPortsAccessible =>
+          val startupMessage = genStartupMessage()
+          val socket = new Socket()
+          try {
+            socket.connect(new InetSocketAddress(availablePort.host.address, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
+            logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
+            val out = socket.getOutputStream
+            val in = socket.getInputStream
+            out.write(startupMessage)
+            val messageType = {
+              val outByte = Array[Byte](0)
+              in.read(outByte, 0, 1)
+              new String(outByte)
+            }
+            // first byte of response message should be `R` char
+            // every authentication message from PostgreSQL starts with `R`
+            if (messageType == "R") {
+              logger.info(s"PostgreSQL protocol on $port is available.")
+              HealthCheckResult.Passed
+            } else {
+              logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
+              HealthCheckResult.Failed(s"PostgreSQL protocol on port=$port unavailable due to unknown message type: messageType=$messageType.")
+            }
+          } catch {
+            case failure: Throwable =>
+              logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. $failure")
+              HealthCheckResult.Failed(s"PostgreSQL protocol on port=$port unavailable due to unexpected exception. failure=$failure")
+          } finally {
+            socket.close()
           }
-          // first byte of response message should be `R` char
-          // every authentication message from PostgreSQL starts with `R`
-          if (messageType == "R") {
-            logger.info(s"PostgreSQL protocol on $port is available.")
-            ContainerHealthCheck.HealthCheckResult.Available
-          } else {
-            logger.info(s"PostgreSQL protocol on $port unavailable due to unknown message type: $messageType.")
-            ContainerHealthCheck.HealthCheckResult.Unavailable
-          }
-        } catch {
-          case failure: Throwable =>
-            logger.warn(s"PostgreSQL protocol on $port unavailable due to unexpected exception. $failure")
-            ContainerHealthCheck.HealthCheckResult.Unavailable
-        } finally {
-          socket.close()
-        }
-      case _ => ContainerHealthCheck.HealthCheckResult.Unavailable
+        case _ =>
+          HealthCheckResult.Failed()
+      }
     }
   }
 

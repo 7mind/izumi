@@ -24,7 +24,7 @@ def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
 // update ref from the environment and return result
 def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] =
   F.access {
-    ref => 
+    ref =>
       for {
         _   <- ref.update(_ + i)
         res <- ref.get
@@ -116,3 +116,30 @@ you are also always importing the syntax-providing implicit conversions.
 This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the used typeclasses.
 
 Implicit Punning for typeclass syntax relieves the programmer from having to manually import syntax implicits in every file in their codebase.
+
+## cats-effect compatibilty
+
+Import `izumi.functional.bio.catz._` for shim compatibilty with cats-effect. You can run `http4s` and all the other cats-effect libraries with just BIO typeclasses, without requiring any cats-effect typeclasses.
+
+## Data Types
+
+`Ref2/3`, `Promise2/3` and `Semaphore2/3` provide basic concurrent mutable state primitives. They require a `Primitives2/3` capability to create.
+With `Primitiives*[F]` in implicit scope, use `F.mkRef`/`F.mkPromise`/`F.mkSemaphore` respectively. (See also example at top of the page)
+
+`Free` monad, as well as `FreeError` and `FreePanic`  provide building blocks for DSLs when combined with a DSL describing functor.
+
+`Morphism1/2/3` provide unboxed natural transformations for functors with 1,2,3-arity respectively, with `Isomorphism1/2/3` modeling two-way transformations.
+
+## Misc Capabilities
+
+`Clock1/2/3` gives access to current time.
+
+`Entropy1/2/3` models random numbers.
+
+`UnsafeRun2/3` allows executing effects (it is required for conversion to cats' `ConcurrentEffect` which also allows unsafe running)
+
+## Examples
+
+[distage-example](https://github.com/7mind/distage-example) is a full example application written in Tagless Final Style using BIO typeclasses.
+
+You may also find a video walkthrough of using BIO on Youtube by [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)

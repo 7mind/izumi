@@ -136,9 +136,12 @@ class SyntaxTest extends AnyWordSpec {
         })(_ => F.pure(1))
     }
     def y[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
-      F.pure(None).bracketCase[Throwable, Int] {
-          case (_, Exit.Success(x)) => F.pure(x).as(())
-          case (_, _) => F.unit
+      F.pure(None).bracketCase {
+          (_, exit: Exit[Throwable, Int]) =>
+            exit match {
+              case Exit.Success(x) => F.pure(x).as(())
+              case _ => F.unit
+            }
         }(_ => F.pure(1))
     }
     def z[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
@@ -163,6 +166,99 @@ class SyntaxTest extends AnyWordSpec {
     y[bio.IO]
     z[bio.IO]
     zz[bio.IO]
+  }
+
+  "Bracket3.bracketCase & guaranteeCase are callable" in {
+    import izumi.functional.bio.{Bracket3, Exit, F}
+
+    def x[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketCase(release = {
+          (_, _: Exit[Throwable, Int]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketCase {
+          (_, exit: Exit[Throwable, Int]) =>
+            exit match {
+              case Exit.Success(x) => F.pure(x).as(())
+              case _ => F.unit
+            }
+        }(_ => F.pure(1))
+    }
+    def z[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(1).guaranteeCase {
+        case Exit.Success(x) => F.pure(x).as(())
+        case _ => F.unit
+      }
+    }
+    def zz[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeCase {
+          case Exit.Success(x) => F.pure(x).as(())
+          case _ => F.unit
+        }.widenError[Throwable]
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+    z[zio.ZIO]
+    zz[zio.ZIO]
+  }
+
+  "Bracket2.bracketOnFailure & guaranteeOnFailure are callable" in {
+    import izumi.functional.bio.{Bracket2, Exit, F}
+
+    def x[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(None).bracketOnFailure(cleanupOnFailure = {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(None).bracketOnFailure {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        }(_ => F.pure(1))
+    }
+    def z[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.pure(1).guaranteeOnFailure(_ => F.unit)
+    }
+    def zz[F[+_, +_]: Bracket2]: F[Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeOnFailure(_ => F.unit).widenError[Throwable]
+    }
+
+    x[zio.IO]
+    y[zio.IO]
+    z[zio.IO]
+    zz[zio.IO]
+
+    x[bio.IO]
+    y[bio.IO]
+    z[bio.IO]
+    zz[bio.IO]
+  }
+
+  "Bracket3.bracketOnFailure & guaranteeOnFailure are callable" in {
+    import izumi.functional.bio.{Bracket3, Exit, F}
+
+    def x[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketOnFailure(cleanupOnFailure = {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        })(_ => F.pure(1))
+    }
+    def y[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(None).bracketOnFailure {
+          (_, _: Exit.Failure[Throwable]) => F.unit
+        }(_ => F.pure(1))
+    }
+    def z[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.pure(1).guaranteeOnFailure(_ => F.unit)
+    }
+    def zz[F[-_, +_, +_]: Bracket3]: F[Any, Throwable, Int] = {
+      F.when(F.pure(false).widenError[Throwable])(F.unit).as(1).guaranteeOnFailure(_ => F.unit).widenError[Throwable]
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+    z[zio.ZIO]
+    zz[zio.ZIO]
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
@@ -256,7 +352,12 @@ class SyntaxTest extends AnyWordSpec {
       y[bio.IO],
       z[bio.IO],
     )
-    lazy val _ = (zioTest, monixTest)
+
+    lazy val eitherTest = (
+      x[Either],
+      z[Either],
+    )
+    lazy val _ = (zioTest, monixTest, eitherTest)
   }
 
   "Support BIO syntax for ZIO with wildcard import" in {
@@ -408,5 +509,134 @@ class SyntaxTest extends AnyWordSpec {
         y[monix.bio.IO],
       )
     }
+  }
+
+  "BIO.iterateUntil/iterateWhile are callable" in {
+    import izumi.functional.bio.{Error2, Monad2}
+
+    def x[F[+_, +_]: Monad2](a: F[Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    def y[F[+_, +_]: Error2](a: F[Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    x[zio.IO](zio.UIO.succeed(()))
+    y[zio.IO](zio.UIO.succeed(()))
+  }
+
+  "BIO3.iterateUntil/iterateWhile are callable" in {
+    import izumi.functional.bio.{Error3, Monad3}
+
+    def x[F[-_, +_, +_]: Monad3](a: F[Any, Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    def y[F[-_, +_, +_]: Error3](a: F[Any, Nothing, Unit]) = {
+      a.iterateWhile(_ => true)
+      a.iterateUntil(_ => false)
+    }
+
+    x[zio.ZIO](zio.UIO.succeed(()))
+    y[zio.ZIO](zio.UIO.succeed(()))
+  }
+
+  "BIO.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
+    import izumi.functional.bio.{Error2, F, Functor2, Monad2}
+
+    def x[F[+_, +_]: Functor2](aOpt: F[String, Option[Unit]]) = {
+      aOpt.fromOptionOr(())
+    }
+
+    def y[F[+_, +_]: Monad2](aOpt: F[String, Option[Unit]]) = {
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+    }
+
+    def z[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Unit]]) = {
+      a.retryUntil(_ => true)
+      a.retryUntilF(_ => F.pure(false))
+      a.retryWhile(_ => false)
+      a.retryWhileF(_ => F.pure(true))
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+      aOpt.fromOption("ooops")
+    }
+
+    x[zio.IO](zio.UIO.succeed(Option(())))
+    y[zio.IO](zio.UIO.succeed(Option(())))
+    z[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
+
+  "BIO3.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
+    import izumi.functional.bio.{Error3, F, Functor3, Monad3}
+
+    def x[F[-_, +_, +_]: Functor3](aOpt: F[Any, String, Option[Unit]]) = {
+      aOpt.fromOptionOr(())
+    }
+
+    def y[F[-_, +_, +_]: Monad3](aOpt: F[Any, String, Option[Unit]]) = {
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+    }
+
+    def z[F[-_, +_, +_]: Error3](a: F[Any, String, Unit], aOpt: F[Any, String, Option[Unit]]) = {
+      a.retryUntil(_ => true)
+      a.retryUntilF(_ => F.pure(false))
+      a.retryWhile(_ => false)
+      a.retryWhileF(_ => F.pure(true))
+      aOpt.fromOptionOr(())
+      aOpt.fromOptionF(F.unit)
+      aOpt.fromOption("ooops")
+    }
+
+    x[zio.ZIO](zio.UIO.succeed(Option(())))
+    y[zio.ZIO](zio.UIO.succeed(Option(())))
+    z[zio.ZIO](zio.UIO.succeed(()), zio.UIO.succeed(Option(())))
+  }
+
+  "Fiber#toCats syntax works" in {
+    import izumi.functional.bio.{Applicative2, Applicative3, F, Fork2, Fork3}
+
+    def x2[F[+_, +_]: Applicative2: Fork2] = {
+      F.unit.fork.map(_.toCats)
+    }
+    def x3[F[-_, +_, +_]: Applicative3: Fork3] = {
+      F.unit.fork.map(_.toCats)
+    }
+    x2[zio.IO]
+    x3[zio.ZIO]
+  }
+
+  "Fiber3 and Fiber2 types are wholly compatible" in {
+    import izumi.functional.bio.{Applicative2, Applicative3, F, Fiber2, Fiber3, Fork2, Fork3}
+
+    def x2[FR[-_, +_, +_]](implicit applicative: Applicative2[FR[Any, +_, +_]], fork: Fork2[FR[Any, +_, +_]]) = {
+      type F[+E, +A] = FR[Any, E, A]
+      for {
+        fiber <- F.unit.fork
+      } yield {
+        val fiber2: Fiber2[F, Nothing, Unit] = fiber
+        val fiber3: Fiber3[FR, Nothing, Unit] = fiber
+        (fiber2, fiber3)
+      }
+    }
+    def x3[FR[-_, +_, +_]: Applicative3: Fork3] = {
+      type F[+E, +A] = FR[Any, E, A]
+      for {
+        fiber <- F.unit.fork
+      } yield {
+        val fiber2: Fiber2[F, Nothing, Unit] = fiber
+        val fiber3: Fiber3[FR, Nothing, Unit] = fiber
+        (fiber2, fiber3)
+      }
+    }
+
+    x2[zio.ZIO]
+    x3[zio.ZIO]
   }
 }

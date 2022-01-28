@@ -127,6 +127,13 @@ object `zio.ZIO` {
   @inline implicit final def get: `zio.ZIO`[zio.ZIO] = null
 }
 
+// zio-interop-cats
+
+final abstract class `zio.interop.CatsEffectPlatform`[A]
+object `zio.interop.CatsEffectPlatform` {
+  @inline implicit final def get: `zio.interop.CatsEffectPlatform`[zio.interop.CatsEffectPlatform] = null
+}
+
 // monix-bio
 
 final abstract class `monix.bio.IO`[K[_, _]]

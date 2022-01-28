@@ -1,24 +1,24 @@
 package logstage
 
-import izumi.functional.bio.{MonadAsk3, SyncSafe2, SyncSafe3}
+import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLoggerF}
-import izumi.logstage.api.rendering.AnyEncoded
+import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
+import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
 import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLoggerF[F] {
+trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLogIO[F] {
   override type Self[f[_]] = LogIO[f]
 
   final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
 
-  override def widen[G[_]](implicit @unused ev: F[_] <:< G[_]): LogIO[G] = this.asInstanceOf[LogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
 object LogIO {
@@ -64,8 +64,29 @@ object LogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, ?]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.widen
+  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, _]] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[?] <:< G[?]): LogIO[G] = log.widen
+
+  implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
+    def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {
+      val renderingPolicy = RenderingPolicy.colorlessPolicy()
+      log.createEntry(Log.Level.Crit, msg).flatMap {
+        entry =>
+          log.log(entry) *>
+          F.fail(new RuntimeException(renderingPolicy.render(entry)))
+      }
+    }
+
+    def terminate(msg: Message)(implicit F: Panic2[F], pos: CodePositionMaterializer): F[Nothing, Nothing] = {
+      val renderingPolicy = RenderingPolicy.colorlessPolicy()
+      log.createEntry(Log.Level.Crit, msg).flatMap {
+        entry =>
+          log.log(entry) *>
+          F.terminate(new RuntimeException(renderingPolicy.render(entry)))
+      }
+    }
+  }
+
 }
 
 object LogIO2 {

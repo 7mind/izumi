@@ -1,22 +1,23 @@
 package izumi.distage.docker
 
-import java.util.UUID
 import com.github.dockerjava.api.DockerClient
-import com.github.dockerjava.api.command.DockerCmdExecFactory
+import com.github.dockerjava.api.exception.NotModifiedException
 import com.github.dockerjava.api.model.Container
-import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder, DockerClientConfig}
+import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig}
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
-import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
+import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax._
 import izumi.functional.Value
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
-import scala.annotation.nowarn
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 class DockerClientWrapper[F[_]](
@@ -32,15 +33,17 @@ class DockerClientWrapper[F[_]](
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
-  def destroyContainer(containerId: ContainerId, context: ContainerDestroyMeta): F[Unit] = {
-    F.definitelyRecover {
-      F.maybeSuspend {
-        logger.info(s"Going to destroy $containerId ($context)...")
+  def removeContainer(containerId: ContainerId, context: ContainerDestroyMeta, removalReason: RemovalReason): F[Unit] = {
+    F.maybeSuspend {
+      try {
+        logger.info(s"Going to remove $containerId $removalReason ($context)...")
 
         try {
           rawClient
             .stopContainerCmd(containerId.name)
             .exec()
+        } catch {
+          case _: NotModifiedException =>
         } finally {
           rawClient
             .removeContainerCmd(containerId.name)
@@ -49,18 +52,21 @@ class DockerClientWrapper[F[_]](
             .discard()
         }
 
-        logger.info(s"Destroyed $containerId ($context)")
+        logger.info(s"Removed $containerId ($context)")
+      } catch {
+        case failure: Throwable =>
+          logger.warn(s"Got failure during container remove $containerId ${failure.stackTrace -> "failure"}")
       }
-    } {
-      failure => F.maybeSuspend(logger.warn(s"Got failure during container destroy $failure"))
     }
   }
 }
 
 object DockerClientWrapper {
+  private[this] val jvmRun: String = UUID.randomUUID().toString
+
   sealed trait ContainerDestroyMeta
   object ContainerDestroyMeta {
-    final case class ParameterizedContainer[T](container: DockerContainer[T]) extends ContainerDestroyMeta {
+    final case class ParameterizedContainer[+Tag](container: DockerContainer[Tag]) extends ContainerDestroyMeta {
       override def toString: String = container.toString
     }
     final case class RawContainer(container: Container) extends ContainerDestroyMeta {
@@ -68,35 +74,40 @@ object DockerClientWrapper {
     }
   }
 
-  private[this] val jvmRun: String = UUID.randomUUID().toString
+  sealed trait RemovalReason
+  object RemovalReason {
+    case object NotReused extends RemovalReason
+    case object NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer extends RemovalReason
+    case object AlreadyExited extends RemovalReason
+  }
 
-  class Resource[F[_]](
-    factory: DockerCmdExecFactory,
+  final class Resource[F[_]](
     logger: IzLogger,
     clientConfig: ClientConfig,
+    clientFactory: DockerClientFactory,
   )(implicit
     F: QuasiIO[F]
   ) extends Lifecycle.Basic[F, DockerClientWrapper[F]]
     with IntegrationCheck[F] {
 
-    private[this] lazy val rawClientConfig = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
-        (b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
-      )
-      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
-        (b, c) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
-      )
-      .get.build()
+    private[this] lazy val rawClientConfig: DefaultDockerClientConfig = {
+      Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
+        .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
+          (b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
+        )
+        .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
+          (b, c) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
+        )
+        .get.build()
+    }
 
-    @nowarn("msg=deprecated")
-    private[this] lazy val client = DockerClientBuilder
-      .getInstance(rawClientConfig)
-      .withDockerCmdExecFactory(factory)
-      .build
+    private[this] lazy val rawClient: DockerClient = {
+      clientFactory.makeClient(clientConfig, rawClientConfig)
+    }
 
     override def resourcesAvailable(): F[ResourceCheck] = F.maybeSuspend {
       try {
-        client.infoCmd().exec()
+        rawClient.infoCmd().exec()
         ResourceCheck.Success()
       } catch {
         case t: Throwable =>
@@ -105,13 +116,15 @@ object DockerClientWrapper {
     }
 
     override def acquire: F[DockerClientWrapper[F]] = {
-      F.maybeSuspend {
+      for {
+        runId <- F.maybeSuspend(UUID.randomUUID().toString)
+      } yield {
         new DockerClientWrapper[F](
-          rawClient = client,
+          rawClient = rawClient,
           rawClientConfig = rawClientConfig,
           labelsBase = Map(DockerConst.Labels.containerTypeLabel -> "testkit"),
           labelsJvm = Map(DockerConst.Labels.jvmRunId -> jvmRun),
-          labelsUnique = Map(DockerConst.Labels.distageRunId -> UUID.randomUUID().toString),
+          labelsUnique = Map(DockerConst.Labels.distageRunId -> runId),
           logger = logger,
           clientConfig = clientConfig,
         )
@@ -119,7 +132,7 @@ object DockerClientWrapper {
     }
 
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
-      for {
+      (for {
         containers <- F.maybeSuspend {
           resource.rawClient
             .listContainersCmd()
@@ -127,23 +140,23 @@ object DockerClientWrapper {
             .withLabelFilter(resource.labels.asJava)
             .exec()
         }
-        // destroy all containers that should not be reused, or was exited (to not to accumulate containers that could be pruned)
-        containersToDestroy = containers.asScala.filter {
-          c =>
-            import izumi.fundamentals.platform.strings.IzString._
-            Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(label => label.asBoolean().contains(false)) || c.getState == DockerConst.State.exited
-        }
-        _ <- F.traverse_(containersToDestroy) {
+        _ <- F.traverse_(containers.asScala) {
           c: Container =>
-            val id = ContainerId(c.getId)
-            F.definitelyRecover(resource.destroyContainer(id, ContainerDestroyMeta.RawContainer(c))) {
-              error =>
-                F.maybeSuspend(logger.warn(s"Failed to destroy container $id: $error"))
+            // destroy all containers that should not be reused or that exited (to not accumulate containers that could be pruned)
+            val notReused = Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(_.asBoolean().contains(false))
+            val removalReason = if (notReused) {
+              Some(RemovalReason.NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer)
+            } else if (c.getState == DockerConst.State.exited) {
+              Some(RemovalReason.AlreadyExited)
+            } else {
+              None
             }
-
+            F.traverse_(removalReason) {
+              resource.removeContainer(ContainerId(c.getId), ContainerDestroyMeta.RawContainer(c), _)
+            }
         }
-        _ <- F.maybeSuspend(resource.rawClient.close())
-      } yield ()
+      } yield ())
+        .guarantee(F.maybeSuspend(resource.rawClient.close()))
     }
   }
 

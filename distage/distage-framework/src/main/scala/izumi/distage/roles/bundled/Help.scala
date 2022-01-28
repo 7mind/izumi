@@ -21,12 +21,10 @@ class Help[F[_]](
   }
 
   private[this] def showHelp(): Unit = {
-    val descriptors = roleInfo
-      .availableRoleBindings
+    val descriptors = roleInfo.availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
 
-    val activations = activationInfo
-      .availableChoices
+    val activations = activationInfo.availableChoices
       .map {
         case (axis, members) =>
           s"$axis:${members.niceList().shift(2)}"

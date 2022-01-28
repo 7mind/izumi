@@ -59,7 +59,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ArgV].fromValue(args)
   make[RequiredRoles].fromValue(requiredRoles)
 
-  make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
+  make[AppShutdownStrategy[F]].aliased[AppShutdownInitiator].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
   make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
 
@@ -118,6 +118,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[Boolean].named("distage.roles.reflection").fromValue(true)
   make[Boolean].named("distage.roles.logs.json").fromValue(false)
+  make[Boolean].named("distage.roles.ignore-mismatched-effect").fromValue(false)
   make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
   make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
 

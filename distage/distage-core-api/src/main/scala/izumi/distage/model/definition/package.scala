@@ -1,8 +1,8 @@
 package izumi.distage.model
 
 package object definition {
-  type Lifecycle2[+F[+_, +_], +E, +A] = Lifecycle[F[E, ?], A]
-  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = Lifecycle[F[R, E, ?], A]
+  type Lifecycle2[+F[+_, +_], +E, +A] = Lifecycle[F[E, _], A]
+  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = Lifecycle[F[R, E, _], A]
 
   @deprecated("Use distage.Lifecycle.Basic", "1.0")
   type DIResource[+F[_], A] = Lifecycle.Basic[F, A]

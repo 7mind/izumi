@@ -28,7 +28,7 @@ trait ContainerDef {
     * make[KafkaDocker.Container].fromResource {
     *   KafkaDocker
     *     .make[F]
-    *     .dependOnDocker(ZookeeperDocker)
+    *     .dependOnContainer(ZookeeperDocker)
     * }
     * }}}
     *

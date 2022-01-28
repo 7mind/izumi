@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection
 
+import scala.annotation.nowarn
 import scala.reflect.api.Universe
 
 object JSRAnnotationTools {
@@ -15,31 +16,24 @@ object JSRAnnotationTools {
     * The package name is being ignored
     */
   def uniqueJSRNameAnno(u: Universe)(annos: List[u.Annotation]): Option[String] = {
-    val maybeJSR = annos
-      .collect {
-        case a: u.AnnotationApi =>
-          a.tree.children match {
-            case (select: u.SelectApi) :: (value: u.NamedArgApi) :: Nil =>
-              (select.children.headOption, value.lhs, value.rhs) match {
-                case (Some(n: u.NewApi), i: u.IdentApi, v: u.LiteralApi) if v.value.value.isInstanceOf[String] && i.name.toString == "value" =>
-                  n.children match {
-                    case (head: u.TypeTreeApi) :: Nil if head.symbol.name.toString == "Named" =>
-                      Some(v.value.value.asInstanceOf[String])
-                    case _ =>
-                      None
-                  }
+    @nowarn("msg=outer reference") @nowarn("msg=abstract type pattern")
+    val maybeJSR = annos.collect {
+      case a: u.AnnotationApi =>
+        a.tree.children match {
+          case (select: u.SelectApi) :: (value: u.NamedArgApi) :: Nil =>
+            (select.children.headOption, value.lhs, value.rhs) match {
+              case (Some(u.New(head: u.TypeTreeApi)), _: u.IdentApi, u.Literal(u.Constant(annotationArgument: String))) if {
+                    head.symbol.name.toString == "Named"
+                  } =>
+                Some(annotationArgument)
 
-                case _ =>
-                  None
-              }
+              case _ => None
+            }
 
-            case _ =>
-              None
-          }
-      }
-      .collect {
-        case Some(name) => name
-      }
+          case _ =>
+            None
+        }
+    }.flatten
 
     maybeJSR match {
       case unique :: Nil =>

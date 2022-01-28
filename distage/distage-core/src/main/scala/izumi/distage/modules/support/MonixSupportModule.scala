@@ -15,11 +15,13 @@ object MonixSupportModule extends MonixSupportModule
   *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `monix`
   *
-  * @note Will also add the following components:
+  * Will also add the following components:
   *   - [[monix.execution.Scheduler Scheduler]] by using [[monix.execution.Scheduler.global]]
   *   - [[monix.execution.Scheduler Scheduler @Id("io")]] by using [[monix.execution.Scheduler.io]]
   *   - [[monix.eval.Task.Options]] by using [[monix.eval.Task.defaultOptions]]
   *   - [[cats.effect.Blocker]] by using `Scheduler @Id("io")`
+  *
+  * Added into scope by [[izumi.distage.modules.DefaultModule]].
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */

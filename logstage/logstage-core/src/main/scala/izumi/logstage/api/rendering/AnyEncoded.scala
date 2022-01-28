@@ -7,16 +7,14 @@ sealed trait AnyEncoded {
   def value: T
   def codec: Option[LogstageCodec[T]]
 }
-
 object AnyEncoded extends AnyEncodedLowPriority {
-  @inline implicit def toPair[A](a: (String, A))(implicit maybeCodec: LogstageCodec[A] = null): (String, AnyEncoded) = (a._1, to(a._2))
+  @inline implicit def toPair[A](a: (String, A))(implicit maybeCodec: LogstageCodec[A] = null): (String, AnyEncoded) = StrictEncoded.toPair(a)
 }
 sealed trait AnyEncodedLowPriority {
   @inline implicit def to[A](a: A)(implicit maybeCodec: LogstageCodec[A] = null): AnyEncoded = StrictEncoded.to(a)
 }
 
 sealed trait StrictEncoded extends AnyEncoded
-
 object StrictEncoded extends StrictEncodedLowPriority {
   @inline implicit def toPair[A](a: (String, A))(implicit maybeCodec: LogstageCodec[A]): (String, StrictEncoded) = (a._1, to(a._2))
 }

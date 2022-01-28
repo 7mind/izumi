@@ -29,8 +29,8 @@ abstract class FileSink[T <: LogFile](
   def restoreSinkState: Option[FileSinkState] = {
     val files = fileService.scanDirectory
     val filesWithSize = files.map(f => (f, fileService.fileSize(f)))
-    filesWithSize
-      .toList.sortWith(_._2 < _._2).headOption.map {
+    filesWithSize.toList
+      .sortWith(_._2 < _._2).headOption.map {
         case (_, size) if size >= config.maxAllowedSize =>
           (filesWithSize.size, 0)
         case (name, size) =>

@@ -19,6 +19,9 @@ object ResourceCases {
     case object XStop extends Ops
     case object YStart extends Ops
     case object YStop extends Ops
+    case object RStart extends Ops
+    case object RStop extends Ops
+    case object ZStart extends Ops
     case object ZStop extends Ops
 
     class X
@@ -27,7 +30,7 @@ object ResourceCases {
 
     val queueEffect = Suspend2(mutable.Queue.empty[Ops])
 
-    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], X] {
+    class XResource(queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, _], X] {
       override def acquire: Suspend2[Nothing, X] = Suspend2 {
         queue += XStart
         new X
@@ -40,7 +43,7 @@ object ResourceCases {
       }.void
     }
 
-    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, ?], Y] {
+    class YResource(x: X, queue: mutable.Queue[Ops]) extends Lifecycle.Basic[Suspend2[Nothing, _], Y] {
       x.discard()
 
       override def acquire: Suspend2[Nothing, Y] = Suspend2 {
@@ -55,7 +58,7 @@ object ResourceCases {
       }.void
     }
 
-    class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, ?], Z] {
+    class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, _], Z] {
       y.discard()
 
       override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
@@ -82,12 +85,12 @@ object ResourceCases {
     def s3ComponentResource[F[_]: QuasiIO](ref: Ref[F, Queue[Ops]], s3Client: S3Client): Lifecycle[F, S3Component] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ComponentStart).map(_ => new S3Component(s3Client))
-      )(release = _ => ref.update(_ :+ ComponentStop).map(_ => ()))
+      )(release = _ => ref.update_(_ :+ ComponentStop))
 
     def s3clientResource[F[_]: QuasiIO](ref: Ref[F, Queue[Ops]], s3Component: S3Component): Lifecycle[F, S3ClientImpl] =
       Lifecycle.make(
         acquire = ref.update(_ :+ ClientStart).map(_ => new S3ClientImpl(s3Component))
-      )(release = _ => ref.update(_ :+ ClientStop).map(_ => ()))
+      )(release = _ => ref.update_(_ :+ ClientStop))
 
   }
 
@@ -107,7 +110,7 @@ object ResourceCases {
       }
     }
 
-    class SuspendResource extends Lifecycle.Basic[Suspend2[Nothing, ?], Res] {
+    class SuspendResource extends Lifecycle.Basic[Suspend2[Nothing, _], Res] {
       override def acquire: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
 
       override def release(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
@@ -121,9 +124,10 @@ object ResourceCases {
     override def release: Unit = ()
   }
 
-  class Ref[F[_]: QuasiIO, A](r: AtomicReference[A]) {
-    def get: F[A] = QuasiIO[F].maybeSuspend(r.get())
-    def update(f: A => A): F[A] = QuasiIO[F].maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
+  class Ref[F[_], A](r: AtomicReference[A])(implicit F: QuasiIO[F]) {
+    def get: F[A] = F.maybeSuspend(r.get())
+    def update(f: A => A): F[A] = F.maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
+    def update_(f: A => A): F[Unit] = update(f).map(_ => ())
     def set(a: A): F[A] = update(_ => a)
   }
 
@@ -155,13 +159,21 @@ object ResourceCases {
   object Suspend2 {
     def apply[A](a: => A)(implicit dummy: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
-    implicit def QuasiIOSuspend2[E <: Throwable]: QuasiIO[Suspend2[E, ?]] = new QuasiIO[Suspend2[E, ?]] {
+    implicit def QuasiIOSuspend2[E <: Throwable]: QuasiIO[Suspend2[E, _]] = new QuasiIO[Suspend2[E, _]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def map2[A, B, C](fa: Suspend2[E, A], fb: => Suspend2[E, B])(f: (A, B) => C): Suspend2[E, C] = fa.flatMap(a => fb.map(f(a, _)))
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): Suspend2[E, A] = {
+        Suspend2(
+          eff match {
+            case Left(err) => throw err
+            case Right(v) => v
+          }
+        )
+      }
       override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         Suspend2(
           () =>
@@ -173,6 +185,15 @@ object ResourceCases {
       }
       override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, () => Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
         definitelyRecover(action)(e => recoverCause(e, () => e))
+      }
+      override def redeem[A, B](action: => Suspend2[E, A])(failure: Throwable => Suspend2[E, B], success: A => Suspend2[E, B]): Suspend2[E, B] = {
+        Suspend2(
+          () =>
+            Try(action.run()).toEither.flatMap(identity) match {
+              case Left(value) => failure(value).run()
+              case Right(value) => success(value).run()
+            }
+        )
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =

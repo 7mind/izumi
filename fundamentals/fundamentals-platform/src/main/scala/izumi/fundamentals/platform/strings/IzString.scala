@@ -13,20 +13,30 @@ final class IzString(private val s: String) extends AnyVal {
 
   @inline final def asBoolean(): Option[Boolean] = {
     try Some(s.toBoolean)
-    catch { case e if NonFatal(e) => None }
+    catch {
+      case e if NonFatal(e) => None
+    }
   }
+
   @inline final def asBoolean(defValue: Boolean): Boolean = {
     try s.toBoolean
-    catch { case e if NonFatal(e) => defValue }
+    catch {
+      case e if NonFatal(e) => defValue
+    }
   }
 
   @inline final def asInt(): Option[Int] = {
     try Some(s.toInt)
-    catch { case e if NonFatal(e) => None }
+    catch {
+      case e if NonFatal(e) => None
+    }
   }
+
   @inline final def asInt(defValue: Int): Int = {
     try s.toInt
-    catch { case e if NonFatal(e) => defValue }
+    catch {
+      case e if NonFatal(e) => defValue
+    }
   }
 
   @inline final def shift(delta: Int, fill: String = " "): String = {
@@ -120,11 +130,19 @@ final class IzString(private val s: String) extends AnyVal {
   }
 
   def camelToUnderscores: String = {
-    "[A-Z\\d]".r.replaceAllIn(s, m => "_" + m.group(0).toLowerCase())
+    if (s.isEmpty) {
+      s
+    } else {
+      s"${s.head.toLower}${"[A-Z\\d]".r.replaceAllIn(s.tail, m => "_" + m.group(0).toLowerCase())}"
+    }
   }
 
   def underscoreToCamel: String = {
-    "_([a-z\\d])".r.replaceAllIn(s, m => m.group(1).toUpperCase())
+    if (s.isEmpty) {
+      s
+    } else {
+      s"${s.head.toUpper}${"_([a-z\\d])".r.replaceAllIn(s.tail, m => m.group(1).toUpperCase())}"
+    }
   }
 
   def splitFirst(separator: Char): (String, String) = {
@@ -165,8 +183,7 @@ final class IzString(private val s: String) extends AnyVal {
     }
 
     import IzString._
-    lines
-      .zipWithIndex
+    lines.zipWithIndex
       .map {
         case (l, i) =>
           s"${(i + 1).toString.leftPad(pad)}: $l"
@@ -233,7 +250,10 @@ final class IzStringBytes(private val s: Iterable[Byte]) extends AnyVal {
 
 object IzString {
   implicit def toRichString(s: String): IzString = new IzString(s)
+
   implicit def toRichIterable[A](s: IterableOnce[A]): IzIterable[A] = new IzIterable(s)
+
   implicit def toRichStringIterable[A](s: Iterable[String]): IzStringIterable[A] = new IzStringIterable(s)
+
   implicit def toRichStringBytes[A](s: Iterable[Byte]): IzStringBytes = new IzStringBytes(s)
 }

@@ -24,8 +24,8 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
   private[definition] def _bindDSLAfterFrom[T](ref: SingletonRef): BindDSLAfterFrom[T]
   private[definition] def _setDSL[T](ref: SetRef): SetDSL[T]
 
-  private[definition] def frozenState: collection.Seq[Binding] = {
-    mutableState.flatMap(_.interpret)
+  private[definition] def frozenState: Iterator[Binding] = {
+    mutableState.iterator.flatMap(_.interpret)
   }
 
   protected[this] def _registered[T <: BindingRef](bindingRef: T): T = {
@@ -94,6 +94,16 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
   /** Same as `make[T].from(implicitly[T])` * */
   final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
     val ref = _registered(new SingletonRef(Bindings.binding(instance)))
+    _bindDSLAfterFrom(ref)
+  }
+
+  /**
+    * Create a dummy binding that throws an exception with an error message when it's created.
+    *
+    * Useful for prototyping.
+    */
+  final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
     _bindDSLAfterFrom(ref)
   }
 

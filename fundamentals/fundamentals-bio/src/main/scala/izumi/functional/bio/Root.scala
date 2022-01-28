@@ -4,7 +4,7 @@ import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper._
-import izumi.functional.bio.impl.{AsyncMonix, AsyncZio}
+import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither}
 import izumi.fundamentals.platform.language.unused
 import zio.ZIO
 
@@ -28,8 +28,8 @@ object Root extends RootInstancesLowPriority1 {
   @inline implicit final def AttachBlockingIO3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit BlockingIO: BlockingIO3[FR]): BlockingIO.type = BlockingIO
 
   implicit final class KleisliSyntaxAttached[FR[-_, +_, +_]](private val FR0: Functor3[FR]) extends AnyVal {
-    @inline def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, ?], R, A])(implicit FR: MonadAsk3[FR]): FR[R, E, A] = FR.fromKleisli(k)
-    @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: Local3[FR]): Kleisli[FR[Any, E, ?], R, A] = {
+    @inline def fromKleisli[R, E, A](k: Kleisli[FR[Any, E, _], R, A])(implicit FR: MonadAsk3[FR]): FR[R, E, A] = FR.fromKleisli(k)
+    @inline def toKleisli[R, E, A](fr: FR[R, E, A])(implicit FR: Local3[FR]): Kleisli[FR[Any, E, _], R, A] = {
       val _ = FR0
       FR.toKleisli(fr)
     }
@@ -102,7 +102,11 @@ sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
     AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
 }
 
-sealed trait RootInstancesLowPriority9 {
+sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
+  @inline implicit final def BIOEither: Predefined.Of[Error2[Either]] = Predefined(BioEither)
+}
+
+sealed trait RootInstancesLowPriority10 {
   @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
   ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =

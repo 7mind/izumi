@@ -139,7 +139,7 @@ class PlanInterpreterDefaultRuntimeImpl(
     }
 
     def runSteps(otherSteps: ArrayBuffer[ExecutableOp.NonImportOp]): F[Unit] = {
-      F.traverse(otherSteps)(
+      F.traverse_(otherSteps) {
         step =>
           processStep(doStep)(step).flatMap {
             case Right(newObjectOps) =>
@@ -166,9 +166,7 @@ class PlanInterpreterDefaultRuntimeImpl(
                 ()
               }
           }
-      )
-        .map(_ => ())
-
+      }
     }
 
     for {

@@ -25,7 +25,7 @@ class PluginLoaderDefaultImpl extends PluginLoader {
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
-    val pluginDef = classOf[PluginDef[_]]
+    val pluginDef = classOf[PluginDef[?]]
     val whitelistedClasses = Seq(pluginDef.getName)
 
     def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {
@@ -43,13 +43,6 @@ class PluginLoaderDefaultImpl extends PluginLoader {
           PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(pkg)))
       }
     }
-  }
-
-  protected[this] def applyOverrides(loadedPlugins: Seq[PluginBase], config: PluginConfig): Seq[PluginBase] = {
-    val merged = loadedPlugins ++ config.merges
-    if (config.overrides.nonEmpty) {
-      Seq((merged.merge +: config.overrides).overrideLeft)
-    } else merged
   }
 }
 

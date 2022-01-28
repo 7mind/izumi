@@ -8,15 +8,15 @@ import scala.annotation.{nowarn, tailrec}
 
 object Toposort {
 
-  final def cycleBreaking[T](predcessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
-    cycleBreaking(predcessors.links, Seq.empty, break)
+  final def cycleBreaking[T](predecessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+    cycleBreaking(predecessors.links, Seq.empty, break)
   }
 
   @nowarn("msg=Unused import")
   @tailrec
-  private[this] def cycleBreaking[T](predcessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  private[this] def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     import scala.collection.compat._
-    val (noPreds, hasPreds) = predcessors.partition(_._2.isEmpty)
+    val (noPreds, hasPreds) = predecessors.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {
       if (hasPreds.isEmpty) {

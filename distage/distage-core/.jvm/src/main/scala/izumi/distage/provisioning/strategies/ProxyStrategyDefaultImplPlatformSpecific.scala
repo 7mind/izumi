@@ -21,15 +21,14 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     val classConstructorParams = if (noArgsConstructor(tpe)) {
       ProxyParams.Empty
     } else {
-      val allArgsAsNull: Array[(Class[_], Any)] = {
+      val allArgsAsNull: Array[(Class[?], Any)] = {
         op.op match {
           case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
             // for class constructors, try to fetch known dependencies from the object graph
             f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a)).toArray
           case _ =>
             // otherwise fill everything with nulls
-            runtimeClass
-              .getConstructors.head.getParameterTypes
+            runtimeClass.getConstructors.head.getParameterTypes
               .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
         }
       }
@@ -46,9 +45,9 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: LinkedParameter): (Class[_], Any) = {
-    val clazz: Class[_] = if (param.isByName) {
-      classOf[Function0[_]]
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: LinkedParameter): (Class[?], Any) = {
+    val clazz: Class[?] = if (param.isByName) {
+      classOf[Function0[?]]
     } else if (param.wasGeneric) {
       classOf[Any]
     } else {

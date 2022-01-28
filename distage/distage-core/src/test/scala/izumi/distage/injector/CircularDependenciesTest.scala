@@ -16,7 +16,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support trait initialization" in {
     import CircularCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[CircularBad1]
       make[CircularBad2]
     })
@@ -35,7 +35,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support complex circular dependencies" in {
     import CircularCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
@@ -62,7 +62,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "Support by-name self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
     })
 
@@ -78,7 +78,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "Support self-referencing traits" in {
     import CircularCase3._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TraitSelfReference]
     })
 
@@ -96,7 +96,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     FactoryConstructor[FactorySelfReference]
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
       make[FactorySelfReference]
     })
@@ -127,7 +127,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "Locator.instances returns instances in the order they were created in" in {
     import CircularCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
@@ -139,28 +139,27 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val planTypes: Seq[SafeType] = plan
-      .steps
+    val planTypes: Seq[SafeType] = plan.steps
       .collect {
         case i: InstantiationOp => i
         case i: MakeProxy => i
       }
       .map(_.target.tpe)
     val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes = context
-      .instances.map(_.key.tpe)
+    val instanceTypes = context.instances
+      .map(_.key.tpe)
       .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
 
     assert(instanceTypes == planTypes)
 
     // whitebox test: ensure that plan ops are in a non-lazy collection
-    assert(plan.steps.isInstanceOf[Vector[_]])
+    assert(plan.steps.isInstanceOf[Vector[?]])
   }
 
   "support by-name circular dependencies" in {
     import ByNameCycle._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[Circular2]
       make[Circular1]
       make[Int].from(1)
@@ -184,7 +183,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support generic circular dependencies when generics are erased by type-erasure" in {
     import CircularCase5._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[ErasedCircular[Dependency]]
       make[PhantomDependency[Dependency]]
     })

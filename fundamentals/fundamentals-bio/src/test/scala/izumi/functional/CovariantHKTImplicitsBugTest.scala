@@ -11,12 +11,12 @@ class CovariantHKTImplicitsBugTest extends AnyWordSpec with GivenWhenThen {
     val res1 = intercept[TestFailedException](assertCompiles("""
         val alg: SomeAlg[IO] = SomeAlg.mk()
       """))
-    assert(res1.getMessage contains "could not find implicit value")
+    assert(res1.getMessage contains "implicit")
     And("really broken")
     val res2 = intercept[TestFailedException](assertCompiles("""
         val alg: SomeAlg[IO] = SomeAlg.mk[IO]()
       """))
-    assert(res2.getMessage contains "could not find implicit value")
+    assert(res2.getMessage contains "implicit")
   }
 
   trait MonoIO[F[_]]
@@ -30,11 +30,11 @@ class CovariantHKTImplicitsBugTest extends AnyWordSpec with GivenWhenThen {
   trait AnyIO[+F[_]]
   object AnyIO {
     implicit def fromMono[F[_]: MonoIO]: AnyIO[F] = new AnyIO[F] {}
-    implicit def fromBIO[F[+_, _]: BifunctorIO]: AnyIO[F[Nothing, ?]] = new AnyIO[F[Nothing, ?]] {}
+    implicit def fromBIO[F[+_, _]: BifunctorIO]: AnyIO[F[Nothing, _]] = new AnyIO[F[Nothing, _]] {}
   }
 
   class SomeAlg[+F[_]]
-  type SomeAlg2[F[_, _]] = SomeAlg[F[Nothing, ?]]
+  type SomeAlg2[F[_, _]] = SomeAlg[F[Nothing, _]]
   object SomeAlg {
     def mk[F[_]: AnyIO](): SomeAlg[F] = new SomeAlg[F]
   }

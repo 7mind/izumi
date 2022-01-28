@@ -4,9 +4,9 @@ import GraphProperty._
 import GraphImpl._
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
-final case class DG[N, M] private (
+final case class DG[N, M] private[izumi] (
   successors: IncidenceMatrix[N],
-  predcessors: IncidenceMatrix[N],
+  predecessors: IncidenceMatrix[N],
   meta: GraphMeta[N, M],
 ) extends AbstractGraph[N, M]
   with DirectedGraph[N, M]
@@ -19,12 +19,12 @@ object DG extends GraphSyntax[DG] {
     fromPred(successors.transposed, meta)
   }
 
-  def fromPred[N, M](predcessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): DG[N, M] = {
-    unsafeFactory(predcessors, meta)
+  def fromPred[N, M](predecessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): DG[N, M] = {
+    unsafeFactory(predecessors, meta)
   }
 
-  override protected def unsafeFactory[N, M](predcessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): DG[N, M] = {
-    new DG(predcessors.transposed, predcessors, meta.only(predcessors.links.keySet))
+  override protected def unsafeFactory[N, M](predecessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): DG[N, M] = {
+    new DG(predecessors.transposed, predecessors, meta.only(predecessors.links.keySet))
   }
 
 }

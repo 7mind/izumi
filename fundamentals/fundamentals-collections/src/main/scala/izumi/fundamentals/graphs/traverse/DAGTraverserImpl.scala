@@ -17,8 +17,8 @@
 // P: Parallel[F],
 //) extends AbstractDagTraverser[F, Node, Trace, Progress] {
 //
-//  final def traverse(predcessors: IncidenceMatrix[Node]): F[Either[TraverseFailure[F, Node, Trace, Progress], Marking[Node, Trace]]] = {
-//    val initial = TraverseState[F, Node, Trace, Progress](predcessors, Marking(Map.empty, Meta(0)), Map.empty)
+//  final def traverse(predecessors: IncidenceMatrix[Node]): F[Either[TraverseFailure[F, Node, Trace, Progress], Marking[Node, Trace]]] = {
+//    val initial = TraverseState[F, Node, Trace, Progress](predecessors, Marking(Map.empty, Meta(0)), Map.empty)
 //    continueTraversal(initial)
 //  }
 //
@@ -67,7 +67,7 @@
 //      val unfinished: Map[Node, MPromise.Status[Progress, Trace]] = merged.toMap -- markedNodes.keySet
 //      val nextMarking = Marking(state.marking.trace ++ markedNodes, Meta(state.marking.meta.generation + 1))
 //
-//      val nextUnmarked = findNext(state.predcessors, nextMarking, (node, mark) => !state.marking.contains(node) && traverseStrategy.isGreen(node, mark))
+//      val nextUnmarked = findNext(state.predecessors, nextMarking, (node, mark) => !state.marking.contains(node) && traverseStrategy.isGreen(node, mark))
 //      val tasks = nextUnmarked.map(n => n -> traverseStrategy.mark(n)).toMap
 //
 //      val stillActive = state.active.view.filterKeys(unfinished.contains).toMap
@@ -77,14 +77,14 @@
 //      assert(state.marking.trace.keySet.intersect(markedNodes.keySet).isEmpty)
 //
 //
-//      val next = TraverseState(state.predcessors, nextMarking, nextActive)
+//      val next = TraverseState(state.predecessors, nextMarking, nextActive)
 //      next
 //    }
 //  }
 //
 //
-//  final def findNext(predcessors: IncidenceMatrix[Node], state: Marking[Node, Trace], goodMark: (Node, Trace) => Boolean): Set[Node] = {
-//    val unmarkedPart = predcessors.links -- state.trace.keySet
+//  final def findNext(predecessors: IncidenceMatrix[Node], state: Marking[Node, Trace], goodMark: (Node, Trace) => Boolean): Set[Node] = {
+//    val unmarkedPart = predecessors.links -- state.trace.keySet
 //    unmarkedPart
 //      .filter {
 //        case (_, pp) =>

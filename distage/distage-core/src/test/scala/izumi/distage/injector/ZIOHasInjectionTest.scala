@@ -35,7 +35,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
   final class ResourceEmptyHasImpl[F[+_, +_]: Applicative2](
     d1: Dependency1
-  ) extends Lifecycle.LiftF[F[Throwable, ?], Trait1](
+  ) extends Lifecycle.LiftF[F[Throwable, _], Trait1](
       F.pure(trait1(d1))
     )
 
@@ -74,7 +74,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       assert(error.getMessage contains "Int")
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGC(definition))
+      val plan = injector.plan(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
@@ -101,7 +101,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       }
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.noGC(definition))
+      val plan = injector.plan(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
@@ -120,7 +120,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
         value: Has[Dep @Id("B")] => ZIO(TestClass2(value.get))
       }
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dep].named("A").from[DepA]
         make[Dep].named("B").from[DepB]
         make[TestClass2[Dep]].named("A").fromHas(ctorA)
@@ -147,7 +147,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       def getDep1 = ZIO.access[Has[Dependency1]](_.get)
       def getDep2 = ZIO.access[Has[Dependency2]](_.get)
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
@@ -216,12 +216,12 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "polymorphic ZIOHas injection" in {
       import TraitCase2._
 
-      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.noGC(new ModuleDef {
+      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.everything(new ModuleDef {
         make[Dependency1]
         make[Dependency2]
         make[Dependency3]
         addImplicit[Local3[F]]
-        addImplicit[Applicative2[F[Any, +?, +?]]]
+        addImplicit[Applicative2[F[Any, +_, +_]]]
         make[Trait3 { def dep1: Dependency1 }].fromHas(
           (d3: Dependency3) =>
             (for {
@@ -234,10 +234,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
             }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3]
         )
         make[Trait2].fromHas[ResourceHasImpl[F]]
-        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
+        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
 
         many[Trait2].addHas[ResourceHasImpl[F]]
-        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +?, +?]]]
+        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
       })
 
       val injector = mkNoCyclesInjector()
@@ -269,7 +269,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
     "can handle AnyVals" in {
       import TraitCase6._
 
-      val definition = PlannerInput.noGC(new ModuleDef {
+      val definition = PlannerInput.everything(new ModuleDef {
         make[Dep]
         make[AnyValDep]
         make[TestTrait].fromHas(

@@ -102,7 +102,7 @@ final case class TestConfig(
   debugOutput: Boolean = false,
 )
 object TestConfig {
-  def forSuite(clazz: Class[_]): TestConfig = {
+  def forSuite(clazz: Class[?]): TestConfig = {
     val packageName = clazz.getPackage.getName
     TestConfig(
       pluginConfig = PluginConfig.cached(Seq(packageName)),
@@ -157,19 +157,19 @@ object TestConfig {
   object AxisDIKeys {
     def empty: AxisDIKeys = AxisDIKeys(Map.empty)
 
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): AxisDIKeys =
+    @inline implicit def fromSet(set: Set[? <: DIKey]): AxisDIKeys =
       AxisDIKeys(Map(Set.empty -> set.toSet[DIKey]))
 
-    @inline implicit def fromSetMap(map: Iterable[(Set[_ <: AxisChoice], Set[_ <: DIKey])]): AxisDIKeys =
-      AxisDIKeys(map.toMap[Set[_ <: AxisChoice], Set[_ <: DIKey]].asInstanceOf[Map[Set[AxisChoice], Set[DIKey]]])
+    @inline implicit def fromSetMap(map: Iterable[(Set[? <: AxisChoice], Set[? <: DIKey])]): AxisDIKeys =
+      AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisChoice] -> v.toSet[DIKey] }.toMap)
 
     @inline implicit def fromSingleMap(map: Iterable[(AxisChoice, DIKey)]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> Set(v) }.toMap)
 
-    @inline implicit def fromSingleToSetMap(map: Iterable[(AxisChoice, Set[_ <: DIKey])]): AxisDIKeys =
+    @inline implicit def fromSingleToSetMap(map: Iterable[(AxisChoice, Set[? <: DIKey])]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => Set(k) -> v.toSet[DIKey] }.toMap)
 
-    @inline implicit def fromSetToSingleMap(map: Iterable[(Set[_ <: AxisChoice], DIKey)]): AxisDIKeys =
+    @inline implicit def fromSetToSingleMap(map: Iterable[(Set[? <: AxisChoice], DIKey)]): AxisDIKeys =
       AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisChoice] -> Set(v) }.toMap)
   }
 
@@ -198,10 +198,10 @@ object TestConfig {
 
     final val MaxLevel = Int.MaxValue
 
-    @inline implicit def fromSet(set: Set[_ <: DIKey]): PriorAxisDIKeys =
+    @inline implicit def fromSet(set: Set[? <: DIKey]): PriorAxisDIKeys =
       PriorAxisDIKeys(Map(MaxLevel -> AxisDIKeys.fromSet(set)))
 
-    @inline implicit def fromPriorSet(map: Map[Int, Set[_ <: DIKey]]): PriorAxisDIKeys =
+    @inline implicit def fromPriorSet(map: Map[Int, Set[? <: DIKey]]): PriorAxisDIKeys =
       PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
 
     @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys =

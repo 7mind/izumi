@@ -5,7 +5,6 @@ import java.util.concurrent.ThreadPoolExecutor
 import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
 import cats.{Parallel, effect}
 import distage.{Id, ModuleDef}
-import zio.interop.catz
 import zio.{IO, Runtime, Task}
 
 import scala.concurrent.ExecutionContext
@@ -18,7 +17,7 @@ object ZIOCatsEffectInstancesModule extends ZIOCatsEffectInstancesModule
   *
   * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
   *
-  * @note Will also add the following components:
+  * Will also add the following components:
   *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("zio.io")`
   */
 trait ZIOCatsEffectInstancesModule extends ModuleDef {
@@ -26,20 +25,24 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
 
   make[ConcurrentEffect[Task]].from {
     r: Runtime[Any] =>
-      catz.taskEffectInstance(r)
+      zio.interop.catz.taskEffectInstance(r)
   }
-  make[Parallel[Task]].from(catz.parallelInstance[Any, Throwable])
+  make[Parallel[Task]].from {
+    zio.interop.catz.parallelInstance[Any, Throwable]
+  }
   make[Timer[Task]].from[ZIOClockTimer[Throwable]]
 
-  make[ContextShift[Task]].from(catz.zioContextShift[Any, Throwable])
+  make[ContextShift[Task]].from {
+    zio.interop.catz.zioContextShift[Any, Throwable]
+  }
   make[Blocker].from {
     pool: ThreadPoolExecutor @Id("zio.io") =>
       Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(pool))
   }
 }
 
-final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, ?]] {
-  override lazy val clock: effect.Clock[IO[E, ?]] = new effect.Clock[IO[E, ?]] {
+final class ZIOClockTimer[E](zioClock: zio.clock.Clock.Service) extends effect.Timer[IO[E, _]] {
+  override lazy val clock: effect.Clock[IO[E, _]] = new effect.Clock[IO[E, _]] {
     override def monotonic(unit: TimeUnit): IO[E, Long] =
       zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
 

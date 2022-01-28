@@ -470,6 +470,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
           }
+        // TODO: workaround to handle integration exceptions thrown by DockerWrapper and ContainerResorce
+        case (ProvisioningIntegrationException(failures), _) =>
+          F.maybeSuspend {
+            reporter.testStatus(test.meta, TestStatus.Ignored(failures))
+          }
         case (_, getTrace) =>
           F.maybeSuspend {
             reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
@@ -610,7 +615,7 @@ object DistageTestRunner {
   final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String) {
     override def toString: String = s"$suiteName: $name"
   }
-  final case class DistageTest[F[_]](test: Functoid[F[_]], environment: TestEnvironment, meta: TestMeta)
+  final case class DistageTest[F[_]](test: Functoid[F[?]], environment: TestEnvironment, meta: TestMeta)
   final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 

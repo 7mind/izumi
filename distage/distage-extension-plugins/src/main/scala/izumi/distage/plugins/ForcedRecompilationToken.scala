@@ -1,5 +1,6 @@
 package izumi.distage.plugins
 
+import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.whitebox
@@ -16,6 +17,11 @@ import scala.reflect.macros.whitebox
   *
   * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-time checks]]
   */
+@implicitNotFound("""Could not find implicit for `izumi.distage.plugins.ForcedRecompilationToken[${T}]`.
+This is supposed to be impossible, but is sometimes observed under mdoc & scaladoc,
+in which case you'll have to put a dummy implicit in scope, such as by using:
+
+  import izumi.distage.plugins.ForcedRecompilationToken.disabled._""")
 final abstract class ForcedRecompilationToken[T]
 
 object ForcedRecompilationToken {
@@ -62,6 +68,10 @@ object ForcedRecompilationToken {
     }
   }
 
+  object disabled {
+    implicit def disable: ForcedRecompilationToken[Unit] = null
+  }
+
   // an implementation for better days!
   // As of IDEA 2020.3 EAP, Intellij "Incrementality type: IDEA" doesn't regard changes in singleton types as "real",
   // so instead we have to use the trick above to encode the UUID as Eithers.
@@ -80,7 +90,10 @@ object ForcedRecompilationToken {
 //      UniqueRecompilationTokenMacro.synchronized {
 //        if (cachedTypedTree eq null) {
 //          val uuidStrConstantType = internal.constantType(Constant(compilerLaunchId))
-//          val tree = c.typecheck(q"null : _root_.izumi.distage.plugins.ForcedRecompilationToken[$uuidStrConstantType]")
+////          val tree = c.typecheck(q"null : _root_.izumi.distage.plugins.ForcedRecompilationToken[$uuidStrConstantType]")
+//          val tree = q"null"
+//          import c.internal.reificationSupport._
+//          setType(tree, appliedType(typeOf[ForcedRecompilationToken[_]].typeConstructor, uuidStrConstantType))
 //          cachedTypedTree = tree
 //        }
 //        cachedTypedTree.asInstanceOf[c.Tree]

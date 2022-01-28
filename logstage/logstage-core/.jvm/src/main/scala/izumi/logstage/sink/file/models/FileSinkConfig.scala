@@ -2,7 +2,7 @@ package izumi.logstage.sink.file.models
 
 import LogPayloadSize._
 
-final case class FileSinkConfig private (fileSizeInBytes: Option[Int] = None, fileSizeSoft: Option[Int] = None) {
+final case class FileSinkConfig private (fileSizeInBytes: Option[Int], fileSizeSoft: Option[Int]) {
 
   val (maxAllowedSize, calculateMessageSize) = {
     (fileSizeSoft, fileSizeInBytes) match {
@@ -15,6 +15,6 @@ final case class FileSinkConfig private (fileSizeInBytes: Option[Int] = None, fi
 }
 
 object FileSinkConfig {
-  def inBytes(limit: Int): FileSinkConfig = new FileSinkConfig(fileSizeInBytes = Some(limit))
-  def soft(limit: Int): FileSinkConfig = new FileSinkConfig(fileSizeSoft = Some(limit))
+  def inBytes(limit: Int): FileSinkConfig = new FileSinkConfig(fileSizeInBytes = Some(limit), fileSizeSoft = None)
+  def soft(limit: Int): FileSinkConfig = new FileSinkConfig(fileSizeSoft = Some(limit), fileSizeInBytes = None)
 }

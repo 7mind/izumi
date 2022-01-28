@@ -16,7 +16,8 @@ object LiteralBoolean {
   @inline implicit final def unwrap[L <: LiteralBoolean](literalBoolean: L): L#T = literalBoolean.value.asInstanceOf[L#T]
 
   @inline final def True: LiteralBoolean { type T = LiteralCompat.`true`.T } = new LiteralBoolean(true).asInstanceOf[LiteralBoolean { type T = LiteralCompat.`true`.T }]
-  @inline final def False: LiteralBoolean { type T = LiteralCompat.`false`.T } = new LiteralBoolean(false).asInstanceOf[LiteralBoolean { type T = LiteralCompat.`false`.T }]
+  @inline final def False: LiteralBoolean { type T = LiteralCompat.`false`.T } =
+    new LiteralBoolean(false).asInstanceOf[LiteralBoolean { type T = LiteralCompat.`false`.T }]
 
   object LiteralBooleanMacro {
     def createBool(c: whitebox.Context)(b: c.Expr[Boolean]): c.Tree = {

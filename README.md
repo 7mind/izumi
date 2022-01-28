@@ -33,7 +33,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. [distage](https://izumi.7mind.io/distage/) – Transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. [distage](https://izumi.7mind.io/distage/) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
 2. [distage-testkit](https://izumi.7mind.io/distage/distage-testkit) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. [distage-framework-docker](https://izumi.7mind.io/distage/distage-framework-docker) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. [LogStage](https://izumi.7mind.io/logstage/) – Automatic structural logs from Scala string interpolations,
@@ -59,20 +59,23 @@ Support Chats:
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
 * [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+* [Discussions on Github](https://github.com/7mind/izumi/discussions)
 
 Videos:
 
-* [Scala, Functional Programming and Team Productivity (an overview of distage, distage-framework-docker & distage-testkit)](https://www.youtube.com/watch?v=QbdeVoL4hBk)
+* [Izumi 1.0: Your Next Scala Stack](https://www.youtube.com/watch?v=o65sKWnFyk0)
+* [Scala, Functional Programming and Team Productivity](https://www.youtube.com/watch?v=QbdeVoL4hBk)
 * [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs)
-* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+* [Livecoding: DIStage & Bifunctor Tagless Final](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 * [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
 
 Slides:
 
+* [Izumi 1.0: Your Next Scala Stack](https://www.slideshare.net/7mind/izumi-10-your-next-scala-stack)
 * [Scala, Functional Programming and Team Productivity](https://www.slideshare.net/7mind/scala-functional-programming-and-team-productivity)
 * [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.slideshare.net/7mind/hyperpragmatic-pure-fp-testing-with-distagetestkit)
 * [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
-* [logstage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
+* [LogStage: Zero-cost Structured Logging](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [More slides](https://github.com/7mind/slides)
 
 Key goals
@@ -113,19 +116,24 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 </a>
 <br/>
 
-<a href="https://vidiq.com/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-vidiq.svg?sanitize=true" alt="vidIQ"/>
-</a>
-<br/>
-
 <a href="https://tele2.ru/">
   <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.svg?sanitize=true" alt="Tele2 Russia"/>
 </a>
 <br/>
 
+<a href="https://evo.company/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-evo-pay.svg?sanitize=true" alt="Evo.Pay"/>
+</a>
+<br/>
+
+<a href="https://glidewell.io/">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
+</a>
+<br/>
+
 Projects powered by Izumi
 ==========================
-- [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely functional way.
+- [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely-functional way.
 
 Credits
 =======
@@ -151,4 +159,3 @@ See:
 
 - [Build notes](doc/md/build.md)
 - [Project flow](doc/md/flow.md)
-

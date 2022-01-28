@@ -80,7 +80,7 @@ sealed trait MiniBIO[+E, +A] {
             case t: Throwable =>
               Exit.Termination(t, Trace.empty)
           }
-        val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[_, _, _, _]])
+        val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[?, ?, ?, ?]])
         catcher match {
           case value :: stackRest =>
             runner(value.asInstanceOf[Catcher[Any, Any, Any, Any]].recover(err), stackRest)
@@ -142,18 +142,6 @@ object MiniBIO {
     }
 
     override def catchAll[R, E, A, E2](r: MiniBIO[E, A])(f: E => MiniBIO[E2, A]): MiniBIO[E2, A] = redeem(r)(f, pure)
-
-    override def catchSome[R, E, A, E2 >: E](r: MiniBIO[E, A])(f: PartialFunction[E, MiniBIO[E2, A]]): MiniBIO[E2, A] = {
-      Redeem[E, A, E2, A](
-        r,
-        {
-          case e @ Exit.Interruption(_, _) => Fail.halt(e)
-          case e @ Exit.Termination(_, _, _) => Fail.halt(e)
-          case exit @ Exit.Error(e, _) => f.applyOrElse(e, (_: E) => Fail.halt(exit))
-        },
-        pure,
-      )
-    }
 
     override def bracketCase[R, E, A, B](acquire: MiniBIO[E, A])(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
       // does not propagate error in release in case `use` fails, propagates only error from `use`

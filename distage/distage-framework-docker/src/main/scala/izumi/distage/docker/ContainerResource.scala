@@ -1,12 +1,11 @@
 package izumi.distage.docker
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
-
 import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model._
 import izumi.distage.docker.ContainerResource.PortDecl
 import izumi.distage.docker.Docker._
-import izumi.distage.docker.DockerClientWrapper.ContainerDestroyMeta
+import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
@@ -17,33 +16,53 @@ import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.fundamentals.platform.language.open
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
-case class ContainerResource[F[_], T](
-  config: Docker.ContainerConfig[T],
-  client: DockerClientWrapper[F],
-  logger: IzLogger,
+@open class ContainerResource[F[_], Tag](
+  val config: Docker.ContainerConfig[Tag],
+  val client: DockerClientWrapper[F],
+  val logger: IzLogger,
 )(implicit
   val F: QuasiIO[F],
   val P: QuasiAsync[F],
-) extends Lifecycle.Basic[F, DockerContainer[T]] {
+) extends Lifecycle.Basic[F, DockerContainer[Tag]] {
 
-  private[this] val rawClient = client.rawClient
+  import client.rawClient
 
-  private[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
+  protected[this] val stableLabels: Map[String, String] = {
+    val reuseLabel = Map(
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
+    )
+    reuseLabel ++ client.labels
+  }
+
+  protected[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
       case _: DockerPort.TCPBase => ExposedPort.tcp(number)
       case _: DockerPort.UDPBase => ExposedPort.udp(number)
     }
   }
 
-  override def acquire: F[DockerContainer[T]] = F.suspendF {
+  def copy(
+    config: Docker.ContainerConfig[Tag] = config,
+    client: DockerClientWrapper[F] = client,
+    logger: IzLogger = logger,
+  )(implicit F: QuasiIO[F] = F,
+    P: QuasiAsync[F] = P,
+  ): ContainerResource[F, Tag] = {
+    new ContainerResource[F, Tag](config, client, logger)(F, P)
+  }
+
+  override def acquire: F[DockerContainer[Tag]] = F.suspendF {
     val ports = config.ports.map {
       containerPort =>
         val local = IzSockets.temporaryLocalPort()
@@ -62,38 +81,28 @@ case class ContainerResource[F[_], T](
     if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
       runReused(ports)
     } else {
-      doRun(ports)
+      runNew(ports)
     }
   }
 
-  override def release(container: DockerContainer[T]): F[Unit] = {
-    if (Docker.shouldKill(container.containerConfig.reuse, container.clientConfig.globalReuse)) {
-      client.destroyContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container))
+  override def release(container: DockerContainer[Tag]): F[Unit] = {
+    if (Docker.shouldKillPromptly(container.containerConfig.reuse, container.clientConfig.globalReuse)) {
+      client.removeContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container), RemovalReason.NotReused)
     } else {
-      F.maybeSuspend(logger.info(s"Will not destroy: $container"))
+      F.maybeSuspend(
+        logger.info(s"Will not destroy: $container (${container.containerConfig.reuse}, ${container.clientConfig.globalReuse})")
+      )
     }
   }
 
-  def await(container: DockerContainer[T], attempt: Int): F[DockerContainer[T]] = {
+  def await(container: DockerContainer[Tag], attempt: Int): F[DockerContainer[Tag]] = {
     F.maybeSuspend {
       logger.debug(s"Awaiting until alive: $container...")
-      try {
-        val status = rawClient.inspectContainerCmd(container.id.name).exec()
-        if (status.getState.getExitCodeLong == 0L && config.ports.isEmpty) {
-          logger.debug(s"Container has exited but that was a singleshot container $container...")
-          Right(HealthCheckResult.Available)
-        } else if (status.getState.getRunning) {
-          logger.debug(s"Trying healthcheck on running $container...")
-          Right(config.healthCheck.check(logger, container))
-        } else {
-          Left(new RuntimeException(s"$container exited, status: ${status.getState}"))
-        }
-      } catch {
-        case t: Throwable =>
-          Left(t)
+      inspectContainerAndGetState(container.id.name).map {
+        config.healthCheck.check(logger, container, _)
       }
     }.flatMap {
-        case Right(HealthCheckResult.Available) =>
+        case Right(HealthCheckResult.Passed) =>
           F.maybeSuspend {
             logger.info(s"Continuing without port checks: $container")
             container
@@ -106,6 +115,9 @@ case class ContainerResource[F[_], T](
             out
           }
 
+        case Right(HealthCheckResult.Terminated(failure)) =>
+          F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+
         case Right(last) =>
           val maxAttempts = config.healthCheckMaxAttempts
           val next = attempt + 1
@@ -114,8 +126,8 @@ case class ContainerResource[F[_], T](
             P.sleep(config.healthCheckInterval).flatMap(_ => await(container, next))
           } else {
             last match {
-              case HealthCheckResult.Unavailable =>
-                F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts, no diagnostics available: $container"))
+              case HealthCheckResult.Failed(failure) =>
+                F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
 
               case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
                 val sb = new StringBuilder()
@@ -124,9 +136,8 @@ case class ContainerResource[F[_], T](
                   sb.append(s"Unchecked ports:\n")
                   sb.append(unverifiedPorts.niceList())
                 }
-
                 if (unavailablePorts.unavailablePorts.nonEmpty) {
-                  val errored = unavailablePorts.unavailablePorts
+                  val portErrors = unavailablePorts.unavailablePorts
                     .flatMap {
                       case (port, attempts) =>
                         attempts.map {
@@ -141,10 +152,12 @@ case class ContainerResource[F[_], T](
                     }
 
                   sb.append(s"Unchecked ports:\n")
-                  sb.append(errored.niceList())
+                  sb.append(portErrors.niceList())
                 }
-
                 F.fail(new TimeoutException(sb.toString()))
+
+              case HealthCheckResult.Terminated(failure) =>
+                F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
 
               case impossible: GoodHealthcheck =>
                 F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
@@ -156,10 +169,10 @@ case class ContainerResource[F[_], T](
       }
   }
 
-  private[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
+  protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
     FileLockMutex.withLocalMutex(logger)(
-      s"distage-container-resource-${config.image.replace("/", "_")}:${config.ports.mkString(";")}",
+      s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
       waitFor = 200.millis,
       maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
     ) {
@@ -187,7 +200,7 @@ case class ContainerResource[F[_], T](
               .sortBy(_.getId)
           } catch {
             case c: Throwable =>
-              throw new IntegrationCheckException(NonEmptyList(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
+              throw new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))
           }
         }
         val candidate = {
@@ -230,7 +243,7 @@ case class ContainerResource[F[_], T](
 
         candidate match {
           case Some((c, cInspection, existingPorts)) =>
-            val unverified = DockerContainer[T](
+            val unverified = DockerContainer[Tag](
               id = ContainerId(c.getId),
               name = cInspection.getName,
               connectivity = existingPorts,
@@ -245,13 +258,13 @@ case class ContainerResource[F[_], T](
 
           case None =>
             logger.info(s"No existing container found for ${config.image}, will run new...")
-            doRun(ports)
+            runNew(ports)
         }
       }
     }
   }
 
-  private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
+  protected[this] def runNew(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
     val baseCmd = rawClient.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
 
@@ -266,9 +279,12 @@ case class ContainerResource[F[_], T](
     val adjustedEnv = portsEnv ++ config.env
 
     for {
+      _ <- F.when(config.autoPull) {
+        doPull()
+      }
       out <- F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
-        val cmd = Value(baseCmd)
+        val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
           .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
           .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
@@ -282,18 +298,8 @@ case class ContainerResource[F[_], T](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        if (config.alwaysPull) {
-          logger.info(s"Going to pull `${config.image}`...")
-          rawClient
-            .pullImageCmd(config.image)
-            .start()
-            .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
-        } else {
-          logger.info(s"Skipping explicit pull of `${config.image}`")
-        }
-
         logger.debug(s"Going to create container from image `${config.image}`...")
-        val res = cmd.exec()
+        val res = createContainerCmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
         rawClient.startContainerCmd(res.getId).exec()
@@ -307,15 +313,15 @@ case class ContainerResource[F[_], T](
             throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
 
           case Right(mappedPorts) =>
-            val container = DockerContainer[T](
-              ContainerId(res.getId),
-              inspection.getName,
-              hostName,
-              inspection.getConfig.getLabels.asScala.toMap,
-              config,
-              client.clientConfig,
-              mappedPorts,
-              VerifiedContainerConnectivity.NoAvailablePorts(),
+            val container = DockerContainer[Tag](
+              id = ContainerId(res.getId),
+              name = inspection.getName,
+              hostName = hostName,
+              labels = inspection.getConfig.getLabels.asScala.toMap,
+              containerConfig = config,
+              clientConfig = client.clientConfig,
+              connectivity = mappedPorts,
+              availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
             )
             logger.debug(s"Created $container from ${config.image}...")
             logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
@@ -335,7 +341,52 @@ case class ContainerResource[F[_], T](
     } yield result
   }
 
-  private def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
+  protected[this] def doPull(): F[Unit] = {
+    F.maybeSuspendEither {
+      val existingImages = rawClient
+        .listImagesCmd().exec()
+        .asScala
+        .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+        .toSet
+      // test if image exists
+      // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+      if (existingImages.contains(config.image) || existingImages.contains(config.image.replace("library/", ""))) {
+        logger.info(s"Skipping pull for `${config.image}`. Image already exists.")
+        Right(())
+      } else {
+        logger.info(s"Going to pull `${config.image}`...")
+        // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+        Try {
+          rawClient
+            .pullImageCmd(config.image)
+            .start()
+            .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+        } match {
+          case Success(pulled) if pulled => // pulled successfully
+            Right(())
+          case Success(_) => // timed out
+            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
+          case Failure(t) => // failure occurred (e.g. rate limiter failure)
+            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
+        }
+      }
+    }
+  }
+
+  protected[this] def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
+    try {
+      val status = rawClient.inspectContainerCmd(containerId).exec()
+      status.getState match {
+        case s if s.getRunning => Right(ContainerState.Running)
+        case s => Right(ContainerState.Exited(s.getExitCodeLong))
+      }
+    } catch {
+      case _: NotFoundException => Right(ContainerState.NotFound)
+      case t: Throwable => Left(t)
+    }
+  }
+
+  protected[this] def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
     val network = inspection.getNetworkSettings
     val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
@@ -347,9 +398,9 @@ case class ContainerResource[F[_], T](
           case static: DockerPort.Static =>
             Some(toExposedPort(static, static.number))
         }
-        val mappings = exposedPort.toSeq.flatMap(p => Option(network.getPorts.getBindings.get(p))).flatten.map {
+        val mappings = exposedPort.toSeq.flatMap(p => Option(network.getPorts.getBindings.get(p))).flatten.flatMap {
           port =>
-            ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+            ServiceHost(port.getHostIp).map(ServicePort(_, Integer.parseInt(port.getHostPortSpec)))
         }
         (containerPort, NonEmptyList.from(mappings))
     }
@@ -359,25 +410,22 @@ case class ContainerResource[F[_], T](
       Left(UnmappedPorts(unmapped))
     } else {
       val dockerHost = client.rawClientConfig.getDockerHost.getHost
-      val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress)
+      val networkAddresses = network.getNetworks.asScala.values.toList.map(_.getIpAddress).flatMap(ServiceHost(_))
       val mapped = ports.collect { case (cp, Some(lst)) => (cp, lst) }
 
       Right(
         ReportedContainerConnectivity(
-          Option(dockerHost),
-          networkAddresses,
-          mapped.toMap,
+          dockerHost = Option(dockerHost),
+          containerAddresses = networkAddresses,
+          dockerPorts = mapped.toMap,
         )
       )
     }
 
   }
 
-  private val stableLabels = Map(
-    DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
-  ) ++ client.labels
 }
 
 object ContainerResource {
-  private final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+  final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 }

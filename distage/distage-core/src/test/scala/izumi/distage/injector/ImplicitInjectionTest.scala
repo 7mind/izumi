@@ -12,7 +12,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
   "Handle multiple parameter lists" in {
     import ImplicitCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TestDependency2]
       make[TestDependency1]
       make[TestDependency3]
@@ -32,7 +32,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
   "populates implicit parameters in class constructor from explicit DI object graph instead of scala's implicit resolution" in {
     import ImplicitCase1._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
       make[Dep]
       make[DummyImplicit].from[MyDummyImplicit]
@@ -51,7 +51,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
   "Implicit parameters are injected from the DI object graph, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
-    val definition = PlannerInput.noGC(new ModuleDef {
+    val definition = PlannerInput.everything(new ModuleDef {
       @nowarn implicit val testDependency3: TestDependency3 = new TestDependency3
 
       make[TestDependency1]

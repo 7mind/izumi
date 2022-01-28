@@ -6,6 +6,9 @@ import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}
 
+import scala.annotation.nowarn
+
+@nowarn("msg=outer reference")
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   import u.u.{Annotation, LiteralApi}
@@ -147,9 +150,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def traitMethods(tpe: TypeNative): List[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
-    val declaredAbstractMethods = tpe
-      .members
-      .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
+    val declaredAbstractMethods = tpe.members.sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(isWireableMethod)
       .map(_.asMethod)
     declaredAbstractMethods.map(methodToAssociation(tpe, _))

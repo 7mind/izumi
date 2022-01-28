@@ -62,7 +62,7 @@ class SimpleLoggerConfigurator(
       } match {
       case Left(errMessage) =>
         exceptionLogger.log(Warn)(errMessage)
-        SinksConfig(Map.empty, None, None, None)
+        SinksConfig(Map.empty, None, None)
 
       case Right(value) =>
         value
@@ -75,7 +75,6 @@ object SimpleLoggerConfigurator {
     levels: Map[String, List[String]],
     options: Option[RenderingOptions],
     json: Option[Boolean],
-    layout: Option[String],
   )
   object SinksConfig {
     implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived

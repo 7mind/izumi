@@ -35,7 +35,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(PlannerInput.noGC(Definition[List](5)))
+    val listPlan = listInjector.plan(PlannerInput.everything(Definition[List](5)))
     val listContext = listInjector.produce(listPlan).unsafeGet()
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -48,22 +48,22 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(PlannerInput.noGC(Definition[OptionT[List, ?]](5)))
+    val optionTPlan = optionTInjector.plan(PlannerInput.everything(Definition[OptionT[List, _]](5)))
     val optionTContext = optionTInjector.produce(optionTPlan).unsafeGet()
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
-    assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
-    assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
+    assert(optionTContext.get[TestServiceClass[OptionT[List, _]]].get == OptionT(List(Option(5))))
+    assert(optionTContext.get[TestServiceTrait[OptionT[List, _]]].get == OptionT(List(Option(10))))
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.plan(PlannerInput.noGC(Definition[Either[String, ?]](5)))
+    val eitherPlan = eitherInjector.plan(PlannerInput.everything(Definition[Either[String, _]](5)))
 
     val eitherContext = eitherInjector.produce(eitherPlan).unsafeGet()
 
     assert(eitherContext.get[TestTrait].get == Right(5))
-    assert(eitherContext.get[TestServiceClass[Either[String, ?]]].get == Right(5))
-    assert(eitherContext.get[TestServiceTrait[Either[String, ?]]].get == Right(10))
+    assert(eitherContext.get[TestServiceClass[Either[String, _]]].get == Right(5))
+    assert(eitherContext.get[TestServiceTrait[Either[String, _]]].get == Right(10))
     assert(eitherContext.get[Either[String, String]] == Right("Hello 5!"))
     assert(
       eitherContext.get[Either[Either[String, String], Either[String, Either[String, Either[String, Either[String, String]]]]]]
@@ -71,7 +71,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     )
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(PlannerInput.noGC(Definition[id](5)))
+    val idPlan = idInjector.plan(PlannerInput.everything(Definition[id](5)))
     val idContext = idInjector.produce(idPlan).unsafeGet()
 
     assert(idContext.get[TestTrait].get == 5)
@@ -156,7 +156,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     val value: Either[String, Int] = Right(5)
     val definition = new Definition[Either, Option, Int](value)
 
-    val context = Injector.Standard().produce(PlannerInput.noGC(definition)).unsafeGet()
+    val context = Injector.Standard().produce(PlannerInput.everything(definition)).unsafeGet()
     assert(context != null)
 
     assert(definition.t0.tag =:= LTag[TestCovariantTC[Either]].tag)

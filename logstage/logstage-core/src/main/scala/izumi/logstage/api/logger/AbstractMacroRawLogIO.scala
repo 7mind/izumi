@@ -4,9 +4,9 @@ import izumi.logstage.macros.LogIOMacroMethods._
 
 import scala.language.experimental.macros
 
-trait AbstractMacroRawLoggerF[F[_]] { this: AbstractLogIO[F] =>
+trait AbstractMacroRawLogIO[F[_]] { this: AbstractLogIO[F] =>
 
-  /** Aliases for [[AbstractLogIO#log]] that look better in Intellij */
+  /** Aliases for [[AbstractLogIO#log(entry:*]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacroRaw[F]
   final def debug(message: String): F[Unit] = macro scDebugMacroRaw[F]
   final def info(message: String): F[Unit] = macro scInfoMacroRaw[F]

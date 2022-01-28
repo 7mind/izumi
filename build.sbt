@@ -11,23 +11,21 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -35,12 +33,16 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -75,40 +77,50 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -118,7 +130,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
          case None         => Seq.empty
        })
     },
-    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -139,24 +151,22 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -164,12 +174,16 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -204,34 +218,44 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -247,24 +271,22 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -272,12 +294,16 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -312,40 +338,50 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -355,7 +391,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
          case None         => Seq.empty
        })
     },
-    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -376,8 +412,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
@@ -385,16 +419,16 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -402,12 +436,16 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -442,40 +480,50 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -485,7 +533,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
          case None         => Seq.empty
        })
     },
-    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -502,23 +550,21 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -526,12 +572,16 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -566,34 +616,44 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -610,8 +670,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -628,16 +686,16 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -645,12 +703,16 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -685,34 +747,44 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -728,29 +800,26 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-parser" % V.circe,
-      "io.circe" %% "circe-literal" % V.circe,
-      "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
       "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
+      "io.circe" %% "circe-literal" % V.circe % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -758,12 +827,16 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -798,34 +871,44 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -838,8 +921,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -847,20 +928,21 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "io.monix" %% "monix" % V.monix % Optional,
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional
+      "io.monix" %% "monix-bio" % V.monix_bio % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -868,12 +950,16 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -908,34 +994,44 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -948,24 +1044,22 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -973,12 +1067,16 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1013,34 +1111,44 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1057,8 +1165,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1074,16 +1180,16 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1091,12 +1197,16 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1131,34 +1241,44 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1174,24 +1294,22 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "cglib" % "cglib-nodep" % V.cglib_nodep
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1199,12 +1317,16 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1239,34 +1361,44 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1283,8 +1415,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1298,16 +1428,16 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1315,12 +1445,16 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1355,34 +1489,44 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1399,8 +1543,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
@@ -1409,16 +1551,16 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1426,12 +1568,16 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1466,40 +1612,50 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -1509,7 +1665,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
          case None         => Seq.empty
        })
     },
-    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -1532,8 +1688,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.github.classgraph" % "classgraph" % V.classgraph,
@@ -1541,16 +1695,16 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1558,12 +1712,16 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1598,34 +1756,44 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1644,23 +1812,21 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1668,12 +1834,16 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1708,34 +1878,44 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1751,24 +1931,22 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1776,12 +1954,16 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1816,34 +1998,44 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1865,8 +2057,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -1880,16 +2070,16 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -1897,12 +2087,16 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -1937,40 +2131,50 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    unmanagedSourceDirectories in Compile ++= (unmanagedSourceDirectories in Compile).value.flatMap {
+    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -1980,7 +2184,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
          case None         => Seq.empty
        })
     },
-    unmanagedSourceDirectories in Test ++= (unmanagedSourceDirectories in Test).value.flatMap {
+    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
       dir =>
        val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
        def scalaDir(s: String) = file(dir.getPath + s)
@@ -2004,8 +2208,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Test,
@@ -2013,20 +2215,21 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "io.monix" %% "monix-bio" % V.monix_bio % Test,
-      "com.github.docker-java" % "docker-java" % V.docker_java
+      "com.github.docker-java" % "docker-java-core" % V.docker_java,
+      "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2034,12 +2237,16 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2074,34 +2281,44 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2117,23 +2334,21 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2141,12 +2356,16 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2181,34 +2400,44 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2227,8 +2456,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
@@ -2242,16 +2469,16 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2259,12 +2486,16 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2299,34 +2530,44 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2343,8 +2584,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
@@ -2355,16 +2594,16 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2372,12 +2611,16 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2412,34 +2655,44 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2456,23 +2709,24 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
+      "io.circe" %% "circe-parser" % V.circe % Test,
+      "io.circe" %% "circe-literal" % V.circe % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2480,12 +2734,16 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2520,34 +2778,44 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2563,24 +2831,22 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2588,12 +2854,16 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2628,42 +2898,52 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
-    compileOrder in Compile := CompileOrder.Mixed,
-    compileOrder in Test := CompileOrder.Mixed,
-    classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat
+    Compile / compileOrder := CompileOrder.Mixed,
+    Test / compileOrder := CompileOrder.Mixed,
+    Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2674,8 +2954,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.slf4j" % "slf4j-api" % V.slf4j,
@@ -2683,16 +2961,16 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2700,12 +2978,16 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2740,34 +3022,44 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2806,8 +3098,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats,
@@ -2816,20 +3106,22 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
+      "io.monix" %% "monix" % V.monix,
+      "io.monix" %% "monix-bio" % V.monix_bio,
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -2837,12 +3129,16 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -2877,42 +3173,54 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:error",
+    scalacOptions -= "-Xsource:3",
+    Compile / sbt.Keys.doc / scalacOptions += "-Xsource:3",
     coverageEnabled := false,
-    skip in publish := true,
+    publish / skip := true,
     DocKeys.prefix := {if (isSnapshot.value) {
                 (s => s"latest/snapshot/$s")
               } else {
@@ -2920,34 +3228,34 @@ lazy val `microsite` = project.in(file("doc/microsite"))
               }},
     previewFixedPort := Some(9999),
     git.remoteRepo := "git@github.com:7mind/izumi-microsite.git",
-    classLoaderLayeringStrategy in Compile := ClassLoaderLayeringStrategy.Flat,
+    Compile / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
     mdocIn := baseDirectory.value / "src/main/tut",
-    sourceDirectory in Paradox := mdocOut.value,
+    Paradox / sourceDirectory := mdocOut.value,
     mdocExtraArguments ++= Seq(
       " --no-link-hygiene"
     ),
-    mappings in SitePlugin.autoImport.makeSite := {
-                (mappings in SitePlugin.autoImport.makeSite)
+    SitePlugin.autoImport.makeSite / mappings := {
+                (SitePlugin.autoImport.makeSite / mappings)
                   .dependsOn(mdoc.toTask(" "))
                   .value
               },
-    version in Paradox := version.value,
+    Paradox / version := version.value,
     ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox),
-    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
-    paradoxMaterialTheme in Paradox ~= {
+    addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
+    Paradox / paradoxMaterialTheme ~= {
                 _.withCopyright("7mind.io")
                   .withRepository(uri("https://github.com/7mind/izumi"))
                 //        .withColor("222", "434343")
               },
-    siteSubdirName in ScalaUnidoc := DocKeys.prefix.value("api"),
-    siteSubdirName in Paradox := DocKeys.prefix.value(""),
+    ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api"),
+    Paradox / siteSubdirName := DocKeys.prefix.value(""),
     paradoxProperties ++= Map(
                 "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "izumi.version" -> version.value,
               ),
-    excludeFilter in ghpagesCleanSite :=
+    ghpagesCleanSite / excludeFilter :=
                 new FileFilter {
                   def accept(f: File): Boolean = {
                       f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
@@ -2978,23 +3286,21 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      compilerPlugin("com.softwaremill.neme" %% "neme-plugin" % V.neme_plugin),
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % V.silencer cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
-    scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.12"
+      "2.12.14"
     ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
       s"-Xmacro-settings:product-version=${version.value}",
@@ -3002,12 +3308,16 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
     ),
-    testOptions in Test += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.12") => Seq(
-        "-Xsource:2.13",
+      case (_, "2.12.14") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         "-Ypartial-unification",
-        "-Yno-adapted-args",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Xlint:adapted-args",
@@ -3042,34 +3352,44 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.4") => Seq(
-        "-Xlint:_,-eta-sam,-multiarg-infix,-byname-implicit",
+      case (_, "2.13.6") => Seq(
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Wconf:msg=package.object.inheritance:silent",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
         "-Ybackend-parallelism",
         math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
-        "-Wunused:_",
         "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions -= "-Wconf:any:error",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.12") => Seq(
+      case (false, "2.12.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.4") => Seq(
+      case (false, "2.13.6") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3082,10 +3402,10 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3104,10 +3424,10 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3126,10 +3446,10 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3150,10 +3470,10 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3174,10 +3494,10 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3191,10 +3511,10 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3208,10 +3528,10 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 
 lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3222,10 +3542,10 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
 
 lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3236,8 +3556,9 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
 
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
-    skip in publish := true,
-    crossScalaVersions := Nil
+    publish / skip := true,
+    crossScalaVersions := Nil,
+    scalaVersion := "2.12.14"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -3246,8 +3567,9 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
-    skip in publish := true,
-    crossScalaVersions := Nil
+    publish / skip := true,
+    crossScalaVersions := Nil,
+    scalaVersion := "2.12.14"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -3256,10 +3578,10 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     crossScalaVersions := Seq(
-      "2.13.4",
-      "2.12.12"
+      "2.13.6",
+      "2.12.14"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3273,9 +3595,9 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
 
 lazy val `izumi` = (project in file("."))
   .settings(
-    skip in publish := true,
-    publishMavenStyle in ThisBuild := true,
-    scalacOptions in ThisBuild ++= Seq(
+    publish / skip := true,
+    ThisBuild / publishMavenStyle := true,
+    ThisBuild / scalacOptions ++= Seq(
       "-encoding",
       "UTF-8",
       "-target:jvm-1.8",
@@ -3285,7 +3607,7 @@ lazy val `izumi` = (project in file("."))
       "-language:higherKinds",
       "-explaintypes"
     ),
-    javacOptions in ThisBuild ++= Seq(
+    ThisBuild / javacOptions ++= Seq(
       "-encoding",
       "UTF-8",
       "-source",
@@ -3297,7 +3619,7 @@ lazy val `izumi` = (project in file("."))
       "-Xlint:all",
       "-XDignore.symbol.file"
     ),
-    scalacOptions in ThisBuild ++= Seq(
+    ThisBuild / scalacOptions ++= Seq(
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
       s"-Xmacro-settings:git-repo-clean=${com.typesafe.sbt.SbtGit.GitKeys.gitUncommittedChanges.value}",
       s"-Xmacro-settings:git-branch=${com.typesafe.sbt.SbtGit.GitKeys.gitCurrentBranch.value}",
@@ -3305,24 +3627,24 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.4",
-    organization in ThisBuild := "io.7mind.izumi",
+    scalaVersion := "2.13.6",
+    ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
-    publishTo in ThisBuild := 
+    ThisBuild / publishTo := 
     (if (!isSnapshot.value) {
         sonatypePublishToBundle.value
       } else {
         Some(Opts.resolver.sonatypeSnapshots)
     })
     ,
-    credentials in ThisBuild += Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"),
-    homepage in ThisBuild := Some(url("https://izumi.7mind.io")),
-    licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
-    developers in ThisBuild := List(
+    ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"),
+    ThisBuild / homepage := Some(url("https://izumi.7mind.io")),
+    ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
+    ThisBuild / developers := List(
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
-    scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
+    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

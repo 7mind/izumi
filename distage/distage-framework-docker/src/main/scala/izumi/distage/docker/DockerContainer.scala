@@ -8,7 +8,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 
-final case class DockerContainer[Tag](
+final case class DockerContainer[+Tag](
   id: ContainerId,
   name: String,
   hostName: String,
@@ -61,28 +61,82 @@ object DockerContainer {
     )(implicit tag: distage.Tag[ContainerResource[F, T]]
     ): Functoid[ContainerResource[F, T]] = {
       self.zip(modify).map {
-        case (that, f) =>
-          import that._
-          that.copy(config = f(that.config))
+        case (self, f) =>
+          import self.{F, P}
+          self.copy(config = f(self.config))
       }
     }
 
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] = {
+    def modifyConfig(
+      modify: Docker.ContainerConfig[T] => Docker.ContainerConfig[T]
+    ): Functoid[ContainerResource[F, T]] = {
+      self.mapSame {
+        self =>
+          import self.{F, P}
+          self.copy(config = modify(self.config))
+      }
+    }
+
+    def dependOnContainer(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
 
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
+    def dependOnContainer[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
       self.addDependency[DockerContainer[T2]]
     }
 
-    def connectToNetwork[T2](
-      networkDecl: ContainerNetworkDef.Aux[T2]
-    )(implicit tag1: distage.Tag[ContainerNetwork[T2]],
+    /**
+      * Export as environment variables inside the container the randomized values of ports of the argument running docker container
+      *
+      * @example
+      * {{{
+      * class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
+      *   make[KafkaDocker.Container].fromResource {
+      *     KafkaDocker
+      *       .make[F]
+      *       .connectToNetwork(KafkaZookeeperNetwork)
+      *       .dependOnContainerPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
+      *   }
+      * }
+      * }}}
+      */
+    def dependOnContainerPorts(
+      containerDecl: ContainerDef
+    )(ports: (Int, String)*
+    )(implicit tag1: distage.Tag[DockerContainer[containerDecl.Tag]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
+    ): Functoid[ContainerResource[F, T]] = {
+      containerDecl.discard()
+      dependOnContainerPorts[containerDecl.Tag](ports: _*)
+    }
+
+    def dependOnContainerPorts[T2](
+      ports: (Int, String)*
+    )(implicit tag1: distage.Tag[DockerContainer[T2]],
+      tag2: distage.Tag[ContainerResource[F, T]],
+      tag3: distage.Tag[Docker.ContainerConfig[T]],
+    ): Functoid[ContainerResource[F, T]] = {
+      discard(tag1, tag3)
+      modifyConfig {
+        original: DockerContainer[T2] => old: Docker.ContainerConfig[T] =>
+          val mapping = ports.map {
+            case (port, envvar) =>
+              (envvar, s"${original.hostName}:$port")
+          }
+          val newEnv = old.env ++ mapping
+          old.copy(env = newEnv)
+      }
+    }
+
+    def connectToNetwork(
+      networkDecl: ContainerNetworkDef
+    )(implicit tag1: distage.Tag[ContainerNetwork[networkDecl.Tag]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
     ): Functoid[ContainerResource[F, T]] = {
       networkDecl.discard()
-      connectToNetwork[T2]
+      connectToNetwork[networkDecl.Tag]
     }
 
     def connectToNetwork[T2](
@@ -96,6 +150,13 @@ object DockerContainer {
           old.copy(networks = old.networks + net)
       }
     }
+
+    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
+    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] =
+      dependOnContainer[containerDecl.Tag]
+
+    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
+    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = dependOnContainer[T2]
   }
 
 }

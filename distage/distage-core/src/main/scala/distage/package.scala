@@ -24,6 +24,7 @@ package object distage extends Distage {
   override type PlanVerifier = solver.PlanVerifier
   override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
+  override type DefaultModule[F[_]] = modules.DefaultModule[F]
   override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
   override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
@@ -47,9 +48,9 @@ package object distage extends Distage {
   override type Lifecycle[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
   override val Lifecycle: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  override type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, ?], A]
+  override type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, _], A]
 
-  override type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, ?], A]
+  override type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, _], A]
 
   override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis

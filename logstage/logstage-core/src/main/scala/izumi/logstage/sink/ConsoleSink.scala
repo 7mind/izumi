@@ -8,6 +8,10 @@ class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
     System.out.println(policy.render(e))
   }
+
+  override def sync(): Unit = {
+    System.out.flush()
+  }
 }
 
 object ConsoleSink {

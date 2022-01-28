@@ -6,6 +6,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ConfigLoader.ConfigLocation
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
+import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
@@ -46,11 +47,12 @@ object BootstrapFactory {
       // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
       new ModuleProvider.Impl[F](
         logRouter = logRouter,
+        options = options,
         config = config,
         roles = roles,
-        options = options,
         args = RawAppArgs.empty,
         activationInfo = activationInfo,
+        shutdownInitiator = AppShutdownInitiator.empty,
         roleAppLocator = None,
       )
     }

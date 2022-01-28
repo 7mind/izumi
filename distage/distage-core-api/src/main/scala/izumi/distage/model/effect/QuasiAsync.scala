@@ -80,9 +80,9 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIO[F[+_, +_]: Async2: Temporal2]: QuasiAsync[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]: Async2: Temporal2]: QuasiAsync[F[Throwable, _]] = {
     import scala.collection.compat._
-    new QuasiAsync[F[Throwable, ?]] {
+    new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
       }

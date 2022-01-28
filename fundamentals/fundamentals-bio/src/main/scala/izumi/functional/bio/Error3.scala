@@ -5,7 +5,10 @@ import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
 
   def catchAll[R, E, A, E2](r: F[R, E, A])(f: E => F[R, E2, A]): F[R, E2, A]
-  def catchSome[R, E, A, E1 >: E](r: F[R, E, A])(f: PartialFunction[E, F[R, E1, A]]): F[R, E1, A]
+
+  def catchSome[R, E, A, E1 >: E](r: F[R, E, A])(f: PartialFunction[E, F[R, E1, A]]): F[R, E1, A] = {
+    catchAll(r)(e => f.applyOrElse(e, (_: E) => fail(e)))
+  }
 
   def redeem[R, E, A, E2, B](r: F[R, E, A])(err: E => F[R, E2, B], succ: A => F[R, E2, B]): F[R, E2, B] = {
     flatMap(attempt(r))(_.fold(err, succ))
@@ -25,6 +28,32 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
   }
   def tapBoth[R, E, A, E1 >: E](r: F[R, E, A])(err: E => F[R, E1, Unit], succ: A => F[R, E1, Unit]): F[R, E1, A] = {
     tap(tapError[R, E, A, E1](r)(err), succ)
+  }
+
+  /** Extracts the optional value or fails with the `errorOnNone` error */
+  def fromOption[R, E, A](errorOnNone: => E, r: F[R, E, Option[A]]): F[R, E, A] = {
+    flatMap(r) {
+      case Some(value) => pure(value)
+      case None => fail(errorOnNone)
+    }
+  }
+
+  /** Retries this effect while its error satisfies the specified predicate. */
+  def retryWhile[R, E, A](r: F[R, E, A])(f: E => Boolean): F[R, E, A] = {
+    retryWhileF(r)(e => pure(f(e)))
+  }
+  /** Retries this effect while its error satisfies the specified effectful predicate. */
+  def retryWhileF[R, R1 <: R, E, A](r: F[R, E, A])(f: E => F[R1, Nothing, Boolean]): F[R1, E, A] = {
+    catchAll(r: F[R1, E, A])(e => flatMap(f(e))(if (_) retryWhileF(r)(f) else fail(e)))
+  }
+
+  /** Retries this effect until its error satisfies the specified predicate. */
+  def retryUntil[R, E, A](r: F[R, E, A])(f: E => Boolean): F[R, E, A] = {
+    retryUntilF(r)(e => pure(f(e)))
+  }
+  /** Retries this effect until its error satisfies the specified effectful predicate. */
+  def retryUntilF[R, R1 <: R, E, A](r: F[R, E, A])(f: E => F[R1, Nothing, Boolean]): F[R1, E, A] = {
+    catchAll(r: F[R1, E, A])(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
   }
 
   /** for-comprehensions sugar:

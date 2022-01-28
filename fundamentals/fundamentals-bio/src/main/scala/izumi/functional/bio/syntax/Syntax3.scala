@@ -64,6 +64,8 @@ object Syntax3 {
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
     @inline final def void: FR[R, E, Unit] = F.void(r)
     @inline final def widen[A1](implicit @unused ev: A <:< A1): FR[R, E, A1] = r.asInstanceOf[FR[R, E, A1]]
+
+    @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
   final class BifunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Bifunctor3[FR]) {
@@ -103,6 +105,12 @@ object Syntax3 {
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
 
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
+
+    @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] = F.iterateWhile(r)(p)
+    @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[R1 <: R, E1 >: E, B](fallbackOnNone: => FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
+      F.fromOptionF(fallbackOnNone, r.widen)
   }
 
   class ApplicativeErrorOps[FR[-_, +_, +_], -R, +E, +A](
@@ -121,10 +129,18 @@ object Syntax3 {
 
   class ErrorOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Error3[FR])
     extends ApplicativeErrorOps(r) {
+    // duplicated from MonadOps
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R1, E1, A, B](r)(f0)
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
 
     @inline final def flatten[R1 <: R, E1 >: E, A1](implicit ev: A <:< FR[R1, E1, A1]): FR[R1, E1, A1] = F.flatten(F.widen(r))
+
+    @inline final def iterateWhile(p: A => Boolean): FR[R, E, A] = F.iterateWhile(r)(p)
+    @inline final def iterateUntil(p: A => Boolean): FR[R, E, A] = F.iterateUntil(r)(p)
+
+    @inline final def fromOptionF[R1 <: R, E1 >: E, B](fallbackOnNone: => FR[R1, E1, B])(implicit ev: A <:< Option[B]): FR[R1, E1, B] =
+      F.fromOptionF(fallbackOnNone, r.widen)
+    // duplicated from MonadOps
 
     @inline final def catchAll[R1 <: R, E2, A2 >: A](h: E => FR[R1, E2, A2]): FR[R1, E2, A2] = F.catchAll[R1, E, A2, E2](r)(h)
     @inline final def catchSome[R1 <: R, E1 >: E, A2 >: A](h: PartialFunction[E, FR[R1, E1, A2]]): FR[R1, E1, A2] = F.catchSome[R1, E, A2, E1](r)(h)
@@ -142,8 +158,13 @@ object Syntax3 {
     @inline final def tapBoth[R1 <: R, E1 >: E, E2 >: E1](err: E => FR[R1, E1, Unit])(succ: A => FR[R1, E2, Unit]): FR[R1, E2, A] = F.tapBoth[R1, E, A, E2](r)(err, succ)
 
     @inline final def fromEither[R1 <: R, E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): FR[R1, E1, A1] = F.flatMap[R1, E1, A, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] =
-      F.flatMap[R1, E1, A, A1](r)(F.fromOption(errorOnNone)(_))
+    @inline final def fromOption[R1 <: R, E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): FR[R1, E1, A1] = F.fromOption(errorOnNone, r.widen)
+
+    @inline final def retryWhile(f: E => Boolean): FR[R, E, A] = F.retryWhile(r)(f)
+    @inline final def retryWhileF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] = F.retryWhileF(r)(f)
+
+    @inline final def retryUntil(f: E => Boolean): FR[R, E, A] = F.retryUntil(r)(f)
+    @inline final def retryUntilF[R1 <: R](f: E => FR[R1, Nothing, Boolean]): FR[R1, E, A] = F.retryUntilF(r)(f)
 
     /** for-comprehensions sugar:
       *
@@ -169,16 +190,21 @@ object Syntax3 {
   class BracketOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Bracket3[FR]) extends ErrorOps(r) {
     @inline final def bracket[R1 <: R, E1 >: E, B](release: A => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
       F.bracket(r: FR[R1, E1, A])(release)(use)
+
     @inline final def bracketCase[R1 <: R, E1 >: E, B](release: (A, Exit[E1, B]) => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
       F.bracketCase(r: FR[R1, E1, A])(release)(use)
     @inline final def guaranteeCase[R1 <: R](cleanup: Exit[E, A] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeCase(r, cleanup)
+
+    @inline final def bracketOnFailure[R1 <: R, E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
+      F.bracketOnFailure(r: FR[R1, E1, A])(cleanupOnFailure)(use)
+    @inline final def guaranteeOnFailure[R1 <: R](cleanupOnFailure: Exit.Failure[E] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
   }
 
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
     @deprecated("renamed to sandboxExit", "1.0")
-    @inline final def sandboxBIOExit = sandboxExit
+    @inline final def sandboxBIOExit: FR[R, Nothing, Exit[E, A]] = sandboxExit
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable
@@ -266,7 +292,7 @@ object Syntax3 {
   }
 
   final class LocalOpsKleisliSyntax[FR[-_, +_, +_], R, E, A](private val r: FR[R, E, A])(implicit private val F: Local3[FR]) {
-    @inline final def toKleisli: Kleisli[FR[Any, E, ?], R, A] = F.toKleisli(r)
+    @inline final def toKleisli: Kleisli[FR[Any, E, _], R, A] = F.toKleisli(r)
   }
 
   trait ImplicitPuns extends ImplicitPuns1 {

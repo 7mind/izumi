@@ -21,9 +21,7 @@ class ForwardingRefResolverDefaultImpl(
 
     val proxies = mutable.Stack[ProxyOp.MakeProxy]()
 
-    val resolvedSteps = plan
-      .toSemi
-      .steps
+    val resolvedSteps = plan.toSemi.steps
       .collect { case i: InstantiationOp => i }
       .flatMap {
         case step if reftable.dependencies.contains(step.target) =>
