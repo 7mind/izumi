@@ -80,6 +80,7 @@ object Izumi {
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
+    final val circe_generic_extras = Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scaltest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
@@ -400,9 +401,14 @@ object Izumi {
           circe_core in Scope.Compile.all,
           circe_derivation in Scope.Compile.all,
           scala_reflect in Scope.Provided.all,
-        ) ++ Seq(
-          jawn in Scope.Test.all,
-          circe_literal in Scope.Test.all,
+          // These dependencies aren't used in fundamentals-json-circe,
+          // But they're added for convenience, so that depending on just
+          // this library would bring in all the common circe modules
+          circe_generic_extras in Scope.Compile.all,
+          circe_parser in Scope.Compile.all,
+          circe_literal in Scope.Compile.all,
+          jawn in Scope.Compile.all,
+          //
         ),
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
@@ -537,11 +543,13 @@ object Izumi {
       Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq(
+          circe_core in Scope.Compile.all,
+          circe_derivation in Scope.Compile.all,
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
         ),
-        depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,

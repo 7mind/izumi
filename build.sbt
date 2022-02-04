@@ -805,8 +805,10 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-derivation" % V.circe_derivation,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
-      "io.circe" %% "circe-literal" % V.circe % Test
+      "io.circe" %% "circe-generic-extras" % V.circe_generic_extras,
+      "io.circe" %% "circe-parser" % V.circe,
+      "io.circe" %% "circe-literal" % V.circe,
+      "org.typelevel" %% "jawn-parser" % V.jawn
     )
   )
   .settings(
@@ -2703,7 +2705,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
 
 lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
-    `fundamentals-json-circe` % "test->compile;compile->compile",
     `logstage-core` % "test->test;compile->compile"
   )
   .settings(
@@ -2711,6 +2712,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-derivation" % V.circe_derivation,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-parser" % V.circe % Test,
       "io.circe" %% "circe-literal" % V.circe % Test
