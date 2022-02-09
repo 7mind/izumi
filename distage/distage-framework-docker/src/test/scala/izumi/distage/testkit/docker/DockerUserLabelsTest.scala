@@ -33,7 +33,9 @@ object DockerUserLabelsTest {
 }
 
 final class DockerUserLabelsTest extends Spec2[IO] {
-  override protected def config: TestConfig = super.config.copy(moduleOverrides = taggedDockerModule)
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = taggedDockerModule
+  )
 
   "Container resource" should {
     "apply user tags" in {
