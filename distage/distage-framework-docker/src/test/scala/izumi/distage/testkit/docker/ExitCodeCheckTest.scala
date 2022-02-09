@@ -19,7 +19,7 @@ final class ExitCodeCheckTest extends Spec2[IO] with AssertZIO {
     "Fail on incorrect exit code" in {
       (checkingContainer: ContainerResource[IO[Throwable, _], ExitCodeCheckContainer.Tag]) =>
         for {
-          Left(error) <- checkingContainer
+          case Left(error) <- checkingContainer
             .copy(config =
               checkingContainer.config.copy(
                 healthCheck = ContainerHealthCheck.exitCodeCheck(1)

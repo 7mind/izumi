@@ -7,7 +7,7 @@ object V {
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.10"
+  val scalatest = "3.2.11"
 
   val cats = "2.7.0"
   val cats_effect = "2.5.4"
@@ -32,7 +32,7 @@ object V {
 
   // java-only dependencies below
   val classgraph = "4.8.138"
-  val slf4j = "1.7.33"
+  val slf4j = "1.7.36"
   val typesafe_config = "1.4.0"
 
   // good to drop - java

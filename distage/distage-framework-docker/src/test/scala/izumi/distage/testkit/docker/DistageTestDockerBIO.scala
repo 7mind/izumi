@@ -6,7 +6,6 @@ import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
 import izumi.distage.testkit.scalatest.Spec2
-import izumi.fundamentals.platform.build.MacroParameters
 import izumi.logstage.api.Log
 import logstage.LogIO2
 import zio.IO
@@ -18,56 +17,66 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     memoizationRoots = Set(DIKey[PgSvcExample]),
     parallelTests = ParallelLevel.Unlimited,
     parallelEnvs = ParallelLevel.Unlimited,
-    logLevel = Log.Level.Info,
+    logLevel = Log.Level.Trace,
   )
 
-  def insideCI: Boolean = MacroParameters.sbtIsInsideCI().getOrElse(false)
+  "distage test runner should start only one container for reusable" should {
 
-  if (!insideCI) {
+    "support docker resources" in {
+      // TODO: additionally check flyway outcome with doobie
+      (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+        for {
+          _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
+          // a new alpine container is spawned every time here
+          _ <- verifier.use(_ => IO.unit)
+        } yield ()
+    }
 
-    "distage test runner should start only one container for reusable" should {
-
-      "support docker resources" in {
-        // TODO: additionally check flyway outcome with doobie
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
-          for {
-            _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
-            _ <- verifier.use(_ => IO.unit)
-          } yield ()
-      }
-
-      "support memoization" in {
-        (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
-          for {
-            _ <- log.info(s"ports/2: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
-            _ <- verifier.use(_ => IO.unit)
-          } yield ()
-      }
-
+    "support memoization" in {
+      (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+        for {
+          _ <- log.info(s"ports/2: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
+          // a new alpine container is spawned every time here
+          _ <- verifier.use(_ => IO.unit)
+        } yield ()
     }
 
   }
 
 }
 
-final class DistageTestDockerBIO1 extends DistageTestDockerBIO
-final class DistageTestDockerBIO2 extends DistageTestDockerBIO
-final class DistageTestDockerBIO3 extends DistageTestDockerBIO
-final class DistageTestDockerBIO4 extends DistageTestDockerBIO
-final class DistageTestDockerBIO5 extends DistageTestDockerBIO
-final class DistageTestDockerBIO6 extends DistageTestDockerBIO
-final class DistageTestDockerBIO7 extends DistageTestDockerBIO
-final class DistageTestDockerBIO8 extends DistageTestDockerBIO
-final class DistageTestDockerBIO9 extends DistageTestDockerBIO
-final class DistageTestDockerBIO10 extends DistageTestDockerBIO
-final class DistageTestDockerBIO11 extends DistageTestDockerBIO
-final class DistageTestDockerBIO12 extends DistageTestDockerBIO
-final class DistageTestDockerBIO13 extends DistageTestDockerBIO
-final class DistageTestDockerBIO14 extends DistageTestDockerBIO
-final class DistageTestDockerBIO15 extends DistageTestDockerBIO
-final class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Warn)
+final class DistageTestDockerBIOFirstEnv1 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv2 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv3 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv4 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv5 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv6 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv7 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv8 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv9 extends DistageTestDockerBIO
+final class DistageTestDockerBIOFirstEnv10 extends DistageTestDockerBIO
+
+abstract class DistageTestDockerBIOSecondEnv extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super.config.copy(
+    // force break env reuse and test global docker reuse across envs by forking the env (by changing env log level)
+    logLevel = Log.Level.Warn
+  )
 }
-final class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Error)
+final class DistageTestDockerBIOSecondEnv1 extends DistageTestDockerBIOSecondEnv
+final class DistageTestDockerBIOSecondEnv2 extends DistageTestDockerBIOSecondEnv
+final class DistageTestDockerBIOSecondEnv3 extends DistageTestDockerBIOSecondEnv
+final class DistageTestDockerBIOSecondEnv4 extends DistageTestDockerBIOSecondEnv
+final class DistageTestDockerBIOSecondEnv5 extends DistageTestDockerBIOSecondEnv
+
+abstract class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
+  override protected def config: TestConfig = super.config.copy(
+    // force break env reuse and test global docker reuse across envs by forking the env (by changing env log level)
+    logLevel = Log.Level.Error
+  )
 }
+
+final class DistageTestDockerBIOThirdEnv1 extends DistageTestDockerBIOThirdEnv
+final class DistageTestDockerBIOThirdEnv2 extends DistageTestDockerBIOThirdEnv
+final class DistageTestDockerBIOThirdEnv3 extends DistageTestDockerBIOThirdEnv
+final class DistageTestDockerBIOThirdEnv4 extends DistageTestDockerBIOThirdEnv
+final class DistageTestDockerBIOThirdEnv5 extends DistageTestDockerBIOThirdEnv

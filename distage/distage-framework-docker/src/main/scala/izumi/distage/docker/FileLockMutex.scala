@@ -3,37 +3,43 @@ package izumi.distage.docker
 import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
 import java.nio.file.StandardOpenOption
-
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.logstage.api.IzLogger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object FileLockMutex {
 
-  def withLocalMutex[F[_], E](
+  def withLocalMutex[F[_], A](
     logger: IzLogger
   )(filename: String,
-    waitFor: FiniteDuration,
+    retryWait: FiniteDuration,
     maxAttempts: Int,
-  )(effect: F[E]
+  )(effect:
+    // MUST be by-name because of QuasiIO[Identity]
+    => F[A]
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
-  ): F[E] = {
-    def retryOnFileLock(eff: F[FileLock]): F[Option[FileLock]] = {
+  ): F[A] = {
+    def retryOnFileLock(
+      // MUST be by-name because of QuasiIO[Identity]
+      doAcquire: => F[FileLock]
+    ): F[Option[FileLock]] = {
       F.tailRecM(0) {
         attempts =>
-          logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire lock for $filename.")
+          if (attempts != 0) {
+            logger.info(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire file lock for image $filename.")
+          }
           F.definitelyRecover[Either[Int, Option[FileLock]]](
-            eff.map(lock => Right(Option(lock)))
+            doAcquire.map(lock => Right(Option(lock)))
           )(recover = {
             case _: OverlappingFileLockException =>
               if (attempts < maxAttempts) {
-                P.sleep(waitFor).map(_ => Left(attempts + 1))
+                P.sleep(retryWait).map(_ => Left(attempts + 1))
               } else {
-                logger.warn(s"Cannot acquire lock for image $filename after $attempts. This may lead to creation of a new container duplicate.")
+                logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")
                 F.pure(Right(None))
               }
             case err =>
@@ -42,11 +48,15 @@ object FileLockMutex {
       }
     }
 
-    def createChannel: F[AsynchronousFileChannel] = F.maybeSuspend {
+    def createChannel(): F[AsynchronousFileChannel] = F.maybeSuspend {
       val tmpDir = System.getProperty("java.io.tmpdir")
       val file = new File(s"$tmpDir/$filename.tmp")
       val newFileCreated = file.createNewFile()
-      if (newFileCreated) file.deleteOnExit()
+      if (newFileCreated) {
+        file.deleteOnExit()
+      } else {
+        logger.debug(s"File lock already existed for image $filename")
+      }
       AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)
     }
 
@@ -64,7 +74,7 @@ object FileLockMutex {
     }
 
     F.bracket(
-      acquire = createChannel
+      acquire = createChannel()
     )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit))(
       use = {
         channel =>
@@ -77,4 +87,5 @@ object FileLockMutex {
       }
     )
   }
+
 }
