@@ -66,7 +66,11 @@ object ContainerNetworkDef {
         if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
           val maxAttempts = 50
           logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
-          FileLockMutex.withLocalMutex(logger)(s"distage-container-network-def-$prefix", waitFor = 200.millis, maxAttempts = maxAttempts) {
+          FileLockMutex.withLocalMutex(logger)(
+            s"distage-container-network-def-$prefix",
+            retryWait = 200.millis,
+            maxAttempts = maxAttempts,
+          ) {
             val labelsSet = networkLabels.toSet
             val existingNetworks = rawClient
               .listNetworksCmd().exec().asScala.toList

@@ -173,7 +173,7 @@ open class ContainerResource[F[_], Tag](
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
     FileLockMutex.withLocalMutex(logger)(
       s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
-      waitFor = 200.millis,
+      retryWait = 200.millis,
       maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
     ) {
       F.suspendF {
@@ -324,8 +324,7 @@ open class ContainerResource[F[_], Tag](
               connectivity = mappedPorts,
               availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
             )
-            logger.debug(s"Created $container from ${config.image}...")
-            logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+            logger.info(s"Created new $container from ${config.image}... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
             config.networks.foreach {
               network =>
                 rawClient
