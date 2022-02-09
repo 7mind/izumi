@@ -172,7 +172,7 @@ object Docker {
     autoRemove: Boolean = true,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
-    pullTimeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+    pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck = ContainerHealthCheck.portCheck,
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
     autoPull: Boolean = true,
