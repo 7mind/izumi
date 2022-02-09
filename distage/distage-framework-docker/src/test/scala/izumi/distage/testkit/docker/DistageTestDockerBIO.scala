@@ -74,6 +74,7 @@ abstract class DistageTestDockerBIOThirdEnv extends DistageTestDockerBIO {
     logLevel = Log.Level.Error
   )
 }
+
 final class DistageTestDockerBIOThirdEnv1 extends DistageTestDockerBIOThirdEnv
 final class DistageTestDockerBIOThirdEnv2 extends DistageTestDockerBIOThirdEnv
 final class DistageTestDockerBIOThirdEnv3 extends DistageTestDockerBIOThirdEnv
