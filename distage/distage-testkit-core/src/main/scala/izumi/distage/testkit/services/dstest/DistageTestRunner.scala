@@ -500,12 +500,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     envs.foreach {
-      case (MemoizationEnv(_, testEnvLogger, runtimePlan, _, debugOutput), testTree) =>
+      case (MemoizationEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
         val suites = testTree.allTests.map(_.test.meta.id.suiteClassName).toList.distinct
-        testEnvLogger.info(
+        testRunnerLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.allTests.size -> "tests"} ${testTree.toString -> "suitesMemoizationTree"}"
         )
-        testEnvLogger.log(testkitDebugMessagesLogLevel(debugOutput))(
+        testRunnerLogger.log(testkitDebugMessagesLogLevel(debugOutput))(
           s"""Effect runtime plan: $runtimePlan"""
         )
     }
