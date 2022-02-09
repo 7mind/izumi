@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.83`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.92`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -190,7 +190,7 @@ object Izumi {
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
-      final val rootSettings = Defaults.SharedOptions ++ Seq(
+      final val rootSettings = Defaults.RootOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
@@ -221,7 +221,7 @@ object Izumi {
         "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}" % Provided""".raw,
       )
 
-      final val sharedSettings = Defaults.SbtMetaOptions ++ outOfSource ++ Seq(
+      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" += "-Wconf:any:error",
         "scalacOptions" ++= Seq(
@@ -330,7 +330,7 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
-  final val crossScalaSources = Defaults.CrossScalaSources
+  final val crossScalaSources = Defaults.CrossScalaPlusSources
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,

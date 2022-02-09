@@ -23,8 +23,12 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -37,6 +41,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -78,6 +84,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -121,25 +129,25 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     },
-    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     }
   )
   .disablePlugins(AssemblyPlugin)
@@ -165,8 +173,12 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -179,6 +191,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -220,6 +234,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -286,8 +302,12 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -300,6 +320,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -341,6 +363,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -384,25 +408,25 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     },
-    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     }
   )
   .disablePlugins(AssemblyPlugin)
@@ -429,8 +453,12 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -443,6 +471,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -484,6 +514,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -527,25 +559,25 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     },
-    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     }
   )
   .disablePlugins(AssemblyPlugin)
@@ -566,8 +598,12 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -580,6 +616,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -621,6 +659,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -698,8 +738,12 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -712,6 +756,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -753,6 +799,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -824,8 +872,12 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -838,6 +890,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -879,6 +933,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -948,8 +1004,12 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -962,6 +1022,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1003,6 +1065,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1066,8 +1130,12 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1080,6 +1148,8 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1121,6 +1191,8 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1197,8 +1269,12 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1211,6 +1287,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1252,6 +1330,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1318,8 +1398,12 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1332,6 +1416,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1373,6 +1459,8 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1447,8 +1535,12 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1461,6 +1553,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1502,6 +1596,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1571,8 +1667,12 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1585,6 +1685,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1626,6 +1728,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1669,25 +1773,25 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     },
-    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     }
   )
   .disablePlugins(AssemblyPlugin)
@@ -1716,8 +1820,12 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1730,6 +1838,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1771,6 +1881,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1840,8 +1952,12 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1854,6 +1970,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1895,6 +2013,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1961,8 +2081,12 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -1975,6 +2099,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2016,6 +2142,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2095,8 +2223,12 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2109,6 +2241,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2150,6 +2284,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2193,25 +2329,25 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / unmanagedSourceDirectories ++= (Compile / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     },
-    Test / unmanagedSourceDirectories ++= (Test / unmanagedSourceDirectories).value.flatMap {
-      dir =>
-       val partialVersion = CrossVersion.partialVersion(scalaVersion.value)
-       def scalaDir(s: String) = file(dir.getPath + s)
-       (partialVersion match {
-         case Some((2, n)) => Seq(scalaDir("_2"), scalaDir("_2." + n.toString))
-         case Some((x, n)) => Seq(scalaDir("_3"), scalaDir("_" + x.toString + "." + n.toString))
-         case None         => Seq.empty
-       })
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
     }
   )
   .disablePlugins(AssemblyPlugin)
@@ -2246,8 +2382,12 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2260,6 +2400,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2301,6 +2443,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2366,8 +2510,12 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2380,6 +2528,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2421,6 +2571,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2497,8 +2649,12 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2511,6 +2667,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2552,6 +2710,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2623,8 +2783,12 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2637,6 +2801,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2678,6 +2844,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2748,8 +2916,12 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2762,6 +2934,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2803,6 +2977,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2869,8 +3045,12 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -2883,6 +3063,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2924,6 +3106,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2994,8 +3178,12 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -3008,6 +3196,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3049,6 +3239,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3146,8 +3338,12 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -3160,6 +3356,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3201,6 +3399,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3326,8 +3526,12 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     coverageEnabled := false,
     organization := "io.7mind.izumi",
     Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
     Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
     Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
     Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -3340,6 +3544,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions += "-Wconf:any:error",
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.15") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3381,6 +3587,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3625,16 +3833,15 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
 lazy val `izumi` = (project in file("."))
   .settings(
     publish / skip := true,
+    Global / onChangedBuildSource := ReloadOnSourceChanges,
     ThisBuild / publishMavenStyle := true,
     ThisBuild / scalacOptions ++= Seq(
       "-encoding",
       "UTF-8",
-      "-target:jvm-1.8",
       "-feature",
       "-unchecked",
       "-deprecation",
-      "-language:higherKinds",
-      "-explaintypes"
+      "-language:higherKinds"
     ),
     ThisBuild / javacOptions ++= Seq(
       "-encoding",
@@ -3674,7 +3881,7 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.83" % Provided
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.92" % Provided
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
