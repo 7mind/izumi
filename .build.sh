@@ -47,6 +47,7 @@ function coverage {
 function site {
   if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
+    mkdir ~/.ssh || true
     chown -R root:root ~/.ssh
     chmod 600 .secrets/travis-deploy-key
     eval "$(ssh-agent -s)"
