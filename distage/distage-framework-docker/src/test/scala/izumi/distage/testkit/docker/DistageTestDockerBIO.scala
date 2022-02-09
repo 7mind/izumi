@@ -17,7 +17,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     memoizationRoots = Set(DIKey[PgSvcExample]),
     parallelTests = ParallelLevel.Unlimited,
     parallelEnvs = ParallelLevel.Unlimited,
-    logLevel = Log.Level.Info,
+    logLevel = Log.Level.Trace,
   )
 
 //  def insideCI: Boolean = MacroParameters.sbtIsInsideCI().getOrElse(false)
