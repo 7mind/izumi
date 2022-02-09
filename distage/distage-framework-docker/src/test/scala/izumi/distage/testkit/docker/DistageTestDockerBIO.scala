@@ -20,8 +20,6 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     logLevel = Log.Level.Trace,
   )
 
-//  def insideCI: Boolean = MacroParameters.sbtIsInsideCI().getOrElse(false)
-
   "distage test runner should start only one container for reusable" should {
 
     "support docker resources" in {
