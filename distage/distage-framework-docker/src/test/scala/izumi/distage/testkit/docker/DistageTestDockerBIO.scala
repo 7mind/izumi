@@ -17,7 +17,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     memoizationRoots = Set(DIKey[PgSvcExample]),
     parallelTests = ParallelLevel.Unlimited,
     parallelEnvs = ParallelLevel.Unlimited,
-    logLevel = Log.Level.Trace,
+    logLevel = Log.Level.Info,
   )
 
   "distage test runner should start only one container for reusable" should {
