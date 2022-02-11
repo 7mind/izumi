@@ -105,7 +105,7 @@ object DIError {
           val conflicting = axisValuesInBindings.diff(bindingTags)
           val implTypeStr = op.foldPartial("", { case b: Binding.ImplBinding => keyMinimizer.renderType(b.implementation.implType) })
           s"$implTypeStr ${op.toSourceFilePosition} - required: {${bindingTags.mkString(", ")}}, conflicting: {${conflicting.mkString(", ")}}, active: {${alreadyActiveTags
-            .mkString(", ")}}"
+              .mkString(", ")}}"
       }.niceList().shift(4)
 
     s"""Conflict resolution failed for key:

@@ -68,11 +68,11 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
     generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
       argss =>
         q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
-          val methodDefs = methods.zip(argss.last).map {
-            case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
-          }
-          mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
-        })"
+            val methodDefs = methods.zip(argss.last).map {
+              case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
+            }
+            mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
+          })"
     }
   }
 
@@ -151,7 +151,7 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
               c.abort(
                 c.enclosingPosition,
                 s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyArgMap.keys
-                  .map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}",
+                    .map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}",
               ),
             )
           case multiple =>

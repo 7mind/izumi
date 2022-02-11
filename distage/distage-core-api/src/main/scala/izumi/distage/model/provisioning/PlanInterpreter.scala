@@ -93,7 +93,7 @@ object PlanInterpreter {
 
         case ProvisioningFailure.BrokenGraph(matrix, _) =>
           s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
-            .map { case (k, v) => s"$k: $v" }.niceList()}"
+              .map { case (k, v) => s"$k: $v" }.niceList()}"
 
         case ProvisioningFailure.CantBuildIntegrationSubplan(errors, _) =>
           s"Unable to build integration checks subplan:\n${errors.map(DIError.format(plan.input.activation))}"
