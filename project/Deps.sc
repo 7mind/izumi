@@ -79,12 +79,15 @@ object Izumi {
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
     final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto)
 
-    final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_interop_cats =
-      Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto).more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_all = Seq(zio_core, zio_interop_cats)
     final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("io.monix" %% "monix-catnap")"""))
     final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("io.monix" %% "monix-catnap")"""))
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
