@@ -52,6 +52,10 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
+                echo "##vso[task.setvariable variable=JAVA_HOME]$(JAVA_HOME_11_X64)"
+                echo "##vso[task.setvariable variable=PATH]$(JAVA_HOME_11_X64)/bin:$(PATH)"
+              displayName: Use JDK 11 for docs build
+            - script: |
                 bash sbtgen.sc --js && bash .build.sh 2.13 secrets site
         - job: publish212
           displayName: 'Publish to Maven Central (2.12)'
