@@ -1,6 +1,6 @@
--Xmx3500M
--XX:ReservedCodeCacheSize=128M
--XX:MaxMetaspaceSize=2G
+-Xmx3584M
+-XX:ReservedCodeCacheSize=256M
+-XX:MaxMetaspaceSize=2560M
 
 -XX:+OmitStackTraceInFastThrow
 -XX:SoftRefLRUPolicyMSPerMB=50
