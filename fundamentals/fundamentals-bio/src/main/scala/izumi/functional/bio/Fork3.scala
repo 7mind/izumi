@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
-import izumi.fundamentals.orphans.`monix.bio.IO`
 import zio.ZIO
 
 trait Fork3[F[-_, +_, +_]] extends RootBifunctor[F] with ForkInstances {
@@ -13,5 +12,5 @@ object ForkInstances extends LowPriorityForkInstances {
   @inline implicit def ForkZio: Predefined.Of[Fork3[ZIO]] = Predefined(impl.ForkZio)
 }
 sealed trait LowPriorityForkInstances {
-  @inline implicit def ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[Fork2[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[Fork2[MonixBIO]]]
+//  @inline implicit def ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[Fork2[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[Fork2[MonixBIO]]]
 }

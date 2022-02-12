@@ -1,8 +1,8 @@
 package izumi.functional.bio.impl
 
 import java.util.concurrent.CompletionStage
-
 import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.data.Morphism3
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO, ZScope}
@@ -163,4 +163,7 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] = (f +++ g).map(_.merge)
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
+  override def halt[E, A](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ???
+  override def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ???
+  override def uninterruptibleWith[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = ???
 }

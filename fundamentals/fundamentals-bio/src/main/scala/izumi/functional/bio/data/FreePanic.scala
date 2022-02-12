@@ -154,5 +154,9 @@ object FreePanic {
     }
 
     @inline override def fromTry[A](effect: => Try[A]): FreePanic[S, Throwable, A] = fromEither(effect.toEither)
+    override def halt[E, A](exit: Exit.Failure[E]): FreePanic[S, E, Nothing] = ???
+    override def sendInterruptToSelf: FreePanic[S, Nothing, Unit] = ???
+    override def uninterruptible[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, E, A] = ???
+    override def uninterruptibleWith[R, E, A](r: Morphism2[FreePanic[S, _, _], FreePanic[S, _, _]] => FreePanic[S, E, A]): FreePanic[S, E, A] = ???
   }
 }

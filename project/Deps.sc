@@ -84,10 +84,13 @@ object Izumi {
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_all = Seq(zio_core, zio_interop_cats)
-    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
-      .more(LibSetting.Raw("""excludeAll("io.monix" %% "monix-catnap")"""))
-    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
-      .more(LibSetting.Raw("""excludeAll("io.monix" %% "monix-catnap")"""))
+//    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
+//    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
+//    final val monix_all = Seq(monix, monix_bio)
+    // FIXME Disable monix due to lack of CE3 support as of now, see:
+    //   https://github.com/monix/monix/issues/1502
+    //   https://github.com/monix/monix/pull/1533
+    final val monix_all = Seq.empty[Library]
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
@@ -109,7 +112,7 @@ object Izumi {
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
 
-    val doobie = Seq(
+    val doobie_all = Seq(
       Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
       Library("org.tpolecat", "doobie-postgres", V.doobie, LibraryType.Auto),
     )
@@ -435,8 +438,9 @@ object Izumi {
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
   final val allZioOptional = Seq(zio_core, izumi_reflect).map(_ in Scope.Optional.all)
-  final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ Seq(monix, monix_bio).map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ Seq(zio_core, izumi_reflect, monix_bio)).map(_ in Scope.Test.all)
+  final val allMonads = cats_all ++ zio_all ++ Seq(izumi_reflect) ++ monix_all
+  final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ monix_all.map(_ in Scope.Optional.all)
+  final val allMonadsTest = (cats_all ++ monix_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
@@ -580,7 +584,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (cats_all ++ zio_all ++ doobie ++ Seq(monix, monix_bio)).map(_ in Scope.Compile.all) ++ Seq(izumi_reflect in Scope.Compile.all),
+        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           "scalacOptions" -= "-Wconf:any:error",

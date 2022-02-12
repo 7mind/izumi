@@ -24,10 +24,10 @@ class FunctoidTest extends AnyWordSpec {
   "Annotation extracting WrappedFunction" should {
     "can't handle opaque function vals, that hide underlying method reference" in {
       val fn = Functoid(locargannfnvalerased).get
-      assert(fn.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
+      assert(fn.diKeys.collect { case i: DIKey.IdKey[?] => i }.isEmpty)
 
       val fn2 = Functoid(testVal2).get
-      assert(fn2.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
+      assert(fn2.diKeys.collect { case i: DIKey.IdKey[?] => i }.isEmpty)
     }
 
     "produce correct DI keys for anonymous inline lambda" in {

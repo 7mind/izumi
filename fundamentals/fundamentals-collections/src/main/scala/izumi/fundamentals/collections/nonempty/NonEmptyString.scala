@@ -392,7 +392,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
   /*
     override def equals(o: Any): Boolean =
       o match {
-        case nonEmptyString: NonEmptyString[_] => toString == nonEmptyString.toString
+        case nonEmptyString: NonEmptyString[?] => toString == nonEmptyString.toString
         case _ => false
       }
    */

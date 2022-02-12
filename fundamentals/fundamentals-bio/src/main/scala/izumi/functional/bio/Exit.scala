@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import zio.{Cause, FiberFailure}
-import monix.bio
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -119,29 +118,29 @@ object Exit {
     }
   }
 
-  object MonixExit {
-    @inline def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
-      exit match {
-        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
-        case Left(Some(error)) => toExit(error)
-        case Right(value) => Success(value)
-      }
-    }
-
-    @inline def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
-      exit match {
-        case Left(error) => toExit(error)
-        case Right(value) => Success(value)
-      }
-    }
-
-    @inline def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
-      cause match {
-        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
-        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
-      }
-    }
-  }
+//  object MonixExit {
+//    @inline def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
+//      exit match {
+//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
+//        case Left(Some(error)) => toExit(error)
+//        case Right(value) => Success(value)
+//      }
+//    }
+//
+//    @inline def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
+//      exit match {
+//        case Left(error) => toExit(error)
+//        case Right(value) => Success(value)
+//      }
+//    }
+//
+//    @inline def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
+//      cause match {
+//        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
+//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
+//      }
+//    }
+//  }
 
   implicit lazy val ExitInstances: Monad2[Exit] with Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this

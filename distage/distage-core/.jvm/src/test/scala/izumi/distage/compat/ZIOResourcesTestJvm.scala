@@ -1,6 +1,6 @@
 package izumi.distage.compat
 
-import cats.effect.Bracket
+import cats.effect.kernel.MonadCancel
 import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
@@ -104,7 +104,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       unsafeRun {
-        import izumi.functional.bio.catz.BIOToBracket
+        import izumi.functional.bio.catz.BIOToMonadCancel
         ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
@@ -211,7 +211,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       unsafeRun {
-        import izumi.functional.bio.catz.BIOToBracket
+        import izumi.functional.bio.catz.BIOToMonadCancel
         ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)

@@ -129,7 +129,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    optSearch[BlockingIO2[SomeBIO]] // hard to make searching this not require zio currently (`type ZIOWithBlocking` creates issue)
 
     And("`No More Orphans` type provider object is accessible")
-    izumi.fundamentals.orphans.`cats.effect.Sync`.hashCode()
+    izumi.fundamentals.orphans.`cats.effect.kernel.Sync`.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError("""
          def y[R[_[_]]: LowPriorityQuasiIOInstances._Sync]() = ()

@@ -1,9 +1,9 @@
 package izumi.distage.model.effect
 
-import cats.effect.ExitCase
+import cats.effect.kernel.Outcome
 import izumi.distage.model.effect.QuasiIO.QuasiIOIdentity
 import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2}
-import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.Sync`}
+import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.kernel.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.annotation.tailrec
@@ -11,20 +11,22 @@ import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 /**
-  * Evidence that `F` is _almost_ `IO`-monad-like capabilities, but not quite,
+  * Evidence that `F` is _almost_ like an `IO` monad, but not quite –
   * because we also allow an impure [[izumi.fundamentals.platform.functional.Identity]] instance,
-  * for which `maybeSuspend` does not in fact suspend!
+  * for which `maybeSuspend` does not actually suspend!
   *
-  * If you use this interface and forget to add manual suspension with by-name's and Function1's,
+  * If you use this interface and forget to add manual suspensions with by-name parameters everywhere,
   * you're going to get weird behavior for Identity instance.
   *
-  * This interface serves internal need of `distage` for interoperability with all the existing
-  * Scala effect types and also impure `Identity`, you should NOT refer to it in your code if possible,
-  * it is public because you may want to define your own instances if a suitable instance of [[izumi.distage.modules.DefaultModule]]
-  * is missing for your custom effect type. Better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  * This interface serves internal needs of `distage` for interoperability with all existing
+  * Scala effect types and also with `Identity`, you should NOT refer to it in your code if possible.
+  *
+  * This type is public because you may want to define your own instances, if a suitable instance of [[izumi.distage.modules.DefaultModule]]
+  * is missing for your custom effect type.
+  * For application logic, prefer writing against typeclasses in [[izumi.functional.bio]] or [[cats]] instead.
   *
   * @see [[izumi.distage.modules.DefaultModule]] - `DefaultModule` makes instances of `QuasiIO` for cats-effect, ZIO,
-  *      monix, monix-bio, `Identity`, and others, available for summoning in your wiring automatically
+  *      monix, monix-bio, `Identity` and others available for summoning in your wiring automatically
   */
 trait QuasiIO[F[_]] extends QuasiApplicative[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
@@ -233,8 +235,8 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.Sync`](implicit F0: Sync[F]): QuasiIO[F] = {
-    val F = F0.asInstanceOf[cats.effect.Sync[F]]
+  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](implicit F0: Sync[F]): QuasiIO[F] = {
+    val F = F0.asInstanceOf[cats.effect.kernel.Sync[F]]
     new QuasiIO[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
@@ -262,20 +264,20 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
         F.bracketCase(acquire = F.defer(acquire))(use = use)(release = {
           case (a, exitCase) =>
             exitCase match {
-              case ExitCase.Completed => release(a, None)
-              case ExitCase.Error(e) => release(a, Some(e))
-              case ExitCase.Canceled => release(a, Some(new InterruptedException))
+              case Outcome.Succeeded(_) => release(a, None)
+              case Outcome.Errored(e) => release(a, Some(e))
+              case Outcome.Canceled() => release(a, Some(new InterruptedException))
             }
         })
       }
       override def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
-        F.guarantee(F.defer(fa))(F.defer(`finally`))
+        F.guarantee(F.defer(fa), F.defer(`finally`))
       }
       override def guaranteeOnFailure[A](fa: => F[A])(cleanupOnFailure: Throwable => F[Unit]): F[A] = {
         F.guaranteeCase(F.defer(fa)) {
-          case ExitCase.Completed => F.unit
-          case ExitCase.Error(e) => cleanupOnFailure(e)
-          case ExitCase.Canceled => cleanupOnFailure(new InterruptedException)
+          case Outcome.Succeeded(_) => F.unit
+          case Outcome.Errored(e) => cleanupOnFailure(e)
+          case Outcome.Canceled() => cleanupOnFailure(new InterruptedException)
         }
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)

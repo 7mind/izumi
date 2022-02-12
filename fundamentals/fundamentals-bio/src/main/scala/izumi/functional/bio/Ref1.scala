@@ -23,7 +23,7 @@ object Ref1 {
       override def update_(f: A => A): IO[Nothing, Unit] = ref.update(f)
     }
 
-  def fromCats[F[+_, +_]: Panic2, A](ref: cats.effect.concurrent.Ref[F[Throwable, _], A]): Ref2[F, A] =
+  def fromCats[F[+_, +_]: Panic2, A](ref: cats.effect.Ref[F[Throwable, _], A]): Ref2[F, A] =
     new Ref2[F, A] {
       override def get: F[Nothing, A] = ref.get.orTerminate
       override def set(a: A): F[Nothing, Unit] = ref.set(a).orTerminate

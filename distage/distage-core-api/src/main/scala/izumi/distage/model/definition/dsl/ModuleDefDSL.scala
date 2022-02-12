@@ -644,7 +644,7 @@ object ModuleDefDSL {
   }
 
   @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, _], A], r: R): Lifecycle[F[Any, E, _], A] = {
-    resource.mapK(Morphism1[F[R, E, _], F[Any, E, _]](F.provide(_)(r)))
+    resource.mapK[F[R, E, _], F[Any, E, _]](Morphism1(F.provide(_)(r)))
   }
 
   // DSL state machine
