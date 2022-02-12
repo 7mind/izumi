@@ -1,7 +1,7 @@
 package izumi.functional.mono
 
 import izumi.functional.bio.{F, IO2, IO3, SyncSafe2}
-import izumi.fundamentals.orphans.`cats.effect.Sync`
+import izumi.fundamentals.orphans.`cats.effect.kernel.Sync`
 
 import scala.language.implicitConversions
 
@@ -22,8 +22,8 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromSync[F[_], Sync[_[_]]: `cats.effect.Sync`](implicit F0: Sync[F]): SyncSafe[F] = {
-    val F = F0.asInstanceOf[cats.effect.Sync[F]]
+  implicit def fromSync[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](implicit F0: Sync[F]): SyncSafe[F] = {
+    val F = F0.asInstanceOf[cats.effect.kernel.Sync[F]]
     new SyncSafe[F] {
       override def syncSafe[A](f: => A): F[A] = F.delay(f)
     }

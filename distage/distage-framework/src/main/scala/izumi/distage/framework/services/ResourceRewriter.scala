@@ -54,7 +54,7 @@ class ResourceRewriter(
     b match {
       case implBinding: Binding.ImplBinding =>
         implBinding match {
-          case binding: Binding.SingletonBinding[_] =>
+          case binding: Binding.SingletonBinding[?] =>
             rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")

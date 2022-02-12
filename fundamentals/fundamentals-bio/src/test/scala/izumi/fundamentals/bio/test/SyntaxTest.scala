@@ -1,10 +1,10 @@
 package izumi.fundamentals.bio.test
 
+import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, Scheduler3}
-import monix.bio
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class SyntaxTest extends AnyWordSpec {
 
@@ -83,7 +83,7 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     x[zio.IO](zio.UIO.succeed(()), zio.UIO.succeed(()))
-    x[bio.IO](bio.UIO.evalTotal(()), bio.UIO.evalTotal(()))
+//    x[bio.IO](bio.UIO.evalTotal(()), bio.UIO.evalTotal(()))
   }
 
   "Async3.race is callable along with all BIOParallel syntax" in {
@@ -109,7 +109,7 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     assert(new X[zio.IO].hello != null)
-    assert(new X[bio.IO].hello != null)
+//    assert(new X[bio.IO].hello != null)
   }
 
   ".widen/widenError is callable" in {
@@ -163,10 +163,10 @@ class SyntaxTest extends AnyWordSpec {
     z[zio.IO]
     zz[zio.IO]
 
-    x[bio.IO]
-    y[bio.IO]
-    z[bio.IO]
-    zz[bio.IO]
+//    x[bio.IO]
+//    y[bio.IO]
+//    z[bio.IO]
+//    zz[bio.IO]
   }
 
   "Bracket3.bracketCase & guaranteeCase are callable" in {
@@ -230,10 +230,10 @@ class SyntaxTest extends AnyWordSpec {
     z[zio.IO]
     zz[zio.IO]
 
-    x[bio.IO]
-    y[bio.IO]
-    z[bio.IO]
-    zz[bio.IO]
+//    x[bio.IO]
+//    y[bio.IO]
+//    z[bio.IO]
+//    zz[bio.IO]
   }
 
   "Bracket3.bracketOnFailure & guaranteeOnFailure are callable" in {
@@ -362,10 +362,10 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     lazy val monixTest = (
-      x[bio.IO],
-      y[bio.IO],
-      z[bio.IO],
-      attachScheduler2[bio.IO],
+//      x[bio.IO],
+//      y[bio.IO],
+//      z[bio.IO],
+//      attachScheduler2[bio.IO],
     )
 
     lazy val eitherTest = (
@@ -519,10 +519,9 @@ class SyntaxTest extends AnyWordSpec {
         F.timeout(5.seconds)(F.forever(F.unit))
       }
 
-      lazy val _ = (
-        y[zio.IO],
-        y[monix.bio.IO],
-      )
+      lazy val _ =
+        y[zio.IO]
+//        y[monix.bio.IO],
     }
   }
 
@@ -654,4 +653,11 @@ class SyntaxTest extends AnyWordSpec {
     x2[zio.ZIO]
     x3[zio.ZIO]
   }
+
+  "Morphism1/2/3 identity is available" in {
+    implicitly[Morphism1[List, List]]
+    implicitly[Morphism2[Either, Either]]
+    implicitly[Morphism3[zio.ZIO, zio.ZIO]]
+  }
+
 }

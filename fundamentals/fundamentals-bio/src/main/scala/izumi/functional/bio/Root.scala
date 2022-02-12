@@ -3,10 +3,9 @@ package izumi.functional.bio
 import cats.data.Kleisli
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
-import izumi.functional.bio.SpecificityHelper._
-import izumi.functional.bio.impl.{AsyncMonix, AsyncZio, BioEither, BioIdentity3}
+import izumi.functional.bio.SpecificityHelper.*
+import izumi.functional.bio.impl.{AsyncZio, BioEither, BioIdentity3}
 import izumi.functional.bio.retry.Scheduler3
-import izumi.fundamentals.orphans.`monix.bio.IO`
 import izumi.fundamentals.platform.functional.{Identity2, Identity3}
 import izumi.fundamentals.platform.language.unused
 import zio.ZIO
@@ -20,7 +19,7 @@ trait RootBifunctor[F[-_, +_, +_]] extends Root
 trait RootTrifunctor[F[-_, +_, +_]] extends Root
 
 object Root extends RootInstancesLowPriority1 {
-  @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] with S1 =
+  @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] & S1 =
     S1(Concurrent.InnerF)
 
   @inline implicit final def AttachLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Local: Local3[FR]): Local.type = Local
@@ -42,7 +41,7 @@ object Root extends RootInstancesLowPriority1 {
 }
 
 sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
-  @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] with S2 =
+  @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] & S2 =
     S2(Temporal.InnerF)
 
   @inline implicit final def AttachArrowChoice[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit ArrowChoice: ArrowChoice3[FR]): ArrowChoice.type =
@@ -53,7 +52,7 @@ sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
 }
 
 sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
-  @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] with S3 =
+  @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] & S3 =
     S3(Parallel.InnerF)
 
   @inline implicit final def AttachArrow[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Arrow: Arrow3[FR]): Arrow.type = Arrow
@@ -64,7 +63,7 @@ sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
 }
 
 sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
-  @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] with S4 =
+  @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] & S4 =
     S4(MonadAsk.InnerF)
 
   @inline implicit final def AttachAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Ask: Ask3[FR]): Ask.type = Ask
@@ -74,18 +73,18 @@ sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
 }
 
 sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
-  @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] with S5 = S5(Ask.InnerF)
+  @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] & S5 = S5(Ask.InnerF)
 
   @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal.type = Temporal
 }
 
 sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
-  @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] with S6 =
+  @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] & S6 =
     S6(Profunctor.InnerF)
 }
 
 sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
-  @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] with S7 =
+  @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] & S7 =
     S7(Bifunctor.InnerF)
 }
 
@@ -102,9 +101,9 @@ sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   // for some reason ZIO instances do not require no-more-orphans machinery and do not create errors when zio is not on classpath...
-  // seems like it's because of the type lambda in `Async2` definition
-  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[Async2[MonixBIO]] =
-    AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
+  // seems like it's because of the additional type lambda in `Async2` definition, unlike `Async3`
+//  @inline implicit final def BIOMonix[MonixBIO[+_, +_]](implicit @unused M: `monix.bio.IO`[MonixBIO]): Predefined.Of[Async2[MonixBIO]] =
+//    AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
 }
 
 sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
@@ -117,8 +116,8 @@ sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
 }
 
 sealed trait RootInstancesLowPriority11 {
-  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper with RootBifunctor[f], FR[-_, +_, +_], R0](
+  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper & RootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
-  ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] with DivergenceHelper { type Divergence = Divergent } =
+  ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] & DivergenceHelper { type Divergence = Divergent } =
     Divergent(cast3To2[C, FR, R0](BifunctorPlus))
 }

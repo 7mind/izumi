@@ -1,6 +1,7 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.Trace
+import izumi.functional.bio.data.Morphism2
 import izumi.functional.bio.impl.MiniBIO.Fail
 import izumi.functional.bio.{BlockingIO2, Exit, IO2}
 
@@ -9,7 +10,7 @@ import scala.language.implicitConversions
 
 /**
   * A lightweight dependency-less implementation of the [[izumi.functional.bio.IO2]] interface,
-  * analogous in purpose with [[cats.effect.SyncIO]]
+  * analogous in purpose with [[cats.effect.kernel.SyncIO]]
   *
   * Sync-only, not interruptible, not async.
   * For internal use. Prefer ZIO or cats-bio in production.
@@ -70,7 +71,7 @@ sealed trait MiniBIO[+E, +A] {
                 exit
             }
 
-          case failure: Exit.Failure[_] =>
+          case failure: Exit.Failure[?] =>
             runner(Fail.halt(failure), stack)
         }
       case MiniBIO.Fail(e) =>
@@ -172,5 +173,9 @@ object MiniBIO {
     override def syncBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
 
     override def syncInterruptibleBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
+    override def halt[E, A](exit: Exit.Failure[E]): MiniBIO[E, Nothing] = ???
+    override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = ???
+    override def uninterruptible[R, E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = ???
+    override def uninterruptibleWith[R, E, A](r: Morphism2[MiniBIO, MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = ???
   }
 }

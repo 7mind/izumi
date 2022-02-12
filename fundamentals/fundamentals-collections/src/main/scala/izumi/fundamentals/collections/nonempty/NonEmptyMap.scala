@@ -301,7 +301,7 @@ final class NonEmptyMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
   /*
     override def equals(o: Any): Boolean =
       o match {
-        case nonEmptyMap: NonEmptyMap[_] => toMap == nonEmptyMap.toMap
+        case nonEmptyMap: NonEmptyMap[?] => toMap == nonEmptyMap.toMap
         case _ => false
       }
    */

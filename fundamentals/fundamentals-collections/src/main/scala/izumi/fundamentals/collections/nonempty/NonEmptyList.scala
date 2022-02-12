@@ -323,7 +323,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
   /*
     override def equals(o: Any): Boolean =
       o match {
-        case nonEmptyList: NonEmptyList[_] => toList == nonEmptyList.toList
+        case nonEmptyList: NonEmptyList[?] => toList == nonEmptyList.toList
         case _ => false
       }
    */

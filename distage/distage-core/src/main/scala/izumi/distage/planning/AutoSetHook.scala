@@ -73,7 +73,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
               None
             }
         }
-      case _: EmptySetBinding[_] =>
+      case _: EmptySetBinding[?] =>
         None
 
     }

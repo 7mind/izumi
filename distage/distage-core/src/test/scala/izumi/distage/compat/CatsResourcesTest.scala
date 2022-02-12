@@ -28,7 +28,7 @@ object CatsResourcesTest {
 final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
-    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.Sync`](): Unit = ()
+    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
     y()
   }
 
@@ -113,7 +113,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "cats instances for Lifecycle" in {
     def failImplicit[A](implicit a: A = null): A = a
-    def request[F[_]: cats.effect.Sync] = {
+    def request[F[_]: cats.effect.kernel.Sync] = {
       val F = cats.Functor[Lifecycle[F, _]]
       val M = cats.Monad[Lifecycle[F, _]]
       val m = cats.Monoid[Lifecycle[F, Int]]

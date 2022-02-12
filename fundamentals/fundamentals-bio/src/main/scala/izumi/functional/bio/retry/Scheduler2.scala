@@ -1,8 +1,7 @@
 package izumi.functional.bio.retry
 
 import izumi.functional.bio.PredefinedHelper.Predefined
-import izumi.functional.bio.impl.{SchedulerMonix, SchedulerZio}
-import izumi.fundamentals.orphans.{`cats.effect.Timer`, `monix.bio.IO`}
+import izumi.functional.bio.impl.SchedulerZio
 import zio.ZIO
 
 trait Scheduler2[F[+_, +_]] extends SchedulerInstances {
@@ -22,10 +21,10 @@ object SchedulerInstances extends SchedulerLowPriorityInstances {
 }
 
 sealed trait SchedulerLowPriorityInstances {
-  @inline implicit def SchedulerFromMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.Timer`](
-    implicit
-    timer: Timer[MonixBIO[Nothing, _]]
-  ): Predefined.Of[Scheduler2[MonixBIO]] = {
-    new SchedulerMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Scheduler2[MonixBIO]]]
-  }
+//  @inline implicit def SchedulerFromMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.kernel.Clock`](
+//    implicit
+//    timer: Timer[MonixBIO[Nothing, _]]
+//  ): Predefined.Of[Scheduler2[MonixBIO]] = {
+//    new SchedulerMonix(timer.asInstanceOf[cats.effect.kernel.Clock[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Scheduler2[MonixBIO]]]
+//  }
 }
