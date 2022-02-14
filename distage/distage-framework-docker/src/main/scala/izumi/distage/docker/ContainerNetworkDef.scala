@@ -1,7 +1,6 @@
 package izumi.distage.docker
 
 import java.util.UUID
-
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
 import izumi.distage.docker.Docker.DockerReusePolicy
 import izumi.distage.model.exceptions.IntegrationCheckException
@@ -9,13 +8,13 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.language.Quirks.*
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 trait ContainerNetworkDef {
   // `ContainerNetworkDef`s must be top-level objects, otherwise `.Network` and `.Config` won't be referencable in ModuleDef
@@ -64,11 +63,15 @@ object ContainerNetworkDef {
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
         if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-          val maxAttempts = 50
+          val retryWait = 200.millis
+          val maxWait = 10.seconds
+          val maxAttempts = (maxWait / retryWait).toInt
+
           logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
+
           FileLockMutex.withLocalMutex(logger)(
             s"distage-container-network-def-$prefix",
-            retryWait = 200.millis,
+            retryWait = retryWait,
             maxAttempts = maxAttempts,
           ) {
             val labelsSet = networkLabels.toSet

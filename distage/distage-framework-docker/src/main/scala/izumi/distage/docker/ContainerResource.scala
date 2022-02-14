@@ -2,28 +2,28 @@ package izumi.distage.docker
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.exception.NotFoundException
-import com.github.dockerjava.api.model._
+import com.github.dockerjava.api.model.*
 import izumi.distage.docker.ContainerResource.PortDecl
-import izumi.distage.docker.Docker._
+import izumi.distage.docker.Docker.*
 import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
-import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.annotation.nowarn
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 open class ContainerResource[F[_], Tag](
@@ -170,11 +170,14 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
-    logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "max lock retries"}...")
+    val retryWait = 200.millis
+    val maxAttempts = (config.pullTimeout / retryWait).toInt
+    logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
+
     FileLockMutex.withLocalMutex(logger)(
       s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
-      retryWait = 200.millis,
-      maxAttempts = config.pullTimeout.toSeconds.toInt * 5,
+      retryWait = retryWait,
+      maxAttempts = maxAttempts,
     ) {
       F.suspendF {
         val containers = {
