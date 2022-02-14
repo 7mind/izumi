@@ -3,6 +3,7 @@ package izumi.logstage.api.rendering
 /**
   * @param withExceptions if `true`, print full stack trace of [[Throwable]]s in the interpolation
   * @param colored        if `true`, use colors in console output
+  * @param hideKeys       if `true`, remove names of interpolated variables from the output
   */
 final case class RenderingOptions(
   withExceptions: Boolean = true,
