@@ -1,12 +1,15 @@
 package izumi.functional.bio
 
-import java.util.concurrent.ThreadPoolExecutor
-
+import izumi.functional.bio.BlockingIOInstances.ZIOWithBlocking
+import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
+import izumi.functional.bio.PredefinedHelper.Predefined
+import zio.ZIO
 import zio.blocking.Blocking
 import zio.internal.Executor
-import zio.{IO, ZIO}
 
-trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances {
+import java.util.concurrent.ThreadPoolExecutor
+
+trait BlockingIO3[F[-_, +_, +_]] extends DivergenceHelper with BlockingIOInstances {
 
   /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes * */
   def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A]
@@ -35,13 +38,13 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
     val blocking: zio.blocking.Blocking.Service = new zio.blocking.Blocking.Service {
       override val blockingExecutor: Executor = executor
     }
-    BlockingZIO3FromBlocking(blocking)
+    BlockingZIOFromBlocking(blocking)
   }
 
-  def BlockingZIO3FromBlocking(b: zio.blocking.Blocking.Service): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+  def BlockingZIOFromBlocking(b: zio.blocking.Blocking.Service): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
     override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = b.blocking(f)
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlockingInterrupt(f)
   }
 
 //  @inline final def BlockingMonixBIOFromScheduler(ioScheduler: Scheduler): BlockingIO2[monix.bio.IO] = new BlockingIO2[monix.bio.IO] {
@@ -50,26 +53,41 @@ object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 //    override def syncInterruptibleBlocking[A](f: => A): monix.bio.IO[Throwable, A] = syncBlocking(f)
 //  }
 
-  @inline implicit final def blockingIOZIO3Blocking(implicit blocking: Blocking): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
-    val b: Blocking.Service = blocking.get
-    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = b.blocking(f)
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.blocking(IO(f))
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = b.effectBlocking(f)
+  @inline implicit final def blockingZIOFromHasBlocking(implicit blocking: Blocking): Predefined.Of[BlockingIO3[ZIO]] = {
+    BlockingZIOFromBlocking(blocking.get).asInstanceOf[Predefined.Of[BlockingIO3[ZIO]]]
   }
+
 }
 
 sealed trait LowPriorityBlockingIOInstances extends LowPriorityBlockingIOInstances1 {
+  type FWithEnv[FR[-_, +_, +_], R0, -R, +E, +A] = FR[R & R0, E, A]
+
+  type IOWithBlocking[+E, +A] = ZIO[Blocking, E, A]
   type ZIOWithBlocking[-R, +E, +A] = ZIO[R & Blocking, E, A]
 
-  @inline implicit final def blockingIOZIOR[R]: BlockingIO2[ZIOWithBlocking[R, +_, +_]] = cast3To2[BlockingIO3, ZIOWithBlocking, R](blockingIOZIO3R)
-
-  implicit final val blockingIOZIO3R: BlockingIO3[ZIOWithBlocking] = new BlockingIO3[ZIOWithBlocking] {
-    override def shiftBlocking[R, E, A](f: ZIO[R & Blocking, E, A]): ZIO[R & Blocking, E, A] = zio.blocking.blocking(f)
-    override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlocking(f)
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlockingInterrupt(f)
+  implicit final def blockingZIOFromHasBlockingEnvironment2: BlockingIO2[IOWithBlocking] = {
+    BlockingIOInstances.blockingZIOFromHasBlockingEnvironment3.asInstanceOf[BlockingIO2[IOWithBlocking]]
   }
 }
 
-sealed trait LowPriorityBlockingIOInstances1 {
-  @inline implicit final def blockingIO3To2[FR[-_, +_, +_], R](implicit BlockingIO3: BlockingIO3[FR]): BlockingIO2[FR[R, +_, +_]] = cast3To2(BlockingIO3)
+sealed trait LowPriorityBlockingIOInstances1 extends LowPriorityBlockingIOInstances2 {
+
+  implicit final def blockingZIOFromHasBlockingEnvironment3: BlockingIO3[ZIOWithBlocking] = {
+    new BlockingIO3[ZIOWithBlocking] {
+      override def shiftBlocking[R, E, A](f: ZIO[R & Blocking, E, A]): ZIO[R & Blocking, E, A] = zio.blocking.blocking(f)
+      override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlocking(f)
+      override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlockingInterrupt(f)
+    }
+  }
+
+}
+
+sealed trait LowPriorityBlockingIOInstances2 {
+
+  @inline implicit final def blockingConvert3To2[FR[-_, +_, +_], R](
+    implicit BlockingIO3: Nondivergent.Of[BlockingIO3[FR]]
+  ): Divergent.Of[BlockingIO2[FR[R, +_, +_]]] = {
+    BlockingIO3.asInstanceOf[Divergent.Of[BlockingIO2[FR[R, +_, +_]]]]
+  }
+
 }
