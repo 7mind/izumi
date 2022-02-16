@@ -12,11 +12,11 @@ import zio.ZIO
 
 import scala.language.implicitConversions
 
-trait Root extends DivergenceHelper with PredefinedHelper
-
 trait RootBifunctor[F[-_, +_, +_]] extends Root
 
 trait RootTrifunctor[F[-_, +_, +_]] extends Root
+
+trait Root extends DivergenceHelper with PredefinedHelper
 
 object Root extends RootInstancesLowPriority1 {
   @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] & S1 =
