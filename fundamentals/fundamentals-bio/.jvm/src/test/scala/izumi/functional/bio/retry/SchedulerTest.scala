@@ -1,27 +1,26 @@
 package izumi.functional.bio.retry
 
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
-import izumi.functional.bio.impl.SchedulerZio
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{F, Functor2, IO2, Monad2, Primitives2, UnsafeRun2}
+import izumi.functional.bio.{F, Functor2, IO2, Monad2, Primitives2, Temporal3, TemporalInstances, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
+import zio.ZIO
 import zio.internal.Platform
 
 import java.time.ZonedDateTime
-import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration.*
 
 class SchedulerTest extends AnyWordSpec {
-//    private def monixSchedulerFromTimer(implicit timer: cats.effect.kernel.Clock[bio.UIO]) = new SchedulerMonix(timer)
-//
-//  private val monixRunner = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
-//  private val monixScheduler = monixSchedulerFromTimer
 
-  private val zioTestClock = zio.Has(zio.clock.Clock.Service.live)
-  private val zioScheduler = new SchedulerZio(zioTestClock)
-  private val zioRunner = UnsafeRun2.createZIO(Platform.default)
+//  private val monixRunner: UnsafeRun2[bio.IO] = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
+//  private val monixScheduler: Scheduler2[bio.IO] = new SchedulerMonix(implicitly[cats.effect.kernel.Clock[bio.UIO]])
+
+  private val zioTestClock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
+  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(zioTestClock)
+  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromZio(zioTestClock)
+  private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO(Platform.default)
 
   "Scheduler" should {
 
@@ -63,7 +62,7 @@ class SchedulerTest extends AnyWordSpec {
     // Since it took some time to run effect plus execute repeat logic, delays could be slightly less than expected.
     "execute effect within a time window" in {
       val sleeps1 =
-        zioRunner.unsafeRun(zioTestTimedScheduler(zio.ZIO.sleep(java.time.Duration.of(1, ChronoUnit.SECONDS)).provide(zioTestClock))(RetryPolicy.fixed(2.seconds), 4))
+        zioRunner.unsafeRun(zioTestTimedScheduler(zioTemporal.sleep(1.seconds))(RetryPolicy.fixed(2.seconds), 4))
 
 //      val sleeps2 =
 //        monixRunner.unsafeRun(monixTestTimedRunner(bio.IO.sleep(1.second))(RetryPolicy.fixed(2.seconds), 4))
@@ -103,7 +102,7 @@ class SchedulerTest extends AnyWordSpec {
 
     "execute spaced" in {
       val sleeps1 =
-        zioRunner.unsafeRun(zioTestTimedScheduler(zio.ZIO.sleep(java.time.Duration.of(1, ChronoUnit.SECONDS)).provide(zioTestClock))(RetryPolicy.spaced(2.seconds), 4))
+        zioRunner.unsafeRun(zioTestTimedScheduler(zioTemporal.sleep(1.seconds))(RetryPolicy.spaced(2.seconds), 4))
 
 //      val sleeps2 =
 //        monixRunner.unsafeRun(monixTestTimedRunner(bio.IO.sleep(1.second))(RetryPolicy.spaced(2.seconds), 4))
@@ -310,25 +309,26 @@ class SchedulerTest extends AnyWordSpec {
       zioRunner.unsafeRun(testProgram)
     }
 
-    def simpleCounter[F[+_, +_]: Monad2: Primitives2, B](sc: Scheduler2[F])(policy: RetryPolicy[F, Int, B]) = {
+    def simpleCounter[F[+_, +_]: Monad2: Primitives2, B](sc: Scheduler2[F])(policy: RetryPolicy[F, Int, B]): F[Nothing, Int] = {
       for {
         counter <- F.mkRef(0)
         res <- sc.repeat(counter.update(_ + 1))(policy)
       } yield res
     }
 
+    @deprecated("Needs to be removed", "16/02/2022")
     def zioTestTimedScheduler[E, B](eff: zio.IO[E, Any])(policy: RetryPolicy[zio.IO, Any, B], n: Int): zio.IO[E, Vector[FiniteDuration]] = {
       def loop(in: Any, makeDecision: RetryFunction[zio.IO, Any, B], acc: Vector[FiniteDuration], iter: Int): zio.IO[E, Vector[FiniteDuration]] = {
-        if (iter <= 0) zio.IO.succeed(acc)
+        if (iter <= 0) ZIO.succeed(acc)
         else {
           (for {
             now <- zio.clock.currentTime(TimeUnit.MILLISECONDS).map(toZonedDateTime)
             dec <- makeDecision(now, in)
             res = dec match {
-              case ControllerDecision.Stop(_) => zio.IO.succeed(acc)
+              case ControllerDecision.Stop(_) => ZIO.succeed(acc)
               case ControllerDecision.Repeat(_, interval, next) =>
                 val sleep = java.time.Duration.between(now, interval)
-                zio.ZIO.sleep(sleep) *> eff *> loop((), next, acc :+ toFiniteDuration(sleep), iter - 1)
+                ZIO.sleep(sleep) *> eff *> loop((), next, acc :+ toFiniteDuration(sleep), iter - 1)
             }
           } yield res).flatten
         }
@@ -337,6 +337,7 @@ class SchedulerTest extends AnyWordSpec {
       loop((), policy.action, Vector.empty[FiniteDuration], n)
     }
 
+//    @deprecated("Needs to be removed", "16/02/2022")
 //    def monixTestTimedRunner[E, B](
 //      eff: bio.IO[E, Any]
 //    )(policy: RetryPolicy[bio.IO, Any, B],
