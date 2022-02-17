@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import cats.effect.kernel.Outcome
 import zio.{Cause, FiberFailure}
 
 sealed trait Exit[+E, +A] {
@@ -94,14 +95,14 @@ object Exit {
   }
 
   object ZIOExit {
-    @inline def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
+    def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
       case zio.Exit.Success(v) =>
         Success(v)
       case zio.Exit.Failure(cause) =>
         toExit(cause)
     }
 
-    @inline def toExit[E](result: Cause[E]): Exit.Failure[E] = {
+    def toExit[E](result: Cause[E]): Exit.Failure[E] = {
       result.failureOrCause match {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
@@ -119,7 +120,7 @@ object Exit {
   }
 
 //  object MonixExit {
-//    @inline def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
+//    def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
 //      exit match {
 //        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
 //        case Left(Some(error)) => toExit(error)
@@ -127,14 +128,14 @@ object Exit {
 //      }
 //    }
 //
-//    @inline def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
+//    def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
 //      exit match {
 //        case Left(error) => toExit(error)
 //        case Right(value) => Success(value)
 //      }
 //    }
 //
-//    @inline def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
+//    def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
 //      cause match {
 //        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
 //        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
@@ -142,7 +143,16 @@ object Exit {
 //    }
 //  }
 
-  implicit lazy val ExitInstances: Monad2[Exit] with Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
+  object CatsExit {
+    def toOutcomeThrowable[F[_], A](pure: A => F[A], exit: Exit[Throwable, A]): Outcome[F, Throwable, A] = exit match {
+      case Exit.Success(b) => Outcome.succeeded(pure(b))
+      case Exit.Interruption(_, _) => Outcome.canceled
+      case error @ Error(_, _) => Outcome.errored(error.toThrowable)
+      case termination @ Termination(_, _, _) => Outcome.errored(termination.toThrowable)
+    }
+  }
+
+  implicit lazy val ExitInstances: Monad2[Exit] & Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this
     override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
     override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)

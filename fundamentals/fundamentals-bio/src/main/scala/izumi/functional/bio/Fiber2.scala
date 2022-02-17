@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
-import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.Exit.{CatsExit, ZIOExit}
 import zio.IO
 
 trait Fiber2[+F[+_, +_], +E, +A] {
@@ -28,11 +28,7 @@ object Fiber2 {
   implicit final class ToCats[F[+_, +_], A](private val bioFiber: Fiber2[F, Throwable, A]) extends AnyVal {
     def toCats(implicit F: Applicative2[F]): cats.effect.Fiber[F[Throwable, _], Throwable, A] = new cats.effect.Fiber[F[Throwable, _], Throwable, A] {
       override def cancel: F[Nothing, Unit] = F.void(bioFiber.interrupt)
-      override def join: F[Nothing, Outcome[F[Throwable, _], Throwable, A]] = bioFiber.observe.map {
-        case Exit.Success(value) => Outcome.succeeded(F.pure(value))
-        case Exit.Interruption(_, _) => Outcome.canceled
-        case failure: Exit.Failure[Throwable] => Outcome.errored(failure.toThrowable)
-      }
+      override def join: F[Nothing, Outcome[F[Throwable, _], Throwable, A]] = bioFiber.observe.map(CatsExit.toOutcomeThrowable(F.pure, _))
     }
   }
 }

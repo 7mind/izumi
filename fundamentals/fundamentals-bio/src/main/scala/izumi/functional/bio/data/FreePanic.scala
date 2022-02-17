@@ -157,6 +157,11 @@ object FreePanic {
     override def halt[E, A](exit: Exit.Failure[E]): FreePanic[S, E, Nothing] = ???
     override def sendInterruptToSelf: FreePanic[S, Nothing, Unit] = ???
     override def uninterruptible[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, E, A] = ???
-    override def uninterruptibleWith[R, E, A](r: Morphism2[FreePanic[S, _, _], FreePanic[S, _, _]] => FreePanic[S, E, A]): FreePanic[S, E, A] = ???
+    override def uninterruptibleExcept[R, E, A](r: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]): FreePanic[S, E, A] = ???
+    override def bracketExcept[R, E, A, B](
+      acquire: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]
+    )(release: (A, Exit[E, B]) => FreePanic[S, Nothing, Unit]
+    )(use: A => FreePanic[S, E, B]
+    ): FreePanic[S, E, B] = ???
   }
 }

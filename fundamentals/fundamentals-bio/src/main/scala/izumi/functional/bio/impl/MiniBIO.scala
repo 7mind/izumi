@@ -1,7 +1,7 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.Trace
-import izumi.functional.bio.data.Morphism2
+import izumi.functional.bio.data.RestoreInterruption2
 import izumi.functional.bio.impl.MiniBIO.Fail
 import izumi.functional.bio.{BlockingIO2, Exit, IO2}
 
@@ -176,6 +176,11 @@ object MiniBIO {
     override def halt[E, A](exit: Exit.Failure[E]): MiniBIO[E, Nothing] = ???
     override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = ???
     override def uninterruptible[R, E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = ???
-    override def uninterruptibleWith[R, E, A](r: Morphism2[MiniBIO, MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = ???
+    override def uninterruptibleExcept[R, E, A](r: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = ???
+    override def bracketExcept[R, E, A, B](
+      acquire: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]
+    )(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit]
+    )(use: A => MiniBIO[E, B]
+    ): MiniBIO[E, B] = ???
   }
 }

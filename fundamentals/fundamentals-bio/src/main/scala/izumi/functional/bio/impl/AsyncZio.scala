@@ -2,7 +2,7 @@ package izumi.functional.bio.impl
 
 import java.util.concurrent.CompletionStage
 import izumi.functional.bio.Exit.ZIOExit
-import izumi.functional.bio.data.Morphism3
+import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO, ZScope}
@@ -165,5 +165,29 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
   override def halt[E, A](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ???
   override def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ???
-  override def uninterruptibleWith[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = ???
+  override def uninterruptibleExcept[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = ???
+  override def bracketExcept[R, E, A, B](
+    acquire: RestoreInterruption3[ZIO] => ZIO[R, E, A]
+  )(release: (A, Exit[E, B]) => ZIO[R, Nothing, Unit]
+  )(use: A => ZIO[R, E, B]
+  ): ZIO[R, E, B] = {
+    ZIO.uninterruptibleMask[R, E, B] {
+      restore =>
+        acquire(Morphism3(restore(_))).flatMap {
+          a =>
+            ZIO
+              .effectSuspendTotal(restore(use(a)))
+              .run
+              .flatMap {
+                e =>
+                  ZIO
+                    .effectSuspendTotal(release(a, Exit.ZIOExit.toExit(e)))
+                    .foldCauseM(
+                      cause2 => ZIO.halt(e.fold(_ ++ cause2, _ => cause2)),
+                      _ => ZIO.done(e),
+                    )
+              }
+        }
+    }
+  }
 }
