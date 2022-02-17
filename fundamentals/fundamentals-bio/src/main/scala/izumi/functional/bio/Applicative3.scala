@@ -30,7 +30,7 @@ trait Applicative3[F[-_, +_, +_]] extends Functor3[F] {
     case Some(a) => map(f(a))(Some(_))
     case None => pure(None)
   }
-  @inline final def when[R, E](cond: Boolean)(ifTrue: F[R, E, Unit]): F[R, E, Unit] = if (cond) ifTrue else unit
-  @inline final def unless[R, E](cond: Boolean)(ifFalse: F[R, E, Unit]): F[R, E, Unit] = if (cond) unit else ifFalse
-  @inline final def ifThenElse[R, E, A](cond: Boolean)(ifTrue: F[R, E, A], ifFalse: F[R, E, A]): F[R, E, A] = if (cond) ifTrue else ifFalse
+  @inline final def when[R, E](cond: Boolean)(ifTrue: => F[R, E, Unit]): F[R, E, Unit] = if (cond) ifTrue else unit
+  @inline final def unless[R, E](cond: Boolean)(ifFalse: => F[R, E, Unit]): F[R, E, Unit] = if (cond) unit else ifFalse
+  @inline final def ifThenElse[R, E, A](cond: Boolean)(ifTrue: => F[R, E, A], ifFalse: => F[R, E, A]): F[R, E, A] = if (cond) ifTrue else ifFalse
 }
