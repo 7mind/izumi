@@ -475,10 +475,10 @@ object ModuleDefDSL {
       }
 
       def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]]): AfterBind = {
-        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get).provide))
+        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get[I]).provide))
       }
       def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, Has[I]]])(implicit d1: DummyImplicit, d2: DummyImplicit): AfterBind = {
-        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
+        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get[I]).provide(_)))
       }
 
       /**
@@ -563,7 +563,7 @@ object ModuleDefDSL {
       }
 
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addResource(HasConstructor[R].map(layer.build.map(_.get).provide))
+        dsl.addResource(HasConstructor[R].map(layer.build.map(_.get[I]).provide))
       }
       def addHas[R: HasConstructor, E: Tag, I <: T: Tag](
         function: Functoid[ZLayer[R, E, Has[I]]]
@@ -571,7 +571,7 @@ object ModuleDefDSL {
         d1: DummyImplicit,
         d2: DummyImplicit,
       ): AfterAdd = {
-        dsl.addResource(function.map2(HasConstructor[R])(_.build.map(_.get).provide(_)))
+        dsl.addResource(function.map2(HasConstructor[R])(_.build.map(_.get[I]).provide(_)))
       }
 
       /**

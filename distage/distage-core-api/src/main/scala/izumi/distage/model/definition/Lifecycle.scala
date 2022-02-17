@@ -878,7 +878,7 @@ object Lifecycle extends LifecycleInstances {
     layer: => ZLayer[R, E, Has[A]]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(fromZIO(layer.build.map(_.get)))
+    Functoid.lift(fromZIO(layer.build.map(_.get[A])))
   }
 
   /**
@@ -889,7 +889,7 @@ object Lifecycle extends LifecycleInstances {
     layer: => ZLayer[R, Nothing, Has[A]]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(fromZIO(layer.build.map(_.get)))
+    Functoid.lift(fromZIO(layer.build.map(_.get[A])))
   }
 
   /** Support binding various FP libraries' Resource types in `.fromResource` */
@@ -1161,7 +1161,7 @@ private[definition] object AdaptFunctoidImpl {
 
       override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: LifecycleTagImpl[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
         import tag.tagFull
-        a.map(layer => fromZIO(layer.map(_.get).build))
+        a.map(layer => fromZIO(layer.map(_.get[A]).build))
       }
     }
   }
