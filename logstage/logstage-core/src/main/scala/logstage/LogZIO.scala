@@ -25,7 +25,7 @@ object LogZIO {
     *   }
     * }}}
     */
-  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get)
+  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
