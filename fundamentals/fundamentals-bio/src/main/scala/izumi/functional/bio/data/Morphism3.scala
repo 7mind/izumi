@@ -53,16 +53,16 @@ object Morphism3 {
   @inline implicit def identity1[F[_]]: Morphism1[F, F] = this.identity
 
   implicit def conversion3To2[F[_, _, _], G[_, _, _], R](f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
+
   implicit def conversion2To1[F[_, _], G[_, _], E](f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
-  // workaround for inference issues with `E=Nothing`
   implicit def conversion2To1Nothing[F[_, _], G[_, _]](f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
-    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]]
+    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing`
 
   implicit def Convert3To2[F[_, _, _], G[_, _, _], R](implicit f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
+
   implicit def Convert2To1[F[_, _], G[_, _], E](implicit f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
-  // workaround for inference issues with `E=Nothing`
   implicit def Convert2To1Nothing[F[_, _], G[_, _]](implicit f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
-    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]]
+    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing`
 
   private[Morphism3] type UnknownR
   private[Morphism3] type UnknownE

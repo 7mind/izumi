@@ -22,6 +22,10 @@ trait Bracket3[F[-_, +_, +_]] extends Error3[F] {
     guaranteeCase[R, E, A](f, { case e: Exit.Failure[E] => cleanupOnFailure(e); case _ => unit })
   }
 
+  final def guaranteeOnInterrupt[R, E, A](f: F[R, E, A], cleanupOnInterruption: Exit.Interruption => F[R, Nothing, Unit]): F[R, E, A] = {
+    guaranteeCase[R, E, A](f, { case e: Exit.Interruption => cleanupOnInterruption(e); case _ => unit })
+  }
+
   // defaults
   override def guarantee[R, E, A](f: F[R, E, A], cleanup: F[R, Nothing, Unit]): F[R, E, A] = {
     bracket(unit: F[R, E, Unit])(_ => cleanup)(_ => f)

@@ -1,10 +1,13 @@
 package izumi.functional.bio
 
 import cats.effect.Fiber
-import cats.effect.kernel.*
+import cats.effect.kernel.Sync.Type
+import cats.effect.kernel.{Outcome, Poll}
 import cats.{Eval, ~>}
 import izumi.functional.bio.CatsConversions.*
+import izumi.functional.bio.Exit.CatsExit
 import izumi.functional.bio.SpecificityHelper.*
+import izumi.functional.bio.data.RestoreInterruption2
 import izumi.fundamentals.platform.language.unused
 
 import scala.concurrent.ExecutionContext
@@ -47,36 +50,37 @@ trait CatsConversions4 extends CatsConversions5 {
 }
 trait CatsConversions5 extends CatsConversions6 {
   @inline implicit final def BIOToMonadCancel[F[+_, +_]](implicit F: Panic2[F]): cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] & S7 =
-    new BIOCatsMonadCancel[F](F) {
-      override def rootCancelScope: CancelScope = ???
-    }
+    new BIOCatsMonadCancel0[F](F)
 }
 trait CatsConversions6 extends CatsConversions7 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 = new BIOCatsSync[F](F) {
-    override def rootCancelScope: CancelScope = ???
-  }
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 = new BIOCatsSync0[F](F, null)
 }
 trait CatsConversions7 extends CatsConversions8 {
-  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit F: Async2[F]): cats.effect.kernel.Async[F[Throwable, _]] & S9 = new BIOCatsAsync[F](F)
+  @inline implicit final def BIOAsyncForkToSpawn[F[+_, +_]](
+    implicit @unused ev: Functor2[F],
+    F: Async2[F],
+    Fork: Fork2[F],
+  ): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S10 = new BIOCatsConcurrent[F](F, Fork)
+
+  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
+    implicit @unused ev: Functor2[F],
+    F: Async2[F],
+    Fork: Fork2[F],
+  ): cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] & S10 = new BIOCatsConcurrent[F](F, Fork)
 }
 trait CatsConversions8 extends CatsConversions9 {
   @inline implicit final def BIOParallelToParallel[F[+_, +_]](implicit F: Parallel2[F]): cats.Parallel[F[Throwable, _]] = new BIOCatsParallel[F](F)
 }
 trait CatsConversions9 extends CatsConversions10 {
-  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
-    implicit @unused ev: Functor2[F],
-    F: Async2[F],
-    Fork: Fork2[F],
-  ): cats.effect.kernel.Concurrent[F[Throwable, _]] & S10 = new BIOCatsConcurrent[F](F, Fork)
-}
-trait CatsConversions10 {
   @inline implicit final def BIOAsyncForkUnsafeRunToConcurrentEffect[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     Fork: Fork2[F],
     UnsafeRun: UnsafeRun2[F],
-  ): cats.effect.Temporal[F[Throwable, _]] & S11 = new BIOCatsConcurrentEffect[F](F, Fork, UnsafeRun)
-//  ): cats.effect.kernel.Async[F[Throwable, _]] & S11 = new BIOCatsConcurrentEffect[F](F, Fork, UnsafeRun)
+  ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11 = new BIOCatsConcurrentEffect[F](F, Fork, UnsafeRun)
+}
+trait CatsConversions10 {
+  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit F: Async2[F]): cats.effect.kernel.Async[F[Throwable, _]] & S9 = new BIOCatsAsync[F](F)
 }
 
 object CatsConversions {
@@ -125,9 +129,30 @@ object CatsConversions {
     @inline override final def fromEither[A](x: Either[E, A]): F[E, A] = F.fromEither(x)
   }
 
-  abstract /**/ class BIOCatsMonadCancel[F[+_, +_]](override val F: Panic2[F])
+  final class BIOCatsMonadCancel0[F[+_, +_]](override val F: Panic2[F]) extends BIOCatsMonadCancel[F](F) {
+    override def rootCancelScope: cats.effect.kernel.CancelScope = cats.effect.kernel.CancelScope.Cancelable
+  }
+
+  abstract class BIOCatsMonadCancel[F[+_, +_]](override val F: Panic2[F])
     extends BIOCatsMonadError[F, Throwable](F)
     with cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] {
+
+    @inline override final def redeemWith[A, B](fa: F[Throwable, A])(recover: Throwable => F[Throwable, B], bind: A => F[Throwable, B]): F[Throwable, B] = {
+      F.redeem(fa)(recover, bind)
+    }
+
+    @inline override final def bracketFull[A, B](
+      acquire: Poll[F[Throwable, _]] => F[Throwable, A]
+    )(use: A => F[Throwable, B]
+    )(release: (A, Outcome[F[Throwable, _], Throwable, B]) => F[Throwable, Unit]
+    ): F[Throwable, B] = {
+      F.bracketExcept(acquire apply toPoll(_))(
+        (a, e: Exit[Throwable, B]) =>
+          F.orTerminate {
+            release(a, CatsExit.toOutcomeThrowable(F.pure, e))
+          }
+      )(use)
+    }
 
     @inline override final def bracketCase[A, B](
       acquire: F[Throwable, A]
@@ -137,14 +162,7 @@ object CatsConversions {
       F.bracketCase(acquire)(
         (a, e: Exit[Throwable, B]) =>
           F.orTerminate {
-            release(
-              a,
-              e match {
-                case Exit.Success(b) => Outcome.succeeded(F.pure(b))
-                case Exit.Interruption(_, _) => Outcome.canceled
-                case value: Exit.Failure[Throwable] => Outcome.errored(value.toThrowable)
-              },
-            )
+            release(a, CatsExit.toOutcomeThrowable(F.pure, e))
           }
       )(use)
     }
@@ -153,9 +171,7 @@ object CatsConversions {
       F.bracket(acquire)(e => F.orTerminate(release(e)))(use)
     }
 
-//    override def rootCancelScope: CancelScope = CancelScope.Cancelable
-
-    override def forceR[A, B](fa: F[Throwable, A])(fb: F[Throwable, B]): F[Throwable, B] = {
+    @inline override final def forceR[A, B](fa: F[Throwable, A])(fb: F[Throwable, B]): F[Throwable, B] = {
       F.redeem(F.sandbox(fa))(
         {
           case exit @ Exit.Interruption(_, _) => F.halt(exit)
@@ -165,13 +181,15 @@ object CatsConversions {
       )
     }
 
-    override def uncancelable[A](body: Poll[F[Throwable, _]] => F[Throwable, A]): F[Throwable, A] = {
-      F.uninterruptibleWith(interruptible => body(Lambda[Poll[F[Throwable, _]]](interruptible(_))))
+    @inline override final def uncancelable[A](body: Poll[F[Throwable, _]] => F[Throwable, A]): F[Throwable, A] = {
+      F.uninterruptibleExcept(body apply toPoll(_))
     }
 
-    override def canceled: F[Throwable, Unit] = F.sendInterruptToSelf
+    @inline override final def canceled: F[Throwable, Unit] = {
+      F.sendInterruptToSelf
+    }
 
-    override def onCancel[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
+    @inline override final def onCancel[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
       F.bracketOnFailure(F.unit)(
         (_, e: Exit.Failure[Throwable]) =>
           e match {
@@ -181,10 +199,10 @@ object CatsConversions {
       )(_ => fa)
     }
 
-    override def guarantee[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
+    @inline override final def guarantee[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
       F.guarantee(fa, F.orTerminate(fin))
     }
-    override def guaranteeCase[A](fa: F[Throwable, A])(fin: Outcome[F[Throwable, _], Throwable, A] => F[Throwable, Unit]): F[Throwable, A] = {
+    @inline override final def guaranteeCase[A](fa: F[Throwable, A])(fin: Outcome[F[Throwable, _], Throwable, A] => F[Throwable, Unit]): F[Throwable, A] = {
       F.guaranteeCase[Any, Throwable, A](
         fa,
         {
@@ -195,17 +213,38 @@ object CatsConversions {
       )
     }
 
-    override def bracketFull[A, B](
-      acquire: Poll[F[Throwable, *]] => F[Throwable, A]
-    )(use: A => F[Throwable, B]
-    )(release: (A, Outcome[F[Throwable, *], Throwable, B]) => F[Throwable, Unit]
-    ): F[Throwable, B] = super.bracketFull(acquire)(use)(release)
+    @inline protected[this] final def toPoll(restoreInterruption: RestoreInterruption2[F]): Poll[F[Throwable, _]] = {
+      Lambda[Poll[F[Throwable, _]]](restoreInterruption(_))
+    }
+
   }
 
-  abstract /**/ class BIOCatsSync[F[+_, +_]](override val F: IO2[F]) extends BIOCatsMonadCancel[F](F) with cats.effect.kernel.Sync[F[Throwable, _]] {
-//    @inline override final def suspend[A](thunk: => F[Throwable, A]): F[Throwable, A] = F.flatten(F.syncThrowable(thunk))
+  final class BIOCatsSync0[F[+_, +_]](override val F: IO2[F], override val blocking: BlockingIO2[F]) extends BIOCatsSync[F](F, blocking) {
+    override def rootCancelScope: cats.effect.kernel.CancelScope = cats.effect.kernel.CancelScope.Cancelable
+  }
+
+  abstract class BIOCatsSync[F[+_, +_]](override val F: IO2[F], val blocking: BlockingIO2[F])
+    extends BIOCatsMonadCancel[F](F)
+    with cats.effect.kernel.Sync[F[Throwable, _]] {
+
     @inline override final def delay[A](thunk: => A): F[Throwable, A] = F.syncThrowable(thunk)
-    override def suspend[A](hint: Sync.Type)(thunk: => A): F[Throwable, A] = ???
+    @inline override final def blocking[A](thunk: => A): F[Throwable, A] = blocking.syncBlocking(thunk)
+    @inline override final def interruptible[A](thunk: => A): F[Throwable, A] = {
+      blocking.syncInterruptibleBlocking(thunk)
+    }
+    @inline override final def interruptibleMany[A](thunk: => A): F[Throwable, A] = {
+      blocking.syncInterruptibleBlocking(thunk)
+    }
+
+    @inline override final def defer[A](thunk: => F[Throwable, A]): F[Throwable, A] = F.suspend(thunk)
+
+    @inline override final def suspend[A](hint: cats.effect.kernel.Sync.Type)(thunk: => A): F[Throwable, A] = hint match {
+      case Type.Delay => delay(thunk)
+      case Type.Blocking => blocking(thunk)
+      case Type.InterruptibleOnce => interruptible(thunk)
+      case Type.InterruptibleMany => interruptibleMany(thunk)
+    }
+
     override def monotonic: F[Throwable, FiniteDuration] = ???
     override def realTime: F[Throwable, FiniteDuration] = ???
   }
@@ -229,7 +268,7 @@ object CatsConversions {
     override lazy val monad: cats.Monad[M] = new BIOCatsMonad(F0.InnerF)
   }
 
-  class BIOCatsAsync[F[+_, +_]](override val F: Async2[F]) extends BIOCatsSync[F](F) with cats.effect.kernel.Async[F[Throwable, _]] {
+  class BIOCatsAsync[F[+_, +_]](override val F: Async2[F]) extends BIOCatsSync[F](F, null) with cats.effect.kernel.Async[F[Throwable, _]] {
 //    @inline override final def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
 //    @inline override final def asyncF[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Unit]): F[Throwable, A] = F.asyncF(k)
 //    @inline override def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] =
@@ -237,11 +276,11 @@ object CatsConversions {
     @inline override final def never[A]: F[Throwable, A] = F.never
     override def evalOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, A] = ???
     override def executionContext: F[Throwable, ExecutionContext] = ???
-    override def cont[K, R](body: Cont[F[Throwable, *], K, R]): F[Throwable, R] = ???
+    override def cont[K, R](body: cats.effect.kernel.Cont[F[Throwable, _], K, R]): F[Throwable, R] = ???
     override def sleep(time: FiniteDuration): F[Throwable, Unit] = ???
-    override def ref[A](a: A): F[Throwable, Ref[F[Throwable, *], A]] = ???
-    override def deferred[A]: F[Throwable, Deferred[F[Throwable, *], A]] = ???
-    override def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, *], Throwable, A]] = ???
+    override def ref[A](a: A): F[Throwable, cats.effect.kernel.Ref[F[Throwable, _], A]] = ???
+    override def deferred[A]: F[Throwable, cats.effect.kernel.Deferred[F[Throwable, _], A]] = ???
+    override def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, _], Throwable, A]] = ???
     override def cede: F[Throwable, Unit] = ???
   }
 

@@ -197,6 +197,8 @@ object Syntax3 {
     @inline final def bracketOnFailure[R1 <: R, E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
       F.bracketOnFailure(r: FR[R1, E1, A])(cleanupOnFailure)(use)
     @inline final def guaranteeOnFailure[R1 <: R](cleanupOnFailure: Exit.Failure[E] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
+    @inline final def guaranteeOnInterrupt[R1 <: R](cleanupOnInterruption: Exit.Interruption => FR[R1, Nothing, Unit]): FR[R1, E, A] =
+      F.guaranteeOnInterrupt(r, cleanupOnInterruption)
   }
 
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
