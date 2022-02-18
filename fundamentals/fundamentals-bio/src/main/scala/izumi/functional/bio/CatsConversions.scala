@@ -227,7 +227,12 @@ object CatsConversions {
     extends BIOCatsMonadCancel[F](F)
     with cats.effect.kernel.Sync[F[Throwable, _]] {
 
-    @inline override final def delay[A](thunk: => A): F[Throwable, A] = F.syncThrowable(thunk)
+    @inline override final def delay[A](thunk: => A): F[Throwable, A] = {
+      implicit val f: IO2[F] = F
+      izumi.functional.bio.F {
+        thunk
+      }
+    }
     @inline override final def blocking[A](thunk: => A): F[Throwable, A] = blocking.syncBlocking(thunk)
     @inline override final def interruptible[A](thunk: => A): F[Throwable, A] = {
       blocking.syncInterruptibleBlocking(thunk)

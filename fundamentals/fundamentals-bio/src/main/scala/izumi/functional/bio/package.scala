@@ -125,7 +125,12 @@ package object bio extends Syntax3 with Syntax2 {
     *   }
     * }}}
     */
-  @inline override final def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
+  @inline final def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
+
+//  @inline final def F[FR[-_, +_, +_], A](effect: => A)(implicit FR: IO3[FR]): FR.Or[Throwable, A] = FR.syncThrowable(effect)
+
+  @inline final def F[FR[-_, +_, +_], A](effect: => A)(implicit FR: IO3[FR]): FR[Any, Throwable, A] = FR.syncThrowable(effect)
+  @inline final def F[FR[+_, +_], A](effect: => A)(implicit FR: IO2[FR], d: DummyImplicit): FR[Throwable, A] = FR.syncThrowable(effect)
 
   type Functor2[F[+_, +_]] = Functor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
   type Bifunctor2[F[+_, +_]] = Bifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]

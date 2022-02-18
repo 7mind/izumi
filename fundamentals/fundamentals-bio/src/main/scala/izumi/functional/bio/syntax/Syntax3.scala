@@ -52,7 +52,9 @@ trait Syntax3 extends ImplicitPuns {
     *   }
     * }}}
     */
-  def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
+//  def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
+//
+//  def F[FR[-_, +_, +_], A](effect: => A)(implicit FR: IO3[FR]): FR.Or[Throwable, A] = FR.syncThrowable(effect)
 }
 
 object Syntax3 {
