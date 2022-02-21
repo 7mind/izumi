@@ -721,8 +721,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "io.monix" %% "monix" % V.monix % Optional excludeAll("io.monix" %% "monix-catnap"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional excludeAll("io.monix" %% "monix-catnap"),
       "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "discipline-core" % V.discipline % Test,
@@ -991,8 +989,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "io.monix" %% "monix" % V.monix % Optional excludeAll("io.monix" %% "monix-catnap"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional excludeAll("io.monix" %% "monix-catnap"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
     )
   )
@@ -1257,7 +1253,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "io.monix" %% "monix-bio" % V.monix_bio % Test excludeAll("io.monix" %% "monix-catnap"),
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
@@ -1521,8 +1516,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "io.monix" %% "monix" % V.monix % Optional excludeAll("io.monix" %% "monix-catnap"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional excludeAll("io.monix" %% "monix-catnap"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "javax.inject" % "javax.inject" % "1" % Test
     )
@@ -2211,7 +2204,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "io.monix" %% "monix-bio" % V.monix_bio % Test excludeAll("io.monix" %% "monix-catnap"),
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
@@ -2369,7 +2361,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "io.monix" %% "monix-bio" % V.monix_bio % Test excludeAll("io.monix" %% "monix-catnap"),
       "com.github.docker-java" % "docker-java-core" % V.docker_java,
       "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
     )
@@ -2635,8 +2626,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "io.monix" %% "monix" % V.monix % Optional excludeAll("io.monix" %% "monix-catnap"),
-      "io.monix" %% "monix-bio" % V.monix_bio % Optional excludeAll("io.monix" %% "monix-catnap"),
       "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
     )
@@ -3323,11 +3312,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.typelevel" %% "cats-effect" % V.cats_effect,
       "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.tpolecat" %% "doobie-core" % V.doobie,
-      "org.tpolecat" %% "doobie-postgres" % V.doobie,
-      "io.monix" %% "monix" % V.monix excludeAll("io.monix" %% "monix-catnap"),
-      "io.monix" %% "monix-bio" % V.monix_bio excludeAll("io.monix" %% "monix-catnap"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect
+      "org.tpolecat" %% "doobie-postgres" % V.doobie
     )
   )
   .settings(
