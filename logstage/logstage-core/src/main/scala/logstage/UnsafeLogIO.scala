@@ -50,7 +50,8 @@ object UnsafeLogIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: UnsafeLogIO2[F]): UnsafeLogIO[F[E, _]] = log.widen
+  implicit def limitedCovariance2[F[+_, _], E](implicit log: UnsafeLogIO2[F]): UnsafeLogIO[F[E, _]] = log.widen
+  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: UnsafeLogIO3[F]): UnsafeLogIO[F[R, E, _]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[?] <:< G[?]): UnsafeLogIO[G] = log.widen
 }
 

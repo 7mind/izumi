@@ -3,10 +3,10 @@ package logstage.strict
 import izumi.functional.bio.{SyncSafe2, SyncSafe3}
 import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log._
+import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
-import logstage.Level
+import logstage.{Level, UnsafeLogIO2}
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
@@ -60,7 +60,8 @@ object LogIOStrict {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
+  implicit def limitedCovariance2[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
+  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogIO3Strict[F]): LogIOStrict[F[R, E, _]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
 }
 
