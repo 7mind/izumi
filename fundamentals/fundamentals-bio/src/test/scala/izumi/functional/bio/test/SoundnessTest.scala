@@ -1,4 +1,4 @@
-package izumi.fundamentals.bio.test
+package izumi.functional.bio.test
 
 import izumi.functional.bio._
 import org.scalatest.exceptions.TestFailedException

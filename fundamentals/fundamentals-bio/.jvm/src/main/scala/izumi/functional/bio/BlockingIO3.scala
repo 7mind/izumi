@@ -84,10 +84,10 @@ sealed trait LowPriorityBlockingIOInstances1 extends LowPriorityBlockingIOInstan
 
 sealed trait LowPriorityBlockingIOInstances2 {
 
-  @inline implicit final def blockingConvert3To2[FR[-_, +_, +_], R](
-    implicit BlockingIO3: Nondivergent.Of[BlockingIO3[FR]]
+  @inline implicit final def blockingConvert3To2[C[f[-_, +_, +_]] <: BlockingIO3[f], FR[-_, +_, +_], R](
+    implicit BlockingIO3: C[FR] { type Divergence = Nondivergent }
   ): Divergent.Of[BlockingIO2[FR[R, +_, +_]]] = {
-    BlockingIO3.asInstanceOf[Divergent.Of[BlockingIO2[FR[R, +_, +_]]]]
+    Divergent(BlockingIO3.asInstanceOf[BlockingIO2[FR[R, +_, +_]]])
   }
 
 }

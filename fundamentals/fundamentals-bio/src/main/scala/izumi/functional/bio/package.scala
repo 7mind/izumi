@@ -2,7 +2,6 @@ package izumi.functional
 
 import izumi.functional.bio.data.Isomorphism2
 import izumi.functional.bio.syntax.{Syntax2, Syntax3}
-import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 
 /**
   *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg)
@@ -196,29 +195,29 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[_, _, _]: UnsafeRun3]: UnsafeRun3[F] = implicitly
   }
 
-  type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, _]]
+  type SyncSafe2[F[_, _]] = SyncSafe1[F[Nothing, _]]
   object SyncSafe2 {
     @inline def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
   }
-  type SyncSafe3[F[_, _, _]] = SyncSafe[F[Any, Nothing, _]]
+  type SyncSafe3[F[_, _, _]] = SyncSafe1[F[Any, Nothing, _]]
   object SyncSafe3 {
     @inline def apply[F[_, _, _]: SyncSafe3]: SyncSafe3[F] = implicitly
   }
 
-  type Clock2[F[_, _]] = Clock[F[Nothing, _]]
+  type Clock2[F[_, _]] = Clock1[F[Nothing, _]]
   object Clock2 {
     @inline def apply[F[_, _]: Clock2]: Clock2[F] = implicitly
   }
-  type Clock3[F[_, _, _]] = Clock[F[Any, Nothing, _]]
+  type Clock3[F[_, _, _]] = Clock1[F[Any, Nothing, _]]
   object Clock3 {
     @inline def apply[F[_, _, _]: Clock3]: Clock3[F] = implicitly
   }
 
-  type Entropy2[F[_, _]] = Entropy[F[Nothing, _]]
+  type Entropy2[F[_, _]] = Entropy1[F[Nothing, _]]
   object Entropy2 {
     @inline def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
-  type Entropy3[F[_, _, _]] = Entropy[F[Any, Nothing, _]]
+  type Entropy3[F[_, _, _]] = Entropy1[F[Any, Nothing, _]]
   object Entropy3 {
     @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }

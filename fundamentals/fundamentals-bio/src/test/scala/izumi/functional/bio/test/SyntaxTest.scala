@@ -1,4 +1,4 @@
-package izumi.fundamentals.bio.test
+package izumi.functional.bio.test
 
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, Scheduler3}

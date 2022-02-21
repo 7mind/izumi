@@ -116,8 +116,9 @@ sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
 }
 
 sealed trait RootInstancesLowPriority11 {
-  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: DivergenceHelper & RootBifunctor[f], FR[-_, +_, +_], R0](
+  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: RootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
-  ): C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]] & DivergenceHelper { type Divergence = Divergent } =
+  ): Divergent.Of[C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]]] = {
     Divergent(cast3To2[C, FR, R0](BifunctorPlus))
+  }
 }

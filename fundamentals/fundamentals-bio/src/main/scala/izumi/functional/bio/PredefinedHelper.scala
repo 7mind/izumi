@@ -10,6 +10,11 @@ object PredefinedHelper {
   type NotPredefined
 
   object Predefined {
+    /**
+      * Unlike for [[DivergenceHelper.Divergent.Of]] a contradictory
+      * value is required here because we do not use a type variable
+      * for `Attach*` conversions
+      */
     type Of[A] = A { type IsPredefined = Predefined }
     @inline def apply[A <: PredefinedHelper, A1 >: A](a: A): Predefined.Of[A1] = a.asInstanceOf[Predefined.Of[A1]]
   }

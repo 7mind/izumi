@@ -1,4 +1,4 @@
-package izumi.fundamentals.bio.test
+package izumi.functional.bio.test
 
 import cats.effect.kernel
 import izumi.functional.bio.catz.*
