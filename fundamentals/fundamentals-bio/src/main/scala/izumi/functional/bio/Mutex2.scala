@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.data.~>>
+import izumi.functional.bio.data.Isomorphism2
 
 trait Mutex2[F[+_, +_]] {
   def bracket[E, A](f: F[E, A]): F[E, A]
@@ -23,9 +23,9 @@ object Mutex2 {
   }
 
   implicit final class Mutex2Ops[F[+_, +_]](private val self: Mutex2[F]) extends AnyVal {
-    def mapK[G[+_, +_]](fg: F ~>> G, gf: G ~>> F): Mutex2[G] = new Mutex2[G] {
-      override def bracket[E, A](f: G[E, A]): G[E, A] = fg(self.bracket(gf(f)))
-      override def bracket_[E, A](f: G[E, A]): G[E, Unit] = fg(self.bracket_(gf(f)))
+    def imapK[G[+_, +_]](fg: F Isomorphism2 G): Mutex2[G] = new Mutex2[G] {
+      override def bracket[E, A](f: G[E, A]): G[E, A] = fg.to(self.bracket(fg.from(f)))
+      override def bracket_[E, A](f: G[E, A]): G[E, Unit] = fg.to(self.bracket_(fg.from(f)))
     }
   }
 }

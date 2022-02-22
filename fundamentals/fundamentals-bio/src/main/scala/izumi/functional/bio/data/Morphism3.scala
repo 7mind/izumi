@@ -25,7 +25,7 @@ object Morphism3 extends LowPriorityMorphismInstances {
     polyFunction.asInstanceOf[Morphism3[F, G]]
   }
 
-  @inline def identity[F[_, _, _]]: Morphism3[F, F] = (Predef.identity[Any] _).asInstanceOf[Morphism3[F, F]]
+  @inline def identity[F[_, _, _]]: Morphism3[F, F] = Morphism3(Predef.identity)
 
   /**
     * When it's more convenient to write a polymorphic function using a class or kind-projector's lambda syntax:
