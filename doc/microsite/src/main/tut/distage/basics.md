@@ -462,7 +462,7 @@ def module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc:to-string
-import distage.DIKey
+import cats.effect.unsafe.implicits.global
 
 val objectGraphResource = {
   Injector[IO]()
@@ -1333,7 +1333,7 @@ First, the program we want to write:
 import cats.Monad
 import cats.effect.{Sync, IO}
 import cats.syntax.all._
-import distage.{Roots, Module, ModuleDef, Injector, Tag, TagK, TagKK}
+import distage.{Roots, ModuleDef, Injector, Tag, TagK, TagKK}
 
 trait Validation[F[_]] {
   def minSize(s: String, n: Int): F[Boolean]
@@ -1399,6 +1399,8 @@ def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
+
+import cats.effect.unsafe.implicits.global
 
 objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```

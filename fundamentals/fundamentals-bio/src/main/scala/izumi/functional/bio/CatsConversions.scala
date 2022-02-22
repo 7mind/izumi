@@ -1,9 +1,10 @@
 package izumi.functional.bio
 
+import cats.data.State
 import cats.effect.Fiber
 import cats.effect.kernel.Sync.Type
 import cats.effect.kernel.{Cont, Outcome, Poll, Unique}
-import cats.{Eval, ~>}
+import cats.{Applicative, Eval, ~>}
 import izumi.functional.bio.CatsConversions.*
 import izumi.functional.bio.Exit.CatsExit
 import izumi.functional.bio.SpecificityHelper.*
@@ -49,11 +50,15 @@ trait CatsConversions4 extends CatsConversions5 {
   @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F: Error2[F]): cats.MonadError[F[E, _], E] & S6 = new BIOCatsMonadError[F, E](F)
 }
 trait CatsConversions5 extends CatsConversions6 {
-  @inline implicit final def BIOToMonadCancel[F[+_, +_]](implicit F: Panic2[F]): cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] & S7 =
+  @inline implicit final def BIOToClock[F[+_, +_], E](implicit F: Applicative2[F], Clock: Clock2[F]): cats.effect.kernel.Clock[F[E, _]] & S7 =
+    new BIOCatsClockImpl[F, E](F, Clock)
+}
+trait CatsConversions6 extends CatsConversions60 {
+  @inline implicit final def BIOToMonadCancel[F[+_, +_]](implicit F: Panic2[F]): cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] & S8 =
     new BIOCatsMonadCancelImpl[F](F)
 }
-trait CatsConversions6 extends CatsConversions7 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F], blocking: BlockingIO2[F], clock: Clock2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 =
+trait CatsConversions60 extends CatsConversions7 {
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F], blocking: BlockingIO2[F], clock: Clock2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S9 =
     new BIOCatsSyncImpl[F](F, blocking, clock)
 }
 trait CatsConversions7 extends CatsConversions8 {
@@ -61,31 +66,35 @@ trait CatsConversions7 extends CatsConversions8 {
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     Fork: Fork2[F],
-  ): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S9 = new BIOCatsSpawnImpl[F](F, Fork)
+  ): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S10 = new BIOCatsSpawnImpl[F](F, Fork)
 
   @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     Fork: Fork2[F],
-  ): cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] & S10 = new BIOCatsConcurrentImpl[F](F, Fork)
+    Primitives: Primitives2[F],
+  ): cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] & S11 = new BIOCatsConcurrentImpl[F](F, Fork, Primitives)
 }
 trait CatsConversions8 extends CatsConversions9 {
   @inline implicit final def BIOParallelToParallel[F[+_, +_]](implicit F: Parallel2[F]): cats.Parallel[F[Throwable, _]] = new BIOCatsParallel[F](F)
 }
 trait CatsConversions9 extends CatsConversions10 {
-  @inline implicit final def BIOAsyncForkUnsafeRunToConcurrentEffect[F[+_, +_]](
+  @inline implicit final def BIOToTemporal[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     T: Temporal2[F],
     Fork: Fork2[F],
-//    UnsafeRun: UnsafeRun2[F],
-  ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11 = {
-    class X(override val F: Async2[F], override val InnerF: Temporal2[F], override val Fork: Fork2[F]) extends BIOCatsSync[F](F, null, null) with BIOCatsTemporal[F] {
+    BlockingIO: BlockingIO2[F],
+    Clock: Clock2[F],
+    Primitives: Primitives2[F],
+  ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S12 = {
+    class BIOTemporalImpl(override val F: Async2[F], override val InnerF: Temporal2[F], override val Fork: Fork2[F], override val Primitives: Primitives2[F])
+      extends BIOCatsSync[F](F, BlockingIO, Clock)
+      with BIOCatsTemporal[F] {
       override def unique: F[Throwable, Unique.Token] = super[BIOCatsSync].unique
     }
-    new X(F, T, Fork)
+    new BIOTemporalImpl(F, T, Fork, Primitives)
   }
-//  ): cats.effect.kernel.Clock[F[Throwable, _]] & S11 = new BIOCatsAsync[F](F, Fork, UnsafeRun)
 }
 trait CatsConversions10 {
   @inline implicit final def BIOAsyncToAsync[F[+_, +_]](
@@ -93,13 +102,16 @@ trait CatsConversions10 {
     F: Async2[F],
     T: Temporal2[F],
     Fork: Fork2[F],
+    BlockingIO: BlockingIO2[F],
+    Clock: Clock2[F],
     UnsafeRun: UnsafeRun2[F],
-  ): cats.effect.kernel.Async[F[Throwable, _]] & S11 = new BIOCatsAsync[F](F, T, Fork, UnsafeRun)
+    Primitives: Primitives2[F],
+  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, T, Fork, BlockingIO, Clock, Primitives, UnsafeRun)
 }
 
 object CatsConversions {
 
-  trait BIOCatsFunctor[F[+_, +_], E] extends cats.Functor[F[E, _]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 with S11 {
+  trait BIOCatsFunctor[F[+_, +_], E] extends cats.Functor[F[E, _]] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 with S10 with S11 with S12 {
     def F: Functor2[F]
 
     @inline override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -108,7 +120,7 @@ object CatsConversions {
     @inline override final def as[A, B](fa: F[E, A], b: B): F[E, B] = F.as(fa)(b)
   }
 
-  trait BIOCatsBifunctor[F[+_, +_]] extends cats.Bifunctor[F] with S1 with S2 with S3 with S4 with S5 with S6 with S7 with S8 with S9 {
+  trait BIOCatsBifunctor[F[+_, +_]] extends cats.Bifunctor[F] with S2 {
     def F: Bifunctor2[F]
 
     @inline override final def bimap[A, B, C, D](fab: F[A, B])(f: A => C, g: B => D): F[C, D] = F.bimap(fab)(f, g)
@@ -233,26 +245,44 @@ object CatsConversions {
 
   }
 
-  final class BIOCatsSyncImpl[F[+_, +_]](override val F: IO2[F], override val blocking: BlockingIO2[F], override val clock: Clock2[F])
-    extends BIOCatsSync[F](F, blocking, clock) {
+  final class BIOCatsClockImpl[F[+_, +_], E](override val F: Applicative2[F], override val Clock: Clock2[F]) extends BIOCatsClock[F, E] with BIOCatsApplicative[F, E] {
+    override def applicative: Applicative[F[E, _]] = this
+  }
+
+  trait BIOCatsClock[F[+_, +_], E] extends cats.effect.kernel.Clock[F[E, _]] {
+    val F: Applicative2[F]
+    val Clock: Clock2[F]
+
+    override def monotonic: F[E, FiniteDuration] = {
+      F.map(Clock.monotonicNano)(FiniteDuration(_, NANOSECONDS))
+    }
+
+    override def realTime: F[E, FiniteDuration] = {
+      F.map(Clock.epoch)(FiniteDuration(_, MILLISECONDS))
+    }
+  }
+
+  final class BIOCatsSyncImpl[F[+_, +_]](override val F: IO2[F], override val BlockingIO: BlockingIO2[F], override val Clock: Clock2[F])
+    extends BIOCatsSync[F](F, BlockingIO, Clock) {
     override def rootCancelScope: cats.effect.kernel.CancelScope = cats.effect.kernel.CancelScope.Cancelable
   }
 
-  abstract class BIOCatsSync[F[+_, +_]](override val F: IO2[F], val blocking: BlockingIO2[F], val clock: Clock2[F])
+  abstract class BIOCatsSync[F[+_, +_]](override val F: IO2[F], val BlockingIO: BlockingIO2[F], override val Clock: Clock2[F])
     extends BIOCatsMonadCancel[F](F)
+    with BIOCatsClock[F, Throwable]
     with cats.effect.kernel.Sync[F[Throwable, _]] {
 
     @inline override final def delay[A](thunk: => A): F[Throwable, A] = {
       F.syncThrowable(thunk)
     }
     @inline override final def blocking[A](thunk: => A): F[Throwable, A] = {
-      blocking.syncBlocking(thunk)
+      BlockingIO.syncBlocking(thunk)
     }
     @inline override final def interruptible[A](thunk: => A): F[Throwable, A] = {
-      blocking.syncInterruptibleBlocking(thunk)
+      BlockingIO.syncInterruptibleBlocking(thunk)
     }
     @inline override final def interruptibleMany[A](thunk: => A): F[Throwable, A] = {
-      blocking.syncInterruptibleBlocking(thunk)
+      BlockingIO.syncInterruptibleBlocking(thunk)
     }
 
     @inline override final def defer[A](thunk: => F[Throwable, A]): F[Throwable, A] = {
@@ -270,13 +300,6 @@ object CatsConversions {
       F.sync(new Unique.Token())
     }
 
-    override def monotonic: F[Throwable, FiniteDuration] = {
-      F.map(clock.monotonicNano)(FiniteDuration(_, NANOSECONDS))
-    }
-
-    override def realTime: F[Throwable, FiniteDuration] = {
-      F.map(clock.epoch)(FiniteDuration(_, MILLISECONDS))
-    }
   }
 
   class BIOCatsParallel[F0[+_, +_]](private val F0: Parallel2[F0]) extends cats.Parallel[F0[Throwable, _]] {
@@ -337,13 +360,12 @@ object CatsConversions {
 //    @inline override final def cancelable[A](k: (Either[Throwable, A] => Unit) => CancelToken[F[Throwable, _]]): F[Throwable, A] = {
 //      F.asyncCancelable(F orTerminate k(_))
 //    }
-//    @inline override final def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] = Concurrent.liftIO(ioa)(this)
-//    override def continual[A, B](fa: F[Throwable, A])(f: Either[Throwable, A] => F[Throwable, B]): F[Throwable, B] = super.continual(fa)(f)
   }
 
   final class BIOCatsConcurrentImpl[F[+_, +_]](
     override val F: Async2[F],
     override val Fork: Fork2[F],
+    override val Primitives: Primitives2[F],
   ) extends BIOCatsMonadCancel[F](F)
     with BIOCatsConcurrent[F] {
     override def unique: F[Throwable, Unique.Token] = {
@@ -354,14 +376,43 @@ object CatsConversions {
   trait BIOCatsConcurrent[F[+_, +_]] extends cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] with BIOCatsSpawn[F] {
     override val F: Async2[F]
     override val Fork: Fork2[F]
+    val Primitives: Primitives2[F]
 
 //    @inline override final def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
 //    @inline override final def asyncF[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Unit]): F[Throwable, A] = F.asyncF(k)
-//    @inline override def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] =
-//      Concurrent.liftIO(ioa)(new BIOCatsConcurrent[F](F, null)) // Concurrent.liftIO uses only F.cancelable, not fork
 
-    override def ref[A](a: A): F[Throwable, cats.effect.kernel.Ref[F[Throwable, _], A]] = ???
-    override def deferred[A]: F[Throwable, cats.effect.kernel.Deferred[F[Throwable, _], A]] = ???
+    override def ref[A](a: A): F[Throwable, cats.effect.kernel.Ref[F[Throwable, _], A]] = F.map(Primitives.mkRef(a))(
+      ref =>
+        new cats.effect.kernel.Ref[F[Throwable, _], A] {
+          override def get: F[Throwable, A] = ref.get
+          override def set(a: A): F[Throwable, Unit] = ref.set(a)
+          override def update(f: A => A): F[Throwable, Unit] = ref.update_(f)
+          override def modify[B](f: A => (A, B)): F[Throwable, B] = ref.modify(f(_).swap)
+
+          override def access: F[Throwable, (A, A => F[Throwable, Boolean])] = ???
+          override def tryUpdate(f: A => A): F[Throwable, Boolean] = ???
+          override def tryModify[B](f: A => (A, B)): F[Throwable, Option[B]] = ???
+
+          override def tryModifyState[B](state: State[A, B]): F[Throwable, Option[B]] = {
+            val f = state.runF.value
+            tryModify(f(_).value)
+          }
+
+          override def modifyState[B](state: State[A, B]): F[Throwable, B] = {
+            val f = state.runF.value
+            modify(f(_).value)
+          }
+        }
+    )
+
+    override def deferred[A]: F[Throwable, cats.effect.kernel.Deferred[F[Throwable, _], A]] = F.map(Primitives.mkPromise[Nothing, A])(
+      promise =>
+        new cats.effect.kernel.Deferred[F[Throwable, _], A] {
+          override def get: F[Throwable, A] = promise.await
+          override def tryGet: F[Throwable, Option[A]] = F.flatMap(promise.poll)(F.traverse(_)(identity))
+          override def complete(a: A): F[Throwable, Boolean] = promise.succeed(a)
+        }
+    )
   }
 
   trait BIOCatsTemporal[F[+_, +_]] extends cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] with BIOCatsConcurrent[F] {
@@ -382,8 +433,11 @@ object CatsConversions {
     override val F: Async2[F],
     override val InnerF: Temporal2[F],
     override val Fork: Fork2[F],
+    override val BlockingIO: BlockingIO2[F],
+    override val Clock: Clock2[F],
+    override val Primitives: Primitives2[F],
     val UnsafeRun: UnsafeRun2[F],
-  ) extends BIOCatsSync[F](F, null, null)
+  ) extends BIOCatsSync[F](F, BlockingIO, Clock)
     with cats.effect.kernel.Async[F[Throwable, _]]
     with BIOCatsTemporal[F] {
 
