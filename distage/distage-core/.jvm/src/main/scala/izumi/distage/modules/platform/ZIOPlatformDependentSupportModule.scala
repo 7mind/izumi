@@ -22,7 +22,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
 
   make[UnsafeRun3[ZIO]].using[ZIORunner]
 
-  make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIO3FromBlocking(_: zio.blocking.Blocking.Service))
+  make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIOFromBlocking(_: zio.blocking.Blocking.Service))
   make[BlockingIO2[IO]].from {
     implicit B: BlockingIO3[ZIO] => BlockingIO2[IO]
   }

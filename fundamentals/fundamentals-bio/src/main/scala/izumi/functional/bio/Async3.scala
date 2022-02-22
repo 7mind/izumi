@@ -9,6 +9,8 @@ trait Async3[F[-_, +_, +_]] extends Concurrent3[F] with IO3[F] {
 
   final type Canceler = F[Any, Nothing, Unit]
 
+  def currentEC: F[Any, Nothing, ExecutionContext]
+
   def async[E, A](register: (Either[E, A] => Unit) => Unit): F[Any, E, A]
   def asyncF[R, E, A](register: (Either[E, A] => Unit) => F[R, E, Unit]): F[R, E, A]
   def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): F[Any, E, A]

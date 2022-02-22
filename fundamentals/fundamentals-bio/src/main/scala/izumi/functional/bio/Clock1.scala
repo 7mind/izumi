@@ -17,17 +17,23 @@ trait Clock1[F[_]] extends DivergenceHelper {
   def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[LocalDateTime]
   def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[OffsetDateTime]
 
+  /** Should return an increasing measure of time, in nanoseconds */
+  def monotonicNano: F[Long]
+
   @inline final def widen[G[x] >: F[x]]: Clock1[G] = this
 }
 
-object Clock1 {
+object Clock1 extends LowPriorityClockInstances {
   def apply[F[_]: Clock1]: Clock1[F] = implicitly
 
-  private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
+  def fromImpure[F[_]: SyncSafe1](impureClock: Clock1[Identity]): Clock1[F] = fromImpureClock(impureClock, SyncSafe1[F])
 
-  implicit object Standard extends Clock1[Identity] {
+  object Standard extends Clock1[Identity] {
     override def epoch: Long = {
-      java.time.Clock.systemUTC().millis()
+      System.currentTimeMillis()
+    }
+    override def monotonicNano: Long = {
+      System.nanoTime()
     }
     override def now(accuracy: ClockAccuracy): ZonedDateTime = {
       ClockAccuracy.applyAccuracy(ZonedDateTime.now(TZ_UTC), accuracy)
@@ -38,22 +44,15 @@ object Clock1 {
     override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = {
       now(accuracy).toOffsetDateTime
     }
+    private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
   }
 
-  final class Constant(time: ZonedDateTime) extends Clock1[Identity] {
+  final class Constant(time: ZonedDateTime, nano: Long) extends Clock1[Identity] {
     override def epoch: Long = time.toEpochSecond
     override def now(accuracy: ClockAccuracy): ZonedDateTime = ClockAccuracy.applyAccuracy(time, accuracy)
     override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = now(accuracy).toLocalDateTime
     override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = now(accuracy).toOffsetDateTime
-  }
-
-  implicit def fromImpure[F[_]](implicit impureClock: Clock1[Identity], F: SyncSafe1[F]): Clock1[F] = {
-    new Clock1[F] {
-      override val epoch: F[Long] = F.syncSafe(impureClock.epoch)
-      override def now(accuracy: ClockAccuracy): F[ZonedDateTime] = F.syncSafe(impureClock.now(accuracy))
-      override def nowLocal(accuracy: ClockAccuracy): F[LocalDateTime] = F.syncSafe(impureClock.nowLocal(accuracy))
-      override def nowOffset(accuracy: ClockAccuracy): F[OffsetDateTime] = F.syncSafe(impureClock.nowOffset(accuracy))
-    }
+    override def monotonicNano: Long = nano
   }
 
   sealed trait ClockAccuracy
@@ -79,6 +78,8 @@ object Clock1 {
     }
   }
 
+  @inline implicit final def impureClock: Clock1[Identity] = Standard
+
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make Clock covariant, because covariant implicits
@@ -103,4 +104,18 @@ object Clock1 {
   @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit ev: F[?] <:< G[?]): Clock1[G] = {
     val _ = ev; clock.asInstanceOf[Clock1[G]]
   }
+}
+
+sealed trait LowPriorityClockInstances {
+
+  @inline implicit final def fromImpureClock[F[_]](implicit impureClock: Clock1[Identity], F: SyncSafe1[F]): Clock1[F] = {
+    new Clock1[F] {
+      override val epoch: F[Long] = F.syncSafe(impureClock.epoch)
+      override def now(accuracy: ClockAccuracy): F[ZonedDateTime] = F.syncSafe(impureClock.now(accuracy))
+      override def nowLocal(accuracy: ClockAccuracy): F[LocalDateTime] = F.syncSafe(impureClock.nowLocal(accuracy))
+      override def nowOffset(accuracy: ClockAccuracy): F[OffsetDateTime] = F.syncSafe(impureClock.nowOffset(accuracy))
+      override val monotonicNano: F[Long] = F.syncSafe(impureClock.monotonicNano)
+    }
+  }
+
 }

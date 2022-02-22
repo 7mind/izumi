@@ -1,12 +1,11 @@
 package logstage.strict
 
-import izumi.functional.bio.{SyncSafe2, SyncSafe3}
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
-import logstage.{Level, UnsafeLogIO2}
+import logstage.Level
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.implicitConversions
@@ -35,8 +34,8 @@ object LogIOStrict {
     */
   @inline def log[F[_]](implicit l: LogIOStrict[F]): l.type = l
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIOStrict[F] = {
-    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F]) with LogIOStrict[F] {
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIOStrict[F] = {
+    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIOStrict[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }

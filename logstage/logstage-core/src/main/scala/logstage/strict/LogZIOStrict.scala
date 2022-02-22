@@ -1,7 +1,6 @@
 package logstage.strict
 
-import izumi.functional.bio.SyncSafe2
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{SyncSafe1, SyncSafe2}
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
 import logstage.strict.LogIO3AskStrict.LogIO3AskStrictImpl
@@ -42,7 +41,7 @@ object LogZIOStrict {
   }
 
   def withDynamicContextStrict[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIOStrict[ZIO[R, Nothing, _]] = {
-    new WrappedLogIOStrict[ZIO[R, Nothing, _]](logger)(SyncSafe[ZIO[R, Nothing, _]]) {
+    new WrappedLogIOStrict[ZIO[R, Nothing, _]](logger)(SyncSafe1[ZIO[R, Nothing, _]]) {
       override def withCustomContext(context: CustomContext): LogIOStrict[ZIO[R, Nothing, _]] = {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }

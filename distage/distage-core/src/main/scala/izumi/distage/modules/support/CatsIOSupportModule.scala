@@ -1,7 +1,9 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
+import cats.effect.kernel.Async
+import cats.effect.IO
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 
@@ -26,18 +28,10 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
   // QuasiIO & cats-effect instances
   include(AnyCatsEffectSupportModule[IO])
 
-  make[ConcurrentEffect[IO]].from(IO.ioConcurrentEffect(_: ContextShift[IO]))
-  make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
+  make[Async[IO]].from(IO.asyncForIO)
+  make[Parallel[IO]].from(IO.parallelForIO)
 
-  make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
-  make[Timer[IO]].from((_: PublicIOApp).timer)
-  make[ExecutionContext].named("cpu").from((_: PublicIOApp).executionContext)
-  make[PublicIOApp]
-}
-
-private[support] trait PublicIOApp extends IOApp {
-  override def contextShift: ContextShift[IO] = super.contextShift
-  override def timer: Timer[IO] = super.timer
-  override def executionContext: ExecutionContext = super.executionContext
-  override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0))
+  make[IORuntimeConfig].fromValue(IORuntimeConfig())
+  make[IORuntime].from(IORuntime.apply _)
+  make[ExecutionContext].named("cpu").from((_: IORuntime).compute)
 }

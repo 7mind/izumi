@@ -1,7 +1,6 @@
 package logstage
 
-import izumi.functional.bio.SyncSafe2
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{SyncSafe1, SyncSafe2}
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.AbstractLogger
 import izumi.logstage.api.rendering.AnyEncoded
@@ -43,7 +42,7 @@ object LogZIO {
   }
 
   def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO2[ZIO[R, _, _]] = {
-    new WrappedLogIO[ZIO[R, Nothing, _]](logger)(SyncSafe[ZIO[R, Nothing, _]]) {
+    new WrappedLogIO[ZIO[R, Nothing, _]](logger)(SyncSafe1[ZIO[R, Nothing, _]]) {
       override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, _]] = {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }

@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
+import izumi.functional.bio.Entropy1.fromImpure
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 
@@ -42,8 +43,10 @@ trait Entropy1[F[_]] extends DivergenceHelper {
   @inline final def widen[G[x] >: F[x]]: Entropy1[G] = this
 }
 
-object Entropy1 {
+object Entropy1 extends LowPriorityEntropyInstances {
   def apply[F[_]: Entropy1]: Entropy1[F] = implicitly
+
+  def fromImpure[F[_]: SyncSafe1](impureEntropy: Entropy1[Identity]): Entropy1[F] = fromImpureEntropy(impureEntropy, SyncSafe1[F])
 
   object Standard extends ScalaEntropy {
     override protected def random: Random = scala.util.Random
@@ -57,31 +60,6 @@ object Entropy1 {
 
     override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID(math.abs(random.nextLong()))
     override def nextUUID(): UUID = new UUID(random.nextLong(), random.nextLong())
-  }
-
-  def fromImpure[F[_]](impureEntropy: Entropy1[Identity])(implicit F: SyncSafe1[F]): Entropy1[F] = {
-    new Entropy1[F] {
-      override def nextBoolean(): F[Boolean] = F.syncSafe(impureEntropy.nextBoolean())
-      override def nextDouble(): F[Double] = F.syncSafe(impureEntropy.nextDouble())
-      override def nextFloat(): F[Float] = F.syncSafe(impureEntropy.nextFloat())
-      override def nextGaussian(): F[Double] = F.syncSafe(impureEntropy.nextGaussian())
-      override def nextLong(): F[Long] = F.syncSafe(impureEntropy.nextLong())
-      override def nextLong(max: Long): F[Long] = F.syncSafe(impureEntropy.nextLong(max))
-      override def nextInt(): F[Int] = F.syncSafe(impureEntropy.nextInt())
-      override def nextInt(max: Int): F[Int] = F.syncSafe(impureEntropy.nextInt(max))
-      override def nextBytes(length: Int): F[Array[Byte]] = F.syncSafe(impureEntropy.nextBytes(length))
-      override def nextPrintableChar(): F[Char] = F.syncSafe(impureEntropy.nextPrintableChar())
-      override def nextString(length: Int): F[String] = F.syncSafe(impureEntropy.nextString(length))
-      override def setSeed(seed: Long): F[Unit] = F.syncSafe(impureEntropy.setSeed(seed))
-      override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
-      override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
-      override def writeRandomBytes(bytes: Array[Byte]): F[Unit] = F.syncSafe(impureEntropy.writeRandomBytes(bytes))
-      override def withSeed(seed: Long): Entropy1[F] = fromImpure(impureEntropy.withSeed(seed))
-
-      @nowarn("msg=CanBuildFrom")
-      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
-        F.syncSafe(impureEntropy.shuffle[T, CC](xs))
-    }
   }
 
   trait ScalaEntropy extends Entropy1[Identity] {
@@ -113,6 +91,8 @@ object Entropy1 {
     override def setSeed(seed: Long): Identity[Unit] = random.setSeed(seed)
   }
 
+  @inline implicit final def impureEntropy: Entropy1[Identity] = Standard
+
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make Entropy covariant, because covariant implicits
@@ -122,7 +102,6 @@ object Entropy1 {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-
   @inline implicit final def limitedCovariance2[C[f[_]] <: Entropy1[f], FR[_, _], R0](
     implicit F: C[FR[Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[FR[R0, _]]] = {
@@ -137,6 +116,35 @@ object Entropy1 {
 
   @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit ev: F[?] <:< G[?]): Entropy1[G] = {
     val _ = ev; entropy.asInstanceOf[Entropy1[G]]
+  }
+
+}
+
+sealed trait LowPriorityEntropyInstances {
+
+  @inline implicit final def fromImpureEntropy[F[_]](implicit impureEntropy: Entropy1[Identity], F: SyncSafe1[F]): Entropy1[F] = {
+    new Entropy1[F] {
+      override def nextBoolean(): F[Boolean] = F.syncSafe(impureEntropy.nextBoolean())
+      override def nextDouble(): F[Double] = F.syncSafe(impureEntropy.nextDouble())
+      override def nextFloat(): F[Float] = F.syncSafe(impureEntropy.nextFloat())
+      override def nextGaussian(): F[Double] = F.syncSafe(impureEntropy.nextGaussian())
+      override def nextLong(): F[Long] = F.syncSafe(impureEntropy.nextLong())
+      override def nextLong(max: Long): F[Long] = F.syncSafe(impureEntropy.nextLong(max))
+      override def nextInt(): F[Int] = F.syncSafe(impureEntropy.nextInt())
+      override def nextInt(max: Int): F[Int] = F.syncSafe(impureEntropy.nextInt(max))
+      override def nextBytes(length: Int): F[Array[Byte]] = F.syncSafe(impureEntropy.nextBytes(length))
+      override def nextPrintableChar(): F[Char] = F.syncSafe(impureEntropy.nextPrintableChar())
+      override def nextString(length: Int): F[String] = F.syncSafe(impureEntropy.nextString(length))
+      override def setSeed(seed: Long): F[Unit] = F.syncSafe(impureEntropy.setSeed(seed))
+      override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
+      override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
+      override def writeRandomBytes(bytes: Array[Byte]): F[Unit] = F.syncSafe(impureEntropy.writeRandomBytes(bytes))
+      override def withSeed(seed: Long): Entropy1[F] = fromImpure(impureEntropy.withSeed(seed))
+
+      @nowarn("msg=CanBuildFrom")
+      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
+        F.syncSafe(impureEntropy.shuffle[T, CC](xs))
+    }
   }
 
 }

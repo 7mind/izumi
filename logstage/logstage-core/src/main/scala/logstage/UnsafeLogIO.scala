@@ -1,7 +1,6 @@
 package logstage
 
-import izumi.functional.bio.{SyncSafe2, SyncSafe3}
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log.{Entry, LoggerId}
 import izumi.logstage.api.logger.AbstractLogger
@@ -25,9 +24,9 @@ trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
 object UnsafeLogIO {
   def apply[F[_]: UnsafeLogIO]: UnsafeLogIO[F] = implicitly
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F])
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F])
 
-  class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
+  class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
       F.syncSafe(logger.unsafeLog(entry))
     }

@@ -8,8 +8,10 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 
 trait Temporal3[F[-_, +_, +_]] extends RootBifunctor[F] with TemporalInstances {
   def InnerF: Error3[F]
+  def underlyingClock: Clock3[F]
 
   def sleep(duration: Duration): F[Any, Nothing, Unit]
+
   def timeout[R, E, A](duration: Duration)(r: F[R, E, A]): F[R, E, Option[A]]
 
   def retryOrElse[R, E, A, E2](r: F[R, E, A])(duration: FiniteDuration, orElse: => F[R, E2, A]): F[R, E2, A]
@@ -38,7 +40,7 @@ trait Temporal3[F[-_, +_, +_]] extends RootBifunctor[F] with TemporalInstances {
 
 private[bio] sealed trait TemporalInstances
 object TemporalInstances extends TemporalInstancesLowPriority1 {
-  @inline implicit final def Temporal3Zio(implicit clockService: zio.clock.Clock): Predefined.Of[Temporal3[ZIO]] = Predefined(new TemporalZio(clockService))
+  @inline implicit final def Temporal3Zio(implicit clock: Clock3[ZIO]): Predefined.Of[Temporal3[ZIO]] = Predefined(new TemporalZio(clock))
 }
 sealed trait TemporalInstancesLowPriority1 {
 //  @inline implicit final def TemporalMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.kernel.Clock`](

@@ -1,9 +1,8 @@
 package logstage
 
-import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe2, SyncSafe3}
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
-import izumi.logstage.api.Log._
+import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
@@ -37,8 +36,8 @@ object LogIO {
     */
   @inline def log[F[_]](implicit l: LogIO[F]): l.type = l
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
-    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F]) with LogIO[F] {
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIO[F] = {
+    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }

@@ -1,14 +1,10 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.{Clock1, Clock2, Clock3, Entropy1, Entropy2, Entropy3, SyncSafe1, SyncSafe2, SyncSafe3}
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.time.{LocalDateTime, OffsetDateTime, ZonedDateTime}
-import java.util.UUID
 import scala.annotation.nowarn
 import scala.annotation.unchecked.uncheckedVariance
-import scala.collection.generic.CanBuildFrom
 
 final class ArityConversionTest extends AnyWordSpec {
 
@@ -125,66 +121,20 @@ final class ArityConversionTest extends AnyWordSpec {
 
   type EitherR[R, E, A] = R => Either[E, A]
 
-  type EitherRX[-R, +E, +A] >: R => Either[E @uncheckedVariance, A @uncheckedVariance]
+  type EitherRX[-R, +E, +A] >: R @uncheckedVariance => Either[E @uncheckedVariance, A @uncheckedVariance]
   implicit val syncSafeEitherRX: SyncSafe3[EitherRX] = new SyncSafe3[EitherRX] {
     override def syncSafe[A](unexceptionalEff: => A): EitherR[Any, Nothing, A] = _ => Right(unexceptionalEff)
   }
-  implicit val clockEitherRX: Clock3[EitherRX] = new Clock3[EitherRX] {
-    override def epoch: EitherRX[Any, Nothing, Long] = ???
-    override def now(accuracy: ClockAccuracy): EitherRX[Any, Nothing, ZonedDateTime] = ???
-    override def nowLocal(accuracy: ClockAccuracy): EitherRX[Any, Nothing, LocalDateTime] = ???
-    override def nowOffset(accuracy: ClockAccuracy): EitherRX[Any, Nothing, OffsetDateTime] = ???
-  }
+  implicit val clockEitherRX: Clock3[EitherRX] = Clock1.Standard.asInstanceOf[Clock3[EitherRX]]
   @nowarn("msg=CanBuildFrom")
-  implicit val entropyEitherRX: Entropy3[EitherRX] = new Entropy3[EitherRX] {
-    override def nextBoolean(): EitherRX[Any, Nothing, Boolean] = ???
-    override def nextInt(): EitherRX[Any, Nothing, Int] = ???
-    override def nextInt(max: Int): EitherRX[Any, Nothing, Int] = ???
-    override def nextLong(): EitherRX[Any, Nothing, Long] = ???
-    override def nextLong(max: Long): EitherRX[Any, Nothing, Long] = ???
-    override def nextFloat(): EitherRX[Any, Nothing, Float] = ???
-    override def nextDouble(): EitherRX[Any, Nothing, Double] = ???
-    override def nextGaussian(): EitherRX[Any, Nothing, Double] = ???
-    override def nextBytes(length: Int): EitherRX[Any, Nothing, Array[Byte]] = ???
-    override def nextPrintableChar(): EitherRX[Any, Nothing, Char] = ???
-    override def nextString(length: Int): EitherRX[Any, Nothing, String] = ???
-    override def nextTimeUUID(): EitherRX[Any, Nothing, UUID] = ???
-    override def nextUUID(): EitherRX[Any, Nothing, UUID] = ???
-    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): EitherRX[Any, Nothing, CC[T]] = ???
-    override def withSeed(seed: Long): Entropy3[EitherRX] = ???
-    override def setSeed(seed: Long): EitherRX[Any, Nothing, Unit] = ???
-    override def writeRandomBytes(bytes: Array[Byte]): EitherRX[Any, Nothing, Unit] = ???
-  }
+  implicit val entropyEitherRX: Entropy3[EitherRX] = Entropy1.Standard.asInstanceOf[Entropy3[EitherRX]]
 
   type EitherX[+E, +A] >: Either[E @uncheckedVariance, A @uncheckedVariance]
   implicit val syncSafeEitherX: SyncSafe2[EitherX] = new SyncSafe2[EitherX] {
     override def syncSafe[A](unexceptionalEff: => A): EitherX[Nothing, A] = Right(unexceptionalEff)
   }
-  implicit val clockEitherX: Clock2[EitherX] = new Clock2[EitherX] {
-    override def epoch: EitherX[Nothing, Long] = ???
-    override def now(accuracy: ClockAccuracy): EitherX[Nothing, ZonedDateTime] = ???
-    override def nowLocal(accuracy: ClockAccuracy): EitherX[Nothing, LocalDateTime] = ???
-    override def nowOffset(accuracy: ClockAccuracy): EitherX[Nothing, OffsetDateTime] = ???
-  }
+  implicit val clockEitherX: Clock2[EitherX] = Clock1.Standard.asInstanceOf[Clock2[EitherX]]
   @nowarn("msg=CanBuildFrom")
-  implicit val entropyEitherX: Entropy2[EitherX] = new Entropy2[EitherX] {
-    override def nextBoolean(): EitherX[Nothing, Boolean] = ???
-    override def nextInt(): EitherX[Nothing, Int] = ???
-    override def nextInt(max: Int): EitherX[Nothing, Int] = ???
-    override def nextLong(): EitherX[Nothing, Long] = ???
-    override def nextLong(max: Long): EitherX[Nothing, Long] = ???
-    override def nextFloat(): EitherX[Nothing, Float] = ???
-    override def nextDouble(): EitherX[Nothing, Double] = ???
-    override def nextGaussian(): EitherX[Nothing, Double] = ???
-    override def nextBytes(length: Int): EitherX[Nothing, Array[Byte]] = ???
-    override def nextPrintableChar(): EitherX[Nothing, Char] = ???
-    override def nextString(length: Int): EitherX[Nothing, String] = ???
-    override def nextTimeUUID(): EitherX[Nothing, UUID] = ???
-    override def nextUUID(): EitherX[Nothing, UUID] = ???
-    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): EitherX[Nothing, CC[T]] = ???
-    override def withSeed(seed: Long): Entropy2[EitherX] = ???
-    override def setSeed(seed: Long): EitherX[Nothing, Unit] = ???
-    override def writeRandomBytes(bytes: Array[Byte]): EitherX[Nothing, Unit] = ???
-  }
+  implicit val entropyEitherX: Entropy2[EitherX] = Entropy1.Standard.asInstanceOf[Entropy2[EitherX]]
 
 }

@@ -16,7 +16,7 @@ object V {
   val discipline_scalatest = "2.1.5"
 
   val zio = "1.0.13"
-  val zio_interop_cats = "3.2.9.0"
+  val zio_interop_cats = "3.2.9.1"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"

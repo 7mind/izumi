@@ -139,23 +139,15 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[
-    F[_]: TagK,
-    ConcurrentEffect[_[_]]: `cats.effect.kernel.ConcurrentEffect`,
-    Timer[_[_]]: `cats.effect.kernel.Clock`,
-    Parallel[_[_]]: `cats.Parallel`,
-    ContextShift[_[_]]: `cats.effect.ContextShift`,
-  ](implicit
-    F0: ConcurrentEffect[F],
-    T0: Timer[F],
+  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`, Parallel[_[_]]: `cats.Parallel`](
+    implicit
+    F0: Async[F],
     P0: Parallel[F],
-    C0: ContextShift[F],
+    tagK: TagK[F],
   ): DefaultModule[F] = {
-    implicit val F: cats.effect.kernel.ConcurrentEffect[F] = F0.asInstanceOf[cats.effect.kernel.ConcurrentEffect[F]]
-    implicit val T: cats.effect.kernel.Clock[F] = T0.asInstanceOf[cats.effect.kernel.Clock[F]]
-    implicit val P: cats.Parallel[F] = P0.asInstanceOf[cats.Parallel[F]]
-    implicit val C: cats.effect.ContextShift[F] = C0.asInstanceOf[cats.effect.ContextShift[F]]
-    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F])
+    val F = F0.asInstanceOf[cats.effect.kernel.Async[F]]
+    val P = P0.asInstanceOf[cats.Parallel[F]]
+    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](tagK, F, P))
   }
 }
 

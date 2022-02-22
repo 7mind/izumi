@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import cats.effect.{ContextShift, IO, LiftIO}
+import cats.effect.kernel.Async
 import izumi.distage.framework.DebugProperties
 import izumi.distage.model.effect.QuasiIO
 import izumi.functional.bio.{Async2, F}
@@ -10,7 +10,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.sink.FallbackConsoleSink
 
 import java.util.concurrent.CountDownLatch
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.Promise
 
 trait AppShutdownInitiator {
   def releaseAwaitLatch(): Unit
@@ -102,7 +102,7 @@ object AppShutdownStrategy {
     }
   }
 
-  class CatsEffectIOShutdownStrategy[F[_]: LiftIO](executionContext: ExecutionContext) extends AppShutdownStrategy[F] {
+  class CatsEffectIOShutdownStrategy[F[_]](implicit F: Async[F]) extends AppShutdownStrategy[F] {
     private val primaryLatch: Promise[Unit] = Promise[Unit]()
     private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 
@@ -113,20 +113,20 @@ object AppShutdownStrategy {
 
       val f = primaryLatch.future
 
-      implicit val ec: ExecutionContext = executionContext
-      f.onComplete {
-        _ =>
-          try {
-            Runtime.getRuntime.removeShutdownHook(shutdownHook)
-          } catch {
-            case _: IllegalStateException =>
+      F.fromFuture(F.flatMap(F.executionContext) {
+        ec =>
+          F.delay {
+            f.map {
+              _ =>
+                try {
+                  Runtime.getRuntime.removeShutdownHook(shutdownHook)
+                } catch {
+                  case _: IllegalStateException =>
+                }
+                logger.info("Going to shut down...")
+            }(ec)
           }
-          logger.info("Going to shut down...")
-      }
-
-      implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-      val fio = IO.fromFuture(IO.pure(f))
-      LiftIO[F].liftIO(fio)
+      })
     }
 
     def releaseAwaitLatch(): Unit = {
@@ -150,9 +150,11 @@ object AppShutdownStrategy {
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
 
+      val f = primaryLatch.future
+
       F.fromFuture {
-        implicit ec =>
-          primaryLatch.future.map[Unit] {
+        ec =>
+          f.map {
             _ =>
               try {
                 Runtime.getRuntime.removeShutdownHook(shutdownHook)
@@ -160,7 +162,7 @@ object AppShutdownStrategy {
                 case _: IllegalStateException =>
               }
               logger.info("Going to shut down...")
-          }
+          }(ec)
       }
     }
 

@@ -1,6 +1,6 @@
 package logstage
 
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.Log.{Context, CustomContext, Entry, Message}
 
@@ -16,9 +16,9 @@ trait LogCreateIO[F[_]] {
 object LogCreateIO {
   @inline def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
-  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe[F])
+  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe1]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe1[F])
 
-  class LogCreateIOSyncSafeInstance[F[_]](protected val F: SyncSafe[F]) extends LogCreateIO[F] {
+  class LogCreateIOSyncSafeInstance[F[_]](protected val F: SyncSafe1[F]) extends LogCreateIO[F] {
     override def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry] = {
       F.syncSafe(Entry.create(logLevel, message)(pos))
     }

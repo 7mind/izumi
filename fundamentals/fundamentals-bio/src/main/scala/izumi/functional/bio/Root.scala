@@ -19,8 +19,8 @@ trait RootTrifunctor[F[-_, +_, +_]] extends Root
 trait Root extends DivergenceHelper with PredefinedHelper
 
 object Root extends RootInstancesLowPriority1 {
-  @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Panic3[FR] & S1 =
-    S1(Concurrent.InnerF)
+  @inline implicit final def ConvertFromConcurrent[FR[-_, +_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent3[FR]]): Predefined.Of[Panic3[FR] & S1] =
+    Predefined(S1(Concurrent.InnerF))
 
   @inline implicit final def AttachLocal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Local: Local3[FR]): Local.type = Local
   @inline implicit final def AttachPrimitives3[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Primitives: Primitives3[FR]): Primitives.type =
@@ -41,8 +41,8 @@ object Root extends RootInstancesLowPriority1 {
 }
 
 sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
-  @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Error3[FR] & S2 =
-    S2(Temporal.InnerF)
+  @inline implicit final def ConvertFromTemporal[FR[-_, +_, +_]](implicit Temporal: NotPredefined.Of[Temporal3[FR]]): Predefined.Of[Error3[FR] & S2] =
+    Predefined(S2(Temporal.InnerF))
 
   @inline implicit final def AttachArrowChoice[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit ArrowChoice: ArrowChoice3[FR]): ArrowChoice.type =
     ArrowChoice
@@ -52,8 +52,8 @@ sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
 }
 
 sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
-  @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Monad3[FR] & S3 =
-    S3(Parallel.InnerF)
+  @inline implicit final def ConvertFromParallel[FR[-_, +_, +_]](implicit Parallel: NotPredefined.Of[Parallel3[FR]]): Predefined.Of[Monad3[FR] & S3] =
+    Predefined(S3(Parallel.InnerF))
 
   @inline implicit final def AttachArrow[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Arrow: Arrow3[FR]): Arrow.type = Arrow
   @inline implicit final def AttachBifunctor[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Bifunctor: Bifunctor3[FR]): Bifunctor.type =
@@ -63,8 +63,8 @@ sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
 }
 
 sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
-  @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Monad3[FR] & S4 =
-    S4(MonadAsk.InnerF)
+  @inline implicit final def ConvertFromMonadAsk[FR[-_, +_, +_]](implicit MonadAsk: NotPredefined.Of[MonadAsk3[FR]]): Predefined.Of[Monad3[FR] & S4] =
+    Predefined(S4(MonadAsk.InnerF))
 
   @inline implicit final def AttachAsk[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Ask: Ask3[FR]): Ask.type = Ask
   @inline implicit final def AttachProfunctor[FR[-_, +_, +_]](@unused self: Functor3[FR])(implicit Profunctor: Profunctor3[FR]): Profunctor.type =
@@ -73,19 +73,19 @@ sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
 }
 
 sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
-  @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Applicative3[FR] & S5 = S5(Ask.InnerF)
+  @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Predefined.Of[Applicative3[FR] & S5] = Predefined(S5(Ask.InnerF))
 
   @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal.type = Temporal
 }
 
 sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
-  @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Functor3[FR] & S6 =
-    S6(Profunctor.InnerF)
+  @inline implicit final def ConvertFromProfunctor[FR[-_, +_, +_]](implicit Profunctor: NotPredefined.Of[Profunctor3[FR]]): Predefined.Of[Functor3[FR] & S6] =
+    Predefined(S6(Profunctor.InnerF))
 }
 
 sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
-  @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Functor3[FR] & S7 =
-    S7(Bifunctor.InnerF)
+  @inline implicit final def ConvertFromBifunctor[FR[-_, +_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor3[FR]]): Predefined.Of[Functor3[FR] & S7] =
+    Predefined(S7(Bifunctor.InnerF))
 }
 
 sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {

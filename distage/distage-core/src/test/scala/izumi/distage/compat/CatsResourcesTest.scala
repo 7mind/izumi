@@ -1,9 +1,10 @@
 package izumi.distage.compat
 
 import cats.arrow.FunctionK
-import cats.effect.{Bracket, IO, Resource, Sync}
-import distage._
-import izumi.distage.compat.CatsResourcesTest._
+import cats.effect.unsafe.IORuntime
+import cats.effect.{IO, Resource, Sync}
+import distage.*
+import izumi.distage.compat.CatsResourcesTest.*
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
@@ -39,7 +40,6 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      addImplicit[Bracket[IO, Throwable]]
       make[MyApp]
     }
 
@@ -47,7 +47,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .produce(module, Roots.Everything).use {
         objects =>
           objects.get[MyApp].run
-      }.unsafeRunSync()
+      }.unsafeRunSync()(IORuntime.global)
   }
 
   "Lifecycle API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
@@ -100,7 +100,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     ctxResource
       .use(assert1)
       .flatMap((assert2 _).tupled)
-      .unsafeRunSync()
+      .unsafeRunSync()(IORuntime.global)
 
     ctxResource
       .mapK(FunctionK.id[IO])
@@ -108,7 +108,7 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
       .mapK(FunctionK.id[IO])
       .use(assert1)
       .flatMap((assert2 _).tupled)
-      .unsafeRunSync()
+      .unsafeRunSync()(IORuntime.global)
   }
 
   "cats instances for Lifecycle" in {

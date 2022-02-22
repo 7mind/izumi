@@ -1,6 +1,7 @@
 package izumi.distage.roles.test
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
@@ -186,7 +187,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 assert(probe.resources.getCheckedResources().size == 2)
                 assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
               }
-          }.unsafeRunSync()
+          }.unsafeRunSync()(IORuntime.global)
       }
     }
 
@@ -223,7 +224,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 assert(probe.resources.getCheckedResources().size == 2)
                 assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
               }
-          }.unsafeRunSync()
+          }.unsafeRunSync()(IORuntime.global)
       }
     }
 
@@ -274,7 +275,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                   )
                 )
               }
-          }.unsafeRunSync()
+          }.unsafeRunSync()(IORuntime.global)
       }
     }
 
@@ -384,7 +385,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       ) {
         val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
         new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
-        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
       }
     }
   }

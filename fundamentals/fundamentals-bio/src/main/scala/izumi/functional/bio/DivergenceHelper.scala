@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import izumi.functional.bio.DivergenceHelper.Nondivergent
 
-import scala.annotation.unused
+import scala.annotation.nowarn
 
 trait DivergenceHelper {
   type Divergence = Nondivergent
@@ -18,6 +18,10 @@ object DivergenceHelper {
       * This allows a Divergent implicit to be _less_ specific
       * than the non-divergent instances, while at the same time
       * not matching its own requirement of `{ type Divergence = Nondivergent }`
+      *
+      * Note: Upcasting Divergence also depends on returning a type
+      * variable instead of a known type. `Divergent.Of[SyncSafe3[F]]`
+      * will not fail the Nondivergent requirement, only `Divergent.Of[C[F]]` will.
       */
     type Of[A] = A { type Divergence }
     @inline def apply[A <: DivergenceHelper, A1 >: A](a: A): Divergent.Of[A1] = a.asInstanceOf[Divergent.Of[A1]]
@@ -38,7 +42,7 @@ object DivergenceHelper {
     * The structural refinement must be placed directly on
     * the `C` type variable, not through an alias to work.
     */
-  @unused private[this] object Nondivergent {
-    @unused private[this] type Of[A] = A { type Divergence = Nondivergent }
+  @nowarn("msg=never used") private[this] object Nondivergent {
+    @nowarn("msg=never used") private[this] type Of[A] = A { type Divergence = Nondivergent }
   }
 }

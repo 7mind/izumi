@@ -2,7 +2,7 @@ package izumi.functional.bio.retry
 
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{F, Functor2, IO2, Monad2, Primitives2, Temporal3, TemporalInstances, UnsafeRun2}
+import izumi.functional.bio.{Clock3, F, Functor2, IO2, Monad2, Primitives2, Temporal3, TemporalInstances, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 import zio.internal.Platform
@@ -18,7 +18,8 @@ class SchedulerTest extends AnyWordSpec {
 //  private val monixScheduler: Scheduler2[bio.IO] = new SchedulerMonix(implicitly[cats.effect.kernel.Clock[bio.UIO]])
 
   private val zioTestClock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
-  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(zioTestClock)
+  private val zioTestClock1: Clock3[ZIO] = Clock3[ZIO]
+  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(zioTestClock1)
   private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromZio(zioTestClock)
   private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO(Platform.default)
 
