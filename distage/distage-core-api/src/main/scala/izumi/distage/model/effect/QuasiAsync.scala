@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
 
 import cats.Parallel
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Concurrent
 import izumi.functional.bio.{Async2, F, Temporal2}
 import izumi.fundamentals.orphans.{`cats.Parallel`, `cats.effect.Concurrent`, `cats.effect.Timer`}
 import izumi.fundamentals.platform.functional.Identity
@@ -12,6 +12,7 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.collection.compat._
+import cats.effect.Temporal
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -141,13 +142,13 @@ private[effect] sealed trait LowPriorityQuasiAsyncInstances {
   ): QuasiAsync[F] = {
     new QuasiAsync[F] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
-        C.asInstanceOf[Concurrent[F]].async(effect)
+        C.asInstanceOf[Concurrent[F]].async_(effect)
       }
       override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
         Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
       }
       override def sleep(duration: FiniteDuration): F[Unit] = {
-        T.asInstanceOf[Timer[F]].sleep(duration)
+        T.asInstanceOf[Temporal[F]].sleep(duration)
       }
       override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
         Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])

@@ -3,7 +3,7 @@ package izumi.functional.bio.laws
 import cats.effect.laws.ConcurrentEffectLaws
 import cats.effect.laws.discipline.{ConcurrentEffectTests, Parameters}
 import cats.effect.laws.util.TestContext
-import cats.effect.{ConcurrentEffect, ContextShift}
+import cats.effect.ConcurrentEffect
 import izumi.functional.bio.laws.env.{ZIOTestEnvNonterminating, ZIOTestEnvTerminating}
 import izumi.functional.bio.{UnsafeRun2, catz}
 import zio.IO

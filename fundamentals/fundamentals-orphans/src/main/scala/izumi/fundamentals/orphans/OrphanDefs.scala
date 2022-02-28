@@ -91,7 +91,7 @@ object `cats.effect.Sync` {
 
 final abstract class `cats.effect.Bracket`[R[_[_], E]]
 object `cats.effect.Bracket` {
-  @inline implicit final def get: `cats.effect.Bracket`[cats.effect.Bracket] = null
+  @inline implicit final def get: `cats.effect.Bracket`[cats.effect.MonadCancel] = null
 }
 
 final abstract class `cats.effect.Concurrent`[K[_[_]]]
@@ -117,7 +117,7 @@ object `cats.effect.ConcurrentEffect` {
 
 final abstract class `cats.effect.Timer`[K[_[_]]]
 object `cats.effect.Timer` {
-  @inline implicit final def get: `cats.effect.Timer`[cats.effect.Timer] = null
+  @inline implicit final def get: `cats.effect.Timer`[cats.effect.Temporal] = null
 }
 
 final abstract class `cats.effect.ContextShift`[K[_[_]]]
