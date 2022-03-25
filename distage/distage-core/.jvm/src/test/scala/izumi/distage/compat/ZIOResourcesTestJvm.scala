@@ -1,6 +1,5 @@
 package izumi.distage.compat
 
-import cats.effect.Bracket
 import distage.{TagKK, _}
 import izumi.distage.compat.ZIOResourcesTestJvm._
 import izumi.distage.model.definition.Binding.SingletonBinding
@@ -13,6 +12,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.Runtime.default.unsafeRun
 import zio._
+import cats.effect.MonadCancel
 
 object ZIOResourcesTestJvm {
   class Res { var initialized = false }
@@ -70,7 +70,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
+          assert(!(fn.diKeys contains DIKey.get[MonadCancel[Task, Throwable]]))
         case _ =>
           fail()
       }
@@ -177,7 +177,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
+          assert(!(fn.diKeys contains DIKey.get[MonadCancel[Task, Throwable]]))
         case _ =>
           fail()
       }
