@@ -26,6 +26,6 @@ sealed trait SchedulerLowPriorityInstances {
     implicit
     timer: Timer[MonixBIO[Nothing, _]]
   ): Predefined.Of[Scheduler2[MonixBIO]] = {
-    new SchedulerMonix(timer.asInstanceOf[cats.effect.Timer[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Scheduler2[MonixBIO]]]
+    new SchedulerMonix(timer.asInstanceOf[cats.effect.Temporal[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Scheduler2[MonixBIO]]]
   }
 }
