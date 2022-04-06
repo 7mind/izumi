@@ -44,7 +44,7 @@ trait CatsConversions4 extends CatsConversions5 {
   @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F: Error2[F]): cats.MonadError[F[E, _], E] with S6 = new BIOCatsMonadError[F, E](F)
 }
 trait CatsConversions5 extends CatsConversions6 {
-  @inline implicit final def BIOToBracket[F[+_, +_]](implicit F: Panic2[F]): cats.effect.Bracket[F[Throwable, _], Throwable] with S7 = new BIOCatsBracket[F](F)
+  @inline implicit final def BIOToBracket[F[+_, +_]](implicit F: Panic2[F]): cats.effect.MonadCancel[F[Throwable, _], Throwable] with S7 = new BIOCatsBracket[F](F)
 }
 trait CatsConversions6 extends CatsConversions7 {
   @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F]): cats.effect.Sync[F[Throwable, _]] with S8 = new BIOCatsSync[F](F)
@@ -117,7 +117,7 @@ object CatsConversions {
     @inline override final def fromEither[A](x: Either[E, A]): F[E, A] = F.fromEither(x)
   }
 
-  class BIOCatsBracket[F[+_, +_]](override val F: Panic2[F]) extends BIOCatsMonadError[F, Throwable](F) with cats.effect.Bracket[F[Throwable, _], Throwable] {
+  class BIOCatsBracket[F[+_, +_]](override val F: Panic2[F]) extends BIOCatsMonadError[F, Throwable](F) with cats.effect.MonadCancel[F[Throwable, _], Throwable] {
     @inline override final def bracketCase[A, B](
       acquire: F[Throwable, A]
     )(use: A => F[Throwable, B]
